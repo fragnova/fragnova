@@ -76,10 +76,10 @@ git = 'https://github.com/paritytech/substrate.git'
 rev = 'd6c33e7ec313f9bd5e319dc0a5a3ace5543f9617'
 version = '3.0.0'
 
-[dependencies.pallet-template]
+[dependencies.frag-pallet-storage]
 default-features = false
-path = '../pallets/template'
-version = '3.0.0'
+path = '../pallets/storage'
+version = '0.0.1'
 
 [dependencies.pallet-timestamp]
 default-features = false
@@ -189,9 +189,9 @@ runtime-benchmarks = [
     'frame-system/runtime-benchmarks',
     'hex-literal',
     'pallet-balances/runtime-benchmarks',
-    'pallet-template/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
+    'frag-pallet-storage/runtime-benchmarks'
 ]
 std = [
     'codec/std',
@@ -204,7 +204,6 @@ std = [
     'pallet-grandpa/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
-    'pallet-template/std',
     'pallet-timestamp/std',
     'pallet-transaction-payment-rpc-runtime-api/std',
     'pallet-transaction-payment/std',
@@ -219,4 +218,5 @@ std = [
     'sp-std/std',
     'sp-transaction-pool/std',
     'sp-version/std',
+    'frag-pallet-storage/std'
 ]
