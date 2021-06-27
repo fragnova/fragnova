@@ -6,6 +6,17 @@
 
 pub use pallet::*;
 
+use frame_system::{
+	self as system,
+	offchain::{
+		AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SendSignedTransaction,
+		SignedPayload, SigningTypes, Signer, SubmitTransaction,
+	}
+};
+
+use sp_runtime::offchain::{http, storage};
+// https://substrate.dev/rustdocs/v3.0.0-monthly-2021-05/sp_runtime/offchain/http/index.html
+
 #[cfg(test)]
 mod mock;
 
@@ -19,6 +30,7 @@ mod benchmarking;
 pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
+	use super::*;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -99,6 +111,33 @@ pub mod pallet {
 					Ok(())
 				},
 			}
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		/// Offchain Worker entry point.
+		///
+		/// By implementing `fn offchain_worker` you declare a new offchain worker.
+		/// This function will be called when the node is fully synced and a new best block is
+		/// succesfuly imported.
+		/// Note that it's not guaranteed for offchain workers to run on EVERY block, there might
+		/// be cases where some blocks are skipped, or for some the worker runs twice (re-orgs),
+		/// so the code should be able to handle that.
+		/// You can use `Local Storage` API to coordinate runs of the worker.
+		fn offchain_worker(block_number: T::BlockNumber) {
+			// Note that having logs compiled to WASM may cause the size of the blob to increase
+			// significantly. You can use `RuntimeDebug` custom derive to hide details of the types
+			// in WASM. The `sp-api` crate also provides a feature `disable-logging` to disable
+			// all logging and thus, remove any logging from the WASM.
+			log::info!("Hello World from offchain workers!");
+
+			// Since off-chain workers are just part of the runtime code, they have direct access
+			// to the storage and other included pallets.
+			//
+			// We can easily import `frame_system` and retrieve a block hash of the parent block.
+			let parent_hash = <system::Pallet<T>>::block_hash(block_number - 1u32.into());
+			log::debug!("Current block: {:?} (parent hash: {:?})", block_number, parent_hash);
 		}
 	}
 }

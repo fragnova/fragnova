@@ -1,19 +1,25 @@
 [dev-dependencies.serde]
 version = '1.0.119'
 
-[dev-dependencies.sp-core]
+[dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 rev = 'd6c33e7ec313f9bd5e319dc0a5a3ace5543f9617'
 version = '3.0.0'
 
-[dev-dependencies.sp-io]
+[dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 rev = 'd6c33e7ec313f9bd5e319dc0a5a3ace5543f9617'
 version = '3.0.0'
 
-[dev-dependencies.sp-runtime]
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+rev = 'd6c33e7ec313f9bd5e319dc0a5a3ace5543f9617'
+version = '3.0.0'
+
+[dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 rev = 'd6c33e7ec313f9bd5e319dc0a5a3ace5543f9617'
@@ -43,6 +49,9 @@ git = 'https://github.com/paritytech/substrate.git'
 rev = 'd6c33e7ec313f9bd5e319dc0a5a3ace5543f9617'
 version = '3.0.0'
 
+[dependencies]
+log = { version = "0.4.14", default-features = false }
+
 [features]
 default = ['std']
 runtime-benchmarks = ['frame-benchmarking']
@@ -51,6 +60,10 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'frame-benchmarking/std',
+    'sp-io/std',
+    'sp-std/std',
+	'sp-runtime/std',
+    'log/std',
 ]
 try-runtime = ['frame-support/try-runtime']
 
