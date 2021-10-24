@@ -16,6 +16,8 @@ use frame_system::{
 
 use sp_runtime::offchain::{http, storage};
 // https://substrate.dev/rustdocs/v3.0.0-monthly-2021-05/sp_runtime/offchain/http/index.html
+use sp_io::offchain_index;
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod mock;
@@ -54,7 +56,6 @@ pub mod pallet {
 	// Pallets use events to inform users when important changes are made.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/events
 	#[pallet::event]
-	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
@@ -138,6 +139,25 @@ pub mod pallet {
 			// We can easily import `frame_system` and retrieve a block hash of the parent block.
 			let parent_hash = <system::Pallet<T>>::block_hash(block_number - 1u32.into());
 			log::debug!("Current block: {:?} (parent hash: {:?})", block_number, parent_hash);
+
+			// initiate a GET request to localhost:1234
+			let request: http::Request = http::Request::get("http://localhost:1234");
+			let pending = request
+				.add_header("X-Auth", "hunter2")
+				.send()
+				.unwrap();
+
+			// wait for the response indefinitely
+			let mut response = pending.wait().unwrap();
+
+			// then check the headers
+			let mut headers = response.headers().into_iter();
+			assert_eq!(headers.current(), None);
+
+			// and collect the body
+			let body = response.body();
+			assert_eq!(body.clone().collect::<Vec<_>>(), b"1234".to_vec());
+			assert_eq!(body.error(), &None);
 		}
 	}
 }
