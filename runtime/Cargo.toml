@@ -82,6 +82,12 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-10'
 version = '4.0.0-dev'
 
+[dependencies.pallet-contracts]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-10'
+version = '4.0.0-dev'
+
 [dependencies.pallet-grandpa]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -189,9 +195,9 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-10'
 version = '4.0.0-dev'
 
-[dependencies.frag-pallet-storage]
+[dependencies.fragments-pallet]
 default-features = false
-path = '../pallets/storage'
+path = '../pallets/fragments'
 version = '0.0.1'
 
 [features]
@@ -205,7 +211,7 @@ runtime-benchmarks = [
     'pallet-balances/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
-    'frag-pallet-storage/runtime-benchmarks'
+    'fragments-pallet/runtime-benchmarks'
 ]
 std = [
     'codec/std',
@@ -216,6 +222,7 @@ std = [
     'frame-system/std',
     'pallet-aura/std',
     'pallet-balances/std',
+    'pallet-contracts/std',
     'pallet-grandpa/std',
     'pallet-randomness-collective-flip/std',
     'pallet-sudo/std',
@@ -233,5 +240,5 @@ std = [
     'sp-std/std',
     'sp-transaction-pool/std',
     'sp-version/std',
-    'frag-pallet-storage/std'
+    'fragments-pallet/std'
 ]

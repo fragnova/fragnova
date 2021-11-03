@@ -88,6 +88,8 @@ pub mod pallet {
 
 			// Update storage.
 			<Something<T>>::put(something);
+			let key = b"my_key";
+			sp_io::offchain_index::set(&key[..], &something.encode());
 
 			// Emit an event.
 			Self::deposit_event(Event::SomethingStored(something, who));
@@ -133,31 +135,31 @@ pub mod pallet {
 			// all logging and thus, remove any logging from the WASM.
 			log::info!("Hello World from offchain workers!");
 
-			// Since off-chain workers are just part of the runtime code, they have direct access
-			// to the storage and other included pallets.
-			//
-			// We can easily import `frame_system` and retrieve a block hash of the parent block.
-			let parent_hash = <system::Pallet<T>>::block_hash(block_number - 1u32.into());
-			log::debug!("Current block: {:?} (parent hash: {:?})", block_number, parent_hash);
+			// // Since off-chain workers are just part of the runtime code, they have direct access
+			// // to the storage and other included pallets.
+			// //
+			// // We can easily import `frame_system` and retrieve a block hash of the parent block.
+			// let parent_hash = <system::Pallet<T>>::block_hash(block_number - 1u32.into());
+			// log::debug!("Current block: {:?} (parent hash: {:?})", block_number, parent_hash);
 
-			// initiate a GET request to localhost:1234
-			let request: http::Request = http::Request::get("http://localhost:1234");
-			let pending = request
-				.add_header("X-Auth", "hunter2")
-				.send()
-				.unwrap();
+			// // initiate a GET request to localhost:1234
+			// let request: http::Request = http::Request::get("http://localhost:1234");
+			// let pending = request
+			// 	.add_header("X-Auth", "hunter2")
+			// 	.send()
+			// 	.unwrap();
 
-			// wait for the response indefinitely
-			let mut response = pending.wait().unwrap();
+			// // wait for the response indefinitely
+			// let mut response = pending.wait().unwrap();
 
-			// then check the headers
-			let mut headers = response.headers().into_iter();
-			assert_eq!(headers.current(), None);
+			// // then check the headers
+			// let mut headers = response.headers().into_iter();
+			// assert_eq!(headers.current(), None);
 
-			// and collect the body
-			let body = response.body();
-			assert_eq!(body.clone().collect::<Vec<_>>(), b"1234".to_vec());
-			assert_eq!(body.error(), &None);
+			// // and collect the body
+			// let body = response.body();
+			// assert_eq!(body.clone().collect::<Vec<_>>(), b"1234".to_vec());
+			// assert_eq!(body.error(), &None);
 		}
 	}
 }

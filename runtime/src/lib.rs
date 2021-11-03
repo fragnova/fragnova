@@ -26,7 +26,7 @@ use sp_version::RuntimeVersion;
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{KeyOwnerProofSystem, Randomness, StorageInfo},
+	traits::{KeyOwnerProofSystem, Randomness, StorageInfo, Contains},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
 		IdentityFee, Weight,
@@ -41,7 +41,9 @@ pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
 /// Import the template pallet.
-pub use frag_pallet_storage;
+pub use fragments_pallet;
+
+pub use pallet_contracts::{Schedule};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -257,6 +259,12 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
+	pub const ContractDeposit: u64 = 16;
+	pub const MaxValueSize: u32 = 16_384;
+	pub const DeletionQueueDepth: u32 = 1024;
+	pub const DeletionWeightLimit: Weight = 500_000_000_000;
+	pub const MaxCodeSize: u32 = 2 * 1024;
+	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
 	pub const TransactionByteFee: Balance = 1;
 }
 
@@ -273,8 +281,31 @@ impl pallet_sudo::Config for Runtime {
 }
 
 /// Configure the pallet-template in pallets/template.
-impl frag_pallet_storage::Config for Runtime {
+impl fragments_pallet::Config for Runtime {
 	type Event = Event;
+}
+
+impl pallet_contracts::Config for Runtime {
+	type Time = Timestamp;
+	type Randomness = RandomnessCollectiveFlip;
+	type Currency = Balances;
+	type Event = Event;
+	type Call = Call;
+	/// The safest default is to allow no calls at all.
+	///
+	/// Runtimes should whitelist dispatchables that are allowed to be called from contracts
+	/// and make sure they are stable. Dispatchables exposed to contracts are not allowed to
+	/// change because that would break already deployed contracts. The `Call` structure itself
+	/// is not allowed to change the indices of existing pallets, too.
+	type CallFilter = frame_support::traits::Nothing;
+	type ContractDeposit = ContractDeposit;
+	type CallStack = [pallet_contracts::Frame<Self>; 31];
+	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
+	type WeightInfo = ();
+	type ChainExtension = ();
+	type DeletionQueueDepth = DeletionQueueDepth;
+	type DeletionWeightLimit = DeletionWeightLimit;
+	type Schedule = MySchedule;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -293,7 +324,7 @@ construct_runtime!(
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		// Include the custom logic from the pallet-template in the runtime.
-		FragModule: frag_pallet_storage::{Pallet, Call, Storage, Event<T>},
+		Fragments: fragments_pallet::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -470,7 +501,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			list_benchmark!(list, extra, frag_pallet_storage, FragModule);
+			list_benchmark!(list, extra, fragments_pallet, Fragments);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -504,7 +535,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, pallet_template, FragModule);
+			add_benchmark!(params, batches, fragments_pallet, Fragments);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)

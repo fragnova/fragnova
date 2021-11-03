@@ -75,10 +75,10 @@ try-runtime = ['frame-support/try-runtime']
 
 [package]
 authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
-description = 'FRAME Fragcolor storage pallet.'
+description = 'Fragments Asset Store pallet.'
 edition = '2018'
-license = 'Unlicense'
-name = 'frag-pallet-storage'
+license = 'BUSL-1.1'
+name = 'fragments-pallet'
 readme = 'README.md'
 version = '0.0.1'
 [package.metadata.docs.rs]

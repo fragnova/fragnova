@@ -1,4 +1,4 @@
-use crate as frag_pallet_storage;
+use crate as fragments_pallet;
 use sp_core::H256;
 use frame_support::parameter_types;
 use sp_runtime::{
@@ -17,7 +17,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		TemplateModule: frag_pallet_storage::{Pallet, Call, Storage, Event<T>},
+		Fragments: fragments_pallet::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -52,7 +52,7 @@ impl system::Config for Test {
 	type OnSetCode = ();
 }
 
-impl frag_pallet_storage::Config for Test {
+impl fragments_pallet::Config for Test {
 	type Event = Event;
 }
 
