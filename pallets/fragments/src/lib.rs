@@ -176,6 +176,8 @@ pub mod pallet {
 			// all logging and thus, remove any logging from the WASM.
 			log::info!("Hello World from offchain workers!");
 
+			sp_chainblocks::my_interface::say_hello_world("Offchain worker");
+
 			// // Since off-chain workers are just part of the runtime code, they have direct access
 			// // to the storage and other included pallets.
 			// //
