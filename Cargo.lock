@@ -3619,11 +3619,13 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
+ "sp-chainblocks",
  "sp-consensus",
  "sp-consensus-aura",
  "sp-core",
  "sp-finality-grandpa",
  "sp-runtime",
+ "sp-runtime-interface",
  "sp-timestamp",
  "structopt",
  "substrate-build-script-utils",
@@ -6377,6 +6379,16 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "thiserror",
+]
+
+[[package]]
+name = "sp-chainblocks"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime-interface",
+ "sp-std",
 ]
 
 [[package]]

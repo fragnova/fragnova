@@ -28,6 +28,7 @@ version = '3.0.0-monthly-2021-10'
 [dependencies]
 jsonrpc-core = '18.0.0'
 structopt = '0.3.8'
+sp-chainblocks = { path = '../primitives/chainblocks' }
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/paritytech/substrate.git'
@@ -153,6 +154,11 @@ tag = 'monthly-2021-10'
 version = '4.0.0-dev'
 
 [dependencies.sp-runtime]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-10'
+version = '4.0.0-dev'
+
+[dependencies.sp-runtime-interface]
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-10'
 version = '4.0.0-dev'
