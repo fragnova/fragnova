@@ -57,6 +57,8 @@ version = '1.0'
 
 [dependencies]
 log = { version = "0.4.14", default-features = false }
+brotli = { version = "3.3.2", default-features = false }
+alloc-no-stdlib = "2.0.3"
 
 [features]
 default = ['std']
