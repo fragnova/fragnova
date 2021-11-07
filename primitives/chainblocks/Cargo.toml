@@ -29,12 +29,16 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-10'
 version = '4.0.0-dev'
 
+[dependencies]
+chainblocks = { git = 'https://github.com/fragcolor-xyz/chainblocks.git', default-features = false, optional = true, features = ["dllblock", "cblisp"] }
+
 [dev-dependencies]
 codec = { package = "parity-scale-codec", default-features = false, version = "2.0.0" }
 
 [features]
 default = ["std"]
 std = [
+	"chainblocks",
 	"sp-core/std",
 	"sp-runtime-interface/std",
 	"sp-std/std",
