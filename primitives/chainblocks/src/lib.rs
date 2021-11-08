@@ -5,12 +5,14 @@ extern crate chainblocks;
 
 #[cfg(feature = "std")]
 mod details {
-	use chainblocks::core::{log, init};
+	use chainblocks::core::{init};
+	use chainblocks::{cbl_env, cblog};
 
 	pub fn _say_hello_world(data: &str) {
 		init();
 		println!("Hello world STD from: {}", data);
-		log("Hello from chainblocks");
+		cblog!("Hello from chainblocks");
+		cbl_env!("(println \"Hello\")");
 	}
 }
 
