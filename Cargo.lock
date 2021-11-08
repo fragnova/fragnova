@@ -772,7 +772,7 @@ dependencies = [
 [[package]]
 name = "chainblocks"
 version = "0.1.0"
-source = "git+https://github.com/fragcolor-xyz/chainblocks.git#f07ac94d6f584bf6360e38cea213493f66799665"
+source = "git+https://github.com/fragcolor-xyz/chainblocks.git#8501bcc158a6f125a4cfac159bc28bf563578c61"
 dependencies = [
  "approx",
  "compile-time-crc32",
