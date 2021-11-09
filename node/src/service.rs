@@ -332,6 +332,9 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		);
 	}
 
+	// add chainblocks initialization here
+	sp_chainblocks::init();
+
 	network_starter.start_network();
 	Ok(task_manager)
 }

@@ -1,0 +1,8 @@
+(defchain validate-fragment
+  (ExpectBytesSeq)
+  (| (Take 0) (Brotli.Decompress) (FromBytes) (ExpectTable) = .files
+      (Take ".s") (ExpectString) = .loaded-fragment-immutable)
+  (| (Take 1) (Brotli.Decompress) (FromBytes) (ExpectTable)
+      (Take "e") (ExpectString) = .loaded-fragment-mutable)
+  ; todo more checks
+  )

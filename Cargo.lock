@@ -92,12 +92,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "alloc-no-stdlib"
-version = "2.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35ef4730490ad1c4eae5c4325b2a95f521d023e5c885853ff7aca0a6a1631db3"
-
-[[package]]
 name = "ansi_term"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -582,25 +576,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "brotli"
-version = "3.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71cb90ade945043d3d53597b2fc359bb063db8ade2bcffe7997351d0756e9d50"
-dependencies = [
- "alloc-no-stdlib",
- "brotli-decompressor",
-]
-
-[[package]]
-name = "brotli-decompressor"
-version = "2.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59ad2d4653bf5ca36ae797b1f4bb4dbddb60ce49ca4aed8a2ce4829f60425b80"
-dependencies = [
- "alloc-no-stdlib",
-]
-
-[[package]]
 name = "bs58"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -772,7 +747,7 @@ dependencies = [
 [[package]]
 name = "chainblocks"
 version = "0.1.0"
-source = "git+https://github.com/fragcolor-xyz/chainblocks.git#8501bcc158a6f125a4cfac159bc28bf563578c61"
+source = "git+https://github.com/fragcolor-xyz/chainblocks.git#0da618fb271382bc1e0ffd172b146facb04f5ed3"
 dependencies = [
  "approx",
  "compile-time-crc32",
@@ -1579,8 +1554,6 @@ dependencies = [
 name = "fragments-pallet"
 version = "0.0.1"
 dependencies = [
- "alloc-no-stdlib",
- "brotli",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -2778,7 +2751,7 @@ dependencies = [
  "sha2 0.9.8",
  "smallvec",
  "thiserror",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
  "void",
  "zeroize",
 ]
@@ -2848,7 +2821,7 @@ dependencies = [
  "regex",
  "sha2 0.9.8",
  "smallvec",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
  "wasm-timer",
 ]
 
@@ -2889,7 +2862,7 @@ dependencies = [
  "sha2 0.9.8",
  "smallvec",
  "uint",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
  "void",
  "wasm-timer",
 ]
@@ -2930,7 +2903,7 @@ dependencies = [
  "parking_lot 0.11.2",
  "rand 0.7.3",
  "smallvec",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
 ]
 
 [[package]]
@@ -2983,7 +2956,7 @@ dependencies = [
  "log",
  "prost",
  "prost-build",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
  "void",
 ]
 
@@ -3019,7 +2992,7 @@ dependencies = [
  "prost-build",
  "rand 0.7.3",
  "smallvec",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
  "void",
  "wasm-timer",
 ]
@@ -3040,7 +3013,7 @@ dependencies = [
  "minicbor",
  "rand 0.7.3",
  "smallvec",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
  "wasm-timer",
 ]
 
@@ -3554,7 +3527,7 @@ dependencies = [
  "percent-encoding 2.1.0",
  "serde",
  "static_assertions",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
  "url 2.2.2",
 ]
 
@@ -3596,7 +3569,7 @@ dependencies = [
  "generic-array 0.14.4",
  "multihash-derive",
  "sha2 0.9.8",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
 ]
 
 [[package]]
@@ -3630,7 +3603,7 @@ dependencies = [
  "log",
  "pin-project 1.0.8",
  "smallvec",
- "unsigned-varint 0.7.0",
+ "unsigned-varint 0.7.1",
 ]
 
 [[package]]
@@ -4186,9 +4159,9 @@ dependencies = [
 
 [[package]]
 name = "parity-db"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7ccc4a8687027deb53d45c5434a1f1b330c9d1069a59cfe80a62aa9a1da25ae"
+checksum = "7cb5195cb862b13055cf7f7a76c55073dc73885c2a61511e322b8c1666be7332"
 dependencies = [
  "blake2-rfc",
  "crc32fast",
@@ -6479,6 +6452,7 @@ name = "sp-chainblocks"
 version = "0.1.0"
 dependencies = [
  "chainblocks",
+ "lazy_static",
  "parity-scale-codec",
  "sp-core",
  "sp-runtime-interface",
@@ -7667,9 +7641,9 @@ dependencies = [
 
 [[package]]
 name = "unsigned-varint"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f8d425fafb8cd76bc3f22aace4af471d3156301d7508f2107e98fbeae10bc7f"
+checksum = "d86a8dc7f45e4c1b0d30e43038c38f274e77af056aa5f74b93c2cf9eb3c1c836"
 dependencies = [
  "asynchronous-codec 0.6.0",
  "bytes 1.1.0",

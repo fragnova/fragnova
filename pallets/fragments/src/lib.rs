@@ -3,9 +3,6 @@
 /// Edit this file to define custom logic or remove it if it is not needed.
 /// Learn more about FRAME and the core library of Substrate FRAME pallets:
 /// <https://substrate.dev/docs/en/knowledgebase/runtime/frame>
-extern crate brotli;
-#[macro_use]
-extern crate alloc_no_stdlib;
 
 pub use pallet::*;
 
@@ -31,43 +28,6 @@ mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-
-use alloc_no_stdlib::{
-	bzero, declare_stack_allocator_struct, define_allocator_memory_pool, AllocatedStackMemory,
-	Allocator, SliceWrapper, SliceWrapperMut, StackAllocator,
-};
-use brotli::{BrotliDecompressStream, BrotliResult, BrotliState, HuffmanCode};
-
-declare_stack_allocator_struct!(MemPool, 128, stack);
-
-fn oneshot_decompress(compressed: &[u8], mut output: &mut [u8]) -> (BrotliResult, usize, usize) {
-	let mut available_in: usize = compressed.len();
-	let mut available_out: usize = output.len();
-	let mut stack_u8_buffer = define_allocator_memory_pool!(128, u8, [0; 100 * 1024], stack);
-	let mut stack_u32_buffer = define_allocator_memory_pool!(128, u32, [0; 36 * 1024], stack);
-	let mut stack_hc_buffer =
-		define_allocator_memory_pool!(128, HuffmanCode, [HuffmanCode::default(); 116 * 1024], stack);
-
-	let stack_u8_allocator = MemPool::<u8>::new_allocator(&mut stack_u8_buffer, bzero);
-	let stack_u32_allocator = MemPool::<u32>::new_allocator(&mut stack_u32_buffer, bzero);
-	let stack_hc_allocator = MemPool::<HuffmanCode>::new_allocator(&mut stack_hc_buffer, bzero);
-	let mut input_offset: usize = 0;
-	let mut output_offset: usize = 0;
-	let mut written: usize = 0;
-	let mut brotli_state =
-		BrotliState::new(stack_u8_allocator, stack_u32_allocator, stack_hc_allocator);
-	let result = BrotliDecompressStream(
-		&mut available_in,
-		&mut input_offset,
-		&compressed[..],
-		&mut available_out,
-		&mut output_offset,
-		&mut output,
-		&mut written,
-		&mut brotli_state,
-	);
-	return (result, input_offset, output_offset)
-}
 
 #[frame_support::pallet]
 pub mod pallet {
