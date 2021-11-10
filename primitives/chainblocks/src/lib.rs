@@ -9,23 +9,32 @@ extern crate lazy_static;
 
 #[cfg(feature = "std")]
 mod details {
+	use std::sync::Mutex;
 	use std::convert::TryInto;
-	use chainblocks::{cbl_env, cblog};
-	use chainblocks::core::{destroyVar};
-	use chainblocks::types::{Node};
+	use chainblocks::{cbl_env, CBVAR_FLAGS_EXTERNAL};
+	use chainblocks::core::{cloneVar, destroyVar, setExternalVariable};
+	use chainblocks::types::{Node, Var, ClonedVar};
 
 	pub fn _say_hello_world(data: &str) {
 		lazy_static! {
+			static ref VAR: Mutex<ClonedVar> = Mutex::new({
+				let mut var = ClonedVar::default();
+				var.0.flags |= CBVAR_FLAGS_EXTERNAL as u8;
+				var
+			});
 			static ref NODE: Node = {
 				let node = Node::default();
 				// let mut chain_var = cbl_env!("(defloop test (Msg \"Hello\"))");
-				let mut chain_var = cbl_env!("(Chain \"test\" :Looped (Msg \"Hello\"))");
+				let mut chain_var = cbl_env!("(Chain \"test\" :Looped .text (ExpectString) (Log))");
 				let chain = chain_var.try_into().unwrap();
+				setExternalVariable(chain, "text", &mut VAR.lock().unwrap().0);
 				node.schedule(chain);
 				destroyVar(&mut chain_var);
 				node
 			};
 		}
+		let v: Var = data.into();
+		cloneVar(&mut VAR.lock().unwrap().0, &v);
 		NODE.tick();
 	}
 }

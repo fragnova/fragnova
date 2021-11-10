@@ -1,4 +1,5 @@
 (defchain validate-fragment
+  .fragment ; external
   (ExpectBytesSeq)
   (| (Take 0) (Brotli.Decompress) (FromBytes) (ExpectTable) = .files
       (Take ".s") (ExpectString) = .loaded-fragment-immutable)
