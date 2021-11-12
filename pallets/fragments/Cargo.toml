@@ -1,28 +1,40 @@
+[package]
+authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
+description = 'Fragments Asset Store pallet.'
+edition = '2018'
+license = 'BUSL-1.1'
+name = 'fragments-pallet'
+readme = 'README.md'
+version = '0.0.1'
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
 [dev-dependencies.serde]
 version = '1.0.119'
 
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-10'
+tag = 'monthly-2021-11-1'
 version = '4.0.0-dev'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-10'
+tag = 'monthly-2021-11-1'
 version = '4.0.0-dev'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-10'
+tag = 'monthly-2021-11-1'
 version = '4.0.0-dev'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-10'
+tag = 'monthly-2021-11-1'
 version = '4.0.0-dev'
 
 [dependencies.codec]
@@ -34,20 +46,20 @@ version = '2.0.0'
 [dependencies.frame-benchmarking]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-10'
+tag = 'monthly-2021-11-1'
 version = '4.0.0-dev'
 optional = true
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-10'
+tag = 'monthly-2021-11-1'
 version = '4.0.0-dev'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-10'
+tag = 'monthly-2021-11-1'
 version = '4.0.0-dev'
 
 [dependencies.scale-info]
@@ -73,14 +85,3 @@ std = [
     'log/std',
 ]
 try-runtime = ['frame-support/try-runtime']
-
-[package]
-authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
-description = 'Fragments Asset Store pallet.'
-edition = '2018'
-license = 'BUSL-1.1'
-name = 'fragments-pallet'
-readme = 'README.md'
-version = '0.0.1'
-[package.metadata.docs.rs]
-targets = ['x86_64-unknown-linux-gnu']
