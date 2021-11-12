@@ -7,41 +7,67 @@ extern crate chainblocks;
 #[macro_use]
 extern crate lazy_static;
 
+use sp_std::vec::Vec;
+pub type Hash = sp_core::H256;
+
 #[cfg(feature = "std")]
 mod details {
-	use std::sync::Mutex;
-	use std::convert::TryInto;
-	use chainblocks::{cbl_env, CBVAR_FLAGS_EXTERNAL};
-	use chainblocks::core::{cloneVar, destroyVar, setExternalVariable};
-	use chainblocks::types::{Node, Var, ClonedVar};
+	use super::*;
+
+	use sp_runtime::traits::Block as BlockT;
+
+	// lazy_static! {
+	// 	static ref FETCH_EXTRINSIC: Mutex<Option<Box<dyn Fn(&Hash) -> Option<Vec<u8>>>>> =
+	// 		Mutex::new(None);
+	// }
+
+	use std::{convert::TryInto, sync::Mutex};
+
+	use chainblocks::{
+		cbl_env,
+		core::destroyVar,
+		types::{ChainRef, ExternalVar, Node, Var},
+		CBVAR_FLAGS_EXTERNAL,
+	};
+
+	pub fn init<F>(fetch_extrinsic: F)
+	where
+		F: Fn(&Hash) -> Option<Vec<u8>>,
+	{
+		// *FETCH_EXTRINSIC.lock().unwrap() = Some(fetch_extrinsic);
+	}
 
 	pub fn _say_hello_world(data: &str) {
 		lazy_static! {
-			static ref VAR: Mutex<ClonedVar> = Mutex::new({
-				let mut var = ClonedVar::default();
-				var.0.flags |= CBVAR_FLAGS_EXTERNAL as u8;
-				var
-			});
+			static ref VAR: Mutex<ExternalVar> = Mutex::new(ExternalVar::default());
 			static ref NODE: Node = {
 				let node = Node::default();
 				// let mut chain_var = cbl_env!("(defloop test (Msg \"Hello\"))");
 				let mut chain_var = cbl_env!("(Chain \"test\" :Looped .text (ExpectString) (Log))");
-				let chain = chain_var.try_into().unwrap();
-				setExternalVariable(chain, "text", &mut VAR.lock().unwrap().0);
+				let chain: ChainRef = chain_var.try_into().unwrap();
+				chain.set_external("text", &VAR.lock().unwrap());
 				node.schedule(chain);
 				destroyVar(&mut chain_var);
 				node
 			};
 		}
-		let v: Var = data.into();
-		cloneVar(&mut VAR.lock().unwrap().0, &v);
+		VAR.lock().unwrap().update(data);
 		NODE.tick();
+	}
+
+	pub fn _fetch_extrinsic(hash: &Hash) -> Option<Vec<u8>> {
+		// FETCH_EXTRINSIC.lock().unwrap().unwrap()(hash)
+		None
 	}
 }
 
 #[cfg(not(feature = "std"))]
 mod details {
-	pub fn _say_hello_world(data: &str) {
+	use super::*;
+
+	pub fn _say_hello_world(data: &str) {}
+	pub fn _fetch_extrinsic(hash: &Hash) -> Option<Vec<u8>> {
+		None
 	}
 }
 
@@ -50,15 +76,23 @@ pub trait MyInterface {
 	fn say_hello_world(data: &str) {
 		details::_say_hello_world(data);
 	}
+
+	fn fetch_extrinsic(hash: &Hash) -> Option<Vec<u8>> {
+		details::_fetch_extrinsic(hash)
+	}
 }
 
 #[cfg(feature = "std")]
-pub fn init() {
-	use chainblocks::core::{init};
+pub fn init<F>(fetch_extrinsic: F)
+where
+	F: Fn(&Hash) -> Option<Vec<u8>>,
+{
 	use chainblocks::{cbl_env, cblog};
 
+	details::init(fetch_extrinsic);
+
 	// needs to go first!
-	init();
+	chainblocks::core::init();
 
 	cblog!("Chainblocks initializing...");
 

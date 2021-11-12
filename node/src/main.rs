@@ -8,6 +8,8 @@ mod cli;
 mod command;
 mod rpc;
 
+mod clamor;
+
 fn main() -> sc_cli::Result<()> {
 	command::run()
 }

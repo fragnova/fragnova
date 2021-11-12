@@ -9,5 +9,5 @@ members = [
 ]
 
 # used locally sometimes...
-# [patch."https://github.com/fragcolor-xyz/chainblocks"]
-# chainblocks = { path = "../chainblocks/rust" }
+[patch."https://github.com/fragcolor-xyz/chainblocks"]
+chainblocks = { path = "../chainblocks/rust" }

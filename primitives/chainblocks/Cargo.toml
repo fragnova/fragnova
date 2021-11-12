@@ -17,6 +17,12 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-10'
 version = '4.0.0-dev'
 
+[dependencies.sp-runtime]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-10'
+version = '4.0.0-dev'
+optional = true
+
 [dependencies.sp-runtime-interface]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -41,6 +47,7 @@ default = ["std"]
 std = [
 	"chainblocks",
 	"lazy_static",
+	"sp-runtime",
 	"sp-core/std",
 	"sp-runtime-interface/std",
 	"sp-std/std",
