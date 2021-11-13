@@ -1,7 +1,7 @@
 [package]
 authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
 description = 'Fragments Asset Store pallet.'
-edition = '2018'
+edition = '2021'
 license = 'BUSL-1.1'
 name = 'fragments-pallet'
 readme = 'README.md'

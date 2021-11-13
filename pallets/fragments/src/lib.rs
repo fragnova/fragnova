@@ -1,10 +1,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://substrate.dev/docs/en/knowledgebase/runtime/frame>
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+mod weights;
 
 pub use pallet::*;
+pub use weights::WeightInfo;
+
+use codec::{Compact, Decode, Encode};
 
 use frame_system::{
 	self as system,
@@ -14,20 +24,34 @@ use frame_system::{
 	},
 };
 
-use sp_runtime::offchain::{http, storage};
+use sp_runtime::{
+	offchain::{http, storage},
+	traits::{BlakeTwo256, Hash, One, Saturating, Zero},
+	AccountId32,
+};
 // https://substrate.dev/rustdocs/v3.0.0-monthly-2021-05/sp_runtime/offchain/http/index.html
-use sp_io::offchain_index;
-use sp_std::vec::Vec;
-use sp_std::ops;
+use sp_io::{
+	hashing::{blake2_256, keccak_256},
+	offchain_index, transaction_index,
+};
+use sp_std::{ops, vec::Vec};
 
-#[cfg(test)]
-mod mock;
+type FragmentHash = [u8; 20];
+type MutableDataHash = [u8; 32];
 
-#[cfg(test)]
-mod tests;
-
-#[cfg(feature = "runtime-benchmarks")]
-mod benchmarking;
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+pub struct Fragment {
+	/// Plain hash of indexed data.
+	mutable_hash: MutableDataHash,
+	/// Include price of the fragment.
+	include_price: Option<Compact<u128>>,
+	/// The original creator of the fragment.
+	creator: Vec<u8>,
+	// Immutable data of the fragment.
+	immutable_block: u32,
+	// Mutable data of the fragment.
+	mutable_block: u32,
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -40,11 +64,27 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
+
+	#[pallet::storage]
+	#[pallet::getter(fn fragments)]
+	pub type Fragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, Fragment>;
+
+	#[pallet::event]
+	#[pallet::generate_deposit(pub(super) fn deposit_event)]
+	pub enum Event<T: Config> {
+		Upload(FragmentHash, T::AccountId),
+		Update(FragmentHash, T::AccountId),
+	}
+
+	// Intermediates
+	#[pallet::storage]
+	pub(super) type BlockFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
 
 	// The pallet's runtime storage items.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
@@ -54,16 +94,6 @@ pub mod pallet {
 	// https://substrate.dev/docs/en/knowledgebase/runtime/storage#declaring-storage-items
 	pub type Something<T> = StorageValue<_, u32>;
 
-	// Pallets use events to inform users when important changes are made.
-	// https://docs.substrate.io/v3/runtime/events-and-errors
-	#[pallet::event]
-	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
-		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [something, who]
-		SomethingStored(u32, T::AccountId),
-	}
-
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
@@ -71,6 +101,8 @@ pub mod pallet {
 		NoneValue,
 		/// Errors should have helpful documentation associated with them.
 		StorageOverflow,
+		/// Systematic failure - those errors should not happen.
+		SystematicFailure,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -78,48 +110,76 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// An example dispatchable that takes a singles value as a parameter, writes the value to
-		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
-			// Check that the extrinsic was signed and get the signer.
-			// This function will return an error if the extrinsic is not signed.
-			// https://substrate.dev/docs/en/knowledgebase/runtime/origin
+		/// Fragment upload function.
+		#[pallet::weight(T::WeightInfo::store((immutable_data.len() as u32) + (mutable_data.len() as u32)))]
+		pub fn upload(
+			origin: OriginFor<T>,
+			immutable_data: Vec<u8>,
+			mutable_data: Vec<u8>,
+			references: Vec<FragmentHash>,
+			include_cost: Option<Compact<u128>>,
+		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			// Update storage.
-			<Something<T>>::put(something);
-			let key = b"my_key";
-			sp_io::offchain_index::set(&key[..], &something.encode());
+			// we need this to index transactions
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
 
-			// Emit an event.
-			Self::deposit_event(Event::SomethingStored(something, who));
-			// Return a successful DispatchResultWithPostInfo
+			// hash the immutable data, this is also the unique fragment id
+			// we use eth like/inspired keccak and 20 bytes hash
+			// also useful for compatibility with EVM
+			let fragment_hash = keccak_256(immutable_data.as_slice());
+			let fragment_hash = &fragment_hash[12..32];
+			let mut index_hash = [0u8; 32];
+			index_hash[12..32].copy_from_slice(fragment_hash);
+			let mut fragment_hash_arr: FragmentHash = [0u8; 20];
+			fragment_hash_arr.copy_from_slice(fragment_hash);
+			sp_io::transaction_index::index(extrinsic_index, immutable_data.len() as u32, index_hash);
+
+			// hash mutable data as well, this time blake2 is fine
+			let mutable_hash = blake2_256(mutable_data.as_slice());
+			sp_io::transaction_index::index(extrinsic_index, mutable_data.len() as u32, mutable_hash);
+
+			// store in the state the fragment
+			// block numbers will be added on finalize
+			let fragment = Fragment {
+				mutable_hash: blake2_256(mutable_data.as_slice()),
+				include_price: include_cost,
+				creator: who.encode(),
+				immutable_block: 0,
+				mutable_block: 0,
+			};
+
+			// store fragment metadata
+			<Fragments<T>>::insert(fragment_hash_arr, fragment);
+
+			// add to block fragments in order to fix block numbers on block finalize
+			<BlockFragments<T>>::mutate(|fragments| fragments.push(fragment_hash_arr));
+
+			// emit event
+			Self::deposit_event(Event::Upload(fragment_hash_arr, who));
+
 			Ok(())
-		}
-
-		/// An example dispatchable that may throw a custom error.
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1))]
-		pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
-			let _who = ensure_signed(origin)?;
-
-			// Read a value from storage.
-			match <Something<T>>::get() {
-				// Return an error if the value has not been set.
-				None => Err(Error::<T>::NoneValue)?,
-				Some(old) => {
-					// Increment the value read from storage; will error in the event of overflow.
-					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-					// Update the value in storage with the incremented result.
-					<Something<T>>::put(new);
-					Ok(())
-				},
-			}
 		}
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(n: T::BlockNumber) {
+			let block_number: u32 = n.try_into().unwrap_or_default();
+			// apparently we get block number from the runtime only on finalize
+			// so we rewrite block numbers of fragments here
+			let fragments = <BlockFragments<T>>::take();
+			for fragment_hash in fragments {
+				let fragment = <Fragments<T>>::get(fragment_hash);
+				if let Some(mut fragment) = fragment {
+					fragment.immutable_block = block_number;
+					fragment.mutable_block = block_number;
+					<Fragments<T>>::insert(fragment_hash, fragment);
+				}
+			}
+		}
+
 		/// Offchain Worker entry point.
 		///
 		/// By implementing `fn offchain_worker` you declare a new offchain worker.
