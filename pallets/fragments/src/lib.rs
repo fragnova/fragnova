@@ -14,44 +14,14 @@ mod weights;
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-use codec::{Compact, Decode, Encode};
-
-use frame_system::{
-	self as system,
-	offchain::{
-		AppCrypto, CreateSignedTransaction, SendSignedTransaction, SendUnsignedTransaction,
-		SignedPayload, Signer, SigningTypes, SubmitTransaction,
-	},
-};
-
-use sp_runtime::{
-	offchain::{http, storage},
-	traits::{BlakeTwo256, Hash, One, Saturating, Zero},
-	AccountId32,
-};
-// https://substrate.dev/rustdocs/v3.0.0-monthly-2021-05/sp_runtime/offchain/http/index.html
+use codec::{Compact, Encode};
 use sp_io::{
 	hashing::{blake2_256, keccak_256},
-	offchain_index, transaction_index,
+	transaction_index,
 };
-use sp_std::{ops, vec::Vec};
+use sp_std::vec::Vec;
 
-type FragmentHash = [u8; 20];
-type MutableDataHash = [u8; 32];
-
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
-pub struct Fragment {
-	/// Plain hash of indexed data.
-	mutable_hash: MutableDataHash,
-	/// Include price of the fragment.
-	include_price: Option<Compact<u128>>,
-	/// The original creator of the fragment.
-	creator: Vec<u8>,
-	// Immutable data of the fragment.
-	immutable_block: u32,
-	// Mutable data of the fragment.
-	mutable_block: u32,
-}
+use sp_chainblocks::{Fragment, FragmentHash};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -85,6 +55,9 @@ pub mod pallet {
 	// Intermediates
 	#[pallet::storage]
 	pub(super) type BlockFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
+
+	#[pallet::storage]
+	pub(super) type OffchainFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
 
 	// The pallet's runtime storage items.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
@@ -134,11 +107,11 @@ pub mod pallet {
 			index_hash[12..32].copy_from_slice(fragment_hash);
 			let mut fragment_hash_arr: FragmentHash = [0u8; 20];
 			fragment_hash_arr.copy_from_slice(fragment_hash);
-			sp_io::transaction_index::index(extrinsic_index, immutable_data.len() as u32, index_hash);
+			transaction_index::index(extrinsic_index, immutable_data.len() as u32, index_hash);
 
 			// hash mutable data as well, this time blake2 is fine
 			let mutable_hash = blake2_256(mutable_data.as_slice());
-			sp_io::transaction_index::index(extrinsic_index, mutable_data.len() as u32, mutable_hash);
+			transaction_index::index(extrinsic_index, mutable_data.len() as u32, mutable_hash);
 
 			// store in the state the fragment
 			// block numbers will be added on finalize
@@ -176,6 +149,9 @@ pub mod pallet {
 					fragment.immutable_block = block_number;
 					fragment.mutable_block = block_number;
 					<Fragments<T>>::insert(fragment_hash, fragment);
+
+					// also add to offchain fragments queue for actualy proper fragment validation
+					<OffchainFragments<T>>::mutate(|fragments| fragments.push(fragment_hash));
 				}
 			}
 		}
@@ -197,6 +173,12 @@ pub mod pallet {
 			log::info!("Hello World from offchain workers!");
 
 			sp_chainblocks::my_interface::say_hello_world("Offchain worker\0");
+
+			// grab all fragments that are ready to be validated
+			let fragment_hashes = <OffchainFragments<T>>::take();
+			for fragment_hash in fragment_hashes {
+				let fragment = <Fragments<T>>::get(fragment_hash);
+			}
 
 			// // Since off-chain workers are just part of the runtime code, they have direct access
 			// // to the storage and other included pallets.

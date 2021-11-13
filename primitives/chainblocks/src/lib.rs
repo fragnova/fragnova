@@ -8,7 +8,26 @@ extern crate chainblocks;
 extern crate lazy_static;
 
 use sp_std::vec::Vec;
+use codec::{Compact, Decode, Encode};
+
 pub type Hash = sp_core::H256;
+
+pub type FragmentHash = [u8; 20];
+pub type MutableDataHash = [u8; 32];
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+pub struct Fragment {
+	/// Plain hash of indexed data.
+	pub mutable_hash: MutableDataHash,
+	/// Include price of the fragment.
+	pub include_price: Option<Compact<u128>>,
+	/// The original creator of the fragment.
+	pub creator: Vec<u8>,
+	// Immutable data of the fragment.
+	pub immutable_block: u32,
+	// Mutable data of the fragment.
+	pub mutable_block: u32,
+}
 
 #[cfg(feature = "std")]
 mod details {
