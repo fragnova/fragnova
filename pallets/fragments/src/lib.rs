@@ -11,6 +11,48 @@ mod benchmarking;
 
 mod weights;
 
+use sp_core::crypto::KeyTypeId;
+
+/// Defines application identifier for crypto keys of this module.
+///
+/// Every module that deals with signatures needs to declare its unique identifier for
+/// its crypto keys.
+/// When offchain worker is signing transactions it's going to request keys of type
+/// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
+/// The keys can be inserted manually via RPC (see `author_insertKey`).
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
+
+/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
+/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
+/// the types with this pallet-specific identifier.
+pub mod crypto {
+	use super::KEY_TYPE;
+	use sp_core::sr25519::Signature as Sr25519Signature;
+	use sp_runtime::{
+		app_crypto::{app_crypto, sr25519},
+		traits::Verify,
+		MultiSignature, MultiSigner,
+	};
+	app_crypto!(sr25519, KEY_TYPE);
+
+	pub struct FragmentsAuthId;
+
+	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for FragmentsAuthId {
+		type RuntimeAppPublic = Public;
+		type GenericSignature = sp_core::sr25519::Signature;
+		type GenericPublic = sp_core::sr25519::Public;
+	}
+
+	// implemented for mock runtime in test
+	impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature>
+		for FragmentsAuthId
+	{
+		type RuntimeAppPublic = Public;
+		type GenericSignature = sp_core::sr25519::Signature;
+		type GenericPublic = sp_core::sr25519::Public;
+	}
+}
+
 pub use pallet::*;
 pub use weights::WeightInfo;
 
@@ -24,6 +66,9 @@ use sp_std::vec::Vec;
 use sp_chainblocks::{offchain_fragments, Fragment, FragmentHash};
 
 use frame_support::{BoundedSlice, WeakBoundedVec};
+use frame_system::offchain::{
+	AppCrypto, CreateSignedTransaction, SendTransactionTypes, SubmitTransaction,
+};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -33,12 +78,12 @@ pub mod pallet {
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: CreateSignedTransaction<Call<Self>> + frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
-		type AuthorityId: Member + Parameter + Default + MaybeSerializeDeserialize + MaxEncodedLen;
-		type MaxAuthorities: Get<u32>;
+		/// The identifier type for an offchain worker.
+		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 	}
 
 	#[pallet::pallet]
@@ -64,12 +109,6 @@ pub mod pallet {
 		StorageValue<_, Vec<FragmentHash>, ValueQuery>;
 	#[pallet::storage]
 	pub type PendingFragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, Fragment>;
-
-	/// The current authority set.
-	#[pallet::storage]
-	#[pallet::getter(fn authorities)]
-	pub(super) type Authorities<T: Config> =
-		StorageValue<_, WeakBoundedVec<T::AuthorityId, T::MaxAuthorities>, ValueQuery>;
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
@@ -229,36 +268,6 @@ pub mod pallet {
 			// 		log::error!("on_new_fragment failed to get data from local storage {:?}", fragment_hash);
 			// 	}
 			// }
-		}
-	}
-
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		pub authorities: Vec<T::AuthorityId>,
-	}
-
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self { authorities: Vec::new() }
-		}
-	}
-
-	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
-		fn build(&self) {
-			Pallet::<T>::initialize_authorities(&self.authorities);
-		}
-	}
-}
-
-impl<T: Config> Pallet<T> {
-	fn initialize_authorities(authorities: &[T::AuthorityId]) {
-		if !authorities.is_empty() {
-			assert!(<Authorities<T>>::get().is_empty(), "Authorities are already initialized!");
-			let bounded = <BoundedSlice<'_, _, T::MaxAuthorities>>::try_from(authorities)
-				.expect("Initial authority set must be less than T::MaxAuthorities");
-			<Authorities<T>>::put(bounded);
 		}
 	}
 }
