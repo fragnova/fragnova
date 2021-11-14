@@ -47,6 +47,7 @@ features = ['derive']
 version = '1.0'
 
 [dependencies]
+log = { version = "0.4.14", default-features = false }
 chainblocks = { git = 'https://github.com/fragcolor-xyz/chainblocks.git', default-features = false, optional = true, features = ["dllblock", "cblisp"] }
 lazy_static = { version = "1.4.0", optional = true }
 

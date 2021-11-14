@@ -6365,6 +6365,7 @@ version = "0.1.0"
 dependencies = [
  "chainblocks",
  "lazy_static",
+ "log",
  "parity-scale-codec",
  "scale-info",
  "sp-core",

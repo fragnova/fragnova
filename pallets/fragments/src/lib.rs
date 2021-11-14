@@ -17,11 +17,13 @@ pub use weights::WeightInfo;
 use codec::{Compact, Encode};
 use sp_io::{
 	hashing::{blake2_256, keccak_256},
-	transaction_index,
+	storage as Storage, transaction_index,
 };
 use sp_std::vec::Vec;
 
-use sp_chainblocks::{Fragment, FragmentHash};
+use sp_chainblocks::{offchain_fragments, Fragment, FragmentHash};
+
+use frame_support::{BoundedSlice, WeakBoundedVec};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -35,6 +37,8 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
+		type AuthorityId: Member + Parameter + Default + MaybeSerializeDeserialize + MaxEncodedLen;
+		type MaxAuthorities: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -54,28 +58,28 @@ pub mod pallet {
 
 	// Intermediates
 	#[pallet::storage]
-	pub(super) type BlockFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
-
+	pub(super) type BlockUploadFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
 	#[pallet::storage]
-	pub(super) type OffchainFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
-
-	// The pallet's runtime storage items.
-	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
+	pub(super) type OffchainUploadFragments<T: Config> =
+		StorageValue<_, Vec<FragmentHash>, ValueQuery>;
 	#[pallet::storage]
-	#[pallet::getter(fn something)]
-	// Learn more about declaring storage items:
-	// https://substrate.dev/docs/en/knowledgebase/runtime/storage#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
+	pub type PendingFragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, Fragment>;
+
+	/// The current authority set.
+	#[pallet::storage]
+	#[pallet::getter(fn authorities)]
+	pub(super) type Authorities<T: Config> =
+		StorageValue<_, WeakBoundedVec<T::AuthorityId, T::MaxAuthorities>, ValueQuery>;
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Error names should be descriptive.
-		NoneValue,
-		/// Errors should have helpful documentation associated with them.
-		StorageOverflow,
 		/// Systematic failure - those errors should not happen.
 		SystematicFailure,
+		/// Fragment not found
+		FragmentNotFound,
+		/// Fragment already uploaded
+		FragmentExists,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -83,54 +87,83 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		// Fragment confirm function, used internally when a fragment is confirmed valid.
+		#[pallet::weight(10_000)]
+		pub fn confirm_upload(origin: OriginFor<T>, fragment_hash: FragmentHash) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			// we need this to index transactions
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+
+			let fragment_info =
+				<PendingFragments<T>>::get(&fragment_hash).ok_or(Error::<T>::SystematicFailure)?;
+
+			// index immutable data for ipfs discovery
+			let mut index_hash = [0u8; 32];
+			index_hash[12..32].copy_from_slice(&fragment_hash);
+			transaction_index::index(extrinsic_index, fragment_info.immutable_data_len, index_hash);
+
+			// index mutable data for ipfs discovery as well
+			transaction_index::index(
+				extrinsic_index,
+				fragment_info.mutable_data_len,
+				fragment_info.mutable_hash,
+			);
+
+			Ok(())
+		}
+
 		/// Fragment upload function.
 		#[pallet::weight(T::WeightInfo::store((immutable_data.len() as u32) + (mutable_data.len() as u32)))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			immutable_data: Vec<u8>,
 			mutable_data: Vec<u8>,
-			references: Vec<FragmentHash>,
+			references: Option<Vec<FragmentHash>>,
 			include_cost: Option<Compact<u128>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-
-			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
 
 			// hash the immutable data, this is also the unique fragment id
 			// we use eth like/inspired keccak and 20 bytes hash
 			// also useful for compatibility with EVM
 			let fragment_hash = keccak_256(immutable_data.as_slice());
 			let fragment_hash = &fragment_hash[12..32];
-			let mut index_hash = [0u8; 32];
-			index_hash[12..32].copy_from_slice(fragment_hash);
 			let mut fragment_hash_arr: FragmentHash = [0u8; 20];
 			fragment_hash_arr.copy_from_slice(fragment_hash);
-			transaction_index::index(extrinsic_index, immutable_data.len() as u32, index_hash);
+
+			// make sure the fragment does not exist already!
+			if <Fragments<T>>::contains_key(&fragment_hash_arr) ||
+				<PendingFragments<T>>::contains_key(&fragment_hash_arr)
+			{
+				return Err(Error::<T>::FragmentExists.into())
+			}
 
 			// hash mutable data as well, this time blake2 is fine
 			let mutable_hash = blake2_256(mutable_data.as_slice());
-			transaction_index::index(extrinsic_index, mutable_data.len() as u32, mutable_hash);
 
 			// store in the state the fragment
 			// block numbers will be added on finalize
 			let fragment = Fragment {
-				mutable_hash: blake2_256(mutable_data.as_slice()),
-				include_price: include_cost,
+				mutable_hash,
+				include_cost,
 				creator: who.encode(),
 				immutable_block: 0,
+				immutable_data_len: immutable_data.len() as u32,
 				mutable_block: 0,
+				mutable_data_len: mutable_data.len() as u32,
+				references,
 			};
 
-			// store fragment metadata
-			<Fragments<T>>::insert(fragment_hash_arr, fragment);
+			// store fragment metadata into the pending list
+			// fragments need proper validation and further offchain metadata generation before
+			// being usable and valid forever
+			<PendingFragments<T>>::insert(fragment_hash_arr, fragment);
 
-			// add to block fragments in order to fix block numbers on block finalize
-			<BlockFragments<T>>::mutate(|fragments| fragments.push(fragment_hash_arr));
-
-			// emit event
-			Self::deposit_event(Event::Upload(fragment_hash_arr, who));
+			// add to block fragments in order to fix block numbers on block finalize and send them to the
+			// offchain worker
+			<BlockUploadFragments<T>>::mutate(|fragments| fragments.push(fragment_hash_arr));
 
 			Ok(())
 		}
@@ -142,17 +175,17 @@ pub mod pallet {
 			let block_number: u32 = n.try_into().unwrap_or_default();
 			// apparently we get block number from the runtime only on finalize
 			// so we rewrite block numbers of fragments here
-			let fragments = <BlockFragments<T>>::take();
+			let fragments = <BlockUploadFragments<T>>::take();
 			for fragment_hash in fragments {
-				let fragment = <Fragments<T>>::get(fragment_hash);
-				if let Some(mut fragment) = fragment {
-					fragment.immutable_block = block_number;
-					fragment.mutable_block = block_number;
-					<Fragments<T>>::insert(fragment_hash, fragment);
+				log::debug!("on_finalize processing fragment upload {:?}", fragment_hash);
 
-					// also add to offchain fragments queue for actualy proper fragment validation
-					<OffchainFragments<T>>::mutate(|fragments| fragments.push(fragment_hash));
-				}
+				<PendingFragments<T>>::mutate(fragment_hash, |fragment| {
+					if let Some(ref mut fragment) = fragment {
+						fragment.immutable_block = block_number;
+						fragment.mutable_block = block_number;
+						// <OffchainUploadFragments<T>>::mutate(|fragments| fragments.push(fragment_hash));
+					}
+				});
 			}
 		}
 
@@ -166,45 +199,66 @@ pub mod pallet {
 		/// so the code should be able to handle that.
 		/// You can use `Local Storage` API to coordinate runs of the worker.
 		fn offchain_worker(block_number: T::BlockNumber) {
-			// Note that having logs compiled to WASM may cause the size of the blob to increase
-			// significantly. You can use `RuntimeDebug` custom derive to hide details of the types
-			// in WASM. The `sp-api` crate also provides a feature `disable-logging` to disable
-			// all logging and thus, remove any logging from the WASM.
-			log::info!("Hello World from offchain workers!");
-
-			sp_chainblocks::my_interface::say_hello_world("Offchain worker\0");
-
 			// grab all fragments that are ready to be validated
-			let fragment_hashes = <OffchainFragments<T>>::take();
-			for fragment_hash in fragment_hashes {
-				let fragment = <Fragments<T>>::get(fragment_hash);
-			}
+			// let fragment_hashes = <OffchainUploadFragments<T>>::take();
+			// for fragment_hash in fragment_hashes {
+			// 	log::debug!("offchain_worker processing fragment upload {:?}", fragment_hash);
 
-			// // Since off-chain workers are just part of the runtime code, they have direct access
-			// // to the storage and other included pallets.
-			// //
-			// // We can easily import `frame_system` and retrieve a block hash of the parent block.
-			// let parent_hash = <system::Pallet<T>>::block_hash(block_number - 1u32.into());
-			// log::debug!("Current block: {:?} (parent hash: {:?})", block_number, parent_hash);
+			// 	// get data from local storage and clear it as well from database
+			// 	let key = [&fragment_hash[..], b"i"].concat();
+			// 	if let Some(immutable_data) = Storage::get(&key) {
+			// 		Storage::clear(&key);
+			// 		let key = [&fragment_hash[..], b"m"].concat();
+			// 		if let Some(mutable_data) = Storage::get(&key) {
+			// 			Storage::clear(&key);
+			// 			// do actual validation and other tasks with immutable_data and mutable_data
+			// 			match offchain_fragments::on_new_fragment(&immutable_data, &mutable_data) {
+			// 				Ok(()) => {
+			// 					log::debug!("on_new_fragment processing {:?}", fragment_hash);
+			// 				},
+			// 				Err(()) => {
+			// 					// in this case we just remove the fragment from the state because it is completely
+			// 					// invalid it will always be in the transaction history for the block of archive
+			// 					// nodes.. this is how blockchains work and so the ipfs bitswap will still work
+			// 					// anyway on such nodes
+			// 					<Fragments<T>>::remove(fragment_hash);
+			// 				},
+			// 			}
+			// 		}
+			// 	} else {
+			// 		log::error!("on_new_fragment failed to get data from local storage {:?}", fragment_hash);
+			// 	}
+			// }
+		}
+	}
 
-			// // initiate a GET request to localhost:1234
-			// let request: http::Request = http::Request::get("http://localhost:1234");
-			// let pending = request
-			// 	.add_header("X-Auth", "hunter2")
-			// 	.send()
-			// 	.unwrap();
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		pub authorities: Vec<T::AuthorityId>,
+	}
 
-			// // wait for the response indefinitely
-			// let mut response = pending.wait().unwrap();
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			Self { authorities: Vec::new() }
+		}
+	}
 
-			// // then check the headers
-			// let mut headers = response.headers().into_iter();
-			// assert_eq!(headers.current(), None);
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+			Pallet::<T>::initialize_authorities(&self.authorities);
+		}
+	}
+}
 
-			// // and collect the body
-			// let body = response.body();
-			// assert_eq!(body.clone().collect::<Vec<_>>(), b"1234".to_vec());
-			// assert_eq!(body.error(), &None);
+impl<T: Config> Pallet<T> {
+	fn initialize_authorities(authorities: &[T::AuthorityId]) {
+		if !authorities.is_empty() {
+			assert!(<Authorities<T>>::get().is_empty(), "Authorities are already initialized!");
+			let bounded = <BoundedSlice<'_, _, T::MaxAuthorities>>::try_from(authorities)
+				.expect("Initial authority set must be less than T::MaxAuthorities");
+			<Authorities<T>>::put(bounded);
 		}
 	}
 }

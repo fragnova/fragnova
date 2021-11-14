@@ -7,26 +7,30 @@ extern crate chainblocks;
 #[macro_use]
 extern crate lazy_static;
 
-use sp_std::vec::Vec;
 use codec::{Compact, Decode, Encode};
+use sp_std::vec::Vec;
 
 pub type Hash = sp_core::H256;
 
 pub type FragmentHash = [u8; 20];
 pub type MutableDataHash = [u8; 32];
 
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct Fragment {
 	/// Plain hash of indexed data.
 	pub mutable_hash: MutableDataHash,
 	/// Include price of the fragment.
-	pub include_price: Option<Compact<u128>>,
+	pub include_cost: Option<Compact<u128>>,
 	/// The original creator of the fragment.
 	pub creator: Vec<u8>,
 	// Immutable data of the fragment.
 	pub immutable_block: u32,
+	pub immutable_data_len: u32,
 	// Mutable data of the fragment.
 	pub mutable_block: u32,
+	pub mutable_data_len: u32,
+	// References to other fragments.
+	pub references: Option<Vec<FragmentHash>>,
 }
 
 #[cfg(feature = "std")]
@@ -91,13 +95,18 @@ mod details {
 }
 
 #[sp_runtime_interface::runtime_interface]
-pub trait MyInterface {
+pub trait OffchainFragments {
 	fn say_hello_world(data: &str) {
 		details::_say_hello_world(data);
 	}
 
 	fn fetch_extrinsic(hash: &Hash) -> Option<Vec<u8>> {
 		details::_fetch_extrinsic(hash)
+	}
+
+	fn on_new_fragment(_immutable_data: &[u8], _mutable_data: &[u8]) -> Result<(), ()> {
+		log::debug!("sp_chainblocks on_new_fragment called...");
+		Ok(())
 	}
 }
 

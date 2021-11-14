@@ -290,6 +290,8 @@ impl pallet_sudo::Config for Runtime {
 impl fragments_pallet::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
+	type AuthorityId = AuraId;
+	type MaxAuthorities = MaxAuthorities;
 }
 
 impl pallet_contracts::Config for Runtime {
