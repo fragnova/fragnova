@@ -12,7 +12,7 @@ use sp_std::vec::Vec;
 
 pub type Hash = sp_core::H256;
 
-pub type FragmentHash = [u8; 20];
+pub type FragmentHash = [u8; 32];
 pub type MutableDataHash = [u8; 32];
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
@@ -23,14 +23,14 @@ pub struct Fragment {
 	pub include_cost: Option<Compact<u128>>,
 	/// The original creator of the fragment.
 	pub creator: Vec<u8>,
-	// Immutable data of the fragment.
+	/// Immutable data of the fragment.
 	pub immutable_block: u32,
-	pub immutable_data_len: u32,
-	// Mutable data of the fragment.
+	/// Mutable data of the fragment.
 	pub mutable_block: u32,
-	pub mutable_data_len: u32,
-	// References to other fragments.
+	/// References to other fragments.
 	pub references: Option<Vec<FragmentHash>>,
+	/// If the fragment has been verified
+	pub verified: bool,
 }
 
 #[cfg(feature = "std")]

@@ -56,19 +56,42 @@ pub mod crypto {
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-use codec::{Compact, Encode};
+use codec::{Compact, Decode, Encode};
 use sp_io::{
 	hashing::{blake2_256, keccak_256},
-	storage as Storage, transaction_index,
+	offchain, offchain_index, transaction_index,
 };
 use sp_std::vec::Vec;
 
 use sp_chainblocks::{offchain_fragments, Fragment, FragmentHash};
 
+use sp_core::offchain::StorageKind;
+
 use frame_support::{BoundedSlice, WeakBoundedVec};
-use frame_system::offchain::{
-	AppCrypto, CreateSignedTransaction, SendTransactionTypes, SubmitTransaction,
+use frame_system::{
+	self as system,
+	offchain::{
+		AppCrypto, CreateSignedTransaction, SendTransactionTypes, SendUnsignedTransaction,
+		SignedPayload, Signer, SigningTypes, SubmitTransaction,
+	},
 };
+
+const BLAKE2S_256: u64 = 0xb260;
+
+/// Payload used by this example crate to hold price
+/// data required to submit a transaction.
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct ValidFragment<Public, BlockNumber> {
+	block_number: BlockNumber,
+	public: Public,
+	fragment_hash: FragmentHash,
+}
+
+impl<T: SigningTypes> SignedPayload<T> for ValidFragment<T::Public, T::BlockNumber> {
+	fn public(&self) -> T::Public {
+		self.public.clone()
+	}
+}
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -91,8 +114,13 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	#[pallet::getter(fn fragments)]
 	pub type Fragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, Fragment>;
+
+	#[pallet::storage]
+	pub type UnverifiedFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type VerifiedFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -100,15 +128,6 @@ pub mod pallet {
 		Upload(FragmentHash, T::AccountId),
 		Update(FragmentHash, T::AccountId),
 	}
-
-	// Intermediates
-	#[pallet::storage]
-	pub(super) type BlockUploadFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
-	#[pallet::storage]
-	pub(super) type OffchainUploadFragments<T: Config> =
-		StorageValue<_, Vec<FragmentHash>, ValueQuery>;
-	#[pallet::storage]
-	pub type PendingFragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, Fragment>;
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
@@ -127,28 +146,44 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		// Fragment confirm function, used internally when a fragment is confirmed valid.
-		#[pallet::weight(10_000)]
-		pub fn confirm_upload(origin: OriginFor<T>, fragment_hash: FragmentHash) -> DispatchResult {
-			let sender = ensure_signed(origin)?;
+		#[pallet::weight(0)]
+		pub fn confirm_upload(
+			origin: OriginFor<T>,
+			fragment_data: ValidFragment<T::Public, T::BlockNumber>,
+			_signature: T::Signature,
+		) -> DispatchResult {
+			ensure_none(origin)?;
 
-			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			// // we need this to index transactions
+			// let extrinsic_index =
+			// 	<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
 
-			let fragment_info =
-				<PendingFragments<T>>::get(&fragment_hash).ok_or(Error::<T>::SystematicFailure)?;
+			// let fragment_hash = fragment_data.fragment_hash;
 
-			// index immutable data for ipfs discovery
-			let mut index_hash = [0u8; 32];
-			index_hash[12..32].copy_from_slice(&fragment_hash);
-			transaction_index::index(extrinsic_index, fragment_info.immutable_data_len, index_hash);
+			// let fragment_info =
+			// 	<UnverifiedFragments<T>>::get(&fragment_hash).ok_or(Error::<T>::SystematicFailure)?;
 
-			// index mutable data for ipfs discovery as well
-			transaction_index::index(
-				extrinsic_index,
-				fragment_info.mutable_data_len,
-				fragment_info.mutable_hash,
-			);
+			// let creator = T::AccountId::decode(&mut fragment_info.creator.as_slice())
+			// 	.map_err(|_| Error::<T>::SystematicFailure)?;
+
+			// // index immutable data for ipfs discovery
+			// let mut index_hash = [0u8; 32];
+			// index_hash[12..32].copy_from_slice(&fragment_hash);
+			// transaction_index::index(extrinsic_index, fragment_info.immutable_data_len, index_hash);
+
+			// // index mutable data for ipfs discovery as well
+			// transaction_index::index(
+			// 	extrinsic_index,
+			// 	fragment_info.mutable_data_len,
+			// 	fragment_info.mutable_hash,
+			// );
+
+			// // remove from unverified fragments storage
+			// <UnverifiedFragments<T>>::remove(&fragment_hash);
+			// // insert to fragments storage
+			// <Fragments<T>>::insert(fragment_hash, fragment_info);
+
+			// Self::deposit_event(Event::Upload(fragment_hash, creator));
 
 			Ok(())
 		}
@@ -165,19 +200,22 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// hash the immutable data, this is also the unique fragment id
-			// we use eth like/inspired keccak and 20 bytes hash
-			// also useful for compatibility with EVM
-			let fragment_hash = keccak_256(immutable_data.as_slice());
-			let fragment_hash = &fragment_hash[12..32];
-			let mut fragment_hash_arr: FragmentHash = [0u8; 20];
-			fragment_hash_arr.copy_from_slice(fragment_hash);
+			let fragment_hash = blake2_256(immutable_data.as_slice());
 
 			// make sure the fragment does not exist already!
-			if <Fragments<T>>::contains_key(&fragment_hash_arr) ||
-				<PendingFragments<T>>::contains_key(&fragment_hash_arr)
-			{
+			if <Fragments<T>>::contains_key(&fragment_hash) {
 				return Err(Error::<T>::FragmentExists.into())
 			}
+
+			let block_number = <system::Pallet<T>>::block_number();
+			let block_number: u32 = block_number.try_into().unwrap_or_default();
+
+			// we need this to index transactions
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+
+			let immutable_data_len = immutable_data.len() as u32;
+			let mutable_data_len = mutable_data.len() as u32;
 
 			// hash mutable data as well, this time blake2 is fine
 			let mutable_hash = blake2_256(mutable_data.as_slice());
@@ -188,46 +226,58 @@ pub mod pallet {
 				mutable_hash,
 				include_cost,
 				creator: who.encode(),
-				immutable_block: 0,
-				immutable_data_len: immutable_data.len() as u32,
-				mutable_block: 0,
-				mutable_data_len: mutable_data.len() as u32,
+				immutable_block: block_number,
+				mutable_block: block_number,
 				references,
+				verified: false,
 			};
 
-			// store fragment metadata into the pending list
-			// fragments need proper validation and further offchain metadata generation before
-			// being usable and valid forever
-			<PendingFragments<T>>::insert(fragment_hash_arr, fragment);
+			// store fragment metadata
+			<Fragments<T>>::insert(fragment_hash, fragment);
 
-			// add to block fragments in order to fix block numbers on block finalize and send them to the
-			// offchain worker
-			<BlockUploadFragments<T>>::mutate(|fragments| fragments.push(fragment_hash_arr));
+			// add to unverifed fragments list
+			<UnverifiedFragments<T>>::mutate(|fragments| fragments.push(fragment_hash));
+
+			// index immutable data for ipfs discovery
+			transaction_index::index(extrinsic_index, immutable_data_len, fragment_hash);
+
+			// index mutable data for ipfs discovery as well
+			transaction_index::index(extrinsic_index, mutable_data_len, mutable_hash);
+
+			// also emit event
+			Self::deposit_event(Event::Upload(fragment_hash, who));
 
 			Ok(())
 		}
 	}
 
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(n: T::BlockNumber) {
-			let block_number: u32 = n.try_into().unwrap_or_default();
-			// apparently we get block number from the runtime only on finalize
-			// so we rewrite block numbers of fragments here
-			let fragments = <BlockUploadFragments<T>>::take();
-			for fragment_hash in fragments {
-				log::debug!("on_finalize processing fragment upload {:?}", fragment_hash);
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
 
-				<PendingFragments<T>>::mutate(fragment_hash, |fragment| {
-					if let Some(ref mut fragment) = fragment {
-						fragment.immutable_block = block_number;
-						fragment.mutable_block = block_number;
-						// <OffchainUploadFragments<T>>::mutate(|fragments| fragments.push(fragment_hash));
-					}
-				});
+		/// Validate unsigned call to this module.
+		///
+		/// By default unsigned transactions are disallowed, but implementing the validator
+		/// here we make sure that some particular calls (the ones produced by offchain worker)
+		/// are being whitelisted and marked as valid.
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			// // Firstly let's check that we call the right function.
+			// if let Call::confirm_upload { ref fragment_data, ref signature } = call {
+			// 	let signature_valid =
+			// 		SignedPayload::<T>::verify::<T::AuthorityId>(fragment_data, signature.clone());
+			// 	if !signature_valid {
+			// 		return InvalidTransaction::BadProof.into()
+			// 	}
+			// 	ValidTransaction::with_tag_prefix("Fragments").propagate(true).build()
+			// } else
+			{
+				InvalidTransaction::Call.into()
 			}
 		}
+	}
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		/// Offchain Worker entry point.
 		///
 		/// By implementing `fn offchain_worker` you declare a new offchain worker.
@@ -238,22 +288,36 @@ pub mod pallet {
 		/// so the code should be able to handle that.
 		/// You can use `Local Storage` API to coordinate runs of the worker.
 		fn offchain_worker(block_number: T::BlockNumber) {
-			// grab all fragments that are ready to be validated
+			// // grab all fragments that are ready to be validated
 			// let fragment_hashes = <OffchainUploadFragments<T>>::take();
 			// for fragment_hash in fragment_hashes {
 			// 	log::debug!("offchain_worker processing fragment upload {:?}", fragment_hash);
 
 			// 	// get data from local storage and clear it as well from database
 			// 	let key = [&fragment_hash[..], b"i"].concat();
-			// 	if let Some(immutable_data) = Storage::get(&key) {
-			// 		Storage::clear(&key);
+			// 	if let Some(immutable_data) = offchain::local_storage_get(StorageKind::PERSISTENT, &key) {
+			// 		offchain::local_storage_clear(StorageKind::PERSISTENT, &key);
 			// 		let key = [&fragment_hash[..], b"m"].concat();
-			// 		if let Some(mutable_data) = Storage::get(&key) {
-			// 			Storage::clear(&key);
+			// 		if let Some(mutable_data) = offchain::local_storage_get(StorageKind::PERSISTENT, &key) {
+			// 			offchain::local_storage_clear(StorageKind::PERSISTENT, &key);
 			// 			// do actual validation and other tasks with immutable_data and mutable_data
 			// 			match offchain_fragments::on_new_fragment(&immutable_data, &mutable_data) {
 			// 				Ok(()) => {
 			// 					log::debug!("on_new_fragment processing {:?}", fragment_hash);
+			// 					// -- Sign using any account
+			// 					let result = Signer::<T, T::AuthorityId>::any_account()
+			// 						.send_unsigned_transaction(
+			// 							|account| ValidFragment {
+			// 								block_number,
+			// 								public: account.public.clone(),
+			// 								fragment_hash,
+			// 							},
+			// 							|payload, signature| Call::confirm_upload { fragment_data: payload, signature },
+			// 						)
+			// 						.ok_or("No local accounts accounts available.");
+			// 					if let Err(e) = result {
+			// 						log::error!("Error while processing fragment: {:?}", e);
+			// 					}
 			// 				},
 			// 				Err(()) => {
 			// 					// in this case we just remove the fragment from the state because it is completely
