@@ -11,7 +11,7 @@ mod benchmarking;
 
 mod weights;
 
-use sp_core::crypto::KeyTypeId;
+use sp_core::crypto::{AccountId32, KeyTypeId};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -61,7 +61,7 @@ use sp_io::{
 	hashing::{blake2_256, keccak_256},
 	offchain, offchain_index, transaction_index,
 };
-use sp_std::vec::Vec;
+use sp_std::{collections::btree_set::BTreeSet, vec::Vec};
 
 use sp_chainblocks::{offchain_fragments, Fragment, FragmentHash};
 
@@ -76,16 +76,19 @@ use frame_system::{
 	},
 };
 
+use sp_runtime::traits::IdentifyAccount;
+
 /// Payload used by this example crate to hold price
 /// data required to submit a transaction.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct ValidFragment<Public, BlockNumber> {
+pub struct FragmentValidation<Public, BlockNumber> {
 	block_number: BlockNumber,
 	public: Public,
 	fragment_hash: FragmentHash,
+	result: bool,
 }
 
-impl<T: SigningTypes> SignedPayload<T> for ValidFragment<T::Public, T::BlockNumber> {
+impl<T: SigningTypes> SignedPayload<T> for FragmentValidation<T::Public, T::BlockNumber> {
 	fn public(&self) -> T::Public {
 		self.public.clone()
 	}
@@ -119,16 +122,20 @@ pub mod pallet {
 	pub type Fragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, Fragment>;
 
 	#[pallet::storage]
-	pub type UnverifiedFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
+	pub type UnverifiedFragments<T: Config> = StorageValue<_, BTreeSet<FragmentHash>, ValueQuery>;
 
 	#[pallet::storage]
 	pub type VerifiedFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
 
+	#[pallet::storage]
+	pub type FragmentValidators<T: Config> = StorageValue<_, BTreeSet<T::AccountId>, ValueQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		Upload(FragmentHash, T::AccountId),
-		Update(FragmentHash, T::AccountId),
+		Upload(FragmentHash),
+		Update(FragmentHash),
+		Verified(FragmentHash),
 	}
 
 	// Errors inform users that something went wrong.
@@ -140,6 +147,8 @@ pub mod pallet {
 		FragmentNotFound,
 		/// Fragment already uploaded
 		FragmentExists,
+		/// Require sudo user
+		SudoUserRequired,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -147,45 +156,46 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		// Add validator public key to the list
+		#[pallet::weight(0)]
+		pub fn add_validator(origin: OriginFor<T>, public: T::AccountId) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New fragment validator: {:?}", public);
+
+			<FragmentValidators<T>>::mutate(|validators| {
+				validators.insert(public);
+			});
+
+			Ok(())
+		}
+
 		// Fragment confirm function, used internally when a fragment is confirmed valid.
 		#[pallet::weight(0)]
 		pub fn confirm_upload(
 			origin: OriginFor<T>,
-			fragment_data: ValidFragment<T::Public, T::BlockNumber>,
+			fragment_data: FragmentValidation<T::Public, T::BlockNumber>,
 			_signature: T::Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			// // we need this to index transactions
-			// let extrinsic_index =
-			// 	<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let fragment_hash = fragment_data.fragment_hash;
 
-			// let fragment_hash = fragment_data.fragment_hash;
+			// remove from unverified
+			<UnverifiedFragments<T>>::mutate(|unverified| {
+				unverified.remove(&fragment_hash);
+			});
 
-			// let fragment_info =
-			// 	<UnverifiedFragments<T>>::get(&fragment_hash).ok_or(Error::<T>::SystematicFailure)?;
+			if fragment_data.result {
+				<VerifiedFragments<T>>::mutate(|verified| {
+					verified.push(fragment_hash);
+				});
+			}
 
-			// let creator = T::AccountId::decode(&mut fragment_info.creator.as_slice())
-			// 	.map_err(|_| Error::<T>::SystematicFailure)?;
+			// also emit event
+			Self::deposit_event(Event::Verified(fragment_hash));
 
-			// // index immutable data for ipfs discovery
-			// let mut index_hash = [0u8; 32];
-			// index_hash[12..32].copy_from_slice(&fragment_hash);
-			// transaction_index::index(extrinsic_index, fragment_info.immutable_data_len, index_hash);
-
-			// // index mutable data for ipfs discovery as well
-			// transaction_index::index(
-			// 	extrinsic_index,
-			// 	fragment_info.mutable_data_len,
-			// 	fragment_info.mutable_hash,
-			// );
-
-			// // remove from unverified fragments storage
-			// <UnverifiedFragments<T>>::remove(&fragment_hash);
-			// // insert to fragments storage
-			// <Fragments<T>>::insert(fragment_hash, fragment_info);
-
-			// Self::deposit_event(Event::Upload(fragment_hash, creator));
+			log::debug!("Fragment {:?} confirmed", fragment_hash);
 
 			Ok(())
 		}
@@ -243,7 +253,7 @@ pub mod pallet {
 			<Fragments<T>>::insert(fragment_hash, fragment);
 
 			// add to unverifed fragments list
-			<UnverifiedFragments<T>>::mutate(|fragments| fragments.push(fragment_hash));
+			<UnverifiedFragments<T>>::mutate(|fragments| fragments.insert(fragment_hash));
 
 			// index immutable data for ipfs discovery
 			transaction_index::index(extrinsic_index, immutable_data_len, fragment_hash);
@@ -252,7 +262,7 @@ pub mod pallet {
 			transaction_index::index(extrinsic_index, mutable_data_len, mutable_hash);
 
 			// also emit event
-			Self::deposit_event(Event::Upload(fragment_hash, who));
+			Self::deposit_event(Event::Upload(fragment_hash));
 
 			Ok(())
 		}
@@ -268,16 +278,20 @@ pub mod pallet {
 		/// here we make sure that some particular calls (the ones produced by offchain worker)
 		/// are being whitelisted and marked as valid.
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			// // Firstly let's check that we call the right function.
-			// if let Call::confirm_upload { ref fragment_data, ref signature } = call {
-			// 	let signature_valid =
-			// 		SignedPayload::<T>::verify::<T::AuthorityId>(fragment_data, signature.clone());
-			// 	if !signature_valid {
-			// 		return InvalidTransaction::BadProof.into()
-			// 	}
-			// 	ValidTransaction::with_tag_prefix("Fragments").propagate(true).build()
-			// } else
-			{
+			// Firstly let's check that we call the right function.
+			if let Call::confirm_upload { ref fragment_data, ref signature } = call {
+				let signature_valid =
+					SignedPayload::<T>::verify::<T::AuthorityId>(fragment_data, signature.clone());
+				if !signature_valid {
+					return InvalidTransaction::BadProof.into()
+				}
+				let account = fragment_data.public.clone().into_account();
+				if !<FragmentValidators<T>>::get().contains(&account) {
+					return InvalidTransaction::BadProof.into()
+				}
+				log::debug!("Sending confirm_upload extrinsic");
+				ValidTransaction::with_tag_prefix("Fragments").propagate(true).build()
+			} else {
 				InvalidTransaction::Call.into()
 			}
 		}
@@ -302,7 +316,7 @@ pub mod pallet {
 					return
 				}
 
-				log::info!(
+				log::debug!(
 					"Running fragments validation duties, fragments pending: {}",
 					fragment_hashes.len()
 				);
@@ -324,23 +338,21 @@ pub mod pallet {
 						let fragment = <Fragments<T>>::get(&fragment_hash);
 
 						// run chainblocks validation etc...
-						let valid = true;
-						if valid {
-							// if valid, mark as verified
-							// -- Sign using any account
-							let result = Signer::<T, T::AuthorityId>::any_account()
-								.send_unsigned_transaction(
-									|account| ValidFragment {
-										block_number,
-										public: account.public.clone(),
-										fragment_hash,
-									},
-									|payload, signature| Call::confirm_upload { fragment_data: payload, signature },
-								)
-								.ok_or("No local accounts accounts available.");
-							if let Err(e) = result {
-								log::error!("Error while processing fragment: {:?}", e);
-							}
+						let valid = true; // TODO validate fragment
+									// -- Sign using any account
+						let result = Signer::<T, T::AuthorityId>::any_account()
+							.send_unsigned_transaction(
+								|account| FragmentValidation {
+									block_number,
+									public: account.public.clone(),
+									fragment_hash,
+									result: valid,
+								},
+								|payload, signature| Call::confirm_upload { fragment_data: payload, signature },
+							)
+							.ok_or("No local accounts accounts available.");
+						if let Err(e) = result {
+							log::error!("Error while processing fragment: {:?}", e);
 						}
 					}
 				}
