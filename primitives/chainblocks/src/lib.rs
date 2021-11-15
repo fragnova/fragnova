@@ -25,10 +25,6 @@ pub struct Fragment {
 	pub creator: Vec<u8>,
 	/// The current owner of the fragment.
 	pub owner: Vec<u8>,
-	/// Immutable data of the fragment.
-	pub immutable_block: u32,
-	/// Mutable data of the fragment.
-	pub mutable_block: u32,
 	/// References to other fragments.
 	pub references: Option<Vec<FragmentHash>>,
 	/// If the fragment has been verified and is passed validation
@@ -106,9 +102,9 @@ pub trait OffchainFragments {
 		details::_fetch_extrinsic(hash)
 	}
 
-	fn on_new_fragment(_immutable_data: &[u8], _mutable_data: &[u8]) -> Result<(), ()> {
+	fn on_new_fragment(fragment_hash: &FragmentHash) -> bool {
 		log::debug!("sp_chainblocks on_new_fragment called...");
-		Ok(())
+		true
 	}
 }
 

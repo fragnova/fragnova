@@ -243,8 +243,6 @@ pub mod pallet {
 				include_cost,
 				creator: owner.clone(),
 				owner,
-				immutable_block: block_number,
-				mutable_block: block_number,
 				references,
 				verified: false,
 			};
@@ -342,8 +340,8 @@ pub mod pallet {
 						let fragment = <Fragments<T>>::get(&fragment_hash);
 
 						// run chainblocks validation etc...
-						let valid = true; // TODO validate fragment
-									// -- Sign using any account
+						let valid = offchain_fragments::on_new_fragment(&fragment_hash);
+						// -- Sign using any account
 						let result = Signer::<T, T::AuthorityId>::any_account()
 							.send_unsigned_transaction(
 								|account| FragmentValidation {
