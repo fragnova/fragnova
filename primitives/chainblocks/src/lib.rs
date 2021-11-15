@@ -23,13 +23,15 @@ pub struct Fragment {
 	pub include_cost: Option<Compact<u128>>,
 	/// The original creator of the fragment.
 	pub creator: Vec<u8>,
+	/// The current owner of the fragment.
+	pub owner: Vec<u8>,
 	/// Immutable data of the fragment.
 	pub immutable_block: u32,
 	/// Mutable data of the fragment.
 	pub mutable_block: u32,
 	/// References to other fragments.
 	pub references: Option<Vec<FragmentHash>>,
-	/// If the fragment has been verified
+	/// If the fragment has been verified and is passed validation
 	pub verified: bool,
 }
 

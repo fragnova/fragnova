@@ -67,7 +67,7 @@ use sp_chainblocks::{offchain_fragments, Fragment, FragmentHash};
 
 use sp_core::offchain::StorageKind;
 
-use frame_support::{BoundedSlice, WeakBoundedVec};
+use frame_support::{traits::Randomness, BoundedSlice, WeakBoundedVec};
 use frame_system::{
 	self as system,
 	offchain::{
@@ -75,8 +75,6 @@ use frame_system::{
 		SignedPayload, Signer, SigningTypes, SubmitTransaction,
 	},
 };
-
-const BLAKE2S_256: u64 = 0xb260;
 
 /// Payload used by this example crate to hold price
 /// data required to submit a transaction.
@@ -101,7 +99,11 @@ pub mod pallet {
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: CreateSignedTransaction<Call<Self>> + frame_system::Config {
+	pub trait Config:
+		CreateSignedTransaction<Call<Self>>
+		+ pallet_randomness_collective_flip::Config
+		+ frame_system::Config
+	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
@@ -200,6 +202,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// hash the immutable data, this is also the unique fragment id
+			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58 "0x0155a0e40220"))
 			let fragment_hash = blake2_256(immutable_data.as_slice());
 
 			// make sure the fragment does not exist already!
@@ -220,12 +223,16 @@ pub mod pallet {
 			// hash mutable data as well, this time blake2 is fine
 			let mutable_hash = blake2_256(mutable_data.as_slice());
 
+			let owner = who.encode();
+
+			// Write STATE from now, ensure no errors from now...
+
 			// store in the state the fragment
-			// block numbers will be added on finalize
 			let fragment = Fragment {
 				mutable_hash,
 				include_cost,
-				creator: who.encode(),
+				creator: owner.clone(),
+				owner,
 				immutable_block: block_number,
 				mutable_block: block_number,
 				references,
@@ -288,50 +295,56 @@ pub mod pallet {
 		/// so the code should be able to handle that.
 		/// You can use `Local Storage` API to coordinate runs of the worker.
 		fn offchain_worker(block_number: T::BlockNumber) {
-			// // grab all fragments that are ready to be validated
-			// let fragment_hashes = <OffchainUploadFragments<T>>::take();
-			// for fragment_hash in fragment_hashes {
-			// 	log::debug!("offchain_worker processing fragment upload {:?}", fragment_hash);
+			if offchain::is_validator() {
+				// grab all fragments that are ready to be validated
+				let fragment_hashes = <UnverifiedFragments<T>>::get();
+				if fragment_hashes.is_empty() {
+					return
+				}
 
-			// 	// get data from local storage and clear it as well from database
-			// 	let key = [&fragment_hash[..], b"i"].concat();
-			// 	if let Some(immutable_data) = offchain::local_storage_get(StorageKind::PERSISTENT, &key) {
-			// 		offchain::local_storage_clear(StorageKind::PERSISTENT, &key);
-			// 		let key = [&fragment_hash[..], b"m"].concat();
-			// 		if let Some(mutable_data) = offchain::local_storage_get(StorageKind::PERSISTENT, &key) {
-			// 			offchain::local_storage_clear(StorageKind::PERSISTENT, &key);
-			// 			// do actual validation and other tasks with immutable_data and mutable_data
-			// 			match offchain_fragments::on_new_fragment(&immutable_data, &mutable_data) {
-			// 				Ok(()) => {
-			// 					log::debug!("on_new_fragment processing {:?}", fragment_hash);
-			// 					// -- Sign using any account
-			// 					let result = Signer::<T, T::AuthorityId>::any_account()
-			// 						.send_unsigned_transaction(
-			// 							|account| ValidFragment {
-			// 								block_number,
-			// 								public: account.public.clone(),
-			// 								fragment_hash,
-			// 							},
-			// 							|payload, signature| Call::confirm_upload { fragment_data: payload, signature },
-			// 						)
-			// 						.ok_or("No local accounts accounts available.");
-			// 					if let Err(e) = result {
-			// 						log::error!("Error while processing fragment: {:?}", e);
-			// 					}
-			// 				},
-			// 				Err(()) => {
-			// 					// in this case we just remove the fragment from the state because it is completely
-			// 					// invalid it will always be in the transaction history for the block of archive
-			// 					// nodes.. this is how blockchains work and so the ipfs bitswap will still work
-			// 					// anyway on such nodes
-			// 					<Fragments<T>>::remove(fragment_hash);
-			// 				},
-			// 			}
-			// 		}
-			// 	} else {
-			// 		log::error!("on_new_fragment failed to get data from local storage {:?}", fragment_hash);
-			// 	}
-			// }
+				log::info!(
+					"Running fragments validation duties, fragments pending: {}",
+					fragment_hashes.len()
+				);
+
+				let random_value =
+					<pallet_randomness_collective_flip::Pallet<T>>::random(&b"fragments-offchain"[..]);
+				let chain_seed = random_value.0.encode();
+				let local_seed = offchain::random_seed();
+				let seed = [&local_seed[..], &chain_seed[..]].concat();
+				let seed = blake2_256(&seed);
+				let (int_bytes, _) = seed.split_at(16);
+				let seed = u128::from_le_bytes(int_bytes.try_into().unwrap());
+
+				for fragment_hash in fragment_hashes {
+					let chance = seed % 100;
+					if chance < 10 {
+						// 10% chance to validate
+						log::debug!("offchain_worker processing fragment {:?}", fragment_hash);
+						let fragment = <Fragments<T>>::get(&fragment_hash);
+
+						// run chainblocks validation etc...
+						let valid = true;
+						if valid {
+							// if valid, mark as verified
+							// -- Sign using any account
+							let result = Signer::<T, T::AuthorityId>::any_account()
+								.send_unsigned_transaction(
+									|account| ValidFragment {
+										block_number,
+										public: account.public.clone(),
+										fragment_hash,
+									},
+									|payload, signature| Call::confirm_upload { fragment_data: payload, signature },
+								)
+								.ok_or("No local accounts accounts available.");
+							if let Err(e) = result {
+								log::error!("Error while processing fragment: {:?}", e);
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 }
