@@ -11,7 +11,7 @@ mod benchmarking;
 
 mod weights;
 
-use sp_core::crypto::{AccountId32, KeyTypeId};
+use sp_core::crypto::KeyTypeId;
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -57,22 +57,17 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 use codec::{Compact, Decode, Encode};
-use sp_io::{
-	hashing::{blake2_256, keccak_256},
-	offchain, offchain_index, transaction_index,
-};
+use sp_io::{hashing::blake2_256, offchain, transaction_index};
 use sp_std::{collections::btree_set::BTreeSet, vec::Vec};
 
 use sp_chainblocks::{offchain_fragments, Fragment, FragmentHash};
 
-use sp_core::offchain::StorageKind;
-
-use frame_support::{traits::Randomness, BoundedSlice, WeakBoundedVec};
+use frame_support::traits::Randomness;
 use frame_system::{
 	self as system,
 	offchain::{
-		AppCrypto, CreateSignedTransaction, SendTransactionTypes, SendUnsignedTransaction,
-		SignedPayload, Signer, SigningTypes, SubmitTransaction,
+		AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
+		SigningTypes,
 	},
 };
 
