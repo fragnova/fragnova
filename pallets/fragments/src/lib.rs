@@ -277,7 +277,7 @@ pub mod pallet {
 		/// By default unsigned transactions are disallowed, but implementing the validator
 		/// here we make sure that some particular calls (the ones produced by offchain worker)
 		/// are being whitelisted and marked as valid.
-		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
 			if let Call::confirm_upload { ref fragment_data, ref signature } = call {
 				let signature_valid =
@@ -290,7 +290,11 @@ pub mod pallet {
 					return InvalidTransaction::BadProof.into()
 				}
 				log::debug!("Sending confirm_upload extrinsic");
-				ValidTransaction::with_tag_prefix("Fragments").propagate(true).build()
+				ValidTransaction::with_tag_prefix("Fragments")
+					.and_provides(fragment_data.fragment_hash)
+					.longevity(5)
+					.propagate(true)
+					.build()
 			} else {
 				InvalidTransaction::Call.into()
 			}
