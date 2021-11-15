@@ -122,10 +122,13 @@ pub mod pallet {
 	pub type Fragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, Fragment>;
 
 	#[pallet::storage]
-	pub type UnverifiedFragments<T: Config> = StorageValue<_, BTreeSet<FragmentHash>, ValueQuery>;
+	pub type VerifiedFragments<T: Config> = StorageMap<_, Blake2_128Concat, u128, FragmentHash>;
 
 	#[pallet::storage]
-	pub type VerifiedFragments<T: Config> = StorageValue<_, Vec<FragmentHash>, ValueQuery>;
+	pub type VerifiedFragmentsSize<T: Config> = StorageValue<_, u128, ValueQuery>;
+
+	#[pallet::storage]
+	pub type UnverifiedFragments<T: Config> = StorageValue<_, BTreeSet<FragmentHash>, ValueQuery>;
 
 	#[pallet::storage]
 	pub type FragmentValidators<T: Config> = StorageValue<_, BTreeSet<T::AccountId>, ValueQuery>;
@@ -187,8 +190,10 @@ pub mod pallet {
 			});
 
 			if fragment_data.result {
-				<VerifiedFragments<T>>::mutate(|verified| {
-					verified.push(fragment_hash);
+				let next = <VerifiedFragmentsSize<T>>::get();
+				<VerifiedFragments<T>>::insert(next, fragment_hash);
+				<VerifiedFragmentsSize<T>>::mutate(|index| {
+					*index += 1;
 				});
 			}
 
