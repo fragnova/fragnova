@@ -168,6 +168,20 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// Remove validator public key to the list
+		#[pallet::weight(25_000)]
+		pub fn remove_validator(origin: OriginFor<T>, public: T::AccountId) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New fragment validator: {:?}", public);
+
+			<FragmentValidators<T>>::mutate(|validators| {
+				validators.remove(&public);
+			});
+
+			Ok(())
+		}
+
 		// Fragment confirm function, used internally when a fragment is confirmed valid.
 		#[pallet::weight(25_000)]
 		pub fn confirm_upload(
