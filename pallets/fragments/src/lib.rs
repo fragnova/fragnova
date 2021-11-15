@@ -157,7 +157,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		// Add validator public key to the list
-		#[pallet::weight(0)]
+		#[pallet::weight(25_000)]
 		pub fn add_validator(origin: OriginFor<T>, public: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -171,7 +171,7 @@ pub mod pallet {
 		}
 
 		// Fragment confirm function, used internally when a fragment is confirmed valid.
-		#[pallet::weight(0)]
+		#[pallet::weight(25_000)]
 		pub fn confirm_upload(
 			origin: OriginFor<T>,
 			fragment_data: FragmentValidation<T::Public, T::BlockNumber>,
