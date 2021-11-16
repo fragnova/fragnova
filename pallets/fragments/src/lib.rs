@@ -63,12 +63,8 @@ use sp_std::{collections::btree_set::BTreeSet, vec::Vec};
 use sp_chainblocks::{offchain_fragments, Fragment, FragmentHash};
 
 use frame_support::traits::Randomness;
-use frame_system::{
-	self as system,
-	offchain::{
-		AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
-		SigningTypes,
-	},
+use frame_system::offchain::{
+	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer, SigningTypes,
 };
 
 use sp_runtime::traits::IdentifyAccount;
@@ -234,9 +230,6 @@ pub mod pallet {
 				return Err(Error::<T>::FragmentExists.into())
 			}
 
-			let block_number = <system::Pallet<T>>::block_number();
-			let block_number: u32 = block_number.try_into().unwrap_or_default();
-
 			// we need this to index transactions
 			let extrinsic_index =
 				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
@@ -289,7 +282,7 @@ pub mod pallet {
 		/// By default unsigned transactions are disallowed, but implementing the validator
 		/// here we make sure that some particular calls (the ones produced by offchain worker)
 		/// are being whitelisted and marked as valid.
-		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
 			if let Call::confirm_upload { ref fragment_data, ref signature } = call {
 				let signature_valid =
@@ -351,7 +344,7 @@ pub mod pallet {
 					if chance < 10 {
 						// 10% chance to validate
 						log::debug!("offchain_worker processing fragment {:?}", fragment_hash);
-						let fragment = <Fragments<T>>::get(&fragment_hash);
+						let _fragment = <Fragments<T>>::get(&fragment_hash);
 
 						// run chainblocks validation etc...
 						let valid = offchain_fragments::on_new_fragment(&fragment_hash);
