@@ -5,16 +5,17 @@ use super::*;
 #[allow(unused)]
 use crate::Pallet as Template;
 
-use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 
 benchmarks! {
-	do_something {
-		let s in 0 .. 100;
+	upload {
+		let immutable_data = vec![1, 2, 3, 4];
+		let mutable_data = vec![1, 2, 3, 4];
 		let caller: T::AccountId = whitelisted_caller();
-	}: _(RawOrigin::Signed(caller), s)
+	}: _(RawOrigin::Signed(caller), immutable_data, mutable_data, None, None)
 	verify {
-		// assert_eq!(Something::<T>::get(), Some(s));
+		assert_eq!(UnverifiedFragments::<T>::get().len(), 1);
 	}
 
 	impl_benchmark_test_suite!(Template, crate::mock::new_test_ext(), crate::mock::Test);
