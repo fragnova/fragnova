@@ -11,7 +11,7 @@ mod benchmarking;
 
 mod weights;
 
-use sp_core::crypto::KeyTypeId;
+use sp_core::{crypto::KeyTypeId, H256};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -57,10 +57,10 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 use codec::{Compact, Decode, Encode};
-use sp_io::{hashing::blake2_256, offchain, transaction_index};
+use sp_io::{hashing::blake2_256, offchain, transaction_index, trie::blake2_256_ordered_root};
 use sp_std::{collections::btree_set::BTreeSet, vec::Vec};
 
-use sp_chainblocks::{offchain_fragments, Fragment, FragmentHash};
+use sp_chainblocks::{offchain_fragments, Entity, EntityHash, Fragment, FragmentHash};
 
 use frame_support::traits::Randomness;
 use frame_system::offchain::{
@@ -113,6 +113,9 @@ pub mod pallet {
 	pub type Fragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, Fragment>;
 
 	#[pallet::storage]
+	pub type Entities<T: Config> = StorageMap<_, Blake2_128Concat, EntityHash, Entity>;
+
+	#[pallet::storage]
 	pub type VerifiedFragments<T: Config> = StorageMap<_, Blake2_128Concat, u128, FragmentHash>;
 
 	#[pallet::storage]
@@ -120,6 +123,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type UnverifiedFragments<T: Config> = StorageValue<_, BTreeSet<FragmentHash>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type PendingEntities<T: Config> = StorageValue<_, BTreeSet<EntityHash>, ValueQuery>;
 
 	#[pallet::storage]
 	pub type FragmentValidators<T: Config> = StorageValue<_, BTreeSet<T::AccountId>, ValueQuery>;
@@ -321,51 +327,93 @@ pub mod pallet {
 			if offchain::is_validator() {
 				// grab all fragments that are ready to be validated
 				let fragment_hashes = <UnverifiedFragments<T>>::get();
-				if fragment_hashes.is_empty() {
-					return
+				if !fragment_hashes.is_empty() {
+					log::debug!(
+						"Running fragments validation duties, fragments pending: {}",
+						fragment_hashes.len()
+					);
+
+					let random = Self::random_u128();
+					for fragment_hash in fragment_hashes {
+						let chance = random % 100;
+						if chance < 10 {
+							// 10% chance to validate
+							log::debug!("offchain_worker processing fragment {:?}", fragment_hash);
+							let _fragment = <Fragments<T>>::get(&fragment_hash);
+							// run chainblocks validation etc...
+							let valid = offchain_fragments::on_new_fragment(&fragment_hash);
+							// -- Sign using any account
+							let result = Signer::<T, T::AuthorityId>::any_account()
+								.send_unsigned_transaction(
+									|account| FragmentValidation {
+										block_number,
+										public: account.public.clone(),
+										fragment_hash,
+										result: valid,
+									},
+									|payload, signature| Call::confirm_upload { fragment_data: payload, signature },
+								)
+								.ok_or("No local accounts accounts available.");
+							if let Err(e) = result {
+								log::error!("Error while processing fragment: {:?}", e);
+							}
+						}
+					}
 				}
 
-				log::debug!(
-					"Running fragments validation duties, fragments pending: {}",
-					fragment_hashes.len()
-				);
+				let pending_entities = <PendingEntities<T>>::get();
+				if !pending_entities.is_empty() {
+					log::debug!(
+						"Running entities processing duties, entities pending: {}",
+						pending_entities.len()
+					);
 
-				let random_value =
-					<pallet_randomness_collective_flip::Pallet<T>>::random(&b"fragments-offchain"[..]);
-				let chain_seed = random_value.0.encode();
-				let local_seed = offchain::random_seed();
-				let seed = [&local_seed[..], &chain_seed[..]].concat();
-				let seed = blake2_256(&seed);
-				let (int_bytes, _) = seed.split_at(16);
-				let seed = u128::from_le_bytes(int_bytes.try_into().unwrap());
-
-				for fragment_hash in fragment_hashes {
-					let chance = seed % 100;
-					if chance < 10 {
-						// 10% chance to validate
-						log::debug!("offchain_worker processing fragment {:?}", fragment_hash);
-						let _fragment = <Fragments<T>>::get(&fragment_hash);
-
-						// run chainblocks validation etc...
-						let valid = offchain_fragments::on_new_fragment(&fragment_hash);
-						// -- Sign using any account
-						let result = Signer::<T, T::AuthorityId>::any_account()
-							.send_unsigned_transaction(
-								|account| FragmentValidation {
-									block_number,
-									public: account.public.clone(),
-									fragment_hash,
-									result: valid,
-								},
-								|payload, signature| Call::confirm_upload { fragment_data: payload, signature },
-							)
-							.ok_or("No local accounts accounts available.");
-						if let Err(e) = result {
-							log::error!("Error while processing fragment: {:?}", e);
+					let random = Self::random_u128();
+					for entity_hash in pending_entities {
+						let chance = random % 100;
+						if chance < 10 {
+							// 10% chance to validate
+							let entity = <Entities<T>>::get(&entity_hash);
+							if let Some(entity) = entity {
+								let fragment = <Fragments<T>>::get(&entity.fragment_hash);
+								if let Some(fragment) = fragment {
+									let references = Self::gather_references(&fragment);
+									let trie_root = blake2_256_ordered_root(references);
+								}
+							}
 						}
 					}
 				}
 			}
 		}
+	}
+}
+
+impl<T: Config> Pallet<T> {
+	fn gather_references(fragment: &Fragment) -> Vec<Vec<u8>> {
+		let mut result = Vec::new();
+		if let Some(references) = &fragment.references {
+			for reference in references {
+				let referenced = <Fragments<T>>::get(&reference);
+				if let Some(referenced) = referenced {
+					let current = (reference, referenced.include_cost);
+					let references = Self::gather_references(&referenced);
+					result.extend(references);
+					result.push(current.encode());
+				}
+			}
+		}
+		result
+	}
+
+	fn random_u128() -> u128 {
+		let random_value =
+			<pallet_randomness_collective_flip::Pallet<T>>::random(&b"fragments-offchain"[..]);
+		let chain_seed = random_value.0.encode();
+		let local_seed = offchain::random_seed();
+		let random = [&local_seed[..], &chain_seed[..]].concat();
+		let random = blake2_256(&random);
+		let (int_bytes, _) = random.split_at(16);
+		u128::from_le_bytes(int_bytes.try_into().unwrap())
 	}
 }

@@ -8,11 +8,12 @@ extern crate chainblocks;
 extern crate lazy_static;
 
 use codec::{Compact, Decode, Encode};
-use sp_std::vec::Vec;
+use sp_std::{vec::Vec};
 
 pub type Hash = sp_core::H256;
 
 pub type FragmentHash = [u8; 32];
+pub type EntityHash = [u8; 32];
 pub type MutableDataHash = [u8; 32];
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
@@ -29,6 +30,14 @@ pub struct Fragment {
 	pub references: Option<Vec<FragmentHash>>,
 	/// If the fragment has been verified and is passed validation
 	pub verified: bool,
+}
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+pub struct Entity {
+	/// The fragment hash. Which is the prefab of the entity.
+	pub fragment_hash: FragmentHash,
+	/// Vault royalties/commissions distribution root trie hash.
+	pub vault_root: Hash,
 }
 
 #[cfg(feature = "std")]
