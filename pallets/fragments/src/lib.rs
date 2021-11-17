@@ -378,6 +378,9 @@ pub mod pallet {
 								let fragment = <Fragments<T>>::get(&entity.fragment_hash);
 								if let Some(fragment) = fragment {
 									let references = Self::gather_references(&fragment);
+									// this includes both fragment hashes and include cost
+									// so that even if the include cost changes this contract needs to be respected
+									// and a claimer can claim what the original value was based on this
 									let trie_root = blake2_256_ordered_root(references);
 								}
 							}
