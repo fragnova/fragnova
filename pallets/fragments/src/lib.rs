@@ -120,6 +120,12 @@ pub struct Entity {
 	pub vault_root: H256,
 }
 
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub struct ExportData {
+	chain: SupportedChains,
+	owner: Vec<u8>,
+}
+
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct LockProof<TSignature> {
 	signature: TSignature,
@@ -163,6 +169,9 @@ pub mod pallet {
 	pub type VerifiedFragments<T: Config> = StorageMap<_, Blake2_128Concat, u128, FragmentHash>;
 
 	#[pallet::storage]
+	pub type ExportedFragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, ExportData>;
+
+	#[pallet::storage]
 	pub type VerifiedFragmentsSize<T: Config> = StorageValue<_, u128, ValueQuery>;
 
 	#[pallet::storage]
@@ -183,6 +192,7 @@ pub mod pallet {
 		Upload(FragmentHash),
 		Update(FragmentHash),
 		Verified(FragmentHash),
+		Exported(FragmentHash, ExportData),
 	}
 
 	// Errors inform users that something went wrong.
@@ -337,10 +347,11 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(25_000)]
-		pub fn lock(
+		pub fn export(
 			origin: OriginFor<T>,
 			fragment_hash: FragmentHash,
 			target_chain: SupportedChains,
+			target_account: Vec<u8>, // an eth address or so
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -374,12 +385,13 @@ pub mod pallet {
 						if let Some(key) = key {
 							let mut payload = fragment_hash.encode();
 							payload.extend(chain_id.encode());
+							payload.extend(target_account.clone());
 							let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &payload[..]);
 							if let Some(signature) = signature {
 								let result = <Fragments<T>>::mutate(&fragment_hash, |fragment| {
 									if let Some(ref mut fragment) = fragment {
-										fragment.lock = Some(signature.encode());
 										// No more failures from this path!!
+										fragment.lock = Some(signature.encode());
 										true
 									} else {
 										false
@@ -396,6 +408,14 @@ pub mod pallet {
 						}
 					},
 				}
+
+				let data = ExportData { chain: target_chain, owner: target_account };
+
+				// add to exported fragments map
+				<ExportedFragments<T>>::insert(fragment_hash, data.clone());
+				// emit event
+				Self::deposit_event(Event::Exported(fragment_hash, data));
+
 				Ok(())
 			} else {
 				Err(Error::<T>::FragmentNotFound.into())
