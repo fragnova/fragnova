@@ -11,7 +11,7 @@ mod benchmarking;
 
 mod weights;
 
-use sp_core::{crypto::KeyTypeId, H256};
+use sp_core::{crypto::KeyTypeId, ecdsa, H256};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -57,10 +57,12 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 use codec::{Compact, Decode, Encode};
-use sp_io::{hashing::blake2_256, offchain, transaction_index, trie::blake2_256_ordered_root};
+use sp_io::{
+	crypto as Crypto, hashing::blake2_256, offchain, transaction_index, trie::blake2_256_ordered_root,
+};
 use sp_std::{collections::btree_set::BTreeSet, vec::Vec};
 
-use sp_chainblocks::{offchain_fragments, Entity, EntityHash, Fragment, FragmentHash};
+use sp_chainblocks::{offchain_fragments, EntityHash, FragmentHash, MutableDataHash};
 
 use frame_support::traits::Randomness;
 use frame_system::offchain::{
@@ -83,6 +85,47 @@ impl<T: SigningTypes> SignedPayload<T> for FragmentValidation<T::Public, T::Bloc
 	fn public(&self) -> T::Public {
 		self.public.clone()
 	}
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum SupportedChains {
+	EthereumMainnet,
+	EthereumRinkeby,
+	EthereumGoerli,
+}
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+pub struct Fragment<TAccountId> {
+	/// Plain hash of indexed data.
+	pub mutable_hash: MutableDataHash,
+	/// Include price of the fragment.
+	pub include_cost: Option<Compact<u128>>,
+	/// The original creator of the fragment.
+	pub creator: TAccountId,
+	/// The current owner of the fragment.
+	pub owner: TAccountId,
+	/// References to other fragments.
+	pub references: Option<Vec<FragmentHash>>,
+	/// If the fragment has been verified and is passed validation
+	pub verified: bool,
+	/// If the fragment has been locked, and the signature of the last lock
+	pub lock: Option<Vec<u8>>,
+}
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+pub struct Entity {
+	/// The fragment hash. Which is the prefab of the entity.
+	pub fragment_hash: FragmentHash,
+	/// Vault royalties/commissions distribution root trie hash.
+	pub vault_root: H256,
+}
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+pub struct LockProof<TSignature> {
+	signature: TSignature,
+	fragment_hash: FragmentHash,
+	/// Can be any type of hash the target chain uses
+	fragment_chain_hash: Vec<u8>,
 }
 
 #[frame_support::pallet]
@@ -110,7 +153,8 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type Fragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, Fragment>;
+	pub type Fragments<T: Config> =
+		StorageMap<_, Blake2_128Concat, FragmentHash, Fragment<T::AccountId>>;
 
 	#[pallet::storage]
 	pub type Entities<T: Config> = StorageMap<_, Blake2_128Concat, EntityHash, Entity>;
@@ -129,6 +173,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type FragmentValidators<T: Config> = StorageValue<_, BTreeSet<T::AccountId>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -149,6 +196,18 @@ pub mod pallet {
 		FragmentExists,
 		/// Require sudo user
 		SudoUserRequired,
+		/// Unsupported chain to lock asset into
+		UnsupportedChain,
+		/// Fragment is already locked into a main chain
+		FragmentLocked,
+		/// Fragment is not verified yet or failed verification!
+		FragmentNotVerified,
+		/// Not the owner of the fragment
+		Unauthorized,
+		/// No Validators are present
+		NoValidator,
+		/// Failed to sign message
+		SigningFailed,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -246,36 +305,101 @@ pub mod pallet {
 			// hash mutable data as well, this time blake2 is fine
 			let mutable_hash = blake2_256(mutable_data.as_slice());
 
-			let owner = who.encode();
-
 			// Write STATE from now, ensure no errors from now...
 
 			// store in the state the fragment
 			let fragment = Fragment {
 				mutable_hash,
 				include_cost,
-				creator: owner.clone(),
-				owner,
+				creator: who.clone(),
+				owner: who,
 				references,
 				verified: false,
+				lock: None,
 			};
 
 			// store fragment metadata
 			<Fragments<T>>::insert(fragment_hash, fragment);
 
-			// add to unverifed fragments list
+			// add to unverified fragments list
 			<UnverifiedFragments<T>>::mutate(|fragments| fragments.insert(fragment_hash));
 
-			// index immutable data for ipfs discovery
+			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, immutable_data_len, fragment_hash);
 
-			// index mutable data for ipfs discovery as well
+			// index mutable data for IPFS discovery as well
 			transaction_index::index(extrinsic_index, mutable_data_len, mutable_hash);
 
 			// also emit event
 			Self::deposit_event(Event::Upload(fragment_hash));
 
 			Ok(())
+		}
+
+		#[pallet::weight(25_000)]
+		pub fn lock(
+			origin: OriginFor<T>,
+			fragment_hash: FragmentHash,
+			target_chain: SupportedChains,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// make sure the fragment exists
+			let fragment = <Fragments<T>>::get(&fragment_hash);
+			if let Some(fragment) = fragment {
+				if fragment.owner != who {
+					return Err(Error::<T>::Unauthorized.into())
+				}
+				if fragment.lock.is_some() {
+					return Err(Error::<T>::FragmentLocked.into())
+				}
+				if !fragment.verified {
+					return Err(Error::<T>::FragmentNotVerified.into())
+				}
+
+				let chain_id = match target_chain {
+					SupportedChains::EthereumMainnet => Some(1u32),
+					SupportedChains::EthereumRinkeby => Some(4u32),
+					SupportedChains::EthereumGoerli => Some(5u32),
+				};
+
+				match target_chain {
+					SupportedChains::EthereumMainnet |
+					SupportedChains::EthereumRinkeby |
+					SupportedChains::EthereumGoerli => {
+						// get local keys
+						let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
+						// make sure the local key is in the global authorities set!
+						let key = keys.iter().find(|k| <EthereumAuthorities<T>>::get().contains(k));
+						if let Some(key) = key {
+							let mut payload = fragment_hash.encode();
+							payload.extend(chain_id.encode());
+							let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &payload[..]);
+							if let Some(signature) = signature {
+								let result = <Fragments<T>>::mutate(&fragment_hash, |fragment| {
+									if let Some(ref mut fragment) = fragment {
+										fragment.lock = Some(signature.encode());
+										// No more failures from this path!!
+										true
+									} else {
+										false
+									}
+								});
+								if !result {
+									return Err(Error::<T>::FragmentNotFound.into())
+								}
+							} else {
+								return Err(Error::<T>::SigningFailed.into())
+							}
+						} else {
+							return Err(Error::<T>::NoValidator.into())
+						}
+					},
+				}
+				Ok(())
+			} else {
+				Err(Error::<T>::FragmentNotFound.into())
+			}
 		}
 	}
 
@@ -393,7 +517,7 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	fn gather_references(fragment: &Fragment) -> Vec<Vec<u8>> {
+	fn gather_references(fragment: &Fragment<T::AccountId>) -> Vec<Vec<u8>> {
 		let mut result = Vec::new();
 		if let Some(references) = &fragment.references {
 			for reference in references {
