@@ -60,7 +60,10 @@ use codec::{Compact, Decode, Encode};
 use sp_io::{
 	crypto as Crypto, hashing::blake2_256, offchain, transaction_index, trie::blake2_256_ordered_root,
 };
-use sp_std::{collections::btree_set::BTreeSet, vec::Vec};
+use sp_std::{
+	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
+	vec::Vec,
+};
 
 use sp_chainblocks::{offchain_fragments, EntityHash, FragmentHash, MutableDataHash};
 
@@ -108,8 +111,6 @@ pub struct Fragment<TAccountId> {
 	pub references: Option<Vec<FragmentHash>>,
 	/// If the fragment has been verified and is passed validation
 	pub verified: bool,
-	/// If the fragment has been locked, and the signature of the last lock
-	pub lock: Option<Vec<u8>>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
@@ -124,14 +125,7 @@ pub struct Entity {
 pub struct ExportData {
 	chain: SupportedChains,
 	owner: Vec<u8>,
-}
-
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
-pub struct LockProof<TSignature> {
-	signature: TSignature,
-	fragment_hash: FragmentHash,
-	/// Can be any type of hash the target chain uses
-	fragment_chain_hash: Vec<u8>,
+	nonce: u64,
 }
 
 #[frame_support::pallet]
@@ -169,7 +163,11 @@ pub mod pallet {
 	pub type VerifiedFragments<T: Config> = StorageMap<_, Blake2_128Concat, u128, FragmentHash>;
 
 	#[pallet::storage]
-	pub type ExportedFragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, ExportData>;
+	pub type DetachedFragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, ExportData>;
+
+	#[pallet::storage]
+	pub type FragmentsNonces<T: Config> =
+		StorageDoubleMap<_, Blake2_128Concat, FragmentHash, Blake2_128Concat, SupportedChains, u64>;
 
 	#[pallet::storage]
 	pub type VerifiedFragmentsSize<T: Config> = StorageValue<_, u128, ValueQuery>;
@@ -192,7 +190,7 @@ pub mod pallet {
 		Upload(FragmentHash),
 		Update(FragmentHash),
 		Verified(FragmentHash),
-		Exported(FragmentHash, ExportData),
+		Exported(FragmentHash, ExportData, Vec<u8>, Vec<u8>),
 	}
 
 	// Errors inform users that something went wrong.
@@ -208,8 +206,8 @@ pub mod pallet {
 		SudoUserRequired,
 		/// Unsupported chain to lock asset into
 		UnsupportedChain,
-		/// Fragment is already locked into a main chain
-		FragmentLocked,
+		/// Fragment is already detached
+		FragmentDetached,
 		/// Fragment is not verified yet or failed verification!
 		FragmentNotVerified,
 		/// Not the owner of the fragment
@@ -218,6 +216,8 @@ pub mod pallet {
 		NoValidator,
 		/// Failed to sign message
 		SigningFailed,
+		/// The provided nonce override is too big
+		NonceMismatch,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -325,7 +325,6 @@ pub mod pallet {
 				owner: who,
 				references,
 				verified: false,
-				lock: None,
 			};
 
 			// store fragment metadata
@@ -346,8 +345,10 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Detached a fragment from this chain by emitting an event that includes a signature.
+		/// The remote target chain can attach this fragment by using this signature.
 		#[pallet::weight(25_000)]
-		pub fn export(
+		pub fn detach(
 			origin: OriginFor<T>,
 			fragment_hash: FragmentHash,
 			target_chain: SupportedChains,
@@ -361,8 +362,9 @@ pub mod pallet {
 				if fragment.owner != who {
 					return Err(Error::<T>::Unauthorized.into())
 				}
-				if fragment.lock.is_some() {
-					return Err(Error::<T>::FragmentLocked.into())
+				let lock = <DetachedFragments<T>>::get(&fragment_hash);
+				if lock.is_some() {
+					return Err(Error::<T>::FragmentDetached.into())
 				}
 				if !fragment.verified {
 					return Err(Error::<T>::FragmentNotVerified.into())
@@ -374,7 +376,7 @@ pub mod pallet {
 					SupportedChains::EthereumGoerli => Some(5u32),
 				};
 
-				match target_chain {
+				let (signature, pub_key, nonce) = match target_chain {
 					SupportedChains::EthereumMainnet |
 					SupportedChains::EthereumRinkeby |
 					SupportedChains::EthereumGoerli => {
@@ -383,38 +385,49 @@ pub mod pallet {
 						// make sure the local key is in the global authorities set!
 						let key = keys.iter().find(|k| <EthereumAuthorities<T>>::get().contains(k));
 						if let Some(key) = key {
+							// This is critical, we send over to the ethereum smart contract this signature
+							// The ethereum smart contract call will be the following
+							// attach(fragment_hash, local_owner, signature, clamor_nonce);
+							// on this target chain the nonce needs to be exactly the same as the one we are using
+							// here or smaller.
 							let mut payload = fragment_hash.encode();
 							payload.extend(chain_id.encode());
 							payload.extend(target_account.clone());
+							let nonce = <FragmentsNonces<T>>::get(&fragment_hash, target_chain.clone());
+							let nonce = if let Some(nonce) = nonce {
+								// add 1, remote will add 1
+								let nonce = nonce.checked_add(1).unwrap();
+								payload.extend(nonce.encode());
+								nonce // for storage
+							} else {
+								// there never was a nonce
+								payload.extend(1u64.encode());
+								1u64
+							};
+							// Sign the payload with a trusted validation key
 							let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &payload[..]);
 							if let Some(signature) = signature {
-								let result = <Fragments<T>>::mutate(&fragment_hash, |fragment| {
-									if let Some(ref mut fragment) = fragment {
-										// No more failures from this path!!
-										fragment.lock = Some(signature.encode());
-										true
-									} else {
-										false
-									}
-								});
-								if !result {
-									return Err(Error::<T>::FragmentNotFound.into())
-								}
+								// No more failures from this path!!
+								Ok((signature.encode(), key.encode(), nonce))
 							} else {
-								return Err(Error::<T>::SigningFailed.into())
+								Err(Error::<T>::SigningFailed)
 							}
 						} else {
-							return Err(Error::<T>::NoValidator.into())
+							Err(Error::<T>::NoValidator)
 						}
 					},
-				}
+				}?;
 
-				let data = ExportData { chain: target_chain, owner: target_account };
+				// Update nonce
+				<FragmentsNonces<T>>::insert(&fragment_hash, target_chain.clone(), nonce);
+
+				let data = ExportData { chain: target_chain, owner: target_account, nonce };
 
 				// add to exported fragments map
-				<ExportedFragments<T>>::insert(fragment_hash, data.clone());
+				<DetachedFragments<T>>::insert(fragment_hash, data.clone());
+
 				// emit event
-				Self::deposit_event(Event::Exported(fragment_hash, data));
+				Self::deposit_event(Event::Exported(fragment_hash, data, signature, pub_key));
 
 				Ok(())
 			} else {
