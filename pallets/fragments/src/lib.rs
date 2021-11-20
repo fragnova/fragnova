@@ -11,7 +11,7 @@ mod benchmarking;
 
 mod weights;
 
-use sp_core::{crypto::KeyTypeId, ecdsa, H256};
+use sp_core::{crypto::KeyTypeId, ecdsa};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -57,15 +57,10 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 use codec::{Compact, Decode, Encode};
-use sp_io::{
-	crypto as Crypto, hashing::blake2_256, offchain, transaction_index, trie::blake2_256_ordered_root,
-};
-use sp_std::{
-	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
-	vec::Vec,
-};
+use sp_io::{crypto as Crypto, hashing::blake2_256, offchain, transaction_index};
+use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
-use sp_chainblocks::{offchain_fragments, EntityHash, FragmentHash, MutableDataHash};
+use sp_chainblocks::{offchain_fragments, FragmentHash, MutableDataHash};
 
 use frame_support::traits::Randomness;
 use frame_system::offchain::{
@@ -100,7 +95,7 @@ pub enum SupportedChains {
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct Fragment<TAccountId> {
 	/// Plain hash of indexed data.
-	pub mutable_hash: MutableDataHash,
+	pub mutable_hash: Vec<MutableDataHash>,
 	/// Include price of the fragment.
 	pub include_cost: Option<Compact<u128>>,
 	/// The original creator of the fragment.
@@ -111,14 +106,6 @@ pub struct Fragment<TAccountId> {
 	pub references: Option<Vec<FragmentHash>>,
 	/// If the fragment has been verified and is passed validation
 	pub verified: bool,
-}
-
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
-pub struct Entity {
-	/// The fragment hash. Which is the prefab of the entity.
-	pub fragment_hash: FragmentHash,
-	/// Vault royalties/commissions distribution root trie hash.
-	pub vault_root: H256,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -157,9 +144,6 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, FragmentHash, Fragment<T::AccountId>>;
 
 	#[pallet::storage]
-	pub type Entities<T: Config> = StorageMap<_, Blake2_128Concat, EntityHash, Entity>;
-
-	#[pallet::storage]
 	pub type VerifiedFragments<T: Config> = StorageMap<_, Blake2_128Concat, u128, FragmentHash>;
 
 	#[pallet::storage]
@@ -176,9 +160,6 @@ pub mod pallet {
 	pub type UnverifiedFragments<T: Config> = StorageValue<_, BTreeSet<FragmentHash>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type PendingEntities<T: Config> = StorageValue<_, BTreeSet<EntityHash>, ValueQuery>;
-
-	#[pallet::storage]
 	pub type FragmentValidators<T: Config> = StorageValue<_, BTreeSet<T::AccountId>, ValueQuery>;
 
 	#[pallet::storage]
@@ -190,7 +171,7 @@ pub mod pallet {
 		Upload(FragmentHash),
 		Update(FragmentHash),
 		Verified(FragmentHash),
-		Exported(FragmentHash, ExportData, Vec<u8>, Vec<u8>),
+		Exported(FragmentHash, Vec<u8>, Vec<u8>),
 	}
 
 	// Errors inform users that something went wrong.
@@ -319,7 +300,7 @@ pub mod pallet {
 
 			// store in the state the fragment
 			let fragment = Fragment {
-				mutable_hash,
+				mutable_hash: vec![mutable_hash],
 				include_cost,
 				creator: who.clone(),
 				owner: who,
@@ -341,6 +322,46 @@ pub mod pallet {
 
 			// also emit event
 			Self::deposit_event(Event::Upload(fragment_hash));
+
+			Ok(())
+		}
+
+		/// Fragment upload function.
+		#[pallet::weight(T::WeightInfo::store(if let Some(mutable_data) = mutable_data { mutable_data.len() as u32} else { 50_000 }))]
+		pub fn update(
+			origin: OriginFor<T>,
+			fragment_hash: FragmentHash,
+			mutable_data: Option<Vec<u8>>,
+			include_cost: Option<Compact<u128>>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			let fragment = <Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
+
+			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
+			ensure!(fragment.verified, Error::<T>::FragmentNotVerified);
+			ensure!(!<DetachedFragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentDetached);
+
+			// we need this to index transactions
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+
+			// Write STATE from now, ensure no errors from now...
+
+			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
+				let fragment = fragment.as_mut().unwrap();
+				if let Some(mutable_data) = mutable_data {
+					let mutable_data_len = mutable_data.len() as u32;
+					// No failures from here on out
+					let mutable_hash = blake2_256(mutable_data.as_slice());
+					fragment.mutable_hash.push(mutable_hash);
+					// index mutable data for IPFS discovery as well
+					transaction_index::index(extrinsic_index, mutable_data_len, mutable_hash);
+				}
+				fragment.include_cost = include_cost;
+			});
+
+			// also emit event
+			Self::deposit_event(Event::Update(fragment_hash));
 
 			Ok(())
 		}
@@ -388,8 +409,7 @@ pub mod pallet {
 							// This is critical, we send over to the ethereum smart contract this signature
 							// The ethereum smart contract call will be the following
 							// attach(fragment_hash, local_owner, signature, clamor_nonce);
-							// on this target chain the nonce needs to be exactly the same as the one we are using
-							// here or smaller.
+							// on this target chain the nonce needs to be exactly the same as the one here
 							let mut payload = fragment_hash.encode();
 							payload.extend(chain_id.encode());
 							payload.extend(target_account.clone());
@@ -424,10 +444,10 @@ pub mod pallet {
 				let data = ExportData { chain: target_chain, owner: target_account, nonce };
 
 				// add to exported fragments map
-				<DetachedFragments<T>>::insert(fragment_hash, data.clone());
+				<DetachedFragments<T>>::insert(fragment_hash, data);
 
 				// emit event
-				Self::deposit_event(Event::Exported(fragment_hash, data, signature, pub_key));
+				Self::deposit_event(Event::Exported(fragment_hash, signature, pub_key));
 
 				Ok(())
 			} else {
@@ -517,40 +537,13 @@ pub mod pallet {
 						}
 					}
 				}
-
-				let pending_entities = <PendingEntities<T>>::get();
-				if !pending_entities.is_empty() {
-					log::debug!(
-						"Running entities processing duties, entities pending: {}",
-						pending_entities.len()
-					);
-
-					let random = Self::random_u128();
-					for entity_hash in pending_entities {
-						let chance = random % 100;
-						if chance < 10 {
-							// 10% chance to validate
-							let entity = <Entities<T>>::get(&entity_hash);
-							if let Some(entity) = entity {
-								let fragment = <Fragments<T>>::get(&entity.fragment_hash);
-								if let Some(fragment) = fragment {
-									let references = Self::gather_references(&fragment);
-									// this includes both fragment hashes and include cost
-									// so that even if the include cost changes this contract needs to be respected
-									// and a claimer can claim what the original value was based on this
-									let trie_root = blake2_256_ordered_root(references);
-								}
-							}
-						}
-					}
-				}
 			}
 		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
-	fn gather_references(fragment: &Fragment<T::AccountId>) -> Vec<Vec<u8>> {
+	pub fn gather_references(fragment: &Fragment<T::AccountId>) -> Vec<Vec<u8>> {
 		let mut result = Vec::new();
 		if let Some(references) = &fragment.references {
 			for reference in references {
@@ -566,7 +559,7 @@ impl<T: Config> Pallet<T> {
 		result
 	}
 
-	fn random_u128() -> u128 {
+	pub fn random_u128() -> u128 {
 		let random_value =
 			<pallet_randomness_collective_flip::Pallet<T>>::random(&b"fragments-offchain"[..]);
 		let chain_seed = random_value.0.encode();
