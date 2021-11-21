@@ -170,7 +170,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		Upload(FragmentHash),
 		Update(FragmentHash),
-		Verified(FragmentHash),
+		Verified(FragmentHash, bool),
 		Exported(FragmentHash, Vec<u8>, Vec<u8>),
 	}
 
@@ -207,7 +207,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		// Add validator public key to the list
-		#[pallet::weight(25_000)]
+		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn add_validator(origin: OriginFor<T>, public: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -221,7 +221,7 @@ pub mod pallet {
 		}
 
 		// Remove validator public key to the list
-		#[pallet::weight(25_000)]
+		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn remove_validator(origin: OriginFor<T>, public: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -235,8 +235,8 @@ pub mod pallet {
 		}
 
 		// Fragment confirm function, used internally when a fragment is confirmed valid.
-		#[pallet::weight(25_000)]
-		pub fn confirm_upload(
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn internal_confirm_upload(
 			origin: OriginFor<T>,
 			fragment_data: FragmentValidation<T::Public, T::BlockNumber>,
 			_signature: T::Signature,
@@ -259,14 +259,15 @@ pub mod pallet {
 			}
 
 			// also emit event
-			Self::deposit_event(Event::Verified(fragment_hash));
+			Self::deposit_event(Event::Verified(fragment_hash, fragment_data.result));
 
-			log::debug!("Fragment {:?} confirmed", fragment_hash);
+			log::debug!("Fragment {:?} confirmed, valid: {}", fragment_hash, fragment_data.result);
 
 			Ok(())
 		}
 
 		/// Fragment upload function.
+		// TODO #1 - weight
 		#[pallet::weight(T::WeightInfo::store((immutable_data.len() as u32) + (mutable_data.len() as u32)))]
 		pub fn upload(
 			origin: OriginFor<T>,
@@ -327,6 +328,7 @@ pub mod pallet {
 		}
 
 		/// Fragment upload function.
+		// TODO #1 - weight
 		#[pallet::weight(T::WeightInfo::store(if let Some(mutable_data) = mutable_data { mutable_data.len() as u32} else { 50_000 }))]
 		pub fn update(
 			origin: OriginFor<T>,
@@ -368,7 +370,7 @@ pub mod pallet {
 
 		/// Detached a fragment from this chain by emitting an event that includes a signature.
 		/// The remote target chain can attach this fragment by using this signature.
-		#[pallet::weight(25_000)]
+		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn detach(
 			origin: OriginFor<T>,
 			fragment_hash: FragmentHash,
@@ -467,7 +469,7 @@ pub mod pallet {
 		/// are being whitelisted and marked as valid.
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
-			if let Call::confirm_upload { ref fragment_data, ref signature } = call {
+			if let Call::internal_confirm_upload { ref fragment_data, ref signature } = call {
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(fragment_data, signature.clone());
 				if !signature_valid {
@@ -495,7 +497,7 @@ pub mod pallet {
 		///
 		/// By implementing `fn offchain_worker` you declare a new offchain worker.
 		/// This function will be called when the node is fully synced and a new best block is
-		/// succesfuly imported.
+		/// successfully imported.
 		/// Note that it's not guaranteed for offchain workers to run on EVERY block, there might
 		/// be cases where some blocks are skipped, or for some the worker runs twice (re-orgs),
 		/// so the code should be able to handle that.
@@ -528,7 +530,10 @@ pub mod pallet {
 										fragment_hash,
 										result: valid,
 									},
-									|payload, signature| Call::confirm_upload { fragment_data: payload, signature },
+									|payload, signature| Call::internal_confirm_upload {
+										fragment_data: payload,
+										signature,
+									},
 								)
 								.ok_or("No local accounts accounts available.");
 							if let Err(e) = result {
