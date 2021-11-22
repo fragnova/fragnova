@@ -98,17 +98,17 @@ pub fn init<F>(fetch_extrinsic: F)
 where
 	F: Fn(&Hash) -> Option<Vec<u8>>,
 {
-	use chainblocks::{cbl_env, cblog};
+	// use chainblocks::{cbl_env, cblog};
 
-	details::init(fetch_extrinsic);
+	// details::init(fetch_extrinsic);
 
-	// needs to go first!
-	chainblocks::core::init();
+	// // needs to go first!
+	// chainblocks::core::init();
 
-	cblog!("Chainblocks initializing...");
+	// cblog!("Chainblocks initializing...");
 
-	// load default chains
-	let chain = cbl_env!(include_str!("validate_fragment.edn"));
+	// // load default chains
+	// let chain = cbl_env!(include_str!("validate_fragment.edn"));
 
-	cblog!("Chainblocks initialized!");
+	// cblog!("Chainblocks initialized!");
 }

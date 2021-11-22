@@ -11,7 +11,10 @@ mod benchmarking;
 
 mod weights;
 
-use sp_core::{crypto::KeyTypeId, ecdsa};
+use core::slice::Iter;
+use scale_info::prelude::format;
+use sp_core::{crypto::KeyTypeId, ecdsa, offchain::StorageKind};
+use sp_runtime::offchain::HttpRequestStatus;
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -504,46 +507,21 @@ pub mod pallet {
 		/// You can use `Local Storage` API to coordinate runs of the worker.
 		fn offchain_worker(block_number: T::BlockNumber) {
 			if offchain::is_validator() {
-				// grab all fragments that are ready to be validated
-				let fragment_hashes = <UnverifiedFragments<T>>::get();
-				if !fragment_hashes.is_empty() {
-					log::debug!(
-						"Running fragments validation duties, fragments pending: {}",
-						fragment_hashes.len()
-					);
-
-					let random = Self::random_u128();
-					for fragment_hash in fragment_hashes {
-						let chance = random % 100;
-						if chance < 10 {
-							// 10% chance to validate
-							log::debug!("offchain_worker processing fragment {:?}", fragment_hash);
-							let _fragment = <Fragments<T>>::get(&fragment_hash);
-							// run chainblocks validation etc...
-							let valid = offchain_fragments::on_new_fragment(&fragment_hash);
-							// -- Sign using any account
-							let result = Signer::<T, T::AuthorityId>::any_account()
-								.send_unsigned_transaction(
-									|account| FragmentValidation {
-										block_number,
-										public: account.public.clone(),
-										fragment_hash,
-										result: valid,
-									},
-									|payload, signature| Call::internal_confirm_upload {
-										fragment_data: payload,
-										signature,
-									},
-								)
-								.ok_or("No local accounts accounts available.");
-							if let Err(e) = result {
-								log::error!("Error while processing fragment: {:?}", e);
-							}
-						}
-					}
-				}
+				Self::process_unverified_fragments(block_number);
+				Self::maintain_mainchains_sync();
 			}
 		}
+	}
+}
+
+impl SupportedChains {
+	pub fn iterator() -> Iter<'static, SupportedChains> {
+		static DIRECTIONS: [SupportedChains; 3] = [
+			SupportedChains::EthereumMainnet,
+			SupportedChains::EthereumRinkeby,
+			SupportedChains::EthereumGoerli,
+		];
+		DIRECTIONS.iter()
 	}
 }
 
@@ -573,5 +551,127 @@ impl<T: Config> Pallet<T> {
 		let random = blake2_256(&random);
 		let (int_bytes, _) = random.split_at(16);
 		u128::from_le_bytes(int_bytes.try_into().unwrap())
+	}
+
+	fn process_unverified_fragments(block_number: T::BlockNumber) {
+		// grab all fragments that are ready to be validated
+		let fragment_hashes = <UnverifiedFragments<T>>::get();
+		if !fragment_hashes.is_empty() {
+			log::debug!(
+				"Running fragments validation duties, fragments pending: {}",
+				fragment_hashes.len()
+			);
+
+			let random = Self::random_u128();
+			for fragment_hash in fragment_hashes {
+				let chance = random % 100;
+				if chance < 10 {
+					// 10% chance to validate
+					log::debug!("offchain_worker processing fragment {:?}", fragment_hash);
+					let _fragment = <Fragments<T>>::get(&fragment_hash);
+					// run chainblocks validation etc...
+					let valid = offchain_fragments::on_new_fragment(&fragment_hash);
+					// -- Sign using any account
+					let result = Signer::<T, T::AuthorityId>::any_account()
+						.send_unsigned_transaction(
+							|account| FragmentValidation {
+								block_number,
+								public: account.public.clone(),
+								fragment_hash,
+								result: valid,
+							},
+							|payload, signature| Call::internal_confirm_upload {
+								fragment_data: payload,
+								signature,
+							},
+						)
+						.ok_or("No local accounts accounts available.");
+					if let Err(e) = result {
+						log::error!("Error while processing fragment: {:?}", e);
+					}
+				}
+			}
+		}
+	}
+
+	fn maintain_mainchains_sync() {
+		for chain in SupportedChains::iterator() {
+			let random = Self::random_u128();
+			let chance = random % 100;
+			if chance >= 10 {
+				continue
+			}
+
+			log::debug!("Running mainchain sync duties, chain: {:?}", chain);
+
+			// key is our "salt" + chain enum index (scale encoded)
+			let key = [&b"mainchain-sync"[..], &chain.encode()[..]].concat();
+			let key = blake2_256(&key);
+			let block_number = offchain::local_storage_get(StorageKind::PERSISTENT, &key[..]);
+			let block_number = if let Some(block_number) = block_number {
+				let block_number = u64::decode(&mut block_number.as_slice()).unwrap();
+				block_number
+			} else {
+				0
+			};
+			// let query = format!("query{{transferEntities(where: {{block_number_gt: \\\"{}\\\"}}){{from
+			// to fragment_hash block_number}}}}", block_number);
+			let query = "query{transferEntities{from to fragment_hash block_number}}";
+			let query = format!("{{\"query\": \"{}\"}}\0", query);
+			log::debug!("query: {}", query);
+			let run = || -> Option<()> {
+				let req = offchain::http_request_start(
+					"POST",
+					"https://api.thegraph.com/subgraphs/name/sinkingsugar/fragments",
+					&[],
+				)
+				.ok()?;
+				offchain::http_request_add_header(req, "Content-Type", "application/json").ok()?;
+				offchain::http_request_add_header(req, "User-Agent", "clamor/0.1").ok()?;
+				offchain::http_request_write_body(req, query.as_bytes(), None).ok()?;
+				offchain::http_request_write_body(req, &[], None).ok()?;
+				// Notice we should execute asyncronously but we risk to saturate our allowed bandwidth
+				if let Some(response) = offchain::http_response_wait(&[req], None).first() {
+					match response {
+						HttpRequestStatus::Finished(status) => {
+							log::debug!("Finished http request, status: {:?}", status);
+						},
+						HttpRequestStatus::DeadlineReached => {
+							log::error!("Deadline reached while waiting for http request");
+						},
+						HttpRequestStatus::Invalid => {
+							log::error!("Invalid http request");
+						},
+						HttpRequestStatus::IoError => {
+							log::error!("Io error while waiting for http request");
+						},
+					}
+				}
+				Some(())
+			};
+			if run().is_none() {
+				log::error!("Error while running mainchain sync duties");
+			}
+
+			// if offchain::http_response_wait(&[req], None).first().is_none() {
+			// 	log::error!("Error while waiting http request");
+			// 	break
+			// }
+			// let headers = offchain::http_response_headers(req);
+			// log::debug!("Headers: {:?}", headers);
+			// let mut res = Vec::new();
+			// res.resize(1024, 0u8);
+			// let len = offchain::http_response_read_body(req, &mut res[..], None);
+			// match len {
+			// 	Ok(len) => {
+			// 		log::debug!("Response body: {:?}", &res[..len as usize])
+			// 	},
+			// 	Err(e) => {
+			// 		log::error!("Error while reading http response: {:?}", e)
+			// 	},
+			// }
+			// //...
+			// offchain::local_storage_set(StorageKind::PERSISTENT, &key[..], &block_number.encode()[..]);
+		}
 	}
 }
