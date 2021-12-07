@@ -15,7 +15,7 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block as BlockT, Extrinsic as ExtrinsicT, IdentifyAccount,
+		BlakeTwo256, Block as BlockT, Extrinsic as ExtrinsicT, IdentifyAccount,
 		NumberFor, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity},
@@ -439,7 +439,7 @@ pub type Executive = frame_executive::Executive<
 	Block,
 	frame_system::ChainContext<Runtime>,
 	Runtime,
-	AllPallets,
+	AllPalletsWithSystem,
 >;
 
 impl_runtime_apis! {
