@@ -7,7 +7,6 @@ extern crate chainblocks;
 #[macro_use]
 extern crate lazy_static;
 
-use codec::{Compact, Decode, Encode};
 use sp_std::{vec::Vec};
 
 pub type Hash = sp_core::H256;
@@ -20,8 +19,6 @@ pub type MutableDataHash = [u8; 32];
 mod details {
 	use super::*;
 
-	use sp_runtime::traits::Block as BlockT;
-
 	// lazy_static! {
 	// 	static ref FETCH_EXTRINSIC: Mutex<Option<Box<dyn Fn(&Hash) -> Option<Vec<u8>>>>> =
 	// 		Mutex::new(None);
@@ -32,8 +29,7 @@ mod details {
 	use chainblocks::{
 		cbl_env,
 		core::destroyVar,
-		types::{ChainRef, ExternalVar, Node, Var},
-		CBVAR_FLAGS_EXTERNAL,
+		types::{ChainRef, ExternalVar, Node},
 	};
 
 	pub fn init<F>(fetch_extrinsic: F)
