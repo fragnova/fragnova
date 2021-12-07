@@ -615,7 +615,7 @@ impl<T: Config> Pallet<T> {
 				0
 			};
 			let query = format!("query{{transferEntities(where: {{block_number_gt: \\\"{}\\\"}}){{from to fragment_hash block_number}}}}", block_number);
-			let query = format!("{{\"query\": \"{}\"}}\0", query);
+			let query = format!("{{\"query\": \"{}\"}}", query);
 			let run = || -> Option<()> {
 				let req = offchain::http_request_start(
 					"POST",
