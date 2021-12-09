@@ -1,4 +1,5 @@
-use crate as fragments_pallet;
+pub use crate as fragments_pallet;
+use crate::*;
 use frame_support::parameter_types;
 use sp_runtime::{
 	testing::{Header, TestXt},
@@ -21,7 +22,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Fragments: fragments_pallet::{Pallet, Call, Storage, Event<T>},
+		FragmentsPallet: fragments_pallet::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 	}
 );
@@ -57,7 +58,7 @@ impl system::Config for Test {
 	type OnSetCode = ();
 }
 
-type Extrinsic = TestXt<Call, ()>;
+pub type Extrinsic = TestXt<Call, ()>;
 type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 impl frame_system::offchain::SigningTypes for Test {
@@ -94,9 +95,4 @@ impl fragments_pallet::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = fragments_pallet::crypto::FragmentsAuthId;
-}
-
-// Build genesis storage according to the mock runtime.
-pub fn new_test_ext() -> sp_io::TestExternalities {
-	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
 }

@@ -37,6 +37,13 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2021-12'
 version = '4.0.0-dev'
 
+[dependencies.sp-keystore]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2021-12'
+version = '0.10.0-dev'
+optional = true
+
 [dependencies.codec]
 default-features = false
 features = ['derive']
@@ -90,5 +97,6 @@ std = [
 	'sp-runtime/std',
     'pallet-randomness-collective-flip/std',
     'log/std',
+	'sp-keystore',
 ]
 try-runtime = ['frame-support/try-runtime']
