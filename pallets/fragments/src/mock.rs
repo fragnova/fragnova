@@ -9,6 +9,7 @@ use sp_core::{
 	sr25519::Signature,
 	H256,
 };
+use sp_runtime::BuildStorage;
 use frame_system as system;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -95,4 +96,9 @@ impl fragments_pallet::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = fragments_pallet::crypto::FragmentsAuthId;
+}
+
+pub fn new_test_ext() -> sp_io::TestExternalities {
+	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	t.into()
 }
