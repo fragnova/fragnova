@@ -614,11 +614,8 @@ impl<T: Config> Pallet<T> {
 			} else {
 				0
 			};
-			// let query = format!("query{{transferEntities(where: {{block_number_gt: \\\"{}\\\"}}){{from
-			// to fragment_hash block_number}}}}", block_number);
-			let query = "query{transferEntities{from to fragment_hash block_number}}";
-			let query = format!("{{\"query\": \"{}\"}}\0", query);
-			log::debug!("query: {}", query);
+			let query = format!("query{{transferEntities(where: {{block_number_gt: \\\"{}\\\"}}){{from to fragment_hash block_number}}}}", block_number);
+			let query = format!("{{\"query\": \"{}\"}}", query);
 			let run = || -> Option<()> {
 				let req = offchain::http_request_start(
 					"POST",
@@ -635,6 +632,30 @@ impl<T: Config> Pallet<T> {
 					match response {
 						HttpRequestStatus::Finished(status) => {
 							log::debug!("Finished http request, status: {:?}", status);
+							let headers = offchain::http_response_headers(req);
+							let mut len = 0;
+							for header in headers {
+								let name = sp_std::str::from_utf8(&header.0).ok()?;
+								let value = sp_std::str::from_utf8(&header.1).ok()?;
+								log::debug!("Header: {} = {}", name, value);
+								if name == "content-length" {
+									len = value.parse::<usize>().ok()?;
+								}
+							}
+							if len > 0 {
+								let mut res = Vec::new();
+								res.resize(len, 0u8);
+								let len = offchain::http_response_read_body(req, &mut res[..], None);
+								match len {
+									Ok(_len) => {
+										let text = sp_std::str::from_utf8(&res).ok()?;
+										log::debug!("Response body: {}", text);
+									},
+									Err(e) => {
+										log::error!("Error while reading http response: {:?}", e)
+									},
+								}
+							}
 						},
 						HttpRequestStatus::DeadlineReached => {
 							log::error!("Deadline reached while waiting for http request");
@@ -656,19 +677,6 @@ impl<T: Config> Pallet<T> {
 			// if offchain::http_response_wait(&[req], None).first().is_none() {
 			// 	log::error!("Error while waiting http request");
 			// 	break
-			// }
-			// let headers = offchain::http_response_headers(req);
-			// log::debug!("Headers: {:?}", headers);
-			// let mut res = Vec::new();
-			// res.resize(1024, 0u8);
-			// let len = offchain::http_response_read_body(req, &mut res[..], None);
-			// match len {
-			// 	Ok(len) => {
-			// 		log::debug!("Response body: {:?}", &res[..len as usize])
-			// 	},
-			// 	Err(e) => {
-			// 		log::error!("Error while reading http response: {:?}", e)
-			// 	},
 			// }
 			// //...
 			// offchain::local_storage_set(StorageKind::PERSISTENT, &key[..], &block_number.encode()[..]);
