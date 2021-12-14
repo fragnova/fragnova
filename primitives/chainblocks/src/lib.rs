@@ -7,7 +7,7 @@ extern crate chainblocks;
 #[macro_use]
 extern crate lazy_static;
 
-use sp_std::{vec::Vec};
+use sp_std::vec::Vec;
 
 pub type Hash = sp_core::H256;
 

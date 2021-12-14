@@ -1,7 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use clamor_runtime::{self, opaque::Block, RuntimeApi};
-use sc_client_api::{ExecutorProvider, BlockBackend};
+use sc_client_api::{BlockBackend, ExecutorProvider};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
@@ -20,7 +20,10 @@ pub struct ExecutorDispatch;
 impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	/// Only enable the benchmarking host functions when we actually want to benchmark.
 	#[cfg(feature = "runtime-benchmarks")]
-	type ExtendHostFunctions = (sp_chainblocks::offchain_fragments::HostFunctions, frame_benchmarking::benchmarking::HostFunctions);
+	type ExtendHostFunctions = (
+		sp_chainblocks::offchain_fragments::HostFunctions,
+		frame_benchmarking::benchmarking::HostFunctions,
+	);
 	/// Otherwise we only use the default Substrate host functions.
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type ExtendHostFunctions = sp_chainblocks::offchain_fragments::HostFunctions;
@@ -62,7 +65,7 @@ pub fn new_partial(
 	ServiceError,
 > {
 	if config.keystore_remote.is_some() {
-		return Err(ServiceError::Other(format!("Remote Keystores are not supported.")))
+		return Err(ServiceError::Other(format!("Remote Keystores are not supported.")));
 	}
 
 	let telemetry = config
@@ -174,11 +177,12 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 	if let Some(url) = &config.keystore_remote {
 		match remote_keystore(url) {
 			Ok(k) => keystore_container.set_remote_keystore(k),
-			Err(e) =>
+			Err(e) => {
 				return Err(ServiceError::Other(format!(
 					"Error hooking up remote keystore for {}: {}",
 					url, e
-				))),
+				)))
+			}
 		};
 	}
 
@@ -335,15 +339,17 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		);
 	}
 
-	sp_chainblocks::init(|hash| {
-		if let Ok(data) = client.indexed_transaction(hash) {
-			data
-		} else {
-			None
-		}
-	});
+	sp_chainblocks::init(
+		|hash| {
+			if let Ok(data) = client.indexed_transaction(hash) {
+				data
+			} else {
+				None
+			}
+		},
+	);
 	let frag_fetch = BlockDataFetcher::new(client.clone());
-	task_manager.spawn_handle().spawn("fragments-fetch", None,frag_fetch);
+	task_manager.spawn_handle().spawn("fragments-fetch", None, frag_fetch);
 
 	network_starter.start_network();
 	Ok(task_manager)

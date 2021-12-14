@@ -1,16 +1,12 @@
 pub use crate as fragments_pallet;
 use crate::*;
 use frame_support::parameter_types;
+use frame_system as system;
+use sp_core::{sr25519::Signature, H256};
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
 };
-use sp_core::{
-	sr25519::Signature,
-	H256,
-};
-use sp_runtime::BuildStorage;
-use frame_system as system;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -68,16 +64,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-	where
-		Call: From<LocalCall>,
+where
+	Call: From<LocalCall>,
 {
 	type OverarchingCall = Call;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-	where
-		Call: From<LocalCall>,
+where
+	Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: Call,
@@ -88,7 +84,6 @@ impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for T
 		Some((call, (nonce, ())))
 	}
 }
-
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
