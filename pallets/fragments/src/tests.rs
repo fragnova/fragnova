@@ -1,10 +1,11 @@
 use crate::FragmentValidators;
-use crate::{mock::*, Error, FragmentValidation, Fragments};
+use crate::{mock::*, Error, FragmentValidation, Fragments, SupportedChains};
 use codec::Decode;
 use frame_support::{assert_noop, assert_ok};
 use frame_system::offchain::SigningTypes;
 use sp_chainblocks::FragmentHash;
 use sp_core::offchain::{testing, OffchainWorkerExt, TransactionPoolExt};
+use sp_core::Pair;
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
 use sp_runtime::RuntimeAppPublic;
@@ -151,6 +152,156 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 				None
 			),
 			Error::<Test>::FragmentExists
+		);
+	});
+}
+
+#[test]
+fn update_fragment_should_not_work_if_not_verified() {
+	new_test_ext().execute_with(|| {
+		let hash: FragmentHash = [
+			30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
+			179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
+		];
+		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
+		let who: sp_core::sr25519::Public = Default::default();
+		assert_ok!(FragmentsPallet::upload(
+			Origin::signed(who.clone()),
+			immutable_data.clone(),
+			"0x0155a0e40220".as_bytes().to_vec(),
+			Some(vec![hash]),
+			None
+		));
+
+		let fragment_hash = blake2_256(immutable_data.as_slice());
+
+		assert_noop!(
+			FragmentsPallet::update(
+				Origin::signed(who),
+				fragment_hash,
+				Some("0x0155a0e40220".as_bytes().to_vec()),
+				None
+			),
+			Error::<Test>::FragmentNotVerified
+		);
+	});
+}
+
+#[test]
+fn update_fragment_should_not_work_if_user_is_unauthorized() {
+	new_test_ext().execute_with(|| {
+		let hash: FragmentHash = [
+			30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
+			179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
+		];
+		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
+		let who: sp_core::sr25519::Public = Default::default();
+		assert_ok!(FragmentsPallet::upload(
+			Origin::signed(who.clone()),
+			immutable_data.clone(),
+			"0x0155a0e40220".as_bytes().to_vec(),
+			Some(vec![hash]),
+			None
+		));
+
+		let fragment_hash = blake2_256(immutable_data.as_slice());
+
+		let (pair, _) = sp_core::sr25519::Pair::generate();
+
+		assert_noop!(
+			FragmentsPallet::update(
+				Origin::signed(pair.public()),
+				fragment_hash,
+				Some("0x0155a0e40220".as_bytes().to_vec()),
+				None
+			),
+			Error::<Test>::Unauthorized
+		);
+	});
+}
+
+#[test]
+fn update_fragment_should_not_work_if_fragment_not_found() {
+	new_test_ext().execute_with(|| {
+		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
+
+		let fragment_hash = blake2_256(immutable_data.as_slice());
+
+		let (pair, _) = sp_core::sr25519::Pair::generate();
+
+		assert_noop!(
+			FragmentsPallet::update(
+				Origin::signed(pair.public()),
+				fragment_hash,
+				Some("0x0155a0e40220".as_bytes().to_vec()),
+				None
+			),
+			Error::<Test>::FragmentNotFound
+		);
+	});
+}
+
+#[test]
+fn detach_fragment_should_not_work_if_user_is_unauthorized() {
+	new_test_ext().execute_with(|| {
+		let hash: FragmentHash = [
+			30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
+			179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
+		];
+		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
+		let who: sp_core::sr25519::Public = Default::default();
+		assert_ok!(FragmentsPallet::upload(
+			Origin::signed(who.clone()),
+			immutable_data.clone(),
+			"0x0155a0e40220".as_bytes().to_vec(),
+			Some(vec![hash]),
+			None
+		));
+
+		let fragment_hash = blake2_256(immutable_data.as_slice());
+
+		let (pair, _) = sp_core::sr25519::Pair::generate();
+
+		assert_noop!(
+			FragmentsPallet::detach(
+				Origin::signed(pair.public()),
+				fragment_hash,
+				SupportedChains::EthereumMainnet,
+				pair.to_raw_vec()
+			),
+			Error::<Test>::Unauthorized
+		);
+	});
+}
+
+#[test]
+fn detach_fragment_should_not_work_if_not_verified() {
+	new_test_ext().execute_with(|| {
+		let hash: FragmentHash = [
+			30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
+			179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
+		];
+		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
+		let who: sp_core::sr25519::Public = Default::default();
+		assert_ok!(FragmentsPallet::upload(
+			Origin::signed(who.clone()),
+			immutable_data.clone(),
+			"0x0155a0e40220".as_bytes().to_vec(),
+			Some(vec![hash]),
+			None
+		));
+
+		let fragment_hash = blake2_256(immutable_data.as_slice());
+		let (pair, _) = sp_core::sr25519::Pair::generate();
+
+		assert_noop!(
+			FragmentsPallet::detach(
+				Origin::signed(who),
+				fragment_hash,
+				SupportedChains::EthereumMainnet,
+				pair.to_raw_vec()
+			),
+			Error::<Test>::FragmentNotVerified
 		);
 	});
 }
