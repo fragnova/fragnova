@@ -240,7 +240,8 @@ pub mod pallet {
 		}
 
 		// Fragment confirm function, used internally when a fragment is confirmed valid.
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		// TODO need to double check for Zero weight
+		#[pallet::weight(25000)] // TODO #1 - weight
 		pub fn internal_confirm_upload(
 			origin: OriginFor<T>,
 			fragment_data: FragmentValidation<T::Public, T::BlockNumber>,
@@ -260,6 +261,13 @@ pub mod pallet {
 				<VerifiedFragments<T>>::insert(next, fragment_hash);
 				<VerifiedFragmentsSize<T>>::mutate(|index| {
 					*index += 1;
+				});
+
+				ensure!(<Fragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentNotFound);
+
+				<Fragments<T>>::mutate(&fragment_hash, |fragment| {
+					let fragment = fragment.as_mut().unwrap();
+					fragment.verified = true;
 				});
 			}
 
@@ -284,7 +292,8 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// hash the immutable data, this is also the unique fragment id
-			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58 "0x0155a0e40220"))
+			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
+			// "0x0155a0e40220"))
 			let fragment_hash = blake2_256(immutable_data.as_slice());
 
 			// make sure the fragment does not exist already!
@@ -417,10 +426,11 @@ pub mod pallet {
 						// make sure the local key is in the global authorities set!
 						let key = keys.iter().find(|k| <EthereumAuthorities<T>>::get().contains(k));
 						if let Some(key) = key {
-							// This is critical, we send over to the ethereum smart contract this signature
-							// The ethereum smart contract call will be the following
+							// This is critical, we send over to the ethereum smart contract this
+							// signature The ethereum smart contract call will be the following
 							// attach(fragment_hash, local_owner, signature, clamor_nonce);
-							// on this target chain the nonce needs to be exactly the same as the one here
+							// on this target chain the nonce needs to be exactly the same as the
+							// one here
 							let mut payload = fragment_hash.encode();
 							payload.extend(chain_id.encode());
 							payload.extend(target_account.clone());
@@ -635,7 +645,8 @@ impl<T: Config> Pallet<T> {
 				offchain::http_request_add_header(req, "User-Agent", "clamor/0.1").ok()?;
 				offchain::http_request_write_body(req, query.as_bytes(), None).ok()?;
 				offchain::http_request_write_body(req, &[], None).ok()?;
-				// Notice we should execute asyncronously but we risk to saturate our allowed bandwidth
+				// Notice we should execute asyncronously but we risk to saturate our allowed
+				// bandwidth
 				if let Some(response) = offchain::http_response_wait(&[req], None).first() {
 					match response {
 						HttpRequestStatus::Finished(status) => {
@@ -688,7 +699,8 @@ impl<T: Config> Pallet<T> {
 			// 	break
 			// }
 			// //...
-			// offchain::local_storage_set(StorageKind::PERSISTENT, &key[..], &block_number.encode()[..]);
+			// offchain::local_storage_set(StorageKind::PERSISTENT, &key[..],
+			// &block_number.encode()[..]);
 		}
 	}
 }

@@ -1,11 +1,12 @@
-use crate::FragmentValidators;
-use crate::{mock::*, Error, FragmentValidation, Fragments, SupportedChains};
+use crate::{mock::*, Error, FragmentValidation, FragmentValidators, Fragments, SupportedChains};
 use codec::Decode;
 use frame_support::{assert_noop, assert_ok};
 use frame_system::offchain::SigningTypes;
 use sp_chainblocks::FragmentHash;
-use sp_core::offchain::{testing, OffchainWorkerExt, TransactionPoolExt};
-use sp_core::Pair;
+use sp_core::{
+	offchain::{testing, OffchainWorkerExt, TransactionPoolExt},
+	Pair,
+};
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
 use sp_runtime::RuntimeAppPublic;
@@ -155,6 +156,7 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 		);
 	});
 }
+
 
 #[test]
 fn update_fragment_should_not_work_if_not_verified() {
