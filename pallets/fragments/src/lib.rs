@@ -67,7 +67,8 @@ use sp_chainblocks::{offchain_fragments, FragmentHash, MutableDataHash};
 
 use frame_support::traits::Randomness;
 use frame_system::offchain::{
-	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer, SigningTypes,
+	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
+	SigningTypes,
 };
 
 use sp_runtime::traits::IdentifyAccount;
@@ -150,7 +151,8 @@ pub mod pallet {
 	pub type VerifiedFragments<T: Config> = StorageMap<_, Blake2_128Concat, u128, FragmentHash>;
 
 	#[pallet::storage]
-	pub type DetachedFragments<T: Config> = StorageMap<_, Blake2_128Concat, FragmentHash, ExportData>;
+	pub type DetachedFragments<T: Config> =
+		StorageMap<_, Blake2_128Concat, FragmentHash, ExportData>;
 
 	#[pallet::storage]
 	pub type FragmentsNonces<T: Config> =
@@ -238,7 +240,8 @@ pub mod pallet {
 		}
 
 		// Fragment confirm function, used internally when a fragment is confirmed valid.
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		// TODO need to double check for Zero weight
+		#[pallet::weight(25000)] // TODO #1 - weight
 		pub fn internal_confirm_upload(
 			origin: OriginFor<T>,
 			fragment_data: FragmentValidation<T::Public, T::BlockNumber>,
@@ -258,6 +261,13 @@ pub mod pallet {
 				<VerifiedFragments<T>>::insert(next, fragment_hash);
 				<VerifiedFragmentsSize<T>>::mutate(|index| {
 					*index += 1;
+				});
+
+				ensure!(<Fragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentNotFound);
+
+				<Fragments<T>>::mutate(&fragment_hash, |fragment| {
+					let fragment = fragment.as_mut().unwrap();
+					fragment.verified = true;
 				});
 			}
 
@@ -282,17 +292,18 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// hash the immutable data, this is also the unique fragment id
-			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58 "0x0155a0e40220"))
+			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
+			// "0x0155a0e40220"))
 			let fragment_hash = blake2_256(immutable_data.as_slice());
 
 			// make sure the fragment does not exist already!
 			if <Fragments<T>>::contains_key(&fragment_hash) {
-				return Err(Error::<T>::FragmentExists.into())
+				return Err(Error::<T>::FragmentExists.into());
 			}
 
 			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			let immutable_data_len = immutable_data.len() as u32;
 			let mutable_data_len = mutable_data.len() as u32;
@@ -340,15 +351,19 @@ pub mod pallet {
 			include_cost: Option<Compact<u128>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			let fragment = <Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
+			let fragment =
+				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
 			ensure!(fragment.verified, Error::<T>::FragmentNotVerified);
-			ensure!(!<DetachedFragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentDetached);
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
 
 			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -386,14 +401,14 @@ pub mod pallet {
 			let fragment = <Fragments<T>>::get(&fragment_hash);
 			if let Some(fragment) = fragment {
 				if fragment.owner != who {
-					return Err(Error::<T>::Unauthorized.into())
+					return Err(Error::<T>::Unauthorized.into());
 				}
 				let lock = <DetachedFragments<T>>::get(&fragment_hash);
 				if lock.is_some() {
-					return Err(Error::<T>::FragmentDetached.into())
+					return Err(Error::<T>::FragmentDetached.into());
 				}
 				if !fragment.verified {
-					return Err(Error::<T>::FragmentNotVerified.into())
+					return Err(Error::<T>::FragmentNotVerified.into());
 				}
 
 				let chain_id = match target_chain {
@@ -403,22 +418,24 @@ pub mod pallet {
 				};
 
 				let (signature, pub_key, nonce) = match target_chain {
-					SupportedChains::EthereumMainnet |
-					SupportedChains::EthereumRinkeby |
-					SupportedChains::EthereumGoerli => {
+					SupportedChains::EthereumMainnet
+					| SupportedChains::EthereumRinkeby
+					| SupportedChains::EthereumGoerli => {
 						// get local keys
 						let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
 						// make sure the local key is in the global authorities set!
 						let key = keys.iter().find(|k| <EthereumAuthorities<T>>::get().contains(k));
 						if let Some(key) = key {
-							// This is critical, we send over to the ethereum smart contract this signature
-							// The ethereum smart contract call will be the following
+							// This is critical, we send over to the ethereum smart contract this
+							// signature The ethereum smart contract call will be the following
 							// attach(fragment_hash, local_owner, signature, clamor_nonce);
-							// on this target chain the nonce needs to be exactly the same as the one here
+							// on this target chain the nonce needs to be exactly the same as the
+							// one here
 							let mut payload = fragment_hash.encode();
 							payload.extend(chain_id.encode());
 							payload.extend(target_account.clone());
-							let nonce = <FragmentsNonces<T>>::get(&fragment_hash, target_chain.clone());
+							let nonce =
+								<FragmentsNonces<T>>::get(&fragment_hash, target_chain.clone());
 							let nonce = if let Some(nonce) = nonce {
 								// add 1, remote will add 1
 								let nonce = nonce.checked_add(1).unwrap();
@@ -440,7 +457,7 @@ pub mod pallet {
 						} else {
 							Err(Error::<T>::NoValidator)
 						}
-					},
+					}
 				}?;
 
 				// Update nonce
@@ -476,11 +493,11 @@ pub mod pallet {
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(fragment_data, signature.clone());
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into()
+					return InvalidTransaction::BadProof.into();
 				}
 				let account = fragment_data.public.clone().into_account();
 				if !<FragmentValidators<T>>::get().contains(&account) {
-					return InvalidTransaction::BadProof.into()
+					return InvalidTransaction::BadProof.into();
 				}
 				log::debug!("Sending confirm_upload extrinsic");
 				ValidTransaction::with_tag_prefix("Fragments")
@@ -565,31 +582,32 @@ impl<T: Config> Pallet<T> {
 			let random = Self::random_u128();
 			for fragment_hash in fragment_hashes {
 				let chance = random % 100;
-				if chance < 10 {
-					// 10% chance to validate
-					log::debug!("offchain_worker processing fragment {:?}", fragment_hash);
-					let _fragment = <Fragments<T>>::get(&fragment_hash);
-					// run chainblocks validation etc...
-					let valid = offchain_fragments::on_new_fragment(&fragment_hash);
-					// -- Sign using any account
-					let result = Signer::<T, T::AuthorityId>::any_account()
-						.send_unsigned_transaction(
-							|account| FragmentValidation {
-								block_number,
-								public: account.public.clone(),
-								fragment_hash,
-								result: valid,
-							},
-							|payload, signature| Call::internal_confirm_upload {
-								fragment_data: payload,
-								signature,
-							},
-						)
-						.ok_or("No local accounts accounts available.");
-					if let Err(e) = result {
-						log::error!("Error while processing fragment: {:?}", e);
-					}
+				// TODO Need to modify this condition
+				//if chance < 10 {
+				// 10% chance to validate
+				log::debug!("offchain_worker processing fragment {:?}", fragment_hash);
+				let _fragment = <Fragments<T>>::get(&fragment_hash);
+				// run chainblocks validation etc...
+				let valid = offchain_fragments::on_new_fragment(&fragment_hash);
+				// -- Sign using any account
+				let result = Signer::<T, T::AuthorityId>::any_account()
+					.send_unsigned_transaction(
+						|account| FragmentValidation {
+							block_number,
+							public: account.public.clone(),
+							fragment_hash,
+							result: valid,
+						},
+						|payload, signature| Call::internal_confirm_upload {
+							fragment_data: payload,
+							signature,
+						},
+					)
+					.ok_or("No local accounts accounts available.");
+				if let Err(e) = result {
+					log::error!("Error while processing fragment: {:?}", e);
 				}
+				//}
 			}
 		}
 	}
@@ -599,7 +617,7 @@ impl<T: Config> Pallet<T> {
 			let random = Self::random_u128();
 			let chance = random % 100;
 			if chance >= 10 {
-				continue
+				continue;
 			}
 
 			log::debug!("Running mainchain sync duties, chain: {:?}", chain);
@@ -627,7 +645,8 @@ impl<T: Config> Pallet<T> {
 				offchain::http_request_add_header(req, "User-Agent", "clamor/0.1").ok()?;
 				offchain::http_request_write_body(req, query.as_bytes(), None).ok()?;
 				offchain::http_request_write_body(req, &[], None).ok()?;
-				// Notice we should execute asyncronously but we risk to saturate our allowed bandwidth
+				// Notice we should execute asyncronously but we risk to saturate our allowed
+				// bandwidth
 				if let Some(response) = offchain::http_response_wait(&[req], None).first() {
 					match response {
 						HttpRequestStatus::Finished(status) => {
@@ -645,27 +664,28 @@ impl<T: Config> Pallet<T> {
 							if len > 0 {
 								let mut res = Vec::new();
 								res.resize(len, 0u8);
-								let len = offchain::http_response_read_body(req, &mut res[..], None);
+								let len =
+									offchain::http_response_read_body(req, &mut res[..], None);
 								match len {
 									Ok(_len) => {
 										let text = sp_std::str::from_utf8(&res).ok()?;
 										log::debug!("Response body: {}", text);
-									},
+									}
 									Err(e) => {
 										log::error!("Error while reading http response: {:?}", e)
-									},
+									}
 								}
 							}
-						},
+						}
 						HttpRequestStatus::DeadlineReached => {
 							log::error!("Deadline reached while waiting for http request");
-						},
+						}
 						HttpRequestStatus::Invalid => {
 							log::error!("Invalid http request");
-						},
+						}
 						HttpRequestStatus::IoError => {
 							log::error!("Io error while waiting for http request");
-						},
+						}
 					}
 				}
 				Some(())
@@ -679,7 +699,8 @@ impl<T: Config> Pallet<T> {
 			// 	break
 			// }
 			// //...
-			// offchain::local_storage_set(StorageKind::PERSISTENT, &key[..], &block_number.encode()[..]);
+			// offchain::local_storage_set(StorageKind::PERSISTENT, &key[..],
+			// &block_number.encode()[..]);
 		}
 	}
 }
