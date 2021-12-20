@@ -25,6 +25,8 @@ fn add_validator_should_works() {
 fn remove_validator_should_works() {
 	new_test_ext().execute_with(|| {
 		let validator = Default::default();
+		assert_ok!(FragmentsPallet::add_validator(Origin::root(), validator));
+		assert!(FragmentValidators::<Test>::get().contains(&validator));
 		assert_ok!(FragmentsPallet::remove_validator(Origin::root(), validator));
 		assert!(!FragmentValidators::<Test>::get().contains(&validator));
 	});
@@ -156,7 +158,6 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 		);
 	});
 }
-
 
 #[test]
 fn update_fragment_should_not_work_if_not_verified() {

@@ -212,7 +212,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		// Add validator public key to the list
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(T::WeightInfo::add_validator())]
 		pub fn add_validator(origin: OriginFor<T>, public: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -226,7 +226,7 @@ pub mod pallet {
 		}
 
 		// Remove validator public key to the list
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(T::WeightInfo::remove_validator())]
 		pub fn remove_validator(origin: OriginFor<T>, public: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -281,7 +281,7 @@ pub mod pallet {
 
 		/// Fragment upload function.
 		// TODO #1 - weight
-		#[pallet::weight(T::WeightInfo::store((immutable_data.len() as u32) + (mutable_data.len() as u32)))]
+		#[pallet::weight(T::WeightInfo::upload())]
 		pub fn upload(
 			origin: OriginFor<T>,
 			immutable_data: Vec<u8>,
@@ -343,7 +343,7 @@ pub mod pallet {
 
 		/// Fragment upload function.
 		// TODO #1 - weight
-		#[pallet::weight(T::WeightInfo::store(if let Some(mutable_data) = mutable_data { mutable_data.len() as u32} else { 50_000 }))]
+		#[pallet::weight(25_000)]
 		pub fn update(
 			origin: OriginFor<T>,
 			fragment_hash: FragmentHash,
