@@ -1,11 +1,13 @@
-use crate::{mock::*, Error, FragmentValidation, FragmentValidators, Fragments, SupportedChains};
+use crate::{mock::*, Error, FragmentValidation, FragmentValidators, Fragments, SupportedChains, EthereumAuthorities, KEY_TYPE};
 use codec::Decode;
 use frame_support::{assert_noop, assert_ok};
 use frame_system::offchain::SigningTypes;
 use sp_chainblocks::FragmentHash;
 use sp_core::{
+	ecdsa,
 	offchain::{testing, OffchainWorkerExt, TransactionPoolExt},
 	Pair,
+	Public
 };
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
@@ -160,7 +162,7 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 }
 
 #[test]
-fn update_fragment_should_not_work_if_not_verified() {
+fn update_fragment_should_work() {
 	new_test_ext().execute_with(|| {
 		let hash: FragmentHash = [
 			30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
@@ -178,15 +180,12 @@ fn update_fragment_should_not_work_if_not_verified() {
 
 		let fragment_hash = blake2_256(immutable_data.as_slice());
 
-		assert_noop!(
-			FragmentsPallet::update(
-				Origin::signed(who),
-				fragment_hash,
-				Some("0x0155a0e40220".as_bytes().to_vec()),
-				None
-			),
-			Error::<Test>::FragmentNotVerified
-		);
+		assert_ok!(FragmentsPallet::update(
+			Origin::signed(who),
+			fragment_hash,
+			Some("0x0155a0e40220".as_bytes().to_vec()),
+			None
+		));
 	});
 }
 
@@ -278,8 +277,12 @@ fn detach_fragment_should_not_work_if_user_is_unauthorized() {
 }
 
 #[test]
-fn detach_fragment_should_not_work_if_not_verified() {
-	new_test_ext().execute_with(|| {
+fn detach_fragment_should_work() {
+	let keystore = KeyStore::new();
+	let mut t = new_test_ext();
+
+	t.register_extension(KeystoreExt(Arc::new(keystore)));
+	t.execute_with(|| {
 		let hash: FragmentHash = [
 			30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
 			179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
@@ -297,14 +300,17 @@ fn detach_fragment_should_not_work_if_not_verified() {
 		let fragment_hash = blake2_256(immutable_data.as_slice());
 		let (pair, _) = sp_core::sr25519::Pair::generate();
 
-		assert_noop!(
-			FragmentsPallet::detach(
-				Origin::signed(who),
-				fragment_hash,
-				SupportedChains::EthereumMainnet,
-				pair.to_raw_vec()
-			),
-			Error::<Test>::FragmentNotVerified
-		);
+		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
+		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
+
+		<EthereumAuthorities<Test>>::mutate(|authorities| {
+			authorities.insert(keys.get(0).unwrap().clone());
+		});
+		assert_ok!(FragmentsPallet::detach(
+			Origin::signed(who),
+			fragment_hash,
+			SupportedChains::EthereumMainnet,
+			pair.to_raw_vec()
+		));
 	});
 }

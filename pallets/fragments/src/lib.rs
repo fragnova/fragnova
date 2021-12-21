@@ -108,8 +108,6 @@ pub struct Fragment<TAccountId> {
 	pub owner: TAccountId,
 	/// References to other fragments.
 	pub references: Option<Vec<FragmentHash>>,
-	/// If the fragment has been verified and is passed validation
-	pub verified: bool,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -194,8 +192,6 @@ pub mod pallet {
 		UnsupportedChain,
 		/// Fragment is already detached
 		FragmentDetached,
-		/// Fragment is not verified yet or failed verification!
-		FragmentNotVerified,
 		/// Not the owner of the fragment
 		Unauthorized,
 		/// No Validators are present
@@ -262,13 +258,6 @@ pub mod pallet {
 				<VerifiedFragmentsSize<T>>::mutate(|index| {
 					*index += 1;
 				});
-
-				ensure!(<Fragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentNotFound);
-
-				<Fragments<T>>::mutate(&fragment_hash, |fragment| {
-					let fragment = fragment.as_mut().unwrap();
-					fragment.verified = true;
-				});
 			}
 
 			// also emit event
@@ -298,7 +287,7 @@ pub mod pallet {
 
 			// make sure the fragment does not exist already!
 			if <Fragments<T>>::contains_key(&fragment_hash) {
-				return Err(Error::<T>::FragmentExists.into());
+				return Err(Error::<T>::FragmentExists.into())
 			}
 
 			// we need this to index transactions
@@ -320,7 +309,6 @@ pub mod pallet {
 				creator: who.clone(),
 				owner: who,
 				references,
-				verified: false,
 			};
 
 			// store fragment metadata
@@ -355,7 +343,6 @@ pub mod pallet {
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
-			ensure!(fragment.verified, Error::<T>::FragmentNotVerified);
 			ensure!(
 				!<DetachedFragments<T>>::contains_key(&fragment_hash),
 				Error::<T>::FragmentDetached
@@ -401,14 +388,11 @@ pub mod pallet {
 			let fragment = <Fragments<T>>::get(&fragment_hash);
 			if let Some(fragment) = fragment {
 				if fragment.owner != who {
-					return Err(Error::<T>::Unauthorized.into());
+					return Err(Error::<T>::Unauthorized.into())
 				}
 				let lock = <DetachedFragments<T>>::get(&fragment_hash);
 				if lock.is_some() {
-					return Err(Error::<T>::FragmentDetached.into());
-				}
-				if !fragment.verified {
-					return Err(Error::<T>::FragmentNotVerified.into());
+					return Err(Error::<T>::FragmentDetached.into())
 				}
 
 				let chain_id = match target_chain {
@@ -418,9 +402,9 @@ pub mod pallet {
 				};
 
 				let (signature, pub_key, nonce) = match target_chain {
-					SupportedChains::EthereumMainnet
-					| SupportedChains::EthereumRinkeby
-					| SupportedChains::EthereumGoerli => {
+					SupportedChains::EthereumMainnet |
+					SupportedChains::EthereumRinkeby |
+					SupportedChains::EthereumGoerli => {
 						// get local keys
 						let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
 						// make sure the local key is in the global authorities set!
@@ -457,7 +441,7 @@ pub mod pallet {
 						} else {
 							Err(Error::<T>::NoValidator)
 						}
-					}
+					},
 				}?;
 
 				// Update nonce
@@ -493,11 +477,11 @@ pub mod pallet {
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(fragment_data, signature.clone());
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 				let account = fragment_data.public.clone().into_account();
 				if !<FragmentValidators<T>>::get().contains(&account) {
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 				log::debug!("Sending confirm_upload extrinsic");
 				ValidTransaction::with_tag_prefix("Fragments")
@@ -617,7 +601,7 @@ impl<T: Config> Pallet<T> {
 			let random = Self::random_u128();
 			let chance = random % 100;
 			if chance >= 10 {
-				continue;
+				continue
 			}
 
 			log::debug!("Running mainchain sync duties, chain: {:?}", chain);
@@ -670,22 +654,22 @@ impl<T: Config> Pallet<T> {
 									Ok(_len) => {
 										let text = sp_std::str::from_utf8(&res).ok()?;
 										log::debug!("Response body: {}", text);
-									}
+									},
 									Err(e) => {
 										log::error!("Error while reading http response: {:?}", e)
-									}
+									},
 								}
 							}
-						}
+						},
 						HttpRequestStatus::DeadlineReached => {
 							log::error!("Deadline reached while waiting for http request");
-						}
+						},
 						HttpRequestStatus::Invalid => {
 							log::error!("Invalid http request");
-						}
+						},
 						HttpRequestStatus::IoError => {
 							log::error!("Io error while waiting for http request");
-						}
+						},
 					}
 				}
 				Some(())
