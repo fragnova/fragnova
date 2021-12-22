@@ -4,10 +4,8 @@ use frame_support::{assert_noop, assert_ok};
 use frame_system::offchain::SigningTypes;
 use sp_chainblocks::FragmentHash;
 use sp_core::{
-	ecdsa,
 	offchain::{testing, OffchainWorkerExt, TransactionPoolExt},
 	Pair,
-	Public
 };
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};

@@ -299,11 +299,15 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
+parameter_types! {
+	pub const MaxDataLength: u32 = 100;
+}
 /// Configure the pallet-template in pallets/template.
 impl fragments_pallet::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = fragments_pallet::crypto::FragmentsAuthId;
+	type MaxDataLength = MaxDataLength;
 }
 
 impl frame_system::offchain::SigningTypes for Runtime {

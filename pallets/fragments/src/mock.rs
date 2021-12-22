@@ -87,10 +87,15 @@ where
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
+parameter_types! {
+	pub const MaxDataLength: u32 = 100;
+}
+
 impl fragments_pallet::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = fragments_pallet::crypto::FragmentsAuthId;
+	type MaxDataLength = MaxDataLength;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
