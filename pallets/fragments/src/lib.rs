@@ -275,8 +275,8 @@ pub mod pallet {
 			mutable_data: Vec<u8>,
 			// we store this in the state as well
 			references: Vec<IncludeInfo>,
-			signature: [u8; 65],
 			include_cost: Option<Compact<u128>>,
+			signature: ecdsa::Signature,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -291,7 +291,7 @@ pub mod pallet {
 
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
-			let recover = Crypto::secp256k1_ecdsa_recover(&signature, &fragment_hash)
+			let recover = Crypto::secp256k1_ecdsa_recover(&signature.0, &fragment_hash)
 				.ok()
 				.ok_or(Error::<T>::SignatureVerificationFailed)?;
 			let recover = EcdsaPubKey(recover);
@@ -359,6 +359,7 @@ pub mod pallet {
 			// fragment hash we want to update
 			fragment_hash: Hash256,
 			include_cost: Option<Compact<u128>>,
+			signature: ecdsa::Signature,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -367,6 +368,17 @@ pub mod pallet {
 
 			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
 			ensure!(!<DetachedFragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentDetached);
+
+			// check if the signature is valid
+			// we use and off chain services that ensure we are storing valid data
+			let recover = Crypto::secp256k1_ecdsa_recover(&signature.0, &fragment_hash)
+				.ok()
+				.ok_or(Error::<T>::SignatureVerificationFailed)?;
+			let recover = EcdsaPubKey(recover);
+			ensure!(
+				<UploadAuthorities<T>>::contains_key(recover),
+				Error::<T>::SignatureVerificationFailed
+			);
 
 			// we need this to index transactions
 			let extrinsic_index =
