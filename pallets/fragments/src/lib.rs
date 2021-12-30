@@ -175,6 +175,7 @@ pub mod pallet {
 		Update(Hash256),
 		Verified(Hash256, bool),
 		Exported(Hash256, Vec<u8>, Vec<u8>),
+		Transfer(Hash256, T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
@@ -487,6 +488,35 @@ pub mod pallet {
 
 			// emit event
 			Self::deposit_event(Event::Exported(fragment_hash, signature, pub_key));
+
+			Ok(())
+		}
+
+		/// Transfer fragment ownership
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn transfer(
+			origin: OriginFor<T>,
+			fragment_hash: Hash256,
+			new_owner: T::AccountId,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// make sure the fragment exists
+			let fragment: Fragment<T::AccountId> =
+				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
+
+			if fragment.owner != who {
+				return Err(Error::<T>::Unauthorized.into())
+			}
+
+			// update fragment
+			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
+				let fragment = fragment.as_mut().unwrap();
+				fragment.owner = new_owner;
+			});
+
+			// emit event
+			Self::deposit_event(Event::Transfer(fragment_hash, new_owner));
 
 			Ok(())
 		}
