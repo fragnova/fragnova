@@ -11,9 +11,7 @@ use sp_std::vec::Vec;
 
 pub type Hash = sp_core::H256;
 
-pub type FragmentHash = [u8; 32];
-pub type EntityHash = [u8; 32];
-pub type MutableDataHash = [u8; 32];
+pub type Hash256 = [u8; 32];
 
 #[cfg(feature = "std")]
 mod details {
@@ -83,7 +81,7 @@ pub trait OffchainFragments {
 		details::_fetch_extrinsic(hash)
 	}
 
-	fn on_new_fragment(fragment_hash: &FragmentHash) -> bool {
+	fn on_new_fragment(fragment_hash: &Hash256) -> bool {
 		log::debug!("sp_chainblocks on_new_fragment called...");
 		true
 	}
