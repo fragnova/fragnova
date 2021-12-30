@@ -505,14 +505,13 @@ pub mod pallet {
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
-			if fragment.owner != who {
-				return Err(Error::<T>::Unauthorized.into())
-			}
+			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
+			ensure!(!<DetachedFragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentDetached);
 
 			// update fragment
 			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
 				let fragment = fragment.as_mut().unwrap();
-				fragment.owner = new_owner;
+				fragment.owner = new_owner.clone();
 			});
 
 			// emit event
