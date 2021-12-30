@@ -211,6 +211,60 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		// Add validator public key to the list
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn add_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New eth auth: {:?}", public);
+
+			<EthereumAuthorities<T>>::mutate(|validators| {
+				validators.insert(public);
+			});
+
+			Ok(())
+		}
+
+		// Remove validator public key to the list
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn del_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New eth auth: {:?}", public);
+
+			<EthereumAuthorities<T>>::mutate(|validators| {
+				validators.remove(&public);
+			});
+
+			Ok(())
+		}
+
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn add_upload_auth(
+			origin: OriginFor<T>,
+			public: EcdsaPubKey,
+			account: T::AccountId,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New upload auth: {:?}", public);
+
+			<UploadAuthorities<T>>::insert(public, account);
+
+			Ok(())
+		}
+
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn del_upload_auth(origin: OriginFor<T>, public: EcdsaPubKey) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New upload auth: {:?}", public);
+
+			<UploadAuthorities<T>>::remove(public);
+
+			Ok(())
+		}
+
 		/// Fragment upload function.
 		// TODO #1 - weight
 		#[pallet::weight(T::WeightInfo::store((immutable_data.len() as u32) + (mutable_data.len() as u32)))]
