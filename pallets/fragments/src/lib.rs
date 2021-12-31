@@ -465,8 +465,9 @@ pub mod pallet {
 							payload.extend(1u64.encode());
 							1u64
 						};
-						// TODO ethereum format used in solidity
-						let msg = keccak_256(&payload);
+						let msg =
+							[&b"\x19Ethereum Signed Message:\n32"[..], &keccak_256(&payload)[..]].concat();
+						let msg = keccak_256(&msg);
 						// Sign the payload with a trusted validation key
 						let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &msg[..]);
 						if let Some(signature) = signature {
