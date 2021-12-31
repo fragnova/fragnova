@@ -58,7 +58,11 @@ pub use pallet::*;
 pub use weights::WeightInfo;
 
 use codec::{Compact, Decode, Encode};
-use sp_io::{crypto as Crypto, hashing::blake2_256, transaction_index};
+use sp_io::{
+	crypto as Crypto,
+	hashing::{blake2_256, keccak_256},
+	transaction_index,
+};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use sp_chainblocks::Hash256;
@@ -87,9 +91,6 @@ pub enum SupportedChains {
 	EthereumRinkeby,
 	EthereumGoerli,
 }
-
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct EcdsaPubKey([u8; 64]);
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct IncludeInfo {
@@ -166,7 +167,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> =
-		StorageMap<_, Blake2_128Concat, EcdsaPubKey, T::AccountId>;
+		StorageMap<_, Blake2_128Concat, ecdsa::Public, T::AccountId>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -243,7 +244,7 @@ pub mod pallet {
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn add_upload_auth(
 			origin: OriginFor<T>,
-			public: EcdsaPubKey,
+			public: ecdsa::Public,
 			account: T::AccountId,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -256,7 +257,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn del_upload_auth(origin: OriginFor<T>, public: EcdsaPubKey) -> DispatchResult {
+		pub fn del_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
 			log::debug!("New upload auth: {:?}", public);
@@ -292,10 +293,10 @@ pub mod pallet {
 
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
-			let recover = Crypto::secp256k1_ecdsa_recover(&signature.0, &fragment_hash)
+			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
 				.ok()
 				.ok_or(Error::<T>::SignatureVerificationFailed)?;
-			let recover = EcdsaPubKey(recover);
+			let recover = ecdsa::Public(recover);
 			ensure!(
 				<UploadAuthorities<T>>::contains_key(recover),
 				Error::<T>::SignatureVerificationFailed
@@ -372,10 +373,10 @@ pub mod pallet {
 
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
-			let recover = Crypto::secp256k1_ecdsa_recover(&signature.0, &fragment_hash)
+			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
 				.ok()
 				.ok_or(Error::<T>::SignatureVerificationFailed)?;
-			let recover = EcdsaPubKey(recover);
+			let recover = ecdsa::Public(recover);
 			ensure!(
 				<UploadAuthorities<T>>::contains_key(recover),
 				Error::<T>::SignatureVerificationFailed
@@ -464,8 +465,10 @@ pub mod pallet {
 							payload.extend(1u64.encode());
 							1u64
 						};
+						// TODO ethereum format used in solidity
+						let msg = keccak_256(&payload);
 						// Sign the payload with a trusted validation key
-						let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &payload[..]);
+						let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &msg[..]);
 						if let Some(signature) = signature {
 							// No more failures from this path!!
 							Ok((signature.encode(), key.encode(), nonce))
