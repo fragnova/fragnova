@@ -341,9 +341,6 @@ pub mod pallet {
 			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, size, fragment_hash);
 
-			// index mutable data for IPFS discovery as well
-			transaction_index::index(extrinsic_index, size, mutable_hash);
-
 			// also emit event
 			Self::deposit_event(Event::Upload(fragment_hash));
 
