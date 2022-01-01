@@ -147,7 +147,8 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type Fragments<T: Config> = StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId>>;
+	pub type Fragments<T: Config> =
+		StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId>>;
 
 	#[pallet::storage]
 	pub type FragmentsList<T: Config> = StorageMap<_, Blake2_128Concat, u128, Hash256>;
@@ -303,13 +304,11 @@ pub mod pallet {
 			);
 
 			// make sure the fragment does not exist already!
-			if <Fragments<T>>::contains_key(&fragment_hash) {
-				return Err(Error::<T>::FragmentExists.into())
-			}
+			ensure!(!<Fragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentExists);
 
 			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// we need to pass this size to the db writer state machine
 			// I'm not too sure if it's taken into account but it might
@@ -369,7 +368,10 @@ pub mod pallet {
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
-			ensure!(!<DetachedFragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentDetached);
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
 
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
@@ -383,8 +385,8 @@ pub mod pallet {
 			);
 
 			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -422,14 +424,12 @@ pub mod pallet {
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
-			if fragment.owner != who {
-				return Err(Error::<T>::Unauthorized.into())
-			}
+			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
 
-			let lock = <DetachedFragments<T>>::get(&fragment_hash);
-			if lock.is_some() {
-				return Err(Error::<T>::FragmentDetached.into())
-			}
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
 
 			let chain_id = match target_chain {
 				SupportedChains::EthereumMainnet => Some(1u32),
@@ -466,7 +466,8 @@ pub mod pallet {
 							1u64
 						};
 						let msg =
-							[&b"\x19Ethereum Signed Message:\n32"[..], &keccak_256(&payload)[..]].concat();
+							[&b"\x19Ethereum Signed Message:\n32"[..], &keccak_256(&payload)[..]]
+								.concat();
 						let msg = keccak_256(&msg);
 						// Sign the payload with a trusted validation key
 						let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &msg[..]);
@@ -510,7 +511,10 @@ pub mod pallet {
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
-			ensure!(!<DetachedFragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentDetached);
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
 
 			// update fragment
 			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
