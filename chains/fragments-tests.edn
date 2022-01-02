@@ -9,6 +9,19 @@
 
 (defnode root)
 
+(defloop wait-port
+  (Setup
+    30 >= .tries)
+  (Maybe (-> 
+          {"id" 1 "jsonrpc" "2.0" "method" "chain_getBlockHash" "params" [0]} (ToJson) (Http.Post rpc-server)
+             (FromJson) (ExpectTable) (Take "result") (ExpectString) (Log)
+             (Stop))
+         (->
+          (Math.Dec .tries) 
+          (Pause 2.0)))
+  .tries (Assert.IsNot 0 true)
+  (Log "Waiting for port"))
+
 (defchain make-calldata
   (| (Take 0) (ExpectInt) = .pallet-idx)
   (| (Take 1) (ExpectInt) = .call-idx)
@@ -113,7 +126,7 @@
     "connect" >> .ipfs-args
     .p2p-address >> .ipfs-args
     (Maybe (-> "" (Process.Run "ipfs" .ipfs-args)))))
-  
+
   "repo" >> .ipfs-args-gc
   "gc" >> .ipfs-args-gc
   (Maybe (-> "" (Process.Run "ipfs" .ipfs-args-gc) nil))
@@ -123,12 +136,14 @@
   "block" >> .ipfs-args-block
   "get" >> .ipfs-args-block
   .frag-cid-str >> .ipfs-args-block
-  "" (Process.Run "ipfs" .ipfs-args-block) (StringToBytes) 
+  "" (Process.Run "ipfs" .ipfs-args-block) (StringToBytes)
   (Brotli.Decompress) (FromBytes) (Log)
   (Assert.Is "immutable & mutable payload" true)
   ;
   )
 
-(schedule root upload)
+(schedule root wait-port)
+(run root 0.1)
 
+(schedule root upload)
 (run root 0.1)

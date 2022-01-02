@@ -42,7 +42,6 @@ jobs:
         run: |
           cargo build
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
-          sleep 10
           docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl cbl /data/chains/fragments-tests.edn
           kill %1
 
