@@ -270,31 +270,29 @@ pub mod pallet {
 
 		/// Fragment upload function.
 		// TODO #1 - weight
-		#[pallet::weight(T::WeightInfo::store((immutable_data.len() as u32) + (mutable_data.len() as u32)))]
+		#[pallet::weight(T::WeightInfo::store((data.len() as u32)))]
 		pub fn upload(
 			origin: OriginFor<T>,
-			// let data come first as we record this size in blocks db basically
-			immutable_data: Vec<u8>,
-			mutable_data: Vec<u8>,
 			// we store this in the state as well
 			references: Vec<IncludeInfo>,
 			include_cost: Option<Compact<u128>>,
 			signature: ecdsa::Signature,
+			// let data come last as we record this size in blocks db (storage chain)
+			// and the offset is calculated like
+			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
+			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-
-			// payload defining the fragment's hash
-			let immutable_data_size = immutable_data.size_hint();
-			let payload = [immutable_data, references.encode()].concat();
 
 			// hash the immutable data, this is also the unique fragment id
 			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
 			// "0x0155a0e40220"))
-			let fragment_hash = blake2_256(payload.as_slice());
+			let fragment_hash = blake2_256(&data);
+			let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
 
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
-			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 				.ok()
 				.ok_or(Error::<T>::SignatureVerificationFailed)?;
 			let recover = ecdsa::Public(recover);
@@ -310,18 +308,11 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
-			// we need to pass this size to the db writer state machine
-			// I'm not too sure if it's taken into account but it might
-			let size = (immutable_data_size + mutable_data.size_hint()) as u32;
-
-			// hash mutable data as well, this time blake2 is fine
-			let mutable_hash = blake2_256(mutable_data.as_slice());
-
 			// Write STATE from now, ensure no errors from now...
 
 			// store in the state the fragment
 			let fragment = Fragment {
-				mutable_hash: vec![mutable_hash],
+				mutable_hash: vec![],
 				include_cost,
 				creator: who.clone(),
 				owner: who,
@@ -339,7 +330,7 @@ pub mod pallet {
 			});
 
 			// index immutable data for IPFS discovery
-			transaction_index::index(extrinsic_index, size, fragment_hash);
+			transaction_index::index(extrinsic_index, data.len() as u32, fragment_hash);
 
 			// also emit event
 			Self::deposit_event(Event::Upload(fragment_hash));
@@ -349,15 +340,15 @@ pub mod pallet {
 
 		/// Fragment upload function.
 		// TODO #1 - weight
-		#[pallet::weight(T::WeightInfo::store(if let Some(mutable_data) = mutable_data { mutable_data.len() as u32} else { 50_000 }))]
+		#[pallet::weight(T::WeightInfo::store(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
 		pub fn update(
 			origin: OriginFor<T>,
-			// data we want to update first because of the way we store blocks
-			mutable_data: Option<Vec<u8>>,
 			// fragment hash we want to update
 			fragment_hash: Hash256,
 			include_cost: Option<Compact<u128>>,
 			signature: ecdsa::Signature,
+			// data we want to update last because of the way we store blocks (storage chain)
+			data: Option<Vec<u8>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -389,13 +380,12 @@ pub mod pallet {
 
 			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
 				let fragment = fragment.as_mut().unwrap();
-				if let Some(mutable_data) = mutable_data {
-					let mutable_data_len = mutable_data.size_hint() as u32;
+				if let Some(data) = data {
 					// No failures from here on out
-					let mutable_hash = blake2_256(mutable_data.as_slice());
-					fragment.mutable_hash.push(mutable_hash);
+					let data_hash = blake2_256(&data);
+					fragment.mutable_hash.push(data_hash);
 					// index mutable data for IPFS discovery as well
-					transaction_index::index(extrinsic_index, mutable_data_len, mutable_hash);
+					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 				}
 				fragment.include_cost = include_cost;
 			});

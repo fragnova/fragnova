@@ -67,37 +67,27 @@
 
 (defchain upload
   ; Vec
-  "immutable payload" (ToBytes) (Brotli.Compress) = .immutable >> .frag-hash-payload
+  "immutable & mutable payload" (ToBytes) (Brotli.Compress) = .immutable
   (Count .immutable) = .immutable-len
-  [.immutable-len] (Substrate.Encode ["c"]) >= .payload
-  .immutable (AppendTo .payload)
-
-  ; Vec
-  "mutable payload" (ToBytes) (Brotli.Compress) = .mutable
-  (Count .mutable) = .mutable-len
-  [.mutable-len] (Substrate.Encode ["c"]) (AppendTo .payload)
-  .mutable (AppendTo .payload)
 
   ; Vec - 0 len
   [0] (Substrate.Encode ["c"]) = .no-refs
-  .no-refs (AppendTo .payload)
+  .no-refs >= .payload
 
-  ; Option None
-  "0x00" (HexToBytes) (AppendTo .payload) >> .frag-hash-payload
+  ; Option None - Include cost
+  "0x00" (HexToBytes) (AppendTo .payload)
 
-  .frag-hash-payload (Hash.Blake2-256) >= .frag-cid
-  (ECDSA.Sign "//Charlie") (AppendTo .payload)
+  .immutable (Hash.Blake2-256) >= .frag-cid >> .frag-hash-payload
+  .no-refs >> .frag-hash-payload
+  .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Charlie") (AppendTo .payload)
+
+  [.immutable-len] (Substrate.Encode ["c"]) (AppendTo .payload)
+  .immutable (AppendTo .payload)
 
   "0x0155a0e40220" (HexToBytes) (PrependTo .frag-cid)
   .frag-cid (ToBase58) >= .frag-cid-str
   "z" (PrependTo .frag-cid-str)
   .frag-cid-str (Log "CID")
-
-  .mutable (Hash.Blake2-256) >= .mut-cid
-  "0x0155a0e40220" (HexToBytes) (PrependTo .mut-cid)
-  .mut-cid (ToBase58) > .frag-cid-str
-  "z" (PrependTo .frag-cid-str)
-  .frag-cid-str (Log "Mut CID")
 
   .payload (Log)
 
@@ -110,8 +100,11 @@
   [sudo-index sudo-call .call1] (Do make-calldata) = .sudo-call1
   ["//Alice" .sudo-call1 0] (Do send-signed-extrinsic) (Log "result1")
 
-  [fragments-index upload-index .payload] (Do make-calldata) = .call2
+  [fragments-index upload-index .payload] (Do make-calldata) = .call2 (| (ToHex) (Log "call2"))
   ["//Alice" .call2 1] (Do send-signed-extrinsic) (Log "result2")
+
+  {"id" 1 "jsonrpc" "2.0" "method" "system_localListenAddresses" "params" []} (ToJson) (Http.Post rpc-server)
+  (FromJson) (ExpectTable) (Take "result") (Log)
   ;
   )
 
