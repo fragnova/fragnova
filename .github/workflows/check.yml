@@ -21,8 +21,7 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-
-      - name: Setup
+        name: Setup
         run: |
           sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
           rustup update
@@ -30,7 +29,7 @@ jobs:
           rustup target add wasm32-unknown-unknown
 
       - name: Run IPFS Test
-      - uses: chainblocks/setup-ipfs@master
+        uses: chainblocks/setup-ipfs@master
         with:
           run_daemon: true
         run: |
