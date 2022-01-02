@@ -104,10 +104,22 @@
   ["//Alice" .call2 1] (Do send-signed-extrinsic) (Log "result2")
 
   {"id" 1 "jsonrpc" "2.0" "method" "system_localListenAddresses" "params" []} (ToJson) (Http.Post rpc-server)
-  (FromJson) (ExpectTable) (Take "result") (Log)
+  (FromJson) (ExpectTable) (Take "result") (ExpectStringSeq) (Log)
+  (ForEach
+   (->
+    (Log "connecting")
+    = .p2p-address
+    "swarm" >> .ipfs-args
+    "connect" >> .ipfs-args
+    .p2p-address >> .ipfs-args
+    (Maybe (-> "" (Process.Run "ipfs" .ipfs-args)))))
+  
+  "repo" >> .ipfs-args-gc
+  "gc" >> .ipfs-args-gc
+  (Maybe (-> "" (Process.Run "ipfs" .ipfs-args-gc)))
   ;
   )
 
 (schedule root upload)
 
-(run root)
+(run root 0.1)
