@@ -28,9 +28,15 @@ jobs:
       - name: Setup
         run: |
           sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
-          rustup update
-          rustup default nightly
-          rustup target add wasm32-unknown-unknown
+
+      - name: Install Rustup
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup default stable
+          rustup update nightly
+          rustup update stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
 
       - name: Run IPFS Test
         run: |
