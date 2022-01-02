@@ -54,22 +54,21 @@ fn upload_should_works() {
 			30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
 			179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
 		];
-		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
+		let data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
 			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
+
+		let fragment_hash = blake2_256(&data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
 
-		let fragment_hash = blake2_256(payload.as_slice());
-
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
@@ -78,11 +77,10 @@ fn upload_should_works() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature
+			signature,
+			data,
 		));
 
 		assert!(<Fragments<Test>>::contains_key(fragment_hash));
@@ -103,15 +101,14 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
-
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
+
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
@@ -120,11 +117,10 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data.clone(),
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references.clone(),
 			None,
-			signature.clone()
+			signature.clone(),
+			immutable_data.clone(),
 		));
 
 		assert!(<Fragments<Test>>::contains_key(fragment_hash));
@@ -132,11 +128,10 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 		assert_noop!(
 			FragmentsPallet::upload(
 				Origin::signed(Default::default()),
-				immutable_data,
-				"0x0155a0e40220".as_bytes().to_vec(),
 				references,
 				None,
-				signature
+				signature,
+				immutable_data,
 			),
 			Error::<Test>::FragmentExists
 		);
@@ -164,11 +159,10 @@ fn upload_fragment_should_not_work_if_not_verified() {
 		assert_noop!(
 			FragmentsPallet::upload(
 				Origin::signed(Default::default()),
-				immutable_data,
-				"0x0155a0e40220".as_bytes().to_vec(),
 				references,
 				None,
-				signature
+				signature,
+				immutable_data,
 			),
 			Error::<Test>::SignatureVerificationFailed
 		);
@@ -189,15 +183,14 @@ fn update_should_works() {
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
-
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
+
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
@@ -206,19 +199,20 @@ fn update_should_works() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature.clone()
+			signature,
+			immutable_data,
 		));
+
+		let signature: sp_core::ecdsa::Signature = pair.sign(&fragment_hash);
 
 		assert_ok!(FragmentsPallet::update(
 			Origin::signed(Default::default()),
-			Some("0x0155a0e40220".as_bytes().to_vec()),
 			fragment_hash,
 			Some(Compact(123)),
-			signature
+			signature,
+			Some("0x0155a0e40220".as_bytes().to_vec()),
 		));
 
 		assert_eq!(<Fragments<Test>>::get(fragment_hash).unwrap().include_cost, Some(Compact(123)))
@@ -256,11 +250,10 @@ fn update_fragment_should_not_work_if_user_is_unauthorized() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature.clone()
+			signature.clone(),
+			immutable_data,
 		));
 
 		let (pair, _) = sp_core::sr25519::Pair::generate();
@@ -268,10 +261,10 @@ fn update_fragment_should_not_work_if_user_is_unauthorized() {
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(pair.public()),
-				Some("0x0155a0e40220".as_bytes().to_vec()),
 				fragment_hash,
 				Some(Compact(123)),
-				signature
+				signature,
+				Some("0x0155a0e40220".as_bytes().to_vec()),
 			),
 			Error::<Test>::Unauthorized
 		);
@@ -292,10 +285,10 @@ fn update_fragment_should_not_work_if_fragment_not_found() {
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(Default::default()),
-				Some("0x0155a0e40220".as_bytes().to_vec()),
 				fragment_hash,
 				Some(Compact(123)),
-				signature
+				signature,
+				Some("0x0155a0e40220".as_bytes().to_vec()),
 			),
 			Error::<Test>::FragmentNotFound
 		);
@@ -333,11 +326,10 @@ fn update_should_not_work_if_not_verified() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature.clone()
+			signature.clone(),
+			immutable_data,
 		));
 		let suri = "//Bob";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
@@ -348,10 +340,10 @@ fn update_should_not_work_if_not_verified() {
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(Default::default()),
-				Some("0x0155a0e40220".as_bytes().to_vec()),
 				fragment_hash,
 				Some(Compact(123)),
-				signature
+				signature,
+				Some("0x0155a0e40220".as_bytes().to_vec()),
 			),
 			Error::<Test>::SignatureVerificationFailed
 		);
@@ -393,11 +385,10 @@ fn update_should_not_work_if_detached() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature.clone()
+			signature.clone(),
+			immutable_data,
 		));
 
 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
@@ -416,10 +407,10 @@ fn update_should_not_work_if_detached() {
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(Default::default()),
-				Some("0x0155a0e40220".as_bytes().to_vec()),
 				fragment_hash,
 				Some(Compact(123)),
-				signature
+				signature,
+				Some("0x0155a0e40220".as_bytes().to_vec()),
 			),
 			Error::<Test>::FragmentDetached
 		);
@@ -461,11 +452,10 @@ fn detach_should_not_work_if_no_validator() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature.clone()
+			signature.clone(),
+			immutable_data,
 		));
 		assert_noop!(
 			FragmentsPallet::detach(
@@ -510,11 +500,10 @@ fn detach_fragment_should_not_work_if_user_is_unauthorized() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature.clone()
+			signature.clone(),
+			immutable_data,
 		));
 
 		let (pair, _) = sp_core::sr25519::Pair::generate();
@@ -587,11 +576,10 @@ fn detach_should_work() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature.clone()
+			signature.clone(),
+			immutable_data,
 		));
 
 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
@@ -640,11 +628,10 @@ fn transfer_should_works() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature
+			signature,
+			immutable_data,
 		));
 
 		let (pair, _) = sp_core::sr25519::Pair::generate();
@@ -708,11 +695,10 @@ fn transfer_should_not_work_if_user_is_unauthorized() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature.clone()
+			signature.clone(),
+			immutable_data,
 		));
 
 		let (pair, _) = sp_core::sr25519::Pair::generate();
@@ -759,11 +745,10 @@ fn transfer_should_not_work_if_detached() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
-			immutable_data,
-			"0x0155a0e40220".as_bytes().to_vec(),
 			references,
 			None,
-			signature.clone()
+			signature.clone(),
+			immutable_data,
 		));
 
 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);

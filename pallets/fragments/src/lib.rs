@@ -270,7 +270,7 @@ pub mod pallet {
 
 		/// Fragment upload function.
 		// TODO #1 - weight
-		#[pallet::weight(T::WeightInfo::store((data.len() as u32)))]
+		#[pallet::weight(T::WeightInfo::store(data.len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
