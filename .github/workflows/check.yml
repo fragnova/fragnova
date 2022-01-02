@@ -26,6 +26,8 @@ jobs:
         run: |
           sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
           rustup update
+          rustup default nightly
+          rustup target add wasm32-unknown-unknown
 
       - name: Run IPFS Test
       - uses: chainblocks/setup-ipfs@master
