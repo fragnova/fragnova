@@ -22,21 +22,20 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: Set-Up
-        run: sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
-
-      # - name: Install Rustup
-      #   run: |
-      #     curl https://sh.rustup.rs -sSf | sh -s -- -y
-      #     source ~/.cargo/env
-      #     rustup default stable
-      #     rustup update nightly
-      #     rustup update stable
-      #     rustup target add wasm32-unknown-unknown --toolchain nightly
-
       - name: Setup
         run: |
+          sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
           rustup update
+
+      - name: Run IPFS Test
+      - uses: chainblocks/setup-ipfs@master
+        with:
+          run_daemon: true
+        run: |
+          RUST_LOG=bitswap=trace cargo run -- --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
+          sleep 10
+          docker run --rm --network host -v ${{ github.workspace }}:/data chainblocks/cbl cbl /data/chains/fragments-tests.edn
+          kill %1
 
       - name: Check Build
         run: |
