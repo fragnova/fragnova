@@ -38,21 +38,21 @@ mod details {
 	}
 
 	pub fn _say_hello_world(data: &str) {
-		lazy_static! {
-			static ref VAR: Mutex<ExternalVar> = Mutex::new(ExternalVar::default());
-			static ref NODE: Node = {
-				let node = Node::default();
-				// let mut chain_var = cbl_env!("(defloop test (Msg \"Hello\"))");
-				let mut chain_var = cbl_env!("(Chain \"test\" :Looped .text (ExpectString) (Log))");
-				let chain: ChainRef = chain_var.try_into().unwrap();
-				chain.set_external("text", &VAR.lock().unwrap());
-				node.schedule(chain);
-				destroyVar(&mut chain_var);
-				node
-			};
-		}
-		VAR.lock().unwrap().update(data);
-		NODE.tick();
+		// lazy_static! {
+		// 	static ref VAR: Mutex<ExternalVar> = Mutex::new(ExternalVar::default());
+		// 	static ref NODE: Node = {
+		// 		let node = Node::default();
+		// 		// let mut chain_var = cbl_env!("(defloop test (Msg \"Hello\"))");
+		// 		let mut chain_var = cbl_env!("(Chain \"test\" :Looped .text (ExpectString) (Log))");
+		// 		let chain: ChainRef = chain_var.try_into().unwrap();
+		// 		chain.set_external("text", &VAR.lock().unwrap());
+		// 		node.schedule(chain);
+		// 		destroyVar(&mut chain_var);
+		// 		node
+		// 	};
+		// }
+		// VAR.lock().unwrap().update(data);
+		// NODE.tick();
 	}
 
 	pub fn _fetch_extrinsic(hash: &Hash) -> Option<Vec<u8>> {
