@@ -56,7 +56,7 @@ fn upload_should_works() {
 		];
 		let data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
@@ -96,7 +96,7 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
@@ -147,7 +147,7 @@ fn upload_fragment_should_not_work_if_not_verified() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
@@ -178,7 +178,7 @@ fn update_should_works() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
@@ -202,17 +202,29 @@ fn update_should_works() {
 			references,
 			None,
 			signature,
-			immutable_data,
+			immutable_data.clone(),
 		));
 
-		let signature: sp_core::ecdsa::Signature = pair.sign(&fragment_hash);
+		let data = Some(immutable_data.clone());
+		let fragment_hash = blake2_256(&immutable_data);
+		let data_hash = blake2_256(&data.encode());
+		let signature_hash = blake2_256(&[&fragment_hash[..], &data_hash[..]].concat());
+
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
+
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
+			.ok()
+			.unwrap();
+		let recover = sp_core::ecdsa::Public(recover);
+
+		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), recover, who));
 
 		assert_ok!(FragmentsPallet::update(
 			Origin::signed(Default::default()),
 			fragment_hash,
 			Some(Compact(123)),
 			signature,
-			Some("0x0155a0e40220".as_bytes().to_vec()),
+			data,
 		));
 
 		assert_eq!(<Fragments<Test>>::get(fragment_hash).unwrap().include_cost, Some(Compact(123)))
@@ -228,7 +240,7 @@ fn update_fragment_should_not_work_if_user_is_unauthorized() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
@@ -304,20 +316,19 @@ fn update_should_not_work_if_not_verified() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
@@ -363,20 +374,19 @@ fn update_should_not_work_if_detached() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
@@ -430,20 +440,19 @@ fn detach_should_not_work_if_no_validator() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
@@ -478,20 +487,19 @@ fn detach_fragment_should_not_work_if_user_is_unauthorized() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
@@ -554,20 +562,19 @@ fn detach_should_work() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
@@ -606,20 +613,19 @@ fn transfer_should_works() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
@@ -673,24 +679,22 @@ fn transfer_should_not_work_if_user_is_unauthorized() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
-
 		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), recover, who));
 
 		assert_ok!(FragmentsPallet::upload(
@@ -723,20 +727,19 @@ fn transfer_should_not_work_if_detached() {
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
 		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Compact(1), staked_amount: Compact(1) };
+			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
 		let references = vec![include_info];
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);
