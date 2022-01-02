@@ -233,15 +233,15 @@ fn update_fragment_should_not_work_if_user_is_unauthorized() {
 
 		let suri = "//Alice";
 		let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
-		let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 		let who: sp_core::sr25519::Public = Default::default();
-		let signature: sp_core::ecdsa::Signature = pair.sign(&msg);
-		let payload = [immutable_data.clone(), references.encode()].concat();
 
-		let fragment_hash = blake2_256(payload.as_slice());
+		let fragment_hash = blake2_256(&immutable_data);
+		let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
 
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
+
+		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 			.ok()
 			.unwrap();
 		let recover = sp_core::ecdsa::Public(recover);

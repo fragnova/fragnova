@@ -95,7 +95,7 @@ pub enum SupportedChains {
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct IncludeInfo {
 	pub fragment_hash: Hash256,
-	pub mutable_index: Compact<u32>,
+	pub mutable_index: Option<Compact<u32>>,
 	pub staked_amount: Compact<u128>,
 }
 
@@ -361,9 +361,12 @@ pub mod pallet {
 				Error::<T>::FragmentDetached
 			);
 
+			let data_hash = blake2_256(&data.encode());
+			let signature_hash = blake2_256(&[&fragment_hash[..], &data_hash[..]].concat());
+
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
-			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &fragment_hash)
+			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 				.ok()
 				.ok_or(Error::<T>::SignatureVerificationFailed)?;
 			let recover = ecdsa::Public(recover);
@@ -382,7 +385,6 @@ pub mod pallet {
 				let fragment = fragment.as_mut().unwrap();
 				if let Some(data) = data {
 					// No failures from here on out
-					let data_hash = blake2_256(&data);
 					fragment.mutable_hash.push(data_hash);
 					// index mutable data for IPFS discovery as well
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
