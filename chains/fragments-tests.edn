@@ -116,7 +116,16 @@
   
   "repo" >> .ipfs-args-gc
   "gc" >> .ipfs-args-gc
-  (Maybe (-> "" (Process.Run "ipfs" .ipfs-args-gc)))
+  (Maybe (-> "" (Process.Run "ipfs" .ipfs-args-gc) nil))
+
+  (Pause 2.0)
+
+  "block" >> .ipfs-args-block
+  "get" >> .ipfs-args-block
+  .frag-cid-str >> .ipfs-args-block
+  "" (Process.Run "ipfs" .ipfs-args-block) (StringToBytes) 
+  (Brotli.Decompress) (FromBytes) (Log)
+  (Assert.Is "immutable & mutable payload" true)
   ;
   )
 
