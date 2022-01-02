@@ -21,17 +21,19 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-        name: Setup
+
+      - name: Setup
         run: |
           sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
           rustup update
           rustup default nightly
           rustup target add wasm32-unknown-unknown
 
-      - name: Run IPFS Test
-        uses: chainblocks/setup-ipfs@master
+      - uses: chainblocks/setup-ipfs@master
         with:
           run_daemon: true
+
+      - name: Run IPFS Test
         run: |
           RUST_LOG=bitswap=trace cargo run -- --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
           sleep 10
