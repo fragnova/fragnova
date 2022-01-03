@@ -5,7 +5,7 @@ apt-get install -y curl
 
 curl -O https://dist.ipfs.io/go-ipfs/v0.10.0/go-ipfs_v0.10.0_linux-amd64.tar.gz
 tar -xvzf go-ipfs_v0.10.0_linux-amd64.tar.gz
-PATH=$PATH:/data/go-ipfs
+export PATH=$PATH:/data/go-ipfs
 
 ipfs init
 ipfs daemon &
