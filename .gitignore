@@ -15,3 +15,7 @@
 # direnv cache
 .direnv
 chainblocks.*log
+
+.lsp*
+.clj*
+*.lock
