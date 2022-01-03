@@ -21,10 +21,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - uses: chainblocks/setup-ipfs@master
-        with:
-          run_daemon: false
-
       - name: Setup
         run: |
           sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
@@ -42,7 +38,7 @@ jobs:
         run: |
           cargo build
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
-          docker run --rm --user root --network host -v /opt/hostedtoolcache/ipfs/0.6.0/x64/go-ipfs:/data/go-ipfs -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
+          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
           kill %1
 
       - name: Check Build
