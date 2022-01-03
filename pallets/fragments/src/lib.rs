@@ -150,7 +150,8 @@ pub mod pallet {
 	pub type UserNonces<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u64>;
 
 	#[pallet::storage]
-	pub type Fragments<T: Config> = StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId>>;
+	pub type Fragments<T: Config> =
+		StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId>>;
 
 	#[pallet::storage]
 	pub type FragmentsList<T: Config> = StorageMap<_, Blake2_128Concat, u128, Hash256>;
@@ -300,8 +301,8 @@ pub mod pallet {
 			ensure!(!<Fragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentExists);
 
 			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -356,7 +357,10 @@ pub mod pallet {
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
-			ensure!(!<DetachedFragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentDetached);
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
 
 			let data_hash = blake2_256(&data.encode());
 			let signature_hash =
@@ -365,8 +369,8 @@ pub mod pallet {
 			<Pallet<T>>::ensure_upload_auth(&signature, &signature_hash)?;
 
 			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -407,7 +411,10 @@ pub mod pallet {
 
 			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
 
-			ensure!(!<DetachedFragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentDetached);
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
 
 			let chain_id = match target_chain {
 				SupportedChains::EthereumMainnet => Some(1u32),
@@ -444,7 +451,8 @@ pub mod pallet {
 							1u64
 						};
 						let msg =
-							[&b"\x19Ethereum Signed Message:\n32"[..], &keccak_256(&payload)[..]].concat();
+							[&b"\x19Ethereum Signed Message:\n32"[..], &keccak_256(&payload)[..]]
+								.concat();
 						let msg = keccak_256(&msg);
 						// Sign the payload with a trusted validation key
 						let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &msg[..]);
@@ -488,7 +496,10 @@ pub mod pallet {
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
-			ensure!(!<DetachedFragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentDetached);
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
 
 			// update fragment
 			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
@@ -504,7 +515,10 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn ensure_upload_auth(signature: &ecdsa::Signature, signature_hash: &[u8; 32]) -> DispatchResult {
+		fn ensure_upload_auth(
+			signature: &ecdsa::Signature,
+			signature_hash: &[u8; 32],
+		) -> DispatchResult {
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
 			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
