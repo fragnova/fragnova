@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "std")]
-extern crate chainblocks;
+// #[cfg(feature = "std")]
+// extern crate chainblocks;
 
 #[cfg(feature = "std")]
 #[macro_use]
@@ -24,11 +24,11 @@ mod details {
 
 	use std::{convert::TryInto, sync::Mutex};
 
-	use chainblocks::{
-		cbl_env,
-		core::destroyVar,
-		types::{ChainRef, ExternalVar, Node},
-	};
+	// use chainblocks::{
+	// 	cbl_env,
+	// 	core::destroyVar,
+	// 	types::{ChainRef, ExternalVar, Node},
+	// };
 
 	pub fn init<F>(fetch_extrinsic: F)
 	where
