@@ -92,6 +92,7 @@
 
   .immutable (Hash.Blake2-256) >= .frag-cid >> .frag-hash-payload
   .no-refs >> .frag-hash-payload
+  [0] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
   .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Charlie") (AppendTo .payload)
 
   [.immutable-len] (Substrate.Encode ["c"]) (AppendTo .payload)
