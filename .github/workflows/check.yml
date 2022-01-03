@@ -42,7 +42,7 @@ jobs:
         run: |
           cargo build
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
-          docker run --rm --user root --network host -v /opt/hostedtoolcache/ipfs/0.6.0/x64/go-ipfs:/data/go-ipfs -v ${{ github.workspace }}:/data chainblocks/cbl sh -c "PATH=$PATH:/data/go-ipfs cbl /data/chains/fragments-tests.edn"
+          docker run --rm --user root --network host -v /opt/hostedtoolcache/ipfs/0.6.0/x64/go-ipfs:/data/go-ipfs -v ${{ github.workspace }}:/data chainblocks/cbl sh -c "PATH=$PATH:/data/go-ipfs ipfs init && cbl /data/chains/fragments-tests.edn"
           kill %1
 
       - name: Check Build
