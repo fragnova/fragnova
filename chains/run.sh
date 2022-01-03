@@ -1,13 +1,15 @@
 #/bin/bash
 
 apt-get update
-apt-get install -y curl
+apt-get install -y wget
 
-curl -O https://dist.ipfs.io/go-ipfs/v0.10.0/go-ipfs_v0.10.0_linux-amd64.tar.gz
+cd /data/chains
+
+wget -q https://dist.ipfs.io/go-ipfs/v0.10.0/go-ipfs_v0.10.0_linux-amd64.tar.gz
 tar -xvzf go-ipfs_v0.10.0_linux-amd64.tar.gz
-export PATH=$PATH:/data/go-ipfs
+export PATH=$PATH:/data/chains/go-ipfs
 
 ipfs init
 ipfs daemon &
 
-cbl /data/chains/fragments-tests.edn
+cbl fragments-tests.edn

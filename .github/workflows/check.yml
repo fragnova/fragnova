@@ -34,12 +34,12 @@ jobs:
           rustup update stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
-      # - name: Run IPFS Test
-      #   run: |
-      #     cargo build
-      #     RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
-      #     docker run --rm --user root --network host -p 4001/tcp -p 4001/udp -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
-      #     kill %1
+      - name: Run IPFS Test
+        run: |
+          cargo build
+          RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
+          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
+          kill %1
 
       - name: Check Build
         run: |
