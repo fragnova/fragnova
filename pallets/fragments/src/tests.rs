@@ -6,7 +6,7 @@ use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;
 use sp_core::Pair;
-use sp_io::{crypto as Crypto, hashing::blake2_256};
+use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
 use std::sync::Arc;
 
@@ -17,33 +17,21 @@ fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature{
 	pair.sign(&msg)
 }
 
-fn initial_set_up_and_get_signature() -> sp_core::ecdsa::Signature {
-	let data = DATA.as_bytes().to_vec();
-	let include_info =
-		IncludeInfo { fragment_hash: FRAGMENT_HASH, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
-	let references = vec![include_info];
-
-	let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
+fn initial_set_up_and_get_signature(data: Vec<u8>, references: Vec<IncludeInfo>) -> sp_core::ecdsa::Signature {
+	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
 
 	let fragment_hash = blake2_256(&data);
-	let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
-
 	let who: sp_core::sr25519::Public = Default::default();
-	let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
-
-	let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
-		.ok()
-		.unwrap();
-	let recover = sp_core::ecdsa::Public(recover);
-
-	assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), recover, who));
+	let signature: sp_core::ecdsa::Signature = pair.sign(&[&fragment_hash[..], &references.encode()].concat());
+	assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public(), who));
 	signature
 }
 
 fn initial_upload_and_get_signature() -> sp_core::ecdsa::Signature {
 	let data = DATA.as_bytes().to_vec();
-	let signature = initial_set_up_and_get_signature();
 	let references = vec![IncludeInfo { fragment_hash: FRAGMENT_HASH, mutable_index: Some(Compact(1)), staked_amount: Compact(1) }];
+	let signature = initial_set_up_and_get_signature(data.clone(), references.clone());
+
 
 	assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
@@ -97,8 +85,9 @@ fn upload_should_works() {
 	new_test_ext().execute_with(|| {
 
 		let data = DATA.as_bytes().to_vec();
-		let signature = initial_set_up_and_get_signature();
 		let references = vec![IncludeInfo { fragment_hash: FRAGMENT_HASH, mutable_index: Some(Compact(1)), staked_amount: Compact(1) }];
+
+		let signature = initial_set_up_and_get_signature(data.clone(), references.clone());
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
@@ -168,17 +157,10 @@ fn update_should_works() {
 		let data = Some(immutable_data.clone());
 		let fragment_hash = blake2_256(&immutable_data);
 		let data_hash = blake2_256(&data.encode());
-		let signature_hash = blake2_256(&[&fragment_hash[..], &data_hash[..]].concat());
-
-		let signature: sp_core::ecdsa::Signature = pair.sign(&signature_hash);
-
-		let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
-			.ok()
-			.unwrap();
-		let recover = sp_core::ecdsa::Public(recover);
+		let signature: sp_core::ecdsa::Signature = pair.sign(&[&fragment_hash[..], &data_hash[..]].concat());
 		let who: sp_core::sr25519::Public = Default::default();
 
-		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), recover, who));
+		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public(), who));
 
 		assert_ok!(FragmentsPallet::update(
 			Origin::signed(Default::default()),
