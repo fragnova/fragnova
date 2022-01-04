@@ -147,6 +147,9 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
+	pub type UserNonces<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u64>;
+
+	#[pallet::storage]
 	pub type Fragments<T: Config> =
 		StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId>>;
 
@@ -154,21 +157,20 @@ pub mod pallet {
 	pub type FragmentsList<T: Config> = StorageMap<_, Blake2_128Concat, u128, Hash256>;
 
 	#[pallet::storage]
+	pub type FragmentsListSize<T: Config> = StorageValue<_, u128, ValueQuery>;
+
+	#[pallet::storage]
 	pub type DetachedFragments<T: Config> = StorageMap<_, Blake2_128Concat, Hash256, ExportData>;
 
 	#[pallet::storage]
-	pub type FragmentsNonces<T: Config> =
+	pub type DetachNonces<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, Hash256, Blake2_128Concat, SupportedChains, u64>;
-
-	#[pallet::storage]
-	pub type FragmentsListSize<T: Config> = StorageValue<_, u128, ValueQuery>;
 
 	#[pallet::storage]
 	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type UploadAuthorities<T: Config> =
-		StorageMap<_, Blake2_128Concat, ecdsa::Public, T::AccountId>;
+	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -243,16 +245,14 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn add_upload_auth(
-			origin: OriginFor<T>,
-			public: ecdsa::Public,
-			account: T::AccountId,
-		) -> DispatchResult {
+		pub fn add_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
 			log::debug!("New upload auth: {:?}", public);
 
-			<UploadAuthorities<T>>::insert(public, account);
+			<UploadAuthorities<T>>::mutate(|validators| {
+				validators.insert(public);
+			});
 
 			Ok(())
 		}
@@ -263,7 +263,9 @@ pub mod pallet {
 
 			log::debug!("New upload auth: {:?}", public);
 
-			<UploadAuthorities<T>>::remove(public);
+			<UploadAuthorities<T>>::mutate(|validators| {
+				validators.remove(&public);
+			});
 
 			Ok(())
 		}
@@ -284,11 +286,14 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			let nonce = <UserNonces<T>>::get(who.clone()).unwrap_or(0);
+
 			// hash the immutable data, this is also the unique fragment id
 			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
 			// "0x0155a0e40220"))
 			let fragment_hash = blake2_256(&data);
-			let signature_hash = blake2_256(&[&fragment_hash[..], &references.encode()].concat());
+			let signature_hash =
+				blake2_256(&[&fragment_hash[..], &references.encode(), &nonce.encode()].concat());
 
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
@@ -297,7 +302,7 @@ pub mod pallet {
 				.ok_or(Error::<T>::SignatureVerificationFailed)?;
 			let recover = ecdsa::Public(recover);
 			ensure!(
-				<UploadAuthorities<T>>::contains_key(recover),
+				<UploadAuthorities<T>>::get().contains(&recover),
 				Error::<T>::SignatureVerificationFailed
 			);
 
@@ -315,7 +320,7 @@ pub mod pallet {
 				mutable_hash: vec![],
 				include_cost,
 				creator: who.clone(),
-				owner: who,
+				owner: who.clone(),
 				references,
 			};
 
@@ -331,6 +336,9 @@ pub mod pallet {
 
 			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, data.len() as u32, fragment_hash);
+
+			// advance nonces
+			<UserNonces<T>>::insert(who, nonce + 1);
 
 			// also emit event
 			Self::deposit_event(Event::Upload(fragment_hash));
@@ -352,6 +360,8 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			let nonce = <UserNonces<T>>::get(who.clone()).unwrap_or(0);
+
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
@@ -362,7 +372,8 @@ pub mod pallet {
 			);
 
 			let data_hash = blake2_256(&data.encode());
-			let signature_hash = blake2_256(&[&fragment_hash[..], &data_hash[..]].concat());
+			let signature_hash =
+				blake2_256(&[&fragment_hash[..], &data_hash[..], &nonce.encode()].concat());
 
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
@@ -371,7 +382,7 @@ pub mod pallet {
 				.ok_or(Error::<T>::SignatureVerificationFailed)?;
 			let recover = ecdsa::Public(recover);
 			ensure!(
-				<UploadAuthorities<T>>::contains_key(recover),
+				<UploadAuthorities<T>>::get().contains(&recover),
 				Error::<T>::SignatureVerificationFailed
 			);
 
@@ -391,6 +402,9 @@ pub mod pallet {
 				}
 				fragment.include_cost = include_cost;
 			});
+
+			// advance nonces
+			<UserNonces<T>>::insert(who, nonce + 1);
 
 			// also emit event
 			Self::deposit_event(Event::Update(fragment_hash));
@@ -443,7 +457,7 @@ pub mod pallet {
 						let mut payload = fragment_hash.encode();
 						payload.extend(chain_id.encode());
 						payload.extend(target_account.clone());
-						let nonce = <FragmentsNonces<T>>::get(&fragment_hash, target_chain.clone());
+						let nonce = <DetachNonces<T>>::get(&fragment_hash, target_chain.clone());
 						let nonce = if let Some(nonce) = nonce {
 							// add 1, remote will add 1
 							let nonce = nonce.checked_add(1).unwrap();
@@ -473,7 +487,7 @@ pub mod pallet {
 			}?;
 
 			// Update nonce
-			<FragmentsNonces<T>>::insert(&fragment_hash, target_chain.clone(), nonce);
+			<DetachNonces<T>>::insert(&fragment_hash, target_chain.clone(), nonce);
 
 			let data = ExportData { chain: target_chain, owner: target_account, nonce };
 
