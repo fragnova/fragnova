@@ -10,35 +10,43 @@ use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
 use std::sync::Arc;
 
-fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature{
+fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
 	let msg = sp_core::keccak_256(b"this should be a hashed message");
 
 	pair.sign(&msg)
 }
 
-fn initial_set_up_and_get_signature(data: Vec<u8>, references: Vec<IncludeInfo>, nonce: u64) -> sp_core::ecdsa::Signature {
+fn initial_set_up_and_get_signature(
+	data: Vec<u8>,
+	references: Vec<IncludeInfo>,
+	nonce: u64,
+) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
 
 	let fragment_hash = blake2_256(&data);
-	let signature: sp_core::ecdsa::Signature = pair.sign(&[&fragment_hash[..], &references.encode(), &nonce.encode()].concat());
+	let signature: sp_core::ecdsa::Signature =
+		pair.sign(&[&fragment_hash[..], &references.encode(), &nonce.encode()].concat());
 	assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
 	signature
 }
 
 fn initial_upload_and_get_signature() -> sp_core::ecdsa::Signature {
 	let data = DATA.as_bytes().to_vec();
-	let references = vec![IncludeInfo { fragment_hash: FRAGMENT_HASH, mutable_index: Some(Compact(1)), staked_amount: Compact(1) }];
+	let references = vec![IncludeInfo {
+		fragment_hash: FRAGMENT_HASH,
+		mutable_index: Some(Compact(1)),
+		staked_amount: Compact(1),
+	}];
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
-
 	assert_ok!(FragmentsPallet::upload(
-			Origin::signed(Default::default()),
-			references,
-			None,
-			signature.clone(),
-			data,
-		));
+		Origin::signed(Default::default()),
+		references,
+		None,
+		signature.clone(),
+		data,
+	));
 	signature
 }
 
@@ -81,9 +89,12 @@ fn del_upload_auth_should_works() {
 #[test]
 fn upload_should_works() {
 	new_test_ext().execute_with(|| {
-
 		let data = DATA.as_bytes().to_vec();
-		let references = vec![IncludeInfo { fragment_hash: FRAGMENT_HASH, mutable_index: Some(Compact(1)), staked_amount: Compact(1) }];
+		let references = vec![IncludeInfo {
+			fragment_hash: FRAGMENT_HASH,
+			mutable_index: Some(Compact(1)),
+			staked_amount: Compact(1),
+		}];
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
@@ -104,7 +115,11 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
 		initial_upload_and_get_signature();
-		let references = vec![IncludeInfo { fragment_hash: FRAGMENT_HASH, mutable_index: Some(Compact(1)), staked_amount: Compact(1) }];
+		let references = vec![IncludeInfo {
+			fragment_hash: FRAGMENT_HASH,
+			mutable_index: Some(Compact(1)),
+			staked_amount: Compact(1),
+		}];
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
 		assert_noop!(
@@ -128,8 +143,11 @@ fn upload_fragment_should_not_work_if_not_verified() {
 			179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
 		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
-		let include_info =
-			IncludeInfo { fragment_hash, mutable_index: Some(Compact(1)), staked_amount: Compact(1) };
+		let include_info = IncludeInfo {
+			fragment_hash,
+			mutable_index: Some(Compact(1)),
+			staked_amount: Compact(1),
+		};
 		let references = vec![include_info];
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
 
@@ -156,8 +174,9 @@ fn update_should_works() {
 		let data = Some(immutable_data.clone());
 		let fragment_hash = blake2_256(&immutable_data);
 		let data_hash = blake2_256(&data.encode());
-		let nonce:u64 = 1;
-		let signature: sp_core::ecdsa::Signature = pair.sign(&[&fragment_hash[..], &data_hash[..], &nonce.encode()].concat());
+		let nonce: u64 = 1;
+		let signature: sp_core::ecdsa::Signature =
+			pair.sign(&[&fragment_hash[..], &data_hash[..], &nonce.encode()].concat());
 		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
 
 		assert_ok!(FragmentsPallet::update(
@@ -373,7 +392,6 @@ fn transfer_should_works() {
 #[test]
 fn transfer_should_not_work_if_fragment_not_found() {
 	new_test_ext().execute_with(|| {
-
 		let (pair, _) = sp_core::sr25519::Pair::generate();
 
 		assert_noop!(

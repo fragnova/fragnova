@@ -12,7 +12,7 @@ mod benchmarking;
 mod weights;
 
 use core::slice::Iter;
-use sp_core::{crypto::KeyTypeId, ecdsa};
+use sp_core::{crypto::KeyTypeId, ecdsa, H160, U256};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -93,6 +93,20 @@ pub enum SupportedChains {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum LinkedAsset {
+	// Ethereum (EIP155 Chain ID, ERC721 Contract address, Token ID)
+	EvmErc721(U256, H160, U256),
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum FragmentOwner<TAccountId> {
+	// A regular account on this chain
+	User(TAccountId),
+	// An external asset not on this chain
+	ExternalAsset(LinkedAsset),
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct IncludeInfo {
 	pub fragment_hash: Hash256,
 	pub mutable_index: Option<Compact<u32>>,
@@ -109,7 +123,7 @@ pub struct Fragment<TAccountId> {
 	/// The original creator of the fragment.
 	pub creator: TAccountId,
 	/// The current owner of the fragment.
-	pub owner: TAccountId,
+	pub owner: FragmentOwner<TAccountId>,
 	/// References to other fragments.
 	/// Hash, mutable index, include cost.
 	pub references: Vec<IncludeInfo>,
@@ -277,6 +291,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			// we store this in the state as well
 			references: Vec<IncludeInfo>,
+			linked_asset: Option<LinkedAsset>,
 			include_cost: Option<Compact<u128>>,
 			signature: ecdsa::Signature,
 			// let data come last as we record this size in blocks db (storage chain)
@@ -292,8 +307,15 @@ pub mod pallet {
 			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
 			// "0x0155a0e40220"))
 			let fragment_hash = blake2_256(&data);
-			let signature_hash =
-				blake2_256(&[&fragment_hash[..], &references.encode(), &nonce.encode()].concat());
+			let signature_hash = blake2_256(
+				&[
+					&fragment_hash[..],
+					&references.encode(),
+					&linked_asset.encode(),
+					&nonce.encode(),
+				]
+				.concat(),
+			);
 
 			<Pallet<T>>::ensure_upload_auth(&signature, &signature_hash)?;
 
@@ -311,7 +333,11 @@ pub mod pallet {
 				mutable_hash: vec![],
 				include_cost,
 				creator: who.clone(),
-				owner: who.clone(),
+				owner: if let Some(link) = linked_asset {
+					FragmentOwner::ExternalAsset(link)
+				} else {
+					FragmentOwner::User(who.clone())
+				},
 				references,
 			};
 
@@ -356,7 +382,14 @@ pub mod pallet {
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
-			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
+			let owner = match fragment.owner {
+				FragmentOwner::User(owner) => owner,
+				FragmentOwner::ExternalAsset(link) => {
+					return Err(Error::<T>::Unauthorized.into());
+				}
+			};
+
+			ensure!(owner == who, Error::<T>::Unauthorized);
 			ensure!(
 				!<DetachedFragments<T>>::contains_key(&fragment_hash),
 				Error::<T>::FragmentDetached
