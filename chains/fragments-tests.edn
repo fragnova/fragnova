@@ -132,7 +132,8 @@
   "gc" >> .ipfs-args-gc
   (Maybe (-> "" (Process.Run "ipfs" .ipfs-args-gc) nil))
 
-  (Pause 2.0)
+  ; not ideal but we need to wait transaction is done and CI can be slow
+  (Pause 10.0)
 
   "block" >> .ipfs-args-block
   "get" >> .ipfs-args-block
