@@ -10,6 +10,11 @@ use sp_runtime::{
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+pub const DATA: &str = "0x0155a0e40220";
+pub const FRAGMENT_HASH: Hash256 = [
+30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
+179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
+];
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
