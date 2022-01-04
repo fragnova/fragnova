@@ -19,7 +19,7 @@
          (->
           (Math.Dec .tries) 
           (Pause 2.0)))
-  .tries (Assert.IsNot 0 true)
+  .tries (Assert.IsNot 0)
   (Log "Waiting for port"))
 
 (defchain make-calldata
@@ -138,12 +138,12 @@
   .frag-cid-str >> .ipfs-args-block
   "" (Process.Run "ipfs" .ipfs-args-block) (StringToBytes)
   (Brotli.Decompress) (FromBytes) (Log)
-  (Assert.Is "immutable & mutable payload" true)
+  (Assert.Is "immutable & mutable payload")
   ;
   )
 
 (schedule root wait-port)
-(run root 0.1)
+(if (run root 0.1) nil (throw "wait-port failed"))
 
 (schedule root upload)
-(run root 0.1)
+(if (run root 0.1) nil (throw "upload failed"))
