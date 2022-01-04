@@ -107,8 +107,6 @@
 
   "//Charlie" (ECDSA.PublicKey true) >= .payload2
   (ToHex) (Log "charlie-key")
-  "//Charlie" (Sr25519.PublicKey) (Substrate.AccountId) = .charlie-account
-  [.charlie-account] (Substrate.Encode ["a"]) (AppendTo .payload2)
 
   [fragments-index add-upload-auth-index .payload2] (Do make-calldata) = .call1
   [sudo-index sudo-call .call1] (Do make-calldata) = .sudo-call1
@@ -133,7 +131,7 @@
   (Maybe (-> "" (Process.Run "ipfs" .ipfs-args-gc) nil))
 
   ; not ideal but we need to wait transaction is done and CI can be slow
-  (Pause 10.0)
+  (Pause 5.0)
 
   "block" >> .ipfs-args-block
   "get" >> .ipfs-args-block
