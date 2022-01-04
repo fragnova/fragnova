@@ -17,20 +17,19 @@ fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature{
 	pair.sign(&msg)
 }
 
-fn initial_set_up_and_get_signature(data: Vec<u8>, references: Vec<IncludeInfo>) -> sp_core::ecdsa::Signature {
+fn initial_set_up_and_get_signature(data: Vec<u8>, references: Vec<IncludeInfo>, nonce: u64) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
 
 	let fragment_hash = blake2_256(&data);
-	let who: sp_core::sr25519::Public = Default::default();
-	let signature: sp_core::ecdsa::Signature = pair.sign(&[&fragment_hash[..], &references.encode()].concat());
-	assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public(), who));
+	let signature: sp_core::ecdsa::Signature = pair.sign(&[&fragment_hash[..], &references.encode(), &nonce.encode()].concat());
+	assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
 	signature
 }
 
 fn initial_upload_and_get_signature() -> sp_core::ecdsa::Signature {
 	let data = DATA.as_bytes().to_vec();
 	let references = vec![IncludeInfo { fragment_hash: FRAGMENT_HASH, mutable_index: Some(Compact(1)), staked_amount: Compact(1) }];
-	let signature = initial_set_up_and_get_signature(data.clone(), references.clone());
+	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
 
 	assert_ok!(FragmentsPallet::upload(
@@ -64,10 +63,9 @@ fn del_eth_auth_should_works() {
 #[test]
 fn add_upload_auth_should_works() {
 	new_test_ext().execute_with(|| {
-		let who: sp_core::sr25519::Public = Default::default();
 		let validator: sp_core::ecdsa::Public = Default::default();
-		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), validator.clone(), who));
-		assert!(UploadAuthorities::<Test>::contains_key(&validator));
+		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), validator.clone()));
+		assert!(UploadAuthorities::<Test>::get().contains(&validator));
 	});
 }
 
@@ -76,7 +74,7 @@ fn del_upload_auth_should_works() {
 	new_test_ext().execute_with(|| {
 		let validator: sp_core::ecdsa::Public = Default::default();
 		assert_ok!(FragmentsPallet::del_upload_auth(Origin::root(), validator.clone()));
-		assert!(!UploadAuthorities::<Test>::contains_key(&validator));
+		assert!(!UploadAuthorities::<Test>::get().contains(&validator));
 	});
 }
 
@@ -87,7 +85,7 @@ fn upload_should_works() {
 		let data = DATA.as_bytes().to_vec();
 		let references = vec![IncludeInfo { fragment_hash: FRAGMENT_HASH, mutable_index: Some(Compact(1)), staked_amount: Compact(1) }];
 
-		let signature = initial_set_up_and_get_signature(data.clone(), references.clone());
+		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
@@ -105,9 +103,10 @@ fn upload_should_works() {
 fn upload_should_not_works_if_fragment_hash_exists() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
-		let signature = initial_upload_and_get_signature();
+		initial_upload_and_get_signature();
 		let references = vec![IncludeInfo { fragment_hash: FRAGMENT_HASH, mutable_index: Some(Compact(1)), staked_amount: Compact(1) }];
 
+		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
 		assert_noop!(
 			FragmentsPallet::upload(
 				Origin::signed(Default::default()),
@@ -157,10 +156,9 @@ fn update_should_works() {
 		let data = Some(immutable_data.clone());
 		let fragment_hash = blake2_256(&immutable_data);
 		let data_hash = blake2_256(&data.encode());
-		let signature: sp_core::ecdsa::Signature = pair.sign(&[&fragment_hash[..], &data_hash[..]].concat());
-		let who: sp_core::sr25519::Public = Default::default();
-
-		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public(), who));
+		let nonce:u64 = 1;
+		let signature: sp_core::ecdsa::Signature = pair.sign(&[&fragment_hash[..], &data_hash[..], &nonce.encode()].concat());
+		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
 
 		assert_ok!(FragmentsPallet::update(
 			Origin::signed(Default::default()),
