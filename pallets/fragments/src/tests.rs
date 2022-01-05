@@ -1,7 +1,4 @@
-use crate::{
-	mock::*, Error, EthereumAuthorities, Fragments, IncludeInfo, SupportedChains,
-	UploadAuthorities, KEY_TYPE,
-};
+use crate::{mock::*, Error, EthereumAuthorities, Fragments, IncludeInfo, SupportedChains, UploadAuthorities, KEY_TYPE, AuthData, LinkedAsset, FragmentOwner};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;
@@ -25,13 +22,14 @@ fn initial_set_up_and_get_signature(
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
 
 	let fragment_hash = blake2_256(&data);
+	let linked_asset: Option<LinkedAsset> = None;
 	let signature: sp_core::ecdsa::Signature =
-		pair.sign(&[&fragment_hash[..], &references.encode(), &nonce.encode()].concat());
+		pair.sign(&[&fragment_hash[..], &references.encode(), &linked_asset.encode(), &nonce.encode(),&1.encode()].concat());
 	assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
 	signature
 }
 
-fn initial_upload_and_get_signature() -> sp_core::ecdsa::Signature {
+fn initial_upload_and_get_signature() -> AuthData {
 	let data = DATA.as_bytes().to_vec();
 	let references = vec![IncludeInfo {
 		fragment_hash: FRAGMENT_HASH,
@@ -39,15 +37,20 @@ fn initial_upload_and_get_signature() -> sp_core::ecdsa::Signature {
 		staked_amount: Compact(1),
 	}];
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
+	let auth_data = AuthData{
+		signature,
+		block: 1
+	};
 
 	assert_ok!(FragmentsPallet::upload(
 		Origin::signed(Default::default()),
 		references,
 		None,
-		signature.clone(),
+		None,
+		auth_data.clone(),
 		data,
 	));
-	signature
+	auth_data
 }
 
 #[test]
@@ -98,11 +101,17 @@ fn upload_should_works() {
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
+		let auth_data = AuthData{
+			signature,
+			block: 1
+		};
+
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
 			references,
 			None,
-			signature,
+			None,
+			auth_data,
 			data,
 		));
 
@@ -122,12 +131,17 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 		}];
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
+		let auth_data = AuthData{
+			signature,
+			block: 1
+		};
 		assert_noop!(
 			FragmentsPallet::upload(
 				Origin::signed(Default::default()),
 				references,
 				None,
-				signature,
+				None,
+				auth_data,
 				data,
 			),
 			Error::<Test>::FragmentExists
@@ -150,16 +164,21 @@ fn upload_fragment_should_not_work_if_not_verified() {
 		};
 		let references = vec![include_info];
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
+		let auth_data = AuthData{
+			signature,
+			block: 1
+		};
 
 		assert_noop!(
 			FragmentsPallet::upload(
 				Origin::signed(Default::default()),
 				references,
 				None,
-				signature,
+				None,
+				auth_data,
 				immutable_data,
 			),
-			Error::<Test>::SignatureVerificationFailed
+			Error::<Test>::VerificationFailed
 		);
 	});
 }
@@ -176,14 +195,18 @@ fn update_should_works() {
 		let data_hash = blake2_256(&data.encode());
 		let nonce: u64 = 1;
 		let signature: sp_core::ecdsa::Signature =
-			pair.sign(&[&fragment_hash[..], &data_hash[..], &nonce.encode()].concat());
+			pair.sign(&[&fragment_hash[..], &data_hash[..], &nonce.encode(),&1.encode()].concat());
 		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
 
+		let auth_data = AuthData{
+			signature,
+			block: 1
+		};
 		assert_ok!(FragmentsPallet::update(
 			Origin::signed(Default::default()),
 			fragment_hash,
 			Some(Compact(123)),
-			signature,
+			auth_data,
 			data,
 		));
 
@@ -195,7 +218,7 @@ fn update_should_works() {
 fn update_fragment_should_not_work_if_user_is_unauthorized() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
-		let signature = initial_upload_and_get_signature();
+		let auth_data = initial_upload_and_get_signature();
 
 		let (pair, _) = sp_core::sr25519::Pair::generate();
 
@@ -204,7 +227,7 @@ fn update_fragment_should_not_work_if_user_is_unauthorized() {
 				Origin::signed(pair.public()),
 				FRAGMENT_HASH,
 				Some(Compact(123)),
-				signature,
+				auth_data,
 				Some(data),
 			),
 			Error::<Test>::Unauthorized
@@ -219,12 +242,16 @@ fn update_fragment_should_not_work_if_fragment_not_found() {
 
 		let fragment_hash = blake2_256(immutable_data.as_slice());
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
+		let auth_data = AuthData{
+			signature,
+			block: 1
+		};
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(Default::default()),
 				fragment_hash,
 				Some(Compact(123)),
-				signature,
+				auth_data,
 				Some(immutable_data),
 			),
 			Error::<Test>::FragmentNotFound
@@ -239,16 +266,20 @@ fn update_should_not_work_if_not_verified() {
 		initial_upload_and_get_signature();
 
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Bob");
+		let auth_data = AuthData{
+			signature,
+			block: 1
+		};
 
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(Default::default()),
 				FRAGMENT_HASH,
 				Some(Compact(123)),
-				signature,
+				auth_data,
 				Some(data),
 			),
-			Error::<Test>::SignatureVerificationFailed
+			Error::<Test>::VerificationFailed
 		);
 	});
 }
@@ -262,7 +293,7 @@ fn update_should_not_work_if_detached() {
 	t.execute_with(|| {
 		let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
 		let data = DATA.as_bytes().to_vec();
-		let signature = initial_upload_and_get_signature();
+		let auth_data = initial_upload_and_get_signature();
 
 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
 		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
@@ -282,7 +313,7 @@ fn update_should_not_work_if_detached() {
 				Origin::signed(Default::default()),
 				FRAGMENT_HASH,
 				Some(Compact(123)),
-				signature,
+				auth_data,
 				Some(data),
 			),
 			Error::<Test>::FragmentDetached
@@ -385,7 +416,7 @@ fn transfer_should_works() {
 			pair.public()
 		));
 
-		assert_eq!(<Fragments<Test>>::get(FRAGMENT_HASH).unwrap().owner, pair.public())
+		assert_eq!(<Fragments<Test>>::get(FRAGMENT_HASH).unwrap().owner, FragmentOwner::User(pair.public()));
 	});
 }
 
