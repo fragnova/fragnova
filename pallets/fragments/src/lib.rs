@@ -12,7 +12,7 @@ mod benchmarking;
 mod weights;
 
 use core::slice::Iter;
-use sp_core::{crypto::KeyTypeId, ecdsa};
+use sp_core::{crypto::KeyTypeId, ecdsa, H160, U256};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -69,7 +69,6 @@ use sp_chainblocks::Hash256;
 
 use frame_system::offchain::{AppCrypto, CreateSignedTransaction, SignedPayload, SigningTypes};
 
-/// Payload used by this example crate to hold price
 /// data required to submit a transaction.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct FragmentValidation<Public, BlockNumber> {
@@ -93,10 +92,37 @@ pub enum SupportedChains {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum LinkSource {
+	// Generally we just store this data, we don't verify it as we assume auth service did it.
+	// (Link signature, Linked block number, EIP155 Chain ID)
+	Evm(ecdsa::Signature, u64, U256),
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum LinkedAsset {
+	// Ethereum (ERC721 Contract address, Token ID, Link source)
+	Erc721(H160, U256, LinkSource),
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum FragmentOwner<TAccountId> {
+	// A regular account on this chain
+	User(TAccountId),
+	// An external asset not on this chain
+	ExternalAsset(LinkedAsset),
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct IncludeInfo {
 	pub fragment_hash: Hash256,
 	pub mutable_index: Option<Compact<u32>>,
 	pub staked_amount: Compact<u128>,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct AuthData {
+	pub signature: ecdsa::Signature,
+	pub block: u32,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
@@ -109,7 +135,7 @@ pub struct Fragment<TAccountId> {
 	/// The original creator of the fragment.
 	pub creator: TAccountId,
 	/// The current owner of the fragment.
-	pub owner: TAccountId,
+	pub owner: FragmentOwner<TAccountId>,
 	/// References to other fragments.
 	/// Hash, mutable index, include cost.
 	pub references: Vec<IncludeInfo>,
@@ -197,8 +223,6 @@ pub mod pallet {
 		UnsupportedChain,
 		/// Fragment is already detached
 		FragmentDetached,
-		/// Fragment is not verified yet or failed verification!
-		FragmentNotVerified,
 		/// Not the owner of the fragment
 		Unauthorized,
 		/// No Validators are present
@@ -206,7 +230,7 @@ pub mod pallet {
 		/// Failed to sign message
 		SigningFailed,
 		/// Signature verification failed
-		SignatureVerificationFailed,
+		VerificationFailed,
 		/// The provided nonce override is too big
 		NonceMismatch,
 	}
@@ -277,8 +301,9 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			// we store this in the state as well
 			references: Vec<IncludeInfo>,
+			linked_asset: Option<LinkedAsset>,
 			include_cost: Option<Compact<u128>>,
-			signature: ecdsa::Signature,
+			auth: AuthData,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -292,10 +317,18 @@ pub mod pallet {
 			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
 			// "0x0155a0e40220"))
 			let fragment_hash = blake2_256(&data);
-			let signature_hash =
-				blake2_256(&[&fragment_hash[..], &references.encode(), &nonce.encode()].concat());
+			let signature_hash = blake2_256(
+				&[
+					&fragment_hash[..],
+					&references.encode(),
+					&linked_asset.encode(),
+					&nonce.encode(),
+					&auth.block.encode(),
+				]
+				.concat(),
+			);
 
-			<Pallet<T>>::ensure_upload_auth(&signature, &signature_hash)?;
+			<Pallet<T>>::ensure_upload_auth(&auth, &signature_hash)?;
 
 			// make sure the fragment does not exist already!
 			ensure!(!<Fragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentExists);
@@ -311,7 +344,11 @@ pub mod pallet {
 				mutable_hash: vec![],
 				include_cost,
 				creator: who.clone(),
-				owner: who.clone(),
+				owner: if let Some(link) = linked_asset {
+					FragmentOwner::ExternalAsset(link)
+				} else {
+					FragmentOwner::User(who.clone())
+				},
 				references,
 			};
 
@@ -345,7 +382,7 @@ pub mod pallet {
 			// fragment hash we want to update
 			fragment_hash: Hash256,
 			include_cost: Option<Compact<u128>>,
-			signature: ecdsa::Signature,
+			auth: AuthData,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Option<Vec<u8>>,
 		) -> DispatchResult {
@@ -356,17 +393,25 @@ pub mod pallet {
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
-			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
+			match fragment.owner {
+				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+				FragmentOwner::ExternalAsset(_ext_asset) =>
+				// We don't allow updating external assets
+					ensure!(false, Error::<T>::Unauthorized),
+			};
+
 			ensure!(
 				!<DetachedFragments<T>>::contains_key(&fragment_hash),
 				Error::<T>::FragmentDetached
 			);
 
 			let data_hash = blake2_256(&data.encode());
-			let signature_hash =
-				blake2_256(&[&fragment_hash[..], &data_hash[..], &nonce.encode()].concat());
+			let signature_hash = blake2_256(
+				&[&fragment_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()]
+					.concat(),
+			);
 
-			<Pallet<T>>::ensure_upload_auth(&signature, &signature_hash)?;
+			<Pallet<T>>::ensure_upload_auth(&auth, &signature_hash)?;
 
 			// we need this to index transactions
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
@@ -409,7 +454,12 @@ pub mod pallet {
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
-			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
+			match fragment.owner {
+				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+				FragmentOwner::ExternalAsset(_ext_asset) =>
+				// We don't allow updating external assets
+					ensure!(false, Error::<T>::Unauthorized),
+			};
 
 			ensure!(
 				!<DetachedFragments<T>>::contains_key(&fragment_hash),
@@ -495,7 +545,13 @@ pub mod pallet {
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
-			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
+			match fragment.owner {
+				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+				FragmentOwner::ExternalAsset(_ext_asset) =>
+				// We don't allow updating external assets
+					ensure!(false, Error::<T>::Unauthorized),
+			};
+
 			ensure!(
 				!<DetachedFragments<T>>::contains_key(&fragment_hash),
 				Error::<T>::FragmentDetached
@@ -504,7 +560,7 @@ pub mod pallet {
 			// update fragment
 			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
 				let fragment = fragment.as_mut().unwrap();
-				fragment.owner = new_owner.clone();
+				fragment.owner = FragmentOwner::User(new_owner.clone());
 			});
 
 			// emit event
@@ -515,20 +571,23 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn ensure_upload_auth(
-			signature: &ecdsa::Signature,
-			signature_hash: &[u8; 32],
-		) -> DispatchResult {
+		fn ensure_upload_auth(data: &AuthData, signature_hash: &[u8; 32]) -> DispatchResult {
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
-			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
-				.ok()
-				.ok_or(Error::<T>::SignatureVerificationFailed)?;
+			let recover =
+				Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, &signature_hash)
+					.ok()
+					.ok_or(Error::<T>::VerificationFailed)?;
 			let recover = ecdsa::Public(recover);
 			ensure!(
 				<UploadAuthorities<T>>::get().contains(&recover),
-				Error::<T>::SignatureVerificationFailed
+				Error::<T>::VerificationFailed
 			);
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			let max_delay = current_block_number + 100u32.into();
+			let signed_at: T::BlockNumber = data.block.into();
+			ensure!(signed_at < max_delay, Error::<T>::VerificationFailed);
 
 			Ok(())
 		}
