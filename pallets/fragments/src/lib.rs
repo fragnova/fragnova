@@ -122,7 +122,7 @@ pub struct IncludeInfo {
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct AuthData {
 	pub signature: ecdsa::Signature,
-	pub block: u64,
+	pub block: u32,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
@@ -223,8 +223,6 @@ pub mod pallet {
 		UnsupportedChain,
 		/// Fragment is already detached
 		FragmentDetached,
-		/// Fragment is not verified yet or failed verification!
-		FragmentNotVerified,
 		/// Not the owner of the fragment
 		Unauthorized,
 		/// No Validators are present
@@ -232,7 +230,7 @@ pub mod pallet {
 		/// Failed to sign message
 		SigningFailed,
 		/// Signature verification failed
-		SignatureVerificationFailed,
+		VerificationFailed,
 		/// The provided nonce override is too big
 		NonceMismatch,
 	}
@@ -305,7 +303,7 @@ pub mod pallet {
 			references: Vec<IncludeInfo>,
 			linked_asset: Option<LinkedAsset>,
 			include_cost: Option<Compact<u128>>,
-			signature: ecdsa::Signature,
+			auth: AuthData,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -325,11 +323,12 @@ pub mod pallet {
 					&references.encode(),
 					&linked_asset.encode(),
 					&nonce.encode(),
+					&auth.block.encode(),
 				]
 				.concat(),
 			);
 
-			<Pallet<T>>::ensure_upload_auth(&signature, &signature_hash)?;
+			<Pallet<T>>::ensure_upload_auth(&auth, &signature_hash)?;
 
 			// make sure the fragment does not exist already!
 			ensure!(!<Fragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentExists);
@@ -383,7 +382,7 @@ pub mod pallet {
 			// fragment hash we want to update
 			fragment_hash: Hash256,
 			include_cost: Option<Compact<u128>>,
-			signature: ecdsa::Signature,
+			auth: AuthData,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Option<Vec<u8>>,
 		) -> DispatchResult {
@@ -407,10 +406,12 @@ pub mod pallet {
 			);
 
 			let data_hash = blake2_256(&data.encode());
-			let signature_hash =
-				blake2_256(&[&fragment_hash[..], &data_hash[..], &nonce.encode()].concat());
+			let signature_hash = blake2_256(
+				&[&fragment_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()]
+					.concat(),
+			);
 
-			<Pallet<T>>::ensure_upload_auth(&signature, &signature_hash)?;
+			<Pallet<T>>::ensure_upload_auth(&auth, &signature_hash)?;
 
 			// we need this to index transactions
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
@@ -570,20 +571,23 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn ensure_upload_auth(
-			signature: &ecdsa::Signature,
-			signature_hash: &[u8; 32],
-		) -> DispatchResult {
+		fn ensure_upload_auth(data: &AuthData, signature_hash: &[u8; 32]) -> DispatchResult {
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
-			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
-				.ok()
-				.ok_or(Error::<T>::SignatureVerificationFailed)?;
+			let recover =
+				Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, &signature_hash)
+					.ok()
+					.ok_or(Error::<T>::VerificationFailed)?;
 			let recover = ecdsa::Public(recover);
 			ensure!(
 				<UploadAuthorities<T>>::get().contains(&recover),
-				Error::<T>::SignatureVerificationFailed
+				Error::<T>::VerificationFailed
 			);
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			let max_delay = current_block_number + 100u32.into();
+			let signed_at: T::BlockNumber = data.block.into();
+			ensure!(signed_at < max_delay, Error::<T>::VerificationFailed);
 
 			Ok(())
 		}

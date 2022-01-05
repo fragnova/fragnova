@@ -12,12 +12,12 @@
 (defloop wait-port
   (Setup
     30 >= .tries)
-  (Maybe (-> 
+  (Maybe (->
           {"id" 1 "jsonrpc" "2.0" "method" "chain_getBlockHash" "params" [0]} (ToJson) (Http.Post rpc-server)
              (FromJson) (ExpectTable) (Take "result") (ExpectString) (Log)
              (Stop))
          (->
-          (Math.Dec .tries) 
+          (Math.Dec .tries)
           (Pause 2.0)))
   .tries (Assert.IsNot 0)
   (Log "Waiting for port"))
@@ -87,13 +87,21 @@
   [0] (Substrate.Encode ["c"]) = .no-refs
   .no-refs >= .payload
 
+  "0x00" (HexToBytes)
+  ; Option None - Linked asset
+  (AppendTo .payload)
   ; Option None - Include cost
-  "0x00" (HexToBytes) (AppendTo .payload)
+  (AppendTo .payload)
 
   .immutable (Hash.Blake2-256) >= .frag-cid >> .frag-hash-payload
   .no-refs >> .frag-hash-payload
+  "0x00" (HexToBytes) >> .frag-hash-payload ; again no linked asset
   [0] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
+  [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
   .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Charlie") (AppendTo .payload)
+
+  ; block
+  [0] (Substrate.Encode ["u32"]) (AppendTo .payload)
 
   [.immutable-len] (Substrate.Encode ["c"]) (AppendTo .payload)
   .immutable (AppendTo .payload)
