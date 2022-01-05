@@ -69,7 +69,6 @@ use sp_chainblocks::Hash256;
 
 use frame_system::offchain::{AppCrypto, CreateSignedTransaction, SignedPayload, SigningTypes};
 
-/// Payload used by this example crate to hold price
 /// data required to submit a transaction.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct FragmentValidation<Public, BlockNumber> {
@@ -93,9 +92,16 @@ pub enum SupportedChains {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum LinkSource {
+	// Generally we just store this data, we don't verify it as we assume auth service did it.
+	// (Link signature, Linked block number, EIP155 Chain ID)
+	Evm(ecdsa::Signature, u64, U256),
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkedAsset {
-	// Ethereum (EIP155 Chain ID, ERC721 Contract address, Token ID)
-	EvmErc721(U256, H160, U256),
+	// Ethereum (ERC721 Contract address, Token ID, Link source)
+	Erc721(H160, U256, LinkSource),
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -111,6 +117,12 @@ pub struct IncludeInfo {
 	pub fragment_hash: Hash256,
 	pub mutable_index: Option<Compact<u32>>,
 	pub staked_amount: Compact<u128>,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct AuthData {
+	pub signature: ecdsa::Signature,
+	pub block: u64,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
@@ -382,14 +394,13 @@ pub mod pallet {
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
-			let owner = match fragment.owner {
-				FragmentOwner::User(owner) => owner,
-				FragmentOwner::ExternalAsset(link) => {
-					return Err(Error::<T>::Unauthorized.into());
-				}
+			match fragment.owner {
+				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+				FragmentOwner::ExternalAsset(_ext_asset) =>
+				// We don't allow updating external assets
+					ensure!(false, Error::<T>::Unauthorized),
 			};
 
-			ensure!(owner == who, Error::<T>::Unauthorized);
 			ensure!(
 				!<DetachedFragments<T>>::contains_key(&fragment_hash),
 				Error::<T>::FragmentDetached
@@ -442,7 +453,12 @@ pub mod pallet {
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
-			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
+			match fragment.owner {
+				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+				FragmentOwner::ExternalAsset(_ext_asset) =>
+				// We don't allow updating external assets
+					ensure!(false, Error::<T>::Unauthorized),
+			};
 
 			ensure!(
 				!<DetachedFragments<T>>::contains_key(&fragment_hash),
@@ -528,7 +544,13 @@ pub mod pallet {
 			let fragment: Fragment<T::AccountId> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
-			ensure!(fragment.owner == who, Error::<T>::Unauthorized);
+			match fragment.owner {
+				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+				FragmentOwner::ExternalAsset(_ext_asset) =>
+				// We don't allow updating external assets
+					ensure!(false, Error::<T>::Unauthorized),
+			};
+
 			ensure!(
 				!<DetachedFragments<T>>::contains_key(&fragment_hash),
 				Error::<T>::FragmentDetached
@@ -537,7 +559,7 @@ pub mod pallet {
 			// update fragment
 			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
 				let fragment = fragment.as_mut().unwrap();
-				fragment.owner = new_owner.clone();
+				fragment.owner = FragmentOwner::User(new_owner.clone());
 			});
 
 			// emit event
