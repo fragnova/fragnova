@@ -8,80 +8,83 @@ use frame_system::RawOrigin;
 use sp_io::hashing::blake2_256;
 use frame_support::traits::Get;
 
+const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
+
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
 benchmarks! {
 
-	add_validator {
-		let validator: T::AccountId = account("fragments", 0, 0);
+	add_eth_auth {
+		let validator: sp_core::ecdsa::Public = Default::default();
 	}: _(RawOrigin::Root, validator.clone())
 	verify {
-		assert!(FragmentValidators::<T>::get().contains(&validator));
+		assert!(EthereumAuthorities::<T>::get().contains(&validator));
 	}
 
-	remove_validator {
-		let validator: T::AccountId = account("fragments", 0, 0);
-		Fragments::<T>::add_validator(RawOrigin::Root.into(), validator.clone())?;
-		assert!(FragmentValidators::<T>::get().contains(&validator));
+	del_eth_auth {
+		let validator: sp_core::ecdsa::Public = Default::default();
+		Fragments::<T>::add_eth_auth(RawOrigin::Root.into(), validator.clone())?;
+		assert!(EthereumAuthorities::<T>::get().contains(&validator));
 	}: _(RawOrigin::Root, validator.clone())
 	verify {
-		assert!(!FragmentValidators::<T>::get().contains(&validator));
+		assert!(!EthereumAuthorities::<T>::get().contains(&validator));
 	}
 
-	// internal_confirm_upload {
-	// 	let caller: T::AccountId = whitelisted_caller();
-	// 	let keystore = KeyStore::new();
-	// 	const PHRASE: &str =
-	// 	"news slush supreme milk chapter athlete soap sausage put clutch what kitten";
-	//
-	// 	SyncCryptoStore::sr25519_generate_new(
-	// 		&keystore,
-	// 		crate::crypto::Public::ID,
-	// 		Some(&format!("{}/hunter1", PHRASE)),
-	// 	)
-	// 	.unwrap();
-	//
-	// 	let public_key = SyncCryptoStore::sr25519_public_keys(&keystore, crate::crypto::Public::ID)
-	// 		.get(0)
-	// 		.unwrap()
-	// 		.clone();
-	// 	let hash: FragmentHash = [
-	// 		30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
-	// 		179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
-	// 	];
-	//
-	// 	let fragment_data:FragmentValidation<T::Public, T::BlockNumber> = FragmentValidation {
-	// 		block_number: 101,
-	// 		fragment_hash: hash,
-	// 		public: public_key,
-	// 		result: true,
-	// 	};
-	//
-	// }: _(RawOrigin::Root, fragment_data, signature)
-	// // verify {
-	// // 	assert_last_event::<T>(Event::<T>::Verified{hash,true}.into())
-	// // }
+	add_upload_auth {
+		let validator: sp_core::ecdsa::Public = Default::default();
+	}: _(RawOrigin::Root, validator.clone())
+	verify {
+		assert!(UploadAuthorities::<T>::get().contains(&validator));
+	}
+
+	del_upload_auth {
+		let validator: sp_core::ecdsa::Public = Default::default();
+		Fragments::<T>::add_eth_auth(RawOrigin::Root.into(), validator.clone())?;
+		assert!(EthereumAuthorities::<T>::get().contains(&validator));
+	}: _(RawOrigin::Root, validator.clone())
+	verify {
+		assert!(!UploadAuthorities::<T>::get().contains(&validator));
+	}
 
 	upload {
 		let l in 1 .. T::MaxDataLength::get();
 		let caller: T::AccountId = whitelisted_caller();
-	}: _(RawOrigin::Signed(caller), vec![0u8; l as usize], vec![0u8; l as usize], None, None)
+		let immutable_data = vec![0u8; l as usize];
+		let fragment_hash = blake2_256(immutable_data.as_slice());
+		let nonce: u64 = 0;
+		let references = vec![IncludeInfo {
+			fragment_hash,
+			mutable_index: Some(Compact(1)),
+			staked_amount: Compact(1),
+		}];
+
+		let key: sp_core::ecdsa::Public = Default::default();
+		let linked_asset: Option<LinkedAsset> = None;
+		let signature =
+		Crypto::ecdsa_sign(KEY_TYPE, &key, &[&fragment_hash[..], &references.encode(), &linked_asset.encode(), &nonce.encode(),&1.encode()].concat());
+		//let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &msg[..]);
+
+		let auth_data = AuthData{
+			signature: signature.unwrap(),
+			block: 1
+		};
+	}: _(RawOrigin::Signed(caller), references , linked_asset, None, auth_data, immutable_data)
 	verify {
-		assert_eq!(UnverifiedFragments::<T>::get().len(), 1);
+		assert_last_event::<T>(Event::<T>::Upload(fragment_hash).into())
 	}
 
-	update {
-		let immutable_data = vec![1, 2, 3, 4];
-		let mutable_data = vec![1, 2, 3, 4];
-		let caller: T::AccountId = whitelisted_caller();
-		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), immutable_data.clone(), mutable_data.clone(), None, None)?;
-		let fragment_hash = blake2_256(immutable_data.as_slice());
-	}: _(RawOrigin::Signed(caller), fragment_hash.clone(), Some(mutable_data), None)
-	verify {
-		assert_last_event::<T>(Event::<T>::Update(fragment_hash).into())
-	}
+	// update {
+	// 	let immutable_data = vec![1, 2, 3, 4];
+	// 	let mutable_data = vec![1, 2, 3, 4];
+	// 	let caller: T::AccountId = whitelisted_caller();
+	// 	Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), immutable_data.clone(), mutable_data.clone(), None, None)?;
+	// 	let fragment_hash = blake2_256(immutable_data.as_slice());
+	// }: _(RawOrigin::Signed(caller), fragment_hash.clone(), Some(mutable_data), None)
+	// verify {
+	// 	assert_last_event::<T>(Event::<T>::Update(fragment_hash).into())
+	// }
 
 	// detach {
 	// 	let immutable_data = vec![1, 2, 3, 4];
