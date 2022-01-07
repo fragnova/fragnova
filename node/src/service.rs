@@ -1,7 +1,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use clamor_runtime::{self, opaque::Block, RuntimeApi};
-use sc_client_api::{BlockBackend, ExecutorProvider};
+use sc_client_api::{ExecutorProvider};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
@@ -326,8 +326,6 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 	}
 
 	sp_chainblocks::init();
-	let frag_fetch = BlockDataFetcher::new(client.clone());
-	task_manager.spawn_handle().spawn("fragments-fetch", None, frag_fetch);
 
 	network_starter.start_network();
 	Ok(task_manager)
