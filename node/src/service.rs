@@ -12,8 +12,6 @@ use sp_consensus::SlotData;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use std::{sync::Arc, time::Duration};
 
-use crate::clamor::BlockDataFetcher;
-
 // Our native executor instance.
 pub struct ExecutorDispatch;
 
@@ -52,12 +50,7 @@ pub fn new_partial(
 		sc_consensus::DefaultImportQueue<Block, FullClient>,
 		sc_transaction_pool::FullPool<Block, FullClient>,
 		(
-			sc_finality_grandpa::GrandpaBlockImport<
-				FullBackend,
-				Block,
-				FullClient,
-				FullSelectChain,
-			>,
+			sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, FullClient, FullSelectChain>,
 			sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
 			Option<Telemetry>,
 		),
@@ -125,18 +118,15 @@ pub fn new_partial(
 			create_inherent_data_providers: move |_, ()| async move {
 				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
-				let slot =
-					sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
-						*timestamp,
-						slot_duration,
-					);
+				let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+					*timestamp,
+					slot_duration,
+				);
 
 				Ok((timestamp, slot))
 			},
 			spawner: &task_manager.spawn_essential_handle(),
-			can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
-				client.executor().clone(),
-			),
+			can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
 			registry: config.prometheus_registry(),
 			check_for_equivocation: Default::default(),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
@@ -224,8 +214,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		let pool = transaction_pool.clone();
 
 		Box::new(move |deny_unsafe, _| {
-			let deps =
-				crate::rpc::FullDeps { client: client.clone(), pool: pool.clone(), deny_unsafe };
+			let deps = crate::rpc::FullDeps { client: client.clone(), pool: pool.clone(), deny_unsafe };
 
 			Ok(crate::rpc::create_full(deps))
 		})
@@ -253,8 +242,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 			telemetry.as_ref().map(|x| x.handle()),
 		);
 
-		let can_author_with =
-			sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
+		let can_author_with = sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
 
 		let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 		let raw_slot_duration = slot_duration.slot_duration();
@@ -298,8 +286,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 
 	// if the node isn't actively participating in consensus then it doesn't
 	// need a keystore, regardless of which protocol we use below.
-	let keystore =
-		if role.is_authority() { Some(keystore_container.sync_keystore()) } else { None };
+	let keystore = if role.is_authority() { Some(keystore_container.sync_keystore()) } else { None };
 
 	let grandpa_config = sc_finality_grandpa::Config {
 		// FIXME #1578 make this available through chainspec
@@ -338,15 +325,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		);
 	}
 
-	sp_chainblocks::init(
-		|hash| {
-			if let Ok(data) = client.indexed_transaction(hash) {
-				data
-			} else {
-				None
-			}
-		},
-	);
+	sp_chainblocks::init();
 	let frag_fetch = BlockDataFetcher::new(client.clone());
 	task_manager.spawn_handle().spawn("fragments-fetch", None, frag_fetch);
 
