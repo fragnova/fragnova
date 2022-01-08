@@ -81,13 +81,54 @@
 (defchain make-test-asset
   (ToString) >= .test-asset-n
   "Test Asset " (PrependTo .test-asset-n)
+  .test-asset-n (Log "asset content")
   [.test-asset-n] (Substrate.Encode [nil]) >= .test-asset-payload ; name
   "0x00" (HexToBytes) (AppendTo .test-asset-payload) ; 0 len description
   "0x00" (HexToBytes) (AppendTo .test-asset-payload) ; 0 len attributes
   "0x00" (HexToBytes) (AppendTo .test-asset-payload) ; None preview
   ["0"] (Substrate.Encode ["u8"]) (AppendTo .test-asset-payload) ; 0 enum index = Edn
-  "(println \"Test Asset " >= .test-asset-edn
+  "(println \"" >= .test-asset-edn
   .test-asset-n (AppendTo .test-asset-edn)
   "\")" (AppendTo .test-asset-edn)
   [.test-asset-edn] (Substrate.Encode [nil]) (AppendTo .test-asset-payload)
   .test-asset-payload)
+
+(defchain test-upload-compressing
+  (| (Take 0) (ExpectBytes) = .upload-data)
+  (| (Take 1) (ExpectInt) = .upload-nonce)
+  (| (Take 2) (ExpectInt) = .frag-nonce)
+
+  .upload-data (Brotli.Compress) = .immutable
+
+  ; Vec - 0 len
+  [0] (Substrate.Encode ["c"]) = .no-refs
+  .no-refs >= .payload
+
+  "0x00" (HexToBytes)
+  ; Option None - Linked asset
+  (AppendTo .payload)
+  ; Option None - Include cost
+  (AppendTo .payload)
+
+  .immutable (Hash.Blake2-256) >= .frag-cid >> .frag-hash-payload
+  .no-refs >> .frag-hash-payload
+  "0x00" (HexToBytes) >> .frag-hash-payload ; again no linked asset
+  [.frag-nonce] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
+  [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
+  .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Charlie") (AppendTo .payload)
+
+  ; block
+  [0] (Substrate.Encode ["u32"]) (AppendTo .payload)
+
+  [.immutable] (Substrate.Encode [nil]) (AppendTo .payload)
+
+  "0x0155a0e40220" (HexToBytes) (PrependTo .frag-cid)
+  .frag-cid (ToBase58) >= .frag-cid-str
+  "z" (PrependTo .frag-cid-str)
+  .frag-cid-str (Log "CID")
+
+  .payload (Log)
+
+  [fragments-index upload-index .payload] (Do make-calldata) = .upload-call (| (ToHex) (Log "upload-call"))
+  ["//Alice" .upload-call .upload-nonce] (Do send-signed-extrinsic) (Log "upload-call-result")
+  .frag-cid-str)

@@ -1,1 +1,27 @@
 (load-file "common.edn")
+
+(defchain add-asset
+  = .add-asset-n (Log "processing asset")
+  (Math.Subtract 1) = .add-asset-n-1
+  (Do make-test-asset) = .test-asset
+  [.test-asset .add-asset-n .add-asset-n-1] (Do test-upload-compressing))
+
+(defchain add-assets
+  ; add charlie as auth key
+  "//Charlie" (ECDSA.PublicKey true) >= .payload2
+  (ToHex) (Log "charlie-key")
+  [fragments-index add-upload-auth-index .payload2] (Do make-calldata) = .call1
+  [sudo-index sudo-call .call1] (Do make-calldata) = .sudo-call1
+  ["//Alice" .sudo-call1 0] (Do send-signed-extrinsic) (Log "result1")
+
+  ; add test assets in parallel
+  (vec (range 1 1000))
+  (TryMany add-asset)
+  ;
+  )
+
+(schedule root wait-port)
+(if (run root 0.1) nil (throw "wait-port failed"))
+
+(schedule root add-assets)
+(if (run root 0.1) nil (throw "upload failed"))
