@@ -203,8 +203,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		Upload(Hash256),
 		Update(Hash256),
-		Verified(Hash256, bool),
-		Exported(Hash256, Vec<u8>, Vec<u8>),
+		Detached(Hash256, Vec<u8>, Vec<u8>),
 		Transfer(Hash256, T::AccountId),
 	}
 
@@ -523,11 +522,11 @@ pub mod pallet {
 
 			let data = ExportData { chain: target_chain, owner: target_account, nonce };
 
-			// add to exported fragments map
+			// add to Detached fragments map
 			<DetachedFragments<T>>::insert(fragment_hash, data);
 
 			// emit event
-			Self::deposit_event(Event::Exported(fragment_hash, signature, pub_key));
+			Self::deposit_event(Event::Detached(fragment_hash, signature, pub_key));
 
 			Ok(())
 		}
