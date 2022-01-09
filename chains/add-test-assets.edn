@@ -15,8 +15,8 @@
   ["//Alice" .sudo-call1 0] (Do send-signed-extrinsic) (Log "result1")
 
   ; add test assets in parallel
-  (vec (range 1 1000))
-  (TryMany add-asset)
+  (vec (range 1 100))
+  (TryMany add-asset :Threads 4 :Coroutines 2)
   ;
   )
 
