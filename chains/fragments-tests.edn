@@ -10,7 +10,9 @@
 
   ; add test asset
   1 (Do make-test-asset) = .test-asset
-  [.test-asset 1 0] (Do test-upload-compressing) = .frag-cid-str
+  [.test-asset 1 0] (Do test-upload-compressing) 
+  (| (Take 0) = .frag-cid-str)
+  (| (Take 1) = .frag-hash)
 
   {"id" 1 "jsonrpc" "2.0" "method" "system_localListenAddresses" "params" []} (ToJson) (Http.Post rpc-server)
   (FromJson) (ExpectTable) (Take "result") (ExpectStringSeq) (Log)
@@ -36,6 +38,9 @@
   "" (Process.Run "ipfs" .ipfs-args-block) (StringToBytes)
   (Brotli.Decompress)
   (Is .test-asset) (Log) (Assert.Is true)
+
+  ; now detach it
+  ;; [.frag-hash 2] (Do test-detach)
   ;
   )
 

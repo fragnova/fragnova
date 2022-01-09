@@ -6,6 +6,7 @@
 (def fragments-index 10)
 (def add-upload-auth-index 2)
 (def upload-index 4)
+(def detach-index 6)
 
 (defnode root)
 
@@ -110,7 +111,7 @@
   ; Option None - Include cost
   (AppendTo .payload)
 
-  .immutable (Hash.Blake2-256) >= .frag-cid >> .frag-hash-payload
+  .immutable (Hash.Blake2-256) >= .frag-cid >> .frag-hash-payload = .fragment-hash
   .no-refs >> .frag-hash-payload
   "0x00" (HexToBytes) >> .frag-hash-payload ; again no linked asset
   [.frag-nonce] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
@@ -131,4 +132,23 @@
 
   [fragments-index upload-index .payload] (Do make-calldata) = .upload-call (| (ToHex) (Log "upload-call"))
   ["//Alice" .upload-call .upload-nonce] (Do send-signed-extrinsic) (Log "upload-call-result")
-  .frag-cid-str)
+  [.frag-cid-str .fragment-hash])
+
+(defchain test-detach
+  (| (Take 0) (ExpectBytes) >= .detach-payload)
+  (| (Take 1) (ExpectInt) = .detach-nonce)
+
+  [2] (Substrate.Encode ["u8"]) (AppendTo .detach-payload)
+
+  [20] (Substrate.Encode ["c"]) (AppendTo .detach-payload)
+  "//Charlie" (ECDSA.PublicKey)
+  (| (ToHex) (Log))
+  (| (Slice :From 1)
+     (Hash.Keccak-256)
+     (Slice :From 12)
+     (| (ToHex) (Log "Eth Address"))
+     (AppendTo .detach-payload))
+
+  [fragments-index detach-index .detach-payload] (Do make-calldata) = .detach-call (| (ToHex) (Log "detach-call"))
+  ["//Alice" .detach-call .detach-nonce] (Do send-signed-extrinsic) (Log "detach-call-result"))
+

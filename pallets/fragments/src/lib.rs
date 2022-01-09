@@ -370,6 +370,8 @@ pub mod pallet {
 			// also emit event
 			Self::deposit_event(Event::Upload(fragment_hash));
 
+			log::debug!("Uploaded fragment: {:?}", fragment_hash);
+
 			Ok(())
 		}
 
@@ -434,6 +436,8 @@ pub mod pallet {
 
 			// also emit event
 			Self::deposit_event(Event::Update(fragment_hash));
+
+			log::debug!("Updated fragment: {:?}", fragment_hash);
 
 			Ok(())
 		}
@@ -526,7 +530,9 @@ pub mod pallet {
 			<DetachedFragments<T>>::insert(fragment_hash, data);
 
 			// emit event
-			Self::deposit_event(Event::Detached(fragment_hash, signature, pub_key));
+			Self::deposit_event(Event::Detached(fragment_hash, signature.clone(), pub_key));
+
+			log::debug!("Detached fragment with hash: {:?} signature: {:?}", fragment_hash, signature);
 
 			Ok(())
 		}
