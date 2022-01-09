@@ -601,11 +601,11 @@ pub mod pallet {
 
 impl SupportedChains {
 	pub fn iterator() -> Iter<'static, SupportedChains> {
-		static DIRECTIONS: [SupportedChains; 3] = [
+		static CHAINS: [SupportedChains; 3] = [
 			SupportedChains::EthereumMainnet,
 			SupportedChains::EthereumRinkeby,
 			SupportedChains::EthereumGoerli,
 		];
-		DIRECTIONS.iter()
+		CHAINS.iter()
 	}
 }
