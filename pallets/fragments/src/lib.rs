@@ -168,6 +168,27 @@ pub mod pallet {
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 	}
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub upload_authorities: Vec<ecdsa::Public>,
+		pub eth_authorities: Vec<ecdsa::Public>,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { upload_authorities: Vec::new(), eth_authorities: Vec::new() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			Pallet::<T>::initialize_upload_authorities(&self.upload_authorities);
+			Pallet::<T>::initialize_eth_authorities(&self.eth_authorities);
+		}
+	}
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
@@ -532,7 +553,11 @@ pub mod pallet {
 			// emit event
 			Self::deposit_event(Event::Detached(fragment_hash, signature.clone(), pub_key));
 
-			log::debug!("Detached fragment with hash: {:?} signature: {:?}", fragment_hash, signature);
+			log::debug!(
+				"Detached fragment with hash: {:?} signature: {:?}",
+				fragment_hash,
+				signature
+			);
 
 			Ok(())
 		}
@@ -595,6 +620,34 @@ pub mod pallet {
 			ensure!(signed_at < max_delay, Error::<T>::VerificationFailed);
 
 			Ok(())
+		}
+
+		fn initialize_upload_authorities(authorities: &[ecdsa::Public]) {
+			if !authorities.is_empty() {
+				assert!(
+					<UploadAuthorities<T>>::get().is_empty(),
+					"UploadAuthorities are already initialized!"
+				);
+				for authority in authorities {
+					<UploadAuthorities<T>>::mutate(|authorities| {
+						authorities.insert(authority.clone());
+					});
+				}
+			}
+		}
+
+		fn initialize_eth_authorities(authorities: &[ecdsa::Public]) {
+			if !authorities.is_empty() {
+				assert!(
+					<EthereumAuthorities<T>>::get().is_empty(),
+					"EthereumAuthorities are already initialized!"
+				);
+				for authority in authorities {
+					<EthereumAuthorities<T>>::mutate(|authorities| {
+						authorities.insert(authority.clone());
+					});
+				}
+			}
 		}
 	}
 }
