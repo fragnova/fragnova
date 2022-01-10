@@ -166,8 +166,6 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
-		#[pallet::constant]
-		type MaxDataLength: Get<u32>;
 	}
 
 	#[pallet::pallet]
@@ -298,7 +296,7 @@ pub mod pallet {
 
 		/// Fragment upload function.
 		// TODO #1 - weight
-		#[pallet::weight(T::WeightInfo::upload(data.len() as u32))]
+		#[pallet::weight(T::WeightInfo::upload())]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -378,7 +376,7 @@ pub mod pallet {
 
 		/// Fragment upload function.
 		// TODO #1 - weight
-		#[pallet::weight(T::WeightInfo::update(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
+		#[pallet::weight(T::WeightInfo::update())]
 		pub fn update(
 			origin: OriginFor<T>,
 			// fragment hash we want to update

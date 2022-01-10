@@ -6,7 +6,6 @@ use crate::Pallet as Fragments;
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use sp_io::hashing::blake2_256;
-use frame_support::traits::Get;
 
 const FRAGMENT_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
@@ -53,7 +52,6 @@ benchmarks! {
 	}
 
 	upload {
-		let l in 1 .. T::MaxDataLength::get();
 		let caller: T::AccountId = whitelisted_caller();
 		let immutable_data = vec![0u8; 1];
 		let fragment_hash = blake2_256(immutable_data.as_slice());
@@ -78,7 +76,6 @@ benchmarks! {
 	}
 
 	update {
-		let l in 1 .. T::MaxDataLength::get();
 		let caller: T::AccountId = whitelisted_caller();
 		let immutable_data = vec![0u8; 1];
 		let fragment_hash = blake2_256(immutable_data.as_slice());
