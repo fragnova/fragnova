@@ -2,9 +2,8 @@
 
 (defchain add-asset
   = .add-asset-n (Log "processing asset")
-  (Math.Subtract 1) = .add-asset-n-1
   (Do make-test-asset) = .test-asset
-  [.test-asset .add-asset-n .add-asset-n-1] (Do test-upload-compressing))
+  [.test-asset .add-asset-n .add-asset-n] (Do test-upload-compressing))
 
 (defchain add-assets
   ; add charlie as auth key
