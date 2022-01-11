@@ -6,7 +6,6 @@ use crate::Pallet as Fragments;
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use sp_io::hashing::blake2_256;
-use sp_io::crypto as Crypto;
 
 const FRAGMENT_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
