@@ -295,8 +295,7 @@ pub mod pallet {
 		}
 
 		/// Fragment upload function.
-		// TODO #1 - weight
-		#[pallet::weight(T::WeightInfo::upload())]
+		#[pallet::weight(T::WeightInfo::upload(data.len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -375,8 +374,7 @@ pub mod pallet {
 		}
 
 		/// Fragment upload function.
-		// TODO #1 - weight
-		#[pallet::weight(T::WeightInfo::update())]
+		#[pallet::weight(T::WeightInfo::update(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
 		pub fn update(
 			origin: OriginFor<T>,
 			// fragment hash we want to update
