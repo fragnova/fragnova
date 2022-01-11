@@ -349,7 +349,7 @@ where
 			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
 		);
 		let raw_payload = SignedPayload::new(call, extra)
-			.map_err(|e| {
+			.map_err(|_e| {
 				// log::warn!("Unable to create signed payload: {:?}", e);
 			})
 			.ok()?;

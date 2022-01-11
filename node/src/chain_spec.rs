@@ -1,10 +1,10 @@
 use clamor_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, IndicesConfig, Signature,
-	SudoConfig, SystemConfig, WASM_BINARY,
+	AccountId, AuraConfig, BalancesConfig, FragmentsConfig, GenesisConfig, GrandpaConfig,
+	IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{ecdsa, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
@@ -151,5 +151,9 @@ fn testnet_genesis(
 		},
 		transaction_payment: Default::default(),
 		indices: IndicesConfig { indices: vec![] },
+		fragments: FragmentsConfig {
+			upload_authorities: vec![get_from_seed::<ecdsa::Public>("Charlie")],
+			eth_authorities: vec![get_from_seed::<ecdsa::Public>("Bob")],
+		},
 	}
 }

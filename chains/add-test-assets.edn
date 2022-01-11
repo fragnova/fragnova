@@ -1,0 +1,19 @@
+(load-file "common.edn")
+
+(defchain add-asset
+  = .add-asset-n (Log "processing asset")
+  (Do make-test-asset) = .test-asset
+  [.test-asset .add-asset-n .add-asset-n] (Do test-upload-compressing))
+
+(defchain add-assets
+  ; add test assets in parallel
+  (vec (range 0 99))
+  (TryMany add-asset :Threads 4 :Coroutines 2)
+  ;
+  )
+
+(schedule root wait-port)
+(if (run root 0.1) nil (throw "wait-port failed"))
+
+(schedule root add-assets)
+(if (run root 0.1) nil (throw "upload failed"))

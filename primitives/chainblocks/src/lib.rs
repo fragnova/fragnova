@@ -4,25 +4,38 @@
 // extern crate chainblocks;
 
 #[cfg(feature = "std")]
-#[macro_use]
 extern crate lazy_static;
 
 use sp_std::vec::Vec;
 
-pub type Hash = sp_core::H256;
-
 pub type Hash256 = [u8; 32];
+
+pub enum AudioFormats {
+	Ogg,
+	Mp3,
+	Wav,
+}
+
+pub struct AudioData {
+	pub format: AudioFormats,
+	pub data: Vec<u8>,
+}
+
+pub enum FragmentData {
+	Chain(Vec<u8>),
+	Audio(AudioData),
+}
 
 #[cfg(feature = "std")]
 mod details {
-	use super::*;
+	// use super::*;
 
 	// lazy_static! {
-	// 	static ref FETCH_EXTRINSIC: Mutex<Option<Box<dyn Fn(&Hash) -> Option<Vec<u8>>>>> =
+	// 	static ref FETCH_EXTRINSIC: Mutex<Option<Box<dyn Fn(&Hash256) -> Option<Vec<u8>>>>> =
 	// 		Mutex::new(None);
 	// }
 
-	use std::{convert::TryInto, sync::Mutex};
+	// use std::{convert::TryInto, sync::Mutex};
 
 	// use chainblocks::{
 	// 	cbl_env,
@@ -30,14 +43,7 @@ mod details {
 	// 	types::{ChainRef, ExternalVar, Node},
 	// };
 
-	pub fn init<F>(fetch_extrinsic: F)
-	where
-		F: Fn(&Hash) -> Option<Vec<u8>>,
-	{
-		// *FETCH_EXTRINSIC.lock().unwrap() = Some(fetch_extrinsic);
-	}
-
-	pub fn _say_hello_world(data: &str) {
+	pub fn _say_hello_world(_data: &str) {
 		// lazy_static! {
 		// 	static ref VAR: Mutex<ExternalVar> = Mutex::new(ExternalVar::default());
 		// 	static ref NODE: Node = {
@@ -54,11 +60,6 @@ mod details {
 		// VAR.lock().unwrap().update(data);
 		// NODE.tick();
 	}
-
-	pub fn _fetch_extrinsic(hash: &Hash) -> Option<Vec<u8>> {
-		// FETCH_EXTRINSIC.lock().unwrap().unwrap()(hash)
-		None
-	}
 }
 
 #[cfg(not(feature = "std"))]
@@ -66,7 +67,7 @@ mod details {
 	use super::*;
 
 	pub fn _say_hello_world(data: &str) {}
-	pub fn _fetch_extrinsic(hash: &Hash) -> Option<Vec<u8>> {
+	pub fn _fetch_extrinsic(hash: &Hash256) -> Option<Vec<u8>> {
 		None
 	}
 }
@@ -77,21 +78,14 @@ pub trait OffchainFragments {
 		details::_say_hello_world(data);
 	}
 
-	fn fetch_extrinsic(hash: &Hash) -> Option<Vec<u8>> {
-		details::_fetch_extrinsic(hash)
-	}
-
-	fn on_new_fragment(fragment_hash: &Hash256) -> bool {
+	fn on_new_fragment(_fragment_hash: &Hash256) -> bool {
 		log::debug!("sp_chainblocks on_new_fragment called...");
 		true
 	}
 }
 
 #[cfg(feature = "std")]
-pub fn init<F>(fetch_extrinsic: F)
-where
-	F: Fn(&Hash) -> Option<Vec<u8>>,
-{
+pub fn init() {
 	// use chainblocks::{cbl_env, cblog};
 
 	// details::init(fetch_extrinsic);

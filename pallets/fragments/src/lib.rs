@@ -168,6 +168,27 @@ pub mod pallet {
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 	}
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub upload_authorities: Vec<ecdsa::Public>,
+		pub eth_authorities: Vec<ecdsa::Public>,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { upload_authorities: Vec::new(), eth_authorities: Vec::new() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			Pallet::<T>::initialize_upload_authorities(&self.upload_authorities);
+			Pallet::<T>::initialize_eth_authorities(&self.eth_authorities);
+		}
+	}
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
@@ -203,8 +224,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		Upload(Hash256),
 		Update(Hash256),
-		Verified(Hash256, bool),
-		Exported(Hash256, Vec<u8>, Vec<u8>),
+		Detached(Hash256, Vec<u8>, Vec<u8>),
 		Transfer(Hash256, T::AccountId),
 	}
 
@@ -370,6 +390,8 @@ pub mod pallet {
 			// also emit event
 			Self::deposit_event(Event::Upload(fragment_hash));
 
+			log::debug!("Uploaded fragment: {:?}", fragment_hash);
+
 			Ok(())
 		}
 
@@ -433,6 +455,8 @@ pub mod pallet {
 
 			// also emit event
 			Self::deposit_event(Event::Update(fragment_hash));
+
+			log::debug!("Updated fragment: {:?}", fragment_hash);
 
 			Ok(())
 		}
@@ -521,11 +545,17 @@ pub mod pallet {
 
 			let data = ExportData { chain: target_chain, owner: target_account, nonce };
 
-			// add to exported fragments map
+			// add to Detached fragments map
 			<DetachedFragments<T>>::insert(fragment_hash, data);
 
 			// emit event
-			Self::deposit_event(Event::Exported(fragment_hash, signature, pub_key));
+			Self::deposit_event(Event::Detached(fragment_hash, signature.clone(), pub_key));
+
+			log::debug!(
+				"Detached fragment with hash: {:?} signature: {:?}",
+				fragment_hash,
+				signature
+			);
 
 			Ok(())
 		}
@@ -589,16 +619,44 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		fn initialize_upload_authorities(authorities: &[ecdsa::Public]) {
+			if !authorities.is_empty() {
+				assert!(
+					<UploadAuthorities<T>>::get().is_empty(),
+					"UploadAuthorities are already initialized!"
+				);
+				for authority in authorities {
+					<UploadAuthorities<T>>::mutate(|authorities| {
+						authorities.insert(authority.clone());
+					});
+				}
+			}
+		}
+
+		fn initialize_eth_authorities(authorities: &[ecdsa::Public]) {
+			if !authorities.is_empty() {
+				assert!(
+					<EthereumAuthorities<T>>::get().is_empty(),
+					"EthereumAuthorities are already initialized!"
+				);
+				for authority in authorities {
+					<EthereumAuthorities<T>>::mutate(|authorities| {
+						authorities.insert(authority.clone());
+					});
+				}
+			}
+		}
 	}
 }
 
 impl SupportedChains {
 	pub fn iterator() -> Iter<'static, SupportedChains> {
-		static DIRECTIONS: [SupportedChains; 3] = [
+		static CHAINS: [SupportedChains; 3] = [
 			SupportedChains::EthereumMainnet,
 			SupportedChains::EthereumRinkeby,
 			SupportedChains::EthereumGoerli,
 		];
-		DIRECTIONS.iter()
+		CHAINS.iter()
 	}
 }

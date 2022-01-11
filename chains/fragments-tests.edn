@@ -1,127 +1,18 @@
-(def rpc-server "http://127.0.0.1:9933")
-(def runtime-spec-version 100)
-(def transaction-version 1)
-(def sudo-index 7)
-(def sudo-call 0)
-(def fragments-index 10)
-(def add-upload-auth-index 2)
-(def upload-index 4)
-
-(defnode root)
-
-(defloop wait-port
-  (Setup
-    30 >= .tries)
-  (Maybe (->
-          {"id" 1 "jsonrpc" "2.0" "method" "chain_getBlockHash" "params" [0]} (ToJson) (Http.Post rpc-server)
-             (FromJson) (ExpectTable) (Take "result") (ExpectString) (Log)
-             (Stop))
-         (->
-          (Math.Dec .tries)
-          (Pause 2.0)))
-  .tries (Assert.IsNot 0)
-  (Log "Waiting for port"))
-
-(defchain make-calldata
-  (| (Take 0) (ExpectInt) = .pallet-idx)
-  (| (Take 1) (ExpectInt) = .call-idx)
-  ; >= copy to allow nesting
-  (| (Take 2) (ExpectBytes) >= .args)
-  ; call payload to be signed
-  ; [module-index call-index] (Check Metadata)
-  [.pallet-idx .call-idx] (Substrate.Encode ["u8" "u8"]) >= .call-data
-  .args (AppendTo .call-data)
-  .call-data)
-
-(defchain send-signed-extrinsic
-  (| (Take 0) (ExpectString) = .private-key)
-  (| (Take 1) (ExpectBytes) = .call-data)
-  (| (Take 2) (ExpectInt) = .nonce)
-
-   ; signer
-  .private-key (Sr25519.PublicKey) (Substrate.AccountId) (Log) = .pub-key
-  ; multiaddress enum
-  [0 .pub-key] (Substrate.Encode ["u8" "a"]) = .signer
-
-  ; extra data to be signed
-  ; [era nonce weight]
-  ; use 0 u8 for era to have an immortal transaction
-  [0 .nonce 0] (Substrate.Encode ["u8" "c" "c"]) = .extra-data
-
-  ; TODO, this should be a CONSTANT actually
-  {"id" 1 "jsonrpc" "2.0" "method" "chain_getBlockHash" "params" [0]} (ToJson) (Http.Post rpc-server)
-  (FromJson) (ExpectTable) (Take "result") (ExpectString) (Log) (HexToBytes) (Log) = .node-genesis-hash
-
-  ; additional data to be signed
-  ; [runtime-spec-version transaction-version genesis-hash genesis-or-current-hash]
-  [runtime-spec-version transaction-version] (Substrate.Encode ["u32" "u32"]) >= .additional-data
-  .node-genesis-hash (AppendTo .additional-data) (AppendTo .additional-data) ; twice
-
-  .call-data >= .signed-payload
-  .extra-data (AppendTo .signed-payload)
-  .additional-data (AppendTo .signed-payload)
-  (Count .signed-payload)
-  (If (IsMore 256)
-      (-> (Msg "LONG PAYLOAD") .signed-payload (Hash.Blake2-256))
-      (-> .signed-payload)) ; use hashed version if longer bigger than 256
-  (Sr25519.Sign .private-key) (Log "Signature bytes") >= .signature
-  ; add enum index 1
-  "0x01" (HexToBytes) (PrependTo .signature)
-  .signature (ToHex) (Log "Signature")
-
-  [0x84] (Substrate.Encode ["u8"]) >= .rpc-data
-  .signer (AppendTo .rpc-data)
-  .signature (AppendTo .rpc-data)
-  .extra-data (AppendTo .rpc-data)
-  .call-data (AppendTo .rpc-data)
-  [.rpc-data] (Substrate.Encode [nil]) (ToHex) (Log "rpc hex") = .rpc-data-hex
-  {"id" 1 "jsonrpc" "2.0" "method" "author_submitExtrinsic" "params" [.rpc-data-hex]} (ToJson) (Http.Post rpc-server)
-  (FromJson))
+(load-file "common.edn")
 
 (defchain upload
-  ; Vec
-  "immutable & mutable payload" (ToBytes) (Brotli.Compress) = .immutable
-  (Count .immutable) = .immutable-len
+  ;; ; add charlie as auth key
+  ;; "//Charlie" (ECDSA.PublicKey true) >= .payload2
+  ;; (ToHex) (Log "charlie-key")
+  ;; [fragments-index add-upload-auth-index .payload2] (Do make-calldata) = .call1
+  ;; [sudo-index sudo-call .call1] (Do make-calldata) = .sudo-call1
+  ;; ["//Alice" .sudo-call1 0] (Do send-signed-extrinsic) (Log "result1")
 
-  ; Vec - 0 len
-  [0] (Substrate.Encode ["c"]) = .no-refs
-  .no-refs >= .payload
-
-  "0x00" (HexToBytes)
-  ; Option None - Linked asset
-  (AppendTo .payload)
-  ; Option None - Include cost
-  (AppendTo .payload)
-
-  .immutable (Hash.Blake2-256) >= .frag-cid >> .frag-hash-payload
-  .no-refs >> .frag-hash-payload
-  "0x00" (HexToBytes) >> .frag-hash-payload ; again no linked asset
-  [0] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
-  [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
-  .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Charlie") (AppendTo .payload)
-
-  ; block
-  [0] (Substrate.Encode ["u32"]) (AppendTo .payload)
-
-  [.immutable-len] (Substrate.Encode ["c"]) (AppendTo .payload)
-  .immutable (AppendTo .payload)
-
-  "0x0155a0e40220" (HexToBytes) (PrependTo .frag-cid)
-  .frag-cid (ToBase58) >= .frag-cid-str
-  "z" (PrependTo .frag-cid-str)
-  .frag-cid-str (Log "CID")
-
-  .payload (Log)
-
-  "//Charlie" (ECDSA.PublicKey true) >= .payload2
-  (ToHex) (Log "charlie-key")
-
-  [fragments-index add-upload-auth-index .payload2] (Do make-calldata) = .call1
-  [sudo-index sudo-call .call1] (Do make-calldata) = .sudo-call1
-  ["//Alice" .sudo-call1 0] (Do send-signed-extrinsic) (Log "result1")
-
-  [fragments-index upload-index .payload] (Do make-calldata) = .call2 (| (ToHex) (Log "call2"))
-  ["//Alice" .call2 1] (Do send-signed-extrinsic) (Log "result2")
+  ; add test asset
+  1 (Do make-test-asset) = .test-asset
+  [.test-asset 0 0] (Do test-upload-compressing) 
+  (| (Take 0) = .frag-cid-str)
+  (| (Take 1) = .frag-hash)
 
   {"id" 1 "jsonrpc" "2.0" "method" "system_localListenAddresses" "params" []} (ToJson) (Http.Post rpc-server)
   (FromJson) (ExpectTable) (Take "result") (ExpectStringSeq) (Log)
@@ -145,8 +36,11 @@
   "get" >> .ipfs-args-block
   .frag-cid-str >> .ipfs-args-block
   "" (Process.Run "ipfs" .ipfs-args-block) (StringToBytes)
-  (Brotli.Decompress) (FromBytes) (Log)
-  (Assert.Is "immutable & mutable payload")
+  (Brotli.Decompress)
+  (Is .test-asset) (Log) (Assert.Is true)
+
+  ;; ; now detach it
+  ;; [.frag-hash 1] (Do test-detach)
   ;
   )
 

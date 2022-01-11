@@ -1,4 +1,7 @@
-use crate::{mock::*, Error, EthereumAuthorities, Fragments, IncludeInfo, SupportedChains, UploadAuthorities, KEY_TYPE, AuthData, LinkedAsset, FragmentOwner};
+use crate::{
+	mock::*, AuthData, Error, EthereumAuthorities, FragmentOwner, Fragments, IncludeInfo,
+	LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE,
+};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;
@@ -23,8 +26,16 @@ fn initial_set_up_and_get_signature(
 
 	let fragment_hash = blake2_256(&data);
 	let linked_asset: Option<LinkedAsset> = None;
-	let signature: sp_core::ecdsa::Signature =
-		pair.sign(&[&fragment_hash[..], &references.encode(), &linked_asset.encode(), &nonce.encode(),&1.encode()].concat());
+	let signature: sp_core::ecdsa::Signature = pair.sign(
+		&[
+			&fragment_hash[..],
+			&references.encode(),
+			&linked_asset.encode(),
+			&nonce.encode(),
+			&1.encode(),
+		]
+		.concat(),
+	);
 	assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
 	signature
 }
@@ -37,10 +48,7 @@ fn initial_upload_and_get_signature() -> AuthData {
 		staked_amount: Compact(1),
 	}];
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
-	let auth_data = AuthData{
-		signature,
-		block: 1
-	};
+	let auth_data = AuthData { signature, block: 1 };
 
 	assert_ok!(FragmentsPallet::upload(
 		Origin::signed(Default::default()),
@@ -101,10 +109,7 @@ fn upload_should_works() {
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
-		let auth_data = AuthData{
-			signature,
-			block: 1
-		};
+		let auth_data = AuthData { signature, block: 1 };
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(Default::default()),
@@ -131,10 +136,7 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 		}];
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
-		let auth_data = AuthData{
-			signature,
-			block: 1
-		};
+		let auth_data = AuthData { signature, block: 1 };
 		assert_noop!(
 			FragmentsPallet::upload(
 				Origin::signed(Default::default()),
@@ -164,10 +166,7 @@ fn upload_fragment_should_not_work_if_not_verified() {
 		};
 		let references = vec![include_info];
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
-		let auth_data = AuthData{
-			signature,
-			block: 1
-		};
+		let auth_data = AuthData { signature, block: 1 };
 
 		assert_noop!(
 			FragmentsPallet::upload(
@@ -195,13 +194,10 @@ fn update_should_works() {
 		let data_hash = blake2_256(&data.encode());
 		let nonce: u64 = 1;
 		let signature: sp_core::ecdsa::Signature =
-			pair.sign(&[&fragment_hash[..], &data_hash[..], &nonce.encode(),&1.encode()].concat());
+			pair.sign(&[&fragment_hash[..], &data_hash[..], &nonce.encode(), &1.encode()].concat());
 		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
 
-		let auth_data = AuthData{
-			signature,
-			block: 1
-		};
+		let auth_data = AuthData { signature, block: 1 };
 		assert_ok!(FragmentsPallet::update(
 			Origin::signed(Default::default()),
 			fragment_hash,
@@ -242,10 +238,7 @@ fn update_fragment_should_not_work_if_fragment_not_found() {
 
 		let fragment_hash = blake2_256(immutable_data.as_slice());
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
-		let auth_data = AuthData{
-			signature,
-			block: 1
-		};
+		let auth_data = AuthData { signature, block: 1 };
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(Default::default()),
@@ -266,10 +259,7 @@ fn update_should_not_work_if_not_verified() {
 		initial_upload_and_get_signature();
 
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Bob");
-		let auth_data = AuthData{
-			signature,
-			block: 1
-		};
+		let auth_data = AuthData { signature, block: 1 };
 
 		assert_noop!(
 			FragmentsPallet::update(
@@ -416,7 +406,10 @@ fn transfer_should_works() {
 			pair.public()
 		));
 
-		assert_eq!(<Fragments<Test>>::get(FRAGMENT_HASH).unwrap().owner, FragmentOwner::User(pair.public()));
+		assert_eq!(
+			<Fragments<Test>>::get(FRAGMENT_HASH).unwrap().owner,
+			FragmentOwner::User(pair.public())
+		);
 	});
 }
 
