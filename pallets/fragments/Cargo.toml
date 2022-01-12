@@ -86,7 +86,7 @@ sp-chainblocks = { path = '../../primitives/chainblocks', default-features = fal
 
 [features]
 default = ['std']
-runtime-benchmarks = ['frame-benchmarking']
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 std = [
     'codec/std',
     'frame-support/std',
@@ -98,5 +98,6 @@ std = [
     'pallet-randomness-collective-flip/std',
     'log/std',
 	'sp-keystore',
+	'sp-core/std',
 ]
 try-runtime = ['frame-support/try-runtime']
