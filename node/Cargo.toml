@@ -146,7 +146,7 @@ version = '0.10.0-dev'
 [dependencies.sp-core]
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2022-01'
-version = '4.0.0-dev'
+version = '4.1.0-dev'
 
 [dependencies.sp-finality-grandpa]
 git = 'https://github.com/paritytech/substrate.git'
