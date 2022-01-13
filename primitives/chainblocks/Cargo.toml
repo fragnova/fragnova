@@ -20,25 +20,25 @@ version = '2.0.0'
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-12'
-version = '4.0.0-dev'
+tag = 'monthly-2022-01'
+version = '4.1.0-dev'
 
 [dependencies.sp-runtime]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-12'
+tag = 'monthly-2022-01'
 version = '4.0.0-dev'
 optional = true
 
 [dependencies.sp-runtime-interface]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-12'
-version = '4.0.0-dev'
+tag = 'monthly-2022-01'
+version = '4.1.0-dev'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2021-12'
+tag = 'monthly-2022-01'
 version = '4.0.0-dev'
 
 [dependencies.scale-info]
