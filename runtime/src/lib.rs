@@ -121,6 +121,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
+	state_version: 1,
 };
 
 /// This determines the average expected block time that we are targeting.
@@ -130,6 +131,12 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 ///
 /// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
+
+pub const MILLICENTS: Balance = 1_000_000_000;
+pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+	items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
+}
 
 // NOTE: Currently it is not possible to change the slot duration after the chain has started.
 //       Attempting to do so will brick block production.
@@ -210,6 +217,7 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = SS58Prefix;
 	/// The set code logic, just the default since we're not a parachain.
 	type OnSetCode = ();
+	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
 impl pallet_randomness_collective_flip::Config for Runtime {}
@@ -276,7 +284,8 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-	pub const ContractDeposit: u64 = 16;
+	pub const DepositPerItem: Balance = deposit(1, 0);
+	pub const DepositPerByte: Balance = deposit(0, 1);
 	pub const MaxValueSize: u32 = 16_384;
 	pub const DeletionQueueDepth: u32 = 1024;
 	pub const DeletionWeightLimit: Weight = 500_000_000_000;
@@ -373,7 +382,8 @@ impl pallet_contracts::Config for Runtime {
 	/// change because that would break already deployed contracts. The `Call` structure itself
 	/// is not allowed to change the indices of existing pallets, too.
 	type CallFilter = frame_support::traits::Nothing;
-	type ContractDeposit = ContractDeposit;
+	type DepositPerItem = DepositPerItem;
+	type DepositPerByte = DepositPerByte;
 	type CallStack = [pallet_contracts::Frame<Self>; 31];
 	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
 	type WeightInfo = ();
@@ -381,6 +391,7 @@ impl pallet_contracts::Config for Runtime {
 	type DeletionQueueDepth = DeletionQueueDepth;
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
+	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
 }
 
 parameter_types! {
@@ -582,21 +593,32 @@ impl_runtime_apis! {
 			dest: AccountId,
 			value: Balance,
 			gas_limit: u64,
+			storage_deposit_limit: Option<Balance>,
 			input_data: Vec<u8>,
-		) -> pallet_contracts_primitives::ContractExecResult {
-			Contracts::bare_call(origin, dest, value, gas_limit, input_data, CONTRACTS_DEBUG_OUTPUT)
+		) -> pallet_contracts_primitives::ContractExecResult<Balance> {
+			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
 		}
 
 		fn instantiate(
 			origin: AccountId,
-			endowment: Balance,
+			value: Balance,
 			gas_limit: u64,
+			storage_deposit_limit: Option<Balance>,
 			code: pallet_contracts_primitives::Code<Hash>,
 			data: Vec<u8>,
 			salt: Vec<u8>,
-		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId>
+		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
 		{
-			Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, CONTRACTS_DEBUG_OUTPUT)
+			Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+		}
+
+		fn upload_code(
+			origin: AccountId,
+			code: Vec<u8>,
+			storage_deposit_limit: Option<Balance>,
+		) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
+		{
+			Contracts::bare_upload_code(origin, code, storage_deposit_limit)
 		}
 
 		fn get_storage(
