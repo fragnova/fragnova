@@ -11,6 +11,8 @@ const FRAGMENT_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
 	51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
 ];
+
+const PUBLIC: [u8; 33] = [3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251];
 const SEED: u32 = 0;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
@@ -20,14 +22,14 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 benchmarks! {
 
 	add_eth_auth {
-		let validator: sp_core::ecdsa::Public = Default::default();
+		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
 	}: _(RawOrigin::Root, validator.clone())
 	verify {
 		assert!(EthereumAuthorities::<T>::get().contains(&validator));
 	}
 
 	del_eth_auth {
-		let validator: sp_core::ecdsa::Public = Default::default();
+		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
 		Fragments::<T>::add_eth_auth(RawOrigin::Root.into(), validator.clone())?;
 		assert!(EthereumAuthorities::<T>::get().contains(&validator));
 	}: _(RawOrigin::Root, validator.clone())
@@ -36,14 +38,14 @@ benchmarks! {
 	}
 
 	add_upload_auth {
-		let validator: sp_core::ecdsa::Public = Default::default();
+		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
 	}: _(RawOrigin::Root, validator.clone())
 	verify {
 		assert!(UploadAuthorities::<T>::get().contains(&validator));
 	}
 
 	del_upload_auth {
-		let validator: sp_core::ecdsa::Public = Default::default();
+		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
 		Fragments::<T>::add_upload_auth(RawOrigin::Root.into(), validator.clone())?;
 		assert!(UploadAuthorities::<T>::get().contains(&validator));
 	}: _(RawOrigin::Root, validator.clone())
