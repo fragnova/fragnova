@@ -155,5 +155,6 @@ fn testnet_genesis(
 			upload_authorities: vec![get_from_seed::<ecdsa::Public>("Charlie")],
 			eth_authorities: vec![get_from_seed::<ecdsa::Public>("Bob")],
 		},
+		assets: Default::default(),
 	}
 }
