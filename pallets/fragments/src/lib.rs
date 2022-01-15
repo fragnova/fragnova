@@ -61,13 +61,14 @@ use codec::{Compact, Decode, Encode};
 use sp_io::{
 	crypto as Crypto,
 	hashing::{blake2_256, keccak_256},
-	transaction_index,
+	offchain_index, transaction_index,
 };
+use sp_runtime::offchain::storage::StorageValueRef;
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use sp_chainblocks::Hash256;
 
-use frame_system::offchain::{AppCrypto, CreateSignedTransaction, SignedPayload, SigningTypes};
+use frame_system::offchain::{AppCrypto, CreateSignedTransaction, SignedPayload, SigningTypes, Signer};
 
 /// data required to submit a transaction.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -89,6 +90,13 @@ pub enum SupportedChains {
 	EthereumMainnet,
 	EthereumRinkeby,
 	EthereumGoerli,
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct DetachRequest {
+	pub fragment_hash: Hash256,
+	pub target_chain: SupportedChains,
+	pub target_account: Vec<u8>, // an eth address or so
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -205,6 +213,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type FragmentsListSize<T: Config> = StorageValue<_, u128, ValueQuery>;
+
+	#[pallet::storage]
+	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
 
 	#[pallet::storage]
 	pub type DetachedFragments<T: Config> = StorageMap<_, Blake2_128Concat, Hash256, ExportData>;
@@ -479,6 +490,40 @@ pub mod pallet {
 			match fragment.owner {
 				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
 				FragmentOwner::ExternalAsset(_ext_asset) =>
+				// We don't allow detaching external assets
+					ensure!(false, Error::<T>::Unauthorized),
+			};
+
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
+
+			<DetachRequests<T>>::mutate(|requests| {
+				requests.push(DetachRequest { fragment_hash, target_chain, target_account });
+			});
+
+			Ok(())
+		}
+
+		/// Detached a fragment from this chain by emitting an event that includes a signature.
+		/// The remote target chain can attach this fragment by using this signature.
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn internal_finalize_detach(
+			origin: OriginFor<T>,
+			fragment_hash: Hash256,
+			target_chain: SupportedChains,
+			target_account: Vec<u8>, // an eth address or so
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// make sure the fragment exists
+			let fragment: Fragment<T::AccountId> =
+				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
+
+			match fragment.owner {
+				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+				FragmentOwner::ExternalAsset(_ext_asset) =>
 				// We don't allow updating external assets
 					ensure!(false, Error::<T>::Unauthorized),
 			};
@@ -598,12 +643,28 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(_n: T::BlockNumber) {
+			// drain and process requests
+			let requests = <DetachRequests<T>>::take();
+			if !requests.is_empty() {
+				log::debug!("Got {} detach requests", requests.len());
+				offchain_index::set(b"fragments-detach-requests", &requests.encode());
+			}
+		}
+
+		fn offchain_worker(_n: T::BlockNumber) {
+			<Pallet<T>>::process_detach_requests();
+		}
+	}
+
 	impl<T: Config> Pallet<T> {
 		fn ensure_upload_auth(data: &AuthData, signature_hash: &[u8; 32]) -> DispatchResult {
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
 			let recover =
-				Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, &signature_hash)
+				Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, signature_hash)
 					.ok()
 					.ok_or(Error::<T>::VerificationFailed)?;
 			let recover = ecdsa::Public(recover);
@@ -646,6 +707,91 @@ pub mod pallet {
 					});
 				}
 			}
+		}
+
+		fn process_detach_requests() {
+			const _FAILED: () = ();
+			let requests = StorageValueRef::persistent(b"fragments-detach-requests");
+			let _ =
+				requests.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| match requests {
+					Ok(Some(requests)) => {
+						log::debug!("Got {} detach requests", requests.len());
+						for request in requests {
+							let chain_id = match request.target_chain {
+								SupportedChains::EthereumMainnet => Some(1u32),
+								SupportedChains::EthereumRinkeby => Some(4u32),
+								SupportedChains::EthereumGoerli => Some(5u32),
+							};
+
+							let values = match request.target_chain {
+								SupportedChains::EthereumMainnet |
+								SupportedChains::EthereumRinkeby |
+								SupportedChains::EthereumGoerli => {
+									// get local keys
+									let keys = Crypto::sr25519_public_keys(KEY_TYPE);
+									log::debug!("Got {} local keys", keys.len());
+									let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
+									log::debug!("Got {} ecdsa local keys", keys.len());
+									// make sure the local key is in the global authorities set!
+									let key = keys
+										.iter()
+										.find(|k| <EthereumAuthorities<T>>::get().contains(k));
+									if let Some(key) = key {
+										// This is critical, we send over to the ethereum smart
+										// contract this signature The ethereum smart contract call
+										// will be the following attach(fragment_hash, local_owner,
+										// signature, clamor_nonce); on this target chain the nonce
+										// needs to be exactly the same as the one here
+										let mut payload = request.fragment_hash.encode();
+										payload.extend(chain_id.encode());
+										payload.extend(request.target_account.clone());
+										let nonce = <DetachNonces<T>>::get(
+											&request.fragment_hash,
+											request.target_chain.clone(),
+										);
+										let nonce = if let Some(nonce) = nonce {
+											// add 1, remote will add 1
+											let nonce = nonce.checked_add(1).unwrap();
+											payload.extend(nonce.encode());
+											nonce // for storage
+										} else {
+											// there never was a nonce
+											payload.extend(1u64.encode());
+											1u64
+										};
+										let msg = [
+											&b"\x19Ethereum Signed Message:\n32"[..],
+											&keccak_256(&payload)[..],
+										]
+										.concat();
+										let msg = keccak_256(&msg);
+										// Sign the payload with a trusted validation key
+										let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &msg[..]);
+										if let Some(signature) = signature {
+											// No more failures from this path!!
+											Ok((signature.encode(), key.encode(), nonce))
+										} else {
+											Err(Error::<T>::SigningFailed)
+										}
+									} else {
+										Err(Error::<T>::NoValidator)
+									}
+								},
+							};
+
+
+							match values {
+								Ok((signature, pub_key, nonce)) => {
+									// exec unsigned transaction from here
+									log::debug!("Executing unsigned transaction for detach; signature: {:?}, pub_key: {:?}, nonce: {:?}", signature, pub_key, nonce);
+								},
+								Err(e) => {log::debug!("Failed to detach with error {:?}", e)},
+							}
+						}
+						Ok(vec![])
+					},
+					_ => Err(_FAILED),
+				});
 		}
 	}
 }

@@ -10,7 +10,7 @@
 
   ; add test asset
   1 (Do make-test-asset) = .test-asset
-  [.test-asset 0 0] (Do test-upload-compressing) 
+  [.test-asset 0 0] (Do test-upload-compressing)
   (| (Take 0) = .frag-cid-str)
   (| (Take 1) = .frag-hash)
 
@@ -39,8 +39,14 @@
   (Brotli.Decompress)
   (Is .test-asset) (Log) (Assert.Is true)
 
-  ;; ; now detach it
-  ;; [.frag-hash 1] (Do test-detach)
+  "//Bob" (Sr25519.PublicKey) (ToHex) (Log "Bobs") = .bob-hex-key
+  {"id" 1 "jsonrpc" "2.0" "method" "author_insertKey" "params" ["frag" "//Bob" .bob-hex-key]} 
+  (ToJson) (Http.Post rpc-server) (Log)
+
+  (Pause 10.0)
+
+  ; now detach it
+  [.frag-hash 1] (Do test-detach)
   ;
   )
 
