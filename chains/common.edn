@@ -12,7 +12,7 @@
 
 (defloop wait-port
   (Setup
-   30 >= .tries)
+   100 >= .tries)
   (Maybe (->
           {"id" 1 "jsonrpc" "2.0" "method" "chain_getBlockHash" "params" [0]} (ToJson) (Http.Post rpc-server)
           (FromJson) (ExpectTable) (Take "result") (ExpectString) (Log)
