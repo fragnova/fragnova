@@ -243,7 +243,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
-		StorageDoubleMap<_, Blake2_128Concat, Hash256, Blake2_128Concat, SupportedChains, u64>;
+		StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, SupportedChains, u64>;
 
 	#[pallet::storage]
 	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
@@ -567,7 +567,7 @@ pub mod pallet {
 			ensure_none(origin)?;
 
 			// Update nonce
-			<DetachNonces<T>>::insert(&data.fragment_hash, data.target_chain.clone(), data.nonce);
+			<DetachNonces<T>>::insert(&data.target_account, data.target_chain.clone(), data.nonce);
 
 			let export_data = ExportData {
 				chain: data.target_chain,
@@ -685,8 +685,11 @@ pub mod pallet {
 					return InvalidTransaction::BadProof.into()
 				}
 				log::debug!("Sending detach finalization extrinsic");
-				ValidTransaction::with_tag_prefix("Fragments")
+				ValidTransaction::with_tag_prefix("Fragments-Detach")
 					.and_provides(data.fragment_hash)
+					.and_provides(data.target_chain.clone())
+					.and_provides(data.target_account.clone())
+					.and_provides(data.nonce)
 					.longevity(5)
 					.propagate(true)
 					.build()
@@ -826,7 +829,7 @@ pub mod pallet {
 										target_account.copy_from_slice(&request.target_account[..]);
 										payload.extend(&target_account[..]);
 										let nonce = <DetachNonces<T>>::get(
-											&request.fragment_hash,
+											&request.target_account,
 											request.target_chain.clone(),
 										);
 										let nonce = if let Some(nonce) = nonce {
