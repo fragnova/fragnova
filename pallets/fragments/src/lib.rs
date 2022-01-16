@@ -109,7 +109,6 @@ pub struct DetachInternalData<TPublic> {
 	target_chain: SupportedChains,
 	target_account: Vec<u8>, // an eth address or so
 	remote_signature: Vec<u8>,
-	pub_key: Vec<u8>,
 	nonce: u64,
 }
 
@@ -260,7 +259,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		Upload(Hash256),
 		Update(Hash256),
-		Detached(Hash256, Vec<u8>, Vec<u8>),
+		Detached(Hash256, Vec<u8>),
 		Transfer(Hash256, T::AccountId),
 	}
 
@@ -583,7 +582,6 @@ pub mod pallet {
 			Self::deposit_event(Event::Detached(
 				data.fragment_hash,
 				data.remote_signature.clone(),
-				data.pub_key,
 			));
 
 			log::debug!(
@@ -767,9 +765,9 @@ pub mod pallet {
 						log::debug!("Got {} detach requests", requests.len());
 						for request in requests {
 							let chain_id = match request.target_chain {
-								SupportedChains::EthereumMainnet => Some(1u32),
-								SupportedChains::EthereumRinkeby => Some(4u32),
-								SupportedChains::EthereumGoerli => Some(5u32),
+								SupportedChains::EthereumMainnet => U256::from(1),
+								SupportedChains::EthereumRinkeby => U256::from(4),
+								SupportedChains::EthereumGoerli => U256::from(5),
 							};
 
 							let values = match request.target_chain {
@@ -794,6 +792,7 @@ pub mod pallet {
 											let mut key_hex = [0u8; 64];
 											hex::encode_to_slice(key, &mut key_hex).map_err(|_| FAILED)?;
 											let key_hex = [b"0x", &key_hex[..]].concat();
+											log::debug!("Adding new key from seed: {:?}", key_hex);
 											let _public = Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
 											keys.insert(*ed_key);
 											edited = true;
@@ -805,7 +804,7 @@ pub mod pallet {
 									}
 									// get local keys
 									let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
-									log::debug!("Got {} ecdsa local keys", keys.len());
+									log::debug!("ecdsa local keys {:?}", keys);
 									// make sure the local key is in the global authorities set!
 									let key = keys
 										.iter()
@@ -817,8 +816,15 @@ pub mod pallet {
 										// signature, clamor_nonce); on this target chain the nonce
 										// needs to be exactly the same as the one here
 										let mut payload = request.fragment_hash.encode();
-										payload.extend(chain_id.encode());
-										payload.extend(request.target_account.clone());
+										let mut chain_id_be: [u8; 32] = [0u8; 32];
+										chain_id.to_big_endian(&mut chain_id_be);
+										payload.extend(&chain_id_be[..]);
+										let mut target_account: [u8; 20] = [0u8; 20];
+										if request.target_account.len() != 20 {
+											return Err(FAILED);
+										}
+										target_account.copy_from_slice(&request.target_account[..]);
+										payload.extend(&target_account[..]);
 										let nonce = <DetachNonces<T>>::get(
 											&request.fragment_hash,
 											request.target_chain.clone(),
@@ -826,24 +832,28 @@ pub mod pallet {
 										let nonce = if let Some(nonce) = nonce {
 											// add 1, remote will add 1
 											let nonce = nonce.checked_add(1).unwrap();
-											payload.extend(nonce.encode());
+											payload.extend(nonce.to_be_bytes());
 											nonce // for storage
 										} else {
 											// there never was a nonce
-											payload.extend(1u64.encode());
+											payload.extend(1u64.to_be_bytes());
 											1u64
 										};
+										log::debug!("payload: {:x?}, len: {}", payload, payload.len());
+										let payload = keccak_256(&payload);
 										let msg = [
-											&b"\x19Ethereum Signed Message:\n32"[..],
-											&keccak_256(&payload)[..],
+											b"\x19Ethereum Signed Message:\n32",
+											&payload[..],
 										]
 										.concat();
-										let msg = keccak_256(&msg);
 										// Sign the payload with a trusted validation key
 										let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &msg[..]);
 										if let Some(signature) = signature {
 											// No more failures from this path!!
-											Ok((signature.encode(), key.encode(), nonce))
+											let mut signature = signature.encode();
+											// fix signature ending for ethereum
+											signature[64] += 27u8;
+											Ok((signature, nonce))
 										} else {
 											Err(Error::<T>::SigningFailed)
 										}
@@ -855,9 +865,9 @@ pub mod pallet {
 
 
 							match values {
-								Ok((signature, pub_key, nonce)) => {
+								Ok((signature, nonce)) => {
 									// exec unsigned transaction from here
-									log::debug!("Executing unsigned transaction for detach; signature: {:?}, pub_key: {:?}, nonce: {:?}", signature, pub_key, nonce);
+									log::debug!("Executing unsigned transaction for detach; signature: {:?}, nonce: {:?}", signature, nonce);
 									if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
 									.send_unsigned_transaction(
 										|account| DetachInternalData {
@@ -866,7 +876,6 @@ pub mod pallet {
 											target_chain: request.target_chain.clone(),
 											target_account: request.target_account.clone(),
 											remote_signature: signature.clone(),
-											pub_key: pub_key.clone(),
 											nonce,
 										},
 										|payload, signature| Call::internal_finalize_detach {

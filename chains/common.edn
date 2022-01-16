@@ -141,13 +141,7 @@
   [2] (Substrate.Encode ["u8"]) (AppendTo .detach-payload)
 
   [20] (Substrate.Encode ["c"]) (AppendTo .detach-payload)
-  "//Charlie" (ECDSA.PublicKey)
-  (| (ToHex) (Log))
-  (| (Slice :From 1)
-     (Hash.Keccak-256)
-     (Slice :From 12)
-     (| (ToHex) (Log "Eth Address"))
-     (AppendTo .detach-payload))
+  "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1" (HexToBytes) (AppendTo .detach-payload)
 
   [fragments-index detach-index .detach-payload] (Do make-calldata) = .detach-call (| (ToHex) (Log "detach-call"))
   ["//Alice" .detach-call .detach-nonce] (Do send-signed-extrinsic) (Log "detach-call-result"))

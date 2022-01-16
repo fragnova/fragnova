@@ -40,11 +40,36 @@
   (Is .test-asset) (Log) (Assert.Is true)
 
   "//Bob" (Ed25519.PublicKey) (ToHex) (Log "Bobs") = .bob-hex-key
-  {"id" 1 "jsonrpc" "2.0" "method" "author_insertKey" "params" ["frag" "//Bob" .bob-hex-key]} 
+  {"id" 1 "jsonrpc" "2.0" "method" "author_insertKey" "params" ["frag" "//Bob" .bob-hex-key]}
   (ToJson) (Http.Post rpc-server) (Log)
 
-  "fragments-frag-ecdsa-keys" (StringToBytes) (Ed25519.Sign "//Bob") 
-  (Hash.Keccak-256) (ECDSA.PublicKey) (ToHex) (Log "Bob ecdsa") (Log)
+  "fragments-frag-ecdsa-keys" (StringToBytes) (Ed25519.Sign "//Bob")
+  (Hash.Keccak-256) = .ecdsa-priv (ECDSA.PublicKey)
+  (| (Slice :From 1)
+     (Hash.Keccak-256)
+     (Slice :From 12)
+     (ToHex)
+     (Log "Bob Eth Address"))
+  (ToHex) (Log "Bob ecdsa")
+
+  .ecdsa-priv (ECDSA.PublicKey :Compressed true) (ToHex)
+  (Assert.Is "0x02623f76d2fc2ce0f2cef97c129e070a01c9e97d53ae465a119f9432e215a3a05f" true)
+
+  "0x46cf18c03116fdb76460307b066a96ab2567913f764473b53e152de6818bc3e45af9d3593b84e62aa4c24633ffd865ad86f65a5590aeba709b258b961540ec8501"
+  (HexToBytes) = .sig-to-recover
+  "0x19" (HexToBytes) >= .message
+  "Ethereum Signed Message:\n32" (StringToBytes) (AppendTo .message)
+  .frag-hash (ExpectBytes) >= .message2
+  5 (BigInt) (BigInt.ToBytes 256) (AppendTo .message2)
+  "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1" (HexToBytes) (AppendTo .message2)
+  1 (BigInt) (BigInt.ToBytes 64) (AppendTo .message2)
+  (Count .message2) (Log "payload len")
+  .message2 (| (ToHex) (Log "payload")) (Hash.Keccak-256) (AppendTo .message)
+  .message (Hash.Keccak-256)
+  (| (ECDSA.Sign .ecdsa-priv) = .signed-message
+     (ToHex) (Log "Signed"))
+  (| (ECDSA.Recover .sig-to-recover) (ToHex) (Log "Recovered"))
+  (| (ECDSA.Recover .signed-message) (ToHex) (Log "Recovered"))
 
   ; now detach it
   [.frag-hash 1] (Do test-detach)
