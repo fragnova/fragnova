@@ -64,8 +64,8 @@
   "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1" (HexToBytes) (AppendTo .message2)
   1 (BigInt) (BigInt.ToBytes 64) (AppendTo .message2)
   (Count .message2) (Log "payload len")
-  .message2 (| (ToHex) (Log "payload")) (Hash.Keccak-256) (AppendTo .message)
-  .message (Hash.Keccak-256)
+  .message2 (| (ToHex) (Log "payload")) (Hash.Keccak-256) (| (ToHex) (Log "payload hash")) (AppendTo .message)
+  .message (Hash.Keccak-256) (| (ToHex) (Log "message hash"))
   (| (ECDSA.Sign .ecdsa-priv) = .signed-message
      (ToHex) (Log "Signed"))
   (| (ECDSA.Recover .sig-to-recover) (ToHex) (Log "Recovered"))

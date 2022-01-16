@@ -804,7 +804,7 @@ pub mod pallet {
 									}
 									// get local keys
 									let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
-									log::debug!("ecdsa local keys {:?}", keys);
+									log::debug!("ecdsa local keys {:x?}", keys);
 									// make sure the local key is in the global authorities set!
 									let key = keys
 										.iter()
@@ -841,16 +841,18 @@ pub mod pallet {
 										};
 										log::debug!("payload: {:x?}, len: {}", payload, payload.len());
 										let payload = keccak_256(&payload);
+										log::debug!("payload hash: {:x?}, len: {}", payload, payload.len());
 										let msg = [
 											b"\x19Ethereum Signed Message:\n32",
 											&payload[..],
 										]
 										.concat();
+										let msg = keccak_256(&msg);
 										// Sign the payload with a trusted validation key
-										let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &msg[..]);
+										let signature = Crypto::ecdsa_sign_prehashed(KEY_TYPE, key, &msg);
 										if let Some(signature) = signature {
 											// No more failures from this path!!
-											let mut signature = signature.encode();
+											let mut signature = signature.0.to_vec();
 											// fix signature ending for ethereum
 											signature[64] += 27u8;
 											Ok((signature, nonce))
@@ -867,7 +869,7 @@ pub mod pallet {
 							match values {
 								Ok((signature, nonce)) => {
 									// exec unsigned transaction from here
-									log::debug!("Executing unsigned transaction for detach; signature: {:?}, nonce: {:?}", signature, nonce);
+									log::debug!("Executing unsigned transaction for detach; signature: {:x?}, nonce: {}", signature, nonce);
 									if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
 									.send_unsigned_transaction(
 										|account| DetachInternalData {
