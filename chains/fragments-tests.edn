@@ -43,7 +43,7 @@
   {"id" 1 "jsonrpc" "2.0" "method" "author_insertKey" "params" ["frag" "//Bob" .bob-hex-key]} 
   (ToJson) (Http.Post rpc-server) (Log)
 
-  "hello-world" (StringToBytes) (Ed25519.Sign "//Bob") 
+  "fragments-frag-ecdsa-keys" (StringToBytes) (Ed25519.Sign "//Bob") 
   (Hash.Keccak-256) (ECDSA.PublicKey) (ToHex) (Log "Bob ecdsa") (Log)
 
   ; now detach it

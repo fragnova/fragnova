@@ -12,7 +12,7 @@ mod benchmarking;
 mod weights;
 
 use core::slice::Iter;
-use sp_core::{crypto::KeyTypeId, ecdsa, H160, U256};
+use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -68,7 +68,9 @@ use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use sp_chainblocks::Hash256;
 
-use frame_system::offchain::{AppCrypto, CreateSignedTransaction, SignedPayload, SigningTypes, Signer};
+use frame_system::offchain::{
+	AppCrypto, CreateSignedTransaction, SignedPayload, Signer, SigningTypes,
+};
 
 /// data required to submit a transaction.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -710,10 +712,9 @@ pub mod pallet {
 		}
 
 		fn process_detach_requests() {
-			const _FAILED: () = ();
+			const FAILED: () = ();
 			let requests = StorageValueRef::persistent(b"fragments-detach-requests");
-			let _ =
-				requests.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| match requests {
+			let _ = requests.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| match requests {
 					Ok(Some(requests)) => {
 						log::debug!("Got {} detach requests", requests.len());
 						for request in requests {
@@ -727,19 +728,33 @@ pub mod pallet {
 								SupportedChains::EthereumMainnet |
 								SupportedChains::EthereumRinkeby |
 								SupportedChains::EthereumGoerli => {
-									// TODO better add key logic
-									let keys = Crypto::ed25519_public_keys(KEY_TYPE);
-									let key = keys.get(0).ok_or(_FAILED)?;
-									log::debug!("Bob's public: {:?}", key);
-									let signed = Crypto::ed25519_sign(KEY_TYPE, key, b"hello-world").unwrap();
-									log::debug!("Signed: {:?}", signed);
-									let key = keccak_256(&signed.0[..]);
-									log::debug!("Key: {:?}", key);
-									let mut key_hex = [0u8; 64];
-									hex::encode_to_slice(key, &mut key_hex).unwrap();
-									let key_hex = [b"0x", &key_hex[..]].concat();
-									let public = Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
-									log::debug!("Public: {:?}", public);
+									// check if we need to generate new ecdsa keys
+									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE);
+									let keys_ref = StorageValueRef::persistent(b"fragments-frag-ecdsa-keys");
+									let keys = keys_ref.get::<BTreeSet<ed25519::Public>>().unwrap_or_default();
+									let mut keys = if let Some(keys) = keys {
+										keys
+									} else {
+										BTreeSet::new()
+									};
+									// doing this cos mutate was insane...
+									let mut edited = false;
+									for ed_key in &ed_keys {
+										if !keys.contains(ed_key) {
+											let signed = Crypto::ed25519_sign(KEY_TYPE, ed_key, b"fragments-frag-ecdsa-keys").unwrap();
+											let key = keccak_256(&signed.0[..]);
+											let mut key_hex = [0u8; 64];
+											hex::encode_to_slice(key, &mut key_hex).map_err(|_| FAILED)?;
+											let key_hex = [b"0x", &key_hex[..]].concat();
+											let _public = Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
+											keys.insert(*ed_key);
+											edited = true;
+										}
+									}
+									if edited {
+										// commit it back
+										keys_ref.set(&keys);
+									}
 									// get local keys
 									let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
 									log::debug!("Got {} ecdsa local keys", keys.len());
@@ -801,7 +816,7 @@ pub mod pallet {
 						}
 						Ok(vec![])
 					},
-					_ => Err(_FAILED),
+					_ => Err(FAILED),
 				});
 		}
 	}

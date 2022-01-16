@@ -6,11 +6,7 @@
 #[cfg(feature = "std")]
 extern crate lazy_static;
 
-use sp_core::{ecdsa, ed25519};
 use sp_std::vec::Vec;
-
-#[cfg(feature = "std")]
-use sp_core::Pair;
 
 pub type Hash256 = [u8; 32];
 
@@ -90,16 +86,6 @@ pub trait OffchainFragments {
 
 #[cfg(feature = "std")]
 pub fn init() {
-	// let pair = ed25519::Pair::from_string("//Bob", None).unwrap();
-	// log::info!("Bob's public: {:?}", pair.public());
-	// let signature = pair.sign(b"hello-world");
-	// log::info!("signature: {:?}", signature);
-	// let hash = sp_core::keccak_256(&signature.0[..]);
-	// log::info!("hash: {:?}", hash);
-	// let pair = ecdsa::Pair::from_seed_slice(&hash[..]).unwrap();
-	// let public = pair.public();
-	// log::info!("public: {:?}", public);
-
 	// use chainblocks::{cbl_env, cblog};
 
 	// details::init(fetch_extrinsic);

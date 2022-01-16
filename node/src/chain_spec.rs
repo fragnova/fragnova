@@ -4,7 +4,7 @@ use clamor_runtime::{
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{ecdsa, sr25519, ed25519, Pair, Public};
+use sp_core::{ecdsa, ed25519, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
@@ -155,7 +155,7 @@ fn testnet_genesis(
 			upload_authorities: vec![get_from_seed::<ecdsa::Public>("Charlie")],
 			eth_authorities: vec![{
 				let pair = ed25519::Pair::from_string("//Bob", None).unwrap();
-				let signature = pair.sign(b"hello-world");
+				let signature = pair.sign(b"fragments-frag-ecdsa-keys");
 				let hash = sp_core::keccak_256(&signature.0[..]);
 				let pair = ecdsa::Pair::from_seed_slice(&hash[..]).unwrap();
 				let public = pair.public();
