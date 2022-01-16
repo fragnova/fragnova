@@ -161,6 +161,7 @@ fn testnet_genesis(
 				let public = pair.public();
 				public
 			}],
+			keys: vec![get_from_seed::<ed25519::Public>("Bob")],
 		},
 	}
 }

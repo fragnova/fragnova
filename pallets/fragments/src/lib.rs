@@ -63,7 +63,7 @@ use sp_io::{
 	hashing::{blake2_256, keccak_256},
 	offchain_index, transaction_index,
 };
-use sp_runtime::offchain::storage::StorageValueRef;
+use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use sp_chainblocks::Hash256;
@@ -200,12 +200,13 @@ pub mod pallet {
 	pub struct GenesisConfig {
 		pub upload_authorities: Vec<ecdsa::Public>,
 		pub eth_authorities: Vec<ecdsa::Public>,
+		pub keys: Vec<ed25519::Public>,
 	}
 
 	#[cfg(feature = "std")]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
-			Self { upload_authorities: Vec::new(), eth_authorities: Vec::new() }
+			Self { upload_authorities: Vec::new(), eth_authorities: Vec::new(), keys: Vec::new() }
 		}
 	}
 
@@ -214,6 +215,7 @@ pub mod pallet {
 		fn build(&self) {
 			Pallet::<T>::initialize_upload_authorities(&self.upload_authorities);
 			Pallet::<T>::initialize_eth_authorities(&self.eth_authorities);
+			Pallet::<T>::initialize_keys(&self.keys);
 		}
 	}
 
@@ -249,6 +251,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -310,7 +315,7 @@ pub mod pallet {
 		pub fn del_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
-			log::debug!("New eth auth: {:?}", public);
+			log::debug!("Removed eth auth: {:?}", public);
 
 			<EthereumAuthorities<T>>::mutate(|validators| {
 				validators.remove(&public);
@@ -336,9 +341,35 @@ pub mod pallet {
 		pub fn del_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
-			log::debug!("New upload auth: {:?}", public);
+			log::debug!("Removed upload auth: {:?}", public);
 
 			<UploadAuthorities<T>>::mutate(|validators| {
+				validators.remove(&public);
+			});
+
+			Ok(())
+		}
+
+		#[pallet::weight(T::WeightInfo::add_upload_auth())]
+		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New key: {:?}", public);
+
+			<FragKeys<T>>::mutate(|validators| {
+				validators.insert(public);
+			});
+
+			Ok(())
+		}
+
+		#[pallet::weight(T::WeightInfo::del_upload_auth())]
+		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("Removed key: {:?}", public);
+
+			<FragKeys<T>>::mutate(|validators| {
 				validators.remove(&public);
 			});
 
@@ -630,6 +661,26 @@ pub mod pallet {
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
 			if let Call::internal_finalize_detach { ref data, ref signature } = call {
+				// check public is valid
+				let valid_keys = <FragKeys<T>>::get();
+				log::debug!("Valid keys: {:?}", valid_keys);
+				// I'm sure there is a way to do this without serialization but I can't spend so
+				// much time fighting with rust
+				let pub_key = data.public.encode();
+				let pub_key: ed25519::Public = {
+					if let Ok(MultiSigner::Ed25519(pub_key)) =
+						<MultiSigner>::decode(&mut &pub_key[..])
+					{
+						pub_key
+					} else {
+						return InvalidTransaction::BadSigner.into()
+					}
+				};
+				log::debug!("Public key: {:?}", pub_key);
+				if !valid_keys.contains(&pub_key) {
+					return InvalidTransaction::BadSigner.into()
+				}
+				// most expensive bit last
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
 				if !signature_valid {
@@ -692,6 +743,17 @@ pub mod pallet {
 				for authority in authorities {
 					<EthereumAuthorities<T>>::mutate(|authorities| {
 						authorities.insert(authority.clone());
+					});
+				}
+			}
+		}
+
+		fn initialize_keys(keys: &[ed25519::Public]) {
+			if !keys.is_empty() {
+				assert!(<FragKeys<T>>::get().is_empty(), "FragKeys are already initialized!");
+				for key in keys {
+					<FragKeys<T>>::mutate(|keys| {
+						keys.insert(*key);
 					});
 				}
 			}

@@ -5,8 +5,8 @@
 (def sudo-call 0)
 (def fragments-index 10)
 (def add-upload-auth-index 2)
-(def upload-index 4)
-(def detach-index 6)
+(def upload-index 6)
+(def detach-index 8)
 
 (defnode root)
 
