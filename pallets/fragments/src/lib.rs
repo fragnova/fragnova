@@ -69,7 +69,8 @@ use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 use sp_chainblocks::Hash256;
 
 use frame_system::offchain::{
-	AppCrypto, CreateSignedTransaction, SignedPayload, Signer, SigningTypes,
+	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
+	SigningTypes,
 };
 
 /// data required to submit a transaction.
@@ -99,6 +100,23 @@ pub struct DetachRequest {
 	pub fragment_hash: Hash256,
 	pub target_chain: SupportedChains,
 	pub target_account: Vec<u8>, // an eth address or so
+}
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub struct DetachInternalData<TPublic> {
+	public: TPublic,
+	fragment_hash: Hash256,
+	target_chain: SupportedChains,
+	target_account: Vec<u8>, // an eth address or so
+	remote_signature: Vec<u8>,
+	pub_key: Vec<u8>,
+	nonce: u64,
+}
+
+impl<T: SigningTypes> SignedPayload<T> for DetachInternalData<T::Public> {
+	fn public(&self) -> T::Public {
+		self.public.clone()
+	}
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -513,95 +531,34 @@ pub mod pallet {
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn internal_finalize_detach(
 			origin: OriginFor<T>,
-			fragment_hash: Hash256,
-			target_chain: SupportedChains,
-			target_account: Vec<u8>, // an eth address or so
+			data: DetachInternalData<T::Public>,
+			_signature: T::Signature,
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-
-			// make sure the fragment exists
-			let fragment: Fragment<T::AccountId> =
-				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
-
-			match fragment.owner {
-				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
-				FragmentOwner::ExternalAsset(_ext_asset) =>
-				// We don't allow updating external assets
-					ensure!(false, Error::<T>::Unauthorized),
-			};
-
-			ensure!(
-				!<DetachedFragments<T>>::contains_key(&fragment_hash),
-				Error::<T>::FragmentDetached
-			);
-
-			let chain_id = match target_chain {
-				SupportedChains::EthereumMainnet => Some(1u32),
-				SupportedChains::EthereumRinkeby => Some(4u32),
-				SupportedChains::EthereumGoerli => Some(5u32),
-			};
-
-			let (signature, pub_key, nonce) = match target_chain {
-				SupportedChains::EthereumMainnet |
-				SupportedChains::EthereumRinkeby |
-				SupportedChains::EthereumGoerli => {
-					// get local keys
-					let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
-					// make sure the local key is in the global authorities set!
-					let key = keys.iter().find(|k| <EthereumAuthorities<T>>::get().contains(k));
-					if let Some(key) = key {
-						// This is critical, we send over to the ethereum smart contract this
-						// signature The ethereum smart contract call will be the following
-						// attach(fragment_hash, local_owner, signature, clamor_nonce);
-						// on this target chain the nonce needs to be exactly the same as the
-						// one here
-						let mut payload = fragment_hash.encode();
-						payload.extend(chain_id.encode());
-						payload.extend(target_account.clone());
-						let nonce = <DetachNonces<T>>::get(&fragment_hash, target_chain.clone());
-						let nonce = if let Some(nonce) = nonce {
-							// add 1, remote will add 1
-							let nonce = nonce.checked_add(1).unwrap();
-							payload.extend(nonce.encode());
-							nonce // for storage
-						} else {
-							// there never was a nonce
-							payload.extend(1u64.encode());
-							1u64
-						};
-						let msg =
-							[&b"\x19Ethereum Signed Message:\n32"[..], &keccak_256(&payload)[..]]
-								.concat();
-						let msg = keccak_256(&msg);
-						// Sign the payload with a trusted validation key
-						let signature = Crypto::ecdsa_sign(KEY_TYPE, key, &msg[..]);
-						if let Some(signature) = signature {
-							// No more failures from this path!!
-							Ok((signature.encode(), key.encode(), nonce))
-						} else {
-							Err(Error::<T>::SigningFailed)
-						}
-					} else {
-						Err(Error::<T>::NoValidator)
-					}
-				},
-			}?;
+			ensure_none(origin)?;
 
 			// Update nonce
-			<DetachNonces<T>>::insert(&fragment_hash, target_chain.clone(), nonce);
+			<DetachNonces<T>>::insert(&data.fragment_hash, data.target_chain.clone(), data.nonce);
 
-			let data = ExportData { chain: target_chain, owner: target_account, nonce };
+			let export_data = ExportData {
+				chain: data.target_chain,
+				owner: data.target_account,
+				nonce: data.nonce,
+			};
 
 			// add to Detached fragments map
-			<DetachedFragments<T>>::insert(fragment_hash, data);
+			<DetachedFragments<T>>::insert(data.fragment_hash, export_data);
 
 			// emit event
-			Self::deposit_event(Event::Detached(fragment_hash, signature.clone(), pub_key));
+			Self::deposit_event(Event::Detached(
+				data.fragment_hash,
+				data.remote_signature.clone(),
+				data.pub_key,
+			));
 
 			log::debug!(
 				"Detached fragment with hash: {:?} signature: {:?}",
-				fragment_hash,
-				signature
+				data.fragment_hash,
+				data.remote_signature
 			);
 
 			Ok(())
@@ -658,6 +615,35 @@ pub mod pallet {
 
 		fn offchain_worker(_n: T::BlockNumber) {
 			<Pallet<T>>::process_detach_requests();
+		}
+	}
+
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		/// Validate unsigned call to this module.
+		///
+		/// By default unsigned transactions are disallowed, but implementing the validator
+		/// here we make sure that some particular calls (the ones produced by offchain worker)
+		/// are being whitelisted and marked as valid.
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			// Firstly let's check that we call the right function.
+			if let Call::internal_finalize_detach { ref data, ref signature } = call {
+				let signature_valid =
+					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
+				if !signature_valid {
+					return InvalidTransaction::BadProof.into()
+				}
+				log::debug!("Sending detach finalization extrinsic");
+				ValidTransaction::with_tag_prefix("Fragments")
+					.and_provides(data.fragment_hash)
+					.longevity(5)
+					.propagate(true)
+					.build()
+			} else {
+				InvalidTransaction::Call.into()
+			}
 		}
 	}
 
@@ -810,6 +796,25 @@ pub mod pallet {
 								Ok((signature, pub_key, nonce)) => {
 									// exec unsigned transaction from here
 									log::debug!("Executing unsigned transaction for detach; signature: {:?}, pub_key: {:?}, nonce: {:?}", signature, pub_key, nonce);
+									if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
+									.send_unsigned_transaction(
+										|account| DetachInternalData {
+											public: account.public.clone(),
+											fragment_hash: request.fragment_hash,
+											target_chain: request.target_chain.clone(),
+											target_account: request.target_account.clone(),
+											remote_signature: signature.clone(),
+											pub_key: pub_key.clone(),
+											nonce,
+										},
+										|payload, signature| Call::internal_finalize_detach {
+											data: payload,
+											signature,
+										},
+									)
+									.ok_or("No local accounts accounts available.") {
+										log::error!("Failed to send unsigned detach transaction with error: {:?}", e);
+									}
 								},
 								Err(e) => {log::debug!("Failed to detach with error {:?}", e)},
 							}
