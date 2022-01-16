@@ -47,7 +47,7 @@ pub use sp_runtime::{Perbill, Permill};
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-/// Import the template pallet.
+/// Import the entities pallet.
 pub use fragments_pallet;
 
 pub use pallet_contracts::Schedule;
@@ -311,7 +311,7 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-/// Configure the pallet-template in pallets/template.
+/// Configure the pallet-entities in pallets/entities.
 impl fragments_pallet::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
