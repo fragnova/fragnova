@@ -28,29 +28,29 @@ pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
 /// the types with this pallet-specific identifier.
 pub mod crypto {
 	use super::KEY_TYPE;
-	use sp_core::sr25519::Signature as Sr25519Signature;
+	use sp_core::ed25519::Signature as Ed25519Signature;
 	use sp_runtime::{
-		app_crypto::{app_crypto, sr25519},
+		app_crypto::{app_crypto, ed25519},
 		traits::Verify,
 		MultiSignature, MultiSigner,
 	};
-	app_crypto!(sr25519, KEY_TYPE);
+	app_crypto!(ed25519, KEY_TYPE);
 
 	pub struct FragmentsAuthId;
 
 	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for FragmentsAuthId {
 		type RuntimeAppPublic = Public;
-		type GenericSignature = sp_core::sr25519::Signature;
-		type GenericPublic = sp_core::sr25519::Public;
+		type GenericSignature = sp_core::ed25519::Signature;
+		type GenericPublic = sp_core::ed25519::Public;
 	}
 
 	// implemented for mock runtime in test
-	impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature>
+	impl frame_system::offchain::AppCrypto<<Ed25519Signature as Verify>::Signer, Ed25519Signature>
 		for FragmentsAuthId
 	{
 		type RuntimeAppPublic = Public;
-		type GenericSignature = sp_core::sr25519::Signature;
-		type GenericPublic = sp_core::sr25519::Public;
+		type GenericSignature = sp_core::ed25519::Signature;
+		type GenericPublic = sp_core::ed25519::Public;
 	}
 }
 
@@ -727,9 +727,20 @@ pub mod pallet {
 								SupportedChains::EthereumMainnet |
 								SupportedChains::EthereumRinkeby |
 								SupportedChains::EthereumGoerli => {
+									// TODO better add key logic
+									let keys = Crypto::ed25519_public_keys(KEY_TYPE);
+									let key = keys.get(0).ok_or(_FAILED)?;
+									log::debug!("Bob's public: {:?}", key);
+									let signed = Crypto::ed25519_sign(KEY_TYPE, key, b"hello-world").unwrap();
+									log::debug!("Signed: {:?}", signed);
+									let key = keccak_256(&signed.0[..]);
+									log::debug!("Key: {:?}", key);
+									let mut key_hex = [0u8; 64];
+									hex::encode_to_slice(key, &mut key_hex).unwrap();
+									let key_hex = [b"0x", &key_hex[..]].concat();
+									let public = Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
+									log::debug!("Public: {:?}", public);
 									// get local keys
-									let keys = Crypto::sr25519_public_keys(KEY_TYPE);
-									log::debug!("Got {} local keys", keys.len());
 									let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
 									log::debug!("Got {} ecdsa local keys", keys.len());
 									// make sure the local key is in the global authorities set!

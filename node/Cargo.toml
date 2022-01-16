@@ -26,6 +26,7 @@ path = '../runtime'
 version = '4.0.0-dev'
 
 [dependencies]
+log = { version = "0.4.14", default-features = false }
 jsonrpc-core = '18.0.0'
 structopt = '0.3.8'
 sp-chainblocks = { path = '../primitives/chainblocks' }
