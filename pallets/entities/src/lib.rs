@@ -3,7 +3,7 @@
 pub use pallet::*;
 use codec::{Compact, Decode, Encode};
 use sp_std::vec::Vec;
-
+use sp_io::hashing::blake2_256;
 use sp_chainblocks::Hash256;
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -32,10 +32,11 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
+	use fragments_pallet::{Fragment, Fragments, FragmentOwner, DetachedFragments};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + fragments_pallet::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 	}
@@ -61,16 +62,22 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
-		SomethingStored(u32, T::AccountId),
+		EntityAdded(T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Error names should be descriptive.
-		NoneValue,
-		/// Errors should have helpful documentation associated with them.
-		StorageOverflow,
+		/// Fragment not found
+		FragmentNotFound,
+		/// Fragment owner not found
+		FragmentOwnerNotFound,
+		/// No Permission
+		NoPermission,
+		/// Fragment is already detached
+		FragmentDetached,
+		/// Entity already exist
+		EntityAlreadyExist
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -89,6 +96,54 @@ pub mod pallet {
 			max_supply: Option<Compact<u128>>
 		) -> DispatchResult {
 
+			let who = ensure_signed(origin)?;
+			let fragment:Fragment<T::AccountId> = <Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
+
+			let fragment_owner: T::AccountId = match fragment.owner {
+				FragmentOwner::User(owner) => Ok(owner),
+				_ => Err(Error::<T>::FragmentOwnerNotFound),
+			}?;
+
+			ensure!(
+				who == fragment_owner,
+				Error::<T>::NoPermission
+			);
+
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
+
+			let hash = blake2_256(
+				&[
+					&fragment_hash[..],
+					&metadata.name.encode(),
+				]
+					.concat(),
+			);
+
+			ensure!(
+				!<Entities<T>>::contains_key(&hash),
+				Error::<T>::EntityAlreadyExist
+			);
+
+			let entity_data = EntityData{
+				fragment_hash,
+				metadata,
+				unique,
+				mutable,
+				max_supply
+			};
+			<Entities<T>>::insert(fragment_hash, entity_data);
+
+			Fragment2Entities::<T>::try_mutate(&fragment_hash, |entity_hash| -> DispatchResult {
+				if let Some(enti_hash) = entity_hash.as_mut() {
+					enti_hash.push(hash);
+				}
+				Ok(())
+			})?;
+
+			Self::deposit_event(Event::EntityAdded(who));
 			Ok(())
 		}
 
