@@ -71,6 +71,12 @@ path = '../fragments'
 [dependencies]
 sp-chainblocks = { path = '../../primitives/chainblocks', default-features = false }
 
+[dependencies.pallet-randomness-collective-flip]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
 [features]
 default = ["std"]
 std = [
@@ -84,6 +90,7 @@ std = [
 	"sp-std/std",
 	"sp-runtime/std",
 	"sp-core/std",
+	"pallet-randomness-collective-flip/std",
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]

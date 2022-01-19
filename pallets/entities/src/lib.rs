@@ -1,5 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+
 pub use pallet::*;
 use codec::{Compact, Decode, Encode};
 use sp_std::vec::Vec;
