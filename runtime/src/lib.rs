@@ -311,7 +311,10 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-/// Configure the pallet-entities in pallets/entities.
+impl entities_pallet::Config for Runtime {
+	type Event = Event;
+}
+
 impl fragments_pallet::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
@@ -454,6 +457,7 @@ construct_runtime!(
 		Indices: pallet_indices,
 		Contracts: pallet_contracts,
 		Fragments: fragments_pallet,
+		Entities: entities_pallet,
 	}
 );
 
