@@ -236,7 +236,8 @@ runtime-benchmarks = [
     'pallet-balances/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
-    'fragments-pallet/runtime-benchmarks'
+    'fragments-pallet/runtime-benchmarks',
+	'entities-pallet/runtime-benchmarks',
 ]
 std = [
     'codec/std',

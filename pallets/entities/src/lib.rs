@@ -2,14 +2,21 @@
 
 #[cfg(test)]
 mod mock;
+
 #[cfg(test)]
 mod tests;
+
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+mod weights;
 
 pub use pallet::*;
 use codec::{Compact, Decode, Encode};
 use sp_std::vec::Vec;
 use sp_io::hashing::blake2_256;
 use sp_chainblocks::Hash256;
+pub use weights::WeightInfo;
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct EntityMetadata {
@@ -44,6 +51,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + fragments_pallet::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::pallet]
@@ -91,7 +99,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
 			origin: OriginFor<T>,
 			fragment_hash: Hash256,

@@ -104,6 +104,7 @@ impl fragments_pallet::Config for Test {
 
 impl entities_pallet::Config for Test {
 	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

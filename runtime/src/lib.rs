@@ -313,6 +313,7 @@ impl pallet_sudo::Config for Runtime {
 
 impl entities_pallet::Config for Runtime {
 	type Event = Event;
+	type WeightInfo = ();
 }
 
 impl fragments_pallet::Config for Runtime {
@@ -681,6 +682,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
 			list_benchmark!(list, extra, fragments_pallet, Fragments);
 			list_benchmark!(list, extra, pallet_assets, Assets);
+			list_benchmark!(list, extra, entities_pallet, Entities);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -720,6 +722,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, fragments_pallet, Fragments);
 			add_benchmark!(params, batches, pallet_assets, Assets);
+			add_benchmark!(params, batches, entities_pallet, Entities);
 
 			Ok(batches)
 		}
