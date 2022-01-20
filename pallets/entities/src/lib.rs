@@ -2,6 +2,8 @@
 
 #[cfg(test)]
 mod mock;
+#[cfg(test)]
+mod tests;
 
 pub use pallet::*;
 use codec::{Compact, Decode, Encode};
@@ -137,7 +139,7 @@ pub mod pallet {
 				mutable,
 				max_supply
 			};
-			<Entities<T>>::insert(fragment_hash, entity_data);
+			<Entities<T>>::insert(&hash, entity_data);
 
 			Fragment2Entities::<T>::try_mutate(&fragment_hash, |entity_hash| -> DispatchResult {
 				if let Some(enti_hash) = entity_hash.as_mut() {
