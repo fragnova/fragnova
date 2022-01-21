@@ -151,15 +151,13 @@ pub mod pallet {
 			};
 			<Entities<T>>::insert(&hash, entity_data);
 
-			Fragment2Entities::<T>::try_mutate(&fragment_hash, |entity_hash| -> DispatchResult {
+			Fragment2Entities::<T>::mutate(&fragment_hash, |entity_hash| {
 				if let Some(enti_hash) = entity_hash.as_mut() {
 					enti_hash.push(hash);
 				} else {
 					*entity_hash = Some(vec![hash]);
 				}
-
-				Ok(())
-			})?;
+			});
 
 			Self::deposit_event(Event::EntityAdded(who));
 			Ok(())
