@@ -17,6 +17,7 @@ use sp_std::vec::Vec;
 use sp_io::hashing::blake2_256;
 use sp_chainblocks::Hash256;
 pub use weights::WeightInfo;
+use sp_std::vec;
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct EntityMetadata {
@@ -127,6 +128,7 @@ pub mod pallet {
 				Error::<T>::FragmentDetached
 			);
 
+			//TODO Need to extend it in future
 			let hash = blake2_256(
 				&[
 					&fragment_hash[..],
@@ -152,7 +154,10 @@ pub mod pallet {
 			Fragment2Entities::<T>::try_mutate(&fragment_hash, |entity_hash| -> DispatchResult {
 				if let Some(enti_hash) = entity_hash.as_mut() {
 					enti_hash.push(hash);
+				} else {
+					*entity_hash = Some(vec![hash]);
 				}
+
 				Ok(())
 			})?;
 

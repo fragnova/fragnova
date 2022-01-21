@@ -1,4 +1,4 @@
-use crate::{mock::*, Error};
+use crate::{mock::*, Error, Fragment2Entities};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use crate::{Entities, EntityMetadata};
@@ -78,6 +78,7 @@ fn create_should_works() {
 			None
 		));
 		assert!(Entities::<Test>::contains_key(&hash));
+		assert!(Fragment2Entities::<Test>::contains_key(&FRAGMENT_HASH));
 	});
 }
 
