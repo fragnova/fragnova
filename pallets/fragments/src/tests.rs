@@ -1,7 +1,4 @@
-use crate::{
-	mock::*, AuthData, Error, EthereumAuthorities, FragmentOwner, Fragments, IncludeInfo,
-	LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE,
-};
+use crate::{mock::*, AuthData, Error, EthereumAuthorities, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE, DetachInternalData};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;
@@ -51,7 +48,7 @@ fn initial_upload_and_get_signature() -> AuthData {
 	let auth_data = AuthData { signature, block: 1 };
 
 	assert_ok!(FragmentsPallet::upload(
-		Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 		references,
 		None,
 		None,
@@ -112,7 +109,7 @@ fn upload_should_works() {
 		let auth_data = AuthData { signature, block: 1 };
 
 		assert_ok!(FragmentsPallet::upload(
-			Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			references,
 			None,
 			None,
@@ -139,7 +136,7 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 		let auth_data = AuthData { signature, block: 1 };
 		assert_noop!(
 			FragmentsPallet::upload(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				references,
 				None,
 				None,
@@ -170,7 +167,7 @@ fn upload_fragment_should_not_work_if_not_verified() {
 
 		assert_noop!(
 			FragmentsPallet::upload(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				references,
 				None,
 				None,
@@ -199,7 +196,7 @@ fn update_should_works() {
 
 		let auth_data = AuthData { signature, block: 1 };
 		assert_ok!(FragmentsPallet::update(
-			Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			fragment_hash,
 			Some(Compact(123)),
 			auth_data,
@@ -216,7 +213,7 @@ fn update_fragment_should_not_work_if_user_is_unauthorized() {
 		let data = DATA.as_bytes().to_vec();
 		let auth_data = initial_upload_and_get_signature();
 
-		let (pair, _) = sp_core::sr25519::Pair::generate();
+		let (pair, _) = sp_core::ed25519::Pair::generate();
 
 		assert_noop!(
 			FragmentsPallet::update(
@@ -241,7 +238,7 @@ fn update_fragment_should_not_work_if_fragment_not_found() {
 		let auth_data = AuthData { signature, block: 1 };
 		assert_noop!(
 			FragmentsPallet::update(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				fragment_hash,
 				Some(Compact(123)),
 				auth_data,
@@ -263,7 +260,7 @@ fn update_should_not_work_if_not_verified() {
 
 		assert_noop!(
 			FragmentsPallet::update(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				FRAGMENT_HASH,
 				Some(Compact(123)),
 				auth_data,
@@ -281,7 +278,7 @@ fn update_should_not_work_if_detached() {
 
 	t.register_extension(KeystoreExt(Arc::new(keystore)));
 	t.execute_with(|| {
-		let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
+		let pair = sp_core::ed25519::Pair::from_string("//Alice", None).unwrap();
 		let data = DATA.as_bytes().to_vec();
 		let auth_data = initial_upload_and_get_signature();
 
@@ -292,15 +289,30 @@ fn update_should_not_work_if_detached() {
 			authorities.insert(keys.get(0).unwrap().clone());
 		});
 		assert_ok!(FragmentsPallet::detach(
-			Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			FRAGMENT_HASH,
 			SupportedChains::EthereumMainnet,
 			pair.to_raw_vec()
 		));
 
+		let detach_data = DetachInternalData {
+			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
+			fragment_hash: FRAGMENT_HASH,
+			remote_signature: vec![],
+			target_account: vec![],
+			target_chain: SupportedChains::EthereumGoerli,
+			nonce: 1
+		};
+
+		assert_ok!(FragmentsPallet::internal_finalize_detach(
+			Origin::none(),
+			detach_data,
+			pair.sign(DATA.as_bytes())
+		));
+
 		assert_noop!(
 			FragmentsPallet::update(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				FRAGMENT_HASH,
 				Some(Compact(123)),
 				auth_data,
@@ -312,32 +324,11 @@ fn update_should_not_work_if_detached() {
 }
 
 #[test]
-fn detach_should_not_work_if_no_validator() {
-	let keystore = KeyStore::new();
-	let mut t = new_test_ext();
-
-	t.register_extension(KeystoreExt(Arc::new(keystore)));
-	t.execute_with(|| {
-		let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
-		initial_upload_and_get_signature();
-		assert_noop!(
-			FragmentsPallet::detach(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
-				FRAGMENT_HASH,
-				SupportedChains::EthereumMainnet,
-				pair.to_raw_vec()
-			),
-			Error::<Test>::NoValidator
-		);
-	});
-}
-
-#[test]
 fn detach_fragment_should_not_work_if_user_is_unauthorized() {
 	new_test_ext().execute_with(|| {
 		initial_upload_and_get_signature();
 
-		let (pair, _) = sp_core::sr25519::Pair::generate();
+		let (pair, _) = sp_core::ed25519::Pair::generate();
 
 		assert_noop!(
 			FragmentsPallet::detach(
@@ -354,8 +345,8 @@ fn detach_fragment_should_not_work_if_user_is_unauthorized() {
 #[test]
 fn detach_fragment_should_not_work_if_fragment_not_found() {
 	new_test_ext().execute_with(|| {
-		let who: sp_core::sr25519::Public = sp_core::sr25519::Public::from_raw(PUBLIC1);
-		let (pair, _) = sp_core::sr25519::Pair::generate();
+		let who: sp_core::ed25519::Public = sp_core::ed25519::Public::from_raw(PUBLIC1);
+		let (pair, _) = sp_core::ed25519::Pair::generate();
 
 		assert_noop!(
 			FragmentsPallet::detach(
@@ -386,7 +377,7 @@ fn detach_should_work() {
 			authorities.insert(keys.get(0).unwrap().clone());
 		});
 		assert_ok!(FragmentsPallet::detach(
-			Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			FRAGMENT_HASH,
 			SupportedChains::EthereumMainnet,
 			pair.to_raw_vec()
@@ -399,9 +390,9 @@ fn transfer_should_works() {
 	new_test_ext().execute_with(|| {
 		initial_upload_and_get_signature();
 
-		let (pair, _) = sp_core::sr25519::Pair::generate();
+		let (pair, _) = sp_core::ed25519::Pair::generate();
 		assert_ok!(FragmentsPallet::transfer(
-			Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			FRAGMENT_HASH,
 			pair.public()
 		));
@@ -416,11 +407,11 @@ fn transfer_should_works() {
 #[test]
 fn transfer_should_not_work_if_fragment_not_found() {
 	new_test_ext().execute_with(|| {
-		let (pair, _) = sp_core::sr25519::Pair::generate();
+		let (pair, _) = sp_core::ed25519::Pair::generate();
 
 		assert_noop!(
 			FragmentsPallet::transfer(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				FRAGMENT_HASH,
 				pair.public()
 			),
@@ -434,7 +425,7 @@ fn transfer_should_not_work_if_user_is_unauthorized() {
 	new_test_ext().execute_with(|| {
 		initial_upload_and_get_signature();
 
-		let (pair, _) = sp_core::sr25519::Pair::generate();
+		let (pair, _) = sp_core::ed25519::Pair::generate();
 
 		assert_noop!(
 			FragmentsPallet::transfer(Origin::signed(pair.public()), FRAGMENT_HASH, pair.public()),
@@ -450,26 +441,33 @@ fn transfer_should_not_work_if_detached() {
 
 	t.register_extension(KeystoreExt(Arc::new(keystore)));
 	t.execute_with(|| {
-		let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
+		let pair = sp_core::ed25519::Pair::from_string("//Alice", None).unwrap();
 		initial_upload_and_get_signature();
-
 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
 		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
 
 		<EthereumAuthorities<Test>>::mutate(|authorities| {
 			authorities.insert(keys.get(0).unwrap().clone());
 		});
-		assert_ok!(FragmentsPallet::detach(
-			Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
-			FRAGMENT_HASH,
-			SupportedChains::EthereumMainnet,
-			pair.to_raw_vec()
+		let detach_data = DetachInternalData {
+			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
+			fragment_hash: FRAGMENT_HASH,
+			remote_signature: vec![],
+			target_account: vec![],
+			target_chain: SupportedChains::EthereumGoerli,
+			nonce: 1
+		};
+
+		assert_ok!(FragmentsPallet::internal_finalize_detach(
+			Origin::none(),
+			detach_data,
+			pair.sign(DATA.as_bytes())
 		));
 
-		let (pair, _) = sp_core::sr25519::Pair::generate();
+		let (pair, _) = sp_core::ed25519::Pair::generate();
 		assert_noop!(
 			FragmentsPallet::transfer(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC1)),
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				FRAGMENT_HASH,
 				pair.public()
 			),
