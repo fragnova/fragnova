@@ -61,11 +61,7 @@ benchmarks! {
 		let l in 1 .. 2;
 		let immutable_data = vec![0u8; l as usize];
 		let fragment_hash = blake2_256(immutable_data.as_slice());
-		let references = vec![IncludeInfo {
-			fragment_hash: FRAGMENT_HASH,
-			mutable_index: Some(Compact(1)),
-			staked_amount: Compact(1),
-		}];
+		let references = BTreeSet::from([FRAGMENT_HASH]);
 
 		let public: [u8; 33] = if l == 1 {
 			[3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251]
@@ -85,7 +81,7 @@ benchmarks! {
 		};
 
 		Fragments::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-	}: _(RawOrigin::Signed(caller), references , None, None, auth_data, immutable_data)
+	}: _(RawOrigin::Signed(caller), auth_data, references , None, None, immutable_data)
 	verify {
 		assert_last_event::<T>(Event::<T>::Upload(fragment_hash).into())
 	}
@@ -95,11 +91,7 @@ benchmarks! {
 		let l in 1 .. 2;
 		let immutable_data = vec![0u8; l as usize];
 		let fragment_hash = blake2_256(immutable_data.as_slice());
-		let references = vec![IncludeInfo {
-			fragment_hash: FRAGMENT_HASH,
-			mutable_index: Some(Compact(1)),
-			staked_amount: Compact(1),
-		}];
+		let references = BTreeSet::from([FRAGMENT_HASH]);
 
 		let public: [u8; 33] = if l == 1 {
 			[3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251]
@@ -119,7 +111,7 @@ benchmarks! {
 		};
 
 		Fragments::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references , None, None, auth_data, immutable_data.clone())?;
+		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references , None, None, immutable_data.clone())?;
 
 		let public: [u8; 33] = if l == 1 {
 			[2, 10, 16, 145, 52, 31, 229, 102, 75, 250, 23, 130, 213, 224, 71, 121, 104, 144, 104, 201, 22, 176, 76, 179, 101, 236, 49, 83, 117, 86, 132, 217, 161]
@@ -142,7 +134,7 @@ benchmarks! {
 		Fragments::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
 
 
-	}: _(RawOrigin::Signed(caller), fragment_hash , Some(Compact(123)), auth_data, Some(immutable_data))
+	}: _(RawOrigin::Signed(caller), auth_data, fragment_hash , Some(Compact(123)), Some(immutable_data))
 	verify {
 		assert_last_event::<T>(Event::<T>::Update(fragment_hash).into())
 	}
@@ -181,11 +173,7 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let new_owner: T::AccountId = account("Sample", 100, SEED);
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
-		let references = vec![IncludeInfo {
-			fragment_hash: FRAGMENT_HASH,
-			mutable_index: Some(Compact(1)),
-			staked_amount: Compact(1),
-		}];
+		let references = BTreeSet::from([FRAGMENT_HASH]);
 
 		let public: [u8; 33] = [3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251];
 		 let signature: [u8; 65] = [132, 58, 255, 255, 79, 60, 138, 156, 240, 245, 176, 220, 10, 248, 217, 156, 60, 180, 61, 210, 74, 231, 141, 45, 165, 102, 165, 251, 130, 229, 229, 144, 75, 26, 6, 42, 15, 121, 152, 88, 5, 120, 95, 20, 183, 221, 44, 110, 72, 245, 228, 200, 232, 253, 209, 69, 10, 197, 75, 108, 56, 196, 190, 182, 0];
@@ -196,7 +184,7 @@ benchmarks! {
 		};
 
 		Fragments::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references , None, None, auth_data, immutable_data.clone())?;
+		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references , None, None, immutable_data.clone())?;
 
 
 	}: _(RawOrigin::Signed(caller), FRAGMENT_HASH, new_owner.clone())
