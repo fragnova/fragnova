@@ -376,11 +376,11 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::upload(data.len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
+			auth: AuthData,
 			// we store this in the state as well
 			references: BTreeSet<Hash256>,
 			linked_asset: Option<LinkedAsset>,
 			include_cost: Option<Compact<u128>>,
-			auth: AuthData,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -469,10 +469,10 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::update(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
 		pub fn update(
 			origin: OriginFor<T>,
+			auth: AuthData,
 			// fragment hash we want to update
 			fragment_hash: Hash256,
 			include_cost: Option<Compact<u128>>,
-			auth: AuthData,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Option<Vec<u8>>,
 		) -> DispatchResult {
@@ -642,10 +642,10 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::upload(data.len() as u32))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
+			auth: AuthData,
 			// fragment hash we want to update
 			fragment_hash: Hash256,
 			metadata_key: Vec<u8>,
-			auth: AuthData,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -687,7 +687,7 @@ pub mod pallet {
 			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
 				let fragment = fragment.as_mut().unwrap();
 				// update metadata
-				fragment.metadata.insert(metadata_key, data_hash);
+				fragment.metadata.insert(metadata_key.clone(), data_hash);
 			});
 
 			// index data
@@ -697,7 +697,7 @@ pub mod pallet {
 			<UserNonces<T>>::insert(who, nonce + 1);
 
 			// also emit event
-			Self::deposit_event(Event::MetadataAdded(fragment_hash, metadata_key));
+			Self::deposit_event(Event::MetadataAdded(fragment_hash, metadata_key.clone()));
 
 			log::debug!(
 				"Added metadata to fragment: {:x?} with key: {:x?}",

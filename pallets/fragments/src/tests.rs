@@ -1,10 +1,14 @@
-use crate::{mock::*, AuthData, Error, EthereumAuthorities, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE, DetachInternalData};
+use crate::{
+	mock::*, AuthData, DetachInternalData, Error, EthereumAuthorities, FragmentOwner, Fragments,
+	LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE,
+};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
+use sp_std::collections::btree_set::BTreeSet;
 use std::sync::Arc;
 
 fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
@@ -16,7 +20,7 @@ fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
 
 fn initial_set_up_and_get_signature(
 	data: Vec<u8>,
-	references: Vec<IncludeInfo>,
+	references: BTreeSet<Hash256>,
 	nonce: u64,
 ) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
@@ -39,20 +43,16 @@ fn initial_set_up_and_get_signature(
 
 fn initial_upload_and_get_signature() -> AuthData {
 	let data = DATA.as_bytes().to_vec();
-	let references = vec![IncludeInfo {
-		fragment_hash: FRAGMENT_HASH,
-		mutable_index: Some(Compact(1)),
-		staked_amount: Compact(1),
-	}];
+	let references = BTreeSet::from([FRAGMENT_HASH]);
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 	let auth_data = AuthData { signature, block: 1 };
 
 	assert_ok!(FragmentsPallet::upload(
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+		auth_data.clone(),
 		references,
 		None,
 		None,
-		auth_data.clone(),
 		data,
 	));
 	auth_data
@@ -98,11 +98,7 @@ fn del_upload_auth_should_works() {
 fn upload_should_works() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
-		let references = vec![IncludeInfo {
-			fragment_hash: FRAGMENT_HASH,
-			mutable_index: Some(Compact(1)),
-			staked_amount: Compact(1),
-		}];
+		let references = BTreeSet::from([FRAGMENT_HASH]);
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
@@ -110,10 +106,10 @@ fn upload_should_works() {
 
 		assert_ok!(FragmentsPallet::upload(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+			auth_data,
 			references,
 			None,
 			None,
-			auth_data,
 			data,
 		));
 
@@ -126,21 +122,17 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
 		initial_upload_and_get_signature();
-		let references = vec![IncludeInfo {
-			fragment_hash: FRAGMENT_HASH,
-			mutable_index: Some(Compact(1)),
-			staked_amount: Compact(1),
-		}];
+		let references = BTreeSet::from([FRAGMENT_HASH]);
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
 		let auth_data = AuthData { signature, block: 1 };
 		assert_noop!(
 			FragmentsPallet::upload(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+				auth_data,
 				references,
 				None,
 				None,
-				auth_data,
 				data,
 			),
 			Error::<Test>::FragmentExists
@@ -151,27 +143,18 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 #[test]
 fn upload_fragment_should_not_work_if_not_verified() {
 	new_test_ext().execute_with(|| {
-		let fragment_hash: Hash256 = [
-			30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10,
-			179, 245, 51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
-		];
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
-		let include_info = IncludeInfo {
-			fragment_hash,
-			mutable_index: Some(Compact(1)),
-			staked_amount: Compact(1),
-		};
-		let references = vec![include_info];
+		let references = BTreeSet::from([FRAGMENT_HASH]);
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
 		let auth_data = AuthData { signature, block: 1 };
 
 		assert_noop!(
 			FragmentsPallet::upload(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+				auth_data,
 				references,
 				None,
 				None,
-				auth_data,
 				immutable_data,
 			),
 			Error::<Test>::VerificationFailed
@@ -197,9 +180,9 @@ fn update_should_works() {
 		let auth_data = AuthData { signature, block: 1 };
 		assert_ok!(FragmentsPallet::update(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+			auth_data,
 			fragment_hash,
 			Some(Compact(123)),
-			auth_data,
 			data,
 		));
 
@@ -218,9 +201,9 @@ fn update_fragment_should_not_work_if_user_is_unauthorized() {
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(pair.public()),
+				auth_data,
 				FRAGMENT_HASH,
 				Some(Compact(123)),
-				auth_data,
 				Some(data),
 			),
 			Error::<Test>::Unauthorized
@@ -239,9 +222,9 @@ fn update_fragment_should_not_work_if_fragment_not_found() {
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+				auth_data,
 				fragment_hash,
 				Some(Compact(123)),
-				auth_data,
 				Some(immutable_data),
 			),
 			Error::<Test>::FragmentNotFound
@@ -261,9 +244,9 @@ fn update_should_not_work_if_not_verified() {
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+				auth_data,
 				FRAGMENT_HASH,
 				Some(Compact(123)),
-				auth_data,
 				Some(data),
 			),
 			Error::<Test>::VerificationFailed
@@ -301,7 +284,7 @@ fn update_should_not_work_if_detached() {
 			remote_signature: vec![],
 			target_account: vec![],
 			target_chain: SupportedChains::EthereumGoerli,
-			nonce: 1
+			nonce: 1,
 		};
 
 		assert_ok!(FragmentsPallet::internal_finalize_detach(
@@ -313,9 +296,9 @@ fn update_should_not_work_if_detached() {
 		assert_noop!(
 			FragmentsPallet::update(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+				auth_data,
 				FRAGMENT_HASH,
 				Some(Compact(123)),
-				auth_data,
 				Some(data),
 			),
 			Error::<Test>::FragmentDetached
@@ -455,7 +438,7 @@ fn transfer_should_not_work_if_detached() {
 			remote_signature: vec![],
 			target_account: vec![],
 			target_chain: SupportedChains::EthereumGoerli,
-			nonce: 1
+			nonce: 1,
 		};
 
 		assert_ok!(FragmentsPallet::internal_finalize_detach(

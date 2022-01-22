@@ -1,13 +1,15 @@
 use crate::{mock::*, Entities, EntityMetadata, Error, Fragment2Entities};
-use codec::{Compact, Encode};
-use fragments_pallet::{AuthData, IncludeInfo, LinkedAsset};
+use codec::Encode;
+use fragments_pallet::{AuthData, LinkedAsset};
 use frame_support::{assert_noop, assert_ok};
+use sp_chainblocks::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
+use sp_std::collections::btree_set::BTreeSet;
 
 fn initial_set_up_and_get_signature(
 	data: Vec<u8>,
-	references: Vec<IncludeInfo>,
+	references: BTreeSet<Hash256>,
 	nonce: u64,
 ) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
@@ -30,20 +32,16 @@ fn initial_set_up_and_get_signature(
 
 fn initial_upload_and_get_signature() -> AuthData {
 	let data = DATA.as_bytes().to_vec();
-	let references = vec![IncludeInfo {
-		fragment_hash: FRAGMENT_HASH,
-		mutable_index: Some(Compact(1)),
-		staked_amount: Compact(1),
-	}];
+	let references = BTreeSet::from([FRAGMENT_HASH]);
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 	let auth_data = AuthData { signature, block: 1 };
 
 	assert_ok!(FragmentsPallet::upload(
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
+		auth_data.clone(),
 		references,
 		None,
 		None,
-		auth_data.clone(),
 		data,
 	));
 	auth_data
@@ -82,14 +80,15 @@ fn create_should_not_work_if_fragments_not_found() {
 			external_url: "external_url".as_bytes().to_vec(),
 		};
 
-		assert_noop!(EntitiesPallet::create(
-			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
-			FRAGMENT_HASH,
-			entity_data,
-			true,
-			true,
-			None
-		),
+		assert_noop!(
+			EntitiesPallet::create(
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
+				FRAGMENT_HASH,
+				entity_data,
+				true,
+				true,
+				None
+			),
 			Error::<Test>::FragmentNotFound
 		);
 	});
@@ -109,14 +108,15 @@ fn create_should_not_work_if_fragment_owner_not_found() {
 			external_url: "external_url".as_bytes().to_vec(),
 		};
 
-		assert_noop!(EntitiesPallet::create(
-			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
-			FRAGMENT_HASH,
-			entity_data,
-			true,
-			true,
-			None
-		),
+		assert_noop!(
+			EntitiesPallet::create(
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
+				FRAGMENT_HASH,
+				entity_data,
+				true,
+				true,
+				None
+			),
 			Error::<Test>::NoPermission
 		);
 	});
@@ -144,14 +144,15 @@ fn create_should_not_work_if_entity_already_exist() {
 		));
 		assert!(Entities::<Test>::contains_key(&hash));
 
-		assert_noop!(EntitiesPallet::create(
-			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
-			FRAGMENT_HASH,
-			entity_data,
-			true,
-			true,
-			None
-		),
+		assert_noop!(
+			EntitiesPallet::create(
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
+				FRAGMENT_HASH,
+				entity_data,
+				true,
+				true,
+				None
+			),
 			Error::<Test>::EntityAlreadyExist
 		);
 	});
