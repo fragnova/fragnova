@@ -11,13 +11,12 @@ mod benchmarking;
 
 mod weights;
 
-pub use pallet::*;
 use codec::{Compact, Decode, Encode};
-use sp_std::vec::Vec;
-use sp_io::hashing::blake2_256;
+pub use pallet::*;
 use sp_chainblocks::Hash256;
+use sp_io::hashing::blake2_256;
+use sp_std::{vec, vec::Vec};
 pub use weights::WeightInfo;
-use sp_std::vec;
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct EntityMetadata {
@@ -36,16 +35,16 @@ pub struct EntityData {
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct EntityInstanceData {
-	pub data_hash: Option<Hash256>, // mutable block data hash
-	pub metadata: Option<EntityMetadata> // an instance might have metadata
+	pub data_hash: Option<Hash256>,       // mutable block data hash
+	pub metadata: Option<EntityMetadata>, // an instance might have metadata
 }
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use fragments_pallet::{DetachedFragments, Fragment, FragmentOwner, Fragments};
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use fragments_pallet::{Fragment, Fragments, FragmentOwner, DetachedFragments};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -69,7 +68,8 @@ pub mod pallet {
 
 	// entity-hash to entity-id to entity-instance-data
 	#[pallet::storage]
-	pub type EntityInstances<T: Config> = StorageDoubleMap<_, Blake2_128Concat, Hash256, Blake2_128Concat, u128, EntityInstanceData>;
+	pub type EntityInstances<T: Config> =
+		StorageDoubleMap<_, Blake2_128Concat, Hash256, Blake2_128Concat, u128, EntityInstanceData>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -91,7 +91,7 @@ pub mod pallet {
 		/// Fragment is already detached
 		FragmentDetached,
 		/// Entity already exist
-		EntityAlreadyExist
+		EntityAlreadyExist,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -99,7 +99,6 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
 			origin: OriginFor<T>,
@@ -107,21 +106,18 @@ pub mod pallet {
 			metadata: EntityMetadata,
 			unique: bool,
 			mutable: bool,
-			max_supply: Option<Compact<u128>>
+			max_supply: Option<Compact<u128>>,
 		) -> DispatchResult {
-
 			let who = ensure_signed(origin)?;
-			let fragment:Fragment<T::AccountId> = <Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
+			let fragment: Fragment<T::AccountId, T::BlockNumber> =
+				<Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			let fragment_owner: T::AccountId = match fragment.owner {
 				FragmentOwner::User(owner) => Ok(owner),
 				_ => Err(Error::<T>::FragmentOwnerNotFound),
 			}?;
 
-			ensure!(
-				who == fragment_owner,
-				Error::<T>::NoPermission
-			);
+			ensure!(who == fragment_owner, Error::<T>::NoPermission);
 
 			ensure!(
 				!<DetachedFragments<T>>::contains_key(&fragment_hash),
@@ -129,26 +125,11 @@ pub mod pallet {
 			);
 
 			//TODO Need to extend it in future
-			let hash = blake2_256(
-				&[
-					&fragment_hash[..],
-					&metadata.name.encode(),
-				]
-					.concat(),
-			);
+			let hash = blake2_256(&[&fragment_hash[..], &metadata.name.encode()].concat());
 
-			ensure!(
-				!<Entities<T>>::contains_key(&hash),
-				Error::<T>::EntityAlreadyExist
-			);
+			ensure!(!<Entities<T>>::contains_key(&hash), Error::<T>::EntityAlreadyExist);
 
-			let entity_data = EntityData{
-				fragment_hash,
-				metadata,
-				unique,
-				mutable,
-				max_supply
-			};
+			let entity_data = EntityData { fragment_hash, metadata, unique, mutable, max_supply };
 			<Entities<T>>::insert(&hash, entity_data);
 
 			Fragment2Entities::<T>::mutate(&fragment_hash, |entity_hash| {
@@ -162,6 +143,5 @@ pub mod pallet {
 			Self::deposit_event(Event::EntityAdded(who));
 			Ok(())
 		}
-
 	}
 }

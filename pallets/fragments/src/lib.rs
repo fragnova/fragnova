@@ -64,7 +64,11 @@ use sp_io::{
 	offchain_index, transaction_index,
 };
 use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
-use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
+use sp_std::{
+	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
+	vec,
+	vec::Vec,
+};
 
 use sp_chainblocks::Hash256;
 
@@ -88,7 +92,7 @@ impl<T: SigningTypes> SignedPayload<T> for FragmentValidation<T::Public, T::Bloc
 	}
 }
 
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum SupportedChains {
 	EthereumMainnet,
 	EthereumRinkeby,
@@ -140,22 +144,19 @@ pub enum FragmentOwner<TAccountId> {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct IncludeInfo {
-	pub fragment_hash: Hash256,
-	pub mutable_index: Option<Compact<u32>>,
-	pub staked_amount: Compact<u128>,
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct AuthData {
 	pub signature: ecdsa::Signature,
 	pub block: u32,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
-pub struct Fragment<TAccountId> {
+pub struct Fragment<TAccountId, TBlockNumber> {
+	/// Block number this fragment was included in
+	pub block: TBlockNumber,
 	/// Plain hash of indexed data.
-	pub mutable_hash: Vec<Hash256>,
+	pub updates: Vec<Hash256>,
+	/// Base include cost, of referenced fragments.
+	pub base_cost: Compact<u128>,
 	/// Include price of the fragment.
 	/// If None, this fragment can't be included into other fragments
 	pub include_cost: Option<Compact<u128>>,
@@ -164,8 +165,9 @@ pub struct Fragment<TAccountId> {
 	/// The current owner of the fragment.
 	pub owner: FragmentOwner<TAccountId>,
 	/// References to other fragments.
-	/// Hash, mutable index, include cost.
-	pub references: Vec<IncludeInfo>,
+	pub references: BTreeSet<Hash256>,
+	/// Metadata attached to the fragment.
+	pub metadata: BTreeMap<Vec<u8>, Hash256>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -227,13 +229,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type Fragments<T: Config> =
-		StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId>>;
-
-	#[pallet::storage]
-	pub type FragmentsList<T: Config> = StorageMap<_, Blake2_128Concat, u128, Hash256>;
-
-	#[pallet::storage]
-	pub type FragmentsListSize<T: Config> = StorageValue<_, u128, ValueQuery>;
+		StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId, T::BlockNumber>>;
 
 	#[pallet::storage]
 	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
@@ -259,6 +255,7 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		Upload(Hash256),
 		Update(Hash256),
+		MetadataAdded(Hash256, Vec<u8>),
 		Detached(Hash256, Vec<u8>),
 		Transfer(Hash256, T::AccountId),
 	}
@@ -380,7 +377,7 @@ pub mod pallet {
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
-			references: Vec<IncludeInfo>,
+			references: BTreeSet<Hash256>,
 			linked_asset: Option<LinkedAsset>,
 			include_cost: Option<Compact<u128>>,
 			auth: AuthData,
@@ -408,7 +405,9 @@ pub mod pallet {
 				.concat(),
 			);
 
-			<Pallet<T>>::ensure_upload_auth(&auth, &signature_hash)?;
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			<Pallet<T>>::ensure_auth(current_block_number, &auth, &signature_hash)?;
 
 			// make sure the fragment does not exist already!
 			ensure!(!<Fragments<T>>::contains_key(&fragment_hash), Error::<T>::FragmentExists);
@@ -417,11 +416,27 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
+			// Calculate the base cost of inclusion
+			let cost = references.iter().fold(0, |acc, ref_hash| {
+				let ref_cost = if let Some(fragment) = <Fragments<T>>::get(ref_hash) {
+					if let Some(cost) = fragment.include_cost {
+						cost.into()
+					} else {
+						0
+					}
+				} else {
+					0
+				};
+				acc + ref_cost
+			});
+
 			// Write STATE from now, ensure no errors from now...
 
 			// store in the state the fragment
 			let fragment = Fragment {
-				mutable_hash: vec![],
+				block: current_block_number,
+				updates: vec![],
+				base_cost: cost.into(),
 				include_cost,
 				creator: who.clone(),
 				owner: if let Some(link) = linked_asset {
@@ -430,17 +445,11 @@ pub mod pallet {
 					FragmentOwner::User(who.clone())
 				},
 				references,
+				metadata: BTreeMap::new(),
 			};
 
 			// store fragment metadata
 			<Fragments<T>>::insert(fragment_hash, fragment);
-
-			// add to enumerable fragments list
-			let next = <FragmentsListSize<T>>::get();
-			<FragmentsList<T>>::insert(next, fragment_hash);
-			<FragmentsListSize<T>>::mutate(|index| {
-				*index += 1;
-			});
 
 			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, data.len() as u32, fragment_hash);
@@ -471,7 +480,7 @@ pub mod pallet {
 
 			let nonce = <UserNonces<T>>::get(who.clone()).unwrap_or(0);
 
-			let fragment: Fragment<T::AccountId> =
+			let fragment: Fragment<T::AccountId, T::BlockNumber> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			match fragment.owner {
@@ -492,7 +501,9 @@ pub mod pallet {
 					.concat(),
 			);
 
-			<Pallet<T>>::ensure_upload_auth(&auth, &signature_hash)?;
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			<Pallet<T>>::ensure_auth(current_block_number, &auth, &signature_hash)?;
 
 			// we need this to index transactions
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
@@ -504,7 +515,7 @@ pub mod pallet {
 				let fragment = fragment.as_mut().unwrap();
 				if let Some(data) = data {
 					// No failures from here on out
-					fragment.mutable_hash.push(data_hash);
+					fragment.updates.push(data_hash);
 					// index mutable data for IPFS discovery as well
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 				}
@@ -534,7 +545,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// make sure the fragment exists
-			let fragment: Fragment<T::AccountId> =
+			let fragment: Fragment<T::AccountId, T::BlockNumber> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			match fragment.owner {
@@ -567,7 +578,7 @@ pub mod pallet {
 			ensure_none(origin)?;
 
 			// Update nonce
-			<DetachNonces<T>>::insert(&data.target_account, data.target_chain.clone(), data.nonce);
+			<DetachNonces<T>>::insert(&data.target_account, data.target_chain, data.nonce);
 
 			let export_data = ExportData {
 				chain: data.target_chain,
@@ -579,10 +590,7 @@ pub mod pallet {
 			<DetachedFragments<T>>::insert(data.fragment_hash, export_data);
 
 			// emit event
-			Self::deposit_event(Event::Detached(
-				data.fragment_hash,
-				data.remote_signature.clone(),
-			));
+			Self::deposit_event(Event::Detached(data.fragment_hash, data.remote_signature.clone()));
 
 			log::debug!(
 				"Detached fragment with hash: {:?} signature: {:?}",
@@ -603,7 +611,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// make sure the fragment exists
-			let fragment: Fragment<T::AccountId> =
+			let fragment: Fragment<T::AccountId, T::BlockNumber> =
 				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
 
 			match fragment.owner {
@@ -626,6 +634,76 @@ pub mod pallet {
 
 			// emit event
 			Self::deposit_event(Event::Transfer(fragment_hash, new_owner));
+
+			Ok(())
+		}
+
+		/// Fragment upload function.
+		#[pallet::weight(T::WeightInfo::upload(data.len() as u32))]
+		pub fn set_metadata(
+			origin: OriginFor<T>,
+			// fragment hash we want to update
+			fragment_hash: Hash256,
+			metadata_key: Vec<u8>,
+			auth: AuthData,
+			// data we want to update last because of the way we store blocks (storage chain)
+			data: Vec<u8>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let nonce = <UserNonces<T>>::get(who.clone()).unwrap_or(0);
+
+			let fragment: Fragment<T::AccountId, T::BlockNumber> =
+				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
+
+			match fragment.owner {
+				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+				FragmentOwner::ExternalAsset(_ext_asset) =>
+				// We don't allow updating external assets
+					ensure!(false, Error::<T>::Unauthorized),
+			};
+
+			ensure!(
+				!<DetachedFragments<T>>::contains_key(&fragment_hash),
+				Error::<T>::FragmentDetached
+			);
+
+			let data_hash = blake2_256(&data.encode());
+			let signature_hash = blake2_256(
+				&[&fragment_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()]
+					.concat(),
+			);
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			<Pallet<T>>::ensure_auth(current_block_number, &auth, &signature_hash)?;
+
+			// we need this to index transactions
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
+
+			// Write STATE from now, ensure no errors from now...
+
+			<Fragments<T>>::mutate(&fragment_hash, |fragment| {
+				let fragment = fragment.as_mut().unwrap();
+				// update metadata
+				fragment.metadata.insert(metadata_key, data_hash);
+			});
+
+			// index data
+			transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
+
+			// advance nonces
+			<UserNonces<T>>::insert(who, nonce + 1);
+
+			// also emit event
+			Self::deposit_event(Event::MetadataAdded(fragment_hash, metadata_key));
+
+			log::debug!(
+				"Added metadata to fragment: {:x?} with key: {:x?}",
+				fragment_hash,
+				metadata_key
+			);
 
 			Ok(())
 		}
@@ -687,7 +765,7 @@ pub mod pallet {
 				log::debug!("Sending detach finalization extrinsic");
 				ValidTransaction::with_tag_prefix("Fragments-Detach")
 					.and_provides(data.fragment_hash)
-					.and_provides(data.target_chain.clone())
+					.and_provides(data.target_chain)
 					.and_provides(data.target_account.clone())
 					.and_provides(data.nonce)
 					.longevity(5)
@@ -700,7 +778,11 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		fn ensure_upload_auth(data: &AuthData, signature_hash: &[u8; 32]) -> DispatchResult {
+		fn ensure_auth(
+			block_number: T::BlockNumber,
+			data: &AuthData,
+			signature_hash: &[u8; 32],
+		) -> DispatchResult {
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
 			let recover =
@@ -713,8 +795,7 @@ pub mod pallet {
 				Error::<T>::VerificationFailed
 			);
 
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
-			let max_delay = current_block_number + 100u32.into();
+			let max_delay = block_number + 100u32.into();
 			let signed_at: T::BlockNumber = data.block.into();
 			ensure!(signed_at < max_delay, Error::<T>::VerificationFailed);
 
@@ -830,7 +911,7 @@ pub mod pallet {
 										payload.extend(&target_account[..]);
 										let nonce = <DetachNonces<T>>::get(
 											&request.target_account,
-											request.target_chain.clone(),
+											request.target_chain,
 										);
 										let nonce = if let Some(nonce) = nonce {
 											// add 1, remote will add 1
@@ -878,7 +959,7 @@ pub mod pallet {
 										|account| DetachInternalData {
 											public: account.public.clone(),
 											fragment_hash: request.fragment_hash,
-											target_chain: request.target_chain.clone(),
+											target_chain: request.target_chain,
 											target_account: request.target_account.clone(),
 											remote_signature: signature.clone(),
 											nonce,
