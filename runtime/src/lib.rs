@@ -47,7 +47,7 @@ pub use sp_runtime::{Perbill, Permill};
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-/// Import the template pallet.
+/// Import the entities pallet.
 pub use fragments_pallet;
 
 pub use pallet_contracts::Schedule;
@@ -311,7 +311,11 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-/// Configure the pallet-template in pallets/template.
+impl entities_pallet::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = ();
+}
+
 impl fragments_pallet::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
@@ -454,6 +458,7 @@ construct_runtime!(
 		Indices: pallet_indices,
 		Contracts: pallet_contracts,
 		Fragments: fragments_pallet,
+		Entities: entities_pallet,
 	}
 );
 
@@ -677,6 +682,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
 			list_benchmark!(list, extra, fragments_pallet, Fragments);
 			list_benchmark!(list, extra, pallet_assets, Assets);
+			list_benchmark!(list, extra, entities_pallet, Entities);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -716,6 +722,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, fragments_pallet, Fragments);
 			add_benchmark!(params, batches, pallet_assets, Assets);
+			add_benchmark!(params, batches, entities_pallet, Entities);
 
 			Ok(batches)
 		}

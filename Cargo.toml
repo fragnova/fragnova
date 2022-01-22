@@ -2,6 +2,7 @@
 members = [
     'node',
     'pallets/fragments',
+	'pallets/entities',
     'runtime',
 ]
 
