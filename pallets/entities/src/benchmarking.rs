@@ -3,7 +3,7 @@
 use super::*;
 #[allow(unused)]
 use crate::Pallet as Entities;
-use fragments_pallet::{AuthData};
+use fragments_pallet::AuthData;
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use sp_io::hashing::blake2_256;

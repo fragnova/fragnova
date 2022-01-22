@@ -163,7 +163,7 @@ fn upload_fragment_should_not_work_if_not_verified() {
 }
 
 #[test]
-fn update_should_works() {
+fn patch_should_works() {
 	new_test_ext().execute_with(|| {
 		let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
 		let immutable_data = DATA.as_bytes().to_vec();
@@ -178,7 +178,7 @@ fn update_should_works() {
 		assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
 
 		let auth_data = AuthData { signature, block: 1 };
-		assert_ok!(FragmentsPallet::update(
+		assert_ok!(FragmentsPallet::patch(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			auth_data,
 			fragment_hash,
@@ -191,7 +191,7 @@ fn update_should_works() {
 }
 
 #[test]
-fn update_fragment_should_not_work_if_user_is_unauthorized() {
+fn patch_fragment_should_not_work_if_user_is_unauthorized() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
 		let auth_data = initial_upload_and_get_signature();
@@ -199,7 +199,7 @@ fn update_fragment_should_not_work_if_user_is_unauthorized() {
 		let (pair, _) = sp_core::ed25519::Pair::generate();
 
 		assert_noop!(
-			FragmentsPallet::update(
+			FragmentsPallet::patch(
 				Origin::signed(pair.public()),
 				auth_data,
 				FRAGMENT_HASH,
@@ -212,7 +212,7 @@ fn update_fragment_should_not_work_if_user_is_unauthorized() {
 }
 
 #[test]
-fn update_fragment_should_not_work_if_fragment_not_found() {
+fn patch_fragment_should_not_work_if_fragment_not_found() {
 	new_test_ext().execute_with(|| {
 		let immutable_data = DATA.as_bytes().to_vec();
 
@@ -220,7 +220,7 @@ fn update_fragment_should_not_work_if_fragment_not_found() {
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
 		let auth_data = AuthData { signature, block: 1 };
 		assert_noop!(
-			FragmentsPallet::update(
+			FragmentsPallet::patch(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				auth_data,
 				fragment_hash,
@@ -233,7 +233,7 @@ fn update_fragment_should_not_work_if_fragment_not_found() {
 }
 
 #[test]
-fn update_should_not_work_if_not_verified() {
+fn patch_should_not_work_if_not_verified() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
 		initial_upload_and_get_signature();
@@ -242,7 +242,7 @@ fn update_should_not_work_if_not_verified() {
 		let auth_data = AuthData { signature, block: 1 };
 
 		assert_noop!(
-			FragmentsPallet::update(
+			FragmentsPallet::patch(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				auth_data,
 				FRAGMENT_HASH,
@@ -255,7 +255,7 @@ fn update_should_not_work_if_not_verified() {
 }
 
 #[test]
-fn update_should_not_work_if_detached() {
+fn patch_should_not_work_if_detached() {
 	let keystore = KeyStore::new();
 	let mut t = new_test_ext();
 
@@ -294,7 +294,7 @@ fn update_should_not_work_if_detached() {
 		));
 
 		assert_noop!(
-			FragmentsPallet::update(
+			FragmentsPallet::patch(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				auth_data,
 				FRAGMENT_HASH,

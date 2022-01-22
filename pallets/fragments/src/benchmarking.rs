@@ -86,7 +86,7 @@ benchmarks! {
 		assert_last_event::<T>(Event::<T>::Upload(fragment_hash).into())
 	}
 
-	update {
+	patch {
 		let caller: T::AccountId = whitelisted_caller();
 		let l in 1 .. 2;
 		let immutable_data = vec![0u8; l as usize];
@@ -136,7 +136,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller), auth_data, fragment_hash , Some(Compact(123)), Some(immutable_data))
 	verify {
-		assert_last_event::<T>(Event::<T>::Update(fragment_hash).into())
+		assert_last_event::<T>(Event::<T>::Patched(fragment_hash).into())
 	}
 
 	// detach {

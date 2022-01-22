@@ -49,7 +49,7 @@ pub trait WeightInfo {
 	fn add_upload_auth() -> Weight;
 	fn del_upload_auth() -> Weight;
 	fn upload(l: u32, ) -> Weight;
-	fn update(l: u32, ) -> Weight;
+	fn patch(l: u32, ) -> Weight;
 	fn transfer() -> Weight;
 }
 
@@ -98,7 +98,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Fragments DetachedFragments (r:1 w:0)
 	// Storage: Fragments UploadAuthorities (r:1 w:0)
 	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
-	fn update(_l: u32, ) -> Weight {
+	fn patch(_l: u32, ) -> Weight {
 		(163_700_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(5 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
@@ -156,7 +156,7 @@ impl WeightInfo for () {
 	// Storage: Fragments DetachedFragments (r:1 w:0)
 	// Storage: Fragments UploadAuthorities (r:1 w:0)
 	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
-	fn update(_l: u32, ) -> Weight {
+	fn patch(_l: u32, ) -> Weight {
 		(163_700_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(2 as Weight))

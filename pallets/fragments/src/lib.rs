@@ -154,7 +154,7 @@ pub struct Fragment<TAccountId, TBlockNumber> {
 	/// Block number this fragment was included in
 	pub block: TBlockNumber,
 	/// Plain hash of indexed data.
-	pub updates: Vec<Hash256>,
+	pub patches: Vec<Hash256>,
 	/// Base include cost, of referenced fragments.
 	pub base_cost: Compact<u128>,
 	/// Include price of the fragment.
@@ -254,7 +254,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		Upload(Hash256),
-		Update(Hash256),
+		Patched(Hash256),
 		MetadataAdded(Hash256, Vec<u8>),
 		Detached(Hash256, Vec<u8>),
 		Transfer(Hash256, T::AccountId),
@@ -435,7 +435,7 @@ pub mod pallet {
 			// store in the state the fragment
 			let fragment = Fragment {
 				block: current_block_number,
-				updates: vec![],
+				patches: vec![],
 				base_cost: cost.into(),
 				include_cost,
 				creator: who.clone(),
@@ -466,14 +466,14 @@ pub mod pallet {
 		}
 
 		/// Fragment upload function.
-		#[pallet::weight(T::WeightInfo::update(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
-		pub fn update(
+		#[pallet::weight(T::WeightInfo::patch(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
+		pub fn patch(
 			origin: OriginFor<T>,
 			auth: AuthData,
-			// fragment hash we want to update
+			// fragment hash we want to patch
 			fragment_hash: Hash256,
 			include_cost: Option<Compact<u128>>,
-			// data we want to update last because of the way we store blocks (storage chain)
+			// data we want to patch last because of the way we store blocks (storage chain)
 			data: Option<Vec<u8>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -515,7 +515,7 @@ pub mod pallet {
 				let fragment = fragment.as_mut().unwrap();
 				if let Some(data) = data {
 					// No failures from here on out
-					fragment.updates.push(data_hash);
+					fragment.patches.push(data_hash);
 					// index mutable data for IPFS discovery as well
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 				}
@@ -526,7 +526,7 @@ pub mod pallet {
 			<UserNonces<T>>::insert(who, nonce + 1);
 
 			// also emit event
-			Self::deposit_event(Event::Update(fragment_hash));
+			Self::deposit_event(Event::Patched(fragment_hash));
 
 			log::debug!("Updated fragment: {:?}", fragment_hash);
 
