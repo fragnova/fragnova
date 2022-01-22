@@ -65,6 +65,12 @@ version = '4.0.0-dev'
 optional = true
 version = '0.3.1'
 
+[dependencies.pallet-assets]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
 [dependencies.pallet-aura]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -189,6 +195,11 @@ default-features = false
 path = '../pallets/fragments'
 version = '0.0.1'
 
+[dependencies.entities-pallet]
+default-features = false
+path = '../pallets/entities'
+version = '0.0.1'
+
 [dependencies.pallet-indices]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -221,10 +232,12 @@ runtime-benchmarks = [
     'frame-system-benchmarking',
     'frame-system/runtime-benchmarks',
     'hex-literal',
+	'pallet-assets/runtime-benchmarks',
     'pallet-balances/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
-    'fragments-pallet/runtime-benchmarks'
+    'fragments-pallet/runtime-benchmarks',
+	'entities-pallet/runtime-benchmarks',
 ]
 std = [
     'codec/std',
@@ -233,6 +246,7 @@ std = [
     'frame-support/std',
     'frame-system-rpc-runtime-api/std',
     'frame-system/std',
+	'pallet-assets/std',
     'pallet-aura/std',
     'pallet-balances/std',
     'pallet-grandpa/std',
@@ -253,6 +267,7 @@ std = [
     'sp-transaction-pool/std',
     'sp-version/std',
     'fragments-pallet/std',
+	'entities-pallet/std',
     'pallet-indices/std',
     'pallet-contracts/std',
     'pallet-contracts-primitives/std',

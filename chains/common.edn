@@ -3,7 +3,7 @@
 (def transaction-version 1)
 (def sudo-index 7)
 (def sudo-call 0)
-(def fragments-index 10)
+(def fragments-index 11)
 (def add-upload-auth-index 2)
 (def upload-index 6)
 (def detach-index 8)

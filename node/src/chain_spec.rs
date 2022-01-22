@@ -163,5 +163,6 @@ fn testnet_genesis(
 			}],
 			keys: vec![get_from_seed::<ed25519::Public>("Bob")],
 		},
+		assets: Default::default(),
 	}
 }

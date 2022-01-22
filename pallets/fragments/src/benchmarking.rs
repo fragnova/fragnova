@@ -1,4 +1,4 @@
-//! Benchmarking setup for pallet-template
+//! Benchmarking setup for pallet-entities
 
 use super::*;
 #[allow(unused)]
