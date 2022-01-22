@@ -39,7 +39,7 @@ fn initial_upload_and_get_signature() -> AuthData {
 	let auth_data = AuthData { signature, block: 1 };
 
 	assert_ok!(FragmentsPallet::upload(
-		Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC)),
+		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 		references,
 		None,
 		None,
@@ -62,7 +62,7 @@ fn create_should_works() {
 		let hash = blake2_256(&[&FRAGMENT_HASH[..], &entity_data.name.encode()].concat());
 
 		assert_ok!(EntitiesPallet::create(
-			Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC)),
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 			FRAGMENT_HASH,
 			entity_data,
 			true,
@@ -82,15 +82,14 @@ fn create_should_not_work_if_fragments_not_found() {
 			external_url: "external_url".as_bytes().to_vec(),
 		};
 
-		assert_noop!(
-			EntitiesPallet::create(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC)),
-				FRAGMENT_HASH,
-				entity_data,
-				true,
-				true,
-				None
-			),
+		assert_noop!(EntitiesPallet::create(
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
+			FRAGMENT_HASH,
+			entity_data,
+			true,
+			true,
+			None
+		),
 			Error::<Test>::FragmentNotFound
 		);
 	});
@@ -110,15 +109,14 @@ fn create_should_not_work_if_fragment_owner_not_found() {
 			external_url: "external_url".as_bytes().to_vec(),
 		};
 
-		assert_noop!(
-			EntitiesPallet::create(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC)),
-				FRAGMENT_HASH,
-				entity_data,
-				true,
-				true,
-				None
-			),
+		assert_noop!(EntitiesPallet::create(
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
+			FRAGMENT_HASH,
+			entity_data,
+			true,
+			true,
+			None
+		),
 			Error::<Test>::NoPermission
 		);
 	});
@@ -137,7 +135,7 @@ fn create_should_not_work_if_entity_already_exist() {
 		let hash = blake2_256(&[&FRAGMENT_HASH[..], &entity_data.name.encode()].concat());
 
 		assert_ok!(EntitiesPallet::create(
-			Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC)),
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 			FRAGMENT_HASH,
 			entity_data.clone(),
 			true,
@@ -146,15 +144,14 @@ fn create_should_not_work_if_entity_already_exist() {
 		));
 		assert!(Entities::<Test>::contains_key(&hash));
 
-		assert_noop!(
-			EntitiesPallet::create(
-				Origin::signed(sp_core::sr25519::Public::from_raw(PUBLIC)),
-				FRAGMENT_HASH,
-				entity_data,
-				true,
-				true,
-				None
-			),
+		assert_noop!(EntitiesPallet::create(
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
+			FRAGMENT_HASH,
+			entity_data,
+			true,
+			true,
+			None
+		),
 			Error::<Test>::EntityAlreadyExist
 		);
 	});
