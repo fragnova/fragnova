@@ -238,18 +238,18 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type Fragments<T: Config> =
-		StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId, T::BlockNumber>>;
+		StorageMap<_, Identity, Hash256, Fragment<T::AccountId, T::BlockNumber>>;
 
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
 	pub type FragmentsByTag<T: Config> =
-		StorageDoubleMap<_, Blake2_128Concat, Tags, Blake2_128Concat, Hash256, u8>;
+		StorageDoubleMap<_, Blake2_128Concat, Tags, Identity, Hash256, u8>;
 
 	#[pallet::storage]
 	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type DetachedFragments<T: Config> = StorageMap<_, Blake2_128Concat, Hash256, ExportData>;
+	pub type DetachedFragments<T: Config> = StorageMap<_, Identity, Hash256, ExportData>;
 
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
