@@ -23,7 +23,7 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let immutable_data = vec![0u8; 1 as usize];
 		let fragment_hash = blake2_256(immutable_data.as_slice());
-		let references = BTreeSet::from([FRAGMENT_HASH]);
+		let references = vec![FRAGMENT_HASH];
 
 		let public: [u8; 33] = [3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251];
 
@@ -35,7 +35,7 @@ benchmarks! {
 		};
 
 		fragments_pallet::Pallet::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		fragments_pallet::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references , None, None, immutable_data.clone())?;
+		fragments_pallet::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, Vec::new(), None, None, immutable_data.clone())?;
 		let entity_data = EntityMetadata {
 			name: "name".as_bytes().to_vec(),
 			external_url: "external_url".as_bytes().to_vec(),

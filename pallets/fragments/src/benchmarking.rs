@@ -81,9 +81,9 @@ benchmarks! {
 		};
 
 		Fragments::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-	}: _(RawOrigin::Signed(caller), auth_data, references , None, None, immutable_data)
+	}: _(RawOrigin::Signed(caller), auth_data, references, Vec::new(), None, None, immutable_data)
 	verify {
-		assert_last_event::<T>(Event::<T>::Upload(fragment_hash).into())
+		assert_last_event::<T>(Event::<T>::Uploaded(fragment_hash).into())
 	}
 
 	patch {
@@ -111,7 +111,7 @@ benchmarks! {
 		};
 
 		Fragments::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references , None, None, immutable_data.clone())?;
+		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, Vec::new(), None, None, immutable_data.clone())?;
 
 		let public: [u8; 33] = if l == 1 {
 			[2, 10, 16, 145, 52, 31, 229, 102, 75, 250, 23, 130, 213, 224, 71, 121, 104, 144, 104, 201, 22, 176, 76, 179, 101, 236, 49, 83, 117, 86, 132, 217, 161]
@@ -184,12 +184,12 @@ benchmarks! {
 		};
 
 		Fragments::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references , None, None, immutable_data.clone())?;
+		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, Vec::new(), None, None, immutable_data.clone())?;
 
 
 	}: _(RawOrigin::Signed(caller), FRAGMENT_HASH, new_owner.clone())
 	verify {
-		assert_last_event::<T>(Event::<T>::Transfer(FRAGMENT_HASH, new_owner).into())
+		assert_last_event::<T>(Event::<T>::Transferred(FRAGMENT_HASH, new_owner).into())
 	}
 
 	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);
