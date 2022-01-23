@@ -1,4 +1,4 @@
-use crate::{mock::*, AuthData, Error, EthereumAuthorities, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE, DetachInternalData};
+use crate::{mock::*, AuthData, Error, EthereumAuthorities, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE, DetachInternalData, DetachedFragments};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;
@@ -473,5 +473,29 @@ fn transfer_should_not_work_if_detached() {
 			),
 			Error::<Test>::FragmentDetached
 		);
+	});
+}
+
+#[test]
+fn internal_finalize_detach_should_works() {
+	new_test_ext().execute_with(|| {
+		let pair = sp_core::ed25519::Pair::from_string("//Alice", None).unwrap();
+
+		let detach_data = DetachInternalData {
+			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
+			fragment_hash: FRAGMENT_HASH,
+			remote_signature: vec![],
+			target_account: vec![],
+			target_chain: SupportedChains::EthereumGoerli,
+			nonce: 1
+		};
+
+		assert_ok!(FragmentsPallet::internal_finalize_detach(
+			Origin::none(),
+			detach_data,
+			pair.sign(DATA.as_bytes())
+		));
+
+		assert!(<DetachedFragments<Test>>::contains_key(FRAGMENT_HASH));
 	});
 }
