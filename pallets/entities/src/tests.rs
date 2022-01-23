@@ -1,18 +1,18 @@
 use crate::{mock::*, Entities, EntityMetadata, Error, Fragment2Entities};
 use codec::Encode;
-use fragments_pallet::{AuthData, LinkedAsset};
+use fragments_pallet::{AuthData, LinkedAsset, Tags};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
-use sp_std::collections::btree_set::BTreeSet;
 
 fn initial_set_up_and_get_signature(
 	data: Vec<u8>,
-	references: BTreeSet<Hash256>,
+	references: Vec<Hash256>,
 	nonce: u64,
 ) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
+	let tags: Vec<Tags> = Vec::new();
 
 	let fragment_hash = blake2_256(&data);
 	let linked_asset: Option<LinkedAsset> = None;
@@ -20,6 +20,7 @@ fn initial_set_up_and_get_signature(
 		&[
 			&fragment_hash[..],
 			&references.encode(),
+			&tags.encode(),
 			&linked_asset.encode(),
 			&nonce.encode(),
 			&1.encode(),
@@ -32,7 +33,7 @@ fn initial_set_up_and_get_signature(
 
 fn initial_upload_and_get_signature() -> AuthData {
 	let data = DATA.as_bytes().to_vec();
-	let references = BTreeSet::from([FRAGMENT_HASH]);
+	let references = vec![FRAGMENT_HASH];
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 	let auth_data = AuthData { signature, block: 1 };
 
@@ -40,6 +41,7 @@ fn initial_upload_and_get_signature() -> AuthData {
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 		auth_data.clone(),
 		references,
+		Vec::new(),
 		None,
 		None,
 		data,

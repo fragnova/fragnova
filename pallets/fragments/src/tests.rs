@@ -1,6 +1,6 @@
 use crate::{
 	mock::*, AuthData, DetachInternalData, Error, EthereumAuthorities, FragmentOwner, Fragments,
-	LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE,
+	LinkedAsset, SupportedChains, Tags, UploadAuthorities, KEY_TYPE,
 };
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
@@ -8,7 +8,6 @@ use sp_chainblocks::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
-use sp_std::collections::btree_set::BTreeSet;
 use std::sync::Arc;
 
 fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
@@ -20,10 +19,11 @@ fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
 
 fn initial_set_up_and_get_signature(
 	data: Vec<u8>,
-	references: BTreeSet<Hash256>,
+	references: Vec<Hash256>,
 	nonce: u64,
 ) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
+	let tags: Vec<Tags> = Vec::new();
 
 	let fragment_hash = blake2_256(&data);
 	let linked_asset: Option<LinkedAsset> = None;
@@ -31,6 +31,7 @@ fn initial_set_up_and_get_signature(
 		&[
 			&fragment_hash[..],
 			&references.encode(),
+			&tags.encode(),
 			&linked_asset.encode(),
 			&nonce.encode(),
 			&1.encode(),
@@ -43,7 +44,7 @@ fn initial_set_up_and_get_signature(
 
 fn initial_upload_and_get_signature() -> AuthData {
 	let data = DATA.as_bytes().to_vec();
-	let references = BTreeSet::from([FRAGMENT_HASH]);
+	let references = vec![FRAGMENT_HASH];
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 	let auth_data = AuthData { signature, block: 1 };
 
@@ -51,6 +52,7 @@ fn initial_upload_and_get_signature() -> AuthData {
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 		auth_data.clone(),
 		references,
+		Vec::new(),
 		None,
 		None,
 		data,
@@ -98,7 +100,7 @@ fn del_upload_auth_should_works() {
 fn upload_should_works() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
-		let references = BTreeSet::from([FRAGMENT_HASH]);
+		let references = vec![FRAGMENT_HASH];
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
@@ -108,6 +110,7 @@ fn upload_should_works() {
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			auth_data,
 			references,
+			Vec::new(),
 			None,
 			None,
 			data,
@@ -122,7 +125,7 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
 		initial_upload_and_get_signature();
-		let references = BTreeSet::from([FRAGMENT_HASH]);
+		let references = vec![FRAGMENT_HASH];
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
 		let auth_data = AuthData { signature, block: 1 };
@@ -131,6 +134,7 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				auth_data,
 				references,
+				Vec::new(),
 				None,
 				None,
 				data,
@@ -144,7 +148,7 @@ fn upload_should_not_works_if_fragment_hash_exists() {
 fn upload_fragment_should_not_work_if_not_verified() {
 	new_test_ext().execute_with(|| {
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
-		let references = BTreeSet::from([FRAGMENT_HASH]);
+		let references = vec![FRAGMENT_HASH];
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
 		let auth_data = AuthData { signature, block: 1 };
 
@@ -153,6 +157,7 @@ fn upload_fragment_should_not_work_if_not_verified() {
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				auth_data,
 				references,
+				Vec::new(),
 				None,
 				None,
 				immutable_data,

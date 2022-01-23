@@ -93,6 +93,13 @@ impl<T: SigningTypes> SignedPayload<T> for FragmentValidation<T::Public, T::Bloc
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum Tags {
+	Code,
+	Audio,
+	Image,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum SupportedChains {
 	EthereumMainnet,
 	EthereumRinkeby,
@@ -165,7 +172,9 @@ pub struct Fragment<TAccountId, TBlockNumber> {
 	/// The current owner of the fragment.
 	pub owner: FragmentOwner<TAccountId>,
 	/// References to other fragments.
-	pub references: BTreeSet<Hash256>,
+	pub references: Vec<Hash256>,
+	/// Tags associated with this fragment
+	pub tags: Vec<Tags>,
 	/// Metadata attached to the fragment.
 	pub metadata: BTreeMap<Vec<u8>, Hash256>,
 }
@@ -232,6 +241,9 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId, T::BlockNumber>>;
 
 	#[pallet::storage]
+	pub type FragmentsByTag<T: Config> = StorageMap<_, Blake2_128Concat, Tags, Vec<Hash256>>;
+
+	#[pallet::storage]
 	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
 
 	#[pallet::storage]
@@ -253,11 +265,11 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		Upload(Hash256),
+		Uploaded(Hash256),
 		Patched(Hash256),
-		MetadataAdded(Hash256, Vec<u8>),
+		MetadataChanged(Hash256, Vec<u8>),
 		Detached(Hash256, Vec<u8>),
-		Transfer(Hash256, T::AccountId),
+		Transferred(Hash256, T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
@@ -378,7 +390,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			auth: AuthData,
 			// we store this in the state as well
-			references: BTreeSet<Hash256>,
+			references: Vec<Hash256>,
+			tags: Vec<Tags>,
 			linked_asset: Option<LinkedAsset>,
 			include_cost: Option<Compact<u128>>,
 			// let data come last as we record this size in blocks db (storage chain)
@@ -398,6 +411,7 @@ pub mod pallet {
 				&[
 					&fragment_hash[..],
 					&references.encode(),
+					&tags.encode(),
 					&linked_asset.encode(),
 					&nonce.encode(),
 					&auth.block.encode(),
@@ -445,11 +459,17 @@ pub mod pallet {
 					FragmentOwner::User(who.clone())
 				},
 				references,
+				tags: tags.clone(),
 				metadata: BTreeMap::new(),
 			};
 
-			// store fragment metadata
+			// store fragment
 			<Fragments<T>>::insert(fragment_hash, fragment);
+
+			// store by tags
+			for tag in tags {
+				<FragmentsByTag<T>>::append(tag, fragment_hash);
+			}
 
 			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, data.len() as u32, fragment_hash);
@@ -458,7 +478,7 @@ pub mod pallet {
 			<UserNonces<T>>::insert(who, nonce + 1);
 
 			// also emit event
-			Self::deposit_event(Event::Upload(fragment_hash));
+			Self::deposit_event(Event::Uploaded(fragment_hash));
 
 			log::debug!("Uploaded fragment: {:?}", fragment_hash);
 
@@ -633,7 +653,7 @@ pub mod pallet {
 			});
 
 			// emit event
-			Self::deposit_event(Event::Transfer(fragment_hash, new_owner));
+			Self::deposit_event(Event::Transferred(fragment_hash, new_owner));
 
 			Ok(())
 		}
@@ -697,7 +717,7 @@ pub mod pallet {
 			<UserNonces<T>>::insert(who, nonce + 1);
 
 			// also emit event
-			Self::deposit_event(Event::MetadataAdded(fragment_hash, metadata_key.clone()));
+			Self::deposit_event(Event::MetadataChanged(fragment_hash, metadata_key.clone()));
 
 			log::debug!(
 				"Added metadata to fragment: {:x?} with key: {:x?}",

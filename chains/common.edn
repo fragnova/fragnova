@@ -111,7 +111,8 @@
   [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
   .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Charlie") >= .payload
 
-  .no-refs (AppendTo .payload)
+  .no-refs (AppendTo .payload) ; refs
+  .no-refs (AppendTo .payload) ; tags
 
   "0x00" (HexToBytes)
   ; Option None - Linked asset
