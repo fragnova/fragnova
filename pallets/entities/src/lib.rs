@@ -60,16 +60,16 @@ pub mod pallet {
 
 	// fragment-hash to entity-hash-sequence
 	#[pallet::storage]
-	pub type Fragment2Entities<T: Config> = StorageMap<_, Blake2_128Concat, Hash256, Vec<Hash256>>;
+	pub type Fragment2Entities<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash256>>;
 
 	// entity-hash to entity-data
 	#[pallet::storage]
-	pub type Entities<T: Config> = StorageMap<_, Blake2_128Concat, Hash256, EntityData>;
+	pub type Entities<T: Config> = StorageMap<_, Identity, Hash256, EntityData>;
 
 	// entity-hash to entity-id to entity-instance-data
 	#[pallet::storage]
 	pub type EntityInstances<T: Config> =
-		StorageDoubleMap<_, Blake2_128Concat, Hash256, Blake2_128Concat, u128, EntityInstanceData>;
+		StorageDoubleMap<_, Identity, Hash256, Blake2_128Concat, u128, EntityInstanceData>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
