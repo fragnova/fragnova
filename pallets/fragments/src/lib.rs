@@ -240,8 +240,10 @@ pub mod pallet {
 	pub type Fragments<T: Config> =
 		StorageMap<_, Blake2_128Concat, Hash256, Fragment<T::AccountId, T::BlockNumber>>;
 
+	// Not ideal but to have it iterable...
 	#[pallet::storage]
-	pub type FragmentsByTag<T: Config> = StorageMap<_, Blake2_128Concat, Tags, Vec<Hash256>>;
+	pub type FragmentsByTag<T: Config> =
+		StorageDoubleMap<_, Blake2_128Concat, Tags, Blake2_128Concat, Hash256, u8>;
 
 	#[pallet::storage]
 	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
@@ -468,7 +470,7 @@ pub mod pallet {
 
 			// store by tags
 			for tag in tags {
-				<FragmentsByTag<T>>::append(tag, fragment_hash);
+				<FragmentsByTag<T>>::insert(tag, fragment_hash, 0);
 			}
 
 			// index immutable data for IPFS discovery
