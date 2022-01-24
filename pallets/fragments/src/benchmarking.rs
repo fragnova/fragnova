@@ -142,11 +142,7 @@ benchmarks! {
 	detach {
 		let caller: T::AccountId = whitelisted_caller();
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
-		let references = vec![IncludeInfo {
-			fragment_hash: FRAGMENT_HASH,
-			mutable_index: Some(Compact(1)),
-			staked_amount: Compact(1),
-		}];
+		let references = vec![FRAGMENT_HASH];
 
 		let public: [u8; 33] = [3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251];
 		 let signature: [u8; 65] = [132, 58, 255, 255, 79, 60, 138, 156, 240, 245, 176, 220, 10, 248, 217, 156, 60, 180, 61, 210, 74, 231, 141, 45, 165, 102, 165, 251, 130, 229, 229, 144, 75, 26, 6, 42, 15, 121, 152, 88, 5, 120, 95, 20, 183, 221, 44, 110, 72, 245, 228, 200, 232, 253, 209, 69, 10, 197, 75, 108, 56, 196, 190, 182, 0];
@@ -157,7 +153,7 @@ benchmarks! {
 		};
 
 		Fragments::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references , None, None, auth_data, immutable_data.clone())?;
+		Fragments::<T>::upload(RawOrigin::Signed(caller.clone()).into(),auth_data, references, Vec::new() , None, None, immutable_data.clone())?;
 
 		let public: [u8; 33] = [2, 44, 133, 69, 18, 57, 0, 152, 97, 145, 160, 85, 122, 14, 119, 232, 88, 169, 142, 77, 139, 133, 214, 67, 188, 128, 137, 28, 23, 247, 242, 193, 104];
 
