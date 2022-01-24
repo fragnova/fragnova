@@ -557,7 +557,7 @@ pub mod pallet {
 
 		/// Detached a fragment from this chain by emitting an event that includes a signature.
 		/// The remote target chain can attach this fragment by using this signature.
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(T::WeightInfo::detach())]
 		pub fn detach(
 			origin: OriginFor<T>,
 			fragment_hash: Hash256,
