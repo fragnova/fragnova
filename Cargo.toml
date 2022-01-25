@@ -3,6 +3,7 @@ members = [
     'node',
     'pallets/fragments',
 	'pallets/entities',
+	'pallets/clamor-tools',
     'runtime',
 ]
 
