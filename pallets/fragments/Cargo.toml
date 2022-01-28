@@ -82,6 +82,7 @@ path = '../clamor-tools'
 log = { version = "0.4.14", default-features = false }
 sp-chainblocks = { path = '../../primitives/chainblocks', default-features = false }
 hex = { version = "0.4", default-features = false }
+pallet-randomness-collective-flip = { version = "4.0.0-dev", tag = "monthly-2022-01", git = "https://github.com/paritytech/substrate.git" }
 
 [features]
 default = ['std']

@@ -1,4 +1,4 @@
-use crate::{mock::*, AuthData, Error, EthereumAuthorities, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE, DetachedFragments};
+use crate::{mock::*, AuthData, Error, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities, DetachedFragments};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;
@@ -6,6 +6,9 @@ use sp_core::Pair;
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
 use std::sync::Arc;
+use clamor_tools_pallet::DetachInternalData;
+use sp_chainblocks::KEY_TYPE;
+use clamor_tools_pallet::EthereumAuthorities;
 
 fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();

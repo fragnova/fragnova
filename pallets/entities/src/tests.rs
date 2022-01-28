@@ -4,8 +4,8 @@ use frame_support::{assert_noop, assert_ok};
 use crate::{Entities, EntityMetadata};
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
-use fragments_pallet::{IncludeInfo, LinkedAsset, AuthData};
-
+use fragments_pallet::{IncludeInfo, AuthData};
+use sp_chainblocks::LinkedAsset;
 
 fn initial_set_up_and_get_signature(
 	data: Vec<u8>,
