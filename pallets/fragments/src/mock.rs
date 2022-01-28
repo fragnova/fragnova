@@ -33,7 +33,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		FragmentsPallet: fragments_pallet::{Pallet, Call, Storage, Event<T>},
-		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
+		ClamorToolsPallet: clamor_tools_pallet::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -99,11 +99,13 @@ where
 	}
 }
 
-impl pallet_randomness_collective_flip::Config for Test {}
-
 impl fragments_pallet::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
+}
+
+impl clamor_tools_pallet::Config for Runtime {
+	type Event = Event;
 	type AuthorityId = fragments_pallet::crypto::FragmentsAuthId;
 }
 

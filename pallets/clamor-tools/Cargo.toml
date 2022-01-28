@@ -75,10 +75,6 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2022-01'
 version = '4.0.0-dev'
 
-[dependencies.fragments-pallet]
-default-features = false
-path = '../fragments'
-
 [features]
 default = ["std"]
 std = [
@@ -91,7 +87,6 @@ std = [
 	"sp-std/std",
 	"sp-runtime/std",
 	"sp-core/std",
-	"fragments-pallet/std",
 	"pallet-randomness-collective-flip/std",
 ]
 

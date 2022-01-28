@@ -3,22 +3,20 @@
 pub use pallet::*;
 use codec::{Decode, Encode};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
-use sp_chainblocks::Hash256;
-use fragments_pallet::SupportedChains;
+use sp_chainblocks::{Hash256, SupportedChains, KEY_TYPE};
 use sp_runtime::MultiSigner;
-use sp_core::{ed25519, U256};
+use sp_core::{ed25519, ecdsa, U256};
 use sp_io::{
 	crypto as Crypto,
 	hashing::keccak_256,
 	offchain_index,
 };
-use fragments_pallet::KEY_TYPE;
 use sp_runtime::offchain::storage::StorageValueRef;
 use frame_system::offchain::{
 	CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
 	SigningTypes,
 };
-use fragments_pallet::{Fragment, Fragments, FragmentOwner, ExportData, EthereumAuthorities, FragKeys};
+use frame_system::offchain::AppCrypto;
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct DetachRequest {
@@ -36,6 +34,12 @@ pub struct DetachInternalData<TPublic> {
 	nonce: u64,
 }
 
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub struct ExportData {
+	pub chain: SupportedChains,
+	pub owner: Vec<u8>,
+	pub nonce: u64,
+}
 
 impl<T: SigningTypes> SignedPayload<T> for DetachInternalData<T::Public> {
 	fn public(&self) -> T::Public {
@@ -48,16 +52,39 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
+	use sp_chainblocks::FragmentOwner;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
 	CreateSignedTransaction<Call<Self>>
 	+ pallet_randomness_collective_flip::Config
-	+ frame_system::Config
-	+ fragments_pallet::Config {
+	+ frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		/// The identifier type for an offchain worker.
+		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig {
+		pub eth_authorities: Vec<ecdsa::Public>,
+		pub keys: Vec<ed25519::Public>,
+	}
+
+	#[cfg(feature = "std")]
+	impl Default for GenesisConfig {
+		fn default() -> Self {
+			Self { eth_authorities: Vec::new(), keys: Vec::new() }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			Pallet::<T>::initialize_eth_authorities(&self.eth_authorities);
+			Pallet::<T>::initialize_keys(&self.keys);
+		}
 	}
 
 	#[pallet::pallet]
@@ -74,6 +101,12 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> = StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, SupportedChains, u64>;
 
+	#[pallet::storage]
+	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -87,8 +120,6 @@ pub mod pallet {
 		SigningFailed,
 		/// No Validators are present
 		NoValidator,
-		/// Fragment not found
-		FragmentNotFound,
 		/// Not the owner of the fragment
 		Unauthorized,
 		/// Fragment is already detached
@@ -100,6 +131,59 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+
+		#[pallet::weight(25_000)]
+		pub fn add_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New eth auth: {:?}", public);
+
+			<EthereumAuthorities<T>>::mutate(|validators| {
+				validators.insert(public);
+			});
+
+			Ok(())
+		}
+
+		// Remove validator public key to the list
+		#[pallet::weight(25_000)]
+		pub fn del_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("Removed eth auth: {:?}", public);
+
+			<EthereumAuthorities<T>>::mutate(|validators| {
+				validators.remove(&public);
+			});
+
+			Ok(())
+		}
+
+		#[pallet::weight(25_000)]
+		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New key: {:?}", public);
+
+			<FragKeys<T>>::mutate(|validators| {
+				validators.insert(public);
+			});
+
+			Ok(())
+		}
+
+		#[pallet::weight(25_000)]
+		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("Removed key: {:?}", public);
+
+			<FragKeys<T>>::mutate(|validators| {
+				validators.remove(&public);
+			});
+
+			Ok(())
+		}
 
 		/// Detached a fragment from this chain by emitting an event that includes a signature.
 		/// The remote target chain can attach this fragment by using this signature.
@@ -148,14 +232,11 @@ pub mod pallet {
 			fragment_hash: Hash256,
 			target_chain: SupportedChains,
 			target_account: Vec<u8>, // an eth address or so
+			owner: FragmentOwner<T::AccountId>
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			// make sure the fragment exists
-			let fragment: Fragment<T::AccountId> =
-				<Fragments<T>>::get(&fragment_hash).ok_or(Error::<T>::FragmentNotFound)?;
-
-			match fragment.owner {
+			match owner {
 				FragmentOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
 				FragmentOwner::ExternalAsset(_ext_asset) =>
 				// We don't allow detaching external assets
@@ -247,6 +328,31 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		fn initialize_eth_authorities(authorities: &[ecdsa::Public]) {
+			if !authorities.is_empty() {
+				assert!(
+					<EthereumAuthorities<T>>::get().is_empty(),
+					"EthereumAuthorities are already initialized!"
+				);
+				for authority in authorities {
+					<EthereumAuthorities<T>>::mutate(|authorities| {
+						authorities.insert(authority.clone());
+					});
+				}
+			}
+		}
+
+		fn initialize_keys(keys: &[ed25519::Public]) {
+			if !keys.is_empty() {
+				assert!(<FragKeys<T>>::get().is_empty(), "FragKeys are already initialized!");
+				for key in keys {
+					<FragKeys<T>>::mutate(|keys| {
+						keys.insert(*key);
+					});
+				}
+			}
+		}
+
 		fn process_detach_requests() {
 			const FAILED: () = ();
 			let requests = StorageValueRef::persistent(b"fragments-detach-requests");

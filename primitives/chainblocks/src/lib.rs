@@ -7,6 +7,9 @@
 extern crate lazy_static;
 
 use sp_std::vec::Vec;
+use codec::{Decode, Encode};
+use sp_core::{crypto::KeyTypeId, ecdsa, H160, U256};
+use core::slice::Iter;
 
 pub type Hash256 = [u8; 32];
 
@@ -24,6 +27,56 @@ pub struct AudioData {
 pub enum FragmentData {
 	Chain(Vec<u8>),
 	Audio(AudioData),
+}
+
+/// Defines application identifier for crypto keys of this module.
+///
+/// Every module that deals with signatures needs to declare its unique identifier for
+/// its crypto keys.
+/// When offchain worker is signing transactions it's going to request keys of type
+/// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
+/// The keys can be inserted manually via RPC (see `author_insertKey`).
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum SupportedChains {
+	EthereumMainnet,
+	EthereumRinkeby,
+	EthereumGoerli,
+}
+
+
+impl SupportedChains {
+	pub fn iterator() -> Iter<'static, SupportedChains> {
+		static CHAINS: [SupportedChains; 3] = [
+			SupportedChains::EthereumMainnet,
+			SupportedChains::EthereumRinkeby,
+			SupportedChains::EthereumGoerli,
+		];
+		CHAINS.iter()
+	}
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum FragmentOwner<TAccountId> {
+	// A regular account on this chain
+	User(TAccountId),
+	// An external asset not on this chain
+	ExternalAsset(LinkedAsset),
+}
+
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum LinkSource {
+	// Generally we just store this data, we don't verify it as we assume auth service did it.
+	// (Link signature, Linked block number, EIP155 Chain ID)
+	Evm(ecdsa::Signature, u64, U256),
+}
+
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum LinkedAsset {
+	// Ethereum (ERC721 Contract address, Token ID, Link source)
+	Erc721(H160, U256, LinkSource),
 }
 
 #[cfg(feature = "std")]

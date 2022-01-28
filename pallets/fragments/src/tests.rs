@@ -1,4 +1,4 @@
-use crate::{mock::*, AuthData, Error, EthereumAuthorities, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE, DetachInternalData, DetachedFragments};
+use crate::{mock::*, AuthData, Error, EthereumAuthorities, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities, KEY_TYPE, DetachedFragments};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;

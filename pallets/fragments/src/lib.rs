@@ -11,29 +11,21 @@ mod benchmarking;
 
 mod weights;
 
-use core::slice::Iter;
-use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
-
-/// Defines application identifier for crypto keys of this module.
-///
-/// Every module that deals with signatures needs to declare its unique identifier for
-/// its crypto keys.
-/// When offchain worker is signing transactions it's going to request keys of type
-/// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
-/// The keys can be inserted manually via RPC (see `author_insertKey`).
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
+use sp_core::ecdsa;
+use sp_chainblocks::{Hash256, SupportedChains, FragmentOwner, LinkedAsset};
+use clamor_tools_pallet::DetachedFragments;
 
 /// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
 /// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
 /// the types with this pallet-specific identifier.
 pub mod crypto {
-	use super::KEY_TYPE;
 	use sp_core::ed25519::Signature as Ed25519Signature;
 	use sp_runtime::{
 		app_crypto::{app_crypto, ed25519},
 		traits::Verify,
 		MultiSignature, MultiSigner,
 	};
+	use sp_chainblocks::KEY_TYPE;
 	app_crypto!(ed25519, KEY_TYPE);
 
 	pub struct FragmentsAuthId;
@@ -65,10 +57,8 @@ use sp_io::{
 };
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
-use sp_chainblocks::Hash256;
-
 use frame_system::offchain::{
-	AppCrypto, CreateSignedTransaction, SignedPayload,
+	CreateSignedTransaction, SignedPayload,
 	SigningTypes,
 };
 
@@ -88,40 +78,12 @@ impl<T: SigningTypes> SignedPayload<T> for FragmentValidation<T::Public, T::Bloc
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub enum SupportedChains {
-	EthereumMainnet,
-	EthereumRinkeby,
-	EthereumGoerli,
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct DetachRequest {
 	pub fragment_hash: Hash256,
 	pub target_chain: SupportedChains,
 	pub target_account: Vec<u8>, // an eth address or so
 }
 
-
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub enum LinkSource {
-	// Generally we just store this data, we don't verify it as we assume auth service did it.
-	// (Link signature, Linked block number, EIP155 Chain ID)
-	Evm(ecdsa::Signature, u64, U256),
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub enum LinkedAsset {
-	// Ethereum (ERC721 Contract address, Token ID, Link source)
-	Erc721(H160, U256, LinkSource),
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub enum FragmentOwner<TAccountId> {
-	// A regular account on this chain
-	User(TAccountId),
-	// An external asset not on this chain
-	ExternalAsset(LinkedAsset),
-}
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct IncludeInfo {
@@ -152,13 +114,6 @@ pub struct Fragment<TAccountId> {
 	pub references: Vec<IncludeInfo>,
 }
 
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct ExportData {
-	pub chain: SupportedChains,
-	pub owner: Vec<u8>,
-	pub nonce: u64,
-}
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -169,26 +124,23 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		CreateSignedTransaction<Call<Self>>
+		+ clamor_tools_pallet::Config
 		+ frame_system::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
-		/// The identifier type for an offchain worker.
-		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 	}
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
 		pub upload_authorities: Vec<ecdsa::Public>,
-		pub eth_authorities: Vec<ecdsa::Public>,
-		pub keys: Vec<ed25519::Public>,
 	}
 
 	#[cfg(feature = "std")]
 	impl Default for GenesisConfig {
 		fn default() -> Self {
-			Self { upload_authorities: Vec::new(), eth_authorities: Vec::new(), keys: Vec::new() }
+			Self { upload_authorities: Vec::new()}
 		}
 	}
 
@@ -196,8 +148,6 @@ pub mod pallet {
 	impl<T: Config> GenesisBuild<T> for GenesisConfig {
 		fn build(&self) {
 			Pallet::<T>::initialize_upload_authorities(&self.upload_authorities);
-			Pallet::<T>::initialize_eth_authorities(&self.eth_authorities);
-			Pallet::<T>::initialize_keys(&self.keys);
 		}
 	}
 
@@ -219,16 +169,8 @@ pub mod pallet {
 	pub type FragmentsListSize<T: Config> = StorageValue<_, u128, ValueQuery>;
 
 	#[pallet::storage]
-	pub type DetachedFragments<T: Config> = StorageMap<_, Blake2_128Concat, Hash256, ExportData>;
-
-	#[pallet::storage]
-	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
-
-	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
-	#[pallet::storage]
-	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -268,32 +210,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		// Add validator public key to the list
-		#[pallet::weight(T::WeightInfo::add_eth_auth())]
-		pub fn add_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
-			ensure_root(origin)?;
 
-			log::debug!("New eth auth: {:?}", public);
-
-			<EthereumAuthorities<T>>::mutate(|validators| {
-				validators.insert(public);
-			});
-
-			Ok(())
-		}
-
-		// Remove validator public key to the list
-		#[pallet::weight(T::WeightInfo::del_eth_auth())]
-		pub fn del_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
-			ensure_root(origin)?;
-
-			log::debug!("Removed eth auth: {:?}", public);
-
-			<EthereumAuthorities<T>>::mutate(|validators| {
-				validators.remove(&public);
-			});
-
-			Ok(())
-		}
 
 		#[pallet::weight(T::WeightInfo::add_upload_auth())]
 		pub fn add_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
@@ -321,31 +238,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::add_upload_auth())]
-		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
-			ensure_root(origin)?;
-
-			log::debug!("New key: {:?}", public);
-
-			<FragKeys<T>>::mutate(|validators| {
-				validators.insert(public);
-			});
-
-			Ok(())
-		}
-
-		#[pallet::weight(T::WeightInfo::del_upload_auth())]
-		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
-			ensure_root(origin)?;
-
-			log::debug!("Removed key: {:?}", public);
-
-			<FragKeys<T>>::mutate(|validators| {
-				validators.remove(&public);
-			});
-
-			Ok(())
-		}
 
 		/// Fragment upload function.
 		#[pallet::weight(T::WeightInfo::upload(data.len() as u32))]
@@ -568,41 +460,5 @@ pub mod pallet {
 			}
 		}
 
-		fn initialize_eth_authorities(authorities: &[ecdsa::Public]) {
-			if !authorities.is_empty() {
-				assert!(
-					<EthereumAuthorities<T>>::get().is_empty(),
-					"EthereumAuthorities are already initialized!"
-				);
-				for authority in authorities {
-					<EthereumAuthorities<T>>::mutate(|authorities| {
-						authorities.insert(authority.clone());
-					});
-				}
-			}
-		}
-
-		fn initialize_keys(keys: &[ed25519::Public]) {
-			if !keys.is_empty() {
-				assert!(<FragKeys<T>>::get().is_empty(), "FragKeys are already initialized!");
-				for key in keys {
-					<FragKeys<T>>::mutate(|keys| {
-						keys.insert(*key);
-					});
-				}
-			}
-		}
-
-	}
-}
-
-impl SupportedChains {
-	pub fn iterator() -> Iter<'static, SupportedChains> {
-		static CHAINS: [SupportedChains; 3] = [
-			SupportedChains::EthereumMainnet,
-			SupportedChains::EthereumRinkeby,
-			SupportedChains::EthereumGoerli,
-		];
-		CHAINS.iter()
 	}
 }

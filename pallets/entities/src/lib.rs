@@ -45,7 +45,9 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use fragments_pallet::{Fragment, Fragments, FragmentOwner, DetachedFragments};
+	use fragments_pallet::{Fragment, Fragments};
+	use sp_chainblocks::FragmentOwner;
+	use clamor_tools_pallet::DetachedFragments;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]

@@ -74,6 +74,10 @@ default-features = false
 features = ['derive']
 version = '1.0'
 
+[dependencies.clamor-tools-pallet]
+default-features = false
+path = '../clamor-tools'
+
 [dependencies]
 log = { version = "0.4.14", default-features = false }
 sp-chainblocks = { path = '../../primitives/chainblocks', default-features = false }
@@ -93,5 +97,6 @@ std = [
     'log/std',
 	'sp-keystore',
 	'sp-core/std',
+	'clamor-tools-pallet/std',
 ]
 try-runtime = ['frame-support/try-runtime']

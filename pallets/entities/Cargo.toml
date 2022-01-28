@@ -68,6 +68,10 @@ version = '4.0.0-dev'
 default-features = false
 path = '../fragments'
 
+[dependencies.clamor-tools-pallet]
+default-features = false
+path = '../clamor-tools'
+
 [dependencies]
 sp-chainblocks = { path = '../../primitives/chainblocks', default-features = false }
 
@@ -91,6 +95,7 @@ std = [
 	"sp-runtime/std",
 	"sp-core/std",
 	"pallet-randomness-collective-flip/std",
+	'clamor-tools-pallet/std',
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]

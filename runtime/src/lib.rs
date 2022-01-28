@@ -318,12 +318,12 @@ impl entities_pallet::Config for Runtime {
 
 impl clamor_tools_pallet::Config for Runtime {
 	type Event = Event;
+	type AuthorityId = fragments_pallet::crypto::FragmentsAuthId;
 }
 
 impl fragments_pallet::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
-	type AuthorityId = fragments_pallet::crypto::FragmentsAuthId;
 }
 
 impl frame_system::offchain::SigningTypes for Runtime {
