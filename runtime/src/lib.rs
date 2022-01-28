@@ -316,6 +316,10 @@ impl entities_pallet::Config for Runtime {
 	type WeightInfo = ();
 }
 
+impl clamor_tools_pallet::Config for Runtime {
+	type Event = Event;
+}
+
 impl fragments_pallet::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
@@ -459,6 +463,7 @@ construct_runtime!(
 		Contracts: pallet_contracts,
 		Fragments: fragments_pallet,
 		Entities: entities_pallet,
+		ClamorTools : clamor_tools_pallet,
 	}
 );
 
