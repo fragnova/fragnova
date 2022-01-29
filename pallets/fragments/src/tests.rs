@@ -1,4 +1,4 @@
-use crate::{mock::*, AuthData, Error, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities, DetachedFragments};
+use crate::{mock::*, AuthData, Error, FragmentOwner, Fragments, IncludeInfo, LinkedAsset, SupportedChains, UploadAuthorities};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use sp_chainblocks::Hash256;
@@ -59,24 +59,6 @@ fn initial_upload_and_get_signature() -> AuthData {
 		data,
 	));
 	auth_data
-}
-
-#[test]
-fn add_eth_auth_should_works() {
-	new_test_ext().execute_with(|| {
-		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
-		assert_ok!(FragmentsPallet::add_eth_auth(Origin::root(), validator.clone()));
-		assert!(EthereumAuthorities::<Test>::get().contains(&validator));
-	});
-}
-
-#[test]
-fn del_eth_auth_should_works() {
-	new_test_ext().execute_with(|| {
-		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
-		assert_ok!(FragmentsPallet::del_eth_auth(Origin::root(), validator.clone()));
-		assert!(!EthereumAuthorities::<Test>::get().contains(&validator));
-	});
 }
 
 #[test]
@@ -291,11 +273,14 @@ fn update_should_not_work_if_detached() {
 		<EthereumAuthorities<Test>>::mutate(|authorities| {
 			authorities.insert(keys.get(0).unwrap().clone());
 		});
-		assert_ok!(FragmentsPallet::detach(
+		let fragment_hash = blake2_256(&data);
+		let owner = <Fragments<Test>>::get(fragment_hash).unwrap().owner;
+		assert_ok!(ClamorToolsPallet::detach(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			FRAGMENT_HASH,
 			SupportedChains::EthereumMainnet,
-			pair.to_raw_vec()
+			pair.to_raw_vec(),
+			owner
 		));
 
 		let detach_data = DetachInternalData {
@@ -307,7 +292,7 @@ fn update_should_not_work_if_detached() {
 			nonce: 1
 		};
 
-		assert_ok!(FragmentsPallet::internal_finalize_detach(
+		assert_ok!(ClamorToolsPallet::internal_finalize_detach(
 			Origin::none(),
 			detach_data,
 			pair.sign(DATA.as_bytes())
@@ -323,68 +308,6 @@ fn update_should_not_work_if_detached() {
 			),
 			Error::<Test>::FragmentDetached
 		);
-	});
-}
-
-#[test]
-fn detach_fragment_should_not_work_if_user_is_unauthorized() {
-	new_test_ext().execute_with(|| {
-		initial_upload_and_get_signature();
-
-		let (pair, _) = sp_core::ed25519::Pair::generate();
-
-		assert_noop!(
-			FragmentsPallet::detach(
-				Origin::signed(pair.public()),
-				FRAGMENT_HASH,
-				SupportedChains::EthereumMainnet,
-				pair.to_raw_vec()
-			),
-			Error::<Test>::Unauthorized
-		);
-	});
-}
-
-#[test]
-fn detach_fragment_should_not_work_if_fragment_not_found() {
-	new_test_ext().execute_with(|| {
-		let who: sp_core::ed25519::Public = sp_core::ed25519::Public::from_raw(PUBLIC1);
-		let (pair, _) = sp_core::ed25519::Pair::generate();
-
-		assert_noop!(
-			FragmentsPallet::detach(
-				Origin::signed(who),
-				FRAGMENT_HASH,
-				SupportedChains::EthereumMainnet,
-				pair.to_raw_vec()
-			),
-			Error::<Test>::FragmentNotFound
-		);
-	});
-}
-
-#[test]
-fn detach_should_work() {
-	let keystore = KeyStore::new();
-	let mut t = new_test_ext();
-
-	t.register_extension(KeystoreExt(Arc::new(keystore)));
-	t.execute_with(|| {
-		let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
-		initial_upload_and_get_signature();
-
-		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
-		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
-
-		<EthereumAuthorities<Test>>::mutate(|authorities| {
-			authorities.insert(keys.get(0).unwrap().clone());
-		});
-		assert_ok!(FragmentsPallet::detach(
-			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-			FRAGMENT_HASH,
-			SupportedChains::EthereumMainnet,
-			pair.to_raw_vec()
-		));
 	});
 }
 
@@ -461,7 +384,7 @@ fn transfer_should_not_work_if_detached() {
 			nonce: 1
 		};
 
-		assert_ok!(FragmentsPallet::internal_finalize_detach(
+		assert_ok!(ClamorToolsPallet::internal_finalize_detach(
 			Origin::none(),
 			detach_data,
 			pair.sign(DATA.as_bytes())
@@ -476,29 +399,5 @@ fn transfer_should_not_work_if_detached() {
 			),
 			Error::<Test>::FragmentDetached
 		);
-	});
-}
-
-#[test]
-fn internal_finalize_detach_should_works() {
-	new_test_ext().execute_with(|| {
-		let pair = sp_core::ed25519::Pair::from_string("//Alice", None).unwrap();
-
-		let detach_data = DetachInternalData {
-			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
-			fragment_hash: FRAGMENT_HASH,
-			remote_signature: vec![],
-			target_account: vec![],
-			target_chain: SupportedChains::EthereumGoerli,
-			nonce: 1
-		};
-
-		assert_ok!(FragmentsPallet::internal_finalize_detach(
-			Origin::none(),
-			detach_data,
-			pair.sign(DATA.as_bytes())
-		));
-
-		assert!(<DetachedFragments<Test>>::contains_key(FRAGMENT_HASH));
 	});
 }

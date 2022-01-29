@@ -1,5 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(test)]
+mod mock;
+
+// #[cfg(test)]
+// mod tests;
+
 pub use pallet::*;
 use codec::{Decode, Encode};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
@@ -26,12 +32,12 @@ pub struct DetachRequest {
 }
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct DetachInternalData<TPublic> {
-	public: TPublic,
-	fragment_hash: Hash256,
-	target_chain: SupportedChains,
-	target_account: Vec<u8>, // an eth address or so
-	remote_signature: Vec<u8>,
-	nonce: u64,
+	pub public: TPublic,
+	pub fragment_hash: Hash256,
+	pub target_chain: SupportedChains,
+	pub target_account: Vec<u8>, // an eth address or so
+	pub remote_signature: Vec<u8>,
+	pub nonce: u64,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
