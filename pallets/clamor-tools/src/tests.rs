@@ -1,171 +1,113 @@
-use crate::{mock::*, Error, Fragment2Entities};
-use codec::{Compact, Encode};
+use crate::{mock::*, Error, KEY_TYPE, DetachInternalData, DetachedFragments, EthereumAuthorities, FragKeys};
 use frame_support::{assert_noop, assert_ok};
-use crate::{Entities, EntityMetadata};
 use sp_core::Pair;
-use sp_io::hashing::blake2_256;
-use fragments_pallet::{IncludeInfo, AuthData};
-use sp_chainblocks::LinkedAsset;
+use sp_keystore::{testing::KeyStore, KeystoreExt};
+use std::sync::Arc;
+use sp_chainblocks::{FragmentOwner, SupportedChains};
 
-fn initial_set_up_and_get_signature(
-	data: Vec<u8>,
-	references: Vec<IncludeInfo>,
-	nonce: u64,
-) -> sp_core::ecdsa::Signature {
-	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
-
-	let fragment_hash = blake2_256(&data);
-	let linked_asset: Option<LinkedAsset> = None;
-	let signature: sp_core::ecdsa::Signature = pair.sign(
-		&[
-			&fragment_hash[..],
-			&references.encode(),
-			&linked_asset.encode(),
-			&nonce.encode(),
-			&1.encode(),
-		]
-			.concat(),
-	);
-	assert_ok!(FragmentsPallet::add_upload_auth(Origin::root(), pair.public()));
-	signature
-}
-
-fn initial_upload_and_get_signature() -> AuthData {
-	let data = DATA.as_bytes().to_vec();
-	let references = vec![IncludeInfo {
-		fragment_hash: FRAGMENT_HASH,
-		mutable_index: Some(Compact(1)),
-		staked_amount: Compact(1),
-	}];
-	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
-	let auth_data = AuthData { signature, block: 1 };
-
-	assert_ok!(FragmentsPallet::upload(
-		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
-		references,
-		None,
-		None,
-		auth_data.clone(),
-		data,
-	));
-	auth_data
+#[test]
+fn add_eth_auth_should_works() {
+	new_test_ext().execute_with(|| {
+		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
+		assert_ok!(ClamorToolsPallet::add_eth_auth(Origin::root(), validator.clone()));
+		assert!(EthereumAuthorities::<Test>::get().contains(&validator));
+	});
 }
 
 #[test]
-fn create_should_works() {
+fn del_eth_auth_should_works() {
 	new_test_ext().execute_with(|| {
-		initial_upload_and_get_signature();
+		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
+		assert_ok!(ClamorToolsPallet::del_eth_auth(Origin::root(), validator.clone()));
+		assert!(!EthereumAuthorities::<Test>::get().contains(&validator));
+	});
+}
 
-		let entity_data = EntityMetadata {
-			name: "name".as_bytes().to_vec(),
-			external_url: "external_url".as_bytes().to_vec(),
-		};
+#[test]
+fn add_key_should_works() {
+	new_test_ext().execute_with(|| {
+		let validator: sp_core::ed25519::Public = sp_core::ed25519::Public::from_raw(PUBLIC1);
+		assert_ok!(ClamorToolsPallet::add_key(Origin::root(), validator.clone()));
+		assert!(FragKeys::<Test>::get().contains(&validator));
+	});
+}
 
-		let hash = blake2_256(
-			&[
-				&FRAGMENT_HASH[..],
-				&entity_data.name.encode(),
-			]
-				.concat(),
+#[test]
+fn del_key_should_works() {
+	new_test_ext().execute_with(|| {
+		let validator: sp_core::ed25519::Public = sp_core::ed25519::Public::from_raw(PUBLIC1);
+		assert_ok!(ClamorToolsPallet::del_key(Origin::root(), validator.clone()));
+		assert!(!FragKeys::<Test>::get().contains(&validator));
+	});
+}
+
+#[test]
+fn detach_fragment_should_not_work_if_user_is_unauthorized() {
+	new_test_ext().execute_with(|| {
+
+		let (pair, _) = sp_core::ed25519::Pair::generate();
+		let who = sp_core::ed25519::Public::from_raw(PUBLIC1);
+		let owner = FragmentOwner::User(who.clone());
+		assert_noop!(
+			ClamorToolsPallet::detach(
+				Origin::signed(pair.public()),
+				FRAGMENT_HASH,
+				SupportedChains::EthereumMainnet,
+				pair.to_raw_vec(),
+				owner
+			),
+			Error::<Test>::Unauthorized
 		);
+	});
+}
 
-		assert_ok!(EntitiesPallet::create(
-			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
+#[test]
+fn detach_should_work() {
+	let keystore = KeyStore::new();
+	let mut t = new_test_ext();
+
+	t.register_extension(KeystoreExt(Arc::new(keystore)));
+	t.execute_with(|| {
+		let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
+
+		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
+		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
+
+		<EthereumAuthorities<Test>>::mutate(|authorities| {
+			authorities.insert(keys.get(0).unwrap().clone());
+		});
+		let who = sp_core::ed25519::Public::from_raw(PUBLIC1);
+		let owner = FragmentOwner::User(who.clone());
+		assert_ok!(ClamorToolsPallet::detach(
+			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			FRAGMENT_HASH,
-			entity_data,
-			true,
-			true,
-			None
+			SupportedChains::EthereumMainnet,
+			pair.to_raw_vec(),
+			owner
 		));
-		assert!(Entities::<Test>::contains_key(&hash));
-		assert!(Fragment2Entities::<Test>::contains_key(&FRAGMENT_HASH));
 	});
 }
 
 #[test]
-fn create_should_not_work_if_fragments_not_found() {
+fn internal_finalize_detach_should_works() {
 	new_test_ext().execute_with(|| {
+		let pair = sp_core::ed25519::Pair::from_string("//Alice", None).unwrap();
 
-		let entity_data = EntityMetadata {
-			name: "name".as_bytes().to_vec(),
-			external_url: "external_url".as_bytes().to_vec(),
+		let detach_data = DetachInternalData {
+			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
+			fragment_hash: FRAGMENT_HASH,
+			remote_signature: vec![],
+			target_account: vec![],
+			target_chain: SupportedChains::EthereumGoerli,
+			nonce: 1
 		};
 
-		assert_noop!(EntitiesPallet::create(
-			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
-			FRAGMENT_HASH,
-			entity_data,
-			true,
-			true,
-			None
-		),
-			Error::<Test>::FragmentNotFound
-		);
-	});
-}
-
-#[test]
-fn create_should_not_work_if_fragment_owner_not_found() {
-	new_test_ext().execute_with(|| {
-
-		initial_upload_and_get_signature();
-		pub const PUBLIC: [u8; 32] = [136, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251];
-
-		let entity_data = EntityMetadata {
-			name: "name".as_bytes().to_vec(),
-			external_url: "external_url".as_bytes().to_vec(),
-		};
-
-		assert_noop!(EntitiesPallet::create(
-			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
-			FRAGMENT_HASH,
-			entity_data,
-			true,
-			true,
-			None
-		),
-			Error::<Test>::NoPermission
-		);
-	});
-}
-
-#[test]
-fn create_should_not_work_if_entity_already_exist() {
-	new_test_ext().execute_with(|| {
-		initial_upload_and_get_signature();
-
-		let entity_data = EntityMetadata {
-			name: "name".as_bytes().to_vec(),
-			external_url: "external_url".as_bytes().to_vec(),
-		};
-
-		let hash = blake2_256(
-			&[
-				&FRAGMENT_HASH[..],
-				&entity_data.name.encode(),
-			]
-				.concat(),
-		);
-
-		assert_ok!(EntitiesPallet::create(
-			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
-			FRAGMENT_HASH,
-			entity_data.clone(),
-			true,
-			true,
-			None
+		assert_ok!(ClamorToolsPallet::internal_finalize_detach(
+			Origin::none(),
+			detach_data,
+			pair.sign(DATA.as_bytes())
 		));
-		assert!(Entities::<Test>::contains_key(&hash));
 
-		assert_noop!(EntitiesPallet::create(
-			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
-			FRAGMENT_HASH,
-			entity_data,
-			true,
-			true,
-			None
-		),
-			Error::<Test>::EntityAlreadyExist
-		);
+		assert!(<DetachedFragments<Test>>::contains_key(FRAGMENT_HASH));
 	});
 }

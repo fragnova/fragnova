@@ -3,8 +3,39 @@
 #[cfg(test)]
 mod mock;
 
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
+
+/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
+/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
+/// the types with this pallet-specific identifier.
+pub mod crypto {
+	use sp_core::ed25519::Signature as Ed25519Signature;
+	use sp_runtime::{
+		app_crypto::{app_crypto, ed25519},
+		traits::Verify,
+		MultiSignature, MultiSigner,
+	};
+	use sp_chainblocks::KEY_TYPE;
+	app_crypto!(ed25519, KEY_TYPE);
+
+	pub struct FragmentsAuthId;
+
+	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for FragmentsAuthId {
+		type RuntimeAppPublic = Public;
+		type GenericSignature = sp_core::ed25519::Signature;
+		type GenericPublic = sp_core::ed25519::Public;
+	}
+
+	// implemented for mock runtime in test
+	impl frame_system::offchain::AppCrypto<<Ed25519Signature as Verify>::Signer, Ed25519Signature>
+	for FragmentsAuthId
+	{
+		type RuntimeAppPublic = Public;
+		type GenericSignature = sp_core::ed25519::Signature;
+		type GenericPublic = sp_core::ed25519::Public;
+	}
+}
 
 pub use pallet::*;
 use codec::{Decode, Encode};

@@ -79,16 +79,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-where
-	Call: From<LocalCall>,
+	where
+		Call: From<LocalCall>,
 {
 	type OverarchingCall = Call;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-where
-	Call: From<LocalCall>,
+	where
+		Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: Call,
@@ -109,7 +109,7 @@ impl pallet_randomness_collective_flip::Config for Test {}
 
 impl clamor_tools_pallet::Config for Test {
 	type Event = Event;
-	type AuthorityId = fragments_pallet::crypto::FragmentsAuthId;
+	type AuthorityId = clamor_tools_pallet::crypto::FragmentsAuthId;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
