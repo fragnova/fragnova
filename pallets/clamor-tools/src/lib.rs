@@ -6,6 +6,12 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
+mod weights;
+
+pub use weights::WeightInfo;
 /// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
 /// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
 /// the types with this pallet-specific identifier.
@@ -101,6 +107,7 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+		type WeightInfo: WeightInfo;
 	}
 
 	#[pallet::genesis_config]
@@ -169,7 +176,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 
-		#[pallet::weight(25_000)]
+		#[pallet::weight(<T as Config>::WeightInfo::add_eth_auth())]
 		pub fn add_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -183,7 +190,7 @@ pub mod pallet {
 		}
 
 		// Remove validator public key to the list
-		#[pallet::weight(25_000)]
+		#[pallet::weight(<T as Config>::WeightInfo::del_eth_auth())]
 		pub fn del_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -196,7 +203,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(25_000)]
+		#[pallet::weight(<T as Config>::WeightInfo::add_key())]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -209,7 +216,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(25_000)]
+		#[pallet::weight(<T as Config>::WeightInfo::del_key())]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -263,7 +270,7 @@ pub mod pallet {
 
 		/// Detached a fragment from this chain by emitting an event that includes a signature.
 		/// The remote target chain can attach this fragment by using this signature.
-		#[pallet::weight(25_000)]
+		#[pallet::weight(<T as Config>::WeightInfo::detach())]
 		pub fn detach(
 			origin: OriginFor<T>,
 			fragment_hash: Hash256,

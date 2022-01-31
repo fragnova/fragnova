@@ -319,6 +319,7 @@ impl entities_pallet::Config for Runtime {
 impl clamor_tools_pallet::Config for Runtime {
 	type Event = Event;
 	type AuthorityId = clamor_tools_pallet::crypto::FragmentsAuthId;
+	type WeightInfo = ();
 }
 
 impl fragments_pallet::Config for Runtime {
@@ -688,6 +689,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, fragments_pallet, Fragments);
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, entities_pallet, Entities);
+			list_benchmark!(list, extra, clamor_tools_pallet, ClamorTools);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -728,6 +730,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, fragments_pallet, Fragments);
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, entities_pallet, Entities);
+			add_benchmark!(params, batches, clamor_tools_pallet, ClamorTools);
 
 			Ok(batches)
 		}

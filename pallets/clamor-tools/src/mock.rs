@@ -106,6 +106,7 @@ impl pallet_randomness_collective_flip::Config for Test {}
 impl clamor_tools_pallet::Config for Test {
 	type Event = Event;
 	type AuthorityId = clamor_tools_pallet::crypto::FragmentsAuthId;
+	type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

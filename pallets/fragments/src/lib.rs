@@ -182,7 +182,7 @@ pub mod pallet {
 		// Add validator public key to the list
 
 
-		#[pallet::weight(T::WeightInfo::add_upload_auth())]
+		#[pallet::weight(<T as Config>::WeightInfo::add_upload_auth())]
 		pub fn add_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -195,7 +195,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::del_upload_auth())]
+		#[pallet::weight(<T as Config>::WeightInfo::del_upload_auth())]
 		pub fn del_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -210,7 +210,7 @@ pub mod pallet {
 
 
 		/// Fragment upload function.
-		#[pallet::weight(T::WeightInfo::upload(data.len() as u32))]
+		#[pallet::weight(<T as Config>::WeightInfo::upload(data.len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -291,7 +291,7 @@ pub mod pallet {
 		}
 
 		/// Fragment upload function.
-		#[pallet::weight(T::WeightInfo::update(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
+		#[pallet::weight(<T as Config>::WeightInfo::update(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
 		pub fn update(
 			origin: OriginFor<T>,
 			// fragment hash we want to update
@@ -357,7 +357,7 @@ pub mod pallet {
 		}
 
 		/// Transfer fragment ownership
-		#[pallet::weight(T::WeightInfo::transfer())]
+		#[pallet::weight(<T as Config>::WeightInfo::transfer())]
 		pub fn transfer(
 			origin: OriginFor<T>,
 			fragment_hash: Hash256,

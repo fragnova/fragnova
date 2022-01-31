@@ -243,6 +243,7 @@ runtime-benchmarks = [
     'sp-runtime/runtime-benchmarks',
     'fragments-pallet/runtime-benchmarks',
 	'entities-pallet/runtime-benchmarks',
+	'clamor-tools-pallet/runtime-benchmarks',
 ]
 std = [
     'codec/std',
