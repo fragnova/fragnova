@@ -155,7 +155,7 @@ fn testnet_genesis(
 			upload_authorities: vec![get_from_seed::<ecdsa::Public>("Charlie")],
 			eth_authorities: vec![{
 				let pair = ed25519::Pair::from_string("//Bob", None).unwrap();
-				let signature = pair.sign(b"protos-frag-ecdsa-keys");
+				let signature = pair.sign(b"fragments-frag-ecdsa-keys");
 				let hash = sp_core::keccak_256(&signature.0[..]);
 				let pair = ecdsa::Pair::from_seed_slice(&hash[..]).unwrap();
 				let public = pair.public();

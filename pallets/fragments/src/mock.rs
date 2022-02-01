@@ -1,4 +1,4 @@
-pub use crate as pallet_fragment;
+pub use crate as pallet_fragments;
 use crate::*;
 use frame_support::{pallet_prelude::ConstU32, parameter_types};
 use frame_system as system;
@@ -30,7 +30,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
-		FragmentsPallet: pallet_fragment::{Pallet, Call, Storage, Event<T>},
+		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -104,7 +104,7 @@ impl pallet_protos::Config for Test {
 	type AuthorityId = pallet_protos::crypto::ProtosAuthId;
 }
 
-impl pallet_fragment::Config for Test {
+impl pallet_fragments::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 }

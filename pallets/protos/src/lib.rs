@@ -883,7 +883,7 @@ pub mod pallet {
 									// check if we need to generate new ecdsa keys
 									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE);
 									let keys_ref =
-										StorageValueRef::persistent(b"protos-frag-ecdsa-keys");
+										StorageValueRef::persistent(b"fragments-frag-ecdsa-keys");
 									let keys = keys_ref
 										.get::<BTreeSet<ed25519::Public>>()
 										.unwrap_or_default();
@@ -896,7 +896,7 @@ pub mod pallet {
 											let signed = Crypto::ed25519_sign(
 												KEY_TYPE,
 												ed_key,
-												b"protos-frag-ecdsa-keys",
+												b"fragments-frag-ecdsa-keys",
 											)
 											.unwrap();
 											let key = keccak_256(&signed.0[..]);

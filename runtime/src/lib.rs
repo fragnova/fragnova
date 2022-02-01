@@ -311,7 +311,7 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-impl pallet_fragment::Config for Runtime {
+impl pallet_fragments::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 }
@@ -458,7 +458,7 @@ construct_runtime!(
 		Indices: pallet_indices,
 		Contracts: pallet_contracts,
 		Protos: pallet_protos,
-		Fragments: pallet_fragment,
+		Fragments: pallet_fragments,
 	}
 );
 
@@ -682,7 +682,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
 			list_benchmark!(list, extra, pallet_protos, Protos);
 			list_benchmark!(list, extra, pallet_assets, Assets);
-			list_benchmark!(list, extra, pallet_fragment, Fragments);
+			list_benchmark!(list, extra, pallet_fragments, Fragments);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -722,7 +722,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
 			add_benchmark!(params, batches, pallet_protos, Protos);
 			add_benchmark!(params, batches, pallet_assets, Assets);
-			add_benchmark!(params, batches, pallet_fragment, Fragments);
+			add_benchmark!(params, batches, pallet_fragments, Fragments);
 
 			Ok(batches)
 		}

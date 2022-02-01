@@ -3,7 +3,7 @@ authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
 description = 'Protos Fragment pallet.'
 edition = '2021'
 license = 'BUSL-1.1'
-name = 'pallet-fragment'
+name = 'pallet-fragments'
 readme = 'README.md'
 version = '0.0.1'
 

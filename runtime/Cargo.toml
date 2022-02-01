@@ -195,7 +195,7 @@ default-features = false
 path = '../pallets/protos'
 version = '0.0.1'
 
-[dependencies.pallet-fragment]
+[dependencies.pallet-fragments]
 default-features = false
 path = '../pallets/fragments'
 version = '0.0.1'
@@ -237,7 +237,7 @@ runtime-benchmarks = [
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
     'pallet-protos/runtime-benchmarks',
-	'pallet-fragment/runtime-benchmarks',
+	'pallet-fragments/runtime-benchmarks',
 ]
 std = [
     'codec/std',
@@ -267,7 +267,7 @@ std = [
     'sp-transaction-pool/std',
     'sp-version/std',
     'pallet-protos/std',
-	'pallet-fragment/std',
+	'pallet-fragments/std',
     'pallet-indices/std',
     'pallet-contracts/std',
     'pallet-contracts-primitives/std',
