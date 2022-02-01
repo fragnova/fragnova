@@ -73,7 +73,7 @@ mod details {
 }
 
 #[sp_runtime_interface::runtime_interface]
-pub trait OffchainFragments {
+pub trait Chainblocks {
 	fn say_hello_world(data: &str) {
 		details::_say_hello_world(data);
 	}

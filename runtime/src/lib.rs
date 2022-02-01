@@ -47,8 +47,8 @@ pub use sp_runtime::{Perbill, Permill};
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-/// Import the entities pallet.
-pub use fragments_pallet;
+/// Import the fragments pallet.
+pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
 
@@ -311,15 +311,15 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-impl entities_pallet::Config for Runtime {
+impl pallet_fragment::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 }
 
-impl fragments_pallet::Config for Runtime {
+impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
-	type AuthorityId = fragments_pallet::crypto::FragmentsAuthId;
+	type AuthorityId = pallet_protos::crypto::ProtosAuthId;
 }
 
 impl frame_system::offchain::SigningTypes for Runtime {
@@ -457,8 +457,8 @@ construct_runtime!(
 		// Our additions
 		Indices: pallet_indices,
 		Contracts: pallet_contracts,
-		Fragments: fragments_pallet,
-		Entities: entities_pallet,
+		Protos: pallet_protos,
+		Fragments: pallet_fragment,
 	}
 );
 
@@ -680,9 +680,9 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			list_benchmark!(list, extra, fragments_pallet, Fragments);
+			list_benchmark!(list, extra, pallet_protos, Protos);
 			list_benchmark!(list, extra, pallet_assets, Assets);
-			list_benchmark!(list, extra, entities_pallet, Entities);
+			list_benchmark!(list, extra, pallet_fragment, Fragments);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -720,9 +720,9 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			add_benchmark!(params, batches, fragments_pallet, Fragments);
+			add_benchmark!(params, batches, pallet_protos, Protos);
 			add_benchmark!(params, batches, pallet_assets, Assets);
-			add_benchmark!(params, batches, entities_pallet, Entities);
+			add_benchmark!(params, batches, pallet_fragment, Fragments);
 
 			Ok(batches)
 		}
