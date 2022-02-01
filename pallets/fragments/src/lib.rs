@@ -249,11 +249,11 @@ pub mod pallet {
 	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type DetachedFragments<T: Config> = StorageMap<_, Identity, Hash256, ExportData>;
-
-	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, SupportedChains, u64>;
+
+	#[pallet::storage]
+	pub type DetachedFragments<T: Config> = StorageMap<_, Identity, Hash256, ExportData>;
 
 	#[pallet::storage]
 	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
@@ -866,7 +866,8 @@ pub mod pallet {
 		fn process_detach_requests() {
 			const FAILED: () = ();
 			let requests = StorageValueRef::persistent(b"fragments-detach-requests");
-			let _ = requests.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| match requests {
+			let _ =
+				requests.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| match requests {
 					Ok(Some(requests)) => {
 						log::debug!("Got {} detach requests", requests.len());
 						for request in requests {
@@ -882,24 +883,31 @@ pub mod pallet {
 								SupportedChains::EthereumGoerli => {
 									// check if we need to generate new ecdsa keys
 									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE);
-									let keys_ref = StorageValueRef::persistent(b"fragments-frag-ecdsa-keys");
-									let keys = keys_ref.get::<BTreeSet<ed25519::Public>>().unwrap_or_default();
-									let mut keys = if let Some(keys) = keys {
-										keys
-									} else {
-										BTreeSet::new()
-									};
+									let keys_ref =
+										StorageValueRef::persistent(b"fragments-frag-ecdsa-keys");
+									let keys = keys_ref
+										.get::<BTreeSet<ed25519::Public>>()
+										.unwrap_or_default();
+									let mut keys =
+										if let Some(keys) = keys { keys } else { BTreeSet::new() };
 									// doing this cos mutate was insane...
 									let mut edited = false;
 									for ed_key in &ed_keys {
 										if !keys.contains(ed_key) {
-											let signed = Crypto::ed25519_sign(KEY_TYPE, ed_key, b"fragments-frag-ecdsa-keys").unwrap();
+											let signed = Crypto::ed25519_sign(
+												KEY_TYPE,
+												ed_key,
+												b"fragments-frag-ecdsa-keys",
+											)
+											.unwrap();
 											let key = keccak_256(&signed.0[..]);
 											let mut key_hex = [0u8; 64];
-											hex::encode_to_slice(key, &mut key_hex).map_err(|_| FAILED)?;
+											hex::encode_to_slice(key, &mut key_hex)
+												.map_err(|_| FAILED)?;
 											let key_hex = [b"0x", &key_hex[..]].concat();
 											log::debug!("Adding new key from seed: {:?}", key_hex);
-											let _public = Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
+											let _public =
+												Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
 											keys.insert(*ed_key);
 											edited = true;
 										}
@@ -927,7 +935,7 @@ pub mod pallet {
 										payload.extend(&chain_id_be[..]);
 										let mut target_account: [u8; 20] = [0u8; 20];
 										if request.target_account.len() != 20 {
-											return Err(FAILED);
+											return Err(FAILED)
 										}
 										target_account.copy_from_slice(&request.target_account[..]);
 										payload.extend(&target_account[..]);
@@ -945,17 +953,24 @@ pub mod pallet {
 											payload.extend(1u64.to_be_bytes());
 											1u64
 										};
-										log::debug!("payload: {:x?}, len: {}", payload, payload.len());
+										log::debug!(
+											"payload: {:x?}, len: {}",
+											payload,
+											payload.len()
+										);
 										let payload = keccak_256(&payload);
-										log::debug!("payload hash: {:x?}, len: {}", payload, payload.len());
-										let msg = [
-											b"\x19Ethereum Signed Message:\n32",
-											&payload[..],
-										]
-										.concat();
+										log::debug!(
+											"payload hash: {:x?}, len: {}",
+											payload,
+											payload.len()
+										);
+										let msg =
+											[b"\x19Ethereum Signed Message:\n32", &payload[..]]
+												.concat();
 										let msg = keccak_256(&msg);
 										// Sign the payload with a trusted validation key
-										let signature = Crypto::ecdsa_sign_prehashed(KEY_TYPE, key, &msg);
+										let signature =
+											Crypto::ecdsa_sign_prehashed(KEY_TYPE, key, &msg);
 										if let Some(signature) = signature {
 											// No more failures from this path!!
 											let mut signature = signature.0.to_vec();
@@ -971,31 +986,37 @@ pub mod pallet {
 								},
 							};
 
-
 							match values {
 								Ok((signature, nonce)) => {
 									// exec unsigned transaction from here
-									log::debug!("Executing unsigned transaction for detach; signature: {:x?}, nonce: {}", signature, nonce);
+									log::debug!(
+									"Executing unsigned transaction for detach; signature: {:x?}, nonce: {}",
+									signature,
+									nonce
+								);
 									if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
-									.send_unsigned_transaction(
-										|account| DetachInternalData {
-											public: account.public.clone(),
-											fragment_hash: request.fragment_hash,
-											target_chain: request.target_chain,
-											target_account: request.target_account.clone(),
-											remote_signature: signature.clone(),
-											nonce,
-										},
-										|payload, signature| Call::internal_finalize_detach {
-											data: payload,
-											signature,
-										},
-									)
-									.ok_or("No local accounts accounts available.") {
+										.send_unsigned_transaction(
+											|account| DetachInternalData {
+												public: account.public.clone(),
+												fragment_hash: request.fragment_hash,
+												target_chain: request.target_chain,
+												target_account: request.target_account.clone(),
+												remote_signature: signature.clone(),
+												nonce,
+											},
+											|payload, signature| Call::internal_finalize_detach {
+												data: payload,
+												signature,
+											},
+										)
+										.ok_or("No local accounts accounts available.")
+									{
 										log::error!("Failed to send unsigned detach transaction with error: {:?}", e);
 									}
 								},
-								Err(e) => {log::debug!("Failed to detach with error {:?}", e)},
+								Err(e) => {
+									log::debug!("Failed to detach with error {:?}", e)
+								},
 							}
 						}
 						Ok(vec![])
