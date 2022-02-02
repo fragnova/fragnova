@@ -43,12 +43,12 @@ jobs:
 
       - name: Check Build
         run: |
-          cargo check --release
+          cargo check
 
       - name: Check Build for Benchmarking
         run: >
           pushd node &&
-          cargo check --features=runtime-benchmarks --release
+          cargo check --features=runtime-benchmarks
 
       - name: Check Test
         run: |
