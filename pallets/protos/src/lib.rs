@@ -252,7 +252,7 @@ pub mod pallet {
 		StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, SupportedChains, u64>;
 
 	#[pallet::storage]
-	pub type DetachedProtos<T: Config> = StorageMap<_, Identity, Hash256, ExportData>;
+	pub type DetachedHashes<T: Config> = StorageMap<_, Identity, Hash256, ExportData>;
 
 	#[pallet::storage]
 	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
@@ -286,8 +286,8 @@ pub mod pallet {
 		SudoUserRequired,
 		/// Unsupported chain to lock asset into
 		UnsupportedChain,
-		/// Proto is already detached
-		ProtoDetached,
+		/// Already detached
+		Detached,
 		/// Not the owner of the proto
 		Unauthorized,
 		/// No Validators are present
@@ -508,18 +508,16 @@ pub mod pallet {
 				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
 				ProtoOwner::ExternalAsset(_ext_asset) =>
 				// We don't allow updating external assets
-					ensure!(false, Error::<T>::Unauthorized),
+				{
+					ensure!(false, Error::<T>::Unauthorized)
+				},
 			};
 
-			ensure!(
-				!<DetachedProtos<T>>::contains_key(&proto_hash),
-				Error::<T>::ProtoDetached
-			);
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::ProtoDetached);
 
 			let data_hash = blake2_256(&data.encode());
 			let signature_hash = blake2_256(
-				&[&proto_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()]
-					.concat(),
+				&[&proto_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()].concat(),
 			);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
@@ -573,13 +571,12 @@ pub mod pallet {
 				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
 				ProtoOwner::ExternalAsset(_ext_asset) =>
 				// We don't allow detaching external assets
-					ensure!(false, Error::<T>::Unauthorized),
+				{
+					ensure!(false, Error::<T>::Unauthorized)
+				},
 			};
 
-			ensure!(
-				!<DetachedProtos<T>>::contains_key(&proto_hash),
-				Error::<T>::ProtoDetached
-			);
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::ProtoDetached);
 
 			<DetachRequests<T>>::mutate(|requests| {
 				requests.push(DetachRequest { proto_hash, target_chain, target_account });
@@ -608,7 +605,7 @@ pub mod pallet {
 			};
 
 			// add to Detached protos map
-			<DetachedProtos<T>>::insert(data.proto_hash, export_data);
+			<DetachedHashes<T>>::insert(data.proto_hash, export_data);
 
 			// emit event
 			Self::deposit_event(Event::Detached(data.proto_hash, data.remote_signature.clone()));
@@ -639,13 +636,12 @@ pub mod pallet {
 				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
 				ProtoOwner::ExternalAsset(_ext_asset) =>
 				// We don't allow updating external assets
-					ensure!(false, Error::<T>::Unauthorized),
+				{
+					ensure!(false, Error::<T>::Unauthorized)
+				},
 			};
 
-			ensure!(
-				!<DetachedProtos<T>>::contains_key(&proto_hash),
-				Error::<T>::ProtoDetached
-			);
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::ProtoDetached);
 
 			// update proto
 			<Protos<T>>::mutate(&proto_hash, |proto| {
@@ -681,18 +677,16 @@ pub mod pallet {
 				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
 				ProtoOwner::ExternalAsset(_ext_asset) =>
 				// We don't allow updating external assets
-					ensure!(false, Error::<T>::Unauthorized),
+				{
+					ensure!(false, Error::<T>::Unauthorized)
+				},
 			};
 
-			ensure!(
-				!<DetachedProtos<T>>::contains_key(&proto_hash),
-				Error::<T>::ProtoDetached
-			);
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::ProtoDetached);
 
 			let data_hash = blake2_256(&data.encode());
 			let signature_hash = blake2_256(
-				&[&proto_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()]
-					.concat(),
+				&[&proto_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()].concat(),
 			);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
@@ -720,11 +714,7 @@ pub mod pallet {
 			// also emit event
 			Self::deposit_event(Event::MetadataChanged(proto_hash, metadata_key.clone()));
 
-			log::debug!(
-				"Added metadata to proto: {:x?} with key: {:x?}",
-				proto_hash,
-				metadata_key
-			);
+			log::debug!("Added metadata to proto: {:x?} with key: {:x?}", proto_hash, metadata_key);
 
 			Ok(())
 		}
@@ -737,7 +727,7 @@ pub mod pallet {
 			let requests = <DetachRequests<T>>::take();
 			if !requests.is_empty() {
 				log::debug!("Got {} detach requests", requests.len());
-				offchain_index::set(b"protos-detach-requests", &requests.encode());
+				offchain_index::set(b"fragments-detach-requests", &requests.encode());
 			}
 		}
 
@@ -770,18 +760,18 @@ pub mod pallet {
 					{
 						pub_key
 					} else {
-						return InvalidTransaction::BadSigner.into()
+						return InvalidTransaction::BadSigner.into();
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
-					return InvalidTransaction::BadSigner.into()
+					return InvalidTransaction::BadSigner.into();
 				}
 				// most expensive bit last
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into()
+					return InvalidTransaction::BadProof.into();
 				}
 				log::debug!("Sending detach finalization extrinsic");
 				ValidTransaction::with_tag_prefix("Protos-Detach")
@@ -864,7 +854,7 @@ pub mod pallet {
 
 		fn process_detach_requests() {
 			const FAILED: () = ();
-			let requests = StorageValueRef::persistent(b"protos-detach-requests");
+			let requests = StorageValueRef::persistent(b"fragments-detach-requests");
 			let _ =
 				requests.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| match requests {
 					Ok(Some(requests)) => {
@@ -877,9 +867,9 @@ pub mod pallet {
 							};
 
 							let values = match request.target_chain {
-								SupportedChains::EthereumMainnet |
-								SupportedChains::EthereumRinkeby |
-								SupportedChains::EthereumGoerli => {
+								SupportedChains::EthereumMainnet
+								| SupportedChains::EthereumRinkeby
+								| SupportedChains::EthereumGoerli => {
 									// check if we need to generate new ecdsa keys
 									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE);
 									let keys_ref =
@@ -934,7 +924,7 @@ pub mod pallet {
 										payload.extend(&chain_id_be[..]);
 										let mut target_account: [u8; 20] = [0u8; 20];
 										if request.target_account.len() != 20 {
-											return Err(FAILED)
+											return Err(FAILED);
 										}
 										target_account.copy_from_slice(&request.target_account[..]);
 										payload.extend(&target_account[..]);

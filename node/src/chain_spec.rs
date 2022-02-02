@@ -1,6 +1,6 @@
 use clamor_runtime::{
-	AccountId, AuraConfig, BalancesConfig, ProtosConfig, GenesisConfig, GrandpaConfig,
-	IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
+	ProtosConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;

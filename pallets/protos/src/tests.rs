@@ -1,6 +1,6 @@
 use crate::{
-	mock::*, AuthData, DetachInternalData, DetachedProtos, Error, EthereumAuthorities,
-	ProtoOwner, Protos, LinkedAsset, SupportedChains, Tags, UploadAuthorities, KEY_TYPE,
+	mock::*, AuthData, DetachInternalData, DetachedProtos, Error, EthereumAuthorities, LinkedAsset,
+	ProtoOwner, Protos, SupportedChains, Tags, UploadAuthorities, KEY_TYPE,
 };
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
@@ -385,10 +385,7 @@ fn transfer_should_works() {
 			pair.public()
 		));
 
-		assert_eq!(
-			<Protos<Test>>::get(PROTO_HASH).unwrap().owner,
-			ProtoOwner::User(pair.public())
-		);
+		assert_eq!(<Protos<Test>>::get(PROTO_HASH).unwrap().owner, ProtoOwner::User(pair.public()));
 	});
 }
 

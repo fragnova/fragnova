@@ -3,9 +3,9 @@
 use super::*;
 #[allow(unused)]
 use crate::Pallet as Fragments;
-use pallet_protos::AuthData;
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
+use pallet_protos::AuthData;
 use sp_io::hashing::blake2_256;
 
 const PROTO_HASH: Hash256 = [

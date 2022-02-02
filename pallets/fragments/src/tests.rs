@@ -1,7 +1,7 @@
-use crate::{mock::*, Fragments, FragmentMetadata, Error, Proto2Fragments};
+use crate::{mock::*, Error, FragmentMetadata, Fragments, Proto2Fragments};
 use codec::Encode;
-use pallet_protos::{AuthData, LinkedAsset, Tags};
 use frame_support::{assert_noop, assert_ok};
+use pallet_protos::{AuthData, LinkedAsset, Tags};
 use sp_chainblocks::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;

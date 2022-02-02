@@ -35,16 +35,16 @@ pub struct FragmentData {
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentInstanceData {
-	pub data_hash: Option<Hash256>,       // mutable block data hash
+	pub data_hash: Option<Hash256>,         // mutable block data hash
 	pub metadata: Option<FragmentMetadata>, // an instance might have metadata
 }
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use pallet_protos::{DetachedProtos, Proto, ProtoOwner, Protos};
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
+	use pallet_protos::{DetachedHashes, Proto, ProtoOwner, Protos};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -88,10 +88,10 @@ pub mod pallet {
 		ProtoOwnerNotFound,
 		/// No Permission
 		NoPermission,
-		/// Proto is already detached
-		ProtoDetached,
-		/// Fragment already exist
-		FragmentAlreadyExist,
+		/// Already detached
+		Detached,
+		/// Already exist
+		AlreadyExist,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -119,15 +119,12 @@ pub mod pallet {
 
 			ensure!(who == proto_owner, Error::<T>::NoPermission);
 
-			ensure!(
-				!<DetachedProtos<T>>::contains_key(&proto_hash),
-				Error::<T>::ProtoDetached
-			);
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
 			//TODO Need to extend it in future
 			let hash = blake2_256(&[&proto_hash[..], &metadata.name.encode()].concat());
 
-			ensure!(!<Fragments<T>>::contains_key(&hash), Error::<T>::FragmentAlreadyExist);
+			ensure!(!<Fragments<T>>::contains_key(&hash), Error::<T>::AlreadyExist);
 
 			let fragment_data = FragmentData { proto_hash, metadata, unique, mutable, max_supply };
 			<Fragments<T>>::insert(&hash, fragment_data);
