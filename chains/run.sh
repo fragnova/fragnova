@@ -11,5 +11,5 @@ export PATH=$PATH:/data/chains/go-ipfs
 
 ipfs init
 ipfs daemon &
-
+sleep 5
 cbl fragments-tests.edn
