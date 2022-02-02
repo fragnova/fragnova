@@ -319,7 +319,12 @@ impl pallet_fragments::Config for Runtime {
 impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
-	type AuthorityId = pallet_protos::crypto::ProtosAuthId;
+}
+
+impl pallet_detach::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = ();
+	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
 impl frame_system::offchain::SigningTypes for Runtime {
@@ -459,6 +464,7 @@ construct_runtime!(
 		Contracts: pallet_contracts,
 		Protos: pallet_protos,
 		Fragments: pallet_fragments,
+		Detach: pallet_detach,
 	}
 );
 
@@ -683,6 +689,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_protos, Protos);
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, pallet_fragments, Fragments);
+			list_benchmark!(list, extra, pallet_detach, Detach);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -723,6 +730,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_protos, Protos);
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_fragments, Fragments);
+			add_benchmark!(params, batches, pallet_detach, Detach);
 
 			Ok(batches)
 		}

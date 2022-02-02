@@ -200,6 +200,11 @@ default-features = false
 path = '../pallets/fragments'
 version = '0.0.1'
 
+[dependencies.pallet-detach]
+default-features = false
+path = '../pallets/detach'
+version = '0.0.1'
+
 [dependencies.pallet-indices]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
