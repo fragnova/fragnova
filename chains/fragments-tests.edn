@@ -35,7 +35,7 @@
   "block" >> .ipfs-args-block
   "get" >> .ipfs-args-block
   .frag-cid-str >> .ipfs-args-block
-  "" (Process.Run "ipfs" .ipfs-args-block :Timeout 60) (StringToBytes)
+  "" (Process.Run "ipfs" .ipfs-args-block :Timeout 120) (StringToBytes)
   (Brotli.Decompress)
   (Is .test-asset) (Log) (Assert.Is true)
 
