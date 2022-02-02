@@ -243,6 +243,7 @@ runtime-benchmarks = [
     'sp-runtime/runtime-benchmarks',
     'pallet-protos/runtime-benchmarks',
 	'pallet-fragments/runtime-benchmarks',
+    'pallet-detach/runtime-benchmarks',
 ]
 std = [
     'codec/std',
@@ -273,6 +274,7 @@ std = [
     'sp-version/std',
     'pallet-protos/std',
 	'pallet-fragments/std',
+    'pallet-detach/std',
     'pallet-indices/std',
     'pallet-contracts/std',
     'pallet-contracts-primitives/std',
