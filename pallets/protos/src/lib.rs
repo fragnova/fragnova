@@ -513,7 +513,7 @@ pub mod pallet {
 				},
 			};
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::ProtoDetached);
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
 			let data_hash = blake2_256(&data.encode());
 			let signature_hash = blake2_256(
@@ -576,7 +576,7 @@ pub mod pallet {
 				},
 			};
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::ProtoDetached);
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
 			<DetachRequests<T>>::mutate(|requests| {
 				requests.push(DetachRequest { proto_hash, target_chain, target_account });
@@ -641,7 +641,7 @@ pub mod pallet {
 				},
 			};
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::ProtoDetached);
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
 			// update proto
 			<Protos<T>>::mutate(&proto_hash, |proto| {
@@ -682,7 +682,7 @@ pub mod pallet {
 				},
 			};
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::ProtoDetached);
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
 			let data_hash = blake2_256(&data.encode());
 			let signature_hash = blake2_256(
