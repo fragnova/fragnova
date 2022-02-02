@@ -190,14 +190,14 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2022-01'
 version = '4.0.0-dev'
 
-[dependencies.fragments-pallet]
+[dependencies.pallet-protos]
 default-features = false
-path = '../pallets/fragments'
+path = '../pallets/protos'
 version = '0.0.1'
 
-[dependencies.entities-pallet]
+[dependencies.pallet-fragments]
 default-features = false
-path = '../pallets/entities'
+path = '../pallets/fragments'
 version = '0.0.1'
 
 [dependencies.pallet-indices]
@@ -236,8 +236,8 @@ runtime-benchmarks = [
     'pallet-balances/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'sp-runtime/runtime-benchmarks',
-    'fragments-pallet/runtime-benchmarks',
-	'entities-pallet/runtime-benchmarks',
+    'pallet-protos/runtime-benchmarks',
+	'pallet-fragments/runtime-benchmarks',
 ]
 std = [
     'codec/std',
@@ -266,8 +266,8 @@ std = [
     'sp-std/std',
     'sp-transaction-pool/std',
     'sp-version/std',
-    'fragments-pallet/std',
-	'entities-pallet/std',
+    'pallet-protos/std',
+	'pallet-fragments/std',
     'pallet-indices/std',
     'pallet-contracts/std',
     'pallet-contracts-primitives/std',

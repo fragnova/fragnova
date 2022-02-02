@@ -1,48 +1,14 @@
 [package]
 authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
-description = 'Fragments Asset Store pallet.'
+description = 'Protos Fragment pallet.'
 edition = '2021'
 license = 'BUSL-1.1'
-name = 'fragments-pallet'
+name = 'pallet-fragments'
 readme = 'README.md'
 version = '0.0.1'
 
 [package.metadata.docs.rs]
-targets = ['x86_64-unknown-linux-gnu']
-
-[dev-dependencies.serde]
-version = '1.0.119'
-
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
-version = '4.1.0-dev'
-
-[dependencies.sp-io]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
-version = '4.0.0-dev'
-
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
-version = '4.0.0-dev'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
-version = '4.0.0-dev'
-
-[dependencies.sp-keystore]
-default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
-version = '0.10.0-dev'
-optional = true
+targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies.codec]
 default-features = false
@@ -74,31 +40,58 @@ default-features = false
 features = ['derive']
 version = '1.0'
 
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.1.0-dev'
+
+[dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
+[dependencies.pallet-protos]
+default-features = false
+path = '../protos'
+
+[dependencies]
+sp-chainblocks = { path = '../../primitives/chainblocks', default-features = false }
+
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2022-01'
 version = '4.0.0-dev'
 
-[dependencies]
-log = { version = "0.4.14", default-features = false }
-sp-chainblocks = { path = '../../primitives/chainblocks', default-features = false }
-hex = { version = "0.4", default-features = false }
-
 [features]
-default = ['std']
-runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+default = ["std"]
 std = [
-    'codec/std',
-    'frame-support/std',
-    'frame-system/std',
-    'frame-benchmarking/std',
-    'sp-io/std',
-    'sp-std/std',
-	'sp-runtime/std',
-    'pallet-randomness-collective-flip/std',
-    'log/std',
-	'sp-keystore',
-	'sp-core/std',
+	"codec/std",
+	"scale-info/std",
+	"pallet-protos/std",
+	"frame-support/std",
+	"frame-system/std",
+	"frame-benchmarking/std",
+	"sp-io/std",
+	"sp-std/std",
+	"sp-runtime/std",
+	"sp-core/std",
+	"pallet-randomness-collective-flip/std",
 ]
-try-runtime = ['frame-support/try-runtime']
+
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+try-runtime = ["frame-support/try-runtime"]

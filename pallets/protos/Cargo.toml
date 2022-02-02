@@ -1,0 +1,104 @@
+[package]
+authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
+description = 'Protos Asset Store pallet.'
+edition = '2021'
+license = 'BUSL-1.1'
+name = 'pallet-protos'
+readme = 'README.md'
+version = '0.0.1'
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dev-dependencies.serde]
+version = '1.0.119'
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.1.0-dev'
+
+[dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
+[dependencies.sp-keystore]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '0.10.0-dev'
+optional = true
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '2.0.0'
+
+[dependencies.frame-benchmarking]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+optional = true
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
+[dependencies.scale-info]
+default-features = false
+features = ['derive']
+version = '1.0'
+
+[dependencies.pallet-randomness-collective-flip]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-01'
+version = '4.0.0-dev'
+
+[dependencies]
+log = { version = "0.4.14", default-features = false }
+sp-chainblocks = { path = '../../primitives/chainblocks', default-features = false }
+hex = { version = "0.4", default-features = false }
+
+[features]
+default = ['std']
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+std = [
+    'codec/std',
+    'frame-support/std',
+    'frame-system/std',
+    'frame-benchmarking/std',
+    'sp-io/std',
+    'sp-std/std',
+	'sp-runtime/std',
+    'pallet-randomness-collective-flip/std',
+    'log/std',
+	'sp-keystore',
+	'sp-core/std',
+]
+try-runtime = ['frame-support/try-runtime']

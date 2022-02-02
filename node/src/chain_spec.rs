@@ -1,5 +1,5 @@
 use clamor_runtime::{
-	AccountId, AuraConfig, BalancesConfig, FragmentsConfig, GenesisConfig, GrandpaConfig,
+	AccountId, AuraConfig, BalancesConfig, ProtosConfig, GenesisConfig, GrandpaConfig,
 	IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
@@ -151,7 +151,7 @@ fn testnet_genesis(
 		},
 		transaction_payment: Default::default(),
 		indices: IndicesConfig { indices: vec![] },
-		fragments: FragmentsConfig {
+		protos: ProtosConfig {
 			upload_authorities: vec![get_from_seed::<ecdsa::Public>("Charlie")],
 			eth_authorities: vec![{
 				let pair = ed25519::Pair::from_string("//Bob", None).unwrap();
