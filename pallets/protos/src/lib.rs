@@ -11,7 +11,6 @@ mod benchmarking;
 
 mod weights;
 
-use core::slice::Iter;
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
 
 /// Defines application identifier for crypto keys of this module.
@@ -108,7 +107,7 @@ pub enum SupportedChains {
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct DetachRequest {
-	pub proto_hash: Hash256,
+	pub hash: Hash256,
 	pub target_chain: SupportedChains,
 	pub target_account: Vec<u8>, // an eth address or so
 }
@@ -116,7 +115,7 @@ pub struct DetachRequest {
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct DetachInternalData<TPublic> {
 	public: TPublic,
-	proto_hash: Hash256,
+	hash: Hash256,
 	target_chain: SupportedChains,
 	target_account: Vec<u8>, // an eth address or so
 	remote_signature: Vec<u8>,
@@ -579,7 +578,7 @@ pub mod pallet {
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
 			<DetachRequests<T>>::mutate(|requests| {
-				requests.push(DetachRequest { proto_hash, target_chain, target_account });
+				requests.push(DetachRequest { hash: proto_hash, target_chain, target_account });
 			});
 
 			Ok(())
@@ -605,16 +604,12 @@ pub mod pallet {
 			};
 
 			// add to Detached protos map
-			<DetachedHashes<T>>::insert(data.proto_hash, export_data);
+			<DetachedHashes<T>>::insert(data.hash, export_data);
 
 			// emit event
-			Self::deposit_event(Event::Detached(data.proto_hash, data.remote_signature.clone()));
+			Self::deposit_event(Event::Detached(data.hash, data.remote_signature.clone()));
 
-			log::debug!(
-				"Detached proto with hash: {:?} signature: {:?}",
-				data.proto_hash,
-				data.remote_signature
-			);
+			log::debug!("Detached hash: {:?} signature: {:?}", data.hash, data.remote_signature);
 
 			Ok(())
 		}
@@ -775,7 +770,7 @@ pub mod pallet {
 				}
 				log::debug!("Sending detach finalization extrinsic");
 				ValidTransaction::with_tag_prefix("Protos-Detach")
-					.and_provides(data.proto_hash)
+					.and_provides(data.hash)
 					.and_provides(data.target_chain)
 					.and_provides(data.target_account.clone())
 					.and_provides(data.nonce)
@@ -918,7 +913,7 @@ pub mod pallet {
 										// will be the following attach(proto_hash, local_owner,
 										// signature, clamor_nonce); on this target chain the nonce
 										// needs to be exactly the same as the one here
-										let mut payload = request.proto_hash.encode();
+										let mut payload = request.hash.encode();
 										let mut chain_id_be: [u8; 32] = [0u8; 32];
 										chain_id.to_big_endian(&mut chain_id_be);
 										payload.extend(&chain_id_be[..]);
@@ -987,7 +982,7 @@ pub mod pallet {
 										.send_unsigned_transaction(
 											|account| DetachInternalData {
 												public: account.public.clone(),
-												proto_hash: request.proto_hash,
+												hash: request.hash,
 												target_chain: request.target_chain,
 												target_account: request.target_account.clone(),
 												remote_signature: signature.clone(),
@@ -1013,16 +1008,5 @@ pub mod pallet {
 					_ => Err(FAILED),
 				});
 		}
-	}
-}
-
-impl SupportedChains {
-	pub fn iterator() -> Iter<'static, SupportedChains> {
-		static CHAINS: [SupportedChains; 3] = [
-			SupportedChains::EthereumMainnet,
-			SupportedChains::EthereumRinkeby,
-			SupportedChains::EthereumGoerli,
-		];
-		CHAINS.iter()
 	}
 }
