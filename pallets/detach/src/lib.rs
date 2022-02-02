@@ -110,12 +110,12 @@ pub struct DetachRequest {
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct DetachInternalData<TPublic> {
-	public: TPublic,
-	hash: Hash256,
-	target_chain: SupportedChains,
-	target_account: Vec<u8>, // an eth address or so
-	remote_signature: Vec<u8>,
-	nonce: u64,
+	pub public: TPublic,
+	pub hash: Hash256,
+	pub target_chain: SupportedChains,
+	pub target_account: Vec<u8>, // an eth address or so
+	pub remote_signature: Vec<u8>,
+	pub nonce: u64,
 }
 
 impl<T: SigningTypes> SignedPayload<T> for DetachInternalData<T::Public> {
@@ -227,17 +227,6 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type UserNonces<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u64>;
-
-	#[pallet::storage]
-	pub type Protos<T: Config> =
-		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
-
-	// Not ideal but to have it iterable...
-	#[pallet::storage]
-	pub type ProtosByTag<T: Config> = StorageMap<_, Blake2_128Concat, Tags, Vec<Hash256>>;
-
-	#[pallet::storage]
 	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
 
 	#[pallet::storage]
@@ -249,9 +238,6 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
-
-	#[pallet::storage]
-	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
@@ -271,10 +257,6 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// Systematic failure - those errors should not happen.
 		SystematicFailure,
-		/// Proto not found
-		ProtoNotFound,
-		/// Proto already uploaded
-		ProtoExists,
 		/// Require sudo user
 		SudoUserRequired,
 		/// Unsupported chain to lock asset into
@@ -347,39 +329,6 @@ pub mod pallet {
 
 			<FragKeys<T>>::mutate(|validators| {
 				validators.remove(&public);
-			});
-
-			Ok(())
-		}
-
-		/// Detached a proto from this chain by emitting an event that includes a signature.
-		/// The remote target chain can attach this proto by using this signature.
-		#[pallet::weight(T::WeightInfo::detach())]
-		pub fn detach(
-			origin: OriginFor<T>,
-			proto_hash: Hash256,
-			target_chain: SupportedChains,
-			target_account: Vec<u8>, // an eth address or so
-		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-
-			// make sure the proto exists
-			let proto: Proto<T::AccountId, T::BlockNumber> =
-				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
-
-			match proto.owner {
-				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
-				ProtoOwner::ExternalAsset(_ext_asset) =>
-				// We don't allow detaching external assets
-				{
-					ensure!(false, Error::<T>::Unauthorized)
-				},
-			};
-
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
-
-			<DetachRequests<T>>::mutate(|requests| {
-				requests.push(DetachRequest { hash: proto_hash, target_chain, target_account });
 			});
 
 			Ok(())

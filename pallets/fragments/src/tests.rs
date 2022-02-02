@@ -155,7 +155,7 @@ fn create_should_not_work_if_fragment_already_exist() {
 				true,
 				None
 			),
-			Error::<Test>::FragmentAlreadyExist
+			Error::<Test>::AlreadyExist
 		);
 	});
 }

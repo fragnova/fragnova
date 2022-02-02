@@ -31,6 +31,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
 		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
+		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -101,12 +102,17 @@ impl pallet_randomness_collective_flip::Config for Test {}
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
-	type AuthorityId = pallet_protos::crypto::ProtosAuthId;
 }
 
 impl pallet_fragments::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
+}
+
+impl pallet_detach::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

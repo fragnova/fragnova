@@ -40,30 +40,6 @@ pub enum Tags {
 	Image,
 }
 
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub enum SupportedChains {
-	EthereumMainnet,
-	EthereumRinkeby,
-	EthereumGoerli,
-}
-
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct DetachRequest {
-	pub hash: Hash256,
-	pub target_chain: SupportedChains,
-	pub target_account: Vec<u8>, // an eth address or so
-}
-
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct DetachInternalData<TPublic> {
-	public: TPublic,
-	hash: Hash256,
-	target_chain: SupportedChains,
-	target_account: Vec<u8>, // an eth address or so
-	remote_signature: Vec<u8>,
-	nonce: u64,
-}
-
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkSource {
 	// Generally we just store this data, we don't verify it as we assume auth service did it.
@@ -114,19 +90,12 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub metadata: BTreeMap<Vec<u8>, Hash256>,
 }
 
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct ExportData {
-	chain: SupportedChains,
-	owner: Vec<u8>,
-	nonce: u64,
-}
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_detach::DetachedHashes;
+	use pallet_detach::{DetachedHashes, DetachRequest, DetachRequests, SupportedChains};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -506,6 +475,39 @@ pub mod pallet {
 			Self::deposit_event(Event::MetadataChanged(proto_hash, metadata_key.clone()));
 
 			log::debug!("Added metadata to proto: {:x?} with key: {:x?}", proto_hash, metadata_key);
+
+			Ok(())
+		}
+
+		/// Detached a proto from this chain by emitting an event that includes a signature.
+		/// The remote target chain can attach this proto by using this signature.
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
+		pub fn detach(
+			origin: OriginFor<T>,
+			proto_hash: Hash256,
+			target_chain: SupportedChains,
+			target_account: Vec<u8>, // an eth address or so
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// make sure the proto exists
+			let proto: Proto<T::AccountId, T::BlockNumber> =
+				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+
+			match proto.owner {
+				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+				ProtoOwner::ExternalAsset(_ext_asset) =>
+				// We don't allow detaching external assets
+				{
+					ensure!(false, Error::<T>::Unauthorized)
+				},
+			};
+
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
+
+			<DetachRequests<T>>::mutate(|requests| {
+				requests.push(DetachRequest { hash: proto_hash, target_chain, target_account });
+			});
 
 			Ok(())
 		}

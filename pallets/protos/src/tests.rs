@@ -1,9 +1,9 @@
-use crate::{
-	mock::*, AuthData, DetachInternalData, DetachedProtos, Error, EthereumAuthorities, LinkedAsset,
-	ProtoOwner, Protos, SupportedChains, Tags, UploadAuthorities, KEY_TYPE,
-};
+use crate::{mock::*, AuthData, Error, LinkedAsset, ProtoOwner, Protos, Tags, UploadAuthorities};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
+use pallet_detach::{
+	DetachInternalData, DetachedHashes, EthereumAuthorities, SupportedChains, KEY_TYPE,
+};
 use sp_chainblocks::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
@@ -64,7 +64,7 @@ fn initial_upload_and_get_signature() -> AuthData {
 fn add_eth_auth_should_works() {
 	new_test_ext().execute_with(|| {
 		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
-		assert_ok!(ProtosPallet::add_eth_auth(Origin::root(), validator.clone()));
+		assert_ok!(DetachPallet::add_eth_auth(Origin::root(), validator.clone()));
 		assert!(EthereumAuthorities::<Test>::get().contains(&validator));
 	});
 }
@@ -73,7 +73,7 @@ fn add_eth_auth_should_works() {
 fn del_eth_auth_should_works() {
 	new_test_ext().execute_with(|| {
 		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
-		assert_ok!(ProtosPallet::del_eth_auth(Origin::root(), validator.clone()));
+		assert_ok!(DetachPallet::del_eth_auth(Origin::root(), validator.clone()));
 		assert!(!EthereumAuthorities::<Test>::get().contains(&validator));
 	});
 }
@@ -285,14 +285,14 @@ fn patch_should_not_work_if_detached() {
 
 		let detach_data = DetachInternalData {
 			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
-			proto_hash: PROTO_HASH,
+			hash: PROTO_HASH,
 			remote_signature: vec![],
 			target_account: vec![],
 			target_chain: SupportedChains::EthereumGoerli,
 			nonce: 1,
 		};
 
-		assert_ok!(ProtosPallet::internal_finalize_detach(
+		assert_ok!(DetachPallet::internal_finalize_detach(
 			Origin::none(),
 			detach_data,
 			pair.sign(DATA.as_bytes())
@@ -306,7 +306,7 @@ fn patch_should_not_work_if_detached() {
 				Some(Compact(123)),
 				Some(data),
 			),
-			Error::<Test>::ProtoDetached
+			Error::<Test>::Detached
 		);
 	});
 }
@@ -436,14 +436,14 @@ fn transfer_should_not_work_if_detached() {
 		});
 		let detach_data = DetachInternalData {
 			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
-			proto_hash: PROTO_HASH,
+			hash: PROTO_HASH,
 			remote_signature: vec![],
 			target_account: vec![],
 			target_chain: SupportedChains::EthereumGoerli,
 			nonce: 1,
 		};
 
-		assert_ok!(ProtosPallet::internal_finalize_detach(
+		assert_ok!(DetachPallet::internal_finalize_detach(
 			Origin::none(),
 			detach_data,
 			pair.sign(DATA.as_bytes())
@@ -456,7 +456,7 @@ fn transfer_should_not_work_if_detached() {
 				PROTO_HASH,
 				pair.public()
 			),
-			Error::<Test>::ProtoDetached
+			Error::<Test>::Detached
 		);
 	});
 }
@@ -468,19 +468,19 @@ fn internal_finalize_detach_should_works() {
 
 		let detach_data = DetachInternalData {
 			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
-			proto_hash: PROTO_HASH,
+			hash: PROTO_HASH,
 			remote_signature: vec![],
 			target_account: vec![],
 			target_chain: SupportedChains::EthereumGoerli,
 			nonce: 1,
 		};
 
-		assert_ok!(ProtosPallet::internal_finalize_detach(
+		assert_ok!(DetachPallet::internal_finalize_detach(
 			Origin::none(),
 			detach_data,
 			pair.sign(DATA.as_bytes())
 		));
 
-		assert!(<DetachedProtos<Test>>::contains_key(PROTO_HASH));
+		assert!(<DetachedHashes<Test>>::contains_key(PROTO_HASH));
 	});
 }
