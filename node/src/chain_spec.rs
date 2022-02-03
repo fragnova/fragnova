@@ -1,6 +1,6 @@
 use clamor_runtime::{
-	AccountId, AuraConfig, BalancesConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
-	ProtosConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+	AccountId, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig, GrandpaConfig,
+	IndicesConfig, ProtosConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -153,6 +153,8 @@ fn testnet_genesis(
 		indices: IndicesConfig { indices: vec![] },
 		protos: ProtosConfig {
 			upload_authorities: vec![get_from_seed::<ecdsa::Public>("Charlie")],
+		},
+		detach: DetachConfig {
 			eth_authorities: vec![{
 				let pair = ed25519::Pair::from_string("//Bob", None).unwrap();
 				let signature = pair.sign(b"fragments-frag-ecdsa-keys");

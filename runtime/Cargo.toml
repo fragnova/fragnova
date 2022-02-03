@@ -200,6 +200,11 @@ default-features = false
 path = '../pallets/fragments'
 version = '0.0.1'
 
+[dependencies.pallet-detach]
+default-features = false
+path = '../pallets/detach'
+version = '0.0.1'
+
 [dependencies.pallet-indices]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -238,6 +243,7 @@ runtime-benchmarks = [
     'sp-runtime/runtime-benchmarks',
     'pallet-protos/runtime-benchmarks',
 	'pallet-fragments/runtime-benchmarks',
+    'pallet-detach/runtime-benchmarks',
 ]
 std = [
     'codec/std',
@@ -268,6 +274,7 @@ std = [
     'sp-version/std',
     'pallet-protos/std',
 	'pallet-fragments/std',
+    'pallet-detach/std',
     'pallet-indices/std',
     'pallet-contracts/std',
     'pallet-contracts-primitives/std',

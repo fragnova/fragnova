@@ -68,6 +68,10 @@ version = '4.0.0-dev'
 default-features = false
 path = '../protos'
 
+[dependencies.pallet-detach]
+default-features = false
+path = '../detach'
+
 [dependencies]
 sp-chainblocks = { path = '../../primitives/chainblocks', default-features = false }
 

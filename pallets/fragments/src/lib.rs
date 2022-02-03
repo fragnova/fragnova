@@ -44,7 +44,8 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_protos::{DetachedHashes, Proto, ProtoOwner, Protos};
+	use pallet_detach::DetachedHashes;
+	use pallet_protos::{Proto, ProtoOwner, Protos};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
