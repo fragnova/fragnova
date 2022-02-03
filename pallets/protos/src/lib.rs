@@ -521,6 +521,11 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+
+		fn get_prorto_by_tags(tags: Tags) -> Option<Vec<Hash256>> {
+			<ProtosByTag<T>>::get(&tags)
+		}
+
 		fn ensure_auth(
 			block_number: T::BlockNumber,
 			data: &AuthData,

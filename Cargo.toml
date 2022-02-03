@@ -1,9 +1,7 @@
 [workspace]
 members = [
     'node',
-    'pallets/protos',
-	'pallets/fragments',
-    'pallets/detach',
+	'pallets/*',
     'runtime',
 ]
 

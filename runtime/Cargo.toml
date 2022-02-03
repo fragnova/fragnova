@@ -195,6 +195,11 @@ default-features = false
 path = '../pallets/protos'
 version = '0.0.1'
 
+[dependencies.pallet-protos-rpc-runtime-api]
+default-features = false
+path = '../pallets/protos/rpc/runtime-api'
+version = '0.0.1'
+
 [dependencies.pallet-fragments]
 default-features = false
 path = '../pallets/fragments'
@@ -273,6 +278,7 @@ std = [
     'sp-transaction-pool/std',
     'sp-version/std',
     'pallet-protos/std',
+	'pallet-protos-rpc-runtime-api/std',
 	'pallet-fragments/std',
     'pallet-detach/std',
     'pallet-indices/std',
