@@ -95,7 +95,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use pallet_detach::{DetachedHashes, DetachRequest, DetachRequests, SupportedChains};
+	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]

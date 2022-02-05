@@ -114,7 +114,7 @@
   "0x00" (HexToBytes) >> .frag-hash-payload ; again no linked asset
   [.frag-nonce] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
   [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
-  .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Charlie") >= .payload
+  .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Alice") >= .payload
 
   ; block
   [0] (Substrate.Encode ["u32"]) (AppendTo .payload)
@@ -139,7 +139,7 @@
   .payload (Log)
 
   [fragments-index upload-index .payload] (Do make-calldata) = .upload-call (| (ToHex) (Log "upload-call"))
-  ["//Alice" .upload-call .upload-nonce] (Do send-signed-extrinsic) (Log "upload-call-result")
+  ["//Dave" .upload-call .upload-nonce] (Do send-signed-extrinsic) (Log "upload-call-result")
   [.frag-cid-str .fragment-hash])
 
 (defchain test-detach
@@ -152,5 +152,5 @@
   "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1" (HexToBytes) (AppendTo .detach-payload)
 
   [fragments-index detach-index .detach-payload] (Do make-calldata) = .detach-call (| (ToHex) (Log "detach-call"))
-  ["//Alice" .detach-call .detach-nonce] (Do send-signed-extrinsic) (Log "detach-call-result"))
+  ["//Dave" .detach-call .detach-nonce] (Do send-signed-extrinsic) (Log "detach-call-result"))
 

@@ -1,13 +1,6 @@
 (load-file "common.edn")
 
 (defchain upload
-  ;; ; add charlie as auth key
-  ;; "//Charlie" (ECDSA.PublicKey true) >= .payload2
-  ;; (ToHex) (Log "charlie-key")
-  ;; [fragments-index add-upload-auth-index .payload2] (Do make-calldata) = .call1
-  ;; [sudo-index sudo-call .call1] (Do make-calldata) = .sudo-call1
-  ;; ["//Alice" .sudo-call1 0] (Do send-signed-extrinsic) (Log "result1")
-
   ; add test asset
   1 (Do make-test-asset) = .test-asset
   [.test-asset 0 0] (Do test-upload-compressing)

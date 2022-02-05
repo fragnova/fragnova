@@ -3,7 +3,7 @@
 use super::*;
 #[allow(unused)]
 use crate::Pallet as Protos;
-use frame_benchmarking::{benchmarks};
+use frame_benchmarking::benchmarks;
 use frame_system::RawOrigin;
 
 const PUBLIC: [u8; 33] = [

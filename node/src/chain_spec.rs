@@ -8,6 +8,10 @@ use sp_core::{ecdsa, ed25519, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
+pub type UploadId = ecdsa::Public;
+pub type EthId = ecdsa::Public;
+pub type DetachId = ed25519::Public;
+
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -21,6 +25,16 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 		.public()
 }
 
+/// Generate a crypto pair from seed.
+pub fn get_from_seed_to_eth(seed: &str) -> ecdsa::Public {
+	let pair = ed25519::Pair::from_string(&format!("//{}", seed), None).unwrap();
+	let signature = pair.sign(b"fragments-frag-ecdsa-keys");
+	let hash = sp_core::keccak_256(&signature.0[..]);
+	let pair = ecdsa::Pair::from_seed_slice(&hash[..]).unwrap();
+	let public = pair.public();
+	public
+}
+
 type AccountPublic = <Signature as Verify>::Signer;
 
 /// Generate an account ID from seed.
@@ -32,8 +46,14 @@ where
 }
 
 /// Generate an Aura authority key.
-pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
-	(get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
+pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId, UploadId, EthId, DetachId) {
+	(
+		get_from_seed::<AuraId>(s),
+		get_from_seed::<GrandpaId>(s),
+		get_from_seed::<UploadId>(s),
+		get_from_seed_to_eth(s),
+		get_from_seed::<DetachId>(s),
+	)
 }
 
 pub fn development_config() -> Result<ChainSpec, String> {
@@ -49,7 +69,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 			testnet_genesis(
 				wasm_binary,
 				// Initial PoA authorities
-				vec![authority_keys_from_seed("Alice")],
+				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
 				// Sudo account
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Pre-funded accounts
@@ -58,6 +78,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 					get_account_id_from_seed::<sr25519::Public>("Bob"),
 					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
 					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
 				],
 				true,
 			)
@@ -125,7 +146,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
-	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	initial_authorities: Vec<(AuraId, GrandpaId, UploadId, EthId, DetachId)>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
@@ -152,18 +173,11 @@ fn testnet_genesis(
 		transaction_payment: Default::default(),
 		indices: IndicesConfig { indices: vec![] },
 		protos: ProtosConfig {
-			upload_authorities: vec![get_from_seed::<ecdsa::Public>("Charlie")],
+			upload_authorities: initial_authorities.iter().map(|x| (x.2.clone())).collect(),
 		},
 		detach: DetachConfig {
-			eth_authorities: vec![{
-				let pair = ed25519::Pair::from_string("//Bob", None).unwrap();
-				let signature = pair.sign(b"fragments-frag-ecdsa-keys");
-				let hash = sp_core::keccak_256(&signature.0[..]);
-				let pair = ecdsa::Pair::from_seed_slice(&hash[..]).unwrap();
-				let public = pair.public();
-				public
-			}],
-			keys: vec![get_from_seed::<ed25519::Public>("Bob")],
+			eth_authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
+			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
 		assets: Default::default(),
 	}

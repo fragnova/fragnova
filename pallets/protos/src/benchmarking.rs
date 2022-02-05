@@ -3,9 +3,9 @@
 use super::*;
 #[allow(unused)]
 use crate::Pallet as Protos;
-use pallet_detach::Pallet as Detach;
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
+use pallet_detach::Pallet as Detach;
 use sp_io::hashing::blake2_256;
 
 const PROTO_HASH: Hash256 = [
