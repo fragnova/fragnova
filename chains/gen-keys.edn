@@ -1,0 +1,28 @@
+(def seed (first *command-line-args*))
+
+(defchain generate
+  seed
+  (| (Sr25519.PublicKey)
+     (| (ToHex) (Log "Sr25519 public"))
+     (| (Substrate.AccountId) (Log "Sr25519 AccountID")))
+  (| (Ed25519.PublicKey)
+     (| (ToHex) (Log "Ed25519 public"))
+     (| (Substrate.AccountId) (Log "Ed25519 AccountID")))
+  (| (ECDSA.PublicKey true)
+     (| (ToHex) (Log "ECDSA public"))
+     (| (Substrate.AccountId true) (Log "ECDSA AccountID")))
+
+  "fragments-frag-ecdsa-keys" (StringToBytes) (Ed25519.Sign seed)
+  (Hash.Keccak-256) = .ecdsa-priv (ECDSA.PublicKey)
+  (| (Slice :From 1)
+     (Hash.Keccak-256)
+     (Slice :From 12)
+     (ToHex)
+     (Log "Eth Address"))
+  .ecdsa-priv (ECDSA.PublicKey true)
+     (| (ToHex) (Log "ECDSA from Ed25519.Sign public"))
+     (| (Substrate.AccountId true) (Log "ECDSA from Ed25519.Sign AccountID")))
+
+(defnode node)
+(schedule node generate)
+(run node)

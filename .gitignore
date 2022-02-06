@@ -19,3 +19,4 @@ chainblocks.*log
 .lsp*
 .clj*
 *.lock
+node_data
