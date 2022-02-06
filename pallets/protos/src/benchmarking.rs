@@ -42,52 +42,54 @@ benchmarks! {
 
 	upload {
 		let caller: T::AccountId = whitelisted_caller();
-		let l in 1 .. 2;
-		let immutable_data = vec![0u8; l as usize];
+		let mut immutable_data: [u8; 9] = [0; 9];
+		hex::decode_to_slice("010000000b00803103", &mut immutable_data).unwrap();
+		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
-		let references = vec![PROTO_HASH];
+		let references = vec![];
+		let tags = vec![Tags::Code];
 
-		let public: [u8; 33] = if l == 1 {
-			[3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251]
-		} else {
-			[3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251]
-		};
+		let mut signature: [u8; 65] = [0; 65];
+		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();
+		let mut public: [u8; 33] = [0; 33];
+		hex::decode_to_slice("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1", &mut public).unwrap();
 
-		 let signature: [u8; 65] = if l == 1 {
-			[29, 83, 249, 100, 228, 85, 48, 71, 56, 134, 254, 85, 188, 199, 241, 160, 149, 99, 4, 236, 47, 249, 66, 140, 5, 123, 161, 152, 76, 152, 92, 89, 32, 85, 113, 187, 51, 6, 13, 223, 25, 225, 100, 38, 60, 46, 94, 71, 221, 149, 171, 23, 85, 228, 34, 227, 244, 85, 56, 171, 103, 111, 119, 61, 1]
-		} else {
-			[28, 64, 136, 241, 147, 34, 162, 228, 181, 29, 74, 73, 148, 220, 75, 47, 247, 106, 95, 247, 174, 31, 157, 252, 111, 175, 221, 239, 55, 245, 128, 34, 81, 214, 149, 247, 115, 217, 252, 152, 19, 234, 232, 144, 174, 233, 39, 34, 96, 37, 112, 142, 18, 187, 129, 230, 1, 138, 233, 154, 40, 123, 7, 51, 1]
-		};
-
-		let auth_data = AuthData{
+		let auth_data = AuthData {
 			signature: sp_core::ecdsa::Signature::from_raw(signature),
-			block: 1
+			block: 0
 		};
 
 		Protos::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-	}: _(RawOrigin::Signed(caller), auth_data, references, Vec::new(), None, None, immutable_data)
+	}: _(RawOrigin::Signed(caller), auth_data, references, tags, None, None, immutable_data)
 	verify {
 		assert_last_event::<T>(Event::<T>::Uploaded(proto_hash).into())
 	}
 
 	patch {
 		let caller: T::AccountId = whitelisted_caller();
-		let l in 1 .. 2;
-		let immutable_data = vec![0u8; l as usize];
+
+		let mut immutable_data: [u8; 9] = [0; 9];
+		hex::decode_to_slice("010000000b00803103", &mut immutable_data).unwrap();
+		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
-		let references = vec![PROTO_HASH];
+		let references = vec![];
+		let tags = vec![Tags::Code];
 
-		let public: [u8; 33] = if l == 1 {
-			[3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251]
-		} else {
-			[3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251]
+		let mut signature: [u8; 65] = [0; 65];
+		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();
+		let mut public: [u8; 33] = [0; 33];
+		hex::decode_to_slice("020a1091341fe5664bfa1782d5e04779689068c916b04cb365ec3153755684d9a1", &mut public).unwrap();
+
+		let auth_data = AuthData {
+			signature: sp_core::ecdsa::Signature::from_raw(signature),
+			block: 0
 		};
 
-		 let signature: [u8; 65] = if l == 1 {
-			[29, 83, 249, 100, 228, 85, 48, 71, 56, 134, 254, 85, 188, 199, 241, 160, 149, 99, 4, 236, 47, 249, 66, 140, 5, 123, 161, 152, 76, 152, 92, 89, 32, 85, 113, 187, 51, 6, 13, 223, 25, 225, 100, 38, 60, 46, 94, 71, 221, 149, 171, 23, 85, 228, 34, 227, 244, 85, 56, 171, 103, 111, 119, 61, 1]
-		} else {
-			[28, 64, 136, 241, 147, 34, 162, 228, 181, 29, 74, 73, 148, 220, 75, 47, 247, 106, 95, 247, 174, 31, 157, 252, 111, 175, 221, 239, 55, 245, 128, 34, 81, 214, 149, 247, 115, 217, 252, 152, 19, 234, 232, 144, 174, 233, 39, 34, 96, 37, 112, 142, 18, 187, 129, 230, 1, 138, 233, 154, 40, 123, 7, 51, 1]
-		};
+		Protos::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
+		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, tags, None, None, immutable_data.clone())?;
+
+		let public: [u8; 33] = [2, 10, 16, 145, 52, 31, 229, 102, 75, 250, 23, 130, 213, 224, 71, 121, 104, 144, 104, 201, 22, 176, 76, 179, 101, 236, 49, 83, 117, 86, 132, 217, 161];
+		let signature: [u8; 65] = [163, 192, 46, 155, 7, 30, 102, 0, 188, 241, 106, 73, 76, 37, 190, 132, 170, 178, 123, 175, 0, 93, 24, 151, 12, 223, 89, 208, 107, 246, 11, 183, 45, 161, 145, 125, 117, 245, 79, 5, 186, 41, 12, 100, 251, 0, 231, 13, 133, 82, 207, 51, 40, 180, 83, 26, 98, 112, 102, 134, 72, 89, 111, 187, 1];
 
 		let auth_data = AuthData{
 			signature: sp_core::ecdsa::Signature::from_raw(signature),
@@ -95,29 +97,6 @@ benchmarks! {
 		};
 
 		Protos::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, Vec::new(), None, None, immutable_data.clone())?;
-
-		let public: [u8; 33] = if l == 1 {
-			[2, 10, 16, 145, 52, 31, 229, 102, 75, 250, 23, 130, 213, 224, 71, 121, 104, 144, 104, 201, 22, 176, 76, 179, 101, 236, 49, 83, 117, 86, 132, 217, 161]
-		} else {
-			[2, 10, 16, 145, 52, 31, 229, 102, 75, 250, 23, 130, 213, 224, 71, 121, 104, 144, 104, 201, 22, 176, 76, 179, 101, 236, 49, 83, 117, 86, 132, 217, 161]
-		};
-
-		 let signature: [u8; 65] = if l == 1 {
-			[182, 126, 145, 239, 103, 243, 151, 246, 231, 244, 195, 48, 67, 37, 83, 79, 66, 229, 255, 139, 106, 33, 113, 206, 135, 22, 221, 130, 162, 206, 43, 85, 92, 8, 197, 104, 195, 51, 254, 242, 253, 21, 57, 21, 44, 79, 34, 100, 55, 47, 149, 74, 201, 50, 235, 157, 79, 201, 166, 241, 156, 191, 106, 224, 0]
-		} else {
-			[163, 192, 46, 155, 7, 30, 102, 0, 188, 241, 106, 73, 76, 37, 190, 132, 170, 178, 123, 175, 0, 93, 24, 151, 12, 223, 89, 208, 107, 246, 11, 183, 45, 161, 145, 125, 117, 245, 79, 5, 186, 41, 12, 100, 251, 0, 231, 13, 133, 82, 207, 51, 40, 180, 83, 26, 98, 112, 102, 134, 72, 89, 111, 187, 1]
-		};
-
-
-		let auth_data = AuthData{
-			signature: sp_core::ecdsa::Signature::from_raw(signature),
-			block: 1
-		};
-
-		Protos::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-
-
 	}: _(RawOrigin::Signed(caller), auth_data, proto_hash , Some(Compact(123)), Some(immutable_data))
 	verify {
 		assert_last_event::<T>(Event::<T>::Patched(proto_hash).into())

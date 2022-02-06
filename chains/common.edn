@@ -80,26 +80,28 @@
   (FromJson))
 
 (defchain make-test-asset
-  (ToString) >= .test-asset-n
-  "Test Asset " (PrependTo .test-asset-n)
-  .test-asset-n (Log "asset content")
-  [.test-asset-n] (Substrate.Encode [nil]) >= .test-asset-payload ; name
-  "0x00" (HexToBytes) (AppendTo .test-asset-payload) ; 0 len description
-  "0x00" (HexToBytes) (AppendTo .test-asset-payload) ; 0 len attributes
-  "0x00" (HexToBytes) (AppendTo .test-asset-payload) ; None preview
-  ["0"] (Substrate.Encode ["u8"]) (AppendTo .test-asset-payload) ; 0 enum index = Edn
-  "(println \"" >= .test-asset-edn
-  .test-asset-n (AppendTo .test-asset-edn)
-  "\")" (AppendTo .test-asset-edn)
-  [.test-asset-edn] (Substrate.Encode [nil]) (AppendTo .test-asset-payload)
-  .test-asset-payload)
+  (ToString) (StringToBytes)
+  ;; >= .test-asset-n
+  ;; "Test Asset " (PrependTo .test-asset-n)
+  ;; .test-asset-n (Log "asset content")
+  ;; [.test-asset-n] (Substrate.Encode [nil]) >= .test-asset-payload ; name
+  ;; "0x00" (HexToBytes) (AppendTo .test-asset-payload) ; 0 len description
+  ;; "0x00" (HexToBytes) (AppendTo .test-asset-payload) ; 0 len attributes
+  ;; "0x00" (HexToBytes) (AppendTo .test-asset-payload) ; None preview
+  ;; ["0"] (Substrate.Encode ["u8"]) (AppendTo .test-asset-payload) ; 0 enum index = Edn
+  ;; "(println \"" >= .test-asset-edn
+  ;; .test-asset-n (AppendTo .test-asset-edn)
+  ;; "\")" (AppendTo .test-asset-edn)
+  ;; [.test-asset-edn] (Substrate.Encode [nil]) (AppendTo .test-asset-payload)
+  ;; .test-asset-payload
+  )
 
 (defchain test-upload-compressing
   (| (Take 0) (ExpectBytes) = .upload-data)
   (| (Take 1) (ExpectInt) = .upload-nonce)
   (| (Take 2) (ExpectInt) = .frag-nonce)
 
-  .upload-data (Brotli.Compress) = .immutable
+  .upload-data (Brotli.Compress) (| (ToHex) (Log "TEST DATA")) = .immutable
 
   ; Vec - 0 len
   [0] (Substrate.Encode ["c"]) = .no-refs
@@ -114,7 +116,9 @@
   "0x00" (HexToBytes) >> .frag-hash-payload ; again no linked asset
   [.frag-nonce] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
   [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
-  .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Alice") >= .payload
+  .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Alice") 
+  (| (ToHex) (Log "AUTH SIGNATURE")) >= .payload
+  "//Alice" (ECDSA.PublicKey true) (ToHex) (Log "ALICE PUBLIC ECDSA")
 
   ; block
   [0] (Substrate.Encode ["u32"]) (AppendTo .payload)
