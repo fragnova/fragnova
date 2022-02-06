@@ -255,24 +255,12 @@ pub mod pallet {
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Systematic failure - those errors should not happen.
-		SystematicFailure,
-		/// Require sudo user
-		SudoUserRequired,
-		/// Unsupported chain to lock asset into
-		UnsupportedChain,
 		/// Already detached
 		Detached,
-		/// Not the owner of the proto
-		Unauthorized,
 		/// No Validators are present
 		NoValidator,
 		/// Failed to sign message
 		SigningFailed,
-		/// Signature verification failed
-		VerificationFailed,
-		/// The provided nonce override is too big
-		NonceMismatch,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
