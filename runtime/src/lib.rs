@@ -296,6 +296,7 @@ parameter_types! {
 	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
 	pub const TransactionByteFee: Balance = 1;
 	pub OperationalFeeMultiplier: u8 = 5;
+	pub StorageBytesMultiplier: u64 = 10;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -319,6 +320,7 @@ impl pallet_fragments::Config for Runtime {
 impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
+	type StorageBytesMultiplier = StorageBytesMultiplier;
 }
 
 impl pallet_detach::Config for Runtime {

@@ -105,6 +105,8 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
+		#[pallet::constant]
+		type StorageBytesMultiplier: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
@@ -203,7 +205,7 @@ pub mod pallet {
 		}
 
 		/// Proto upload function.
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(data.len() as u32))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			auth: AuthData,
@@ -304,7 +306,7 @@ pub mod pallet {
 		}
 
 		/// Proto upload function.
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch())]
 		pub fn patch(
 			origin: OriginFor<T>,
 			auth: AuthData,
@@ -406,7 +408,7 @@ pub mod pallet {
 		}
 
 		/// Proto upload function.
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(data.len() as u32))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch())]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			auth: AuthData,

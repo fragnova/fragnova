@@ -33,6 +33,11 @@
   (Brotli.Decompress)
   (Is .test-asset) (Log) (Assert.Is true)
 
+  ; patch
+  [.frag-hash 1 1] (Do test-patch)
+
+  ; detach
+
   "//Bob" (Ed25519.PublicKey) (ToHex) (Log "Bobs") = .bob-hex-key
   {"id" 1 "jsonrpc" "2.0" "method" "author_insertKey" "params" ["frag" "//Bob" .bob-hex-key]}
   (ToJson) (Http.Post rpc-server) (Log)
