@@ -10,7 +10,8 @@ mod tests;
 mod benchmarking;
 
 mod weights;
-
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
 use sp_core::{ecdsa, H160, U256};
@@ -34,6 +35,7 @@ pub struct ProtoValidation<Public, BlockNumber> {
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Tags {
 	Code,
 	Audio,
@@ -522,7 +524,7 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 
-		fn get_prorto_by_tags(tags: Tags) -> Option<Vec<Hash256>> {
+		pub fn get_prorto_by_tags(tags: Tags) -> Option<Vec<Hash256>> {
 			<ProtosByTag<T>>::get(&tags)
 		}
 
