@@ -41,6 +41,7 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
+	pub StorageBytesMultiplier: u64 = 10;
 }
 
 impl system::Config for Test {
@@ -105,6 +106,7 @@ impl pallet_randomness_collective_flip::Config for Test {}
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
+	type StorageBytesMultiplier = StorageBytesMultiplier;
 }
 
 impl pallet_detach::Config for Test {

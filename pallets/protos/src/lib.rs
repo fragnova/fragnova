@@ -306,7 +306,7 @@ pub mod pallet {
 		}
 
 		/// Proto upload function.
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch())]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + if let Some(data) = data { data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get() } else { 0 })]
 		pub fn patch(
 			origin: OriginFor<T>,
 			auth: AuthData,
@@ -408,7 +408,7 @@ pub mod pallet {
 		}
 
 		/// Proto upload function.
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch())]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			auth: AuthData,

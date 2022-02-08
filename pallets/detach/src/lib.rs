@@ -393,18 +393,18 @@ pub mod pallet {
 					{
 						pub_key
 					} else {
-						return InvalidTransaction::BadSigner.into();
+						return InvalidTransaction::BadSigner.into()
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
-					return InvalidTransaction::BadSigner.into();
+					return InvalidTransaction::BadSigner.into()
 				}
 				// most expensive bit last
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 				log::debug!("Sending detach finalization extrinsic");
 				ValidTransaction::with_tag_prefix("Protos-Detach")
@@ -462,9 +462,9 @@ pub mod pallet {
 							};
 
 							let values = match request.target_chain {
-								SupportedChains::EthereumMainnet
-								| SupportedChains::EthereumRinkeby
-								| SupportedChains::EthereumGoerli => {
+								SupportedChains::EthereumMainnet |
+								SupportedChains::EthereumRinkeby |
+								SupportedChains::EthereumGoerli => {
 									// check if we need to generate new ecdsa keys
 									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE);
 									let keys_ref =
@@ -519,7 +519,7 @@ pub mod pallet {
 										payload.extend(&chain_id_be[..]);
 										let mut target_account: [u8; 20] = [0u8; 20];
 										if request.target_account.len() != 20 {
-											return Err(FAILED);
+											return Err(FAILED)
 										}
 										target_account.copy_from_slice(&request.target_account[..]);
 										payload.extend(&target_account[..]);
