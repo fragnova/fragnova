@@ -91,7 +91,7 @@ hex = { version = "0.4", default-features = false }
 
 [features]
 default = ['std']
-runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
     'codec/std',
     'frame-support/std',

@@ -5,7 +5,8 @@
   1 (Do make-test-asset) = .test-asset
   [.test-asset 0 0] (Do test-upload-compressing)
   (| (Take 0) = .frag-cid-str)
-  (| (Take 1) = .frag-hash)
+  (| (Take 1) (ExpectBytes) = .frag-hash
+     (ToHex) (Log "Test Fragment Hash"))
 
   {"id" 1 "jsonrpc" "2.0" "method" "system_localListenAddresses" "params" []} (ToJson) (Http.Post rpc-server)
   (FromJson) (ExpectTable) (Take "result") (ExpectStringSeq) (Log)
@@ -31,6 +32,11 @@
   "" (Process.Run "ipfs" .ipfs-args-block :Timeout 120) (StringToBytes)
   (Brotli.Decompress)
   (Is .test-asset) (Log) (Assert.Is true)
+
+  ; patch
+  [.frag-hash 1 1] (Do test-patch)
+
+  ; detach
 
   "//Bob" (Ed25519.PublicKey) (ToHex) (Log "Bobs") = .bob-hex-key
   {"id" 1 "jsonrpc" "2.0" "method" "author_insertKey" "params" ["frag" "//Bob" .bob-hex-key]}
