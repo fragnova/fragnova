@@ -7,6 +7,6 @@ sp_api::decl_runtime_apis! {
 
     pub trait ProtosApi<Tags> where
         Tags: Codec, {
-        fn get_prorto_by_tags(tags: Tags) -> Option<Vec<Hash256>>;
+        fn get_proto_by_tags(tags: Tags) -> Option<Vec<Hash256>>;
     }
 }
