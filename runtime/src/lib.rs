@@ -51,6 +51,8 @@ use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
+use pallet_protos::Tags;
+use sp_chainblocks::Hash256;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.
@@ -670,6 +672,12 @@ impl_runtime_apis! {
 			Contracts::get_storage(address, key)
 		}
 	}
+
+	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Tags> for Runtime {
+        fn get_proto_by_tags(tags: Tags) -> Option<Vec<Hash256>> {
+            Protos::get_proto_by_tags(tags)
+        }
+    }
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {

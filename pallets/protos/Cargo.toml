@@ -10,9 +10,6 @@ version = '0.0.1'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
-[dev-dependencies.serde]
-version = '1.0.119'
-
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
@@ -88,11 +85,13 @@ path = '../detach'
 log = { version = "0.4.14", default-features = false }
 sp-chainblocks = { path = '../../primitives/chainblocks', default-features = false }
 hex = { version = "0.4", default-features = false }
+serde = { version = "1.0.132", features = ["derive"], optional = true }
 
 [features]
 default = ['std']
 runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
+	'serde',
     'codec/std',
     'frame-support/std',
     'frame-system/std',

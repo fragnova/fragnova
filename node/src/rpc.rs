@@ -13,8 +13,9 @@ use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-
+use pallet_protos_rpc::{Protos, ProtosApi};
 use pallet_contracts_rpc::{Contracts, ContractsApi};
+use clamor_runtime::pallet_protos::Tags;
 
 /// Full client dependencies.
 pub struct FullDeps<C, P> {
@@ -35,6 +36,7 @@ where
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>,
+	C::Api: pallet_protos_rpc::ProtosRuntimeApi<Block, Tags>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + 'static,
 {
@@ -55,6 +57,8 @@ where
 
 	// Contracts RPC API extension
 	io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
-
+	io.extend_with(ProtosApi::to_delegate(Protos::new(
+		client.clone(),
+	)));
 	io
 }
