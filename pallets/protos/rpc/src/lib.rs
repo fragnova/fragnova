@@ -35,7 +35,7 @@ impl<C, P> Protos<C, P> {
 
 /// Error type of this RPC api.
 pub enum Error {
-	/// The transaction was not decodable.
+	/// The transaction was not decoded.
 	DecodeError,
 	/// The call to runtime failed.
 	RuntimeError,
