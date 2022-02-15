@@ -674,10 +674,10 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Tags> for Runtime {
-        fn get_proto_by_tags(tags: Tags) -> Option<Vec<Hash256>> {
-            Protos::get_proto_by_tags(tags)
-        }
-    }
+		fn get_proto_by_tags(tags: Tags) -> Option<Vec<Hash256>> {
+			Protos::get_proto_by_tags(tags)
+		}
+	}
 
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {

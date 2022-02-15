@@ -10,10 +10,10 @@ mod tests;
 mod benchmarking;
 
 mod weights;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use sp_core::{ecdsa, H160, U256};
 use sp_io::{crypto as Crypto, hashing::blake2_256, transaction_index};
 use sp_std::{
@@ -515,7 +515,6 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-
 		pub fn get_proto_by_tags(tags: Tags) -> Option<Vec<Hash256>> {
 			<ProtosByTag<T>>::get(&tags)
 		}

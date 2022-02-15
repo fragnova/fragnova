@@ -5,8 +5,8 @@ use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use sp_chainblocks::Hash256;
+use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
 pub use pallet_protos_rpc_runtime_api::ProtosApi as ProtosRuntimeApi;
 
@@ -15,7 +15,6 @@ pub trait ProtosApi<BlockHash, Tags> {
 	#[rpc(name = "get_proto_by_tags")]
 	fn get_proto_by_tags(&self, tags: Tags, at: Option<BlockHash>) -> Result<Option<Vec<Hash256>>>;
 }
-
 
 /// An implementation of protos specific RPC methods.
 pub struct Protos<C, M> {
@@ -26,10 +25,7 @@ pub struct Protos<C, M> {
 impl<C, P> Protos<C, P> {
 	/// Create new `Protos` with the given reference to the client.
 	pub fn new(client: Arc<C>) -> Self {
-		Protos {
-			client,
-			_marker: Default::default(),
-		}
+		Protos { client, _marker: Default::default() }
 	}
 }
 
@@ -51,13 +47,13 @@ impl From<Error> for i64 {
 }
 
 impl<C, Block, Tags> ProtosApi<<Block as BlockT>::Hash, Tags> for Protos<C, Block>
-	where
-		Block: BlockT,
-		C: Send + Sync + 'static,
-		C: ProvideRuntimeApi<Block>,
-		C: HeaderBackend<Block>,
-		C::Api: ProtosRuntimeApi<Block, Tags>,
-		Tags: Codec,
+where
+	Block: BlockT,
+	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block>,
+	C::Api: ProtosRuntimeApi<Block, Tags>,
+	Tags: Codec,
 {
 	fn get_proto_by_tags(
 		&self,
@@ -69,14 +65,10 @@ impl<C, Block, Tags> ProtosApi<<Block as BlockT>::Hash, Tags> for Protos<C, Bloc
 			// If the block hash is not supplied assume the best block.
 			self.client.info().best_hash));
 
-		api.get_proto_by_tags(&at, tags)
-			.map_err(|e| RpcError {
-				code: ErrorCode::ServerError(Error::RuntimeError.into()),
-				message: "Unable to fetch data.".into(),
-				data: Some(format!("{:?}", e).into()),
-			})
+		api.get_proto_by_tags(&at, tags).map_err(|e| RpcError {
+			code: ErrorCode::ServerError(Error::RuntimeError.into()),
+			message: "Unable to fetch data.".into(),
+			data: Some(format!("{:?}", e).into()),
+		})
 	}
 }
-
-
-
