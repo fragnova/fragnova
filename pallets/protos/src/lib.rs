@@ -244,8 +244,8 @@ pub mod pallet {
 			ensure!(!<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoExists);
 
 			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// Calculate the base cost of inclusion
 			let cost = references.iter().fold(0, |acc, ref_hash| {
@@ -345,8 +345,8 @@ pub mod pallet {
 			<Pallet<T>>::ensure_auth(current_block_number, &auth, &signature_hash)?;
 
 			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -464,8 +464,8 @@ pub mod pallet {
 			<Pallet<T>>::ensure_auth(current_block_number, &auth, &signature_hash)?;
 
 			// we need this to index transactions
-			let extrinsic_index =
-				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -542,11 +542,15 @@ pub mod pallet {
 		) -> DispatchResult {
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
-			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, signature_hash)
-				.ok()
-				.ok_or(Error::<T>::VerificationFailed)?;
+			let recover =
+				Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, signature_hash)
+					.ok()
+					.ok_or(Error::<T>::VerificationFailed)?;
 			let recover = ecdsa::Public(recover);
-			ensure!(<UploadAuthorities<T>>::get().contains(&recover), Error::<T>::VerificationFailed);
+			ensure!(
+				<UploadAuthorities<T>>::get().contains(&recover),
+				Error::<T>::VerificationFailed
+			);
 
 			let max_delay = block_number + 100u32.into();
 			let signed_at: T::BlockNumber = data.block.into();
