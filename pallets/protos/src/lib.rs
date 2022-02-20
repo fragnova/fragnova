@@ -25,15 +25,6 @@ pub use weights::WeightInfo;
 
 use sp_chainblocks::Hash256;
 
-/// data required to submit a transaction.
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct ProtoValidation<Public, BlockNumber> {
-	block_number: BlockNumber,
-	public: Public,
-	proto_hash: Hash256,
-	result: bool,
-}
-
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Tags {
@@ -141,9 +132,12 @@ pub mod pallet {
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
-	// Not ideal but to have it iterable...
 	#[pallet::storage]
 	pub type ProtosByTag<T: Config> = StorageMap<_, Blake2_128Concat, Tags, Vec<Hash256>>;
+
+	#[pallet::storage]
+	pub type ProtosByOwner<T: Config> =
+		StorageMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
@@ -249,8 +243,8 @@ pub mod pallet {
 			ensure!(!<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoExists);
 
 			// we need this to index transactions
-			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
-				.ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
 
 			// Calculate the base cost of inclusion
 			let cost = references.iter().fold(0, |acc, ref_hash| {
@@ -266,6 +260,12 @@ pub mod pallet {
 				acc + ref_cost
 			});
 
+			let owner = if let Some(link) = linked_asset {
+				ProtoOwner::ExternalAsset(link)
+			} else {
+				ProtoOwner::User(who.clone())
+			};
+
 			// Write STATE from now, ensure no errors from now...
 
 			// store in the state the proto
@@ -275,11 +275,7 @@ pub mod pallet {
 				base_cost: cost.into(),
 				include_cost,
 				creator: who.clone(),
-				owner: if let Some(link) = linked_asset {
-					ProtoOwner::ExternalAsset(link)
-				} else {
-					ProtoOwner::User(who.clone())
-				},
+				owner: owner.clone(),
 				references,
 				tags: tags.clone(),
 				metadata: BTreeMap::new(),
@@ -292,6 +288,8 @@ pub mod pallet {
 			for tag in tags {
 				<ProtosByTag<T>>::append(tag, proto_hash);
 			}
+
+			<ProtosByOwner<T>>::append(owner, proto_hash);
 
 			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, data.len() as u32, proto_hash);
@@ -346,8 +344,8 @@ pub mod pallet {
 			<Pallet<T>>::ensure_auth(current_block_number, &auth, &signature_hash)?;
 
 			// we need this to index transactions
-			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
-				.ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -386,7 +384,8 @@ pub mod pallet {
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 
-			match proto.owner {
+			// make sure the caller is the owner
+			match proto.owner.clone() {
 				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
 				ProtoOwner::ExternalAsset(_ext_asset) =>
 				// We don't allow updating external assets
@@ -395,12 +394,28 @@ pub mod pallet {
 				},
 			};
 
+			// make sure the proto is not detached
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
+
+			// collect new owner
+			let new_owner_s = ProtoOwner::User(new_owner.clone());
+
+			// WRITING STATE FROM NOW
+
+			// remove proto from old owner
+			<ProtosByOwner<T>>::mutate(proto.owner, |proto_by_owner| {
+				if let Some(list) = proto_by_owner {
+					list.retain(|current_hash| proto_hash != *current_hash);
+				}
+			});
+
+			// add proto to new owner
+			<ProtosByOwner<T>>::append(new_owner_s.clone(), proto_hash);
 
 			// update proto
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
-				proto.owner = ProtoOwner::User(new_owner.clone());
+				proto.owner = new_owner_s;
 			});
 
 			// emit event
@@ -448,8 +463,8 @@ pub mod pallet {
 			<Pallet<T>>::ensure_auth(current_block_number, &auth, &signature_hash)?;
 
 			// we need this to index transactions
-			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
-				.ok_or(Error::<T>::SystematicFailure)?;
+			let extrinsic_index =
+				<frame_system::Pallet<T>>::extrinsic_index().ok_or(Error::<T>::SystematicFailure)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -526,15 +541,11 @@ pub mod pallet {
 		) -> DispatchResult {
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
-			let recover =
-				Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, signature_hash)
-					.ok()
-					.ok_or(Error::<T>::VerificationFailed)?;
+			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, signature_hash)
+				.ok()
+				.ok_or(Error::<T>::VerificationFailed)?;
 			let recover = ecdsa::Public(recover);
-			ensure!(
-				<UploadAuthorities<T>>::get().contains(&recover),
-				Error::<T>::VerificationFailed
-			);
+			ensure!(<UploadAuthorities<T>>::get().contains(&recover), Error::<T>::VerificationFailed);
 
 			let max_delay = block_number + 100u32.into();
 			let signed_at: T::BlockNumber = data.block.into();
