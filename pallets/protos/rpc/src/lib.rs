@@ -12,7 +12,7 @@ pub use pallet_protos_rpc_runtime_api::ProtosApi as ProtosRuntimeApi;
 
 #[rpc]
 pub trait ProtosApi<BlockHash, Tags> {
-	#[rpc(name = "get_proto_by_tags")]
+	#[rpc(name = "protos_getByTag")]
 	fn get_proto_by_tags(&self, tags: Tags, at: Option<BlockHash>) -> Result<Option<Vec<Hash256>>>;
 }
 
