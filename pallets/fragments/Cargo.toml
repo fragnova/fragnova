@@ -19,20 +19,20 @@ version = '2.0.0'
 [dependencies.frame-benchmarking]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-02'
 version = '4.0.0-dev'
 optional = true
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-02'
 version = '4.0.0-dev'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-02'
 version = '4.0.0-dev'
 
 [dependencies.scale-info]
@@ -43,26 +43,26 @@ version = '1.0'
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-02'
 version = '4.1.0-dev'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-02'
 version = '4.0.0-dev'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-02'
 version = '4.0.0-dev'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
-version = '4.0.0-dev'
+tag = 'monthly-2022-02'
+version = '4.1.0-dev'
 
 [dependencies.pallet-protos]
 default-features = false
@@ -78,7 +78,7 @@ sp-chainblocks = { path = '../../primitives/chainblocks', default-features = fal
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-02'
 version = '4.0.0-dev'
 
 [features]
