@@ -6,7 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use frame_support::traits::ConstU128;
+use frame_support::traits::{ConstU16, ConstU128};
 use frame_system::EnsureRoot;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -331,6 +331,16 @@ impl pallet_detach::Config for Runtime {
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
+impl pallet_multisig::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type DepositBase = ConstU128<1>;
+	type DepositFactor = ConstU128<1>;
+	type MaxSignatories = ConstU16<3>;
+	type WeightInfo = ();
+}
+
 impl frame_system::offchain::SigningTypes for Runtime {
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;
@@ -469,6 +479,7 @@ construct_runtime!(
 		Protos: pallet_protos,
 		Fragments: pallet_fragments,
 		Detach: pallet_detach,
+		Multisig: pallet_multisig,
 	}
 );
 
@@ -700,6 +711,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, pallet_fragments, Fragments);
 			list_benchmark!(list, extra, pallet_detach, Detach);
+			list_benchmark!(list, extra, pallet_multisig, Multisig);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -741,6 +753,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_fragments, Fragments);
 			add_benchmark!(params, batches, pallet_detach, Detach);
+			add_benchmark!(params, batches, pallet_multisig, Multisig);
 
 			Ok(batches)
 		}

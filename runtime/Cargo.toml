@@ -234,6 +234,18 @@ git = 'https://github.com/paritytech/substrate.git'
 tag = 'monthly-2022-02'
 version = '4.0.0-dev'
 
+[dependencies.pallet-proxy]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-02'
+version = '4.0.0-dev'
+
+[dependencies.pallet-multisig]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-02'
+version = '4.0.0-dev'
+
 [dependencies]
 sp-chainblocks = { path = '../primitives/chainblocks', default-features = false }
 
@@ -252,6 +264,8 @@ runtime-benchmarks = [
     'pallet-protos/runtime-benchmarks',
 	'pallet-fragments/runtime-benchmarks',
     'pallet-detach/runtime-benchmarks',
+    'pallet-proxy/runtime-benchmarks',
+    'pallet-multisig/runtime-benchmarks',
 ]
 std = [
     'codec/std',
@@ -287,5 +301,7 @@ std = [
     'pallet-indices/std',
     'pallet-contracts/std',
     'pallet-contracts-primitives/std',
-    'pallet-contracts-rpc-runtime-api/std'
+    'pallet-contracts-rpc-runtime-api/std',
+    'pallet-proxy/std',
+    'pallet-multisig/std',
 ]
