@@ -6,7 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use frame_support::traits::{ConstU128, ConstU16};
+use frame_support::traits::{ConstU128, ConstU32, ConstU16};
 use frame_system::EnsureRoot;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -341,6 +341,21 @@ impl pallet_multisig::Config for Runtime {
 	type WeightInfo = ();
 }
 
+impl pallet_proxy::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU128<1>;
+	type ProxyDepositFactor = ConstU128<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type CallHasher = BlakeTwo256;
+	type MaxPending = ConstU32<2>;
+	type AnnouncementDepositBase = ConstU128<1>;
+	type AnnouncementDepositFactor = ConstU128<1>;
+}
+
 impl frame_system::offchain::SigningTypes for Runtime {
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;
@@ -480,6 +495,7 @@ construct_runtime!(
 		Fragments: pallet_fragments,
 		Detach: pallet_detach,
 		Multisig: pallet_multisig,
+		Proxy: pallet_proxy,
 	}
 );
 
@@ -712,6 +728,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_fragments, Fragments);
 			list_benchmark!(list, extra, pallet_detach, Detach);
 			list_benchmark!(list, extra, pallet_multisig, Multisig);
+			list_benchmark!(list, extra, pallet_proxy, Proxy);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -754,6 +771,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_fragments, Fragments);
 			add_benchmark!(params, batches, pallet_detach, Detach);
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
+			add_benchmark!(params, batches, pallet_proxy, Proxy);
 
 			Ok(batches)
 		}

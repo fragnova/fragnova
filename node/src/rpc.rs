@@ -58,6 +58,9 @@ where
 
 	// Contracts RPC API extension
 	io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
+
+	// Protos RPCs
 	io.extend_with(ProtosApi::to_delegate(Protos::new(client.clone())));
+
 	io
 }
