@@ -25,6 +25,7 @@ pub use weights::WeightInfo;
 use sp_chainblocks::Hash256;
 
 /// data required to submit a transaction.
+/// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct ProtoValidation<Public, BlockNumber> {
 	block_number: BlockNumber,
@@ -33,6 +34,7 @@ pub struct ProtoValidation<Public, BlockNumber> {
 	result: bool,
 }
 
+/// Types of tags that can be attached to a Proto-Fragment to describe it (e.g Code, Audio, Video etc.)
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum Tags {
 	Code,
@@ -40,6 +42,8 @@ pub enum Tags {
 	Image,
 }
 
+
+/// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkSource {
 	// Generally we just store this data, we don't verify it as we assume auth service did it.
@@ -47,12 +51,14 @@ pub enum LinkSource {
 	Evm(ecdsa::Signature, u64, U256),
 }
 
+/// Types of Assets that are linked to a Proto-Fragment (e.g an ERC-721 Contract etc.)
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkedAsset {
 	// Ethereum (ERC721 Contract address, Token ID, Link source)
 	Erc721(H160, U256, LinkSource),
 }
 
+/// Types of Proto-Fragment Owner
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum ProtoOwner<TAccountId> {
 	// A regular account on this chain
@@ -61,12 +67,14 @@ pub enum ProtoOwner<TAccountId> {
 	ExternalAsset(LinkedAsset),
 }
 
+/// Struct that represents the digital signature (and other important information) given by the off-chain validator
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct AuthData {
 	pub signature: ecdsa::Signature,
 	pub block: u32,
 }
 
+/// Struct of a Proto-Fragment
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct Proto<TAccountId, TBlockNumber> {
 	/// Block number this proto was included in
@@ -109,6 +117,7 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
+		/// List of upload authorities (i.e off-chain validators). Any of them must validate a Proto-Fragment before it can be uploaded/patched/etc. on the Blockchain
 		pub upload_authorities: Vec<ecdsa::Public>,
 	}
 
@@ -130,23 +139,32 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	pub struct Pallet<T>(_);
 
+	/// Storage Map that represents the number of transactions the user has performed with the off-chain validator
+	/// * The key is the AccountId of the user
+	/// * The value is the number of transactions the user has performed with the off-chain validator
 	#[pallet::storage]
 	pub type UserNonces<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u64>;
 
+	/// Storage Map of Proto-Fragments where the key is the hash of the data of the Proto-Fragment, and the value is the Proto struct of the Proto-Fragment
 	#[pallet::storage]
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
+	/// Storage Map which keeps track of the Proto-Fragments by Tag type.
+	/// The key is the Tag type and the value is a list of the hash of a Proto-Fragment
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
 	pub type ProtosByTag<T: Config> = StorageMap<_, Blake2_128Concat, Tags, Vec<Hash256>>;
 
+	/// UploadAuthorities is a StorageValue that keeps track of the set of ECDSA public keys of the upload authorities
+	/// * Note: An upload authority (also known as the off-chain validator) provides the digital signature needed to upload a Proto-Fragment
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// A Proto-Fragment was upload to the blockchain
 		Uploaded(Hash256),
 		Patched(Hash256),
 		MetadataChanged(Hash256, Vec<u8>),
@@ -176,6 +194,11 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Allows the Sudo Account to add an ECDSA public key to current set of designated upload authorities (i.e the designated off-chain validators)
+		///
+		/// # Arguements
+		/// * `origin` - The origin of the extrisnic/dispatchable function
+		/// * `public` - The ECDSA public key to add to the current set of designated upload authorities
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_upload_auth())]
 		pub fn add_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -189,6 +212,11 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Allows the Sudo Account to remove an ECDSA public key from current set of designated upload authorities (i.e the designated off-chain validators)
+		///
+		/// # Arguements
+		/// * `origin` - The origin of the extrisnic/dispatchable function
+		/// * `public` - The ECDSA public key to remove from the current set of designated upload authorities
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::del_upload_auth())]
 		pub fn del_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -202,7 +230,18 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Proto upload function.
+		/// Uploads a Proto-Fragment onto the Blockchain. To successfully upload a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrisnic/dispatchable function
+		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
+		/// * `references` - A list of references to other Proto-Fragments
+		/// * `tags` - A list of tags to upload along with the Proto-Fragment
+		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Frament (e.g an ERC-721 Contract)
+		/// * `include_cost` (optional) -
+		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(data.len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
@@ -303,7 +342,19 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Proto upload function.
+		/// Patches (i.e modifies) the existing Proto-Fragment (whose hash is `proto_hash`) by appending the hash of `data` to the Vector field `patches` of the existing Proto-Fragment's Struct Instance.
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrisnic / dispatchable function
+		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
+		/// * `proto_hash` - The hash of the existing Proto-Fragment
+		/// * `tags` - A list of tags to upload along with the Proto-Fragment
+		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Frament (e.g an ERC-721 Contract)
+		/// * `include_cost` (optional) -
+		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(if let Some(data) = data { data.len() as u32} else { 50_000 }))]
 		pub fn patch(
 			origin: OriginFor<T>,
@@ -369,7 +420,13 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Transfer proto ownership
+		/// Transfer the ownership of a Proto-Fragment from `origin` to `new_owner`
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrinsic / dispatchable function
+		/// * `proto_hash` - The hash of the data of the Proto-Fragment that you want to transfer
+		/// * `new_owner` - The AccountId of the account you want to transfer the Proto-Fragment to
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
 		pub fn transfer(
 			origin: OriginFor<T>,
@@ -405,13 +462,25 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Proto upload function.
+		/// ¿
+		/// Alters the metadata of an existing Proto-Fragment (whose hash is `proto_hash`) by adding the key-value pair (`metadata_key.clone`,`blake2_256(&data.encode())`) to the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance.
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrisnic / dispatchable function
+		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
+		/// * `proto_hash` - The hash of the existing Proto-Fragment
+		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
+		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(data.len() as u32))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			auth: AuthData,
 			// proto hash we want to update
 			proto_hash: Hash256,
+			// Think of "u8" as string (something to do with WASM - that's why we use u8)
 			metadata_key: Vec<u8>,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
@@ -471,6 +540,14 @@ pub mod pallet {
 
 		/// Detached a proto from this chain by emitting an event that includes a signature.
 		/// The remote target chain can attach this proto by using this signature.
+		///
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrisnic / dispatchable function
+		/// * `proto_hash` - The hash of the existing Proto-Fragment to detach
+		/// * `target_chain` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
+		/// * `target_account` - The public account address on the blockchain `target_chain` that we want to detach the existing Proto-Fragment into
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
 		pub fn detach(
 			origin: OriginFor<T>,
@@ -511,6 +588,13 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Ensures that the  SECP256k1 ECDSA public key recovered from the digital signature and the blake2-256 hash of the message is of a designated upload authority
+		/// Also ensures that the digital signature was not signed more than a certain number of blocks ago
+		/// * `block number` - The latest block number
+		/// * `data` - AuthData Struct which contains:
+		///     * The digital signature
+		///     * The value of the latest block number when the digital signature was signed
+		/// * `signature_hash` - The blake2-256 hash of the message
 		fn ensure_auth(
 			block_number: T::BlockNumber,
 			data: &AuthData,
