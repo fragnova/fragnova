@@ -79,7 +79,7 @@ use frame_system::offchain::{
 /// data required to submit a transaction.
 /// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-	pub struct ProtoValidation<Public, BlockNumber> {
+pub struct ProtoValidation<Public, BlockNumber> {
 	block_number: BlockNumber,
 	public: Public,
 	proto_hash: Hash256,
