@@ -16,8 +16,6 @@ use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
 
 /// Defines application identifier for crypto keys of this module.
 ///
-/// ¿
-///
 /// Every module that deals with signatures needs to declare its unique identifier for
 /// its crypto keys.
 /// When offchain worker is signing transactions it's going to request keys of type
@@ -36,7 +34,7 @@ pub mod crypto {
 		traits::Verify,
 		MultiSignature, MultiSigner,
 	};
-	/// ¿
+
 	app_crypto!(ed25519, KEY_TYPE);
 
 	pub struct DetachAuthId;
@@ -77,7 +75,6 @@ use frame_system::offchain::{
 };
 
 /// data required to submit a transaction.
-/// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct ProtoValidation<Public, BlockNumber> {
 	block_number: BlockNumber,
@@ -133,7 +130,7 @@ impl<T: SigningTypes> SignedPayload<T> for DetachInternalData<T::Public> {
 	}
 }
 
-/// ¿
+/// This is the original data that was used to validate the link, this data is produced off-chain, e.g. for ethereum it would be a validator account signing a message
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkSource {
 	// Generally we just store this data, we don't verify it as we assume auth service did it.
@@ -194,7 +191,9 @@ pub struct ExportData {
 	chain: SupportedChains,
 	/// The account address (on the blockchain `SupportedChain`) that the Proto-Fragment was transfered into
 	owner: Vec<u8>,
-	/// ¿
+	/// For now we don't allow to re-attach but in the future we will,
+	/// this nonce is in 1:1 relationship with the remote chain,
+	/// so that e.g. if we detach on ethereum the message cannot be repeated and needs to go 1:1 with clamor
 	nonce: u64,
 }
 
@@ -260,7 +259,8 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
-	/// ¿
+	/// These are the public keys representing the actual keys that can Sign messages
+	/// to present to external chains to detach onto
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
@@ -473,7 +473,6 @@ pub mod pallet {
 
 		/// Function detaches Proto-Fragment
 		/// NOTE: This function runs off-chain, so it can access the block state, but cannot preform any alterations. More specifically alterations are not forbidden, but they are not persisted in any way
-		/// ¿
 		fn process_detach_requests() {
 			const FAILED: () = ();
 			let requests = StorageValueRef::persistent(b"fragments-detach-requests");

@@ -110,10 +110,10 @@ pub mod pallet {
 		/// # Arguements
 		/// * `origin` - The origin of the extrisnic/dispatchable function.
 		/// * `proto_hash` - The hash of the existing Proto-Fragment
-		/// * `metadata` - The metadata (name, external url etc.) of the Fragement that is going to be created
+		/// * `metadata` - The metadata (name, external url etc.) of the Fragment that is going to be created
 		/// * `unique` - Whether the Fragment that is being created is unique
-		/// * `mutable` - ¿
-		/// * max_supply (optional) - ¿
+		/// * `mutable` - if the item data can be edited (will be more clear when we add the mint/buy/upload bit)
+		/// * max_supply (optional) - if scarce, the maximum amount of items that can be ever created of this type
 		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
 			origin: OriginFor<T>,

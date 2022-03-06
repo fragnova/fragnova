@@ -25,7 +25,6 @@ pub use weights::WeightInfo;
 use sp_chainblocks::Hash256;
 
 /// data required to submit a transaction.
-/// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct ProtoValidation<Public, BlockNumber> {
 	block_number: BlockNumber,
