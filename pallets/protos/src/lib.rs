@@ -531,7 +531,7 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		pub fn get_proto_by_tags(tags: Tags) -> Option<Vec<Hash256>> {
+		pub fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
 			<ProtosByTag<T>>::get(&tags)
 		}
 

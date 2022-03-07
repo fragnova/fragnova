@@ -730,8 +730,8 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Tags> for Runtime {
-		fn get_proto_by_tags(tags: Tags) -> Option<Vec<Hash256>> {
-			Protos::get_proto_by_tags(tags)
+		fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
+			Protos::get_by_tag(tags)
 		}
 	}
 

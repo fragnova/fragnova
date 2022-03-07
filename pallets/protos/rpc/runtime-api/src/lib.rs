@@ -6,6 +6,6 @@ use sp_std::vec::Vec;
 sp_api::decl_runtime_apis! {
 		pub trait ProtosApi<Tags> where
 				Tags: Codec, {
-				fn get_proto_by_tags(tags: Tags) -> Option<Vec<Hash256>>;
+				fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>>;
 		}
 }
