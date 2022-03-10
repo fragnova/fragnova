@@ -546,11 +546,11 @@ pub mod pallet {
 			}
 		}
 
-		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<ProtoOwner<T::AccountId>>, limit: u32) -> Option<Vec<Hash256>> {
+		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32) -> Option<Vec<Hash256>> {
 
 			match owner {
 				Some(owner) => {
-					if let Some(vector_protos) = <ProtosByOwner<T>>::get(&owner) {
+					if let Some(vector_protos) = <ProtosByOwner<T>>::get(ProtoOwner::User(owner)) {
 						let iter_protos = vector_protos.into_iter();
 						let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
 						let iter_protos_limited = iter_protos_filtered.take(limit as usize);

@@ -729,12 +729,12 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Tags, ProtoOwner<AccountId>> for Runtime {
+	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Tags, AccountId> for Runtime {
 		fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
 			Protos::get_by_tag(tags)
 		}
 
-		fn get_by_tags(tags: Vec<Tags>, owner: Option<ProtoOwner<AccountId>>, limit: u32) -> Option<Vec<Hash256>> {
+		fn get_by_tags(tags: Vec<Tags>, owner: Option<AccountId>, limit: u32) -> Option<Vec<Hash256>> {
 			Protos::get_by_tags(tags, owner, limit)
 		}
 	}
