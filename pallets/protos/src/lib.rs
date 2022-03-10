@@ -34,6 +34,7 @@ pub enum Tags {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum LinkSource {
 	// Generally we just store this data, we don't verify it as we assume auth service did it.
 	// (Link signature, Linked block number, EIP155 Chain ID)
@@ -41,12 +42,14 @@ pub enum LinkSource {
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum LinkedAsset {
 	// Ethereum (ERC721 Contract address, Token ID, Link source)
 	Erc721(H160, U256, LinkSource),
 }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ProtoOwner<TAccountId> {
 	// A regular account on this chain
 	User(TAccountId),
@@ -534,6 +537,46 @@ pub mod pallet {
 		pub fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
 			<ProtosByTag<T>>::get(&tags)
 		}
+
+		fn is_proto_having_any_tags(proto_hash: &Hash256, tags: &Vec<Tags>) -> bool {
+			if let Some(struct_proto) = <Protos<T>>::get(proto_hash) {
+				tags.into_iter().any(|tag| struct_proto.tags.contains(&tag))
+			} else {
+				false
+			}
+		}
+
+		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<ProtoOwner<T::AccountId>>, limit: u32) -> Option<Vec<Hash256>> {
+
+			match owner {
+				Some(owner) => {
+					if let Some(vector_protos) = <ProtosByOwner<T>>::get(&owner) {
+						let iter_protos = vector_protos.into_iter();
+						let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
+						let iter_protos_limited = iter_protos_filtered.take(limit as usize);
+						Some(iter_protos_limited.collect::<Vec<Hash256>>())
+					} else {
+						None
+					}
+				},
+				None => {
+					/// TODO - Consider improving the closure in map
+					let iter_protos = tags.into_iter().map(|tag| <ProtosByTag<T>>::get(&tag).unwrap_or(Vec::new())).flatten();
+					let iter_protos_limited = iter_protos.take(limit as usize);
+					Some(iter_protos_limited.collect::<Vec<Hash256>>())
+				}
+
+			}
+
+		}
+
+
+		// fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<String>) -> Vec<Hash256> {
+		//
+		//
+		//
+		// 	vec![]
+		// }
 
 		fn ensure_auth(
 			block_number: T::BlockNumber,
