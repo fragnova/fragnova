@@ -734,8 +734,12 @@ impl_runtime_apis! {
 			Protos::get_by_tag(tags)
 		}
 
-		fn get_by_tags(tags: Vec<Tags>, owner: Option<AccountId>, limit: u32) -> Option<Vec<Hash256>> {
+		fn get_by_tags(tags: Vec<Tags>, owner: Option<AccountId>, limit: u32) -> Vec<Hash256> {
 			Protos::get_by_tags(tags, owner, limit)
+		}
+
+		fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Hash256>>> {
+			Protos::get_metadata_batch(batch, keys)
 		}
 	}
 

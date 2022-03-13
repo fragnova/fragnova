@@ -137,11 +137,10 @@ pub mod pallet {
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
 	#[pallet::storage]
-	pub type ProtosByTag<T: Config> = StorageMap<_, Blake2_128Concat, Tags, Vec<Hash256>>;
+	pub type ProtosByTag<T: Config> = StorageDoubleMap<_, Blake2_128Concat, Tags, Blake2_128Concat, Hash256, bool>;
 
 	#[pallet::storage]
-	pub type ProtosByOwner<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
+	pub type ProtosByOwner<T: Config> = StorageDoubleMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Blake2_128Concat, Hash256, bool>;
 
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
@@ -290,10 +289,10 @@ pub mod pallet {
 
 			// store by tags
 			for tag in tags {
-				<ProtosByTag<T>>::append(tag, proto_hash);
+				<ProtosByTag<T>>::insert(tag, proto_hash, true);
 			}
 
-			<ProtosByOwner<T>>::append(owner, proto_hash);
+			<ProtosByOwner<T>>::insert(owner, proto_hash, true);
 
 			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, data.len() as u32, proto_hash);
@@ -407,14 +406,10 @@ pub mod pallet {
 			// WRITING STATE FROM NOW
 
 			// remove proto from old owner
-			<ProtosByOwner<T>>::mutate(proto.owner, |proto_by_owner| {
-				if let Some(list) = proto_by_owner {
-					list.retain(|current_hash| proto_hash != *current_hash);
-				}
-			});
+			<ProtosByOwner<T>>::remove(proto.owner, proto_hash);
 
 			// add proto to new owner
-			<ProtosByOwner<T>>::append(new_owner_s.clone(), proto_hash);
+			<ProtosByOwner<T>>::insert(new_owner_s.clone(), proto_hash, true);
 
 			// update proto
 			<Protos<T>>::mutate(&proto_hash, |proto| {
@@ -534,8 +529,9 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// This function is deprecated and will never be used
 		pub fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
-			<ProtosByTag<T>>::get(&tags)
+			Some(<ProtosByTag<T>>::iter_key_prefix(tags).collect::<Vec<Hash256>>())
 		}
 
 		fn is_proto_having_any_tags(proto_hash: &Hash256, tags: &Vec<Tags>) -> bool {
@@ -546,24 +542,32 @@ pub mod pallet {
 			}
 		}
 
-		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32) -> Option<Vec<Hash256>> {
+		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32) -> Vec<Hash256> {
+
+
+			// log::info!("inside get_by_tags");
+			// log::info!("tags: {:?}, owner: {:?}, limit: {}", tags, owner, limit);
 
 			match owner {
 				Some(owner) => {
-					if let Some(vector_protos) = <ProtosByOwner<T>>::get(ProtoOwner::User(owner)) {
-						let iter_protos = vector_protos.into_iter();
-						let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
-						let iter_protos_limited = iter_protos_filtered.take(limit as usize);
-						Some(iter_protos_limited.collect::<Vec<Hash256>>())
-					} else {
-						None
-					}
+
+					let iter_protos = <ProtosByOwner<T>>::iter_key_prefix(ProtoOwner::User(owner));
+
+					let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
+					let iter_protos_limited = iter_protos_filtered.take(limit as usize);
+					iter_protos_limited.collect::<Vec<Hash256>>()
+
 				},
 				None => {
-					/// TODO - Consider improving the closure in map
-					let iter_protos = tags.into_iter().map(|tag| <ProtosByTag<T>>::get(&tag).unwrap_or(Vec::new())).flatten();
-					let iter_protos_limited = iter_protos.take(limit as usize);
-					Some(iter_protos_limited.collect::<Vec<Hash256>>())
+					let mut remaining = limit;
+
+					let iter_protos = tags.into_iter().map(|tag| {
+						let vector_protos = <ProtosByTag<T>>::iter_key_prefix(tag).take(remaining as usize).collect::<Vec<Hash256>>();
+						remaining -= vector_protos.len() as u32;
+						vector_protos
+					}).flatten().take(limit as usize);
+
+					iter_protos.collect::<Vec<Hash256>>()
 				}
 
 			}
@@ -571,12 +575,24 @@ pub mod pallet {
 		}
 
 
-		// fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<String>) -> Vec<Hash256> {
-		//
-		//
-		//
-		// 	vec![]
-		// }
+		pub fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Hash256>>> {
+
+			batch.into_iter().map(|proto_hash| -> Option<Vec<Hash256>> {
+
+				let proto = <Protos<T>>::get(&proto_hash)?;
+
+				let mut vec_data_hash : Vec<Hash256> = Vec::new();
+
+				for key in &keys {
+					let data_hash = proto.metadata.get(key)?;
+					vec_data_hash.push(*data_hash);
+				}
+
+				Some(vec_data_hash)
+
+			}).collect::<Vec<Option<Vec<Hash256>>>>()
+
+		}
 
 		fn ensure_auth(
 			block_number: T::BlockNumber,
