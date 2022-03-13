@@ -1,6 +1,6 @@
 use clamor_runtime::{
-	AccountId, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig, GrandpaConfig,
-	IndicesConfig, ProtosConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig,
+	GrandpaConfig, IndicesConfig, ProtosConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -170,7 +170,7 @@ fn testnet_genesis(
 		},
 		sudo: SudoConfig {
 			// Assign network admin rights.
-			key: Some(root_key),
+			key: Some(root_key.clone()),
 		},
 		transaction_payment: Default::default(),
 		indices: IndicesConfig { indices: vec![] },
@@ -181,6 +181,18 @@ fn testnet_genesis(
 			eth_authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
-		assets: Default::default(),
+		assets: AssetsConfig {
+			assets: vec![
+				// id, owner, is_sufficient, min_balance
+				(0, root_key.clone(), true, 1),
+				(1, root_key, true, 1),
+			],
+			metadata: vec![
+				// id, name, symbol, decimals
+				(0, "Fragnova Network Token".into(), "FRAG".into(), 18),
+				(1, "Fragnova Exchange Token".into(), "NOVA".into(), 18),
+			],
+			accounts: vec![],
+		},
 	}
 }

@@ -93,13 +93,21 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + pallet_detach::Config + pallet_randomness_collective_flip::Config
+		frame_system::Config
+		+ pallet_detach::Config
+		+ pallet_randomness_collective_flip::Config
+		+ pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
 		type WeightInfo: WeightInfo;
+
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
+
+		#[pallet::constant]
+		type FragToken: Get<<Self as pallet_assets::Config>::AssetId>;
 	}
 
 	#[pallet::genesis_config]
@@ -142,6 +150,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type FragToken<T: Config> = StorageValue<_, T::AssetId, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]

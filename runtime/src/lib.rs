@@ -323,6 +323,7 @@ impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
+	type FragToken = ConstU32<0>;
 }
 
 impl pallet_detach::Config for Runtime {
