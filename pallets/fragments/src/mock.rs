@@ -1,6 +1,9 @@
 pub use crate as pallet_fragments;
 use crate::*;
-use frame_support::{traits::{ConstU32, ConstU64}, parameter_types};
+use frame_support::{
+	parameter_types,
+	traits::{ConstU32, ConstU64},
+};
 use frame_system as system;
 use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
