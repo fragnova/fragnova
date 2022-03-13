@@ -66,8 +66,6 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub block: TBlockNumber,
 	/// Plain hash of indexed data.
 	pub patches: Vec<Hash256>,
-	/// Base include cost, of referenced protos.
-	pub base_cost: Compact<u128>,
 	/// Include price of the proto.
 	/// If None, this proto can't be included into other protos
 	pub include_cost: Option<Compact<u128>>,
@@ -151,8 +149,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
+	// Staking management
 	#[pallet::storage]
-	pub type FragToken<T: Config> = StorageValue<_, T::AssetId, ValueQuery>;
+	pub type ProtoStakes<T: Config> =
+		StorageDoubleMap<_, Identity, Hash256, Blake2_128Concat, T::AccountId, Compact<u128>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -179,6 +179,12 @@ pub mod pallet {
 		Unauthorized,
 		/// Signature verification failed
 		VerificationFailed,
+		/// Not enough FRAG staked
+		NotEnoughStaked,
+		/// Stake not found
+		StakeNotFound,
+		/// Reference not found
+		ReferenceNotFound,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -258,19 +264,27 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
-			// Calculate the base cost of inclusion
-			let cost = references.iter().fold(0, |acc, ref_hash| {
-				let ref_cost = if let Some(proto) = <Protos<T>>::get(ref_hash) {
-					if let Some(cost) = proto.include_cost {
-						cost.into()
-					} else {
-						0
+			// Check FRAG staking
+			for reference in references.iter() {
+				let cost = <Protos<T>>::get(reference).map(|p| p.include_cost);
+				if let Some(cost) = cost {
+					if let Some(cost) = cost {
+						let stake = <ProtoStakes<T>>::get(reference, who.clone());
+						if let Some(stake) = stake {
+							ensure!(stake >= cost, Error::<T>::NotEnoughStaked);
+						} else {
+							// Stake not found
+							return Err(Error::<T>::StakeNotFound.into())
+						}
 					}
+				// Free to include, just continue
 				} else {
-					0
-				};
-				acc + ref_cost
-			});
+					// Proto not found
+					return Err(Error::<T>::ReferenceNotFound.into())
+				}
+			}
+
+			// ! Write STATE from now, ensure no errors from now...
 
 			let owner = if let Some(link) = linked_asset {
 				ProtoOwner::ExternalAsset(link)
@@ -278,13 +292,10 @@ pub mod pallet {
 				ProtoOwner::User(who.clone())
 			};
 
-			// Write STATE from now, ensure no errors from now...
-
 			// store in the state the proto
 			let proto = Proto {
 				block: current_block_number,
 				patches: vec![],
-				base_cost: cost.into(),
 				include_cost,
 				creator: who.clone(),
 				owner: owner.clone(),
