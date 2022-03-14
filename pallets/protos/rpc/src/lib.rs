@@ -74,7 +74,7 @@ where
 
 
 
-		api.get_by_tags(&at, tags, owner, limit).map_err(|e| RpcError {
+		api.get_by_tags(&at, tags, owner, limit, from, desc).map_err(|e| RpcError {
 			code: ErrorCode::ServerError(Error::RuntimeError.into()),
 			message: "Unable to fetch data.".into(),
 			data: Some(format!("{:?}", e).into()),

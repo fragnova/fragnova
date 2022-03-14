@@ -538,7 +538,7 @@ pub mod pallet {
 			}
 		}
 
-		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32) -> Vec<Hash256> {
+		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32, from: u32, desc: bool) -> Vec<Hash256> {
 
 
 			// log::info!("inside get_by_tags");
@@ -550,7 +550,7 @@ pub mod pallet {
 					let iter_protos = <ProtosByOwner<T>>::iter_key_prefix(ProtoOwner::User(owner));
 
 					let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
-					let iter_protos_limited = iter_protos_filtered.take(limit as usize);
+					let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
 					iter_protos_limited.collect::<Vec<Hash256>>()
 
 				},
@@ -561,7 +561,7 @@ pub mod pallet {
 						let vector_protos = <ProtosByTag<T>>::iter_key_prefix(tag).take(remaining as usize).collect::<Vec<Hash256>>();
 						remaining -= vector_protos.len() as u32;
 						vector_protos
-					}).flatten().take(limit as usize);
+					}).flatten().skip(from as usize).take(limit as usize);
 
 					iter_protos.collect::<Vec<Hash256>>()
 				}
