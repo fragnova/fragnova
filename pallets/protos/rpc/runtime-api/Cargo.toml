@@ -11,27 +11,27 @@ version = '0.0.1'
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2", default-features = false, features = ["derive"] }
-scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2.0", default-features = false, features = ["derive"] }
 sp-chainblocks = { path = '../../../../primitives/chainblocks', default-features = false }
 
 # Substrate Dependencies
 [dependencies.sp-api]
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-03-2022_1'
 version = '4.0.0-dev'
 default-features = false
 
 [dependencies.sp-runtime]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
-version = '4.1.0-dev'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-03-2022_1'
+version = '5.0.0'
 
 [dependencies.sp-std]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-03-2022_1'
 version = '4.0.0-dev'
 
 

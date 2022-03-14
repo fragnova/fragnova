@@ -10,7 +10,7 @@ mod tests;
 mod benchmarking;
 
 mod weights;
-use codec::{Compact, Decode, Encode};
+use codec::{Compact, Decode, Encode, WrapperTypeEncode};
 pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -571,7 +571,7 @@ use super::*;
 			let balance = <pallet_assets::Pallet<T>>::balance(T::FragToken::get(), &who.clone());
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
-			<pallet_assets::Pallet<T>>::do_mint(T::FragToken::get(), &who, amount, None);
+			// <pallet_assets::Pallet<T>>::do_mint(T::FragToken::get(), &who, amount, None);
 
 			Ok(())
 		}
