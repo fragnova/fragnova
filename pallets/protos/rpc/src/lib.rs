@@ -13,9 +13,6 @@ pub use pallet_protos_rpc_runtime_api::ProtosApi as ProtosRuntimeApi;
 #[rpc]
 pub trait ProtosApi<BlockHash, Tags, AccountId> {
 
-	#[rpc(name = "protos_getByTag")]
-	fn get_by_tag(&self, tags: Tags, at: Option<BlockHash>) -> Result<Option<Vec<Hash256>>>;
-
 	#[rpc(name = "protos_getByTags")]
 	fn get_by_tags(&self, tags: Vec<Tags>, owner: Option<AccountId>, limit: u32, from: u32, desc: bool, at: Option<BlockHash>) ->Result<Vec<Hash256>>;
 
@@ -64,18 +61,6 @@ where
 	Tags: Codec,
 	AccountId: Codec
 {
-	fn get_by_tag(&self, tags: Tags, at: Option<<Block as BlockT>::Hash>) -> Result<Option<Vec<Hash256>>> {
-		let api = self.client.runtime_api();
-		let at = BlockId::hash(at.unwrap_or_else(||
-			// If the block hash is not supplied assume the best block.
-			self.client.info().best_hash));
-
-		api.get_by_tag(&at, tags).map_err(|e| RpcError {
-			code: ErrorCode::ServerError(Error::RuntimeError.into()),
-			message: "Unable to fetch data.".into(),
-			data: Some(format!("{:?}", e).into()),
-		})
-	}
 
 	fn get_by_tags(&self, tags: Vec<Tags>,
 				   owner: Option<AccountId>,

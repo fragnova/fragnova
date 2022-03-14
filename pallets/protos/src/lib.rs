@@ -137,10 +137,10 @@ pub mod pallet {
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
 	#[pallet::storage]
-	pub type ProtosByTag<T: Config> = StorageDoubleMap<_, Blake2_128Concat, Tags, Blake2_128Concat, Hash256, bool>;
+	pub type ProtosByTag<T: Config> = StorageDoubleMap<_, Blake2_128Concat, Tags, Identity, Hash256, bool>;
 
 	#[pallet::storage]
-	pub type ProtosByOwner<T: Config> = StorageDoubleMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Blake2_128Concat, Hash256, bool>;
+	pub type ProtosByOwner<T: Config> = StorageDoubleMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Identity, Hash256, bool>;
 
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
@@ -529,10 +529,6 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// This function is deprecated and will never be used
-		pub fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
-			Some(<ProtosByTag<T>>::iter_key_prefix(tags).collect::<Vec<Hash256>>())
-		}
 
 		fn is_proto_having_any_tags(proto_hash: &Hash256, tags: &Vec<Tags>) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_hash) {
