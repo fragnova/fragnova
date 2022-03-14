@@ -571,22 +571,26 @@ pub mod pallet {
 		}
 
 
-		pub fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Hash256>>> {
+		pub fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Option<Hash256>>>> {
 
-			batch.into_iter().map(|proto_hash| -> Option<Vec<Hash256>> {
+			batch.into_iter().map(|proto_hash| -> Option<Vec<Option<Hash256>>> {
 
+				// If proto doesn't exist, return None
 				let proto = <Protos<T>>::get(&proto_hash)?;
 
-				let mut vec_data_hash : Vec<Hash256> = Vec::new();
+				let mut vec_data_hash : Vec<Option<Hash256>> = Vec::new();
 
 				for key in &keys {
-					let data_hash = proto.metadata.get(key)?;
-					vec_data_hash.push(*data_hash);
+					if let Some(optional_data_hash) = proto.metadata.get(key) {
+						vec_data_hash.push(Some(*optional_data_hash));
+					} else {
+						vec_data_hash.push(None);
+					}
 				}
 
 				Some(vec_data_hash)
 
-			}).collect::<Vec<Option<Vec<Hash256>>>>()
+			}).collect::<Vec<Option<Vec<Option<Hash256>>>>>()
 
 		}
 

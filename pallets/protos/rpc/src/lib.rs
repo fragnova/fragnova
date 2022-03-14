@@ -18,7 +18,7 @@ pub trait ProtosApi<BlockHash, Tags, AccountId> {
 
 
 	#[rpc(name = "protos_getMetadataBatch")]
-	fn get_metadata_batch(&self, batch: Vec<Hash256>, keys: Vec<Vec<u8>>, at: Option<BlockHash>) -> Result<Vec<Option<Vec<Hash256>>>>;
+	fn get_metadata_batch(&self, batch: Vec<Hash256>, keys: Vec<Vec<u8>>, at: Option<BlockHash>) -> Result<Vec<Option<Vec<Option<Hash256>>>>>;
 }
 
 /// An implementation of protos specific RPC methods.
@@ -82,7 +82,7 @@ where
 
 	}
 
-	fn get_metadata_batch(&self, batch: Vec<Hash256>, keys: Vec<Vec<u8>>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<Option<Vec<Hash256>>>> {
+	fn get_metadata_batch(&self, batch: Vec<Hash256>, keys: Vec<Vec<u8>>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<Option<Vec<Option<Hash256>>>>> {
 		let api = self.client.runtime_api();
 
 		// If the block hash is not supplied in `at`, use the best block's hash
