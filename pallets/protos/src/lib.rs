@@ -10,7 +10,7 @@ mod tests;
 mod benchmarking;
 
 mod weights;
-use codec::{Compact, Decode, Encode, WrapperTypeEncode};
+use codec::{Compact, Decode, Encode};
 pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,7 @@ pub use weights::WeightInfo;
 use sp_chainblocks::Hash256;
 
 use frame_support::PalletId;
-const ProtosPalletId: PalletId = PalletId(*b"protos__");
+const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -86,12 +86,11 @@ pub struct Proto<TAccountId, TBlockNumber> {
 
 #[frame_support::pallet]
 pub mod pallet {
-	use sp_runtime::traits::AccountIdConversion;
-use super::*;
+	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
-	use sp_runtime::{traits::StaticLookup, SaturatedConversion};
+	use sp_runtime::{traits::AccountIdConversion, SaturatedConversion};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -571,7 +570,7 @@ use super::*;
 			let balance = <pallet_assets::Pallet<T>>::balance(T::FragToken::get(), &who.clone());
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
-			// <pallet_assets::Pallet<T>>::do_mint(T::FragToken::get(), &who, amount, None);
+			<pallet_assets::Pallet<T>>::do_mint(T::FragToken::get(), &who, amount, None).unwrap();
 
 			Ok(())
 		}
@@ -628,7 +627,7 @@ use super::*;
 		}
 
 		pub fn account_id() -> T::AccountId {
-			ProtosPalletId.into_account()
+			PROTOS_PALLET_ID.into_account()
 		}
 	}
 }
