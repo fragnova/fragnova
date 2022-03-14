@@ -25,6 +25,9 @@ pub use weights::WeightInfo;
 
 use sp_chainblocks::Hash256;
 
+use frame_support::PalletId;
+const ProtosPalletId: PalletId = PalletId(*b"protos__");
+
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Tags {
@@ -83,10 +86,12 @@ pub struct Proto<TAccountId, TBlockNumber> {
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
+	use sp_runtime::traits::AccountIdConversion;
+use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
+	use sp_runtime::{traits::StaticLookup, SaturatedConversion};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -150,9 +155,16 @@ pub mod pallet {
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
 	// Staking management
+	// (Amount staked, Last stake time)
 	#[pallet::storage]
-	pub type ProtoStakes<T: Config> =
-		StorageDoubleMap<_, Identity, Hash256, Blake2_128Concat, T::AccountId, Compact<u128>>;
+	pub type ProtoStakes<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		Hash256,
+		Blake2_128Concat,
+		T::AccountId,
+		(T::Balance, T::BlockNumber),
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -185,6 +197,8 @@ pub mod pallet {
 		StakeNotFound,
 		/// Reference not found
 		ReferenceNotFound,
+		/// Not enough tokens to stake
+		InsufficientBalance,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -269,9 +283,11 @@ pub mod pallet {
 				let cost = <Protos<T>>::get(reference).map(|p| p.include_cost);
 				if let Some(cost) = cost {
 					if let Some(cost) = cost {
+						let cost: u128 = cost.into();
+						let cost: T::Balance = cost.saturated_into();
 						let stake = <ProtoStakes<T>>::get(reference, who.clone());
 						if let Some(stake) = stake {
-							ensure!(stake >= cost, Error::<T>::NotEnoughStaked);
+							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
 						} else {
 							// Stake not found
 							return Err(Error::<T>::StakeNotFound.into())
@@ -543,6 +559,22 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::weight(50_000)]
+		pub fn stake(
+			origin: OriginFor<T>,
+			proto_hash: Hash256,
+			amount: T::Balance,
+		) -> DispatchResult {
+			let who = ensure_signed(origin.clone())?;
+
+			let balance = <pallet_assets::Pallet<T>>::balance(T::FragToken::get(), &who.clone());
+			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
+
+			<pallet_assets::Pallet<T>>::do_mint(T::FragToken::get(), &who, amount, None);
+
+			Ok(())
+		}
 	}
 
 	#[pallet::hooks]
@@ -593,6 +625,10 @@ pub mod pallet {
 					});
 				}
 			}
+		}
+
+		pub fn account_id() -> T::AccountId {
+			ProtosPalletId.into_account()
 		}
 	}
 }
