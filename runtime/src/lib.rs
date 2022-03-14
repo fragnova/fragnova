@@ -6,7 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use frame_support::traits::{ConstU128, ConstU16, ConstU32};
+use frame_support::traits::{ConstU128, ConstU16, ConstU32, ConstU64};
 use frame_system::EnsureRoot;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -324,6 +324,8 @@ impl pallet_protos::Config for Runtime {
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
 	type FragToken = ConstU32<0>;
+	// type StakeLockupPeriod = ConstU64<100800>; // one week
+	type StakeLockupPeriod = ConstU64<5>; // one week
 }
 
 impl pallet_detach::Config for Runtime {

@@ -110,6 +110,9 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type FragToken: Get<<Self as pallet_assets::Config>::AssetId>;
+
+		#[pallet::constant]
+		type StakeLockupPeriod: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
@@ -174,6 +177,7 @@ pub mod pallet {
 		Detached(Hash256, Vec<u8>),
 		Transferred(Hash256, T::AccountId),
 		Staked(Hash256, T::AccountId, T::Balance),
+		Unstaked(Hash256, T::AccountId, T::Balance),
 	}
 
 	// Errors inform users that something went wrong.
@@ -199,6 +203,8 @@ pub mod pallet {
 		ReferenceNotFound,
 		/// Not enough tokens to stake
 		InsufficientBalance,
+		/// Cannot unstake yet
+		StakeLocked,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -596,6 +602,46 @@ pub mod pallet {
 
 			// also emit event
 			Self::deposit_event(Event::Staked(proto_hash, who, amount));
+
+			Ok(())
+		}
+
+		#[pallet::weight(50_000)]
+		pub fn unstake(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
+			use frame_support::traits::fungibles::Transfer;
+
+			let who = ensure_signed(origin.clone())?;
+
+			// make sure the proto exists
+			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
+
+			// make sure user has enough FRAG
+			let stake =
+				<ProtoStakes<T>>::get(&proto_hash, &who).ok_or(Error::<T>::StakeNotFound)?;
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			ensure!(
+				current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()),
+				Error::<T>::StakeLocked
+			);
+
+			// ! from now we write...
+
+			// transfer to pallet vault
+			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+				T::FragToken::get(),
+				&Self::account_id(),
+				&who,
+				stake.0,
+				false,
+			)
+			.map(|_| ())?;
+
+			// take record of the unstake
+			<ProtoStakes<T>>::remove(proto_hash, &who);
+
+			// also emit event
+			Self::deposit_event(Event::Unstaked(proto_hash, who, stake.0));
 
 			Ok(())
 		}
