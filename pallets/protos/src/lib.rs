@@ -173,6 +173,7 @@ pub mod pallet {
 		MetadataChanged(Hash256, Vec<u8>),
 		Detached(Hash256, Vec<u8>),
 		Transferred(Hash256, T::AccountId),
+		Staked(Hash256, T::AccountId, T::Balance),
 	}
 
 	// Errors inform users that something went wrong.
@@ -565,12 +566,36 @@ pub mod pallet {
 			proto_hash: Hash256,
 			amount: T::Balance,
 		) -> DispatchResult {
+			use frame_support::traits::fungibles::Transfer;
+
 			let who = ensure_signed(origin.clone())?;
 
+			// make sure the proto exists
+			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
+
+			// make sure user has enough FRAG
 			let balance = <pallet_assets::Pallet<T>>::balance(T::FragToken::get(), &who.clone());
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
-			<pallet_assets::Pallet<T>>::do_mint(T::FragToken::get(), &who, amount, None).unwrap();
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			// ! from now we write...
+
+			// transfer to pallet vault
+			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+				T::FragToken::get(),
+				&who,
+				&Self::account_id(),
+				amount,
+				true,
+			)
+			.map(|_| ())?;
+
+			// take record of the stake
+			<ProtoStakes<T>>::insert(proto_hash, &who, (amount, current_block_number));
+
+			// also emit event
+			Self::deposit_event(Event::Staked(proto_hash, who, amount));
 
 			Ok(())
 		}
