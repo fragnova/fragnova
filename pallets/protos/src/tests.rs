@@ -44,7 +44,7 @@ fn initial_set_up_and_get_signature(
 
 fn initial_upload_and_get_signature() -> AuthData {
 	let data = DATA.as_bytes().to_vec();
-	let references = vec![PROTO_HASH];
+	let references = vec![];
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 	let auth_data = AuthData { signature, block: 1 };
 
@@ -100,7 +100,7 @@ fn del_upload_auth_should_works() {
 fn upload_should_works() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
-		let references = vec![PROTO_HASH];
+		let references = vec![];
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
@@ -125,7 +125,7 @@ fn upload_should_not_works_if_proto_hash_exists() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
 		initial_upload_and_get_signature();
-		let references = vec![PROTO_HASH];
+		let references = vec![];
 
 		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
 		let auth_data = AuthData { signature, block: 1 };
@@ -148,7 +148,7 @@ fn upload_should_not_works_if_proto_hash_exists() {
 fn upload_proto_should_not_work_if_not_verified() {
 	new_test_ext().execute_with(|| {
 		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
-		let references = vec![PROTO_HASH];
+		let references = vec![];
 		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
 		let auth_data = AuthData { signature, block: 1 };
 

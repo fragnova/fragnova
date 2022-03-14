@@ -25,6 +25,9 @@ pub use weights::WeightInfo;
 
 use sp_chainblocks::Hash256;
 
+use frame_support::PalletId;
+const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
+
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Tags {
@@ -66,8 +69,6 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub block: TBlockNumber,
 	/// Plain hash of indexed data.
 	pub patches: Vec<Hash256>,
-	/// Base include cost, of referenced protos.
-	pub base_cost: Compact<u128>,
 	/// Include price of the proto.
 	/// If None, this proto can't be included into other protos
 	pub include_cost: Option<Compact<u128>>,
@@ -89,17 +90,29 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
+	use sp_runtime::{traits::AccountIdConversion, SaturatedConversion};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + pallet_detach::Config + pallet_randomness_collective_flip::Config
+		frame_system::Config
+		+ pallet_detach::Config
+		+ pallet_randomness_collective_flip::Config
+		+ pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
 		type WeightInfo: WeightInfo;
+
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
+
+		#[pallet::constant]
+		type FragToken: Get<<Self as pallet_assets::Config>::AssetId>;
+
+		#[pallet::constant]
+		type StakeLockupPeriod: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
@@ -143,6 +156,18 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
+	// Staking management
+	// (Amount staked, Last stake time)
+	#[pallet::storage]
+	pub type ProtoStakes<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		Hash256,
+		Blake2_128Concat,
+		T::AccountId,
+		(T::Balance, T::BlockNumber),
+	>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -151,6 +176,8 @@ pub mod pallet {
 		MetadataChanged(Hash256, Vec<u8>),
 		Detached(Hash256, Vec<u8>),
 		Transferred(Hash256, T::AccountId),
+		Staked(Hash256, T::AccountId, T::Balance),
+		Unstaked(Hash256, T::AccountId, T::Balance),
 	}
 
 	// Errors inform users that something went wrong.
@@ -168,6 +195,16 @@ pub mod pallet {
 		Unauthorized,
 		/// Signature verification failed
 		VerificationFailed,
+		/// Not enough FRAG staked
+		NotEnoughStaked,
+		/// Stake not found
+		StakeNotFound,
+		/// Reference not found
+		ReferenceNotFound,
+		/// Not enough tokens to stake
+		InsufficientBalance,
+		/// Cannot unstake yet
+		StakeLocked,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -247,19 +284,29 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
-			// Calculate the base cost of inclusion
-			let cost = references.iter().fold(0, |acc, ref_hash| {
-				let ref_cost = if let Some(proto) = <Protos<T>>::get(ref_hash) {
-					if let Some(cost) = proto.include_cost {
-						cost.into()
-					} else {
-						0
+			// Check FRAG staking
+			for reference in references.iter() {
+				let cost = <Protos<T>>::get(reference).map(|p| p.include_cost);
+				if let Some(cost) = cost {
+					if let Some(cost) = cost {
+						let cost: u128 = cost.into();
+						let cost: T::Balance = cost.saturated_into();
+						let stake = <ProtoStakes<T>>::get(reference, who.clone());
+						if let Some(stake) = stake {
+							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
+						} else {
+							// Stake not found
+							return Err(Error::<T>::StakeNotFound.into())
+						}
 					}
+				// Free to include, just continue
 				} else {
-					0
-				};
-				acc + ref_cost
-			});
+					// Proto not found
+					return Err(Error::<T>::ReferenceNotFound.into())
+				}
+			}
+
+			// ! Write STATE from now, ensure no errors from now...
 
 			let owner = if let Some(link) = linked_asset {
 				ProtoOwner::ExternalAsset(link)
@@ -267,13 +314,10 @@ pub mod pallet {
 				ProtoOwner::User(who.clone())
 			};
 
-			// Write STATE from now, ensure no errors from now...
-
 			// store in the state the proto
 			let proto = Proto {
 				block: current_block_number,
 				patches: vec![],
-				base_cost: cost.into(),
 				include_cost,
 				creator: who.clone(),
 				owner: owner.clone(),
@@ -521,6 +565,86 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::weight(50_000)]
+		pub fn stake(
+			origin: OriginFor<T>,
+			proto_hash: Hash256,
+			amount: T::Balance,
+		) -> DispatchResult {
+			use frame_support::traits::fungibles::Transfer;
+
+			let who = ensure_signed(origin.clone())?;
+
+			// make sure the proto exists
+			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
+
+			// make sure user has enough FRAG
+			let balance = <pallet_assets::Pallet<T>>::balance(T::FragToken::get(), &who.clone());
+			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			// ! from now we write...
+
+			// transfer to pallet vault
+			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+				T::FragToken::get(),
+				&who,
+				&Self::account_id(),
+				amount,
+				true,
+			)
+			.map(|_| ())?;
+
+			// take record of the stake
+			<ProtoStakes<T>>::insert(proto_hash, &who, (amount, current_block_number));
+
+			// also emit event
+			Self::deposit_event(Event::Staked(proto_hash, who, amount));
+
+			Ok(())
+		}
+
+		#[pallet::weight(50_000)]
+		pub fn unstake(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
+			use frame_support::traits::fungibles::Transfer;
+
+			let who = ensure_signed(origin.clone())?;
+
+			// make sure the proto exists
+			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
+
+			// make sure user has enough FRAG
+			let stake =
+				<ProtoStakes<T>>::get(&proto_hash, &who).ok_or(Error::<T>::StakeNotFound)?;
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			ensure!(
+				current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()),
+				Error::<T>::StakeLocked
+			);
+
+			// ! from now we write...
+
+			// transfer to pallet vault
+			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+				T::FragToken::get(),
+				&Self::account_id(),
+				&who,
+				stake.0,
+				false,
+			)
+			.map(|_| ())?;
+
+			// take record of the unstake
+			<ProtoStakes<T>>::remove(proto_hash, &who);
+
+			// also emit event
+			Self::deposit_event(Event::Unstaked(proto_hash, who, stake.0));
+
+			Ok(())
+		}
 	}
 
 	#[pallet::hooks]
@@ -571,6 +695,10 @@ pub mod pallet {
 					});
 				}
 			}
+		}
+
+		pub fn account_id() -> T::AccountId {
+			PROTOS_PALLET_ID.into_account()
 		}
 	}
 }

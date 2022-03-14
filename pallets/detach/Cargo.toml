@@ -16,68 +16,68 @@ version = '1.0.119'
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
-version = '4.1.0-dev'
+tag = 'monthly-2022-03'
+version = '5.0.0'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
-version = '4.0.0-dev'
+tag = 'monthly-2022-03'
+version = '5.0.0'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
-version = '4.1.0-dev'
+tag = 'monthly-2022-03'
+version = '5.0.0'
 
 [dependencies.sp-keystore]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
-version = '0.10.0-dev'
+tag = 'monthly-2022-03'
+version = '0.11.0'
 optional = true
 
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '2.0.0'
+version = '3.0.0'
 
 [dependencies.frame-benchmarking]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 optional = true
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.scale-info]
 default-features = false
 features = ['derive']
-version = '1.0'
+version = '2.0'
 
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies]

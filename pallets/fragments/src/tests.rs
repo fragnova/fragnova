@@ -33,7 +33,7 @@ fn initial_set_up_and_get_signature(
 
 fn initial_upload_and_get_signature() -> AuthData {
 	let data = DATA.as_bytes().to_vec();
-	let references = vec![PROTO_HASH];
+	let references = vec![];
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 	let auth_data = AuthData { signature, block: 1 };
 
