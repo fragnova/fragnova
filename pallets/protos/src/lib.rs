@@ -15,12 +15,13 @@ pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{ecdsa, H160, U256};
-use sp_io::{crypto as Crypto, hashing::blake2_256, transaction_index};
+use sp_io::{crypto as Crypto, hashing::blake2_256, offchain, transaction_index};
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	vec,
 	vec::Vec,
 };
+
 pub use weights::WeightInfo;
 
 use sp_chainblocks::Hash256;
@@ -90,7 +91,9 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
-	use sp_runtime::{traits::AccountIdConversion, SaturatedConversion};
+	use sp_runtime::{
+		offchain::HttpRequestStatus, traits::AccountIdConversion, SaturatedConversion,
+	};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -113,6 +116,9 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type StakeLockupPeriod: Get<u64>;
+
+		#[pallet::constant]
+		type EthChainId: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
@@ -649,9 +655,33 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(_n: T::BlockNumber) {}
+		fn offchain_worker(_n: T::BlockNumber) {
+			let request = offchain::http_request_start("POST",
+				"https://api.thegraph.com/subgraphs/id/QmPggztWjfJtSVkckhuh8N58iY4Vk5XUo1Y6p47GpVubU6",
+				&[]
+			).unwrap(); // hard fail if fails... it should not...
 
-		fn offchain_worker(_n: T::BlockNumber) {}
+			offchain::http_request_add_header(request, "Content-Type", "application/json").unwrap();
+
+			let query = b"{ \"query\": \"{lockEntities(first: 5) {id owner amount lock}}\"}";
+			offchain::http_request_write_body(request, query, None).unwrap();
+
+			// send off the request
+			offchain::http_request_write_body(request, &[], None).unwrap();
+			let request = offchain::http_response_wait(&[request], None);
+			let status = request[0];
+			match status {
+				HttpRequestStatus::Finished(status) => match status {
+					200 => {},
+					_ => {
+						log::error!("Sync request had unexpected status: {}", status);
+					},
+				},
+				_ => {
+					log::error!("Sync request failed with status: {:?}", status);
+				},
+			}
+		}
 	}
 
 	impl<T: Config> Pallet<T> {

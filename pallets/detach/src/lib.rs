@@ -355,7 +355,7 @@ pub mod pallet {
 				);
 				for authority in authorities {
 					<EthereumAuthorities<T>>::mutate(|authorities| {
-						authorities.insert(authority.clone());
+						authorities.insert(*authority);
 					});
 				}
 			}

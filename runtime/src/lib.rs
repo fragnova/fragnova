@@ -326,6 +326,7 @@ impl pallet_protos::Config for Runtime {
 	type FragToken = ConstU32<0>;
 	// type StakeLockupPeriod = ConstU64<100800>; // one week
 	type StakeLockupPeriod = ConstU64<5>; // one week
+	type EthChainId = ConstU64<5>; // goerli
 }
 
 impl pallet_detach::Config for Runtime {
