@@ -137,10 +137,24 @@ pub mod pallet {
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
 	#[pallet::storage]
-	pub type ProtosByTag<T: Config> = StorageDoubleMap<_, Blake2_128Concat, Tags, Identity, Hash256, bool>;
+	pub type ProtosByTag<T: Config> = StorageNMap<
+		_,
+		(
+			NMapKey<Blake2_128Concat, Tags>,
+			NMapKey<Identity, T::BlockNumber>,
+			NMapKey<Identity, Hash256>
+		),
+		bool>;
 
 	#[pallet::storage]
-	pub type ProtosByOwner<T: Config> = StorageDoubleMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Identity, Hash256, bool>;
+	pub type ProtosByOwner<T: Config> = StorageNMap<
+		_,
+		(
+			NMapKey<Blake2_128Concat, ProtoOwner<T::AccountId>>,
+			NMapKey<Identity, T::BlockNumber>,
+			NMapKey<Identity, Hash256>
+		),
+		bool>;
 
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
@@ -289,10 +303,10 @@ pub mod pallet {
 
 			// store by tags
 			for tag in tags {
-				<ProtosByTag<T>>::insert(tag, proto_hash, true);
+				<ProtosByTag<T>>::insert((tag, current_block_number, proto_hash), true);
 			}
 
-			<ProtosByOwner<T>>::insert(owner, proto_hash, true);
+			<ProtosByOwner<T>>::insert((owner, current_block_number, proto_hash), true);
 
 			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, data.len() as u32, proto_hash);
@@ -406,10 +420,11 @@ pub mod pallet {
 			// WRITING STATE FROM NOW
 
 			// remove proto from old owner
-			<ProtosByOwner<T>>::remove(proto.owner, proto_hash);
+			<ProtosByOwner<T>>::remove((proto.owner, proto.block, proto_hash));
 
 			// add proto to new owner
-			<ProtosByOwner<T>>::insert(new_owner_s.clone(), proto_hash, true);
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			<ProtosByOwner<T>>::insert((new_owner_s.clone(), current_block_number, proto_hash), true);
 
 			// update proto
 			<Protos<T>>::mutate(&proto_hash, |proto| {
@@ -547,10 +562,11 @@ pub mod pallet {
 			match owner {
 				Some(owner) => {
 
-					let iter_protos = <ProtosByOwner<T>>::iter_key_prefix(ProtoOwner::User(owner));
-
+					let iter_protos = <ProtosByOwner<T>>::iter_key_prefix((ProtoOwner::User(owner),))
+						.map(|(_block_number, proto)| proto);
 					let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
 					let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
+
 					iter_protos_limited.collect::<Vec<Hash256>>()
 
 				},
@@ -558,10 +574,12 @@ pub mod pallet {
 					let mut remaining = limit;
 
 					let iter_protos = tags.into_iter().map(|tag| {
-						let vector_protos = <ProtosByTag<T>>::iter_key_prefix(tag).take(remaining as usize).collect::<Vec<Hash256>>();
+						let vector_protos = <ProtosByTag<T>>::iter_key_prefix((tag,)).map(|(_block_number, tag)| tag)
+							.take(remaining as usize).collect::<Vec<Hash256>>();
 						remaining -= vector_protos.len() as u32;
 						vector_protos
 					}).flatten().skip(from as usize).take(limit as usize);
+
 
 					iter_protos.collect::<Vec<Hash256>>()
 				}

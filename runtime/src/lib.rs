@@ -51,7 +51,7 @@ use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
-use pallet_protos::{Tags, ProtoOwner};
+use pallet_protos::{Tags};
 use sp_chainblocks::Hash256;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
