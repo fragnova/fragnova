@@ -16,6 +16,7 @@ pub use pallet::*;
 use serde::{Deserialize, Serialize};
 use sp_core::{ecdsa, H160, U256};
 use sp_io::{crypto as Crypto, hashing::blake2_256, offchain, transaction_index};
+use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	vec,
@@ -25,6 +26,10 @@ use sp_std::{
 pub use weights::WeightInfo;
 
 use sp_chainblocks::Hash256;
+
+use scale_info::prelude::{format, string::String};
+
+use serde_json::{Result, Value};
 
 use frame_support::PalletId;
 const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
@@ -656,6 +661,14 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(_n: T::BlockNumber) {
+			let last_id_ref = StorageValueRef::persistent(b"protos_stake_sync_last_id");
+			let last_id: Option<Vec<u8>> = last_id_ref.get().unwrap_or_default();
+			let last_id = if let Some(last_id) = last_id {
+				String::from_utf8(last_id).unwrap()
+			} else {
+				String::from("")
+			};
+
 			let request = offchain::http_request_start("POST",
 				"https://api.thegraph.com/subgraphs/id/QmPggztWjfJtSVkckhuh8N58iY4Vk5XUo1Y6p47GpVubU6",
 				&[]
@@ -663,28 +676,44 @@ pub mod pallet {
 
 			offchain::http_request_add_header(request, "Content-Type", "application/json").unwrap();
 
-			// TODO
-			/*
-			query {
-				lockEntities(where: {id_gt: "6544734-9-31"}) {
-					id
-					owner
-					amount
-					lock
-				}
-			}
-			*/
-
-			let query = b"{ \"query\": \"{lockEntities(first: 5) {id owner amount lock}}\"}";
-			offchain::http_request_write_body(request, query, None).unwrap();
+			let query = format!("{{ \"query\": \"{{lockEntities(where: {{id_gt: \\\"{}\\\"}}) {{id owner amount lock}}}}\"}}", last_id);
+			log::trace!("query: {}", query);
+			offchain::http_request_write_body(request, query.as_bytes(), None).unwrap();
 
 			// send off the request
 			offchain::http_request_write_body(request, &[], None).unwrap();
-			let request = offchain::http_response_wait(&[request], None);
-			let status = request[0];
+			let results = offchain::http_response_wait(&[request], None);
+			let status = results[0];
 			match status {
 				HttpRequestStatus::Finished(status) => match status {
-					200 => {},
+					200 => {
+						let mut response_body: Vec<u8> = Vec::new();
+						loop {
+							let mut buffer = Vec::new();
+							buffer.resize(1024, 0);
+							let len = offchain::http_response_read_body(request, &mut buffer, None)
+								.unwrap();
+							if len == 0 {
+								break
+							}
+							response_body.extend_from_slice(&buffer[..len as usize]);
+						}
+						let response = String::from_utf8(response_body).unwrap();
+						log::trace!("response: {}", response);
+
+						let v: Value = serde_json::from_str(&response).unwrap();
+						let records = v["data"]["lockEntities"].as_array().unwrap();
+						for (i, record) in records.iter().enumerate() {
+							let lock = record["lock"].as_bool().unwrap();
+							if lock {
+								let id = record["id"].as_str().unwrap();
+								log::trace!("Recording lock stake for {}", id);
+								if i == records.len() - 1 {
+									last_id_ref.set(&id.as_bytes().to_vec());
+								}
+							}
+						}
+					},
 					_ => {
 						log::error!("Sync request had unexpected status: {}", status);
 					},
