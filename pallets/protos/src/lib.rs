@@ -663,6 +663,18 @@ pub mod pallet {
 
 			offchain::http_request_add_header(request, "Content-Type", "application/json").unwrap();
 
+			// TODO
+			/*
+			query {
+				lockEntities(where: {id_gt: "6544734-9-31"}) {
+					id
+					owner
+					amount
+					lock
+				}
+			}
+			*/
+
 			let query = b"{ \"query\": \"{lockEntities(first: 5) {id owner amount lock}}\"}";
 			offchain::http_request_write_body(request, query, None).unwrap();
 
