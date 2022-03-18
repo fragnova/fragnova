@@ -138,13 +138,13 @@ pub struct Proto<TAccountId, TBlockNumber> {
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct EthStakeUpdate<TPublic> {
+pub struct EthStakeUpdate<TPublic, TBalance> {
 	pub public: TPublic,
-	pub amount: Compact<u128>,
+	pub amount: TBalance,
 	pub account: H160,
 }
 
-impl<T: SigningTypes> SignedPayload<T> for EthStakeUpdate<T::Public> {
+impl<T: SigningTypes, TBalance: Encode> SignedPayload<T> for EthStakeUpdate<T::Public, TBalance> {
 	fn public(&self) -> T::Public {
 		self.public.clone()
 	}
@@ -155,6 +155,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
+	use hex::FromHex;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	use sp_runtime::{
 		offchain::HttpRequestStatus, traits::AccountIdConversion, SaturatedConversion,
@@ -233,6 +234,9 @@ pub mod pallet {
 		T::AccountId,
 		(T::Balance, T::BlockNumber),
 	>;
+
+	#[pallet::storage]
+	pub type EthLockedFrag<T: Config> = StorageMap<_, Blake2_128Concat, H160, T::Balance>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -717,7 +721,7 @@ pub mod pallet {
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn internal_update_stake(
 			origin: OriginFor<T>,
-			_data: EthStakeUpdate<T::Public>,
+			_data: EthStakeUpdate<T::Public, T::Balance>,
 			_signature: T::Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
@@ -777,13 +781,18 @@ pub mod pallet {
 								let id = record["id"].as_str().unwrap();
 								log::trace!("Recording lock stake for {}", id);
 
-								// TODO send internal transaction to updated state
+								let account = &record["owner"].as_str().unwrap()[2..];
+								let account = <[u8; 20]>::from_hex(account).unwrap();
+
+								let amount = record["amount"].as_str().unwrap();
+								let amount = amount.parse::<u128>().unwrap();
+
 								if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
 									.send_unsigned_transaction(
-										|account| EthStakeUpdate {
-											public: account.public.clone(),
-											amount: Compact(0),
-											account: H160::default(),
+										|pub_key| EthStakeUpdate {
+											public: pub_key.public.clone(),
+											amount: amount.saturated_into(),
+											account: account.into(),
 										},
 										|payload, signature| Call::internal_update_stake {
 											data: payload,
