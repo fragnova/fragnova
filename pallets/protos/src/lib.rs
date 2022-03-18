@@ -29,7 +29,7 @@ use sp_chainblocks::Hash256;
 
 use scale_info::prelude::{format, string::String};
 
-use serde_json::{Result, Value};
+use serde_json::Value;
 
 use frame_support::PalletId;
 const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
@@ -127,15 +127,9 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
+	#[derive(Default)]
 	pub struct GenesisConfig {
 		pub upload_authorities: Vec<ecdsa::Public>,
-	}
-
-	#[cfg(feature = "std")]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self { upload_authorities: Vec::new() }
-		}
 	}
 
 	#[pallet::genesis_build]
@@ -708,6 +702,10 @@ pub mod pallet {
 							if lock {
 								let id = record["id"].as_str().unwrap();
 								log::trace!("Recording lock stake for {}", id);
+
+								// TODO send internal transaction to updated state
+
+								// update the last recorded event
 								if i == records.len() - 1 {
 									last_id_ref.set(&id.as_bytes().to_vec());
 								}
@@ -762,7 +760,7 @@ pub mod pallet {
 				);
 				for authority in authorities {
 					<UploadAuthorities<T>>::mutate(|authorities| {
-						authorities.insert(authority.clone());
+						authorities.insert(*authority);
 					});
 				}
 			}

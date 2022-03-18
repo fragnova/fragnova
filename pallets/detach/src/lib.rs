@@ -126,16 +126,10 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
+	#[derive(Default)]
 	pub struct GenesisConfig {
 		pub eth_authorities: Vec<ecdsa::Public>,
 		pub keys: Vec<ed25519::Public>,
-	}
-
-	#[cfg(feature = "std")]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self { eth_authorities: Vec::new(), keys: Vec::new() }
-		}
 	}
 
 	#[pallet::genesis_build]
@@ -499,10 +493,10 @@ pub mod pallet {
 								Ok((signature, nonce)) => {
 									// exec unsigned transaction from here
 									log::debug!(
-									"Executing unsigned transaction for detach; signature: {:x?}, nonce: {}",
-									signature,
-									nonce
-								);
+										"Executing unsigned transaction for detach; signature: {:x?}, nonce: {}",
+										signature,
+										nonce
+									);
 									if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
 										.send_unsigned_transaction(
 											|account| DetachInternalData {
