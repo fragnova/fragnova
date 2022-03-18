@@ -10,17 +10,64 @@ mod tests;
 mod benchmarking;
 
 mod weights;
+
+use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
+
+/// Defines application identifier for crypto keys of this module.
+///
+/// Every module that deals with signatures needs to declare its unique identifier for
+/// its crypto keys.
+/// When offchain worker is signing transactions it's going to request keys of type
+/// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
+/// The keys can be inserted manually via RPC (see `author_insertKey`).
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
+
+/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
+/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
+/// the types with this pallet-specific identifier.
+pub mod crypto {
+	use super::KEY_TYPE;
+	use sp_core::ed25519::Signature as Ed25519Signature;
+	use sp_runtime::{
+		app_crypto::{app_crypto, ed25519},
+		traits::Verify,
+		MultiSignature, MultiSigner,
+	};
+	app_crypto!(ed25519, KEY_TYPE);
+
+	pub struct DetachAuthId;
+
+	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for DetachAuthId {
+		type RuntimeAppPublic = Public;
+		type GenericSignature = sp_core::ed25519::Signature;
+		type GenericPublic = sp_core::ed25519::Public;
+	}
+
+	// implemented for mock runtime in test
+	impl frame_system::offchain::AppCrypto<<Ed25519Signature as Verify>::Signer, Ed25519Signature>
+		for DetachAuthId
+	{
+		type RuntimeAppPublic = Public;
+		type GenericSignature = sp_core::ed25519::Signature;
+		type GenericPublic = sp_core::ed25519::Public;
+	}
+}
+
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{ecdsa, H160, U256};
 use sp_io::{crypto as Crypto, hashing::blake2_256, offchain, transaction_index};
-use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
+use sp_runtime::offchain::storage::StorageValueRef;
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	vec,
 	vec::Vec,
+};
+
+use frame_system::offchain::{
+	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
+	SigningTypes,
 };
 
 pub use weights::WeightInfo;
@@ -90,6 +137,19 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub metadata: BTreeMap<Vec<u8>, Hash256>,
 }
 
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub struct EthStakeUpdate<TPublic> {
+	pub public: TPublic,
+	pub amount: Compact<u128>,
+	pub account: H160,
+}
+
+impl<T: SigningTypes> SignedPayload<T> for EthStakeUpdate<T::Public> {
+	fn public(&self) -> T::Public {
+		self.public.clone()
+	}
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -104,6 +164,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
+		+ CreateSignedTransaction<Call<Self>>
 		+ pallet_detach::Config
 		+ pallet_randomness_collective_flip::Config
 		+ pallet_assets::Config
@@ -650,6 +711,19 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Detached a proto from this chain by emitting an event that includes a signature.
+		/// The remote target chain can attach this proto by using this signature.
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn internal_update_stake(
+			origin: OriginFor<T>,
+			_data: EthStakeUpdate<T::Public>,
+			_signature: T::Signature,
+		) -> DispatchResult {
+			ensure_none(origin)?;
+
+			Ok(())
+		}
 	}
 
 	#[pallet::hooks]
@@ -704,6 +778,22 @@ pub mod pallet {
 								log::trace!("Recording lock stake for {}", id);
 
 								// TODO send internal transaction to updated state
+								if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
+									.send_unsigned_transaction(
+										|account| EthStakeUpdate {
+											public: account.public.clone(),
+											amount: Compact(0),
+											account: H160::default(),
+										},
+										|payload, signature| Call::internal_update_stake {
+											data: payload,
+											signature,
+										},
+									)
+									.ok_or("No local accounts accounts available.")
+								{
+									log::error!("Failed to send unsigned detach transaction with error: {:?}", e);
+								}
 
 								// update the last recorded event
 								if i == records.len() - 1 {
