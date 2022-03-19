@@ -42,6 +42,8 @@ fn initial_set_up_and_get_signature(
 	signature
 }
 
+/// Uploads Proto with data `pallet_protos::mock::DATA` (uploaded by `pallet_protos::mock::PUBLIC1`)
+/// @dev DO NOT CHANGE THIS FUNCTION
 fn initial_upload_and_get_signature() -> AuthData {
 	let data = DATA.as_bytes().to_vec();
 	let references = vec![];
@@ -482,5 +484,62 @@ fn internal_finalize_detach_should_works() {
 		));
 
 		assert!(<DetachedHashes<Test>>::contains_key(PROTO_HASH));
+	});
+}
+
+
+
+
+#[test]
+fn stake_should_not_work_if_proto_not_found() {
+	new_test_ext().execute_with(|| {
+		let data = DATA.as_bytes().to_vec();
+
+		let proto_hash = blake2_256(data.as_slice());
+		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
+		let auth_data = AuthData { signature, block: 1 };
+		assert_noop!(
+			ProtosPallet::stake(
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)), 
+				proto_hash, 
+				69),
+			Error::<Test>::ProtoNotFound
+		);
+	});
+}
+
+
+#[test]
+fn stake_should_not_work_if_amount_greater_than_balance() {
+	new_test_ext().execute_with(|| {
+		let data = DATA.as_bytes().to_vec();
+		initial_upload_and_get_signature();
+
+		let signature: sp_core::ecdsa::Signature = generate_signature("//Bob");
+		let auth_data = AuthData { signature, block: 1 };
+
+		assert_noop!(
+
+			ProtosPallet::stake(
+				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)), 
+				PROTO_HASH, 
+				69),
+
+			// ProtosPallet::patch(
+			// 	Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+			// 	auth_data,
+			// 	PROTO_HASH,
+			// 	Some(Compact(123)),
+			// 	Some(data),
+			// ),
+			Error::<Test>::InsufficientBalance
+		);
+	});
+}
+
+#[test]
+fn dummy() {
+	new_test_ext().execute_with(|| {
+		
 	});
 }
