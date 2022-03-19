@@ -14,51 +14,51 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [build-dependencies.substrate-wasm-builder]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '5.0.0-dev'
 
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '2.0.0'
+version = '3.0.0'
 
 [dependencies.frame-benchmarking]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 optional = true
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.frame-executive]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.frame-system-benchmarking]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 optional = true
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.frame-system-rpc-runtime-api]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.hex-literal]
@@ -68,131 +68,136 @@ version = '0.3.1'
 [dependencies.pallet-assets]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-aura]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-balances]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-grandpa]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-sudo]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-timestamp]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-transaction-payment]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-transaction-payment-rpc-runtime-api]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.scale-info]
 default-features = false
 features = ['derive']
-version = '1.0'
+version = '2.0'
 
 [dependencies.sp-api]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.sp-block-builder]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.sp-consensus-aura]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '0.10.0-dev'
 
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
-version = '4.1.0-dev'
+tag = 'monthly-2022-03'
+version = '5.0.0'
 
 [dependencies.sp-inherents]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.sp-offchain]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
-version = '4.0.0-dev'
+tag = 'monthly-2022-03'
+version = '5.0.0'
 
 [dependencies.sp-session]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.sp-transaction-pool]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.sp-version]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-protos]
 default-features = false
 path = '../pallets/protos'
+version = '0.0.1'
+
+[dependencies.pallet-protos-rpc-runtime-api]
+default-features = false
+path = '../pallets/protos/rpc/runtime-api'
 version = '0.0.1'
 
 [dependencies.pallet-fragments]
@@ -208,26 +213,53 @@ version = '0.0.1'
 [dependencies.pallet-indices]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-contracts]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
 
 [dependencies.pallet-contracts-primitives]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
-version = '4.0.0-dev'
+tag = 'monthly-2022-03'
+version = '5.0.0'
 
 [dependencies.pallet-contracts-rpc-runtime-api]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-01'
+tag = 'monthly-2022-03'
 version = '4.0.0-dev'
+
+[dependencies.pallet-multisig]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-03'
+version = '4.0.0-dev'
+
+[dependencies.pallet-proxy]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-03'
+version = '4.0.0-dev'
+
+[dependencies.pallet-identity]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-03'
+version = '4.0.0-dev'
+
+[dependencies.pallet-utility]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-03'
+version = '4.0.0-dev'
+
+[dependencies]
+sp-chainblocks = { path = '../primitives/chainblocks', default-features = false }
 
 [features]
 default = ['std']
@@ -244,6 +276,10 @@ runtime-benchmarks = [
     'pallet-protos/runtime-benchmarks',
 	'pallet-fragments/runtime-benchmarks',
     'pallet-detach/runtime-benchmarks',
+    'pallet-multisig/runtime-benchmarks',
+    'pallet-proxy/runtime-benchmarks',
+    'pallet-identity/runtime-benchmarks',
+    'pallet-utility/runtime-benchmarks',
 ]
 std = [
     'codec/std',
@@ -273,10 +309,15 @@ std = [
     'sp-transaction-pool/std',
     'sp-version/std',
     'pallet-protos/std',
+	'pallet-protos-rpc-runtime-api/std',
 	'pallet-fragments/std',
     'pallet-detach/std',
     'pallet-indices/std',
     'pallet-contracts/std',
     'pallet-contracts-primitives/std',
-    'pallet-contracts-rpc-runtime-api/std'
+    'pallet-contracts-rpc-runtime-api/std',
+    'pallet-multisig/std',
+    "pallet-proxy/std",
+    "pallet-identity/std",
+    "pallet-utility/std",
 ]

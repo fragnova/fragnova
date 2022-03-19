@@ -46,8 +46,7 @@ jobs:
           cargo check
 
       - name: Check Build for Benchmarking
-        run: >
-          pushd node &&
+        run: |
           cargo check --features=runtime-benchmarks
 
       - name: Check Test

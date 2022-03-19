@@ -1,8 +1,8 @@
-//! Benchmarking setup for pallet-fragments
+//! Benchmarking setup for pallet-detach
 
 use super::*;
 #[allow(unused)]
-use crate::Pallet as Protos;
+use crate::Pallet as Detach;
 use frame_benchmarking::benchmarks;
 use frame_system::RawOrigin;
 
@@ -22,12 +22,12 @@ benchmarks! {
 
 	del_eth_auth {
 		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
-		Protos::<T>::add_eth_auth(RawOrigin::Root.into(), validator.clone())?;
+		Detach::<T>::add_eth_auth(RawOrigin::Root.into(), validator.clone())?;
 		assert!(EthereumAuthorities::<T>::get().contains(&validator));
 	}: _(RawOrigin::Root, validator.clone())
 	verify {
 		assert!(!EthereumAuthorities::<T>::get().contains(&validator));
 	}
 
-	impl_benchmark_test_suite!(Protos, crate::mock::new_test_ext(), crate::mock::Test);
+	impl_benchmark_test_suite!(Detach, crate::mock::new_test_ext(), crate::mock::Test);
 }

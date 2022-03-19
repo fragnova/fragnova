@@ -1,0 +1,46 @@
+[package]
+authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
+description = 'Protos Asset Store pallet.'
+edition = '2021'
+license = 'BUSL-1.1'
+name = 'pallet-protos-rpc-runtime-api'
+readme = 'README.md'
+version = '0.0.1'
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { version = "2.0", default-features = false, features = ["derive"] }
+sp-chainblocks = { path = '../../../../primitives/chainblocks', default-features = false }
+
+# Substrate Dependencies
+[dependencies.sp-api]
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-03'
+version = '4.0.0-dev'
+default-features = false
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-03'
+version = '5.0.0'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+tag = 'monthly-2022-03'
+version = '4.0.0-dev'
+
+
+[features]
+default = ["std"]
+std = [
+	"sp-api/std",
+	"codec/std",
+	"scale-info/std",
+	"sp-std/std",
+	"sp-runtime/std",
+]

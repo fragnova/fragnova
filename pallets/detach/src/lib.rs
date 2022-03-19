@@ -11,7 +11,7 @@ mod benchmarking;
 
 mod weights;
 
-use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
+use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, U256};
 
 
 /// Defines application identifier for crypto keys of this module.
@@ -58,14 +58,10 @@ pub mod crypto {
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-use codec::{Compact, Decode, Encode};
+use codec::{Decode, Encode};
 use sp_io::{crypto as Crypto, hashing::keccak_256, offchain_index};
 use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
-use sp_std::{
-	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
-	vec,
-	vec::Vec,
-};
+use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use sp_chainblocks::Hash256;
 
@@ -74,28 +70,6 @@ use frame_system::offchain::{
 	SigningTypes,
 };
 
-/// data required to submit a transaction.
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct ProtoValidation<Public, BlockNumber> {
-	block_number: BlockNumber,
-	public: Public,
-	proto_hash: Hash256,
-	result: bool,
-}
-
-impl<T: SigningTypes> SignedPayload<T> for ProtoValidation<T::Public, T::BlockNumber> {
-	fn public(&self) -> T::Public {
-		self.public.clone()
-	}
-}
-
-/// Types of tags that can be attached to a Proto-Fragment to describe it (e.g Code, Audio, Video etc.)
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub enum Tags {
-	Code,
-	Audio,
-	Image,
-}
 
 /// The Blockchains onto which a Proto-Fragment can be detached
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -130,59 +104,6 @@ impl<T: SigningTypes> SignedPayload<T> for DetachInternalData<T::Public> {
 	}
 }
 
-/// This is the original data that was used to validate the link, this data is produced off-chain, e.g. for ethereum it would be a validator account signing a message
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub enum LinkSource {
-	// Generally we just store this data, we don't verify it as we assume auth service did it.
-	// (Link signature, Linked block number, EIP155 Chain ID)
-	Evm(ecdsa::Signature, u64, U256),
-}
-
-/// Types of Assets that are linked to a Proto-Fragment (e.g an ERC-721 Contract etc.)
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub enum LinkedAsset {
-	// Ethereum (ERC721 Contract address, Token ID, Link source)
-	Erc721(H160, U256, LinkSource),
-}
-
-/// Types of Proto-Fragment Owner
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub enum ProtoOwner<TAccountId> {
-	// A regular account on this chain
-	User(TAccountId),
-	// An external asset not on this chain
-	ExternalAsset(LinkedAsset),
-}
-
-/// Struct that represents the digital signature (and other important information) given by the off-chain validator
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct AuthData {
-	pub signature: ecdsa::Signature,
-	pub block: u32,
-}
-
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
-pub struct Proto<TAccountId, TBlockNumber> {
-	/// Block number this proto was included in
-	pub block: TBlockNumber,
-	/// Plain hash of indexed data.
-	pub patches: Vec<Hash256>,
-	/// Base include cost, of referenced protos.
-	pub base_cost: Compact<u128>,
-	/// Include price of the proto.
-	/// If None, this proto can't be included into other protos
-	pub include_cost: Option<Compact<u128>>,
-	/// The original creator of the proto.
-	pub creator: TAccountId,
-	/// The current owner of the proto.
-	pub owner: ProtoOwner<TAccountId>,
-	/// References to other protos.
-	pub references: Vec<Hash256>,
-	/// Tags associated with this proto
-	pub tags: Vec<Tags>,
-	/// Metadata attached to the proto.
-	pub metadata: BTreeMap<Vec<u8>, Hash256>,
-}
 
 /// Struct that represents a Proto-Fragment that was detached (i.e exported) onto another Blockchain (e.g Ethereum)
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -241,6 +162,7 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	/// StorageValue that represents a list of `DetachRequests`
@@ -320,7 +242,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::add_upload_auth())]
+		#[pallet::weight(T::WeightInfo::add_eth_auth())]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -333,7 +255,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		#[pallet::weight(T::WeightInfo::del_upload_auth())]
+		#[pallet::weight(T::WeightInfo::del_eth_auth())]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -417,18 +339,18 @@ pub mod pallet {
 					{
 						pub_key
 					} else {
-						return InvalidTransaction::BadSigner.into();
+						return InvalidTransaction::BadSigner.into()
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
-					return InvalidTransaction::BadSigner.into();
+					return InvalidTransaction::BadSigner.into()
 				}
 				// most expensive bit last
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 				log::debug!("Sending detach finalization extrinsic");
 				ValidTransaction::with_tag_prefix("Protos-Detach")
@@ -488,9 +410,9 @@ pub mod pallet {
 							};
 
 							let values = match request.target_chain {
-								SupportedChains::EthereumMainnet
-								| SupportedChains::EthereumRinkeby
-								| SupportedChains::EthereumGoerli => {
+								SupportedChains::EthereumMainnet |
+								SupportedChains::EthereumRinkeby |
+								SupportedChains::EthereumGoerli => {
 									// check if we need to generate new ecdsa keys
 									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE);
 									let keys_ref =
@@ -545,7 +467,7 @@ pub mod pallet {
 										payload.extend(&chain_id_be[..]);
 										let mut target_account: [u8; 20] = [0u8; 20];
 										if request.target_account.len() != 20 {
-											return Err(FAILED);
+											return Err(FAILED)
 										}
 										target_account.copy_from_slice(&request.target_account[..]);
 										payload.extend(&target_account[..]);

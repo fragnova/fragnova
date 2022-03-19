@@ -1,6 +1,9 @@
 pub use crate as pallet_protos;
 use crate::*;
-use frame_support::{pallet_prelude::ConstU32, parameter_types};
+use frame_support::{
+	parameter_types,
+	traits::{ConstU32, ConstU64},
+};
 use frame_system as system;
 use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
@@ -35,12 +38,15 @@ frame_support::construct_runtime!(
 		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
+	pub StorageBytesMultiplier: u64 = 10;
 }
 
 impl system::Config for Test {
@@ -61,7 +67,7 @@ impl system::Config for Test {
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -102,9 +108,41 @@ where
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
-impl pallet_protos::Config for Test {
+impl pallet_balances::Config for Test {
+	type Balance = u64;
+	type DustRemoval = ();
+	type Event = Event;
+	type ExistentialDeposit = ConstU64<1>;
+	type AccountStore = System;
+	type WeightInfo = ();
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+}
+
+impl pallet_assets::Config for Test {
+	type Event = Event;
+	type Balance = u64;
+	type AssetId = u32;
+	type Currency = ();
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type AssetDeposit = ConstU32<1>;
+	type AssetAccountDeposit = ConstU32<10>;
+	type MetadataDepositBase = ConstU32<1>;
+	type MetadataDepositPerByte = ConstU32<1>;
+	type ApprovalDeposit = ConstU32<1>;
+	type StringLimit = ConstU32<50>;
+	type Freezer = ();
+	type WeightInfo = ();
+	type Extra = ();
+}
+
+impl Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
+	type StorageBytesMultiplier = StorageBytesMultiplier;
+	type FragToken = ConstU32<0>;
+	type StakeLockupPeriod = ConstU64<100800>; // one week
 }
 
 impl pallet_detach::Config for Test {

@@ -6,7 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use frame_support::traits::ConstU128;
+use frame_support::traits::{ConstU128, ConstU16, ConstU32, ConstU64};
 use frame_system::EnsureRoot;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -51,6 +51,8 @@ use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
+use pallet_protos::Tags;
+use sp_chainblocks::Hash256;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.
@@ -296,6 +298,7 @@ parameter_types! {
 	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
 	pub const TransactionByteFee: Balance = 1;
 	pub OperationalFeeMultiplier: u8 = 5;
+	pub StorageBytesMultiplier: u64 = 10;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
@@ -319,12 +322,68 @@ impl pallet_fragments::Config for Runtime {
 impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
+	type StorageBytesMultiplier = StorageBytesMultiplier;
+	type FragToken = ConstU32<0>;
+	// type StakeLockupPeriod = ConstU64<100800>; // one week
+	type StakeLockupPeriod = ConstU64<5>; // one week
 }
 
 impl pallet_detach::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_multisig::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type DepositBase = ConstU128<1>;
+	type DepositFactor = ConstU128<1>;
+	type MaxSignatories = ConstU16<3>;
+	type WeightInfo = ();
+}
+
+impl pallet_proxy::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU128<1>;
+	type ProxyDepositFactor = ConstU128<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type CallHasher = BlakeTwo256;
+	type MaxPending = ConstU32<2>;
+	type AnnouncementDepositBase = ConstU128<1>;
+	type AnnouncementDepositFactor = ConstU128<1>;
+}
+
+parameter_types! {
+	pub const MaxAdditionalFields: u32 = 2;
+	pub const MaxRegistrars: u32 = 20;
+}
+
+impl pallet_identity::Config for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+	type Slashed = ();
+	type BasicDeposit = ConstU128<10>;
+	type FieldDeposit = ConstU128<10>;
+	type SubAccountDeposit = ConstU128<10>;
+	type MaxSubAccounts = ConstU32<2>;
+	type MaxAdditionalFields = MaxAdditionalFields;
+	type MaxRegistrars = MaxRegistrars;
+	type RegistrarOrigin = EnsureRoot<AccountId>;
+	type ForceOrigin = EnsureRoot<AccountId>;
+	type WeightInfo = ();
+}
+
+impl pallet_utility::Config for Runtime {
+	type Event = Event;
+	type Call = Call;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = ();
 }
 
 impl frame_system::offchain::SigningTypes for Runtime {
@@ -428,7 +487,7 @@ parameter_types! {
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
-	type Balance = u128;
+	type Balance = Balance;
 	type AssetId = u32;
 	type Currency = Balances;
 	type ForceOrigin = EnsureRoot<AccountId>;
@@ -465,6 +524,10 @@ construct_runtime!(
 		Protos: pallet_protos,
 		Fragments: pallet_fragments,
 		Detach: pallet_detach,
+		Multisig: pallet_multisig,
+		Proxy: pallet_proxy,
+		Identity: pallet_identity,
+		Utility: pallet_utility,
 	}
 );
 
@@ -669,6 +732,12 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Tags> for Runtime {
+		fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
+			Protos::get_by_tag(tags)
+		}
+	}
+
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
 		fn benchmark_metadata(extra: bool) -> (
@@ -690,6 +759,10 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, pallet_fragments, Fragments);
 			list_benchmark!(list, extra, pallet_detach, Detach);
+			list_benchmark!(list, extra, pallet_multisig, Multisig);
+			list_benchmark!(list, extra, pallet_proxy, Proxy);
+			list_benchmark!(list, extra, pallet_identity, Identity);
+			list_benchmark!(list, extra, pallet_utility, Utility);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -731,6 +804,10 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_fragments, Fragments);
 			add_benchmark!(params, batches, pallet_detach, Detach);
+			add_benchmark!(params, batches, pallet_multisig, Multisig);
+			add_benchmark!(params, batches, pallet_proxy, Proxy);
+			add_benchmark!(params, batches, pallet_identity, Identity);
+			add_benchmark!(params, batches, pallet_utility, Utility);
 
 			Ok(batches)
 		}
