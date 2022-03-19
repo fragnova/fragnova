@@ -20,6 +20,7 @@ use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	vec,
 	vec::Vec,
+	boxed::Box
 };
 pub use weights::WeightInfo;
 
@@ -137,24 +138,10 @@ pub mod pallet {
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
 	#[pallet::storage]
-	pub type ProtosByTag<T: Config> = StorageNMap<
-		_,
-		(
-			NMapKey<Blake2_128Concat, Tags>,
-			NMapKey<Identity, T::BlockNumber>,
-			NMapKey<Identity, Hash256>
-		),
-		bool>;
+	pub type ProtosByTag<T: Config> = StorageMap<_, Blake2_128Concat, Tags, Vec<Hash256>>;
 
 	#[pallet::storage]
-	pub type ProtosByOwner<T: Config> = StorageNMap<
-		_,
-		(
-			NMapKey<Blake2_128Concat, ProtoOwner<T::AccountId>>,
-			NMapKey<Identity, T::BlockNumber>,
-			NMapKey<Identity, Hash256>
-		),
-		bool>;
+	pub type ProtosByOwner<T: Config> = StorageMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
@@ -303,10 +290,10 @@ pub mod pallet {
 
 			// store by tags
 			for tag in tags {
-				<ProtosByTag<T>>::insert((tag, current_block_number, proto_hash), true);
+				<ProtosByTag<T>>::append(tag, proto_hash);
 			}
 
-			<ProtosByOwner<T>>::insert((owner, current_block_number, proto_hash), true);
+			<ProtosByOwner<T>>::append(owner, proto_hash);
 
 			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, data.len() as u32, proto_hash);
@@ -420,11 +407,14 @@ pub mod pallet {
 			// WRITING STATE FROM NOW
 
 			// remove proto from old owner
-			<ProtosByOwner<T>>::remove((proto.owner, proto.block, proto_hash));
+			<ProtosByOwner<T>>::mutate(proto.owner, |proto_by_owner| {
+				if let Some(list) = proto_by_owner {
+					list.retain(|current_hash| proto_hash != *current_hash);
+				}
+			});
 
 			// add proto to new owner
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
-			<ProtosByOwner<T>>::insert((new_owner_s.clone(), current_block_number, proto_hash), true);
+			<ProtosByOwner<T>>::append(new_owner_s.clone(), proto_hash);
 
 			// update proto
 			<Protos<T>>::mutate(&proto_hash, |proto| {
@@ -553,7 +543,8 @@ pub mod pallet {
 			}
 		}
 
-		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32, from: u32, desc: bool) -> Vec<Hash256> {
+		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32, from: u32, desc: bool) 
+		-> Option<Vec<Hash256>> {
 
 
 			// log::info!("inside get_by_tags");
@@ -562,26 +553,55 @@ pub mod pallet {
 			match owner {
 				Some(owner) => {
 
-					let iter_protos = <ProtosByOwner<T>>::iter_key_prefix((ProtoOwner::User(owner),))
-						.map(|(_block_number, proto)| proto);
+					let vector_protos = <ProtosByOwner<T>>::get(ProtoOwner::User(owner))?;
+
+					let iter_protos : Box<dyn Iterator<Item=Hash256>> = if desc {
+						Box::new(vector_protos.into_iter().rev())
+					}  else {
+						Box::new(vector_protos.into_iter())
+					};
+
+
+
 					let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
 					let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
 
-					iter_protos_limited.collect::<Vec<Hash256>>()
+					Some(iter_protos_limited.collect::<Vec<Hash256>>())
 
 				},
+				// TODO - I am not sure if this is how we want to implement `get_by_tags` for match `None`
+				// TODO - Clarify whether `from` needs to be used for match `None`
 				None => {
-					let mut remaining = limit;
+
+					let mut remaining = limit as usize;
 
 					let iter_protos = tags.into_iter().map(|tag| {
-						let vector_protos = <ProtosByTag<T>>::iter_key_prefix((tag,)).map(|(_block_number, tag)| tag)
-							.take(remaining as usize).collect::<Vec<Hash256>>();
-						remaining -= vector_protos.len() as u32;
-						vector_protos
-					}).flatten().skip(from as usize).take(limit as usize);
+						
+						let vec_protos =
+						if remaining <= 0 {
+							<Vec<Hash256>>::new()
+						}
+						else if let Some(vec_protos) = <ProtosByTag<T>>::get(&tag) {
 
+							let r = sp_std::cmp::min(vec_protos.len(), remaining);
 
-					iter_protos.collect::<Vec<Hash256>>()
+							if desc {
+								vec_protos[vec_protos.len() - r .. vec_protos.len()].to_vec()
+							} else {
+								vec_protos[..r].to_vec()
+							}
+						} else {
+							<Vec<Hash256>>::new()
+						};
+
+						remaining -= vec_protos.len();
+
+						vec_protos
+					
+					}).flatten();
+					let iter_protos_limited = iter_protos.skip(from as usize).take(limit as usize);
+					Some(iter_protos_limited.collect::<Vec<Hash256>>())
+
 				}
 
 			}
