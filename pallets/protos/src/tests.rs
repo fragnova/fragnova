@@ -1,4 +1,4 @@
-use crate::{mock::*, AuthData, Error, LinkedAsset, ProtoOwner, Protos, Tags, UploadAuthorities};
+use crate::{mock::*, AuthData, Error, LinkedAsset, ProtoOwner, Protos, Tags, UploadAuthorities, ProtosByTag};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use pallet_detach::{
@@ -8,6 +8,7 @@ use sp_chainblocks::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
+use sp_runtime::AccountId32;
 use std::sync::Arc;
 
 fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
@@ -60,6 +61,21 @@ fn initial_upload_and_get_signature() -> AuthData {
 		data,
 	));
 	auth_data
+}
+
+
+fn mint_fragtoken(address: Test::AccountId, amount: Test::Balance) {
+
+	let signed_account = Origin::signed(sp_core::ed25519::Public::from_raw(address));
+
+	assert_ok!(
+		Assets::mint(
+			Origin::root(),
+			FragToken::get(), 
+			signed_account, 
+			amount
+		)
+	);
 }
 
 #[test]
@@ -119,6 +135,8 @@ fn upload_should_works() {
 		));
 
 		assert!(<Protos<Test>>::contains_key(PROTO_HASH));
+
+		assert!(<ProtosByOwner<Test>>::contains_key(ProtoOwner::User(PUBLIC1)));
 	});
 }
 
@@ -488,21 +506,47 @@ fn internal_finalize_detach_should_works() {
 }
 
 
+#[test]
+fn stake_should_work() {
+	new_test_ext().execute_with(|| {
+
+		let data = DATA.as_bytes().to_vec();
+		initial_upload_and_get_signature();
+		
+		let amount = 69;
+		let signed_account = Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1));
+		mint_fragtoken(PUBLIC1, amount);
+
+		assert_ok!(
+			ProtosPallet::stake(
+				signed_account, 
+				PROTO_HASH, 
+				amount)
+		);
+
+		assert!(<ProtoStakes<Test>>::contains_key((PROTO_HASH, signed_account)));
+
+	});
+}
+
 
 
 #[test]
 fn stake_should_not_work_if_proto_not_found() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
-
 		let proto_hash = blake2_256(data.as_slice());
-		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
-		let auth_data = AuthData { signature, block: 1 };
+
+		let amount = 69;
+		let signed_account = Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1));
+		mint_fragtoken(PUBLIC1, amount);
+		
+
 		assert_noop!(
 			ProtosPallet::stake(
-				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)), 
+				signed_account, 
 				proto_hash, 
-				69),
+				amount),
 			Error::<Test>::ProtoNotFound
 		);
 	});
@@ -515,31 +559,16 @@ fn stake_should_not_work_if_amount_greater_than_balance() {
 		let data = DATA.as_bytes().to_vec();
 		initial_upload_and_get_signature();
 
-		let signature: sp_core::ecdsa::Signature = generate_signature("//Bob");
-		let auth_data = AuthData { signature, block: 1 };
-
 		assert_noop!(
 
 			ProtosPallet::stake(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)), 
 				PROTO_HASH, 
 				69),
-
-			// ProtosPallet::patch(
-			// 	Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-			// 	auth_data,
-			// 	PROTO_HASH,
-			// 	Some(Compact(123)),
-			// 	Some(data),
-			// ),
 			Error::<Test>::InsufficientBalance
 		);
 	});
 }
 
-#[test]
-fn dummy() {
-	new_test_ext().execute_with(|| {
-		
-	});
-}
+
+
