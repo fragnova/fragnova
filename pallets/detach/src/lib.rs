@@ -13,6 +13,7 @@ mod weights;
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, U256};
 
+
 /// Defines application identifier for crypto keys of this module.
 ///
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -33,6 +34,7 @@ pub mod crypto {
 		traits::Verify,
 		MultiSignature, MultiSigner,
 	};
+
 	app_crypto!(ed25519, KEY_TYPE);
 
 	pub struct DetachAuthId;
@@ -68,6 +70,8 @@ use frame_system::offchain::{
 	SigningTypes,
 };
 
+
+/// The Blockchains onto which a Proto-Fragment can be detached
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum SupportedChains {
 	EthereumMainnet,
@@ -75,12 +79,14 @@ pub enum SupportedChains {
 	EthereumGoerli,
 }
 
+/// A struct that represents a request to detach the Proto-Fragment (whose data's hash is `hash`) from this Blockchain to the Target Blockchain `target_chain` and into the account address `target_account` of the Target Blockchain
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct DetachRequest {
 	pub hash: Hash256,
 	pub target_chain: SupportedChains,
 	pub target_account: Vec<u8>, // an eth address or so
 }
+
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct DetachInternalData<TPublic> {
@@ -98,10 +104,17 @@ impl<T: SigningTypes> SignedPayload<T> for DetachInternalData<T::Public> {
 	}
 }
 
+
+/// Struct that represents a Proto-Fragment that was detached (i.e exported) onto another Blockchain (e.g Ethereum)
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct ExportData {
+	/// The Blockchain the Proto-Fragment was detached onto
 	chain: SupportedChains,
+	/// The account address (on the blockchain `SupportedChain`) that the Proto-Fragment was transfered into
 	owner: Vec<u8>,
+	/// For now we don't allow to re-attach but in the future we will,
+	/// this nonce is in 1:1 relationship with the remote chain,
+	/// so that e.g. if we detach on ethereum the message cannot be repeated and needs to go 1:1 with clamor
 	nonce: u64,
 }
 
@@ -127,6 +140,7 @@ pub mod pallet {
 
 	#[pallet::genesis_config]
 	pub struct GenesisConfig {
+		///
 		pub eth_authorities: Vec<ecdsa::Public>,
 		pub keys: Vec<ed25519::Public>,
 	}
@@ -151,6 +165,7 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
+	/// StorageValue that represents a list of `DetachRequests`
 	#[pallet::storage]
 	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
 
@@ -158,12 +173,16 @@ pub mod pallet {
 	pub type DetachNonces<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, SupportedChains, u64>;
 
+
 	#[pallet::storage]
 	pub type DetachedHashes<T: Config> = StorageMap<_, Identity, Hash256, ExportData>;
 
+	/// EthereumAuthorities is a StorageValue that keeps track of the set of ECDSA public keys of the Ethereum accounts on which a Proto-Fragment can be detached from this Blockchain
 	#[pallet::storage]
 	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
+	/// These are the public keys representing the actual keys that can Sign messages
+	/// to present to external chains to detach onto
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
@@ -194,6 +213,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		// Add validator public key to the list
+		/// Allows the Sudo Account to add an ECDSA public key to current set of ethereum account addresses on which a Proto-Fragment can be detached from this Blockchain
 		#[pallet::weight(T::WeightInfo::add_eth_auth())]
 		pub fn add_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -208,6 +228,7 @@ pub mod pallet {
 		}
 
 		// Remove validator public key to the list
+		/// Allows the Sudo Account to remove an ECDSA public key from the current set of ethereum account addresses on which a Proto-Fragment can be detached from this Blockchain
 		#[pallet::weight(T::WeightInfo::del_eth_auth())]
 		pub fn del_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -372,6 +393,8 @@ pub mod pallet {
 			}
 		}
 
+		/// Function detaches Proto-Fragment
+		/// NOTE: This function runs off-chain, so it can access the block state, but cannot preform any alterations. More specifically alterations are not forbidden, but they are not persisted in any way
 		fn process_detach_requests() {
 			const FAILED: () = ();
 			let requests = StorageValueRef::persistent(b"fragments-detach-requests");
