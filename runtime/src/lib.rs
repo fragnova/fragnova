@@ -323,6 +323,7 @@ impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
+	/// "FRAG" Token is initialized with ID "0" in `chain_spec.rs`
 	type FragToken = ConstU32<0>;
 	// type StakeLockupPeriod = ConstU64<100800>; // one week
 	type StakeLockupPeriod = ConstU64<5>; // one week
