@@ -225,7 +225,7 @@ pub mod pallet {
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
-  
+
   /// Storage Map which keeps track of the Proto-Fragments by Tag type.
 	/// The key is the Tag type and the value is a list of the hash of a Proto-Fragment
 	// Not ideal but to have it iterable...
@@ -880,7 +880,7 @@ pub mod pallet {
 									)
 									.ok_or("No local accounts accounts available.")
 								{
-									log::error!("Failed to send unsigned detach transaction with error: {:?}", e);
+									log::error!("Failed to send unsigned eth sync transaction with error: {:?}", e);
 								}
 
 								// update the last recorded event
