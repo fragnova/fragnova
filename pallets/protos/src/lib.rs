@@ -19,8 +19,7 @@ use sp_io::{crypto as Crypto, hashing::blake2_256, transaction_index};
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	vec,
-	vec::Vec,
-	boxed::Box
+	vec::Vec
 };
 pub use weights::WeightInfo;
 
@@ -555,18 +554,27 @@ pub mod pallet {
 
 					let vector_protos = <ProtosByOwner<T>>::get(ProtoOwner::User(owner))?;
 
-					let iter_protos : Box<dyn Iterator<Item=Hash256>> = if desc {
-						Box::new(vector_protos.into_iter().rev())
-					}  else {
-						Box::new(vector_protos.into_iter())
-					};
+					match desc {
+						true => {
+							let iter_protos = vector_protos.into_iter().rev();
 
+							let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
+							let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
 
+							Some(iter_protos_limited.collect::<Vec<Hash256>>())
 
-					let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
-					let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
+						},
+						false => {
+							let iter_protos = vector_protos.into_iter();
 
-					Some(iter_protos_limited.collect::<Vec<Hash256>>())
+							let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
+							let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
+
+							Some(iter_protos_limited.collect::<Vec<Hash256>>())
+
+						}
+					}
+
 
 				},
 				// TODO - I am not sure if this is how we want to implement `get_by_tags` for match `None`
@@ -583,11 +591,14 @@ pub mod pallet {
 						}
 						else if let Some(vec_protos) = <ProtosByTag<T>>::get(&tag) {
 
+							// Number of elements to retrieve from `vec_protos`
 							let r = sp_std::cmp::min(vec_protos.len(), remaining);
 
 							if desc {
+								// Return the last `r` elements of `vec_protos`
 								vec_protos[vec_protos.len() - r .. vec_protos.len()].to_vec()
 							} else {
+								// Return the first `r` elements of `vec_protos`
 								vec_protos[..r].to_vec()
 							}
 						} else {
@@ -599,7 +610,9 @@ pub mod pallet {
 						vec_protos
 					
 					}).flatten();
+
 					let iter_protos_limited = iter_protos.skip(from as usize).take(limit as usize);
+					
 					Some(iter_protos_limited.collect::<Vec<Hash256>>())
 
 				}
