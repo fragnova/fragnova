@@ -1,6 +1,6 @@
-use crate::{mock::*, AuthData, Error, LinkedAsset, ProtoOwner, Protos, Tags, UploadAuthorities, ProtosByTag};
+use crate::{mock::*, AuthData, Error, LinkedAsset, ProtoOwner, Protos, Tags, UploadAuthorities, ProtosByOwner, ProtoStakes, Config};
 use codec::{Compact, Encode};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::Get};
 use pallet_detach::{
 	DetachInternalData, DetachedHashes, EthereumAuthorities, SupportedChains, KEY_TYPE,
 };
@@ -8,7 +8,6 @@ use sp_chainblocks::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
-use sp_runtime::AccountId32;
 use std::sync::Arc;
 
 fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
@@ -64,18 +63,20 @@ fn initial_upload_and_get_signature() -> AuthData {
 }
 
 
-fn mint_fragtoken(address: Test::AccountId, amount: Test::Balance) {
+fn mint_fragtoken(account: <Test as frame_system::Config>::AccountId, amount: <Test as pallet_balances::Config>::Balance) {
 
-	let signed_account = Origin::signed(sp_core::ed25519::Public::from_raw(address));
+	let signed_root_key = Origin::signed(sp_core::ed25519::Public(ROOT_KEY));
 
 	assert_ok!(
 		Assets::mint(
-			Origin::root(),
-			FragToken::get(), 
-			signed_account, 
+			signed_root_key,
+			<<Test as Config>::FragToken as Get<_>>::get(), 
+			account, 
 			amount
 		)
 	);
+
+
 }
 
 #[test]
@@ -136,7 +137,7 @@ fn upload_should_works() {
 
 		assert!(<Protos<Test>>::contains_key(PROTO_HASH));
 
-		assert!(<ProtosByOwner<Test>>::contains_key(ProtoOwner::User(PUBLIC1)));
+		assert!(<ProtosByOwner<Test>>::contains_key(ProtoOwner::<<Test as frame_system::Config>::AccountId>::User(sp_core::ed25519::Public(PUBLIC1))));
 	});
 }
 
@@ -510,12 +511,13 @@ fn internal_finalize_detach_should_works() {
 fn stake_should_work() {
 	new_test_ext().execute_with(|| {
 
-		let data = DATA.as_bytes().to_vec();
 		initial_upload_and_get_signature();
 		
 		let amount = 69;
-		let signed_account = Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1));
-		mint_fragtoken(PUBLIC1, amount);
+		let account = sp_core::ed25519::Public::from_raw(PUBLIC1);
+		mint_fragtoken(account, amount);
+		
+		let signed_account = Origin::signed(account);
 
 		assert_ok!(
 			ProtosPallet::stake(
@@ -524,7 +526,7 @@ fn stake_should_work() {
 				amount)
 		);
 
-		assert!(<ProtoStakes<Test>>::contains_key((PROTO_HASH, signed_account)));
+		assert!(<ProtoStakes<Test>>::contains_key(PROTO_HASH, account));
 
 	});
 }
@@ -538,8 +540,10 @@ fn stake_should_not_work_if_proto_not_found() {
 		let proto_hash = blake2_256(data.as_slice());
 
 		let amount = 69;
-		let signed_account = Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1));
-		mint_fragtoken(PUBLIC1, amount);
+		let account = sp_core::ed25519::Public::from_raw(PUBLIC1);
+		mint_fragtoken(account, amount);
+
+		let signed_account = Origin::signed(account);
 		
 
 		assert_noop!(
@@ -556,7 +560,7 @@ fn stake_should_not_work_if_proto_not_found() {
 #[test]
 fn stake_should_not_work_if_amount_greater_than_balance() {
 	new_test_ext().execute_with(|| {
-		let data = DATA.as_bytes().to_vec();
+
 		initial_upload_and_get_signature();
 
 		assert_noop!(

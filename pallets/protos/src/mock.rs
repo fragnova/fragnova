@@ -2,7 +2,7 @@ pub use crate as pallet_protos;
 use crate::*;
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, ConstU64},
+	traits::{ConstU32, ConstU64, GenesisBuild},
 };
 use frame_system as system;
 use sp_core::{ed25519::Signature, H256};
@@ -18,6 +18,9 @@ pub const PROTO_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
 	51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
 ];
+
+pub const ROOT_KEY: [u8; 32] = [1u8; 32];
+
 pub const PUBLIC: [u8; 33] = [
 	3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79,
 	173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251,
@@ -60,7 +63,7 @@ impl system::Config for Test {
 	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = sp_core::ed25519::Public;
+	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type Event = Event;
@@ -77,6 +80,7 @@ impl system::Config for Test {
 }
 
 pub type Extrinsic = TestXt<Call, ()>;
+
 type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 impl frame_system::offchain::SigningTypes for Test {
@@ -151,7 +155,29 @@ impl pallet_detach::Config for Test {
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
-pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	t.into()
+// Inspired from https://github.com/paritytech/substrate/blob/master/frame/assets/src/mock.rs
+pub(crate) fn new_test_ext() -> sp_io::TestExternalities {
+	let mut storage = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+	let config: pallet_assets::GenesisConfig<Test> = pallet_assets::GenesisConfig {
+		assets: vec![
+			// id, owner, is_sufficient, min_balance
+			(0, sp_core::ed25519::Public(ROOT_KEY), true, 1),
+			(1, sp_core::ed25519::Public(ROOT_KEY), true, 1),
+		],
+		metadata: vec![
+			// id, name, symbol, decimals
+			(0, "Fragnova Network Token".into(), "FRAG".into(), 18),
+			(1, "Fragnova Exchange Token".into(), "NOVA".into(), 18),
+		],
+		accounts: vec![],
+	};
+
+	config.assimilate_storage(&mut storage).unwrap();
+
+	let mut ext: sp_io::TestExternalities = storage.into();
+	// // Clear thread local vars for https://github.com/paritytech/substrate/issues/10479.
+	// ext.execute_with(|| take_hooks());
+	// ext.execute_with(|| System::set_block_number(1));
+	ext
 }
