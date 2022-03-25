@@ -569,7 +569,7 @@ pub mod pallet {
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
-			let data_hash = blake2_256(&data.encode());
+			let data_hash = blake2_256(&data);
 			let signature_hash = blake2_256(
 				&[&proto_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()].concat(),
 			);
