@@ -176,7 +176,7 @@ fn patch_should_works() {
 
 		let data = immutable_data.clone();
 		let proto_hash = blake2_256(&immutable_data);
-		let data_hash = blake2_256(&data.encode());
+		let data_hash = blake2_256(&data);
 		let nonce: u64 = 1;
 		let signature: sp_core::ecdsa::Signature =
 			pair.sign(&[&proto_hash[..], &data_hash[..], &nonce.encode(), &1.encode()].concat());
