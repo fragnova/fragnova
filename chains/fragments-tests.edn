@@ -38,11 +38,13 @@
 
   ; detach
 
-  "//Bob" (Ed25519.PublicKey) (ToHex) (Log "Bobs") = .bob-hex-key
+  "//Bob" (Ed25519.PublicKey) = .bob-pub-key (ToHex) (Log "Bobs") = .bob-hex-key
   {"id" 1 "jsonrpc" "2.0" "method" "author_insertKey" "params" ["frag" "//Bob" .bob-hex-key]}
   (ToJson) (Http.Post rpc-server) (Log)
 
-  "fragments-frag-ecdsa-keys" (StringToBytes) (Ed25519.Sign "//Bob")
+  "fragments-frag-ecdsa-keys" (StringToBytes) >= .bob-msg
+  .bob-pub-key (AppendTo .bob-msg)
+  .bob-msg (Ed25519.Sign "//Bob")
   (Hash.Keccak-256) = .ecdsa-priv (ECDSA.PublicKey)
   (| (Slice :From 1)
      (Hash.Keccak-256)

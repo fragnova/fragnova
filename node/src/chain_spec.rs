@@ -28,7 +28,9 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 /// Generate a crypto pair from seed.
 pub fn get_from_seed_to_eth(seed: &str) -> ecdsa::Public {
 	let pair = ed25519::Pair::from_string(&format!("//{}", seed), None).unwrap();
-	let signature = pair.sign(b"fragments-frag-ecdsa-keys");
+	let mut message = b"fragments-frag-ecdsa-keys".to_vec();
+	message.append(&mut pair.public().to_vec()); // salt it with the public key
+	let signature = pair.sign(&message);
 	let hash = sp_core::keccak_256(&signature.0[..]);
 	let pair = ecdsa::Pair::from_seed_slice(&hash[..]).unwrap();
 	let public = pair.public();

@@ -258,13 +258,19 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// A Proto-Fragment was upload to the blockchain
+		/// A Proto-Fragment was uploaded
 		Uploaded(Hash256),
+		/// A Proto-Fragment was patched
 		Patched(Hash256),
+		/// A Proto-Fragment metadata has changed
 		MetadataChanged(Hash256, Vec<u8>),
+		/// A Proto-Fragment was detached
 		Detached(Hash256, Vec<u8>),
+		/// A Proto-Fragment was transferred
 		Transferred(Hash256, T::AccountId),
+		/// Stake was created
 		Staked(Hash256, T::AccountId, T::Balance),
+		/// Stake was unlocked
 		Unstaked(Hash256, T::AccountId, T::Balance),
 	}
 
@@ -818,13 +824,11 @@ pub mod pallet {
 			let signature_hash = blake2_256(message);
 
 			// Recover ecdsa public here
-			let recover = Crypto::secp256k1_ecdsa_recover(&signature.0, &signature_hash)
+			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
 				.ok()
 				.ok_or(Error::<T>::VerificationFailed)?;
-			let recover =
-				ecdsa::Public::from_full(&recover).map_err(|_| Error::<T>::VerificationFailed)?;
 			// this is how substrate handles ecdsa publics
-			let recover = blake2_256(&recover.0);
+			let recover = blake2_256(&recover);
 
 			let who2 = T::AccountId::decode(&mut &recover[..])
 				.map_err(|_| Error::<T>::VerificationFailed)?;
