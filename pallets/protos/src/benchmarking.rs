@@ -96,7 +96,7 @@ benchmarks! {
 		hex::decode_to_slice("C0FFEE", &mut data).unwrap();
 
 		Protos::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-	}: _(RawOrigin::Signed(caller), auth_data, proto_hash , Some(Compact(123)), Some(data.to_vec()))
+	}: _(RawOrigin::Signed(caller), auth_data, proto_hash , Some(Compact(123)), data.to_vec())
 	verify {
 		assert_last_event::<T>(Event::<T>::Patched(proto_hash).into())
 	}
