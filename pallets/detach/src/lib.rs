@@ -13,7 +13,6 @@ mod weights;
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, U256};
 
-
 /// Defines application identifier for crypto keys of this module.
 ///
 /// Every module that deals with signatures needs to declare its unique identifier for
@@ -70,7 +69,6 @@ use frame_system::offchain::{
 	SigningTypes,
 };
 
-
 /// The Blockchains onto which a Proto-Fragment can be detached
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum SupportedChains {
@@ -87,7 +85,6 @@ pub struct DetachRequest {
 	pub target_account: Vec<u8>, // an eth address or so
 }
 
-
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct DetachInternalData<TPublic> {
 	pub public: TPublic,
@@ -103,7 +100,6 @@ impl<T: SigningTypes> SignedPayload<T> for DetachInternalData<T::Public> {
 		self.public.clone()
 	}
 }
-
 
 /// Struct that represents a Proto-Fragment that was detached (i.e exported) onto another Blockchain (e.g Ethereum)
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -166,7 +162,6 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, SupportedChains, u64>;
-
 
 	#[pallet::storage]
 	pub type DetachedHashes<T: Config> = StorageMap<_, Identity, Hash256, ExportData>;
@@ -333,18 +328,18 @@ pub mod pallet {
 					{
 						pub_key
 					} else {
-						return InvalidTransaction::BadSigner.into()
+						return InvalidTransaction::BadSigner.into();
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
-					return InvalidTransaction::BadSigner.into()
+					return InvalidTransaction::BadSigner.into();
 				}
 				// most expensive bit last
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into()
+					return InvalidTransaction::BadProof.into();
 				}
 				log::debug!("Sending detach finalization extrinsic");
 				ValidTransaction::with_tag_prefix("Protos-Detach")
@@ -404,9 +399,9 @@ pub mod pallet {
 							};
 
 							let values = match request.target_chain {
-								SupportedChains::EthereumMainnet |
-								SupportedChains::EthereumRinkeby |
-								SupportedChains::EthereumGoerli => {
+								SupportedChains::EthereumMainnet
+								| SupportedChains::EthereumRinkeby
+								| SupportedChains::EthereumGoerli => {
 									// check if we need to generate new ecdsa keys
 									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE);
 									let keys_ref =
@@ -461,7 +456,7 @@ pub mod pallet {
 										payload.extend(&chain_id_be[..]);
 										let mut target_account: [u8; 20] = [0u8; 20];
 										if request.target_account.len() != 20 {
-											return Err(FAILED)
+											return Err(FAILED);
 										}
 										target_account.copy_from_slice(&request.target_account[..]);
 										payload.extend(&target_account[..]);

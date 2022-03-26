@@ -90,7 +90,6 @@ pub enum Tags {
 	Image,
 }
 
-
 /// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkSource {
@@ -225,8 +224,7 @@ pub mod pallet {
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
-
-  /// Storage Map which keeps track of the Proto-Fragments by Tag type.
+	/// Storage Map which keeps track of the Proto-Fragments by Tag type.
 	/// The key is the Tag type and the value is a list of the hash of a Proto-Fragment
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
@@ -337,7 +335,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-
 		/// Uploads a Proto-Fragment onto the Blockchain. To successfully upload a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
 		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
 		///
@@ -407,13 +404,13 @@ pub mod pallet {
 							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
 						} else {
 							// Stake not found
-							return Err(Error::<T>::StakeNotFound.into())
+							return Err(Error::<T>::StakeNotFound.into());
 						}
 					}
 				// Free to include, just continue
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into())
+					return Err(Error::<T>::ReferenceNotFound.into());
 				}
 			}
 
@@ -461,7 +458,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-
 		/// Patches (i.e modifies) the existing Proto-Fragment (whose hash is `proto_hash`) by appending the hash of `data` to the Vector field `patches` of the existing Proto-Fragment's Struct Instance.
 		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
 		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
@@ -475,7 +471,7 @@ pub mod pallet {
 		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Frament (e.g an ERC-721 Contract)
 		/// * `include_cost` (optional) -
 		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + if let Some(data) = data { data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get() } else { 0 })]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get())]
 		pub fn patch(
 			origin: OriginFor<T>,
 			auth: AuthData,
@@ -483,7 +479,7 @@ pub mod pallet {
 			proto_hash: Hash256,
 			include_cost: Option<Compact<u128>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
-			data: Option<Vec<u8>>,
+			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -503,7 +499,7 @@ pub mod pallet {
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
-			let data_hash = blake2_256(&data.encode());
+			let data_hash = blake2_256(&data);
 			let signature_hash = blake2_256(
 				&[&proto_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()].concat(),
 			);
@@ -520,7 +516,7 @@ pub mod pallet {
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
-				if let Some(data) = data {
+				if data.len() > 0 {
 					// No failures from here on out
 					proto.patches.push(data_hash);
 					// index mutable data for IPFS discovery as well
@@ -639,7 +635,7 @@ pub mod pallet {
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
-			let data_hash = blake2_256(&data.encode());
+			let data_hash = blake2_256(&data);
 			let signature_hash = blake2_256(
 				&[&proto_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()].concat(),
 			);
@@ -902,14 +898,11 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-
-
 		pub fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
 			<ProtosByTag<T>>::get(&tags)
 		}
 
-
-    /// Ensures that the  SECP256k1 ECDSA public key recovered from the digital signature and the blake2-256 hash of the message is of a designated upload authority
+		/// Ensures that the  SECP256k1 ECDSA public key recovered from the digital signature and the blake2-256 hash of the message is of a designated upload authority
 		/// Also ensures that the digital signature was not signed more than a certain number of blocks ago
 		/// * `block number` - The latest block number
 		/// * `data` - AuthData Struct which contains:
