@@ -543,7 +543,7 @@ pub mod pallet {
 		}
 
 		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32, from: u32, desc: bool) 
-		-> Option<Vec<Hash256>> {
+		-> Vec<Hash256> {
 
 
 			// log::info!("inside get_by_tags");
@@ -552,28 +552,29 @@ pub mod pallet {
 			match owner {
 				Some(owner) => {
 
-					let vector_protos = <ProtosByOwner<T>>::get(ProtoOwner::User(owner))?;
-
-					match desc {
-						true => {
-							let iter_protos = vector_protos.into_iter().rev();
-
-							let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
-							let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
-
-							Some(iter_protos_limited.collect::<Vec<Hash256>>())
-
-						},
-						false => {
-							let iter_protos = vector_protos.into_iter();
-
-							let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
-							let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
-
-							Some(iter_protos_limited.collect::<Vec<Hash256>>())
-
+					if let Some(vec_protos) = <ProtosByOwner<T>>::get(ProtoOwner::User(owner)) { // If owner exists
+						if desc {
+								let iter_protos = vec_protos.into_iter().rev();
+	
+								let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
+								let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
+	
+								iter_protos_limited.collect::<Vec<Hash256>>()
+	
+						} else {
+								let iter_protos = vec_protos.into_iter();
+	
+								let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
+								let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
+	
+								iter_protos_limited.collect::<Vec<Hash256>>()
 						}
+						
+					} else { // If owner cannot be found
+						<Vec<Hash256>>::new()
 					}
+
+										
 
 
 				},
@@ -589,7 +590,7 @@ pub mod pallet {
 						if remaining <= 0 {
 							<Vec<Hash256>>::new()
 						}
-						else if let Some(vec_protos) = <ProtosByTag<T>>::get(&tag) {
+						else if let Some(vec_protos) = <ProtosByTag<T>>::get(&tag) { // Get protos of tag type `tag`
 
 							// Number of elements to retrieve from `vec_protos`
 							let r = sp_std::cmp::min(vec_protos.len(), remaining);
@@ -601,7 +602,7 @@ pub mod pallet {
 								// Return the first `r` elements of `vec_protos`
 								vec_protos[..r].to_vec()
 							}
-						} else {
+						} else { // If no protos exist for tag type `tag`
 							<Vec<Hash256>>::new()
 						};
 
@@ -613,7 +614,7 @@ pub mod pallet {
 
 					let iter_protos_limited = iter_protos.skip(from as usize).take(limit as usize);
 					
-					Some(iter_protos_limited.collect::<Vec<Hash256>>())
+					iter_protos_limited.collect::<Vec<Hash256>>()
 
 				}
 

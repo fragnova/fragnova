@@ -14,7 +14,7 @@ pub use pallet_protos_rpc_runtime_api::ProtosApi as ProtosRuntimeApi;
 pub trait ProtosApi<BlockHash, Tags, AccountId> {
 
 	#[rpc(name = "protos_getByTags")]
-	fn get_by_tags(&self, tags: Vec<Tags>, owner: Option<AccountId>, limit: u32, from: u32, desc: bool, at: Option<BlockHash>) ->Result<Option<Vec<Hash256>>>;
+	fn get_by_tags(&self, tags: Vec<Tags>, owner: Option<AccountId>, limit: u32, from: u32, desc: bool, at: Option<BlockHash>) -> Result<Vec<Hash256>>;
 
 
 	#[rpc(name = "protos_getMetadataBatch")]
@@ -65,7 +65,7 @@ where
 	fn get_by_tags(&self, tags: Vec<Tags>,
 				   owner: Option<AccountId>,
 				   limit: u32, from: u32, desc: bool,
-				   at: Option<<Block as BlockT>::Hash>) -> Result<Option<Vec<Hash256>>> {
+				   at: Option<<Block as BlockT>::Hash>) -> Result<Vec<Hash256>> {
 
 		let api = self.client.runtime_api();
 
