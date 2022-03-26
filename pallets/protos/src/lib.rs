@@ -164,7 +164,8 @@ pub mod pallet {
 	use hex::FromHex;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	use sp_runtime::{
-		offchain::HttpRequestStatus, traits::AccountIdConversion, SaturatedConversion,
+		offchain::HttpRequestStatus, traits::AccountIdConversion, MultiSignature,
+		SaturatedConversion,
 	};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -791,8 +792,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Detached a proto from this chain by emitting an event that includes a signature.
-		/// The remote target chain can attach this proto by using this signature.
+		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn internal_update_stake(
 			origin: OriginFor<T>,
@@ -800,6 +800,38 @@ pub mod pallet {
 			_signature: T::Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
+
+			// TODO
+
+			Ok(())
+		}
+
+		/// TODO
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn query_stake_update(
+			origin: OriginFor<T>,
+			signature: ecdsa::Signature,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let message = b"TODO";
+			let signature_hash = blake2_256(message);
+
+			// Recover ecdsa public here
+			let recover = Crypto::secp256k1_ecdsa_recover(&signature.0, &signature_hash)
+				.ok()
+				.ok_or(Error::<T>::VerificationFailed)?;
+			let recover =
+				ecdsa::Public::from_full(&recover).map_err(|_| Error::<T>::VerificationFailed)?;
+			// this is how substrate handles ecdsa publics
+			let recover = blake2_256(&recover.0);
+
+			let who2 = T::AccountId::decode(&mut &recover[..])
+				.map_err(|_| Error::<T>::VerificationFailed)?;
+
+			ensure!(who == who2, Error::<T>::VerificationFailed);
+
+			// TODO
 
 			Ok(())
 		}
@@ -841,7 +873,7 @@ pub mod pallet {
 							let len = offchain::http_response_read_body(request, &mut buffer, None)
 								.unwrap();
 							if len == 0 {
-								break
+								break;
 							}
 							response_body.extend_from_slice(&buffer[..len as usize]);
 						}
