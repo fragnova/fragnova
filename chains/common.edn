@@ -154,7 +154,6 @@
 
   "0xC0FFEE" (HexToBytes) = .patch-data-bytes
   [.patch-data-bytes] (Substrate.Encode [nil]) >= .patch-data
-  "0x01" (HexToBytes) (PrependTo .patch-data)
 
   .fragment-hash >> .frag-hash-payload
   .patch-data (Hash.Blake2-256) >> .frag-hash-payload ; no data

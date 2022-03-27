@@ -15,7 +15,8 @@
     (Log "connecting")
     = .p2p-address
     "swarm" >> .ipfs-args
-    "connect" >> .ipfs-args
+    "peering" >> .ipfs-args
+    "add" >> .ipfs-args
     .p2p-address >> .ipfs-args
     (Maybe (-> "" (Process.Run "ipfs" .ipfs-args)))))
 
