@@ -55,7 +55,7 @@
   (ToHex) (Log "Bob ecdsa")
 
   .ecdsa-priv (ECDSA.PublicKey :Compressed true) (ToHex)
-  (Assert.Is "0x02623f76d2fc2ce0f2cef97c129e070a01c9e97d53ae465a119f9432e215a3a05f" true)
+  (Assert.Is "0x03512c109541bad2b0f326ef5f9e8f0469a2debdde6df06a686e7a79d85b6cc084" true)
 
   "0x46cf18c03116fdb76460307b066a96ab2567913f764473b53e152de6818bc3e45af9d3593b84e62aa4c24633ffd865ad86f65a5590aeba709b258b961540ec8501"
   (HexToBytes) = .sig-to-recover
