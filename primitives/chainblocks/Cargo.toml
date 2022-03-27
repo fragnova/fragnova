@@ -41,6 +41,12 @@ git = 'https://github.com/clamor-io/substrate.git'
 tag = 'clamor-21-03-2022'
 version = '4.0.0-dev'
 
+[dependencies.sp-io]
+default-features = false
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
+version = '5.0.0'
+
 [dependencies.scale-info]
 default-features = false
 features = ['derive']
@@ -62,5 +68,6 @@ std = [
 	"sp-core/std",
 	"sp-runtime-interface/std",
 	"sp-std/std",
+	"sp-io/std",
 	"fragments/std"
 ]

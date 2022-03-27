@@ -57,7 +57,9 @@ use codec::{Compact, Decode, Encode};
 pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_io::{crypto as Crypto, hashing::blake2_256, offchain, transaction_index};
+use sp_io::{
+	crypto as Crypto, hashing::blake2_256, hashing::keccak_256, offchain, transaction_index,
+};
 use sp_runtime::offchain::storage::StorageValueRef;
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
@@ -72,7 +74,7 @@ use frame_system::offchain::{
 
 pub use weights::WeightInfo;
 
-use sp_chainblocks::Hash256;
+use sp_chainblocks::{Hash256, http_json_post};
 
 use scale_info::prelude::{format, string::String};
 
@@ -823,17 +825,31 @@ pub mod pallet {
 			let message = b"TODO";
 			let signature_hash = blake2_256(message);
 
-			// Recover ecdsa public here
-			let recover = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &signature_hash)
-				.ok()
-				.ok_or(Error::<T>::VerificationFailed)?;
-			// this is how substrate handles ecdsa publics
-			let recover = blake2_256(&recover);
+			// ! Notice we do this all in WASM... SLOWNESS here can be a issue
+			let sig = libsecp256k1::Signature::parse_overflowing_slice(&signature.0[..64])
+				.map_err(|_| Error::<T>::VerificationFailed)?;
+			let ri = libsecp256k1::RecoveryId::parse(signature.0[64])
+				.map_err(|_| Error::<T>::VerificationFailed)?;
+			let msg = libsecp256k1::Message::parse_slice(&signature_hash[..])
+				.map_err(|_| Error::<T>::VerificationFailed)?;
+			let pub_key = libsecp256k1::recover(&msg, &sig, &ri)
+				.map_err(|_| Error::<T>::VerificationFailed)?;
+			let short_key = pub_key.serialize_compressed();
 
-			let who2 = T::AccountId::decode(&mut &recover[..])
+			// this is how substrate handles ecdsa publics
+			let short_key = blake2_256(&short_key[..]);
+
+			let who2 = T::AccountId::decode(&mut &short_key[..])
 				.map_err(|_| Error::<T>::VerificationFailed)?;
 
 			ensure!(who == who2, Error::<T>::VerificationFailed);
+
+			// ! Check passed, derive eth key and send to offchain worker
+
+			let eth_key = pub_key.serialize();
+			let eth_key = &eth_key[1..];
+			let eth_key = keccak_256(&eth_key[..]);
+			let eth_key = &eth_key[12..];
 
 			// TODO
 
@@ -852,83 +868,59 @@ pub mod pallet {
 				String::from("")
 			};
 
-			let request = offchain::http_request_start("POST",
-				"https://api.thegraph.com/subgraphs/id/QmPggztWjfJtSVkckhuh8N58iY4Vk5XUo1Y6p47GpVubU6",
-				&[]
-			).unwrap(); // hard fail if fails... it should not...
-
-			offchain::http_request_add_header(request, "Content-Type", "application/json").unwrap();
-
 			let query = format!("{{ \"query\": \"{{lockEntities(where: {{id_gt: \\\"{}\\\"}}) {{id owner amount lock}}}}\"}}", last_id);
 			log::trace!("query: {}", query);
-			offchain::http_request_write_body(request, query.as_bytes(), None).unwrap();
+			let response_body = http_json_post("https://api.thegraph.com/subgraphs/id/QmPggztWjfJtSVkckhuh8N58iY4Vk5XUo1Y6p47GpVubU6", query.as_bytes());
+			let response_body = if let Ok(response) = response_body {
+				response
+			} else {
+				log::error!("failed to get response from the graph");
+				return;
+			};
 
-			// send off the request
-			offchain::http_request_write_body(request, &[], None).unwrap();
-			let results = offchain::http_response_wait(&[request], None);
-			let status = results[0];
-			match status {
-				HttpRequestStatus::Finished(status) => match status {
-					200 => {
-						let mut response_body: Vec<u8> = Vec::new();
-						loop {
-							let mut buffer = Vec::new();
-							buffer.resize(1024, 0);
-							let len = offchain::http_response_read_body(request, &mut buffer, None)
-								.unwrap();
-							if len == 0 {
-								break;
-							}
-							response_body.extend_from_slice(&buffer[..len as usize]);
-						}
-						let response = String::from_utf8(response_body).unwrap();
-						log::trace!("response: {}", response);
+			let response = String::from_utf8(response_body).unwrap();
+			log::trace!("response: {}", response);
 
-						let v: Value = serde_json::from_str(&response).unwrap();
-						let records = v["data"]["lockEntities"].as_array().unwrap();
-						for (i, record) in records.iter().enumerate() {
-							let lock = record["lock"].as_bool().unwrap();
-							if lock {
-								let id = record["id"].as_str().unwrap();
-								log::trace!("Recording lock stake for {}", id);
+			let v: Value = serde_json::from_str(&response).unwrap();
+			let records = v["data"]["lockEntities"].as_array().unwrap();
+			for (i, record) in records.iter().enumerate() {
+				let lock = record["lock"].as_bool().unwrap();
+				if lock {
+					let id = record["id"].as_str().unwrap();
+					log::trace!("Recording lock stake for {}", id);
 
-								let account = &record["owner"].as_str().unwrap()[2..];
-								let account = <[u8; 20]>::from_hex(account).unwrap();
+					let account = &record["owner"].as_str().unwrap()[2..];
+					let account = <[u8; 20]>::from_hex(account).unwrap();
 
-								let amount = record["amount"].as_str().unwrap();
-								let amount = amount.parse::<u128>().unwrap();
+					let amount = record["amount"].as_str().unwrap();
+					let amount = amount.parse::<u128>().unwrap();
 
-								if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
-									.send_unsigned_transaction(
-										|pub_key| EthStakeUpdate {
-											public: pub_key.public.clone(),
-											amount: amount.saturated_into(),
-											account: account.into(),
-										},
-										|payload, signature| Call::internal_update_stake {
-											data: payload,
-											signature,
-										},
-									)
-									.ok_or("No local accounts accounts available.")
-								{
-									log::error!("Failed to send unsigned eth sync transaction with error: {:?}", e);
-								}
+					if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
+						.send_unsigned_transaction(
+							|pub_key| EthStakeUpdate {
+								public: pub_key.public.clone(),
+								amount: amount.saturated_into(),
+								account: account.into(),
+							},
+							|payload, signature| Call::internal_update_stake {
+								data: payload,
+								signature,
+							},
+						)
+						.ok_or("No local accounts accounts available.")
+					{
+						log::error!(
+							"Failed to send unsigned eth sync transaction with error: {:?}",
+							e
+						);
+						return;
+					}
 
-								// update the last recorded event
-								if i == records.len() - 1 {
-									last_id_ref.set(&id.as_bytes().to_vec());
-								}
-							}
-						}
-					},
-					_ => {
-						log::error!("Sync request had unexpected status: {}", status);
-					},
-				},
-				_ => {
-					log::error!("Sync request failed with status: {:?}", status);
-				},
+					// update the last recorded event
+					if i == records.len() - 1 {
+						last_id_ref.set(&id.as_bytes().to_vec());
+					}
+				}
 			}
 		}
 	}

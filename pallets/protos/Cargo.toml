@@ -99,6 +99,7 @@ sp-chainblocks = { path = '../../primitives/chainblocks', default-features = fal
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
 serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
+libsecp256k1 = { version = "0.7.0", default-features = false, features = ['static-context'] }
 
 [features]
 default = ['std']

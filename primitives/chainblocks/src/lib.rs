@@ -6,6 +6,8 @@
 #[cfg(feature = "std")]
 extern crate lazy_static;
 
+use sp_core::offchain::HttpRequestStatus;
+use sp_io::offchain;
 use sp_std::vec::Vec;
 
 pub type Hash256 = [u8; 32];
@@ -99,4 +101,49 @@ pub fn init() {
 	// let chain = cbl_env!(include_str!("validate_fragment.edn"));
 
 	// cblog!("Chainblocks initialized!");
+}
+
+pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
+	log::debug!("sp_chainblocks http_request called...");
+
+	let request =
+		offchain::http_request_start("POST", url, &[]).map_err(|_| "Failed to start request")?;
+
+	offchain::http_request_add_header(request, "Content-Type", "application/json")
+		.map_err(|_| "Failed to add header")?;
+
+	offchain::http_request_write_body(request, body, None).map_err(|_| "Failed to write body")?;
+
+	// send off the request
+	offchain::http_request_write_body(request, &[], None).unwrap();
+
+	let results = offchain::http_response_wait(&[request], None);
+	let status = results[0];
+
+	match status {
+		HttpRequestStatus::Finished(status) => match status {
+			200 => {
+				let mut response_body: Vec<u8> = Vec::new();
+				loop {
+					let mut buffer = Vec::new();
+					buffer.resize(1024, 0);
+					let len =
+						offchain::http_response_read_body(request, &mut buffer, None).unwrap();
+					if len == 0 {
+						break;
+					}
+					response_body.extend_from_slice(&buffer[..len as usize]);
+				}
+				Ok(response_body)
+			},
+			_ => {
+				log::error!("request had unexpected status: {}", status);
+				Err("request had unexpected status")
+			},
+		},
+		_ => {
+			log::error!("request failed with status: {:?}", status);
+			Err("request failed")
+		},
+	}
 }

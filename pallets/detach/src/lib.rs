@@ -417,12 +417,9 @@ pub mod pallet {
 										if !keys.contains(ed_key) {
 											let mut msg = b"fragments-frag-ecdsa-keys".to_vec();
 											msg.append(&mut ed_key.to_vec());
-											let signed = Crypto::ed25519_sign(
-												KEY_TYPE,
-												ed_key,
-												&msg,
-											)
-											.unwrap();
+											let signed =
+												Crypto::ed25519_sign(KEY_TYPE, ed_key, &msg)
+													.unwrap();
 											let key = keccak_256(&signed.0[..]);
 											let mut key_hex = [0u8; 64];
 											hex::encode_to_slice(key, &mut key_hex)
