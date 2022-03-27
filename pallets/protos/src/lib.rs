@@ -74,7 +74,7 @@ use frame_system::offchain::{
 
 pub use weights::WeightInfo;
 
-use sp_chainblocks::{Hash256, http_json_post};
+use sp_chainblocks::{http_json_post, Hash256};
 
 use scale_info::prelude::{format, string::String};
 
@@ -859,7 +859,66 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn offchain_worker(_n: T::BlockNumber) {
+		fn offchain_worker(n: T::BlockNumber) {
+			Self::sync_frag_stakes(n);
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		pub fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
+			<ProtosByTag<T>>::get(&tags)
+		}
+
+		/// Ensures that the  SECP256k1 ECDSA public key recovered from the digital signature and the blake2-256 hash of the message is of a designated upload authority
+		/// Also ensures that the digital signature was not signed more than a certain number of blocks ago
+		/// * `block number` - The latest block number
+		/// * `data` - AuthData Struct which contains:
+		///     * The digital signature
+		///     * The value of the latest block number when the digital signature was signed
+		/// * `signature_hash` - The blake2-256 hash of the message
+		fn ensure_auth(
+			block_number: T::BlockNumber,
+			data: &AuthData,
+			signature_hash: &[u8; 32],
+		) -> DispatchResult {
+			// check if the signature is valid
+			// we use and off chain services that ensure we are storing valid data
+			let recover =
+				Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, signature_hash)
+					.ok()
+					.ok_or(Error::<T>::VerificationFailed)?;
+			let recover = ecdsa::Public(recover);
+			ensure!(
+				<UploadAuthorities<T>>::get().contains(&recover),
+				Error::<T>::VerificationFailed
+			);
+
+			let max_delay = block_number + 100u32.into();
+			let signed_at: T::BlockNumber = data.block.into();
+			ensure!(signed_at < max_delay, Error::<T>::VerificationFailed);
+
+			Ok(())
+		}
+
+		fn initialize_upload_authorities(authorities: &[ecdsa::Public]) {
+			if !authorities.is_empty() {
+				assert!(
+					<UploadAuthorities<T>>::get().is_empty(),
+					"UploadAuthorities are already initialized!"
+				);
+				for authority in authorities {
+					<UploadAuthorities<T>>::mutate(|authorities| {
+						authorities.insert(*authority);
+					});
+				}
+			}
+		}
+
+		pub fn account_id() -> T::AccountId {
+			PROTOS_PALLET_ID.into_account()
+		}
+
+		pub fn sync_frag_stakes(_block_number: T::BlockNumber) {
 			let last_id_ref = StorageValueRef::persistent(b"protos_stake_sync_last_id");
 			let last_id: Option<Vec<u8>> = last_id_ref.get().unwrap_or_default();
 			let last_id = if let Some(last_id) = last_id {
@@ -922,61 +981,6 @@ pub mod pallet {
 					}
 				}
 			}
-		}
-	}
-
-	impl<T: Config> Pallet<T> {
-		pub fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
-			<ProtosByTag<T>>::get(&tags)
-		}
-
-		/// Ensures that the  SECP256k1 ECDSA public key recovered from the digital signature and the blake2-256 hash of the message is of a designated upload authority
-		/// Also ensures that the digital signature was not signed more than a certain number of blocks ago
-		/// * `block number` - The latest block number
-		/// * `data` - AuthData Struct which contains:
-		///     * The digital signature
-		///     * The value of the latest block number when the digital signature was signed
-		/// * `signature_hash` - The blake2-256 hash of the message
-		fn ensure_auth(
-			block_number: T::BlockNumber,
-			data: &AuthData,
-			signature_hash: &[u8; 32],
-		) -> DispatchResult {
-			// check if the signature is valid
-			// we use and off chain services that ensure we are storing valid data
-			let recover =
-				Crypto::secp256k1_ecdsa_recover_compressed(&data.signature.0, signature_hash)
-					.ok()
-					.ok_or(Error::<T>::VerificationFailed)?;
-			let recover = ecdsa::Public(recover);
-			ensure!(
-				<UploadAuthorities<T>>::get().contains(&recover),
-				Error::<T>::VerificationFailed
-			);
-
-			let max_delay = block_number + 100u32.into();
-			let signed_at: T::BlockNumber = data.block.into();
-			ensure!(signed_at < max_delay, Error::<T>::VerificationFailed);
-
-			Ok(())
-		}
-
-		fn initialize_upload_authorities(authorities: &[ecdsa::Public]) {
-			if !authorities.is_empty() {
-				assert!(
-					<UploadAuthorities<T>>::get().is_empty(),
-					"UploadAuthorities are already initialized!"
-				);
-				for authority in authorities {
-					<UploadAuthorities<T>>::mutate(|authorities| {
-						authorities.insert(*authority);
-					});
-				}
-			}
-		}
-
-		pub fn account_id() -> T::AccountId {
-			PROTOS_PALLET_ID.into_account()
 		}
 	}
 }
