@@ -860,7 +860,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(n: T::BlockNumber) {
-			Self::sync_frag_stakes(n);
+			// Self::sync_frag_stakes(n);
 		}
 	}
 
