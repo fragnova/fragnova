@@ -1,6 +1,6 @@
 [package]
 name = "sp-chainblocks"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Fragcolor Pte. Ltd. <ask@fragcolor.com>"]
 edition = "2021"
 license = "Apache-2.0"

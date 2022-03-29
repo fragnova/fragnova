@@ -187,14 +187,16 @@ fn testnet_genesis(
 			assets: vec![
 				// id, owner, is_sufficient, min_balance
 				(0, root_key.clone(), true, 1),
-				(1, root_key, true, 1),
+				(1, root_key.clone(), true, 1),
 			],
 			metadata: vec![
 				// id, name, symbol, decimals
-				(0, "Fragnova Network Token".into(), "FRAG".into(), 18),
-				(1, "Fragnova Exchange Token".into(), "NOVA".into(), 18),
+				(0, "Fragnova Network Token".into(), "FRAG".into(), 10),
+				(1, "Fragnova Exchange Token".into(), "NOVA".into(), 10),
 			],
-			accounts: vec![],
+			accounts: vec![
+				(1, root_key, (1000000000u128 * (10u128.pow(10)))),
+			],
 		},
 	}
 }
