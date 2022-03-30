@@ -1,4 +1,4 @@
-pub use crate as pallet_protos;
+pub use crate as pallet_frag;
 use crate::*;
 use frame_support::{
 	parameter_types,
@@ -35,9 +35,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
-		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
-		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
+		FragPallet: pallet_frag::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 	}
@@ -140,15 +138,10 @@ impl pallet_assets::Config for Test {
 impl Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
-	type StorageBytesMultiplier = StorageBytesMultiplier;
 	type FragToken = ConstU32<0>;
 	type StakeLockupPeriod = ConstU64<100800>; // one week
-}
-
-impl pallet_detach::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+	type EthChainId = ConstU64<5>; // goerli
+	type AuthorityId = pallet_frag::crypto::FragAuthId;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
