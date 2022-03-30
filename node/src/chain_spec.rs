@@ -162,7 +162,11 @@ fn testnet_genesis(
 		},
 		balances: BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 60.
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, (1000000000u128 * (10u128.pow(12)))))
+				.collect(),
 		},
 		aura: AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
@@ -191,12 +195,9 @@ fn testnet_genesis(
 			],
 			metadata: vec![
 				// id, name, symbol, decimals
-				(0, "Fragnova Network Token".into(), "FRAG".into(), 10),
-				(1, "Fragnova Exchange Token".into(), "NOVA".into(), 10),
+				(0, "Fragnova Network Token".into(), "FRAG".into(), 12),
 			],
-			accounts: vec![
-				(1, root_key, (1000000000u128 * (10u128.pow(10)))),
-			],
+			accounts: vec![],
 		},
 	}
 }
