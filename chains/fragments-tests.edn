@@ -25,12 +25,14 @@
   (Maybe (-> "" (Process.Run "ipfs" .ipfs-args-gc) nil))
 
   ; not ideal but we need to wait transaction is done and CI can be slow
-  (Pause 10.0)
+  (Pause 5.0)
+
+  (Msg "Downloading IPFS Payload")
 
   "block" >> .ipfs-args-block
   "get" >> .ipfs-args-block
   .frag-cid-str >> .ipfs-args-block
-  "" (Process.Run "ipfs" .ipfs-args-block :Timeout 240) (StringToBytes)
+  "" (Process.Run "ipfs" .ipfs-args-block :Timeout 120) (StringToBytes)
   (Brotli.Decompress)
   (Is .test-asset) (Log) (Assert.Is true)
 
