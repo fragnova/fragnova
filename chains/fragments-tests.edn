@@ -19,6 +19,15 @@
     "add" >> .ipfs-args
     .p2p-address >> .ipfs-args
     (Maybe (-> "" (Process.Run "ipfs" .ipfs-args)))))
+  ; also call connect
+  (ForEach
+   (->
+    (Log "connecting")
+    = .p2p-address
+    "swarm" >> .ipfs-args
+    "connect" >> .ipfs-args
+    .p2p-address >> .ipfs-args
+    (Maybe (-> "" (Process.Run "ipfs" .ipfs-args)))))
 
   "repo" >> .ipfs-args-gc
   "gc" >> .ipfs-args-gc
