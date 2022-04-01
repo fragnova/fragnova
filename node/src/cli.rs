@@ -7,6 +7,9 @@ pub struct Cli {
 
 	#[clap(flatten)]
 	pub run: RunCmd,
+
+	#[clap(short, long)]
+	pub geth_url: Option<String>,
 }
 
 #[derive(Debug, clap::Subcommand)]

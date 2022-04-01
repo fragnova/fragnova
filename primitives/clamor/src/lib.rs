@@ -3,9 +3,6 @@
 // #[cfg(feature = "std")]
 // extern crate chainblocks;
 
-#[cfg(feature = "std")]
-extern crate lazy_static;
-
 use sp_core::offchain::HttpRequestStatus;
 use sp_io::offchain;
 use sp_std::vec::Vec;
@@ -30,7 +27,12 @@ pub enum FragmentData {
 
 #[cfg(feature = "std")]
 mod details {
-	// use super::*;
+	use lazy_static::lazy_static;
+	use std::sync::Mutex;
+
+	lazy_static! {
+		pub static ref GETH_URL: Mutex<Option<Vec<u8>>> = Mutex::new(None);
+	}
 
 	// lazy_static! {
 	// 	static ref FETCH_EXTRINSIC: Mutex<Option<Box<dyn Fn(&Hash256) -> Option<Vec<u8>>>>> =
@@ -63,8 +65,13 @@ mod details {
 		// NODE.tick();
 	}
 
-	pub fn _get_geth_url() -> Vec<u8> {
-		b"http://localhost:8545".to_vec()
+	pub fn _get_geth_url() -> Option<Vec<u8>> {
+		if let Some(geth_url) = GETH_URL.lock().unwrap().as_ref() {
+			// well, we are doing an allocation every time we call this function here...
+			Some(geth_url.clone())
+		} else {
+			None
+		}
 	}
 }
 
@@ -77,8 +84,8 @@ mod details {
 		None
 	}
 
-	pub fn _get_geth_url() -> Vec<u8> {
-		b"http://localhost:8545".to_vec()
+	pub fn _get_geth_url() -> Option<Vec<u8>> {
+		None
 	}
 }
 
@@ -96,13 +103,17 @@ pub trait Clamor {
 		true
 	}
 
-	fn get_geth_url() -> Vec<u8> {
+	pub fn _get_geth_url() -> Option<Vec<u8>> {
 		details::_get_geth_url()
 	}
 }
 
 #[cfg(feature = "std")]
-pub fn init() {
+pub fn init(geth_url: Option<String>) {
+	if let Some(geth_url) = geth_url {
+		*details::GETH_URL.lock().unwrap() = Some(geth_url.into_bytes());
+	}
+
 	// use chainblocks::{cbl_env, cblog};
 
 	// details::init(fetch_extrinsic);
