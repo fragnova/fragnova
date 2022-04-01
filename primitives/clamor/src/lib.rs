@@ -103,7 +103,7 @@ pub trait Clamor {
 		true
 	}
 
-	pub fn _get_geth_url() -> Option<Vec<u8>> {
+	fn get_geth_url() -> Option<Vec<u8>> {
 		details::_get_geth_url()
 	}
 }

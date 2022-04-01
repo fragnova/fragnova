@@ -78,7 +78,7 @@ use sp_clamor::{http_json_post, Hash256};
 
 use scale_info::prelude::{format, string::String};
 
-use serde_json::Value;
+use serde_json::{json, Value};
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct EthStakeUpdate<TPublic, TBalance> {
@@ -225,13 +225,20 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(n: T::BlockNumber) {
-			// Self::sync_frag_stakes(n);
+			Self::sync_frag_stakes(n);
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
 		pub fn sync_frag_stakes(_block_number: T::BlockNumber) {
-			let last_id_ref = StorageValueRef::persistent(b"protos_stake_sync_last_id");
+			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
+				String::from_utf8(geth).unwrap()
+			} else {
+				log::debug!("No geth url found, skipping sync");
+				return;
+			};
+
+			let last_id_ref = StorageValueRef::persistent(b"frag_sync_last_block");
 			let last_id: Option<Vec<u8>> = last_id_ref.get().unwrap_or_default();
 			let last_id = if let Some(last_id) = last_id {
 				String::from_utf8(last_id).unwrap()
@@ -239,9 +246,24 @@ pub mod pallet {
 				String::from("")
 			};
 
-			let query = format!("{{ \"query\": \"{{lockEntities(where: {{id_gt: \\\"{}\\\"}}) {{id owner amount lock}}}}\"}}", last_id);
-			log::trace!("query: {}", query);
-			let response_body = http_json_post("https://api.thegraph.com/subgraphs/id/QmPggztWjfJtSVkckhuh8N58iY4Vk5XUo1Y6p47GpVubU6", query.as_bytes());
+			let req = json!({
+				"jsonrpc": "2.0",
+				"method": "eth_getLogs",
+				"id": "0",
+				"params": [{
+					"fromBlock": "0x0",
+					"toBlock": "0x1",
+					"address": "0x0000000000000000000000000000000000000001",
+					"topics": [
+						"0x0000000000000000000000000000000000000000000000000000000000000001",
+						"0x0000000000000000000000000000000000000000000000000000000000000002",
+						"0x0000000000000000000000000000000000000000000000000000000000000003",
+					],
+				}]
+			});
+
+			let req = serde_json::to_string(&req).unwrap();
+			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes());
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -253,46 +275,47 @@ pub mod pallet {
 			log::trace!("response: {}", response);
 
 			let v: Value = serde_json::from_str(&response).unwrap();
-			let records = v["data"]["lockEntities"].as_array().unwrap();
-			for (i, record) in records.iter().enumerate() {
-				let lock = record["lock"].as_bool().unwrap();
-				if lock {
-					let id = record["id"].as_str().unwrap();
-					log::trace!("Recording lock stake for {}", id);
 
-					let account = &record["owner"].as_str().unwrap()[2..];
-					let account = <[u8; 20]>::from_hex(account).unwrap();
+			// let records = v["data"]["lockEntities"].as_array().unwrap();
+			// for (i, record) in records.iter().enumerate() {
+			// 	let lock = record["lock"].as_bool().unwrap();
+			// 	if lock {
+			// 		let id = record["id"].as_str().unwrap();
+			// 		log::trace!("Recording lock stake for {}", id);
 
-					let amount = record["amount"].as_str().unwrap();
-					let amount = amount.parse::<u128>().unwrap();
+			// 		let account = &record["owner"].as_str().unwrap()[2..];
+			// 		let account = <[u8; 20]>::from_hex(account).unwrap();
 
-					if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
-						.send_unsigned_transaction(
-							|pub_key| EthStakeUpdate {
-								public: pub_key.public.clone(),
-								amount: amount.saturated_into(),
-								account: account.into(),
-							},
-							|payload, signature| Call::internal_update_stake {
-								data: payload,
-								signature,
-							},
-						)
-						.ok_or("No local accounts accounts available.")
-					{
-						log::error!(
-							"Failed to send unsigned eth sync transaction with error: {:?}",
-							e
-						);
-						return;
-					}
+			// 		let amount = record["amount"].as_str().unwrap();
+			// 		let amount = amount.parse::<u128>().unwrap();
 
-					// update the last recorded event
-					if i == records.len() - 1 {
-						last_id_ref.set(&id.as_bytes().to_vec());
-					}
-				}
-			}
+			// 		if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
+			// 			.send_unsigned_transaction(
+			// 				|pub_key| EthStakeUpdate {
+			// 					public: pub_key.public.clone(),
+			// 					amount: amount.saturated_into(),
+			// 					account: account.into(),
+			// 				},
+			// 				|payload, signature| Call::internal_update_stake {
+			// 					data: payload,
+			// 					signature,
+			// 				},
+			// 			)
+			// 			.ok_or("No local accounts accounts available.")
+			// 		{
+			// 			log::error!(
+			// 				"Failed to send unsigned eth sync transaction with error: {:?}",
+			// 				e
+			// 			);
+			// 			return;
+			// 		}
+
+			// 		// update the last recorded event
+			// 		if i == records.len() - 1 {
+			// 			last_id_ref.set(&id.as_bytes().to_vec());
+			// 		}
+			// 	}
+			// }
 		}
 	}
 }
