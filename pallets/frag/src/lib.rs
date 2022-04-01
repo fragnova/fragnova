@@ -11,6 +11,9 @@ mod benchmarking;
 
 mod weights;
 
+const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f";
+const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
+
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
 
 /// Defines application identifier for crypto keys of this module.
@@ -247,48 +250,39 @@ pub mod pallet {
 
 			let last_block_ref = StorageValueRef::persistent(b"frag_sync_last_block");
 			let last_block: Option<Vec<u8>> = last_block_ref.get().unwrap_or_default();
-			let req = if let Some(last_block) = last_block {
-				json!({
-					"jsonrpc": "2.0",
-					"method": "eth_getLogs",
-					"id": "0",
-					"params": [{
-						"fromBlock": String::from_utf8(last_block).unwrap(),
-						"address": contract,
-						"topics": [
-							// [] to OR
-							["0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f", // Lock
-							"0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe"] // Unlock
-						],
-					}]
-				})
+			let last_block = if let Some(last_block) = last_block {
+				String::from_utf8(last_block).unwrap()
 			} else {
-				json!({
-					"jsonrpc": "2.0",
-					"method": "eth_getLogs",
-					"id": "0",
-					"params": [{
-						"address": contract,
-						"topics": [
-							// [] to OR
-							["0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f", // Lock
-							"0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe"] // Unlock
-						],
-					}]
-				})
+				String::from("0x0")
 			};
 
+			let req = json!({
+				"jsonrpc": "2.0",
+				"method": "eth_getLogs",
+				"id": "0",
+				"params": [{
+					"fromBlock": last_block,
+					"address": contract,
+					"topics": [
+						// [] to OR
+						[LOCK_EVENT, UNLOCK_EVENT]
+					],
+				}]
+			});
+
 			let req = serde_json::to_string(&req).unwrap();
+			log::trace!("Request: {}", req);
+
 			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes());
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				log::error!("failed to get response from geth");
+				log::error!("Failed to get response from geth");
 				return;
 			};
 
 			let response = String::from_utf8(response_body).unwrap();
-			log::trace!("response: {}", response);
+			log::trace!("Response: {}", response);
 
 			let v: Value = serde_json::from_str(&response).unwrap();
 
