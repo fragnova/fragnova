@@ -238,36 +238,52 @@ pub mod pallet {
 				return;
 			};
 
-			let last_id_ref = StorageValueRef::persistent(b"frag_sync_last_block");
-			let last_id: Option<Vec<u8>> = last_id_ref.get().unwrap_or_default();
-			let last_id = if let Some(last_id) = last_id {
-				String::from_utf8(last_id).unwrap()
+			let contract = if let Some(contract) = sp_clamor::clamor::get_eth_contract() {
+				String::from_utf8(contract).unwrap()
 			} else {
-				String::from("")
+				log::debug!("No contract address found, skipping sync");
+				return;
 			};
 
-			let req = json!({
-				"jsonrpc": "2.0",
-				"method": "eth_getLogs",
-				"id": "0",
-				"params": [{
-					"fromBlock": "0x0",
-					"toBlock": "0x1",
-					"address": "0x0000000000000000000000000000000000000001",
-					"topics": [
-						"0x0000000000000000000000000000000000000000000000000000000000000001",
-						"0x0000000000000000000000000000000000000000000000000000000000000002",
-						"0x0000000000000000000000000000000000000000000000000000000000000003",
-					],
-				}]
-			});
+			let last_block_ref = StorageValueRef::persistent(b"frag_sync_last_block");
+			let last_block: Option<Vec<u8>> = last_block_ref.get().unwrap_or_default();
+			let req = if let Some(last_block) = last_block {
+				json!({
+					"jsonrpc": "2.0",
+					"method": "eth_getLogs",
+					"id": "0",
+					"params": [{
+						"fromBlock": String::from_utf8(last_block).unwrap(),
+						"address": contract,
+						"topics": [
+							// [] to OR
+							["0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f", // Lock
+							"0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe"] // Unlock
+						],
+					}]
+				})
+			} else {
+				json!({
+					"jsonrpc": "2.0",
+					"method": "eth_getLogs",
+					"id": "0",
+					"params": [{
+						"address": contract,
+						"topics": [
+							// [] to OR
+							["0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f", // Lock
+							"0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe"] // Unlock
+						],
+					}]
+				})
+			};
 
 			let req = serde_json::to_string(&req).unwrap();
 			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes());
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				log::error!("failed to get response from the graph");
+				log::error!("failed to get response from geth");
 				return;
 			};
 
@@ -312,7 +328,7 @@ pub mod pallet {
 
 			// 		// update the last recorded event
 			// 		if i == records.len() - 1 {
-			// 			last_id_ref.set(&id.as_bytes().to_vec());
+			// 			last_block_ref.set(&id.as_bytes().to_vec());
 			// 		}
 			// 	}
 			// }
