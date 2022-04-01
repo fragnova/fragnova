@@ -62,6 +62,10 @@ mod details {
 		// VAR.lock().unwrap().update(data);
 		// NODE.tick();
 	}
+
+	pub fn _get_geth_url() -> Vec<u8> {
+		b"http://localhost:8545".to_vec()
+	}
 }
 
 #[cfg(not(feature = "std"))]
@@ -72,17 +76,28 @@ mod details {
 	pub fn _fetch_extrinsic(hash: &Hash256) -> Option<Vec<u8>> {
 		None
 	}
+
+	pub fn _get_geth_url() -> Vec<u8> {
+		b"http://localhost:8545".to_vec()
+	}
 }
 
 #[sp_runtime_interface::runtime_interface]
-pub trait Chainblocks {
+pub trait Clamor {
+	// these are called NATIVE from even WASM
+	// that's the deal
+
 	fn say_hello_world(data: &str) {
 		details::_say_hello_world(data);
 	}
 
 	fn on_new_fragment(_fragment_hash: &Hash256) -> bool {
-		log::debug!("sp_chainblocks on_new_fragment called...");
+		log::debug!("sp_clamor on_new_fragment called...");
 		true
+	}
+
+	fn get_geth_url() -> Vec<u8> {
+		details::_get_geth_url()
 	}
 }
 
@@ -104,7 +119,7 @@ pub fn init() {
 }
 
 pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
-	log::debug!("sp_chainblocks http_request called...");
+	log::debug!("sp_clamor http_request called...");
 
 	let request =
 		offchain::http_request_start("POST", url, &[]).map_err(|_| "Failed to start request")?;

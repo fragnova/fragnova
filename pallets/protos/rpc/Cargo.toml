@@ -16,7 +16,7 @@ jsonrpc-core = "18.0.0"
 jsonrpc-core-client = "18.0.0"
 jsonrpc-derive = "18.0.0"
 serde = { version = "1", features = ["derive"] }
-sp-chainblocks = { version = '0.1.0', path = '../../../primitives/chainblocks', default-features = false }
+sp-clamor = { version = '0.1.0', path = '../../../primitives/clamor', default-features = false }
 
 # Substrate Dependencies
 [dependencies.sp-api]

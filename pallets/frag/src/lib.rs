@@ -74,7 +74,7 @@ use frame_system::offchain::{
 
 pub use weights::WeightInfo;
 
-use sp_chainblocks::{http_json_post, Hash256};
+use sp_clamor::{http_json_post, Hash256};
 
 use scale_info::prelude::{format, string::String};
 
@@ -128,18 +128,6 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
-
-	// Staking management
-	// (Amount staked, Last stake time)
-	#[pallet::storage]
-	pub type ProtoStakes<T: Config> = StorageDoubleMap<
-		_,
-		Identity,
-		Hash256,
-		Blake2_128Concat,
-		T::AccountId,
-		(T::Balance, T::BlockNumber),
-	>;
 
 	#[pallet::storage]
 	pub type EthLockedFrag<T: Config> = StorageMap<_, Blake2_128Concat, H160, T::Balance>;

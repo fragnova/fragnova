@@ -26,7 +26,7 @@ use sp_std::{
 
 pub use weights::WeightInfo;
 
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 
 use frame_support::PalletId;
 const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");

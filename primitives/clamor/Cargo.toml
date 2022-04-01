@@ -1,5 +1,5 @@
 [package]
-name = "sp-chainblocks"
+name = "sp-clamor"
 version = "0.1.0"
 authors = ["Fragcolor Pte. Ltd. <ask@fragcolor.com>"]
 edition = "2021"

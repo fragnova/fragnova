@@ -5,7 +5,7 @@ use jsonrpc_core::{Error as RpcError, ErrorCode, Result};
 use jsonrpc_derive::rpc;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
 pub use pallet_protos_rpc_runtime_api::ProtosApi as ProtosRuntimeApi;

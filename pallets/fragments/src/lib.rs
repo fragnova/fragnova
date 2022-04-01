@@ -13,7 +13,7 @@ mod weights;
 
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 use sp_io::hashing::blake2_256;
 use sp_std::{vec, vec::Vec};
 pub use weights::WeightInfo;

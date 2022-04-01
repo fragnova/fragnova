@@ -29,7 +29,7 @@ version = '4.0.0-dev'
 log = { version = "0.4.14", default-features = false }
 jsonrpc-core = '18.0.0'
 clap = { version = "3.0", features = ["derive"] }
-sp-chainblocks = { version = '0.1.0', path = '../primitives/chainblocks' }
+sp-clamor = { version = '0.1.0', path = '../primitives/clamor' }
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/clamor-io/substrate.git'

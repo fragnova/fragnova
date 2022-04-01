@@ -4,7 +4,7 @@ use frame_support::{assert_noop, assert_ok};
 use pallet_detach::{
 	DetachInternalData, DetachedHashes, EthereumAuthorities, SupportedChains, KEY_TYPE,
 };
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};

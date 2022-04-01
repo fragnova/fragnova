@@ -52,7 +52,7 @@ pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
 use pallet_protos::Tags;
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.

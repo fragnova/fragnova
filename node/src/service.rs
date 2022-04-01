@@ -17,13 +17,11 @@ pub struct ExecutorDispatch;
 impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	/// Only enable the benchmarking host functions when we actually want to benchmark.
 	#[cfg(feature = "runtime-benchmarks")]
-	type ExtendHostFunctions = (
-		sp_chainblocks::chainblocks::HostFunctions,
-		frame_benchmarking::benchmarking::HostFunctions,
-	);
+	type ExtendHostFunctions =
+		(sp_clamor::chainblocks::HostFunctions, frame_benchmarking::benchmarking::HostFunctions);
 	/// Otherwise we only use the default Substrate host functions.
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type ExtendHostFunctions = sp_chainblocks::chainblocks::HostFunctions;
+	type ExtendHostFunctions = sp_clamor::clamor::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 		clamor_runtime::api::dispatch(method, data)
@@ -345,7 +343,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		);
 	}
 
-	sp_chainblocks::init();
+	sp_clamor::init();
 
 	network_starter.start_network();
 	Ok(task_manager)

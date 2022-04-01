@@ -62,7 +62,7 @@ use sp_io::{crypto as Crypto, hashing::keccak_256, offchain_index};
 use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 
 use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
