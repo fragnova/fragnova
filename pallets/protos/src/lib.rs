@@ -24,8 +24,6 @@ use sp_std::{
 	vec::Vec,
 };
 
-use frame_system::offchain::{CreateSignedTransaction, SignedPayload, SigningTypes};
-
 pub use weights::WeightInfo;
 
 use sp_chainblocks::Hash256;
@@ -95,19 +93,6 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub metadata: BTreeMap<Vec<u8>, Hash256>,
 }
 
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct EthStakeUpdate<TPublic, TBalance> {
-	pub public: TPublic,
-	pub amount: TBalance,
-	pub account: H160,
-}
-
-impl<T: SigningTypes, TBalance: Encode> SignedPayload<T> for EthStakeUpdate<T::Public, TBalance> {
-	fn public(&self) -> T::Public {
-		self.public.clone()
-	}
-}
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -120,7 +105,6 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
-		+ CreateSignedTransaction<Call<Self>>
 		+ pallet_detach::Config
 		+ pallet_randomness_collective_flip::Config
 		+ pallet_assets::Config
