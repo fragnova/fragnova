@@ -98,8 +98,6 @@ log = { version = "0.4.14", default-features = false }
 sp-chainblocks = { version = '0.1.0', path = '../../primitives/chainblocks', default-features = false }
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
-serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
-libsecp256k1 = { version = "0.7.0", default-features = false, features = ['static-context'] }
 
 [features]
 default = ['std']
