@@ -3,8 +3,9 @@
 // #[cfg(feature = "std")]
 // extern crate chainblocks;
 
+use codec::{Decode, Encode, Error as CodecError};
 use sp_core::offchain::HttpRequestStatus;
-use sp_io::offchain;
+use sp_io::{hashing::blake2_256, offchain};
 use sp_std::vec::Vec;
 
 pub type Hash256 = [u8; 32];
@@ -193,4 +194,14 @@ pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
 			Err("request failed")
 		},
 	}
+}
+
+pub fn get_locked_frag_account<TAccountId: Encode + Decode>(
+	who: &TAccountId,
+) -> Result<TAccountId, CodecError> {
+	// the idea is to use an account that users cannot access
+	let mut who = who.encode();
+	who.append(&mut b"frag-locked-account".to_vec());
+	let who = blake2_256(&who);
+	TAccountId::decode(&mut &who[..])
 }

@@ -11,8 +11,8 @@ mod benchmarking;
 
 mod weights;
 
-const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f";
-const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
+const LOCK_EVENT: &str = "0xeb49373c30c7ae230c318e69e8e8632f3831fc92d4a27cee08a8c91dd41ef03a";
+const UNLOCK_EVENT: &str = "0x16a32b1d5be5f34a614fa537e89a714d2db2ea522ef95c42ea2ae79a7f3b5a85";
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
 
@@ -83,6 +83,8 @@ use scale_info::prelude::{format, string::String};
 
 use serde_json::{json, Value};
 
+use ethabi::{ParamType, Token};
+
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct EthStakeUpdate<TPublic, TBalance> {
 	pub public: TPublic,
@@ -135,9 +137,16 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type EthLockedFrag<T: Config> = StorageMap<_, Blake2_128Concat, H160, T::Balance>;
 
+	#[pallet::storage]
+	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BTreeSet<H160>>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// A link happened between native and ethereum account.
+		Linked(T::AccountId, H160),
+		/// A link was removed between native and ethereum account.
+		Unlinked(T::AccountId, H160),
 		/// Stake was created
 		Staked(Hash256, T::AccountId, T::Balance),
 		/// Stake was unlocked
@@ -156,7 +165,7 @@ pub mod pallet {
 		/// Stake not found
 		StakeNotFound,
 		/// Reference not found
-		ReferenceNotFound,
+		LinkNotFound,
 		/// Not enough tokens to stake
 		InsufficientBalance,
 		/// Cannot unstake yet
@@ -168,6 +177,62 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// TODO
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn link_ethereum(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			let mut message = b"EVM2Fragnova".to_vec();
+			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
+			message.extend_from_slice(&sender.encode());
+			let message_hash = keccak_256(&message);
+
+			let recovered = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
+				.map_err(|_| Error::<T>::VerificationFailed)?;
+
+			let eth_key = &recovered[1..];
+			let eth_key = keccak_256(&eth_key[..]);
+			let eth_key = &eth_key[12..];
+			let eth_key = H160::from_slice(&eth_key[..]);
+
+			<EVMLinks<T>>::mutate(sender.clone(), |links| match links {
+				Some(links) => {
+					links.insert(eth_key);
+				},
+				_ => {
+					<EVMLinks<T>>::insert(sender.clone(), BTreeSet::from_iter(vec![eth_key]));
+				},
+			});
+
+			// also emit event
+			Self::deposit_event(Event::Linked(sender, eth_key));
+
+			Ok(())
+		}
+
+		/// TODO
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn unlink_ethereum(origin: OriginFor<T>, account: H160) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			<EVMLinks<T>>::mutate(sender.clone(), |links| {
+				if let Some(links) = links {
+					if links.remove(&account) {
+						Ok(())
+					} else {
+						Err(Error::<T>::LinkNotFound)
+					}
+				} else {
+					Err(Error::<T>::LinkNotFound)
+				}
+			})?;
+
+			// also emit event
+			Self::deposit_event(Event::Unlinked(sender, account));
+
+			Ok(())
+		}
+
 		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn internal_update_stake(
@@ -191,21 +256,13 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			let message = b"TODO";
-			let signature_hash = blake2_256(message);
+			let message_hash = keccak_256(message);
 
-			// ! Notice we do this all in WASM... SLOWNESS here can be a issue
-			let sig = libsecp256k1::Signature::parse_overflowing_slice(&signature.0[..64])
+			let recovered = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &message_hash)
 				.map_err(|_| Error::<T>::VerificationFailed)?;
-			let ri = libsecp256k1::RecoveryId::parse(signature.0[64])
-				.map_err(|_| Error::<T>::VerificationFailed)?;
-			let msg = libsecp256k1::Message::parse_slice(&signature_hash[..])
-				.map_err(|_| Error::<T>::VerificationFailed)?;
-			let pub_key = libsecp256k1::recover(&msg, &sig, &ri)
-				.map_err(|_| Error::<T>::VerificationFailed)?;
-			let short_key = pub_key.serialize_compressed();
 
 			// this is how substrate handles ecdsa publics
-			let short_key = blake2_256(&short_key[..]);
+			let short_key = blake2_256(&recovered[..]);
 
 			let who2 = T::AccountId::decode(&mut &short_key[..])
 				.map_err(|_| Error::<T>::VerificationFailed)?;
@@ -214,10 +271,10 @@ pub mod pallet {
 
 			// ! Check passed, derive eth key and send to offchain worker
 
-			let eth_key = pub_key.serialize();
-			let eth_key = &eth_key[1..];
-			let eth_key = keccak_256(&eth_key[..]);
-			let eth_key = &eth_key[12..];
+			// let eth_key = pub_key.serialize();
+			// let eth_key = &eth_key[1..];
+			// let eth_key = keccak_256(&eth_key[..]);
+			// let eth_key = &eth_key[12..];
 
 			// TODO
 
@@ -228,30 +285,32 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(n: T::BlockNumber) {
-			Self::sync_frag_stakes(n);
+			if let Err(error) = Self::sync_frag_stakes(n) {
+				log::error!("Error syncing frag stakes: {:?}", error);
+			}
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
-		pub fn sync_frag_stakes(_block_number: T::BlockNumber) {
+		pub fn sync_frag_stakes(_block_number: T::BlockNumber) -> Result<(), &'static str> {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
 			} else {
 				log::debug!("No geth url found, skipping sync");
-				return;
+				return Ok(()); // It is fine to have a node not syncing with eth
 			};
 
 			let contract = if let Some(contract) = sp_clamor::clamor::get_eth_contract() {
 				String::from_utf8(contract).unwrap()
 			} else {
 				log::debug!("No contract address found, skipping sync");
-				return;
+				return Ok(()); // It is fine to have a node not syncing with eth
 			};
 
 			let last_block_ref = StorageValueRef::persistent(b"frag_sync_last_block");
 			let last_block: Option<Vec<u8>> = last_block_ref.get().unwrap_or_default();
 			let last_block = if let Some(last_block) = last_block {
-				String::from_utf8(last_block).unwrap()
+				String::from_utf8(last_block).map_err(|_| "Invalid last block")?
 			} else {
 				String::from("0x0")
 			};
@@ -270,21 +329,39 @@ pub mod pallet {
 				}]
 			});
 
-			let req = serde_json::to_string(&req).unwrap();
+			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
 			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes());
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				log::error!("Failed to get response from geth");
-				return;
+				return Err("Failed to get response from geth");
 			};
 
-			let response = String::from_utf8(response_body).unwrap();
+			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
 			log::trace!("Response: {}", response);
 
-			let v: Value = serde_json::from_str(&response).unwrap();
+			let v: Value =
+				serde_json::from_str(&response).map_err(|_| "Invalid response - json parse")?;
+
+			let logs = v["result"].as_array().ok_or_else(|| "Invalid response - no result")?;
+			for log in logs {
+				let topics =
+					log["topics"].as_array().ok_or_else(|| "Invalid response - no topics")?;
+				let topic = topics[0].as_str().ok_or_else(|| "Invalid response - no topic")?;
+				let data = log["data"].as_str().ok_or_else(|| "Invalid response - no data")?;
+				let data = hex::decode(data).map_err(|_| "Invalid response - invalid data")?;
+				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256)], &data)
+					.map_err(|_| "Invalid response - invalid eth data")?;
+				let locked = match topic {
+					LOCK_EVENT => true,
+					UNLOCK_EVENT => false,
+					_ => return Err("Invalid topic"),
+				};
+			}
+
+			Ok(())
 
 			// let records = v["data"]["lockEntities"].as_array().unwrap();
 			// for (i, record) in records.iter().enumerate() {

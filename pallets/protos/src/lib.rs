@@ -26,7 +26,7 @@ use sp_std::{
 
 pub use weights::WeightInfo;
 
-use sp_clamor::Hash256;
+use sp_clamor::{get_locked_frag_account, Hash256};
 
 use frame_support::PalletId;
 const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
@@ -653,6 +653,7 @@ pub mod pallet {
 			use frame_support::traits::fungibles::Transfer;
 
 			let who = ensure_signed(origin.clone())?;
+			let who = get_locked_frag_account(&who).map_err(|_| Error::<T>::SystematicFailure)?;
 
 			// make sure the proto exists
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
