@@ -3,10 +3,16 @@
 (def transaction-version 1)
 (def sudo-index 7)
 (def sudo-call 0)
+;; Index of the Protos Pallet
 (def fragments-index 11)
 (def add-upload-auth-index 0)
+;; Index of the Upload Function in Protos Pallet
 (def upload-index 2)
+;; Index of the Patch Function in Protos Pallet
 (def patch-index 3)
+;; Index of the Set Metadata Function in Protos Pallet
+(def set-metadata-index 5)
+;; Index of the Detach Function in Protos Pallet
 (def detach-index 6)
 
 (defnode root)
@@ -76,8 +82,10 @@
   .signature (AppendTo .rpc-data)
   .extra-data (AppendTo .rpc-data)
   .call-data (AppendTo .rpc-data)
-  [.rpc-data] (Substrate.Encode [nil]) (ToHex) (Log "rpc hex") = .rpc-data-hex
+  [.rpc-data] (Substrate.Encode [nil]) (ToHex) = .rpc-data-hex
+  (| (ToBytes) (Log "rpc hex (pointer)")) ; the rpc hex for an image is so long it crashes the terminal! (so I am only only printing the memory address)
   {"id" 1 "jsonrpc" "2.0" "method" "author_submitExtrinsic" "params" [.rpc-data-hex]} (ToJson) (Http.Post rpc-server)
+  (Log "HTTP Response is")
   (FromJson))
 
 (defchain make-test-asset
@@ -97,11 +105,52 @@
   ;; .test-asset-payload
   )
 
+(defchain test-set-metadata
+  (| (Take 0) (ExpectString) = .frag-owner)
+  (| (Take 1) (ExpectBytes) = .frag-hash)
+  (| (Take 2) (ExpectBytes) = .data)
+  (| (Take 3) (ExpectString) = .metadata-key)
+  (| (Take 4) (ExpectInt) = .set-metadata-nonce)
+  (| (Take 5) (ExpectInt) = .frag-nonce)
+
+  .frag-hash >> .message-hash
+  .data (Hash.Blake2-256) >> .message-hash = .data-hash >= .data-cid
+  [.frag-nonce] (Substrate.Encode ["u64"]) >> .message-hash
+  [0] (Substrate.Encode ["u32"]) >> .message-hash ; block
+
+
+
+  .message-hash (Hash.Blake2-256) (| (ToHex) (Log "set_metadata message hash is")) (ECDSA.Sign "//Alice")
+
+  ;; .payload is a sequence that has all the arguments of the set_metadata extrinsic
+  ;; ¿Why isn't the ECDSA.Signature encoded?
+  (| (ToHex) (Log "AUTH SIGNATURE")) >= .payload
+  "//Alice" (ECDSA.PublicKey true) (ToHex) (Log "ALICE PUBLIC ECDSA")
+  [0] (Substrate.Encode ["u32"]) (AppendTo .payload) ; block
+  .frag-hash (AppendTo .payload)
+  [.metadata-key] (Substrate.Encode [nil]) (AppendTo .payload)
+  [.data] (Substrate.Encode [nil]) (AppendTo .payload)
+
+
+  ;; .payload is the arguments of the set_metadata extrinsic
+  [fragments-index set-metadata-index .payload] (Do make-calldata) = .set-metadata-call (Log "set-metadata-call")
+  [.frag-owner .set-metadata-call .set-metadata-nonce] (Do send-signed-extrinsic) (Log "set-metadata-call-result")
+
+  ;; to compose the V1 Cid, add this prefix to the proto hash: (str "z" (base58 "0x0155a0e40220"))
+  "0x0155a0e40220" (HexToBytes) (PrependTo .data-cid)
+  .data-cid (ToBase58) >= .data-cid-str
+  "z" (PrependTo .data-cid-str)
+  .data-cid-str (Log "Metadata CID")
+
+  .data-cid-str)
+
 (defchain test-upload-compressing
   (| (Take 0) (ExpectBytes) = .upload-data)
   (| (Take 1) (ExpectInt) = .upload-nonce)
   (| (Take 2) (ExpectInt) = .frag-nonce)
 
+
+  ;; .immutable is the proto data
   .upload-data (Brotli.Compress) (| (ToHex) (Log "TEST DATA")) = .immutable
 
   ; Vec - 0 len
@@ -117,35 +166,49 @@
   "0x00" (HexToBytes) >> .frag-hash-payload ; again no linked asset
   [.frag-nonce] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
   [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
-  .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Alice") 
+
+  ;; `authority_keys_from_seed ("Alice")` is one of the initial authorities (this is set in chain_spec.rs in `clamor`)
+  .frag-hash-payload (Hash.Blake2-256) (| (ToHex) (Log "upload message hash is")) (ECDSA.Sign "//Alice")
+
+
+  ;; .payload is a sequence that has all the arguments of the upload extrinsic
   (| (ToHex) (Log "AUTH SIGNATURE")) >= .payload
   "//Alice" (ECDSA.PublicKey true) (ToHex) (Log "ALICE PUBLIC ECDSA")
 
   ; block
   [0] (Substrate.Encode ["u32"]) (AppendTo .payload)
 
+  ;; `references` argument of upload extrinsic
   .no-refs (AppendTo .payload) ; refs
-  
+
+  ;; `tag` argument of upload extrinsic
   .one-tag (AppendTo .payload) ; tags
 
   "0x00" (HexToBytes)
+  ;; `linked_asset` argument of upload extrinsic
   ; Option None - Linked asset
   (AppendTo .payload)
+  ;; `include_cost` argument of upload extrinsic
   ; Option None - Include cost
   (AppendTo .payload)
 
+  ;; `data` argument of upload extrinsic
   [.immutable] (Substrate.Encode [nil]) (AppendTo .payload)
 
+  ;; to compose the V1 Cid, add this prefix to the proto hash: (str "z" (base58 "0x0155a0e40220"))
   "0x0155a0e40220" (HexToBytes) (PrependTo .frag-cid)
   .frag-cid (ToBase58) >= .frag-cid-str
   "z" (PrependTo .frag-cid-str)
-  .frag-cid-str (Log "CID")
+  .frag-cid-str (Log "Proto CID")
 
   .payload (Log)
 
+  ;; .payload is the arguments of the upload extrinsic
   [fragments-index upload-index .payload] (Do make-calldata) = .upload-call (| (ToHex) (Log "upload-call"))
-  ["//Dave" .upload-call .upload-nonce] (Do send-signed-extrinsic) (Log "upload-call-result")
-  [.frag-cid-str .fragment-hash])
+  ;; "//Dave" is the private key of an account
+  "//Dave" = .frag-owner
+  [.frag-owner .upload-call .upload-nonce] (Do send-signed-extrinsic) (Log "upload-call-result")
+  [.frag-cid-str .fragment-hash .frag-owner])
 
 (defchain test-patch
   (| (Take 0) (ExpectBytes) = .fragment-hash)

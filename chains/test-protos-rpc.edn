@@ -1,6 +1,6 @@
 (load-file "common.edn")
 
-(defchain add-asset
+(defchain add-dummy-proto-and-dummy-metadata
   = .add-asset-n (Log "processing asset")
 
   (| (Math.Add 1) = .add-asset-n-plus-1)
@@ -16,20 +16,18 @@
   [.frag-owner-outer .frag-hash-outer .image-data "image" .add-asset-n-plus-1 .add-asset-n-plus-1] (Do test-set-metadata)
 
   {"name" "monalisa" "desc" "iconic, priceless, renaissance art"} (ToJson) (ToBytes) = .json-data
-  [.frag-owner-outer .frag-hash-outer .json-data "json_description" .add-asset-n-plus-2 .add-asset-n-plus-2] (Do test-set-metadata))
+  [.frag-owner-outer .frag-hash-outer .json-data "json_description" .add-asset-n-plus-2 .add-asset-n-plus-2] (Do test-set-metadata)
+  )
 
 
 
 
-
-(defchain add-assets
-
-  ; add test assets in parallel
-  (vec (range 0 99)) (Math.Multiply 3)
-  (TryMany add-asset :Threads 4 :Coroutines 2))
+(defchain main 
+  0 (Do add-dummy-proto-and-dummy-metadata)
+  )
 
 (schedule root wait-port)
 (if (run root 0.1) nil (throw "wait-port failed"))
 
-(schedule root add-assets)
+(schedule root main)
 (if (run root 0.1) nil (throw "upload failed"))

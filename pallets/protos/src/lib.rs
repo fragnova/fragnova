@@ -6,6 +6,15 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod common;
+
+#[cfg(test)]
+mod get_by_tags;
+
+#[cfg(test)]
+mod get_metadata_batch;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
@@ -238,6 +247,9 @@ pub mod pallet {
 				.concat(),
 			);
 
+			log::info!("upload nonce is: {}", nonce);
+			log::info!("upload message hash is: {:?}", signature_hash);
+
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			<Pallet<T>>::ensure_auth(current_block_number, &auth, &signature_hash)?;
@@ -456,10 +468,13 @@ pub mod pallet {
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
-			let data_hash = blake2_256(&data.encode());
+			let data_hash = blake2_256(&data);
 			let signature_hash = blake2_256(
 				&[&proto_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()].concat(),
 			);
+
+			log::info!("set_metadata nonce is: {}", nonce);
+			log::info!("set_metadata message hash is: {:?}", signature_hash);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
@@ -546,28 +561,28 @@ pub mod pallet {
 		-> Vec<Hash256> {
 
 
-			// log::info!("inside get_by_tags");
-			// log::info!("tags: {:?}, owner: {:?}, limit: {}", tags, owner, limit);
+			log::info!("inside get_by_tags");
+			log::info!("tags: {:?}, owner: {:?}, limit: {}", tags, owner, limit);
 
 			match owner {
 				Some(owner) => {
 
 					if let Some(vec_protos) = <ProtosByOwner<T>>::get(ProtoOwner::User(owner)) { // If owner exists
 						if desc {
-								let iter_protos = vec_protos.into_iter().rev();
-	
-								let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
-								let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
-	
-								iter_protos_limited.collect::<Vec<Hash256>>()
+							let iter_protos = vec_protos.into_iter().rev();
+
+							let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
+							let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
+
+							iter_protos_limited.collect::<Vec<Hash256>>()
 	
 						} else {
-								let iter_protos = vec_protos.into_iter();
-	
-								let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
-								let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
-	
-								iter_protos_limited.collect::<Vec<Hash256>>()
+							let iter_protos = vec_protos.into_iter();
+
+							let iter_protos_filtered = iter_protos.filter(|proto| Self::is_proto_having_any_tags(proto, &tags));
+							let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
+
+							iter_protos_limited.collect::<Vec<Hash256>>()
 						}
 						
 					} else { // If owner cannot be found
@@ -622,21 +637,32 @@ pub mod pallet {
 
 		}
 
+		/// Returns the values of the requested metadata keys for the requested Proto-Fragments 
+		/// - If a Proto-Fragment doen't exist at index i of `batch`, the returned Vector will have a `None` element at index i
+		/// - If a Metadata Key at index j of `keys` doesn't exist for a Proto-Fragment at index i of `batch`, the returned Vector will have a `None` element at index (i, j)
+		/// Note: The values of any metadata key is the hash digest of the metadata (not the actual metadata). To get the actual metadata, you need to use IPFS
+		/// 
+		/// 
+		/// # Arguments
+		/// 
+		/// * `batch` - The  Proto-Fragment IDs to query
+		/// * `keys` - The metadata keys to query
+		pub fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Option<Hash256>>>> { 
 
-		pub fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Option<Hash256>>>> {
+			log::info!("get_metadata_batch batch: {:?}", batch);
+			log::info!("get_metadata_batch keys: {:?}", keys);
 
 			batch.into_iter().map(|proto_hash| -> Option<Vec<Option<Hash256>>> {
 
-				// If proto doesn't exist, return None
-				let proto = <Protos<T>>::get(&proto_hash)?;
+				let proto = <Protos<T>>::get(&proto_hash)?; // If proto doesn't exist, return None
 
 				let mut vec_data_hash : Vec<Option<Hash256>> = Vec::new();
 
 				for key in &keys {
-					if let Some(optional_data_hash) = proto.metadata.get(key) {
-						vec_data_hash.push(Some(*optional_data_hash));
+					if let Some(data_hash) = proto.metadata.get(key) {
+						vec_data_hash.push(Some(*data_hash));
 					} else {
-						vec_data_hash.push(None);
+						vec_data_hash.push(None); // If metadata key doesn't exist, return None
 					}
 				}
 
