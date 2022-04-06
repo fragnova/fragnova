@@ -34,12 +34,12 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      - name: Run IPFS Test
-        run: |
-          cargo build
-          RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
-          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
-          kill %1
+      # - name: Run IPFS Test
+      #   run: |
+      #     cargo build
+      #     RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
+      #     docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
+      #     kill %1
 
       - name: Check Build
         run: |
