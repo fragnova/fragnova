@@ -18,7 +18,7 @@ pub trait ProtosApi<BlockHash, Tags, AccountId> {
 
 
 	#[rpc(name = "protos_getMetadataBatch")]
-	fn get_metadata_batch(&self, batch: Vec<Hash256>, keys: Vec<String>, at: Option<BlockHash>) -> Result<Vec<Option<Vec<Option<Hash256>>>>>;
+	fn get_metadata_batch(&self, batch: Vec<String>, keys: Vec<String>, at: Option<BlockHash>) -> Result<Vec<Option<Vec<Option<Hash256>>>>>;
 }
 
 /// An implementation of protos specific RPC methods.
@@ -82,16 +82,37 @@ where
 
 	}
 
-	fn get_metadata_batch(&self, batch: Vec<Hash256>, keys: Vec<String>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<Option<Vec<Option<Hash256>>>>> {
+	fn get_metadata_batch(&self, batch: Vec<String>, keys: Vec<String>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<Option<Vec<Option<Hash256>>>>> {
+		
 
-		let keys_bytes = keys.into_iter().map(|s| s.into_bytes()).collect::<Vec<Vec<u8>>>();
+		let batch : Result<Vec<Hash256>> = batch.into_iter().map(|s| -> Result<Hash256>  { 
+			let vector : Vec<u8>  = hex::decode(&s).map_err(|e| 
+				RpcError {
+					code: ErrorCode::InvalidParams,
+					message: "An element in `batch` is not a hexadecimal string".into(),
+					data: Some(format!("Hexadecical String: {:?}, Error: {:?}", s, e).into()),
+				}
+			)?;
+			let hash : Hash256 = vector.try_into().map_err(|e| 
+				RpcError {
+					code: ErrorCode::InvalidParams,
+					message: "A hexadecimal string in `batch` is not 32 bytes in length".into(),
+					data: Some(format!("Hexadecical String: {:?}, Error: {:?}", s, e).into()),
+				}
+			)?;
+			Ok(hash)
+		}).collect();
+
+		let batch = batch?;
+
+		let keys = keys.into_iter().map(|s| s.into_bytes()).collect::<Vec<Vec<u8>>>();
 
 		let api = self.client.runtime_api();
 
 		// If the block hash is not supplied in `at`, use the best block's hash
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-		api.get_metadata_batch(&at, batch, keys_bytes).map_err(|e| RpcError {
+		api.get_metadata_batch(&at, batch, keys).map_err(|e| RpcError {
 			code: ErrorCode::ServerError(Error::RuntimeError.into()),
 			message: "Unable to fetch data.".into(),
 			data: Some(format!("{:?}", e).into()),

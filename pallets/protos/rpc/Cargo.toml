@@ -17,6 +17,7 @@ jsonrpc-core-client = "18.0.0"
 jsonrpc-derive = "18.0.0"
 serde = { version = "1", features = ["derive"] }
 sp-chainblocks = { path = '../../../primitives/chainblocks', default-features = false }
+hex = "^0.4.3" 
 
 # Substrate Dependencies
 [dependencies.sp-api]
