@@ -9,12 +9,6 @@ mod tests;
 #[cfg(test)]
 mod common;
 
-#[cfg(test)]
-mod get_by_tags;
-
-#[cfg(test)]
-mod get_metadata_batch;
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 

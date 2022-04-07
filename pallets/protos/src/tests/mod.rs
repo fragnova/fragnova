@@ -425,3 +425,7 @@ fn internal_finalize_detach_should_works() {
 		assert!(<DetachedHashes<Test>>::contains_key(PROTO_HASH));
 	});
 }
+
+
+mod get_by_tags;
+mod get_metadata_batch;
