@@ -78,13 +78,25 @@ jobs:
   # Build documentation website
   #
   docs-website-build:
-    needs: [check]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 1
+      - name: Setup
+        run: |
+          sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
+      - name: Install Rustup
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup default stable
+          rustup update nightly
+          rustup update stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+
+      - uses: Swatinem/rust-cache@v1
       - name: Build website
         run: |
           cargo doc
