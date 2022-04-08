@@ -68,6 +68,7 @@ jobs:
           cd rpc
           npm install
           npm test
+          kill %1
           
 
 
