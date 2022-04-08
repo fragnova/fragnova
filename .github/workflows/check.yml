@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      -name: Test
+      - name: Test
         run: |
           ls -R
 
@@ -139,7 +139,7 @@ jobs:
   #         echo "::set-output name=ipfs_cid::$(cat response.json | jq .value.cid)"
 
 
-
+          
       # - name: Sync Cloudflare
       #   uses: nick-invision/retry@v2
       #   with:
