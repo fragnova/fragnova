@@ -19,127 +19,120 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Test
+      - name: Setup
         run: |
-          ls -R
+          sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
 
-  #     - name: Setup
-  #       run: |
-  #         sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
+      - name: Install Rustup
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup default stable
+          rustup update nightly
+          rustup update stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
 
-  #     - name: Install Rustup
-  #       run: |
-  #         curl https://sh.rustup.rs -sSf | sh -s -- -y
-  #         source ~/.cargo/env
-  #         rustup default stable
-  #         rustup update nightly
-  #         rustup update stable
-  #         rustup target add wasm32-unknown-unknown --toolchain nightly
+      - uses: Swatinem/rust-cache@v1
 
-  #     - uses: Swatinem/rust-cache@v1
+      # - name: Run IPFS Test
+      #   run: |
+      #     cargo build
+      #     RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
+      #     docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
+      #     kill %1
 
-  #     # - name: Run IPFS Test
-  #     #   run: |
-  #     #     cargo build
-  #     #     RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
-  #     #     docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
-  #     #     kill %1
+      # - name: Check Build
+      #   run: |
+      #     cargo check
 
-  #     # - name: Check Build
-  #     #   run: |
-  #     #     cargo check
+      # - name: Check Build for Benchmarking
+      #   run: |
+      #     cargo check --features=runtime-benchmarks
 
-  #     # - name: Check Build for Benchmarking
-  #     #   run: |
-  #     #     cargo check --features=runtime-benchmarks
-
-  #     # - name: Check Test
-  #     #   run: |
-  #     #     cargo test
+      # - name: Check Test
+      #   run: |
+      #     cargo test
 
       
-  #     - uses: actions/setup-node@v3
-  #       with: 
-  #         node-version: '14'  # The node-version input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
+      - uses: actions/setup-node@v3
+        with: 
+          node-version: '14'  # The node-version input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
 
-  #     - name: Test RPCs
-  #       run: |
-  #         cargo build
-  #         RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
-  #         sleep 5
-  #         docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl cbl /data/chains/test-protos-rpc.edn
-  #         echo "before changing directory"
-  #         cd /data/rpc
-  #         npm install
-  #         npm test
+      - name: Test RPCs
+        run: |
+          cargo build
+          RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
+          sleep 5
+          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl cbl /data/chains/test-protos-rpc.edn
+          echo "before changing directory"
+          cd /data/rpc
+          npm install
+          npm test
           
 
 
 
 
-  # #
-  # # Build documentation website
-  # #
-  # docs-website-build:
-  #   needs: []
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       with:
-  #         fetch-depth: 1
-  #     - name: Build website
-  #       run: |
-  #         cargo doc
-  #     - name: Upload artifact
-  #       uses: actions/upload-artifact@v2
-  #       with:
-  #         name: docs-website
-  #         path: |
-  #           target/doc/
-  #         if-no-files-found: error
+  #
+  # Build documentation website
+  #
+  docs-website-build:
+    needs: [check]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Build website
+        run: |
+          cargo doc
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: docs-website
+          path: |
+            target/doc/
+          if-no-files-found: error
 
-  # #
-  # # Publish documentation website to IPFS
-  # #
-  # docs-website-publish:
-  #   needs: docs-website-build
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Set up node
-  #       uses: actions/setup-node@v2
-  #       with:
-  #         node-version: '14'
-  #     - name: Install ipfs-car
-  #       run: |
-  #         npm install ipfs-car@0.6.1
-  #         npm install --save blockstore-core@1.0.2
-  #     - name: Download artifact
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: docs-website
-  #         path: target/doc/
-  #     - name: Publish to NFT storage
-  #       uses: nick-invision/retry@v2
-  #       with:
-  #         timeout_minutes: 5
-  #         max_attempts: 3
-  #         command: |
-  #           ./node_modules/.bin/ipfs-car --pack target/doc --output clamor-docs.car
-  #           curl -X POST https://api.nft.storage/upload \
-  #               --data-binary @clamor-docs.car \
-  #               -H "Authorization: Bearer ${{ secrets.NFT_STORAGE_KEY }}" \
-  #               -H "Content-Type: application/car" \
-  #               > response.json
-  #           cat response.json
-  #           if [ $(cat response.json | jq .ok) != "true" ]; then exit 1; fi
-  #     - name: Set IPFS CID
-  #       id: set_ipfs_cid
-  #       run: |
-  #         echo "::set-output name=ipfs_cid::$(cat response.json | jq .value.cid)"
-
-
-          
+  #
+  # Publish documentation website to IPFS
+  #
+  docs-website-publish:
+    needs: docs-website-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Install ipfs-car
+        run: |
+          npm install ipfs-car@0.6.1
+          npm install --save blockstore-core@1.0.2
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: docs-website
+          path: target/doc/
+      - name: Publish to NFT storage
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          command: |
+            ./node_modules/.bin/ipfs-car --pack target/doc --output clamor-docs.car
+            curl -X POST https://api.nft.storage/upload \
+                --data-binary @clamor-docs.car \
+                -H "Authorization: Bearer ${{ secrets.NFT_STORAGE_KEY }}" \
+                -H "Content-Type: application/car" \
+                > response.json
+            cat response.json
+            if [ $(cat response.json | jq .ok) != "true" ]; then exit 1; fi
+      - name: Set IPFS CID
+        id: set_ipfs_cid
+        run: |
+          echo "::set-output name=ipfs_cid::$(cat response.json | jq .value.cid)"
       # - name: Sync Cloudflare
       #   uses: nick-invision/retry@v2
       #   with:
