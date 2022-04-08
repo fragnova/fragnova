@@ -77,7 +77,7 @@ jobs:
   # Build documentation website
   #
   docs-website-build:
-    needs: [docs-markdown, docs-samples]
+    needs: []
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
