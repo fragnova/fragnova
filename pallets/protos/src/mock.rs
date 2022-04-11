@@ -40,6 +40,7 @@ frame_support::construct_runtime!(
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+		Frag: pallet_frag::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -137,11 +138,18 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
+impl pallet_frag::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type FragToken = ConstU32<0>;
+	type EthChainId = ConstU64<5>; // goerli
+	type AuthorityId = pallet_frag::crypto::FragAuthId;
+}
+
 impl Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type FragToken = ConstU32<0>;
 	type StakeLockupPeriod = ConstU64<100800>; // one week
 }
 

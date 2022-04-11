@@ -98,6 +98,12 @@ impl<T: SigningTypes, TBalance: Encode> SignedPayload<T> for EthStakeUpdate<T::P
 	}
 }
 
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub struct Unlinked<TAccount> {
+	pub account: TAccount,
+	pub external_account: H160,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -140,6 +146,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BTreeSet<H160>>;
 
+	// consumed by Protos pallet
+	#[pallet::storage]
+	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<Unlinked<T::AccountId>>, ValueQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -179,7 +189,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn link_ethereum(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
+		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
 			let mut message = b"EVM2Fragnova".to_vec();
@@ -212,12 +222,17 @@ pub mod pallet {
 
 		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn unlink_ethereum(origin: OriginFor<T>, account: H160) -> DispatchResult {
+		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
 			<EVMLinks<T>>::mutate(sender.clone(), |links| {
 				if let Some(links) = links {
 					if links.remove(&account) {
+						let unlinked = Unlinked {
+							account: sender.clone(),
+							external_account: account,
+						};
+						<PendingUnlinks<T>>::append(&unlinked);
 						Ok(())
 					} else {
 						Err(Error::<T>::LinkNotFound)

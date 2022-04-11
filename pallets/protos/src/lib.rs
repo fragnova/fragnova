@@ -106,6 +106,7 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config
 		+ pallet_detach::Config
+		+ pallet_frag::Config
 		+ pallet_randomness_collective_flip::Config
 		+ pallet_assets::Config
 	{
@@ -116,9 +117,6 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
-
-		#[pallet::constant]
-		type FragToken: Get<<Self as pallet_assets::Config>::AssetId>;
 
 		#[pallet::constant]
 		type StakeLockupPeriod: Get<u64>;
@@ -723,6 +721,14 @@ pub mod pallet {
 			Self::deposit_event(Event::Unstaked(proto_hash, who, stake.0));
 
 			Ok(())
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(_n: T::BlockNumber) {
+			// drain unlinks
+			let _unlinks = <pallet_frag::PendingUnlinks<T>>::take();
 		}
 	}
 
