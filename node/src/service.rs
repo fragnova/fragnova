@@ -17,13 +17,11 @@ pub struct ExecutorDispatch;
 impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	/// Only enable the benchmarking host functions when we actually want to benchmark.
 	#[cfg(feature = "runtime-benchmarks")]
-	type ExtendHostFunctions = (
-		sp_chainblocks::chainblocks::HostFunctions,
-		frame_benchmarking::benchmarking::HostFunctions,
-	);
+	type ExtendHostFunctions =
+		(sp_clamor::clamor::HostFunctions, frame_benchmarking::benchmarking::HostFunctions);
 	/// Otherwise we only use the default Substrate host functions.
 	#[cfg(not(feature = "runtime-benchmarks"))]
-	type ExtendHostFunctions = sp_chainblocks::chainblocks::HostFunctions;
+	type ExtendHostFunctions = sp_clamor::clamor::HostFunctions;
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 		clamor_runtime::api::dispatch(method, data)
@@ -160,7 +158,11 @@ fn remote_keystore(_url: &String) -> Result<Arc<LocalKeystore>, &'static str> {
 }
 
 /// Builds a new service for a full client.
-pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> {
+pub fn new_full(
+	mut config: Configuration,
+	geth_url: Option<String>,
+	contract: Option<String>,
+) -> Result<TaskManager, ServiceError> {
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -345,7 +347,7 @@ pub fn new_full(mut config: Configuration) -> Result<TaskManager, ServiceError> 
 		);
 	}
 
-	sp_chainblocks::init();
+	sp_clamor::init(geth_url, contract);
 
 	network_starter.start_network();
 	Ok(task_manager)

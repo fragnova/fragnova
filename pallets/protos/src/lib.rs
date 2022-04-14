@@ -10,20 +10,23 @@ mod tests;
 mod benchmarking;
 
 mod weights;
+
+use sp_core::{ecdsa, H160, U256};
+
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{ecdsa, H160, U256};
 use sp_io::{crypto as Crypto, hashing::blake2_256, transaction_index};
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	vec,
 	vec::Vec,
 };
+
 pub use weights::WeightInfo;
 
-use sp_chainblocks::Hash256;
+use sp_clamor::{get_locked_frag_account, Hash256};
 
 use frame_support::PalletId;
 const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
@@ -103,6 +106,7 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config
 		+ pallet_detach::Config
+		+ pallet_frag::Config
 		+ pallet_randomness_collective_flip::Config
 		+ pallet_assets::Config
 	{
@@ -115,23 +119,14 @@ pub mod pallet {
 		type StorageBytesMultiplier: Get<u64>;
 
 		#[pallet::constant]
-		type FragToken: Get<<Self as pallet_assets::Config>::AssetId>;
-
-		#[pallet::constant]
 		type StakeLockupPeriod: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
+	#[derive(Default)]
 	pub struct GenesisConfig {
 		/// List of upload authorities (i.e off-chain validators). Any of them must validate a Proto-Fragment before it can be uploaded/patched/etc. on the Blockchain
 		pub upload_authorities: Vec<ecdsa::Public>,
-	}
-
-	#[cfg(feature = "std")]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self { upload_authorities: Vec::new() }
-		}
 	}
 
 	#[pallet::genesis_build]
@@ -187,13 +182,19 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// A Proto-Fragment was upload to the blockchain
+		/// A Proto-Fragment was uploaded
 		Uploaded(Hash256),
+		/// A Proto-Fragment was patched
 		Patched(Hash256),
+		/// A Proto-Fragment metadata has changed
 		MetadataChanged(Hash256, Vec<u8>),
+		/// A Proto-Fragment was detached
 		Detached(Hash256, Vec<u8>),
+		/// A Proto-Fragment was transferred
 		Transferred(Hash256, T::AccountId),
+		/// Stake was created
 		Staked(Hash256, T::AccountId, T::Balance),
+		/// Stake was unlocked
 		Unstaked(Hash256, T::AccountId, T::Balance),
 	}
 
@@ -650,6 +651,7 @@ pub mod pallet {
 			use frame_support::traits::fungibles::Transfer;
 
 			let who = ensure_signed(origin.clone())?;
+			let who = get_locked_frag_account(&who).map_err(|_| Error::<T>::SystematicFailure)?;
 
 			// make sure the proto exists
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
@@ -724,9 +726,10 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(_n: T::BlockNumber) {}
-
-		fn offchain_worker(_n: T::BlockNumber) {}
+		fn on_finalize(_n: T::BlockNumber) {
+			// drain unlinks
+			let _unlinks = <pallet_frag::PendingUnlinks<T>>::take();
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -773,7 +776,7 @@ pub mod pallet {
 				);
 				for authority in authorities {
 					<UploadAuthorities<T>>::mutate(|authorities| {
-						authorities.insert(authority.clone());
+						authorities.insert(*authority);
 					});
 				}
 			}

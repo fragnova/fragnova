@@ -1,4 +1,4 @@
-pub use crate as pallet_fragments;
+pub use crate as pallet_frag;
 use crate::*;
 use frame_support::{
 	parameter_types,
@@ -18,8 +18,11 @@ pub const PROTO_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
 	51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
 ];
-
-pub const PUBLIC: [u8; 32] = [
+pub const PUBLIC: [u8; 33] = [
+	3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79,
+	173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251,
+];
+pub const PUBLIC1: [u8; 32] = [
 	137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79,
 	173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251,
 ];
@@ -32,12 +35,9 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
-		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
-		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
+		FragPallet: pallet_frag::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Frag: pallet_frag::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -135,30 +135,12 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
-impl pallet_protos::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type StakeLockupPeriod = ConstU64<100800>; // one week
-}
-
-impl pallet_frag::Config for Test {
+impl Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type FragToken = ConstU32<0>;
 	type EthChainId = ConstU64<5>; // goerli
 	type AuthorityId = pallet_frag::crypto::FragAuthId;
-}
-
-impl pallet_fragments::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-}
-
-impl pallet_detach::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

@@ -5,14 +5,16 @@
   (| (Sr25519.PublicKey)
      (| (ToHex) (Log "Sr25519 public"))
      (| (Substrate.AccountId) (Log "Sr25519 AccountID")))
-  (| (Ed25519.PublicKey)
+  (| (Ed25519.PublicKey) = .gen-ed-pub-key
      (| (ToHex) (Log "Ed25519 public"))
      (| (Substrate.AccountId) (Log "Ed25519 AccountID")))
   (| (ECDSA.PublicKey true)
      (| (ToHex) (Log "ECDSA public"))
      (| (Substrate.AccountId true) (Log "ECDSA AccountID")))
 
-  "fragments-frag-ecdsa-keys" (StringToBytes) (Ed25519.Sign seed)
+  "fragments-frag-ecdsa-keys" (StringToBytes) >= .gen-message 
+  .gen-ed-pub-key (AppendTo .gen-message)
+  .gen-message (Ed25519.Sign seed)
   (Hash.Keccak-256) = .ecdsa-priv (ECDSA.PublicKey)
   (| (Slice :From 1)
      (Hash.Keccak-256)

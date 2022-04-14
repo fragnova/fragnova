@@ -62,7 +62,7 @@ use sp_io::{crypto as Crypto, hashing::keccak_256, offchain_index};
 use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 
 use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
@@ -135,17 +135,11 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
+	#[derive(Default)]
 	pub struct GenesisConfig {
 		///
 		pub eth_authorities: Vec<ecdsa::Public>,
 		pub keys: Vec<ed25519::Public>,
-	}
-
-	#[cfg(feature = "std")]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self { eth_authorities: Vec::new(), keys: Vec::new() }
-		}
 	}
 
 	#[pallet::genesis_build]
@@ -371,7 +365,7 @@ pub mod pallet {
 				);
 				for authority in authorities {
 					<EthereumAuthorities<T>>::mutate(|authorities| {
-						authorities.insert(authority.clone());
+						authorities.insert(*authority);
 					});
 				}
 			}
@@ -421,12 +415,11 @@ pub mod pallet {
 									let mut edited = false;
 									for ed_key in &ed_keys {
 										if !keys.contains(ed_key) {
-											let signed = Crypto::ed25519_sign(
-												KEY_TYPE,
-												ed_key,
-												b"fragments-frag-ecdsa-keys",
-											)
-											.unwrap();
+											let mut msg = b"fragments-frag-ecdsa-keys".to_vec();
+											msg.append(&mut ed_key.to_vec());
+											let signed =
+												Crypto::ed25519_sign(KEY_TYPE, ed_key, &msg)
+													.unwrap();
 											let key = keccak_256(&signed.0[..]);
 											let mut key_hex = [0u8; 64];
 											hex::encode_to_slice(key, &mut key_hex)
@@ -517,10 +510,10 @@ pub mod pallet {
 								Ok((signature, nonce)) => {
 									// exec unsigned transaction from here
 									log::debug!(
-									"Executing unsigned transaction for detach; signature: {:x?}, nonce: {}",
-									signature,
-									nonce
-								);
+										"Executing unsigned transaction for detach; signature: {:x?}, nonce: {}",
+										signature,
+										nonce
+									);
 									if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
 										.send_unsigned_transaction(
 											|account| DetachInternalData {
