@@ -141,7 +141,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type EthLockedFrag<T: Config> = StorageMap<_, Blake2_128Concat, H160, T::Balance>;
+	pub type EthLockedFrag<T: Config> = StorageMap<_, Blake2_128Concat, H160, (T::Balance, bool)>;
 
 	#[pallet::storage]
 	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BTreeSet<H160>>;
@@ -170,16 +170,16 @@ pub mod pallet {
 		SystematicFailure,
 		/// Signature verification failed
 		VerificationFailed,
-		/// Not enough FRAG staked
-		NotEnoughStaked,
-		/// Stake not found
-		StakeNotFound,
 		/// Reference not found
 		LinkNotFound,
 		/// Not enough tokens to stake
 		InsufficientBalance,
 		/// Cannot unstake yet
 		StakeLocked,
+		/// Account already linked
+		AccountAlreadyLinked,
+		/// Account not linked
+		AccountNotLinked,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -205,6 +205,12 @@ pub mod pallet {
 			let eth_key = &eth_key[12..];
 			let eth_key = H160::from_slice(&eth_key[..]);
 
+			// find the locked frag account
+			let locked_frag =
+				<EthLockedFrag<T>>::get(&eth_key).ok_or_else(|| Error::<T>::LinkNotFound)?;
+			// ensure the account is not linked yet
+			ensure!(!locked_frag.1, Error::<T>::AccountAlreadyLinked);
+
 			<EVMLinks<T>>::mutate(sender.clone(), |links| match links {
 				Some(links) => {
 					links.insert(eth_key);
@@ -213,6 +219,8 @@ pub mod pallet {
 					<EVMLinks<T>>::insert(sender.clone(), BTreeSet::from_iter(vec![eth_key]));
 				},
 			});
+
+			<EthLockedFrag<T>>::insert(eth_key, (locked_frag.0, true));
 
 			// also emit event
 			Self::deposit_event(Event::Linked(sender, eth_key));
@@ -225,13 +233,17 @@ pub mod pallet {
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
+			// find the locked frag account
+			let locked_frag =
+				<EthLockedFrag<T>>::get(&account).ok_or_else(|| Error::<T>::LinkNotFound)?;
+			// ensure the account is not linked yet
+			ensure!(locked_frag.1, Error::<T>::AccountNotLinked);
+
 			<EVMLinks<T>>::mutate(sender.clone(), |links| {
 				if let Some(links) = links {
 					if links.remove(&account) {
-						let unlinked = Unlinked {
-							account: sender.clone(),
-							external_account: account,
-						};
+						let unlinked =
+							Unlinked { account: sender.clone(), external_account: account };
 						<PendingUnlinks<T>>::append(&unlinked);
 						Ok(())
 					} else {
@@ -241,6 +253,8 @@ pub mod pallet {
 					Err(Error::<T>::LinkNotFound)
 				}
 			})?;
+
+			<EthLockedFrag<T>>::insert(account, (locked_frag.0, false));
 
 			// also emit event
 			Self::deposit_event(Event::Unlinked(sender, account));
