@@ -380,7 +380,7 @@ pub mod pallet {
 					log["topics"].as_array().ok_or_else(|| "Invalid response - no topics")?;
 				let topic = topics[0].as_str().ok_or_else(|| "Invalid response - no topic")?;
 				let data = log["data"].as_str().ok_or_else(|| "Invalid response - no data")?;
-				let data = hex::decode(data).map_err(|_| "Invalid response - invalid data")?;
+				let data = hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?;
 				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256)], &data)
 					.map_err(|_| "Invalid response - invalid eth data")?;
 				let locked = match topic {
