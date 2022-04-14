@@ -388,6 +388,8 @@ pub mod pallet {
 					UNLOCK_EVENT => false,
 					_ => return Err("Invalid topic"),
 				};
+
+				log::trace!("Log: {:?}, lock: {:?}", data, locked);
 			}
 
 			Ok(())
