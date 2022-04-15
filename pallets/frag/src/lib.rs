@@ -13,6 +13,7 @@ mod weights;
 
 const LOCK_EVENT: &str = "0xeb49373c30c7ae230c318e69e8e8632f3831fc92d4a27cee08a8c91dd41ef03a";
 const UNLOCK_EVENT: &str = "0x16a32b1d5be5f34a614fa537e89a714d2db2ea522ef95c42ea2ae79a7f3b5a85";
+const CONFIRMATIONS_NUMBER: u64 = 15;
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
 
@@ -359,7 +360,7 @@ pub mod pallet {
 				serde_json::from_str(&response).map_err(|_| "Invalid response - json parse")?;
 
 			let current_block = v["result"].as_str().ok_or("Invalid response - no result")?;
-			let current_block = i64::from_str_radix(&current_block[2..], 16)
+			let current_block = u64::from_str_radix(&current_block[2..], 16)
 				.map_err(|_| "Invalid response - invalid block number")?;
 			log::trace!("Current block: {}", current_block);
 
@@ -371,12 +372,15 @@ pub mod pallet {
 				String::from("0x0")
 			};
 
+			let to_block = current_block.saturating_sub(CONFIRMATIONS_NUMBER);
+
 			let req = json!({
 				"jsonrpc": "2.0",
 				"method": "eth_getLogs",
 				"id": "0",
 				"params": [{
 					"fromBlock": last_block,
+					"toBlock": format!("0x{:x}", to_block),
 					"address": contract,
 					"topics": [
 						// [] to OR
