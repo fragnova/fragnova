@@ -1,5 +1,6 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
 
+const {Text} = require('@polkadot/types')
 
 const connectToLocalNode = async () => {
     const wsProvider = new WsProvider('ws://127.0.0.1:9944');
@@ -23,6 +24,22 @@ const connectToLocalNode = async () => {
                         {name: 'keys', type: 'Vec<String>'},
                         {name: 'at', type: 'BlockHash', isOptional: true}
                     ]},
+
+                getProtos: {description: "this is the description", type: "Text",
+                    params: [
+                        // {name: 'params', type: 'GetProtosParams'},
+
+                        {name: 'desc', type: 'bool'},
+                        {name: 'from', type: 'u32'},
+                        {name: 'limit', type: 'u32'},
+                        {name: 'metadata_keys', type: 'Vec<String>', isOptional: true},
+                        {name: 'owner', type: 'AccountId', isOptional: true},
+                        {name: 'return_owners', type: 'bool'},
+                        {name: 'tags', type: 'Vec<Tags>', isOptional: true},
+
+
+                        {name: 'at', type: 'BlockHash', isOptional: true}
+                    ]},
             }
         },
 
@@ -35,6 +52,16 @@ const connectToLocalNode = async () => {
 
             Hash256: '[u8; 32]',
 
+            GetProtosParams: {
+                tags: 'Option<Vec<Tags>>',
+                owner: 'Option<AccountId>',
+                limit: 'u32',
+                from: 'u32',
+                desc: 'bool',
+                metadata_keys: 'Option<Vec<Text>>',
+                return_owners: 'bool'
+            }
+
 
         }
     });
@@ -46,7 +73,19 @@ const connectToLocalNode = async () => {
 
 
 
+(async () => {
+    const api = await connectToLocalNode();   
 
+    // const params = api.createType("GetProtosParams", {tags: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
+    //     metadata_keys: ['A', 'A'], return_owners: true});
+
+
+    let string_json = await api.rpc.protos.getProtos({tags: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
+    metadata_keys: ['A', 'A'], return_owners: true})
+
+    console.log('string_json is', string_json)
+
+})()
 
 
 

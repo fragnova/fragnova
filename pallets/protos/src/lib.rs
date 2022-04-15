@@ -28,6 +28,9 @@ pub use weights::WeightInfo;
 
 use sp_chainblocks::Hash256;
 
+use scale_info::prelude::{format, string::{String, ToString}};
+use serde_json::{Map, Value, json};
+
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Tags {
@@ -59,6 +62,20 @@ pub enum ProtoOwner<TAccountId> {
 	// An external asset not on this chain
 	ExternalAsset(LinkedAsset),
 }
+
+// #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+// pub struct GetProtosParams<TAccountId, StringType> {
+// 	pub desc: bool,
+// 	pub from: u32,
+// 	pub limit: u32,
+// 	// pub metadata_keys: Option<Vec<String>>,
+// 	// pub metadata_keys: Option<Vec<Vec<u8>>>,
+// 	pub metadata_keys: Option<Vec<StringType>>,
+// 	pub owner: Option<TAccountId>,
+// 	pub return_owners : bool,
+// 	pub tags: Option<Vec<Tags>>,
+// }
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct AuthData {
@@ -543,8 +560,8 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T> {
 
-		fn is_proto_having_any_tags(proto_hash: &Hash256, tags: &Vec<Tags>) -> bool {
-			if let Some(struct_proto) = <Protos<T>>::get(proto_hash) {
+		fn is_proto_having_any_tags(proto_id: &Hash256, tags: &Vec<Tags>) -> bool {
+			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				tags.into_iter().any(|tag| struct_proto.tags.contains(&tag))
 			} else {
 				false
@@ -665,6 +682,157 @@ pub mod pallet {
 			}).collect::<Vec<Option<Vec<Option<Hash256>>>>>()
 
 		}
+
+
+		pub fn get_protos(desc: bool, from: u32, limit: u32, metadata_keys: Option<Vec<Vec<u8>>>, 
+						  owner: Option<T::AccountId>, return_owners : bool, tags: Option<Vec<Tags>>) -> Vec<u8> {
+
+			// let mut map = HashMap::<String, HashMap<String, String>>::new();
+			let mut map = Map::new();
+
+
+			let mut list_protos_final : Vec<Hash256> = if let Some(owner) = owner { // `owner` exists
+				if let Some(list_protos_owner) = <ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner)) { // `owner` exists in `ProtosByOwner`
+
+
+					if desc { // Sort in descending order
+						list_protos_owner.into_iter()
+										 .rev()
+										 .filter(|proto_id|
+											if let Some(tags) = &tags {
+												Self::is_proto_having_any_tags(proto_id, &tags)
+											} else {
+												true
+											})
+										 .skip(from as usize)
+										 .take(limit as usize)
+										 .collect::<Vec<Hash256>>()
+					} else { // Sort in ascending order
+						list_protos_owner.into_iter()
+										 .filter(|proto_id|
+											if let Some(tags) = &tags {
+												Self::is_proto_having_any_tags(proto_id, &tags)
+											} else {
+												true
+											})
+										 .skip(from as usize)
+										 .take(limit as usize)
+										 .collect::<Vec<Hash256>>()
+					}
+
+				} else { // // `owner` doesn't exist in `ProtosByOwner`
+					Vec::<Hash256>::new()
+				}
+
+			} else if let Some(tags) = tags { // `tags` exist
+				let mut remaining = limit as usize; // Remaining number of protos to get
+
+				tags.into_iter()
+					.map(|tag| -> Vec<Hash256> { // Iterate through every `tag` in `tags`
+						let list_protos_tag_final =
+						if remaining <= 0 {
+							<Vec<Hash256>>::new()
+						}
+						else if let Some(list_protos_tag) = <ProtosByTag<T>>::get(&tag) { // Get protos with tag `tag`
+
+							let r = sp_std::cmp::min(list_protos_tag.len(), remaining); // Number of protos to retrieve from `list_protos_tag`
+
+							if desc {
+								list_protos_tag[list_protos_tag.len() - r .. list_protos_tag.len()].to_vec() // Return last `r` protos of `list_protos_tag`
+							} else {
+								list_protos_tag[..r].to_vec() // Return first `r` protos of `vec_protos`
+							}
+						} else {
+							<Vec<Hash256>>::new() // If no protos exist for tag `tag`
+						};
+
+						remaining -= list_protos_tag_final.len();
+
+						list_protos_tag_final
+
+					})
+					.flatten()
+					.skip(from as usize)
+					.take(limit as usize)
+					.collect::<Vec<Hash256>>()
+
+
+			} else { // Don't filter by `owner` or `tags`
+				if desc { // TODO: desc is not implemented for Protos. Vector returned has random ordering
+					<Protos<T>>::iter_keys()
+								.skip(from as usize)
+								.take(limit as usize)
+								.collect::<Vec<Hash256>>()
+				} else { // TODO: asc is not implemented for Protos. Vector returned has random ordering
+					<Protos<T>>::iter_keys()
+								.skip(from as usize)
+								.take(limit as usize)
+								.collect::<Vec<Hash256>>()
+				}
+			};
+
+			for proto_id in list_protos_final.into_iter() {
+
+				map.insert(hex::encode(proto_id), Value::Object(Map::new()));
+			}
+
+
+			if return_owners {
+
+				for (proto_id, map_proto) in map.iter_mut() {
+
+					let array_proto_id : Hash256 = hex::decode(proto_id).unwrap()[..].try_into().unwrap();
+
+					let owner = <Protos<T>>::get(array_proto_id).unwrap().owner;
+
+					let string_owner = match owner {
+						ProtoOwner::User(account_id) => format!("{:?}", account_id),
+						ProtoOwner::ExternalAsset(enum_linked_assset) => String::from("No se que debo hago")
+					};
+
+					match map_proto {
+						Value::Object(map_proto) => (*map_proto).insert(String::from("owner"), Value::String(string_owner)),
+						_ => None
+					};
+
+
+
+				}
+
+			}
+
+
+			if let Some(metadata_keys) = metadata_keys {
+
+				for (proto_id, map_proto) in map.iter_mut() {
+
+					let array_proto_id : Hash256 = hex::decode(proto_id).unwrap()[..].try_into().unwrap();
+
+					let map_metadata = <Protos<T>>::get(array_proto_id).unwrap().metadata;
+
+					for metadata_key in metadata_keys.iter() {
+						let metadata_value = 
+						// if let Some(data_hash) = map_metadata.get(metadata_key.as_bytes()) {
+						if let Some(data_hash) = map_metadata.get(metadata_key) {
+							hex::encode(data_hash)
+						} else {
+							String::from("null")
+						};
+
+						match map_proto {
+							// Value::Object(map_proto) => (*map_proto).insert(metadata_key.clone(), Value::String(metadata_value)), // Cloning `metadata_key` might be inefficient
+							Value::Object(map_proto) => (*map_proto).insert(String::from_utf8(metadata_key.clone()).unwrap(), Value::String(metadata_value)), // Cloning `metadata_key` might be inefficient
+							_ => None
+						};
+					}
+				}
+			
+			}
+
+			json!(map).to_string().into_bytes()
+
+		}
+
 
 		fn ensure_auth(
 			block_number: T::BlockNumber,

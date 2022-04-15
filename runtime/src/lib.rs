@@ -23,6 +23,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::prelude::*;
+use scale_info::prelude::{string::{String, ToString}};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -51,7 +52,9 @@ use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
-use pallet_protos::{Tags};
+use pallet_protos::{Tags,
+					// GetProtosParams,
+					};
 use sp_chainblocks::Hash256;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
@@ -737,6 +740,11 @@ impl_runtime_apis! {
 
 		fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Option<Hash256>>>> {
 			Protos::get_metadata_batch(batch, keys)
+		}
+
+		fn get_protos(desc: bool, from: u32, limit: u32, metadata_keys: Option<Vec<Vec<u8>>>,
+		  			  owner: Option<AccountId>, return_owners : bool, tags: Option<Vec<Tags>>) -> Vec<u8> {
+			Protos::get_protos(desc, from, limit, metadata_keys, owner, return_owners, tags)
 		}
 	}
 

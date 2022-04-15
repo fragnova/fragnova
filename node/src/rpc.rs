@@ -9,7 +9,9 @@ use std::sync::Arc;
 
 use clamor_runtime::{
 	opaque::Block, AccountId, Balance, BlockNumber, Hash, Index,
-	pallet_protos::Tags,
+	pallet_protos::{Tags,
+					// GetProtosParams
+	  			   },
 };
 use pallet_contracts_rpc::{Contracts, ContractsApi};
 use pallet_protos_rpc::{Protos, ProtosApi};
