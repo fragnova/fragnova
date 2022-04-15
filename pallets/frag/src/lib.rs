@@ -336,6 +336,33 @@ pub mod pallet {
 				return Ok(()); // It is fine to have a node not syncing with eth
 			};
 
+			let req = json!({
+				"jsonrpc": "2.0",
+				"method": "eth_blockNumber",
+				"id": 1
+			});
+
+			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
+			log::trace!("Request: {}", req);
+
+			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes());
+			let response_body = if let Ok(response) = response_body {
+				response
+			} else {
+				return Err("Failed to get response from geth");
+			};
+
+			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
+			log::trace!("Response: {}", response);
+
+			let v: Value =
+				serde_json::from_str(&response).map_err(|_| "Invalid response - json parse")?;
+
+			let current_block = v["result"].as_str().ok_or("Invalid response - no result")?;
+			let current_block = i64::from_str_radix(&current_block[2..], 16)
+				.map_err(|_| "Invalid response - invalid block number")?;
+			log::trace!("Current block: {}", current_block);
+
 			let last_block_ref = StorageValueRef::persistent(b"frag_sync_last_block");
 			let last_block: Option<Vec<u8>> = last_block_ref.get().unwrap_or_default();
 			let last_block = if let Some(last_block) = last_block {
@@ -380,7 +407,8 @@ pub mod pallet {
 					log["topics"].as_array().ok_or_else(|| "Invalid response - no topics")?;
 				let topic = topics[0].as_str().ok_or_else(|| "Invalid response - no topic")?;
 				let data = log["data"].as_str().ok_or_else(|| "Invalid response - no data")?;
-				let data = hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?;
+				let data =
+					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?;
 				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256)], &data)
 					.map_err(|_| "Invalid response - invalid eth data")?;
 				let locked = match topic {
