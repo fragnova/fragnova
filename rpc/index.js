@@ -27,15 +27,15 @@ const connectToLocalNode = async () => {
 
                 getProtos: {description: "this is the description", type: "Text",
                     params: [
-                        // {name: 'params', type: 'GetProtosParams'},
+                        {name: 'params', type: 'GetProtosParams'},
 
-                        {name: 'desc', type: 'bool'},
-                        {name: 'from', type: 'u32'},
-                        {name: 'limit', type: 'u32'},
-                        {name: 'metadata_keys', type: 'Vec<String>', isOptional: true},
-                        {name: 'owner', type: 'AccountId', isOptional: true},
-                        {name: 'return_owners', type: 'bool'},
-                        {name: 'tags', type: 'Vec<Tags>', isOptional: true},
+                        // {name: 'desc', type: 'bool'},
+                        // {name: 'from', type: 'u32'},
+                        // {name: 'limit', type: 'u32'},
+                        // {name: 'metadata_keys', type: 'Vec<String>', isOptional: true},
+                        // {name: 'owner', type: 'AccountId', isOptional: true},
+                        // {name: 'return_owners', type: 'bool'},
+                        // {name: 'tags', type: 'Vec<Tags>', isOptional: true},
 
 
                         {name: 'at', type: 'BlockHash', isOptional: true}
@@ -76,12 +76,11 @@ const connectToLocalNode = async () => {
 (async () => {
     const api = await connectToLocalNode();   
 
-    // const params = api.createType("GetProtosParams", {tags: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
-    //     metadata_keys: ['A', 'A'], return_owners: true});
+    const params = api.createType("GetProtosParams", {tags: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
+        metadata_keys: ['A', 'A'], return_owners: true});
 
 
-    let string_json = await api.rpc.protos.getProtos({tags: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
-    metadata_keys: ['A', 'A'], return_owners: true})
+    let string_json = await api.rpc.protos.getProtos(params)
 
     console.log('string_json is', string_json)
 

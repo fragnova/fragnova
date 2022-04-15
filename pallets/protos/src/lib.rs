@@ -63,19 +63,19 @@ pub enum ProtoOwner<TAccountId> {
 	ExternalAsset(LinkedAsset),
 }
 
-// #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
-// #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-// pub struct GetProtosParams<TAccountId, StringType> {
-// 	pub desc: bool,
-// 	pub from: u32,
-// 	pub limit: u32,
-// 	// pub metadata_keys: Option<Vec<String>>,
-// 	// pub metadata_keys: Option<Vec<Vec<u8>>>,
-// 	pub metadata_keys: Option<Vec<StringType>>,
-// 	pub owner: Option<TAccountId>,
-// 	pub return_owners : bool,
-// 	pub tags: Option<Vec<Tags>>,
-// }
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GetProtosParams<TAccountId, StringType> {
+	pub desc: bool,
+	pub from: u32,
+	pub limit: u32,
+	// pub metadata_keys: Option<Vec<String>>,
+	// pub metadata_keys: Option<Vec<Vec<u8>>>,
+	pub metadata_keys: Option<Vec<StringType>>,
+	pub owner: Option<TAccountId>,
+	pub return_owners : bool,
+	pub tags: Option<Vec<Tags>>,
+}
 
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct AuthData {
@@ -684,39 +684,38 @@ pub mod pallet {
 		}
 
 
-		pub fn get_protos(desc: bool, from: u32, limit: u32, metadata_keys: Option<Vec<Vec<u8>>>, 
-						  owner: Option<T::AccountId>, return_owners : bool, tags: Option<Vec<Tags>>) -> Vec<u8> {
+		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Vec<u8> {
 
 			// let mut map = HashMap::<String, HashMap<String, String>>::new();
 			let mut map = Map::new();
 
 
-			let mut list_protos_final : Vec<Hash256> = if let Some(owner) = owner { // `owner` exists
+			let mut list_protos_final : Vec<Hash256> = if let Some(owner) = params.owner { // `owner` exists
 				if let Some(list_protos_owner) = <ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner)) { // `owner` exists in `ProtosByOwner`
 
 
-					if desc { // Sort in descending order
+					if params.desc { // Sort in descending order
 						list_protos_owner.into_iter()
 										 .rev()
 										 .filter(|proto_id|
-											if let Some(tags) = &tags {
+											if let Some(tags) = &params.tags {
 												Self::is_proto_having_any_tags(proto_id, &tags)
 											} else {
 												true
 											})
-										 .skip(from as usize)
-										 .take(limit as usize)
+										 .skip(params.from as usize)
+										 .take(params.limit as usize)
 										 .collect::<Vec<Hash256>>()
 					} else { // Sort in ascending order
 						list_protos_owner.into_iter()
 										 .filter(|proto_id|
-											if let Some(tags) = &tags {
+											if let Some(tags) = &params.tags {
 												Self::is_proto_having_any_tags(proto_id, &tags)
 											} else {
 												true
 											})
-										 .skip(from as usize)
-										 .take(limit as usize)
+										 .skip(params.from as usize)
+										 .take(params.limit as usize)
 										 .collect::<Vec<Hash256>>()
 					}
 
@@ -724,8 +723,8 @@ pub mod pallet {
 					Vec::<Hash256>::new()
 				}
 
-			} else if let Some(tags) = tags { // `tags` exist
-				let mut remaining = limit as usize; // Remaining number of protos to get
+			} else if let Some(tags) = params.tags { // `tags` exist
+				let mut remaining = params.limit as usize; // Remaining number of protos to get
 
 				tags.into_iter()
 					.map(|tag| -> Vec<Hash256> { // Iterate through every `tag` in `tags`
@@ -737,7 +736,7 @@ pub mod pallet {
 
 							let r = sp_std::cmp::min(list_protos_tag.len(), remaining); // Number of protos to retrieve from `list_protos_tag`
 
-							if desc {
+							if params.desc {
 								list_protos_tag[list_protos_tag.len() - r .. list_protos_tag.len()].to_vec() // Return last `r` protos of `list_protos_tag`
 							} else {
 								list_protos_tag[..r].to_vec() // Return first `r` protos of `vec_protos`
@@ -752,21 +751,21 @@ pub mod pallet {
 
 					})
 					.flatten()
-					.skip(from as usize)
-					.take(limit as usize)
+					.skip(params.from as usize)
+					.take(params.limit as usize)
 					.collect::<Vec<Hash256>>()
 
 
 			} else { // Don't filter by `owner` or `tags`
-				if desc { // TODO: desc is not implemented for Protos. Vector returned has random ordering
+				if params.desc { // TODO: desc is not implemented for Protos. Vector returned has random ordering
 					<Protos<T>>::iter_keys()
-								.skip(from as usize)
-								.take(limit as usize)
+								.skip(params.from as usize)
+								.take(params.limit as usize)
 								.collect::<Vec<Hash256>>()
 				} else { // TODO: asc is not implemented for Protos. Vector returned has random ordering
 					<Protos<T>>::iter_keys()
-								.skip(from as usize)
-								.take(limit as usize)
+								.skip(params.from as usize)
+								.take(params.limit as usize)
 								.collect::<Vec<Hash256>>()
 				}
 			};
@@ -777,7 +776,7 @@ pub mod pallet {
 			}
 
 
-			if return_owners {
+			if params.return_owners {
 
 				for (proto_id, map_proto) in map.iter_mut() {
 
@@ -802,7 +801,7 @@ pub mod pallet {
 			}
 
 
-			if let Some(metadata_keys) = metadata_keys {
+			if let Some(metadata_keys) = params.metadata_keys {
 
 				for (proto_id, map_proto) in map.iter_mut() {
 
@@ -829,7 +828,11 @@ pub mod pallet {
 			
 			}
 
-			json!(map).to_string().into_bytes()
+			let result = json!(map).to_string();
+
+			log::info!("get_protos's result is: {:?}", result);
+
+			result.into_bytes()
 
 		}
 

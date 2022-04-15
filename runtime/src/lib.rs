@@ -53,7 +53,7 @@ pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
 use pallet_protos::{Tags,
-					// GetProtosParams,
+					GetProtosParams,
 					};
 use sp_chainblocks::Hash256;
 
@@ -742,9 +742,8 @@ impl_runtime_apis! {
 			Protos::get_metadata_batch(batch, keys)
 		}
 
-		fn get_protos(desc: bool, from: u32, limit: u32, metadata_keys: Option<Vec<Vec<u8>>>,
-		  			  owner: Option<AccountId>, return_owners : bool, tags: Option<Vec<Tags>>) -> Vec<u8> {
-			Protos::get_protos(desc, from, limit, metadata_keys, owner, return_owners, tags)
+		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8> {
+			Protos::get_protos(params)
 		}
 	}
 
