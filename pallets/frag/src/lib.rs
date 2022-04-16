@@ -84,16 +84,18 @@ use scale_info::prelude::{format, string::String};
 
 use serde_json::{json, Value};
 
-use ethabi::{ParamType, Token};
+use ethabi::ParamType;
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct EthStakeUpdate<TPublic, TBalance> {
+pub struct EthStakeUpdate<TPublic> {
 	pub public: TPublic,
-	pub amount: TBalance,
-	pub account: H160,
+	pub amount: U256,
+	pub sender: H160,
+	pub signature: ecdsa::Signature,
+	pub lock: bool,
 }
 
-impl<T: SigningTypes, TBalance: Encode> SignedPayload<T> for EthStakeUpdate<T::Public, TBalance> {
+impl<T: SigningTypes> SignedPayload<T> for EthStakeUpdate<T::Public> {
 	fn public(&self) -> T::Public {
 		self.public.clone()
 	}
@@ -201,8 +203,7 @@ pub mod pallet {
 			let recovered = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
 				.map_err(|_| Error::<T>::VerificationFailed)?;
 
-			let eth_key = &recovered[1..];
-			let eth_key = keccak_256(&eth_key[..]);
+			let eth_key = keccak_256(&recovered[..]);
 			let eth_key = &eth_key[12..];
 			let eth_key = H160::from_slice(&eth_key[..]);
 
@@ -265,39 +266,42 @@ pub mod pallet {
 
 		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn internal_update_stake(
+		pub fn internal_stake_update(
 			origin: OriginFor<T>,
-			_data: EthStakeUpdate<T::Public, T::Balance>,
+			data: EthStakeUpdate<T::Public>,
 			_signature: T::Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			// TODO
+			let mut message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() };
+			message.extend_from_slice(&data.sender.0[..]);
+			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
+			let amount: [u8; 32] = data.amount.into();
+			message.extend_from_slice(&amount[..]);
+			let message_hash = keccak_256(&message);
 
-			Ok(())
-		}
+			let message = [b"\x19Ethereum Signed Message:\n32", &message_hash[..]].concat();
+			let message_hash = keccak_256(&message);
 
-		/// TODO
-		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn query_stake_update(
-			origin: OriginFor<T>,
-			signature: ecdsa::Signature,
-		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+			let signature = data.signature;
+			let sender = data.sender;
 
-			let message = b"TODO";
-			let message_hash = keccak_256(message);
-
-			let recovered = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &message_hash)
+			let pub_key = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
 				.map_err(|_| Error::<T>::VerificationFailed)?;
+			let pub_key = keccak_256(&pub_key[..]);
+			let pub_key = &pub_key[12..];
+			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
-			// this is how substrate handles ecdsa publics
-			let short_key = blake2_256(&recovered[..]);
+			// let recovered = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &message_hash)
+			// 	.map_err(|_| Error::<T>::VerificationFailed)?;
 
-			let who2 = T::AccountId::decode(&mut &short_key[..])
-				.map_err(|_| Error::<T>::VerificationFailed)?;
+			// // this is how substrate handles ecdsa publics
+			// let short_key = blake2_256(&recovered[..]);
 
-			ensure!(who == who2, Error::<T>::VerificationFailed);
+			// let who2 = T::AccountId::decode(&mut &short_key[..])
+			// 	.map_err(|_| Error::<T>::VerificationFailed)?;
+
+			// ensure!(who == who2, Error::<T>::VerificationFailed);
 
 			// ! Check passed, derive eth key and send to offchain worker
 
@@ -413,59 +417,33 @@ pub mod pallet {
 				let data = log["data"].as_str().ok_or_else(|| "Invalid response - no data")?;
 				let data =
 					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?;
-				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256)], &data)
-					.map_err(|_| "Invalid response - invalid eth data")?;
+				let data = ethabi::decode(
+					&[ParamType::Address, ParamType::Bytes, ParamType::Uint(256)],
+					&data,
+				)
+				.map_err(|_| "Invalid response - invalid eth data")?;
 				let locked = match topic {
 					LOCK_EVENT => true,
 					UNLOCK_EVENT => false,
 					_ => return Err("Invalid topic"),
 				};
 
-				log::trace!("Log: {:?}, lock: {:?}", data, locked);
+				let sender = data[0]
+					.clone()
+					.into_address()
+					.ok_or_else(|| "Invalid response - invalid sender")?;
+
+				let signature = data[1].clone().into_bytes().ok_or_else(|| "Invalid data")?;
+				let signature: ecdsa::Signature =
+					(&signature[..]).try_into().map_err(|_| "Invalid data")?;
+
+				let amount = data[2].clone().into_uint().ok_or_else(|| "Invalid data")?;
+				let amount: u128 = amount.try_into().map_err(|_| "Invalid data")?;
+
+				log::trace!("Signature: {:?}, amount: {}, locked: {}", signature, amount, locked);
 			}
 
 			Ok(())
-
-			// let records = v["data"]["lockEntities"].as_array().unwrap();
-			// for (i, record) in records.iter().enumerate() {
-			// 	let lock = record["lock"].as_bool().unwrap();
-			// 	if lock {
-			// 		let id = record["id"].as_str().unwrap();
-			// 		log::trace!("Recording lock stake for {}", id);
-
-			// 		let account = &record["owner"].as_str().unwrap()[2..];
-			// 		let account = <[u8; 20]>::from_hex(account).unwrap();
-
-			// 		let amount = record["amount"].as_str().unwrap();
-			// 		let amount = amount.parse::<u128>().unwrap();
-
-			// 		if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
-			// 			.send_unsigned_transaction(
-			// 				|pub_key| EthStakeUpdate {
-			// 					public: pub_key.public.clone(),
-			// 					amount: amount.saturated_into(),
-			// 					account: account.into(),
-			// 				},
-			// 				|payload, signature| Call::internal_update_stake {
-			// 					data: payload,
-			// 					signature,
-			// 				},
-			// 			)
-			// 			.ok_or("No local accounts accounts available.")
-			// 		{
-			// 			log::error!(
-			// 				"Failed to send unsigned eth sync transaction with error: {:?}",
-			// 				e
-			// 			);
-			// 			return;
-			// 		}
-
-			// 		// update the last recorded event
-			// 		if i == records.len() - 1 {
-			// 			last_block_ref.set(&id.as_bytes().to_vec());
-			// 		}
-			// 	}
-			// }
 		}
 	}
 }
