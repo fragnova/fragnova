@@ -25,7 +25,7 @@ const connectToLocalNode = async () => {
                         {name: 'at', type: 'BlockHash', isOptional: true}
                     ]},
 
-                getProtos: {description: "this is the description", type: "Text",
+                getProtos: {description: "this is the description", type: "String",
                     params: [
                         {name: 'params', type: 'GetProtosParams'},
 
@@ -58,7 +58,7 @@ const connectToLocalNode = async () => {
                 limit: 'u32',
                 from: 'u32',
                 desc: 'bool',
-                metadata_keys: 'Option<Vec<Text>>',
+                metadata_keys: 'Option<Vec<String>>',
                 return_owners: 'bool'
             }
 
@@ -73,18 +73,18 @@ const connectToLocalNode = async () => {
 
 
 
-(async () => {
-    const api = await connectToLocalNode();   
+// (async () => {
+//     const api = await connectToLocalNode();   
 
-    const params = api.createType("GetProtosParams", {tags: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
-        metadata_keys: ['A', 'A'], return_owners: true});
+//     const params = api.createType("GetProtosParams", {tags: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
+//         metadata_keys: ['A', 'A'], return_owners: true});
 
 
-    let string_json = await api.rpc.protos.getProtos(params)
+//     let string_json = await api.rpc.protos.getProtos(params)
 
-    console.log('string_json is', string_json)
+//     console.log('string_json is', string_json)
 
-})()
+// })()
 
 
 

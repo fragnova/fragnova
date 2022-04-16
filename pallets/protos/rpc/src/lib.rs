@@ -22,7 +22,7 @@ pub trait ProtosApi<BlockHash, Tags, AccountId> {
 	fn get_metadata_batch(&self, batch: Vec<String>, keys: Vec<String>, at: Option<BlockHash>) -> Result<Vec<Option<Vec<Option<Hash256>>>>>;
 
 	#[rpc(name = "protos_getProtos")]
-	fn get_protos(&self, params: GetProtosParams<AccountId, String>, at: Option<BlockHash>) -> Result<Vec<u8>>;
+	fn get_protos(&self, params: GetProtosParams<AccountId, String>, at: Option<BlockHash>) -> Result<String>;
 }
 
 /// An implementation of protos specific RPC methods.
@@ -124,7 +124,7 @@ where
 	}
 
 	fn get_protos(&self, params: GetProtosParams<AccountId, String>,
-				  at: Option<<Block as BlockT>::Hash>) -> Result<Vec<u8>> {
+				  at: Option<<Block as BlockT>::Hash>) -> Result<String> {
 
 		
 		let api = self.client.runtime_api();
@@ -147,7 +147,7 @@ where
 			tags: params.tags,
 		};
 
-		api.get_protos(&at, params_no_std).map_err(|e| RpcError {
+		api.get_protos(&at, params_no_std).map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from(""))).map_err(|e| RpcError {
 			code: ErrorCode::ServerError(Error::RuntimeError.into()),
 			message: "Unable to fetch data.".into(),
 			data: Some(format!("{:?}", e).into()),

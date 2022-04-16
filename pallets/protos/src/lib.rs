@@ -138,7 +138,10 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> GenesisBuild<T> for GenesisConfig
+	where
+		T::AccountId: AsRef<[u8]>
+	{
 		fn build(&self) {
 			Pallet::<T>::initialize_upload_authorities(&self.upload_authorities);
 		}
@@ -196,7 +199,10 @@ pub mod pallet {
 	// These functions materialize as "extrinsics", which are often compared to transactions.
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		T::AccountId: AsRef<[u8]>
+	{
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_upload_auth())]
 		pub fn add_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -558,7 +564,12 @@ pub mod pallet {
 		fn offchain_worker(_n: T::BlockNumber) {}
 	}
 
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		T::AccountId: AsRef<[u8]>
+	{
+
+
 
 		fn is_proto_having_any_tags(proto_id: &Hash256, tags: &Vec<Tags>) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
@@ -690,7 +701,7 @@ pub mod pallet {
 			let mut map = Map::new();
 
 
-			let mut list_protos_final : Vec<Hash256> = if let Some(owner) = params.owner { // `owner` exists
+			let list_protos_final : Vec<Hash256> = if let Some(owner) = params.owner { // `owner` exists
 				if let Some(list_protos_owner) = <ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner)) { // `owner` exists in `ProtosByOwner`
 
 
@@ -728,8 +739,7 @@ pub mod pallet {
 
 				tags.into_iter()
 					.map(|tag| -> Vec<Hash256> { // Iterate through every `tag` in `tags`
-						let list_protos_tag_final =
-						if remaining <= 0 {
+						let list_protos_tag_final = if remaining <= 0 {
 							<Vec<Hash256>>::new()
 						}
 						else if let Some(list_protos_tag) = <ProtosByTag<T>>::get(&tag) { // Get protos with tag `tag`
@@ -785,7 +795,7 @@ pub mod pallet {
 					let owner = <Protos<T>>::get(array_proto_id).unwrap().owner;
 
 					let string_owner = match owner {
-						ProtoOwner::User(account_id) => format!("{:?}", account_id),
+						ProtoOwner::User(account_id) => hex::encode(account_id.as_ref()), //format!("{:?}", account_id),
 						ProtoOwner::ExternalAsset(enum_linked_assset) => String::from("No se que debo hago")
 					};
 
@@ -813,14 +823,14 @@ pub mod pallet {
 						let metadata_value = 
 						// if let Some(data_hash) = map_metadata.get(metadata_key.as_bytes()) {
 						if let Some(data_hash) = map_metadata.get(metadata_key) {
-							hex::encode(data_hash)
+							Value::String(hex::encode(data_hash))
 						} else {
-							String::from("null")
+							Value::Null
 						};
 
 						match map_proto {
 							// Value::Object(map_proto) => (*map_proto).insert(metadata_key.clone(), Value::String(metadata_value)), // Cloning `metadata_key` might be inefficient
-							Value::Object(map_proto) => (*map_proto).insert(String::from_utf8(metadata_key.clone()).unwrap(), Value::String(metadata_value)), // Cloning `metadata_key` might be inefficient
+							Value::Object(map_proto) => (*map_proto).insert(String::from_utf8(metadata_key.clone()).unwrap(), metadata_value), // Cloning `metadata_key` might be inefficient
 							_ => None
 						};
 					}
@@ -829,8 +839,6 @@ pub mod pallet {
 			}
 
 			let result = json!(map).to_string();
-
-			log::info!("get_protos's result is: {:?}", result);
 
 			result.into_bytes()
 
