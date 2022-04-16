@@ -483,7 +483,7 @@ pub mod pallet {
 				let data =
 					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?;
 				let data = ethabi::decode(
-					&[ParamType::Address, ParamType::Bytes, ParamType::Uint(256)],
+					&[ParamType::Bytes, ParamType::Uint(256)],
 					&data,
 				)
 				.map_err(|_| "Invalid response - invalid eth data")?;
@@ -493,16 +493,15 @@ pub mod pallet {
 					_ => return Err("Invalid topic"),
 				};
 
-				let sender = data[0]
-					.clone()
-					.into_address()
-					.ok_or_else(|| "Invalid response - invalid sender")?;
+				let sender = topics[1].as_str().ok_or_else(|| "Invalid response - no sender")?;
+				let sender = hex::decode(&sender[2..]).map_err(|_| "Invalid response - invalid sender")?;
+				let sender = H160::from_slice(&sender[12..]);
 
-				let eth_signature = data[1].clone().into_bytes().ok_or_else(|| "Invalid data")?;
+				let eth_signature = data[0].clone().into_bytes().ok_or_else(|| "Invalid data")?;
 				let eth_signature: ecdsa::Signature =
 					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
 
-				let amount = data[2].clone().into_uint().ok_or_else(|| "Invalid data")?;
+				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?;
 
 				log::trace!(
 					"Block: {}, sender: {}, locked: {}, amount: {}, signature: {:?}",
