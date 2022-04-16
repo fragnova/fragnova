@@ -11,8 +11,8 @@ mod benchmarking;
 
 mod weights;
 
-const LOCK_EVENT: &str = "0xeb49373c30c7ae230c318e69e8e8632f3831fc92d4a27cee08a8c91dd41ef03a";
-const UNLOCK_EVENT: &str = "0x16a32b1d5be5f34a614fa537e89a714d2db2ea522ef95c42ea2ae79a7f3b5a85";
+const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f";
+const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
 const CONFIRMATIONS_NUMBER: u64 = 15;
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
@@ -503,6 +503,15 @@ pub mod pallet {
 					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
 
 				let amount = data[2].clone().into_uint().ok_or_else(|| "Invalid data")?;
+
+				log::trace!(
+					"Block: {}, sender: {}, locked: {}, amount: {}, signature: {:?}",
+					block_number,
+					sender,
+					locked,
+					amount,
+					eth_signature.clone(),
+				);
 
 				Signer::<T, T::AuthorityId>::any_account()
 					.send_unsigned_transaction(
