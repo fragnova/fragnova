@@ -88,7 +88,7 @@ use serde_json::{json, Value};
 use ethabi::ParamType;
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct EthStakeUpdate<TPublic> {
+pub struct EthLockUpdate<TPublic> {
 	pub public: TPublic,
 	pub amount: U256,
 	pub sender: H160,
@@ -97,7 +97,7 @@ pub struct EthStakeUpdate<TPublic> {
 	pub block_number: u64,
 }
 
-impl<T: SigningTypes> SignedPayload<T> for EthStakeUpdate<T::Public> {
+impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
 	fn public(&self) -> T::Public {
 		self.public.clone()
 	}
@@ -183,9 +183,9 @@ pub mod pallet {
 		Linked(T::AccountId, H160),
 		/// A link was removed between native and ethereum account.
 		Unlinked(T::AccountId, H160),
-		/// Stake was created
+		/// ETH side lock was updated
 		Locked(H160, T::Balance),
-		/// Stake was unlocked
+		/// ETH side lock was unlocked
 		Unlocked(H160, T::Balance),
 	}
 
@@ -198,10 +198,6 @@ pub mod pallet {
 		VerificationFailed,
 		/// Reference not found
 		LinkNotFound,
-		/// Not enough tokens to stake
-		InsufficientBalance,
-		/// Cannot unstake yet
-		StakeLocked,
 		/// Account already linked
 		AccountAlreadyLinked,
 		/// Account not linked
@@ -284,9 +280,9 @@ pub mod pallet {
 
 		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn internal_stake_update(
+		pub fn internal_lock_update(
 			origin: OriginFor<T>,
-			data: EthStakeUpdate<T::Public>,
+			data: EthLockUpdate<T::Public>,
 			_signature: T::Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
@@ -343,8 +339,8 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(n: T::BlockNumber) {
-			if let Err(error) = Self::sync_frag_stakes(n) {
-				log::error!("Error syncing frag stakes: {:?}", error);
+			if let Err(error) = Self::sync_frag_locks(n) {
+				log::error!("Error syncing frag locks: {:?}", error);
 			}
 		}
 	}
@@ -360,7 +356,7 @@ pub mod pallet {
 		/// are being whitelisted and marked as valid.
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
-			if let Call::internal_stake_update { ref data, ref signature } = call {
+			if let Call::internal_lock_update { ref data, ref signature } = call {
 				// check public is valid
 				let valid_keys = <FragKeys<T>>::get();
 				log::debug!("Valid keys: {:?}", valid_keys);
@@ -415,7 +411,7 @@ pub mod pallet {
 			}
 		}
 
-		fn sync_frag_stakes(_block_number: T::BlockNumber) -> Result<(), &'static str> {
+		fn sync_frag_locks(_block_number: T::BlockNumber) -> Result<(), &'static str> {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
 			} else {
@@ -541,7 +537,7 @@ pub mod pallet {
 
 				Signer::<T, T::AuthorityId>::any_account()
 					.send_unsigned_transaction(
-						|account| EthStakeUpdate {
+						|account| EthLockUpdate {
 							public: account.public.clone(),
 							amount,
 							sender,
@@ -549,7 +545,7 @@ pub mod pallet {
 							lock: locked,
 							block_number,
 						},
-						|payload, signature| Call::internal_stake_update {
+						|payload, signature| Call::internal_lock_update {
 							data: payload,
 							signature,
 						},
