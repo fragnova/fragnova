@@ -64,8 +64,8 @@ use serde::{Deserialize, Serialize};
 use sp_io::{
 	crypto as Crypto, hashing::blake2_256, hashing::keccak_256, offchain, transaction_index,
 };
-use sp_runtime::MultiSigner;
 use sp_runtime::offchain::storage::StorageValueRef;
+use sp_runtime::MultiSigner;
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	vec,
@@ -140,6 +140,19 @@ pub mod pallet {
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 	}
 
+	#[pallet::genesis_config]
+	#[derive(Default)]
+	pub struct GenesisConfig {
+		pub keys: Vec<ed25519::Public>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			Pallet::<T>::initialize_keys(&self.keys);
+		}
+	}
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
@@ -168,9 +181,9 @@ pub mod pallet {
 		/// A link was removed between native and ethereum account.
 		Unlinked(T::AccountId, H160),
 		/// Stake was created
-		Staked(Hash256, T::AccountId, T::Balance),
+		Locked(H160, T::Balance),
 		/// Stake was unlocked
-		Unstaked(Hash256, T::AccountId, T::Balance),
+		Unlocked(H160, T::Balance),
 	}
 
 	// Errors inform users that something went wrong.
@@ -197,6 +210,32 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New key: {:?}", public);
+
+			<FragKeys<T>>::mutate(|validators| {
+				validators.insert(public);
+			});
+
+			Ok(())
+		}
+
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("Removed key: {:?}", public);
+
+			<FragKeys<T>>::mutate(|validators| {
+				validators.remove(&public);
+			});
+
+			Ok(())
+		}
+
 		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
@@ -299,25 +338,29 @@ pub mod pallet {
 			let pub_key = &pub_key[12..];
 			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
-			// let recovered = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &message_hash)
-			// 	.map_err(|_| Error::<T>::VerificationFailed)?;
+			let amount: u128 = data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
-			// // this is how substrate handles ecdsa publics
-			// let short_key = blake2_256(&recovered[..]);
+			if !data.lock {
+				ensure!(amount == 0, Error::<T>::SystematicFailure);
+			} else {
+				ensure!(amount > 0, Error::<T>::SystematicFailure);
+			}
 
-			// let who2 = T::AccountId::decode(&mut &short_key[..])
-			// 	.map_err(|_| Error::<T>::VerificationFailed)?;
+			let amount: T::Balance = amount.saturated_into();
 
-			// ensure!(who == who2, Error::<T>::VerificationFailed);
+			let linked = <EthLockedFrag<T>>::get(&sender);
+			if let Some(linked) = linked {
+				<EthLockedFrag<T>>::insert(sender.clone(), (amount, linked.1));
+			} else {
+				<EthLockedFrag<T>>::insert(sender.clone(), (amount, false));
+			}
 
-			// ! Check passed, derive eth key and send to offchain worker
-
-			// let eth_key = pub_key.serialize();
-			// let eth_key = &eth_key[1..];
-			// let eth_key = keccak_256(&eth_key[..]);
-			// let eth_key = &eth_key[12..];
-
-			// TODO
+			if data.lock {
+				// also emit event
+				Self::deposit_event(Event::Locked(sender, amount));
+			} else {
+				Self::deposit_event(Event::Unlocked(sender, amount));
+			}
 
 			Ok(())
 		}
@@ -369,7 +412,7 @@ pub mod pallet {
 				if !signature_valid {
 					return InvalidTransaction::BadProof.into();
 				}
-				log::debug!("Sending detach finalization extrinsic");
+				log::debug!("Sending frag lock update extrinsic");
 				ValidTransaction::with_tag_prefix("FragLockUpdate")
 					.and_provides(data.public.clone())
 					.and_provides(data.amount)
@@ -387,6 +430,17 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		fn initialize_keys(keys: &[ed25519::Public]) {
+			if !keys.is_empty() {
+				assert!(<FragKeys<T>>::get().is_empty(), "FragKeys are already initialized!");
+				for key in keys {
+					<FragKeys<T>>::mutate(|keys| {
+						keys.insert(*key);
+					});
+				}
+			}
+		}
+
 		pub fn sync_frag_stakes(_block_number: T::BlockNumber) -> Result<(), &'static str> {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
@@ -438,6 +492,7 @@ pub mod pallet {
 			};
 
 			let to_block = current_block.saturating_sub(CONFIRMATIONS_NUMBER);
+			let to_block = format!("0x{:x}", to_block);
 
 			let req = json!({
 				"jsonrpc": "2.0",
@@ -445,7 +500,7 @@ pub mod pallet {
 				"id": "0",
 				"params": [{
 					"fromBlock": last_block,
-					"toBlock": format!("0x{:x}", to_block),
+					"toBlock": to_block,
 					"address": contract,
 					"topics": [
 						// [] to OR
@@ -482,11 +537,8 @@ pub mod pallet {
 				let data = log["data"].as_str().ok_or_else(|| "Invalid response - no data")?;
 				let data =
 					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?;
-				let data = ethabi::decode(
-					&[ParamType::Bytes, ParamType::Uint(256)],
-					&data,
-				)
-				.map_err(|_| "Invalid response - invalid eth data")?;
+				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256)], &data)
+					.map_err(|_| "Invalid response - invalid eth data")?;
 				let locked = match topic {
 					LOCK_EVENT => true,
 					UNLOCK_EVENT => false,
@@ -494,7 +546,8 @@ pub mod pallet {
 				};
 
 				let sender = topics[1].as_str().ok_or_else(|| "Invalid response - no sender")?;
-				let sender = hex::decode(&sender[2..]).map_err(|_| "Invalid response - invalid sender")?;
+				let sender =
+					hex::decode(&sender[2..]).map_err(|_| "Invalid response - invalid sender")?;
 				let sender = H160::from_slice(&sender[12..]);
 
 				let eth_signature = data[0].clone().into_bytes().ok_or_else(|| "Invalid data")?;
@@ -527,10 +580,12 @@ pub mod pallet {
 							signature,
 						},
 					)
-					.ok_or_else(|| "Failed to send transaction")?
+					.ok_or_else(|| "Failed to sign transaction")?
 					.1
-					.map_err(|_| "Failed to sign")?;
+					.map_err(|_| "Failed to send transaction")?;
 			}
+
+			last_block_ref.set(&to_block.as_bytes().to_vec());
 
 			Ok(())
 		}

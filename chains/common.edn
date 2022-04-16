@@ -8,6 +8,7 @@
 (def upload-index 2)
 (def patch-index 3)
 (def detach-index 6)
+(def frag-index (+ detach-index 5))
 
 (defnode root)
 
