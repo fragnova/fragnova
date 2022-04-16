@@ -64,6 +64,7 @@ use serde::{Deserialize, Serialize};
 use sp_io::{
 	crypto as Crypto, hashing::blake2_256, hashing::keccak_256, offchain, transaction_index,
 };
+use sp_runtime::MultiSigner;
 use sp_runtime::offchain::storage::StorageValueRef;
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
@@ -93,6 +94,7 @@ pub struct EthStakeUpdate<TPublic> {
 	pub sender: H160,
 	pub signature: ecdsa::Signature,
 	pub lock: bool,
+	pub block_number: u64,
 }
 
 impl<T: SigningTypes> SignedPayload<T> for EthStakeUpdate<T::Public> {
@@ -152,6 +154,11 @@ pub mod pallet {
 	// consumed by Protos pallet
 	#[pallet::storage]
 	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<Unlinked<T::AccountId>>, ValueQuery>;
+
+	/// These are the public keys representing the actual keys that can Sign messages
+	/// to present to external chains to detach onto
+	#[pallet::storage]
+	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -325,6 +332,60 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		/// Validate unsigned call to this module.
+		///
+		/// By default unsigned transactions are disallowed, but implementing the validator
+		/// here we make sure that some particular calls (the ones produced by offchain worker)
+		/// are being whitelisted and marked as valid.
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			// Firstly let's check that we call the right function.
+			if let Call::internal_stake_update { ref data, ref signature } = call {
+				// check public is valid
+				let valid_keys = <FragKeys<T>>::get();
+				log::debug!("Valid keys: {:?}", valid_keys);
+				// I'm sure there is a way to do this without serialization but I can't spend so
+				// much time fighting with rust
+				let pub_key = data.public.encode();
+				let pub_key: ed25519::Public = {
+					if let Ok(MultiSigner::Ed25519(pub_key)) =
+						<MultiSigner>::decode(&mut &pub_key[..])
+					{
+						pub_key
+					} else {
+						return InvalidTransaction::BadSigner.into();
+					}
+				};
+				log::debug!("Public key: {:?}", pub_key);
+				if !valid_keys.contains(&pub_key) {
+					return InvalidTransaction::BadSigner.into();
+				}
+				// most expensive bit last
+				let signature_valid =
+					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
+				if !signature_valid {
+					return InvalidTransaction::BadProof.into();
+				}
+				log::debug!("Sending detach finalization extrinsic");
+				ValidTransaction::with_tag_prefix("FragLockUpdate")
+					.and_provides(data.public.clone())
+					.and_provides(data.amount)
+					.and_provides(data.sender)
+					.and_provides(data.signature.clone())
+					.and_provides(data.lock)
+					.and_provides(data.block_number)
+					.longevity(5)
+					.propagate(true)
+					.build()
+			} else {
+				InvalidTransaction::Call.into()
+			}
+		}
+	}
+
 	impl<T: Config> Pallet<T> {
 		pub fn sync_frag_stakes(_block_number: T::BlockNumber) -> Result<(), &'static str> {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
@@ -411,6 +472,10 @@ pub mod pallet {
 
 			let logs = v["result"].as_array().ok_or_else(|| "Invalid response - no result")?;
 			for log in logs {
+				let block_number =
+					log["blockNumber"].as_str().ok_or("Invalid response - no block number")?;
+				let block_number = u64::from_str_radix(&block_number[2..], 16)
+					.map_err(|_| "Invalid response - invalid block number")?;
 				let topics =
 					log["topics"].as_array().ok_or_else(|| "Invalid response - no topics")?;
 				let topic = topics[0].as_str().ok_or_else(|| "Invalid response - no topic")?;
@@ -447,6 +512,7 @@ pub mod pallet {
 							sender,
 							signature: eth_signature.clone(),
 							lock: locked,
+							block_number,
 						},
 						|payload, signature| Call::internal_stake_update {
 							data: payload,
