@@ -433,14 +433,29 @@ pub mod pallet {
 					.into_address()
 					.ok_or_else(|| "Invalid response - invalid sender")?;
 
-				let signature = data[1].clone().into_bytes().ok_or_else(|| "Invalid data")?;
-				let signature: ecdsa::Signature =
-					(&signature[..]).try_into().map_err(|_| "Invalid data")?;
+				let eth_signature = data[1].clone().into_bytes().ok_or_else(|| "Invalid data")?;
+				let eth_signature: ecdsa::Signature =
+					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
 
 				let amount = data[2].clone().into_uint().ok_or_else(|| "Invalid data")?;
-				let amount: u128 = amount.try_into().map_err(|_| "Invalid data")?;
 
-				log::trace!("Signature: {:?}, amount: {}, locked: {}", signature, amount, locked);
+				Signer::<T, T::AuthorityId>::any_account()
+					.send_unsigned_transaction(
+						|account| EthStakeUpdate {
+							public: account.public.clone(),
+							amount,
+							sender,
+							signature: eth_signature.clone(),
+							lock: locked,
+						},
+						|payload, signature| Call::internal_stake_update {
+							data: payload,
+							signature,
+						},
+					)
+					.ok_or_else(|| "Failed to send transaction")?
+					.1
+					.map_err(|_| "Failed to sign")?;
 			}
 
 			Ok(())
