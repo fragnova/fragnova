@@ -159,10 +159,13 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type EthLockedFrag<T: Config> = StorageMap<_, Blake2_128Concat, H160, (T::Balance, bool)>;
+	pub type EthLockedFrag<T: Config> = StorageMap<_, Identity, H160, T::Balance>;
 
 	#[pallet::storage]
 	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BTreeSet<H160>>;
+
+	#[pallet::storage]
+	pub type EVMLinksReverse<T: Config> = StorageMap<_, Identity, H160, T::AccountId>;
 
 	// consumed by Protos pallet
 	#[pallet::storage]
@@ -253,11 +256,7 @@ pub mod pallet {
 			let eth_key = &eth_key[12..];
 			let eth_key = H160::from_slice(&eth_key[..]);
 
-			// find the locked frag account
-			let locked_frag =
-				<EthLockedFrag<T>>::get(&eth_key).ok_or_else(|| Error::<T>::LinkNotFound)?;
-			// ensure the account is not linked yet
-			ensure!(!locked_frag.1, Error::<T>::AccountAlreadyLinked);
+			ensure!(!<EVMLinksReverse<T>>::contains_key(eth_key), Error::<T>::AccountAlreadyLinked);
 
 			<EVMLinks<T>>::mutate(sender.clone(), |links| match links {
 				Some(links) => {
@@ -268,7 +267,7 @@ pub mod pallet {
 				},
 			});
 
-			<EthLockedFrag<T>>::insert(eth_key, (locked_frag.0, true));
+			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
 
 			// also emit event
 			Self::deposit_event(Event::Linked(sender, eth_key));
@@ -280,34 +279,7 @@ pub mod pallet {
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
-
-			// find the locked frag account
-			let locked_frag =
-				<EthLockedFrag<T>>::get(&account).ok_or_else(|| Error::<T>::LinkNotFound)?;
-			// ensure the account is not linked yet
-			ensure!(locked_frag.1, Error::<T>::AccountNotLinked);
-
-			<EVMLinks<T>>::mutate(sender.clone(), |links| {
-				if let Some(links) = links {
-					if links.remove(&account) {
-						let unlinked =
-							Unlinked { account: sender.clone(), external_account: account };
-						<PendingUnlinks<T>>::append(&unlinked);
-						Ok(())
-					} else {
-						Err(Error::<T>::LinkNotFound)
-					}
-				} else {
-					Err(Error::<T>::LinkNotFound)
-				}
-			})?;
-
-			<EthLockedFrag<T>>::insert(account, (locked_frag.0, false));
-
-			// also emit event
-			Self::deposit_event(Event::Unlinked(sender, account));
-
-			Ok(())
+			Self::unlink_account(sender, account)
 		}
 
 		/// TODO
@@ -348,17 +320,19 @@ pub mod pallet {
 
 			let amount: T::Balance = amount.saturated_into();
 
-			let linked = <EthLockedFrag<T>>::get(&sender);
-			if let Some(linked) = linked {
-				<EthLockedFrag<T>>::insert(sender.clone(), (amount, linked.1));
-			} else {
-				<EthLockedFrag<T>>::insert(sender.clone(), (amount, false));
-			}
+			<EthLockedFrag<T>>::insert(sender.clone(), amount);
 
 			if data.lock {
 				// also emit event
 				Self::deposit_event(Event::Locked(sender, amount));
 			} else {
+				// if we have any link to this account, then force unlinking
+				let linked = <EVMLinksReverse<T>>::get(sender.clone());
+				if let Some(linked) = linked {
+					Self::unlink_account(linked, sender.clone())?;
+				}
+
+				// also emit event
 				Self::deposit_event(Event::Unlocked(sender, amount));
 			}
 
@@ -441,7 +415,7 @@ pub mod pallet {
 			}
 		}
 
-		pub fn sync_frag_stakes(_block_number: T::BlockNumber) -> Result<(), &'static str> {
+		fn sync_frag_stakes(_block_number: T::BlockNumber) -> Result<(), &'static str> {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
 			} else {
@@ -586,6 +560,32 @@ pub mod pallet {
 			}
 
 			last_block_ref.set(&to_block.as_bytes().to_vec());
+
+			Ok(())
+		}
+
+		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
+			ensure!(<EVMLinksReverse<T>>::contains_key(account), Error::<T>::AccountNotLinked);
+
+			<EVMLinks<T>>::mutate(sender.clone(), |links| {
+				if let Some(links) = links {
+					if links.remove(&account) {
+						let unlinked =
+							Unlinked { account: sender.clone(), external_account: account };
+						<PendingUnlinks<T>>::append(&unlinked);
+						Ok(())
+					} else {
+						Err(Error::<T>::LinkNotFound)
+					}
+				} else {
+					Err(Error::<T>::LinkNotFound)
+				}
+			})?;
+
+			<EVMLinksReverse<T>>::remove(account);
+
+			// also emit event
+			Self::deposit_event(Event::Unlinked(sender, account));
 
 			Ok(())
 		}
