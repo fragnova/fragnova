@@ -310,8 +310,6 @@ pub mod pallet {
 
 			let amount: T::Balance = amount.saturated_into();
 
-			<EthLockedFrag<T>>::insert(sender.clone(), amount);
-
 			if data.lock {
 				// also emit event
 				Self::deposit_event(Event::Locked(sender, amount));
@@ -325,6 +323,9 @@ pub mod pallet {
 				// also emit event
 				Self::deposit_event(Event::Unlocked(sender, amount));
 			}
+
+			// write this later as unlink_account can fail
+			<EthLockedFrag<T>>::insert(sender.clone(), amount);
 
 			Ok(())
 		}
