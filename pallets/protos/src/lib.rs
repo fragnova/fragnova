@@ -5,10 +5,6 @@ mod mock;
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(test)]
-mod common;
-
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 

@@ -1,5 +1,64 @@
-use crate::common::*;
+use crate::{mock::*, AuthData, Error, LinkedAsset, ProtoOwner, Protos, Tags, UploadAuthorities};
+use codec::{Compact, Encode};
+use frame_support::{assert_noop, assert_ok};
+use pallet_detach::{
+	DetachInternalData, DetachedHashes, EthereumAuthorities, SupportedChains, KEY_TYPE,
+};
+use sp_clamor::Hash256;
+use sp_core::Pair;
+use sp_io::hashing::blake2_256;
+use sp_keystore::{testing::KeyStore, KeystoreExt};
+use std::sync::Arc;
 
+fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
+	let pair = sp_core::ecdsa::Pair::from_string(suri, None).unwrap();
+	let msg = sp_core::keccak_256(b"this should be a hashed message");
+
+	pair.sign(&msg)
+}
+
+fn initial_set_up_and_get_signature(
+	data: Vec<u8>,
+	references: Vec<Hash256>,
+	nonce: u64,
+) -> sp_core::ecdsa::Signature {
+	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
+	let tags: Vec<Tags> = Vec::new();
+
+	let proto_hash = blake2_256(&data);
+	let linked_asset: Option<LinkedAsset> = None;
+	let signature: sp_core::ecdsa::Signature = pair.sign(
+		&[
+			&proto_hash[..],
+			&references.encode(),
+			&tags.encode(),
+			&linked_asset.encode(),
+			&nonce.encode(),
+			&1.encode(),
+		]
+		.concat(),
+	);
+	assert_ok!(ProtosPallet::add_upload_auth(Origin::root(), pair.public()));
+	signature
+}
+
+fn initial_upload_and_get_signature() -> AuthData {
+	let data = DATA.as_bytes().to_vec();
+	let references = vec![];
+	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
+	let auth_data = AuthData { signature, block: 1 };
+
+	assert_ok!(ProtosPallet::upload(
+		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
+		auth_data.clone(),
+		references,
+		Vec::new(),
+		None,
+		None,
+		data,
+	));
+	auth_data
+}
 
 #[test]
 fn add_eth_auth_should_works() {
@@ -43,7 +102,7 @@ fn upload_should_works() {
 		let data = DATA.as_bytes().to_vec();
 		let references = vec![];
 
-		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0, vec![]);
+		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 
 		let auth_data = AuthData { signature, block: 1 };
 
@@ -68,7 +127,7 @@ fn upload_should_not_works_if_proto_hash_exists() {
 		initial_upload_and_get_signature();
 		let references = vec![];
 
-		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1, vec![]);
+		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
 		let auth_data = AuthData { signature, block: 1 };
 		assert_noop!(
 			ProtosPallet::upload(
@@ -425,7 +484,3 @@ fn internal_finalize_detach_should_works() {
 		assert!(<DetachedHashes<Test>>::contains_key(PROTO_HASH));
 	});
 }
-
-
-mod get_by_tags;
-mod get_metadata_batch;
