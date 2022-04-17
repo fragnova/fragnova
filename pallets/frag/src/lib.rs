@@ -162,7 +162,7 @@ pub mod pallet {
 	pub type EthLockedFrag<T: Config> = StorageMap<_, Identity, H160, T::Balance>;
 
 	#[pallet::storage]
-	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BTreeSet<H160>>;
+	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, H160>;
 
 	#[pallet::storage]
 	pub type EVMLinksReverse<T: Config> = StorageMap<_, Identity, H160, T::AccountId>;
@@ -240,6 +240,7 @@ pub mod pallet {
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
+			// the idea is to prove to this chain that the sender knows the private key of the external address
 			let mut message = b"EVM2Fragnova".to_vec();
 			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
 			message.extend_from_slice(&sender.encode());
@@ -252,17 +253,10 @@ pub mod pallet {
 			let eth_key = &eth_key[12..];
 			let eth_key = H160::from_slice(&eth_key[..]);
 
+			ensure!(!<EVMLinks<T>>::contains_key(&sender), Error::<T>::AccountAlreadyLinked);
 			ensure!(!<EVMLinksReverse<T>>::contains_key(eth_key), Error::<T>::AccountAlreadyLinked);
 
-			<EVMLinks<T>>::mutate(sender.clone(), |links| match links {
-				Some(links) => {
-					links.insert(eth_key);
-				},
-				_ => {
-					<EVMLinks<T>>::insert(sender.clone(), BTreeSet::from_iter(vec![eth_key]));
-				},
-			});
-
+			<EVMLinks<T>>::insert(sender.clone(), eth_key);
 			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
 
 			// also emit event
@@ -561,23 +555,13 @@ pub mod pallet {
 		}
 
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
+			ensure!(<EVMLinks<T>>::contains_key(sender.clone()), Error::<T>::AccountNotLinked);
 			ensure!(<EVMLinksReverse<T>>::contains_key(account), Error::<T>::AccountNotLinked);
 
-			<EVMLinks<T>>::mutate(sender.clone(), |links| {
-				if let Some(links) = links {
-					if links.remove(&account) {
-						let unlinked =
-							Unlinked { account: sender.clone(), external_account: account };
-						<PendingUnlinks<T>>::append(&unlinked);
-						Ok(())
-					} else {
-						Err(Error::<T>::LinkNotFound)
-					}
-				} else {
-					Err(Error::<T>::LinkNotFound)
-				}
-			})?;
+			let unlinked = Unlinked { account: sender.clone(), external_account: account };
 
+			<EVMLinks<T>>::remove(sender.clone());
+			<PendingUnlinks<T>>::append(&unlinked);
 			<EVMLinksReverse<T>>::remove(account);
 
 			// also emit event

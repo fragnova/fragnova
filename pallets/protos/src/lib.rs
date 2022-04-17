@@ -727,7 +727,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_n: T::BlockNumber) {
-			// drain unlinks
+			// TODO drain unlinks
 			let _unlinks = <pallet_frag::PendingUnlinks<T>>::take();
 		}
 	}
