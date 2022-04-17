@@ -34,6 +34,22 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '14'  # The node-version input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
+
+      - name: Test RPCs
+        run: |
+          cargo build
+          RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
+          sleep 5
+          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl cbl /data/chains/test-protos-rpc.edn
+          echo "before changing directory"
+          cd rpc
+          npm install
+          npm test
+          kill %1
+
       - name: Run IPFS Test
         run: |
           cargo build
@@ -57,22 +73,6 @@ jobs:
       - name: Check if Rustdocs Builds
         run: |
           cargo doc
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '14'  # The node-version input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
-
-      - name: Test RPCs
-        run: |
-          cargo build
-          RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
-          sleep 600
-          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl cbl /data/chains/test-protos-rpc.edn
-          echo "before changing directory"
-          cd rpc
-          npm install
-          npm test
-          kill %1
 
 
   #
