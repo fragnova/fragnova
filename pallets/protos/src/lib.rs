@@ -571,7 +571,7 @@ pub mod pallet {
 
 
 
-		fn is_proto_having_any_tags(proto_id: &Hash256, tags: &Vec<Tags>) -> bool {
+		fn is_proto_having_any_tags(proto_id: &Hash256, tags: &[Tags]) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				tags.into_iter().any(|tag| struct_proto.tags.contains(&tag))
 			} else {
