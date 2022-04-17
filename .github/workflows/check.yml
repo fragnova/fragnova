@@ -116,26 +116,26 @@ jobs:
           cd target/doc
           npm i -g carbites-cli
           carbites split clamor.car --size 100MB --strategy treewalk
-      - name: Publish to NFT storage
-        uses: nick-invision/retry@v2
-        with:
-          timeout_minutes: 5
-          max_attempts: 3
-          command: |
-            
-            for filename in clamor-*.car; do
-                curl -X POST https://api.nft.storage/upload \
-                --data-binary @${filename} \
-                -H "Authorization: Bearer ${{ secrets.NFT_STORAGE_KEY }}" \
-                -H "Content-Type: application/car" \
-                > response.json
-            cat response.json
-            if [ $(cat response.json | jq .ok) != "true" ]; then exit 1; fi
-            done;
-      - name: Set IPFS CID
-        id: set_ipfs_cid
-        run: |
-          echo "::set-output name=ipfs_cid::$(cat response.json | jq .value.cid)"
+#      - name: Publish to NFT storage
+#        uses: nick-invision/retry@v2
+#        with:
+#          timeout_minutes: 5
+#          max_attempts: 3
+#          command: |
+#
+#            for filename in clamor-*.car; do
+#                curl -X POST https://api.nft.storage/upload \
+#                --data-binary @${filename} \
+#                -H "Authorization: Bearer ${{ secrets.NFT_STORAGE_KEY }}" \
+#                -H "Content-Type: application/car" \
+#                > response.json
+#            cat response.json
+#            if [ $(cat response.json | jq .ok) != "true" ]; then exit 1; fi
+#            done;
+#      - name: Set IPFS CID
+#        id: set_ipfs_cid
+#        run: |
+#          echo "::set-output name=ipfs_cid::$(cat response.json | jq .value.cid)"
       # - name: Sync Cloudflare
       #   uses: nick-invision/retry@v2
       #   with:
