@@ -27,7 +27,7 @@
   )
 
 (schedule root wait-port)
-(if (run root 0.1) nil (throw "wait-port failed"))
+(if (run root 0.1) nil (throw "wait-port failed (ha fallado)"))
 
 (schedule root main)
 (if (run root 0.1) nil (throw "upload failed"))
