@@ -6,7 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use frame_support::traits::{ConstU128, ConstU16, ConstU32};
+use frame_support::traits::{ConstU128, ConstU16, ConstU32, ConstU64};
 use frame_system::EnsureRoot;
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
@@ -53,8 +53,8 @@ pub use pallet_protos;
 pub use pallet_contracts::Schedule;
 use pallet_protos::{Tags,
 					GetProtosParams,
-					};
-use sp_chainblocks::Hash256;
+ 				   };
+use sp_clamor::Hash256;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.
@@ -321,10 +321,21 @@ impl pallet_fragments::Config for Runtime {
 	type WeightInfo = ();
 }
 
+impl pallet_frag::Config for Runtime {
+	type Event = Event;
+	type WeightInfo = ();
+	/// "FRAG" Token is initialized with ID "0" in `chain_spec.rs`
+	type FragToken = ConstU32<0>;
+	type EthChainId = ConstU64<5>; // goerli
+	type AuthorityId = pallet_frag::crypto::FragAuthId;
+}
+
 impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
+	// type StakeLockupPeriod = ConstU64<100800>; // one week
+	type StakeLockupPeriod = ConstU64<5>; // one week
 }
 
 impl pallet_detach::Config for Runtime {
@@ -486,7 +497,7 @@ parameter_types! {
 
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
-	type Balance = u128;
+	type Balance = Balance;
 	type AssetId = u32;
 	type Currency = Balances;
 	type ForceOrigin = EnsureRoot<AccountId>;
@@ -527,6 +538,7 @@ construct_runtime!(
 		Proxy: pallet_proxy,
 		Identity: pallet_identity,
 		Utility: pallet_utility,
+		Frag: pallet_frag,
 	}
 );
 
@@ -763,6 +775,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
+			// list_benchmark!(list, extra, pallet_frag, Frag);
 			list_benchmark!(list, extra, pallet_protos, Protos);
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, pallet_fragments, Fragments);
@@ -808,6 +821,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+			// add_benchmark!(params, batches, pallet_frag, Frag);
 			add_benchmark!(params, batches, pallet_protos, Protos);
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_fragments, Fragments);

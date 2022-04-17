@@ -1,6 +1,6 @@
 use clamor_runtime::{
-	AccountId, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig, GrandpaConfig,
-	IndicesConfig, ProtosConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig,
+	GrandpaConfig, IndicesConfig, ProtosConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -28,7 +28,9 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 /// Generate a crypto pair from seed.
 pub fn get_from_seed_to_eth(seed: &str) -> ecdsa::Public {
 	let pair = ed25519::Pair::from_string(&format!("//{}", seed), None).unwrap();
-	let signature = pair.sign(b"fragments-frag-ecdsa-keys");
+	let mut message = b"fragments-frag-ecdsa-keys".to_vec();
+	message.append(&mut pair.public().to_vec()); // salt it with the public key
+	let signature = pair.sign(&message);
 	let hash = sp_core::keccak_256(&signature.0[..]);
 	let pair = ecdsa::Pair::from_seed_slice(&hash[..]).unwrap();
 	let public = pair.public();
@@ -160,7 +162,11 @@ fn testnet_genesis(
 		},
 		balances: BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 60.
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+			balances: endowed_accounts
+				.iter()
+				.cloned()
+				.map(|k| (k, (1000000000u128 * (10u128.pow(12)))))
+				.collect(),
 		},
 		aura: AuraConfig {
 			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
@@ -170,7 +176,7 @@ fn testnet_genesis(
 		},
 		sudo: SudoConfig {
 			// Assign network admin rights.
-			key: Some(root_key),
+			key: Some(root_key.clone()),
 		},
 		transaction_payment: Default::default(),
 		indices: IndicesConfig { indices: vec![] },
@@ -181,6 +187,17 @@ fn testnet_genesis(
 			eth_authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
-		assets: Default::default(),
+		assets: AssetsConfig {
+			assets: vec![
+				// id, owner, is_sufficient, min_balance
+				(0, root_key.clone(), true, 1),
+				(1, root_key.clone(), true, 1),
+			],
+			metadata: vec![
+				// id, name, symbol, decimals
+				(0, "Fragnova Network Token".into(), "FRAG".into(), 12),
+			],
+			accounts: vec![],
+		},
 	}
 }

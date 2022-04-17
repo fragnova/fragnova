@@ -10,6 +10,7 @@ tar -xvzf go-ipfs_v0.10.0_linux-amd64.tar.gz
 export PATH=$PATH:/data/chains/go-ipfs
 
 ipfs init
+ipfs config profile apply test
 ipfs daemon &
 sleep 5
 cbl test-protos-ipfs.edn

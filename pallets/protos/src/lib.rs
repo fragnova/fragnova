@@ -13,24 +13,31 @@ mod common;
 mod benchmarking;
 
 mod weights;
+
+use sp_core::{ecdsa, H160, U256};
+
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{ecdsa, H160, U256};
 use sp_io::{crypto as Crypto, hashing::blake2_256, transaction_index};
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	vec,
-	vec::Vec
+	vec::Vec,
 };
+
 pub use weights::WeightInfo;
 
-use sp_chainblocks::Hash256;
+use sp_clamor::{get_locked_frag_account, Hash256};
 
 use scale_info::prelude::{format, string::{String, ToString}};
 use serde_json::{Map, Value, json};
 
+use frame_support::PalletId;
+const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
+
+/// Types of tags that can be attached to a Proto-Fragment to describe it (e.g Code, Audio, Video etc.)
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Tags {
@@ -39,23 +46,23 @@ pub enum Tags {
 	Image,
 }
 
+/// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum LinkSource {
 	// Generally we just store this data, we don't verify it as we assume auth service did it.
 	// (Link signature, Linked block number, EIP155 Chain ID)
 	Evm(ecdsa::Signature, u64, U256),
 }
 
+/// Types of Assets that are linked to a Proto-Fragment (e.g an ERC-721 Contract etc.)
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum LinkedAsset {
 	// Ethereum (ERC721 Contract address, Token ID, Link source)
 	Erc721(H160, U256, LinkSource),
 }
 
+/// Types of Proto-Fragment Owner
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum ProtoOwner<TAccountId> {
 	// A regular account on this chain
 	User(TAccountId),
@@ -77,20 +84,20 @@ pub struct GetProtosParams<TAccountId, StringType> {
 	pub tags: Option<Vec<Tags>>,
 }
 
+/// Struct that represents the digital signature (and other important information) given by the off-chain validator
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct AuthData {
 	pub signature: ecdsa::Signature,
 	pub block: u32,
 }
 
+/// Struct of a Proto-Fragment
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct Proto<TAccountId, TBlockNumber> {
 	/// Block number this proto was included in
 	pub block: TBlockNumber,
 	/// Plain hash of indexed data.
 	pub patches: Vec<Hash256>,
-	/// Base include cost, of referenced protos.
-	pub base_cost: Compact<u128>,
 	/// Include price of the proto.
 	/// If None, this proto can't be included into other protos
 	pub include_cost: Option<Compact<u128>>,
@@ -112,29 +119,34 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
+	use sp_runtime::{traits::AccountIdConversion, SaturatedConversion};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + pallet_detach::Config + pallet_randomness_collective_flip::Config
+		frame_system::Config
+		+ pallet_detach::Config
+		+ pallet_frag::Config
+		+ pallet_randomness_collective_flip::Config
+		+ pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
 		type WeightInfo: WeightInfo;
+
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
+
+		#[pallet::constant]
+		type StakeLockupPeriod: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
+	#[derive(Default)]
 	pub struct GenesisConfig {
+		/// List of upload authorities (i.e off-chain validators). Any of them must validate a Proto-Fragment before it can be uploaded/patched/etc. on the Blockchain
 		pub upload_authorities: Vec<ecdsa::Public>,
-	}
-
-	#[cfg(feature = "std")]
-	impl Default for GenesisConfig {
-		fn default() -> Self {
-			Self { upload_authorities: Vec::new() }
-		}
 	}
 
 	#[pallet::genesis_build]
@@ -152,30 +164,61 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
+	/// Storage Map that represents the number of transactions the user has performed with the off-chain validator
+	/// * The key is the AccountId of the user
+	/// * The value is the number of transactions the user has performed with the off-chain validator
 	#[pallet::storage]
 	pub type UserNonces<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, u64>;
 
+	/// Storage Map of Proto-Fragments where the key is the hash of the data of the Proto-Fragment, and the value is the Proto struct of the Proto-Fragment
 	#[pallet::storage]
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
+	/// Storage Map which keeps track of the Proto-Fragments by Tag type.
+	/// The key is the Tag type and the value is a list of the hash of a Proto-Fragment
+	// Not ideal but to have it iterable...
 	#[pallet::storage]
 	pub type ProtosByTag<T: Config> = StorageMap<_, Blake2_128Concat, Tags, Vec<Hash256>>;
 
+	/// UploadAuthorities is a StorageValue that keeps track of the set of ECDSA public keys of the upload authorities
+	/// * Note: An upload authority (also known as the off-chain validator) provides the digital signature needed to upload a Proto-Fragment
 	#[pallet::storage]
-	pub type ProtosByOwner<T: Config> = StorageMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
+	pub type ProtosByOwner<T: Config> =
+		StorageMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
 	#[pallet::storage]
 	pub type UploadAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
+	// Staking management
+	// (Amount staked, Last stake time)
+	#[pallet::storage]
+	pub type ProtoStakes<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		Hash256,
+		Blake2_128Concat,
+		T::AccountId,
+		(T::Balance, T::BlockNumber),
+	>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// A Proto-Fragment was uploaded
 		Uploaded(Hash256),
+		/// A Proto-Fragment was patched
 		Patched(Hash256),
+		/// A Proto-Fragment metadata has changed
 		MetadataChanged(Hash256, Vec<u8>),
+		/// A Proto-Fragment was detached
 		Detached(Hash256, Vec<u8>),
+		/// A Proto-Fragment was transferred
 		Transferred(Hash256, T::AccountId),
+		/// Stake was created
+		Staked(Hash256, T::AccountId, T::Balance),
+		/// Stake was unlocked
+		Unstaked(Hash256, T::AccountId, T::Balance),
 	}
 
 	// Errors inform users that something went wrong.
@@ -193,6 +236,16 @@ pub mod pallet {
 		Unauthorized,
 		/// Signature verification failed
 		VerificationFailed,
+		/// Not enough FRAG staked
+		NotEnoughStaked,
+		/// Stake not found
+		StakeNotFound,
+		/// Reference not found
+		ReferenceNotFound,
+		/// Not enough tokens to stake
+		InsufficientBalance,
+		/// Cannot unstake yet
+		StakeLocked,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -203,6 +256,12 @@ pub mod pallet {
 	where
 		T::AccountId: AsRef<[u8]>
 	{
+	impl<T: Config> Pallet<T> {
+		/// Allows the Sudo Account to add an ECDSA public key to current set of designated upload authorities (i.e the designated off-chain validators)
+		///
+		/// # Arguements
+		/// * `origin` - The origin of the extrisnic/dispatchable function
+		/// * `public` - The ECDSA public key to add to the current set of designated upload authorities
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_upload_auth())]
 		pub fn add_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -216,6 +275,11 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Allows the Sudo Account to remove an ECDSA public key from current set of designated upload authorities (i.e the designated off-chain validators)
+		///
+		/// # Arguements
+		/// * `origin` - The origin of the extrisnic/dispatchable function
+		/// * `public` - The ECDSA public key to remove from the current set of designated upload authorities
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::del_upload_auth())]
 		pub fn del_upload_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -229,7 +293,18 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Proto upload function.
+		/// Uploads a Proto-Fragment onto the Blockchain. To successfully upload a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrisnic/dispatchable function
+		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
+		/// * `references` - A list of references to other Proto-Fragments
+		/// * `tags` - A list of tags to upload along with the Proto-Fragment
+		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Frament (e.g an ERC-721 Contract)
+		/// * `include_cost` (optional) -
+		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn upload(
 			origin: OriginFor<T>,
@@ -278,19 +353,29 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
-			// Calculate the base cost of inclusion
-			let cost = references.iter().fold(0, |acc, ref_hash| {
-				let ref_cost = if let Some(proto) = <Protos<T>>::get(ref_hash) {
-					if let Some(cost) = proto.include_cost {
-						cost.into()
-					} else {
-						0
+			// Check FRAG staking
+			for reference in references.iter() {
+				let cost = <Protos<T>>::get(reference).map(|p| p.include_cost);
+				if let Some(cost) = cost {
+					if let Some(cost) = cost {
+						let cost: u128 = cost.into();
+						let cost: T::Balance = cost.saturated_into();
+						let stake = <ProtoStakes<T>>::get(reference, who.clone());
+						if let Some(stake) = stake {
+							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
+						} else {
+							// Stake not found
+							return Err(Error::<T>::StakeNotFound.into());
+						}
 					}
+				// Free to include, just continue
 				} else {
-					0
-				};
-				acc + ref_cost
-			});
+					// Proto not found
+					return Err(Error::<T>::ReferenceNotFound.into());
+				}
+			}
+
+			// ! Write STATE from now, ensure no errors from now...
 
 			let owner = if let Some(link) = linked_asset {
 				ProtoOwner::ExternalAsset(link)
@@ -298,13 +383,10 @@ pub mod pallet {
 				ProtoOwner::User(who.clone())
 			};
 
-			// Write STATE from now, ensure no errors from now...
-
 			// store in the state the proto
 			let proto = Proto {
 				block: current_block_number,
 				patches: vec![],
-				base_cost: cost.into(),
 				include_cost,
 				creator: who.clone(),
 				owner: owner.clone(),
@@ -337,8 +419,20 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Proto upload function.
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + if let Some(data) = data { data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get() } else { 0 })]
+		/// Patches (i.e modifies) the existing Proto-Fragment (whose hash is `proto_hash`) by appending the hash of `data` to the Vector field `patches` of the existing Proto-Fragment's Struct Instance.
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrisnic / dispatchable function
+		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
+		/// * `proto_hash` - The hash of the existing Proto-Fragment
+		/// * `tags` - A list of tags to upload along with the Proto-Fragment
+		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Frament (e.g an ERC-721 Contract)
+		/// * `include_cost` (optional) -
+		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get())]
 		pub fn patch(
 			origin: OriginFor<T>,
 			auth: AuthData,
@@ -346,7 +440,7 @@ pub mod pallet {
 			proto_hash: Hash256,
 			include_cost: Option<Compact<u128>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
-			data: Option<Vec<u8>>,
+			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -366,7 +460,7 @@ pub mod pallet {
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
-			let data_hash = blake2_256(&data.encode());
+			let data_hash = blake2_256(&data);
 			let signature_hash = blake2_256(
 				&[&proto_hash[..], &data_hash[..], &nonce.encode(), &auth.block.encode()].concat(),
 			);
@@ -383,7 +477,7 @@ pub mod pallet {
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
-				if let Some(data) = data {
+				if data.len() > 0 {
 					// No failures from here on out
 					proto.patches.push(data_hash);
 					// index mutable data for IPFS discovery as well
@@ -403,7 +497,13 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Transfer proto ownership
+		/// Transfer the ownership of a Proto-Fragment from `origin` to `new_owner`
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrinsic / dispatchable function
+		/// * `proto_hash` - The hash of the data of the Proto-Fragment that you want to transfer
+		/// * `new_owner` - The AccountId of the account you want to transfer the Proto-Fragment to
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
 		pub fn transfer(
 			origin: OriginFor<T>,
@@ -456,13 +556,24 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Proto upload function.
+		/// Alters the metadata of an existing Proto-Fragment (whose hash is `proto_hash`) by adding the key-value pair (`metadata_key.clone`,`blake2_256(&data.encode())`) to the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance.
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrisnic / dispatchable function
+		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
+		/// * `proto_hash` - The hash of the existing Proto-Fragment
+		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
+		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			auth: AuthData,
 			// proto hash we want to update
 			proto_hash: Hash256,
+			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
 			metadata_key: Vec<u8>,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
@@ -525,6 +636,14 @@ pub mod pallet {
 
 		/// Detached a proto from this chain by emitting an event that includes a signature.
 		/// The remote target chain can attach this proto by using this signature.
+		///
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrisnic / dispatchable function
+		/// * `proto_hash` - The hash of the existing Proto-Fragment to detach
+		/// * `target_chain` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
+		/// * `target_account` - The public account address on the blockchain `target_chain` that we want to detach the existing Proto-Fragment into
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
 		pub fn detach(
 			origin: OriginFor<T>,
@@ -555,13 +674,95 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::weight(50_000)]
+		pub fn stake(
+			origin: OriginFor<T>,
+			proto_hash: Hash256,
+			amount: T::Balance,
+		) -> DispatchResult {
+			use frame_support::traits::fungibles::Transfer;
+
+			let who = ensure_signed(origin.clone())?;
+			let who = get_locked_frag_account(&who).map_err(|_| Error::<T>::SystematicFailure)?;
+
+			// make sure the proto exists
+			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
+
+			// make sure user has enough FRAG
+			let balance = <pallet_assets::Pallet<T>>::balance(T::FragToken::get(), &who.clone());
+			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			// ! from now we write...
+
+			// transfer to pallet vault
+			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+				T::FragToken::get(),
+				&who,
+				&Self::account_id(),
+				amount,
+				true,
+			)
+			.map(|_| ())?;
+
+			// take record of the stake
+			<ProtoStakes<T>>::insert(proto_hash, &who, (amount, current_block_number));
+
+			// also emit event
+			Self::deposit_event(Event::Staked(proto_hash, who, amount));
+
+			Ok(())
+		}
+
+		#[pallet::weight(50_000)]
+		pub fn unstake(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
+			use frame_support::traits::fungibles::Transfer;
+
+			let who = ensure_signed(origin.clone())?;
+
+			// make sure the proto exists
+			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
+
+			// make sure user has enough FRAG
+			let stake =
+				<ProtoStakes<T>>::get(&proto_hash, &who).ok_or(Error::<T>::StakeNotFound)?;
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			ensure!(
+				current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()),
+				Error::<T>::StakeLocked
+			);
+
+			// ! from now we write...
+
+			// transfer to pallet vault
+			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+				T::FragToken::get(),
+				&Self::account_id(),
+				&who,
+				stake.0,
+				false,
+			)
+			.map(|_| ())?;
+
+			// take record of the unstake
+			<ProtoStakes<T>>::remove(proto_hash, &who);
+
+			// also emit event
+			Self::deposit_event(Event::Unstaked(proto_hash, who, stake.0));
+
+			Ok(())
+		}
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(_n: T::BlockNumber) {}
-
-		fn offchain_worker(_n: T::BlockNumber) {}
+		fn on_finalize(_n: T::BlockNumber) {
+			// drain unlinks
+			let _unlinks = <pallet_frag::PendingUnlinks<T>>::take();
+		}
 	}
 
 	impl<T: Config> Pallet<T>
@@ -579,7 +780,7 @@ pub mod pallet {
 			}
 		}
 
-		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32, from: u32, desc: bool) 
+		pub fn get_by_tags(tags: Vec<Tags>, owner: Option<T::AccountId>, limit: u32, from: u32, desc: bool)
 		-> Vec<Hash256> {
 
 
@@ -597,7 +798,7 @@ pub mod pallet {
 							let iter_protos_limited = iter_protos_filtered.skip(from as usize).take(limit as usize);
 
 							iter_protos_limited.collect::<Vec<Hash256>>()
-	
+
 						} else {
 							let iter_protos = vec_protos.into_iter();
 
@@ -606,12 +807,12 @@ pub mod pallet {
 
 							iter_protos_limited.collect::<Vec<Hash256>>()
 						}
-						
+
 					} else { // If owner cannot be found
 						<Vec<Hash256>>::new()
 					}
 
-										
+
 
 
 				},
@@ -622,7 +823,7 @@ pub mod pallet {
 					let mut remaining = limit as usize;
 
 					let iter_protos = tags.into_iter().map(|tag| {
-						
+
 						let vec_protos =
 						if remaining <= 0 {
 							<Vec<Hash256>>::new()
@@ -646,11 +847,11 @@ pub mod pallet {
 						remaining -= vec_protos.len();
 
 						vec_protos
-					
+
 					}).flatten();
 
 					let iter_protos_limited = iter_protos.skip(from as usize).take(limit as usize);
-					
+
 					iter_protos_limited.collect::<Vec<Hash256>>()
 
 				}
@@ -659,17 +860,17 @@ pub mod pallet {
 
 		}
 
-		/// Returns the values of the requested metadata keys for the requested Proto-Fragments 
+		/// Returns the values of the requested metadata keys for the requested Proto-Fragments
 		/// - If a Proto-Fragment doen't exist at index i of `batch`, the returned Vector will have a `None` element at index i
 		/// - If a Metadata Key at index j of `keys` doesn't exist for a Proto-Fragment at index i of `batch`, the returned Vector will have a `None` element at index (i, j)
 		/// Note: The values of any metadata key is the hash digest of the metadata (not the actual metadata). To get the actual metadata, you need to use IPFS
-		/// 
-		/// 
+		///
+		///
 		/// # Arguments
-		/// 
+		///
 		/// * `batch` - The  Proto-Fragment IDs to query
 		/// * `keys` - The metadata keys to query
-		pub fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Option<Hash256>>>> { 
+		pub fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Option<Hash256>>>> {
 
 			log::info!("get_metadata_batch batch: {:?}", batch);
 			log::info!("get_metadata_batch keys: {:?}", keys);
@@ -820,7 +1021,7 @@ pub mod pallet {
 					let map_metadata = <Protos<T>>::get(array_proto_id).unwrap().metadata;
 
 					for metadata_key in metadata_keys.iter() {
-						let metadata_value = 
+						let metadata_value =
 						// if let Some(data_hash) = map_metadata.get(metadata_key.as_bytes()) {
 						if let Some(data_hash) = map_metadata.get(metadata_key) {
 							Value::String(hex::encode(data_hash))
@@ -835,7 +1036,7 @@ pub mod pallet {
 						};
 					}
 				}
-			
+
 			}
 
 			let result = json!(map).to_string();
@@ -845,6 +1046,13 @@ pub mod pallet {
 		}
 
 
+		/// Ensures that the  SECP256k1 ECDSA public key recovered from the digital signature and the blake2-256 hash of the message is of a designated upload authority
+		/// Also ensures that the digital signature was not signed more than a certain number of blocks ago
+		/// * `block number` - The latest block number
+		/// * `data` - AuthData Struct which contains:
+		///     * The digital signature
+		///     * The value of the latest block number when the digital signature was signed
+		/// * `signature_hash` - The blake2-256 hash of the message
 		fn ensure_auth(
 			block_number: T::BlockNumber,
 			data: &AuthData,
@@ -877,10 +1085,14 @@ pub mod pallet {
 				);
 				for authority in authorities {
 					<UploadAuthorities<T>>::mutate(|authorities| {
-						authorities.insert(authority.clone());
+						authorities.insert(*authority);
 					});
 				}
 			}
+		}
+
+		pub fn account_id() -> T::AccountId {
+			PROTOS_PALLET_ID.into_account()
 		}
 	}
 }

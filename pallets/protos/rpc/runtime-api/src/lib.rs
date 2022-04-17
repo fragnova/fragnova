@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 use codec::Codec;
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 use sp_std::vec::Vec;
 
 use pallet_protos::GetProtosParams;

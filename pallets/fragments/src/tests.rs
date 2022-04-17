@@ -2,7 +2,7 @@ use crate::{mock::*, Error, FragmentMetadata, Fragments, Proto2Fragments};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 use pallet_protos::{AuthData, LinkedAsset, Tags};
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
 
@@ -33,7 +33,7 @@ fn initial_set_up_and_get_signature(
 
 fn initial_upload_and_get_signature() -> AuthData {
 	let data = DATA.as_bytes().to_vec();
-	let references = vec![PROTO_HASH];
+	let references = vec![];
 	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
 	let auth_data = AuthData { signature, block: 1 };
 

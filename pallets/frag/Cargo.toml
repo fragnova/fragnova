@@ -1,17 +1,14 @@
 [package]
 authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
-description = 'Detach utility pallet.'
+description = 'FRAG Token pallet.'
 edition = '2021'
 license = 'BUSL-1.1'
-name = 'pallet-detach'
+name = 'pallet-frag'
 readme = 'README.md'
 version = '0.0.1'
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
-
-[dev-dependencies.serde]
-version = '1.0.119'
 
 [dependencies.sp-core]
 default-features = false
@@ -80,15 +77,31 @@ git = 'https://github.com/clamor-io/substrate.git'
 tag = 'clamor-21-03-2022'
 version = '4.0.0-dev'
 
+[dependencies.pallet-assets]
+default-features = false
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
+version = '4.0.0-dev'
+
+[dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
+version = '4.0.0-dev'
+
 [dependencies]
 log = { version = "0.4.14", default-features = false }
 sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
-hex = { version = "0.4", default-features = false }
+hex = { version = "0.4.3", default-features = false }
+serde = { version = "1.0.136", features = ["derive"], optional = true }
+serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
+ethabi = { version = "17.0.0", default-features = false }
 
 [features]
 default = ['std']
-runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
+	'serde',
     'codec/std',
     'frame-support/std',
     'frame-system/std',
@@ -97,6 +110,8 @@ std = [
     'sp-std/std',
 	'sp-runtime/std',
     'pallet-randomness-collective-flip/std',
+    'pallet-balances/std',
+    'pallet-assets/std',
     'log/std',
 	'sp-keystore',
 	'sp-core/std',

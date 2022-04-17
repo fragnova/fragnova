@@ -34,28 +34,32 @@ jobs:
 
       - uses: Swatinem/rust-cache@v1
 
-      # - name: Run IPFS Test
-      #   run: |
-      #     cargo build
-      #     RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
-      #     docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
-      #     kill %1
+      - name: Run IPFS Test
+        run: |
+          cargo build
+          RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain &
+          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
+          kill %1
 
-      # - name: Check Build
-      #   run: |
-      #     cargo check
+      - name: Check Build
+        run: |
+          cargo check
 
-      # - name: Check Build for Benchmarking
-      #   run: |
-      #     cargo check --features=runtime-benchmarks
+      - name: Check Build for Benchmarking
+        run: |
+          cargo check --features=runtime-benchmarks
 
-      # - name: Check Test
-      #   run: |
-      #     cargo test
+      - name: Check Test
+        run: |
+          cargo test
+          
 
-      
-      - uses: actions/setup-node@v3
-        with: 
+      - name: Check if Rustdocs can be Generated
+        run: |
+          cargo doc
+          
+              - uses: actions/setup-node@v3
+        with:
           node-version: '14'  # The node-version input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
 
       - name: Test RPCs
@@ -69,15 +73,13 @@ jobs:
           npm install
           npm test
           kill %1
-          
-
-
 
 
   #
   # Build documentation website
   #
   docs-website-build:
+    needs: [check]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -116,36 +118,36 @@ jobs:
           cd target/doc
           npm i -g carbites-cli
           carbites split clamor.car --size 100MB --strategy treewalk
-#      - name: Publish to NFT storage
-#        uses: nick-invision/retry@v2
-#        with:
-#          timeout_minutes: 5
-#          max_attempts: 3
-#          command: |
-#
-#            for filename in clamor-*.car; do
-#                curl -X POST https://api.nft.storage/upload \
-#                --data-binary @${filename} \
-#                -H "Authorization: Bearer ${{ secrets.NFT_STORAGE_KEY }}" \
-#                -H "Content-Type: application/car" \
-#                > response.json
-#            cat response.json
-#            if [ $(cat response.json | jq .ok) != "true" ]; then exit 1; fi
-#            done;
-#      - name: Set IPFS CID
-#        id: set_ipfs_cid
-#        run: |
-#          echo "::set-output name=ipfs_cid::$(cat response.json | jq .value.cid)"
-      # - name: Sync Cloudflare
-      #   uses: nick-invision/retry@v2
-      #   with:
-      #     timeout_minutes: 5
-      #     max_attempts: 3
-      #     command: |
-      #       curl -X PUT "https://api.cloudflare.com/client/v4/zones/440ac84707c532c2e51fcb56dfccef22/dns_records/78646b6202c9ef585ff7dbe5670aaa7e" \
-      #           -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_DNS_EDIT_API }}" \
-      #           -H "Content-Type: application/json" \
-                # -d "{ \"type\": \"TXT\", \"name\": \"_dnslink.docs.fragcolor.xyz\", \"content\": \"dnslink=/ipfs/${{ steps.set_ipfs_cid.outputs.ipfs_cid }}/site\", \"ttl\": 1 }" \
+          #      - name: Publish to NFT storage
+          #        uses: nick-invision/retry@v2
+          #        with:
+          #          timeout_minutes: 5
+          #          max_attempts: 3
+          #          command: |
+          #
+          #            for filename in clamor-*.car; do
+          #                curl -X POST https://api.nft.storage/upload \
+          #                --data-binary @${filename} \
+          #                -H "Authorization: Bearer ${{ secrets.NFT_STORAGE_KEY }}" \
+          #                -H "Content-Type: application/car" \
+          #                > response.json
+          #            cat response.json
+          #            if [ $(cat response.json | jq .ok) != "true" ]; then exit 1; fi
+          #            done;
+          #      - name: Set IPFS CID
+          #        id: set_ipfs_cid
+          #        run: |
+          #          echo "::set-output name=ipfs_cid::$(cat response.json | jq .value.cid)"
+          # - name: Sync Cloudflare
+          #   uses: nick-invision/retry@v2
+          #   with:
+          #     timeout_minutes: 5
+          #     max_attempts: 3
+          #     command: |
+          #       curl -X PUT "https://api.cloudflare.com/client/v4/zones/440ac84707c532c2e51fcb56dfccef22/dns_records/78646b6202c9ef585ff7dbe5670aaa7e" \
+          #           -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_DNS_EDIT_API }}" \
+          #           -H "Content-Type: application/json" \
+        # -d "{ \"type\": \"TXT\", \"name\": \"_dnslink.docs.fragcolor.xyz\", \"content\": \"dnslink=/ipfs/${{ steps.set_ipfs_cid.outputs.ipfs_cid }}/site\", \"ttl\": 1 }" \
       #           > response.json
       #       cat response.json
       #       if [ $(cat response.json | jq .success) != "true" ]; then exit 1; fi

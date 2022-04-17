@@ -13,7 +13,7 @@ mod weights;
 
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
-use sp_chainblocks::Hash256;
+use sp_clamor::Hash256;
 use sp_io::hashing::blake2_256;
 use sp_std::{vec, vec::Vec};
 pub use weights::WeightInfo;
@@ -24,8 +24,10 @@ pub struct FragmentMetadata {
 	pub external_url: Vec<u8>, // can be 0 len/empty
 }
 
+/// Struct of a Fragment
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentData {
+	/// The Proto-Fragment that was used to create this Fragment
 	pub proto_hash: Hash256,
 	pub metadata: FragmentMetadata,
 	pub unique: bool,
@@ -61,10 +63,13 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	// proto-hash to fragment-hash-sequence
+	/// Storage Map that keeps track of the number of Fragments that were created using a Proto-Fragment.
+	/// The key is the hash of the Proto-Fragment, and the value is the list of hash of the Fragments
 	#[pallet::storage]
 	pub type Proto2Fragments<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash256>>;
 
 	// fragment-hash to fragment-data
+	/// Storage Map of Fragments where the key is the hash of the concatenation of its corresponding Proto-Fragment and the name of the Fragment, and the value is the Fragment struct of the Fragment
 	#[pallet::storage]
 	pub type Fragments<T: Config> = StorageMap<_, Identity, Hash256, FragmentData>;
 
@@ -101,6 +106,15 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		/// Create a Fragment using an existing Proto-Fragment (only the owner of the Proto-Fragment can call this function and create a Fragment)
+		///
+		/// # Arguements
+		/// * `origin` - The origin of the extrisnic/dispatchable function.
+		/// * `proto_hash` - The hash of the existing Proto-Fragment
+		/// * `metadata` - The metadata (name, external url etc.) of the Fragment that is going to be created
+		/// * `unique` - Whether the Fragment that is being created is unique
+		/// * `mutable` - if the item data can be edited (will be more clear when we add the mint/buy/upload bit)
+		/// * max_supply (optional) - if scarce, the maximum amount of items that can be ever created of this type
 		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
 			origin: OriginFor<T>,
