@@ -20,6 +20,11 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 }
 
 benchmarks! {
+
+	where_clause { where
+		T::AccountId: AsRef<[u8]>
+	}
+
 	add_upload_auth {
 		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
 	}: _(RawOrigin::Root, validator.clone())
