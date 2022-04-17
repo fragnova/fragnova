@@ -256,7 +256,7 @@ pub mod pallet {
 	where
 		T::AccountId: AsRef<[u8]>
 	{
-	impl<T: Config> Pallet<T> {
+
 		/// Allows the Sudo Account to add an ECDSA public key to current set of designated upload authorities (i.e the designated off-chain validators)
 		///
 		/// # Arguements

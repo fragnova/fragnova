@@ -12,69 +12,69 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies.sp-core]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
-version = '4.1.0-dev'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
+version = '5.0.0'
 
 [dependencies.sp-io]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
-version = '4.0.0-dev'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
+version = '5.0.0'
 
 [dependencies.sp-std]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
 version = '4.0.0-dev'
 
 [dependencies.sp-runtime]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
-version = '4.1.0-dev'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
+version = '5.0.0'
 
 [dependencies.sp-keystore]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
-version = '0.10.0-dev'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
+version = '0.11.0'
 optional = true
 
 [dependencies.codec]
 default-features = false
 features = ['derive']
 package = 'parity-scale-codec'
-version = '2.0.0'
+version = '3.0.0'
 
 [dependencies.frame-benchmarking]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
 version = '4.0.0-dev'
 optional = true
 
 [dependencies.frame-support]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
 version = '4.0.0-dev'
 
 [dependencies.frame-system]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
 version = '4.0.0-dev'
 
 [dependencies.scale-info]
 default-features = false
 features = ['derive']
-version = '1.0'
+version = '2.0'
 
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
-git = 'https://github.com/paritytech/substrate.git'
-tag = 'monthly-2022-02'
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-21-03-2022'
 version = '4.0.0-dev'
 
 [dependencies.pallet-detach]
@@ -108,19 +108,19 @@ serde_json = { version = '1.0.79', default-features = false, features = ['alloc'
 default = ['std']
 runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
-	'serde',
+    'serde',
     'codec/std',
     'frame-support/std',
     'frame-system/std',
     'frame-benchmarking/std',
     'sp-io/std',
     'sp-std/std',
-	'sp-runtime/std',
+    'sp-runtime/std',
     'pallet-randomness-collective-flip/std',
     'pallet-balances/std',
     'pallet-assets/std',
     'log/std',
-	'sp-keystore',
-	'sp-core/std',
+    'sp-keystore',
+    'sp-core/std',
 ]
 try-runtime = ['frame-support/try-runtime']
