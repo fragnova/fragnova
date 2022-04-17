@@ -54,11 +54,13 @@ jobs:
           cargo test
           
 
-      - name: Check if Rustdocs can be Generated
+      - name: Check if Rustdocs Builds
         run: |
           cargo doc
           
               - uses: actions/setup-node@v3
+
+      - uses: actions/setup-node@v3
         with:
           node-version: '14'  # The node-version input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
 
