@@ -138,7 +138,6 @@ impl pallet_assets::Config for Test {
 impl Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
-	type FragToken = ConstU32<0>;
 	type EthChainId = ConstU64<5>; // goerli
 	type AuthorityId = pallet_frag::crypto::FragAuthId;
 }

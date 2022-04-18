@@ -39,7 +39,6 @@ frame_support::construct_runtime!(
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Frag: pallet_frag::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -121,27 +120,9 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 }
 
-impl pallet_assets::Config for Test {
-	type Event = Event;
-	type Balance = u64;
-	type AssetId = u32;
-	type Currency = ();
-	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type AssetDeposit = ConstU32<1>;
-	type AssetAccountDeposit = ConstU32<10>;
-	type MetadataDepositBase = ConstU32<1>;
-	type MetadataDepositPerByte = ConstU32<1>;
-	type ApprovalDeposit = ConstU32<1>;
-	type StringLimit = ConstU32<50>;
-	type Freezer = ();
-	type WeightInfo = ();
-	type Extra = ();
-}
-
 impl pallet_frag::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
-	type FragToken = ConstU32<0>;
 	type EthChainId = ConstU64<5>; // goerli
 	type AuthorityId = pallet_frag::crypto::FragAuthId;
 }

@@ -99,7 +99,10 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
-	use sp_runtime::{traits::{AccountIdConversion, Saturating}, SaturatedConversion};
+	use sp_runtime::{
+		traits::{AccountIdConversion, Saturating},
+		SaturatedConversion,
+	};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -683,8 +686,6 @@ pub mod pallet {
 
 		#[pallet::weight(50_000)]
 		pub fn unstake(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
-			use frame_support::traits::fungibles::Transfer;
-
 			let who = ensure_signed(origin.clone())?;
 
 			// make sure the proto exists
@@ -702,15 +703,9 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			// // transfer to pallet vault
-			// <pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
-			// 	T::FragToken::get(),
-			// 	&Self::account_id(),
-			// 	&who,
-			// 	stake.0,
-			// 	false,
-			// )
-			// .map(|_| ())?;
+			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
+				usage.as_mut().unwrap().saturating_sub(stake.0);
+			});
 
 			// take record of the unstake
 			<ProtoStakes<T>>::remove(proto_hash, &who);
