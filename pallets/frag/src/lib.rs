@@ -167,6 +167,9 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type EVMLinksReverse<T: Config> = StorageMap<_, Identity, H160, T::AccountId>;
 
+	#[pallet::storage]
+	pub type FragUsage<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, T::Balance>;
+
 	// consumed by Protos pallet
 	#[pallet::storage]
 	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<Unlinked<T::AccountId>>, ValueQuery>;
@@ -258,6 +261,8 @@ pub mod pallet {
 
 			<EVMLinks<T>>::insert(sender.clone(), eth_key);
 			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
+			let zero: T::Balance = 0u32.saturated_into();
+			<FragUsage<T>>::insert(sender.clone(), zero);
 
 			// also emit event
 			Self::deposit_event(Event::Linked(sender, eth_key));
@@ -562,8 +567,11 @@ pub mod pallet {
 			let unlinked = Unlinked { account: sender.clone(), external_account: account };
 
 			<EVMLinks<T>>::remove(sender.clone());
-			<PendingUnlinks<T>>::append(&unlinked);
 			<EVMLinksReverse<T>>::remove(account);
+			// reset usage counter
+			<FragUsage<T>>::remove(sender.clone());
+			// force dereferencing of protos and more
+			<PendingUnlinks<T>>::append(&unlinked);
 
 			// also emit event
 			Self::deposit_event(Event::Unlinked(sender, account));

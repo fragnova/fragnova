@@ -99,7 +99,7 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
-	use sp_runtime::{traits::AccountIdConversion, SaturatedConversion};
+	use sp_runtime::{traits::{AccountIdConversion, Saturating}, SaturatedConversion};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -108,7 +108,6 @@ pub mod pallet {
 		+ pallet_detach::Config
 		+ pallet_frag::Config
 		+ pallet_randomness_collective_flip::Config
-		+ pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -223,6 +222,8 @@ pub mod pallet {
 		InsufficientBalance,
 		/// Cannot unstake yet
 		StakeLocked,
+		/// Cannot find FRAG link to use as stake funds
+		NoFragLink,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -648,8 +649,6 @@ pub mod pallet {
 			proto_hash: Hash256,
 			amount: T::Balance,
 		) -> DispatchResult {
-			use frame_support::traits::fungibles::Transfer;
-
 			let who = ensure_signed(origin.clone())?;
 			let who = get_locked_frag_account(&who).map_err(|_| Error::<T>::SystematicFailure)?;
 
@@ -657,22 +656,21 @@ pub mod pallet {
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
 			// make sure user has enough FRAG
-			let balance = <pallet_assets::Pallet<T>>::balance(T::FragToken::get(), &who.clone());
+			let account = <pallet_frag::EVMLinks<T>>::get(&who.clone())
+				.ok_or_else(|| Error::<T>::NoFragLink)?;
+			let balance = <pallet_frag::EthLockedFrag<T>>::get(&account)
+				.ok_or_else(|| Error::<T>::NoFragLink)?
+				- <pallet_frag::FragUsage<T>>::get(&who.clone())
+					.ok_or_else(|| Error::<T>::NoFragLink)?;
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			// ! from now we write...
 
-			// transfer to pallet vault
-			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
-				T::FragToken::get(),
-				&who,
-				&Self::account_id(),
-				amount,
-				true,
-			)
-			.map(|_| ())?;
+			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
+				usage.as_mut().unwrap().saturating_add(amount);
+			});
 
 			// take record of the stake
 			<ProtoStakes<T>>::insert(proto_hash, &who, (amount, current_block_number));
@@ -704,15 +702,15 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			// transfer to pallet vault
-			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
-				T::FragToken::get(),
-				&Self::account_id(),
-				&who,
-				stake.0,
-				false,
-			)
-			.map(|_| ())?;
+			// // transfer to pallet vault
+			// <pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+			// 	T::FragToken::get(),
+			// 	&Self::account_id(),
+			// 	&who,
+			// 	stake.0,
+			// 	false,
+			// )
+			// .map(|_| ())?;
 
 			// take record of the unstake
 			<ProtoStakes<T>>::remove(proto_hash, &who);
