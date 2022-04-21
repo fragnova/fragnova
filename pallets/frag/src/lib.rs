@@ -103,12 +103,6 @@ impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
 	}
 }
 
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct Unlinked<TAccount> {
-	pub account: TAccount,
-	pub external_account: H160,
-}
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -169,7 +163,7 @@ pub mod pallet {
 
 	// consumed by Protos pallet
 	#[pallet::storage]
-	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<Unlinked<T::AccountId>>, ValueQuery>;
+	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
 	/// These are the public keys representing the actual keys that can Sign messages
 	/// to present to external chains to detach onto
@@ -561,14 +555,12 @@ pub mod pallet {
 			ensure!(<EVMLinks<T>>::contains_key(sender.clone()), Error::<T>::AccountNotLinked);
 			ensure!(<EVMLinksReverse<T>>::contains_key(account), Error::<T>::AccountNotLinked);
 
-			let unlinked = Unlinked { account: sender.clone(), external_account: account };
-
 			<EVMLinks<T>>::remove(sender.clone());
 			<EVMLinksReverse<T>>::remove(account);
 			// reset usage counter
 			<FragUsage<T>>::remove(sender.clone());
 			// force dereferencing of protos and more
-			<PendingUnlinks<T>>::append(&unlinked);
+			<PendingUnlinks<T>>::append(sender.clone());
 
 			// also emit event
 			Self::deposit_event(Event::Unlinked(sender, account));

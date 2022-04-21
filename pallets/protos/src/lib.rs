@@ -96,7 +96,7 @@ pub struct Proto<TAccountId, TBlockNumber> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
+	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Blake2_128Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	use sp_runtime::{
@@ -180,6 +180,9 @@ pub mod pallet {
 		T::AccountId,
 		(T::Balance, T::BlockNumber),
 	>;
+
+	#[pallet::storage]
+	pub type AccountStakes<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, Vec<Hash256>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -677,6 +680,7 @@ pub mod pallet {
 
 			// take record of the stake
 			<ProtoStakes<T>>::insert(proto_hash, &who, (amount, current_block_number));
+			<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
 
 			// also emit event
 			Self::deposit_event(Event::Staked(proto_hash, who, amount));
@@ -709,6 +713,11 @@ pub mod pallet {
 
 			// take record of the unstake
 			<ProtoStakes<T>>::remove(proto_hash, &who);
+			<AccountStakes<T>>::mutate(who.clone(), |stakes| {
+				if let Some(stakes) = stakes {
+					stakes.retain(|h| h != &proto_hash);
+				}
+			});
 
 			// also emit event
 			Self::deposit_event(Event::Unstaked(proto_hash, who, stake.0));
@@ -720,8 +729,17 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_n: T::BlockNumber) {
-			// TODO drain unlinks
-			let _unlinks = <pallet_frag::PendingUnlinks<T>>::take();
+			// drain unlinks
+			let unlinks = <pallet_frag::PendingUnlinks<T>>::take();
+			for unlink in unlinks {
+				// take emptying the storage
+				let stakes = <AccountStakes<T>>::take(unlink.clone());
+				if let Some(stakes) = stakes {
+					for stake in stakes {
+						<ProtoStakes<T>>::remove(stake, &unlink);
+					}
+				}
+			}
 		}
 	}
 
