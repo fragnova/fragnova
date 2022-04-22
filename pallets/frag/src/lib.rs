@@ -11,8 +11,8 @@ mod benchmarking;
 
 mod weights;
 
-const LOCK_EVENT: &str = "0xeb49373c30c7ae230c318e69e8e8632f3831fc92d4a27cee08a8c91dd41ef03a";
-const UNLOCK_EVENT: &str = "0x16a32b1d5be5f34a614fa537e89a714d2db2ea522ef95c42ea2ae79a7f3b5a85";
+const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f";
+const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
 const CONFIRMATIONS_NUMBER: u64 = 15;
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
@@ -65,6 +65,7 @@ use sp_io::{
 	crypto as Crypto, hashing::blake2_256, hashing::keccak_256, offchain, transaction_index,
 };
 use sp_runtime::offchain::storage::StorageValueRef;
+use sp_runtime::MultiSigner;
 use sp_std::{
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
 	vec,
@@ -84,25 +85,22 @@ use scale_info::prelude::{format, string::String};
 
 use serde_json::{json, Value};
 
-use ethabi::{ParamType, Token};
+use ethabi::ParamType;
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct EthStakeUpdate<TPublic, TBalance> {
+pub struct EthLockUpdate<TPublic> {
 	pub public: TPublic,
-	pub amount: TBalance,
-	pub account: H160,
+	pub amount: U256,
+	pub sender: H160,
+	pub signature: ecdsa::Signature,
+	pub lock: bool,
+	pub block_number: u64,
 }
 
-impl<T: SigningTypes, TBalance: Encode> SignedPayload<T> for EthStakeUpdate<T::Public, TBalance> {
+impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
 	fn public(&self) -> T::Public {
 		self.public.clone()
 	}
-}
-
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct Unlinked<TAccount> {
-	pub account: TAccount,
-	pub external_account: H160,
 }
 
 #[frame_support::pallet]
@@ -119,15 +117,12 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + CreateSignedTransaction<Call<Self>> + pallet_assets::Config
+		frame_system::Config + CreateSignedTransaction<Call<Self>> + pallet_balances::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		type WeightInfo: WeightInfo;
-
-		#[pallet::constant]
-		type FragToken: Get<<Self as pallet_assets::Config>::AssetId>;
 
 		#[pallet::constant]
 		type EthChainId: Get<u64>;
@@ -136,20 +131,44 @@ pub mod pallet {
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 	}
 
+	#[pallet::genesis_config]
+	#[derive(Default)]
+	pub struct GenesisConfig {
+		pub keys: Vec<ed25519::Public>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			Pallet::<T>::initialize_keys(&self.keys);
+		}
+	}
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type EthLockedFrag<T: Config> = StorageMap<_, Blake2_128Concat, H160, (T::Balance, bool)>;
+	pub type EthLockedFrag<T: Config> = StorageMap<_, Identity, H160, T::Balance>;
 
 	#[pallet::storage]
-	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BTreeSet<H160>>;
+	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, H160>;
+
+	#[pallet::storage]
+	pub type EVMLinksReverse<T: Config> = StorageMap<_, Identity, H160, T::AccountId>;
+
+	#[pallet::storage]
+	pub type FragUsage<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, T::Balance>;
 
 	// consumed by Protos pallet
 	#[pallet::storage]
-	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<Unlinked<T::AccountId>>, ValueQuery>;
+	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+
+	/// These are the public keys representing the actual keys that can Sign messages
+	/// to present to external chains to detach onto
+	#[pallet::storage]
+	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -158,10 +177,10 @@ pub mod pallet {
 		Linked(T::AccountId, H160),
 		/// A link was removed between native and ethereum account.
 		Unlinked(T::AccountId, H160),
-		/// Stake was created
-		Staked(Hash256, T::AccountId, T::Balance),
-		/// Stake was unlocked
-		Unstaked(Hash256, T::AccountId, T::Balance),
+		/// ETH side lock was updated
+		Locked(H160, T::Balance),
+		/// ETH side lock was unlocked
+		Unlocked(H160, T::Balance),
 	}
 
 	// Errors inform users that something went wrong.
@@ -173,10 +192,6 @@ pub mod pallet {
 		VerificationFailed,
 		/// Reference not found
 		LinkNotFound,
-		/// Not enough tokens to stake
-		InsufficientBalance,
-		/// Cannot unstake yet
-		StakeLocked,
 		/// Account already linked
 		AccountAlreadyLinked,
 		/// Account not linked
@@ -188,11 +203,38 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New key: {:?}", public);
+
+			<FragKeys<T>>::mutate(|validators| {
+				validators.insert(public);
+			});
+
+			Ok(())
+		}
+
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("Removed key: {:?}", public);
+
+			<FragKeys<T>>::mutate(|validators| {
+				validators.remove(&public);
+			});
+
+			Ok(())
+		}
+
 		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
+			// the idea is to prove to this chain that the sender knows the private key of the external address
 			let mut message = b"EVM2Fragnova".to_vec();
 			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
 			message.extend_from_slice(&sender.encode());
@@ -201,27 +243,17 @@ pub mod pallet {
 			let recovered = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
 				.map_err(|_| Error::<T>::VerificationFailed)?;
 
-			let eth_key = &recovered[1..];
-			let eth_key = keccak_256(&eth_key[..]);
+			let eth_key = keccak_256(&recovered[..]);
 			let eth_key = &eth_key[12..];
 			let eth_key = H160::from_slice(&eth_key[..]);
 
-			// find the locked frag account
-			let locked_frag =
-				<EthLockedFrag<T>>::get(&eth_key).ok_or_else(|| Error::<T>::LinkNotFound)?;
-			// ensure the account is not linked yet
-			ensure!(!locked_frag.1, Error::<T>::AccountAlreadyLinked);
+			ensure!(!<EVMLinks<T>>::contains_key(&sender), Error::<T>::AccountAlreadyLinked);
+			ensure!(!<EVMLinksReverse<T>>::contains_key(eth_key), Error::<T>::AccountAlreadyLinked);
 
-			<EVMLinks<T>>::mutate(sender.clone(), |links| match links {
-				Some(links) => {
-					links.insert(eth_key);
-				},
-				_ => {
-					<EVMLinks<T>>::insert(sender.clone(), BTreeSet::from_iter(vec![eth_key]));
-				},
-			});
-
-			<EthLockedFrag<T>>::insert(eth_key, (locked_frag.0, true));
+			<EVMLinks<T>>::insert(sender.clone(), eth_key);
+			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
+			let zero: T::Balance = 0u32.saturated_into();
+			<FragUsage<T>>::insert(sender.clone(), zero);
 
 			// also emit event
 			Self::deposit_event(Event::Linked(sender, eth_key));
@@ -233,80 +265,63 @@ pub mod pallet {
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
-
-			// find the locked frag account
-			let locked_frag =
-				<EthLockedFrag<T>>::get(&account).ok_or_else(|| Error::<T>::LinkNotFound)?;
-			// ensure the account is not linked yet
-			ensure!(locked_frag.1, Error::<T>::AccountNotLinked);
-
-			<EVMLinks<T>>::mutate(sender.clone(), |links| {
-				if let Some(links) = links {
-					if links.remove(&account) {
-						let unlinked =
-							Unlinked { account: sender.clone(), external_account: account };
-						<PendingUnlinks<T>>::append(&unlinked);
-						Ok(())
-					} else {
-						Err(Error::<T>::LinkNotFound)
-					}
-				} else {
-					Err(Error::<T>::LinkNotFound)
-				}
-			})?;
-
-			<EthLockedFrag<T>>::insert(account, (locked_frag.0, false));
-
-			// also emit event
-			Self::deposit_event(Event::Unlinked(sender, account));
-
-			Ok(())
+			Self::unlink_account(sender, account)
 		}
 
 		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn internal_update_stake(
+		pub fn internal_lock_update(
 			origin: OriginFor<T>,
-			_data: EthStakeUpdate<T::Public, T::Balance>,
+			data: EthLockUpdate<T::Public>,
 			_signature: T::Signature,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
-			// TODO
+			let mut message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() };
+			message.extend_from_slice(&data.sender.0[..]);
+			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
+			let amount: [u8; 32] = data.amount.into();
+			message.extend_from_slice(&amount[..]);
+			let message_hash = keccak_256(&message);
 
-			Ok(())
-		}
+			let message = [b"\x19Ethereum Signed Message:\n32", &message_hash[..]].concat();
+			let message_hash = keccak_256(&message);
 
-		/// TODO
-		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn query_stake_update(
-			origin: OriginFor<T>,
-			signature: ecdsa::Signature,
-		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+			let signature = data.signature;
+			let sender = data.sender;
 
-			let message = b"TODO";
-			let message_hash = keccak_256(message);
-
-			let recovered = Crypto::secp256k1_ecdsa_recover_compressed(&signature.0, &message_hash)
+			let pub_key = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
 				.map_err(|_| Error::<T>::VerificationFailed)?;
+			let pub_key = keccak_256(&pub_key[..]);
+			let pub_key = &pub_key[12..];
+			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
-			// this is how substrate handles ecdsa publics
-			let short_key = blake2_256(&recovered[..]);
+			let amount: u128 = data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
-			let who2 = T::AccountId::decode(&mut &short_key[..])
-				.map_err(|_| Error::<T>::VerificationFailed)?;
+			if !data.lock {
+				ensure!(amount == 0, Error::<T>::SystematicFailure);
+			} else {
+				ensure!(amount > 0, Error::<T>::SystematicFailure);
+			}
 
-			ensure!(who == who2, Error::<T>::VerificationFailed);
+			let amount: T::Balance = amount.saturated_into();
 
-			// ! Check passed, derive eth key and send to offchain worker
+			if data.lock {
+				// also emit event
+				Self::deposit_event(Event::Locked(sender, amount));
+			} else {
+				// if we have any link to this account, then force unlinking
+				let linked = <EVMLinksReverse<T>>::get(sender.clone());
+				if let Some(linked) = linked {
+					Self::unlink_account(linked, sender.clone())?;
+				}
 
-			// let eth_key = pub_key.serialize();
-			// let eth_key = &eth_key[1..];
-			// let eth_key = keccak_256(&eth_key[..]);
-			// let eth_key = &eth_key[12..];
+				// also emit event
+				Self::deposit_event(Event::Unlocked(sender, amount));
+			}
 
-			// TODO
+			// write this later as unlink_account can fail
+			<EthLockedFrag<T>>::insert(sender.clone(), amount);
 
 			Ok(())
 		}
@@ -315,14 +330,79 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(n: T::BlockNumber) {
-			if let Err(error) = Self::sync_frag_stakes(n) {
-				log::error!("Error syncing frag stakes: {:?}", error);
+			if let Err(error) = Self::sync_frag_locks(n) {
+				log::error!("Error syncing frag locks: {:?}", error);
+			}
+		}
+	}
+
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		/// Validate unsigned call to this module.
+		///
+		/// By default unsigned transactions are disallowed, but implementing the validator
+		/// here we make sure that some particular calls (the ones produced by offchain worker)
+		/// are being whitelisted and marked as valid.
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			// Firstly let's check that we call the right function.
+			if let Call::internal_lock_update { ref data, ref signature } = call {
+				// check public is valid
+				let valid_keys = <FragKeys<T>>::get();
+				log::debug!("Valid keys: {:?}", valid_keys);
+				// I'm sure there is a way to do this without serialization but I can't spend so
+				// much time fighting with rust
+				let pub_key = data.public.encode();
+				let pub_key: ed25519::Public = {
+					if let Ok(MultiSigner::Ed25519(pub_key)) =
+						<MultiSigner>::decode(&mut &pub_key[..])
+					{
+						pub_key
+					} else {
+						return InvalidTransaction::BadSigner.into();
+					}
+				};
+				log::debug!("Public key: {:?}", pub_key);
+				if !valid_keys.contains(&pub_key) {
+					return InvalidTransaction::BadSigner.into();
+				}
+				// most expensive bit last
+				let signature_valid =
+					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
+				if !signature_valid {
+					return InvalidTransaction::BadProof.into();
+				}
+				log::debug!("Sending frag lock update extrinsic");
+				ValidTransaction::with_tag_prefix("FragLockUpdate")
+					.and_provides(data.public.clone())
+					.and_provides(data.amount)
+					.and_provides(data.sender)
+					.and_provides(data.signature.clone())
+					.and_provides(data.lock)
+					.and_provides(data.block_number)
+					.longevity(5)
+					.propagate(true)
+					.build()
+			} else {
+				InvalidTransaction::Call.into()
 			}
 		}
 	}
 
 	impl<T: Config> Pallet<T> {
-		pub fn sync_frag_stakes(_block_number: T::BlockNumber) -> Result<(), &'static str> {
+		fn initialize_keys(keys: &[ed25519::Public]) {
+			if !keys.is_empty() {
+				assert!(<FragKeys<T>>::get().is_empty(), "FragKeys are already initialized!");
+				for key in keys {
+					<FragKeys<T>>::mutate(|keys| {
+						keys.insert(*key);
+					});
+				}
+			}
+		}
+
+		fn sync_frag_locks(_block_number: T::BlockNumber) -> Result<(), &'static str> {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
 			} else {
@@ -373,6 +453,7 @@ pub mod pallet {
 			};
 
 			let to_block = current_block.saturating_sub(CONFIRMATIONS_NUMBER);
+			let to_block = format!("0x{:x}", to_block);
 
 			let req = json!({
 				"jsonrpc": "2.0",
@@ -380,7 +461,7 @@ pub mod pallet {
 				"id": "0",
 				"params": [{
 					"fromBlock": last_block,
-					"toBlock": format!("0x{:x}", to_block),
+					"toBlock": to_block,
 					"address": contract,
 					"topics": [
 						// [] to OR
@@ -407,6 +488,10 @@ pub mod pallet {
 
 			let logs = v["result"].as_array().ok_or_else(|| "Invalid response - no result")?;
 			for log in logs {
+				let block_number =
+					log["blockNumber"].as_str().ok_or("Invalid response - no block number")?;
+				let block_number = u64::from_str_radix(&block_number[2..], 16)
+					.map_err(|_| "Invalid response - invalid block number")?;
 				let topics =
 					log["topics"].as_array().ok_or_else(|| "Invalid response - no topics")?;
 				let topic = topics[0].as_str().ok_or_else(|| "Invalid response - no topic")?;
@@ -421,51 +506,66 @@ pub mod pallet {
 					_ => return Err("Invalid topic"),
 				};
 
-				log::trace!("Log: {:?}, lock: {:?}", data, locked);
+				let sender = topics[1].as_str().ok_or_else(|| "Invalid response - no sender")?;
+				let sender =
+					hex::decode(&sender[2..]).map_err(|_| "Invalid response - invalid sender")?;
+				let sender = H160::from_slice(&sender[12..]);
+
+				let eth_signature = data[0].clone().into_bytes().ok_or_else(|| "Invalid data")?;
+				let eth_signature: ecdsa::Signature =
+					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
+
+				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?;
+
+				log::trace!(
+					"Block: {}, sender: {}, locked: {}, amount: {}, signature: {:?}",
+					block_number,
+					sender,
+					locked,
+					amount,
+					eth_signature.clone(),
+				);
+
+				Signer::<T, T::AuthorityId>::any_account()
+					.send_unsigned_transaction(
+						|account| EthLockUpdate {
+							public: account.public.clone(),
+							amount,
+							sender,
+							signature: eth_signature.clone(),
+							lock: locked,
+							block_number,
+						},
+						|payload, signature| Call::internal_lock_update {
+							data: payload,
+							signature,
+						},
+					)
+					.ok_or_else(|| "Failed to sign transaction")?
+					.1
+					.map_err(|_| "Failed to send transaction")?;
 			}
 
+			last_block_ref.set(&to_block.as_bytes().to_vec());
+
 			Ok(())
+		}
 
-			// let records = v["data"]["lockEntities"].as_array().unwrap();
-			// for (i, record) in records.iter().enumerate() {
-			// 	let lock = record["lock"].as_bool().unwrap();
-			// 	if lock {
-			// 		let id = record["id"].as_str().unwrap();
-			// 		log::trace!("Recording lock stake for {}", id);
+		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
+			ensure!(<EVMLinks<T>>::contains_key(sender.clone()), Error::<T>::AccountNotLinked);
+			ensure!(<EVMLinksReverse<T>>::contains_key(account), Error::<T>::AccountNotLinked);
 
-			// 		let account = &record["owner"].as_str().unwrap()[2..];
-			// 		let account = <[u8; 20]>::from_hex(account).unwrap();
+			<EVMLinks<T>>::remove(sender.clone());
+			<EVMLinksReverse<T>>::remove(account);
+			// reset usage counter
+			<FragUsage<T>>::remove(sender.clone());
+			// force dereferencing of protos and more
+			<PendingUnlinks<T>>::append(sender.clone());
 
-			// 		let amount = record["amount"].as_str().unwrap();
-			// 		let amount = amount.parse::<u128>().unwrap();
+			// also emit event
+			Self::deposit_event(Event::Unlinked(sender, account));
 
-			// 		if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
-			// 			.send_unsigned_transaction(
-			// 				|pub_key| EthStakeUpdate {
-			// 					public: pub_key.public.clone(),
-			// 					amount: amount.saturated_into(),
-			// 					account: account.into(),
-			// 				},
-			// 				|payload, signature| Call::internal_update_stake {
-			// 					data: payload,
-			// 					signature,
-			// 				},
-			// 			)
-			// 			.ok_or("No local accounts accounts available.")
-			// 		{
-			// 			log::error!(
-			// 				"Failed to send unsigned eth sync transaction with error: {:?}",
-			// 				e
-			// 			);
-			// 			return;
-			// 		}
-
-			// 		// update the last recorded event
-			// 		if i == records.len() - 1 {
-			// 			last_block_ref.set(&id.as_bytes().to_vec());
-			// 		}
-			// 	}
-			// }
+			Ok(())
 		}
 	}
 }

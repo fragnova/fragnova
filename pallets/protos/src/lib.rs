@@ -96,10 +96,13 @@ pub struct Proto<TAccountId, TBlockNumber> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
+	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Blake2_128Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
-	use sp_runtime::{traits::AccountIdConversion, SaturatedConversion};
+	use sp_runtime::{
+		traits::{AccountIdConversion, Saturating},
+		SaturatedConversion,
+	};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -108,7 +111,6 @@ pub mod pallet {
 		+ pallet_detach::Config
 		+ pallet_frag::Config
 		+ pallet_randomness_collective_flip::Config
-		+ pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -179,6 +181,9 @@ pub mod pallet {
 		(T::Balance, T::BlockNumber),
 	>;
 
+	#[pallet::storage]
+	pub type AccountStakes<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, Vec<Hash256>>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -223,6 +228,8 @@ pub mod pallet {
 		InsufficientBalance,
 		/// Cannot unstake yet
 		StakeLocked,
+		/// Cannot find FRAG link to use as stake funds
+		NoFragLink,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -648,8 +655,6 @@ pub mod pallet {
 			proto_hash: Hash256,
 			amount: T::Balance,
 		) -> DispatchResult {
-			use frame_support::traits::fungibles::Transfer;
-
 			let who = ensure_signed(origin.clone())?;
 			let who = get_locked_frag_account(&who).map_err(|_| Error::<T>::SystematicFailure)?;
 
@@ -657,25 +662,25 @@ pub mod pallet {
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
 			// make sure user has enough FRAG
-			let balance = <pallet_assets::Pallet<T>>::balance(T::FragToken::get(), &who.clone());
+			let account = <pallet_frag::EVMLinks<T>>::get(&who.clone())
+				.ok_or_else(|| Error::<T>::NoFragLink)?;
+			let balance = <pallet_frag::EthLockedFrag<T>>::get(&account)
+				.ok_or_else(|| Error::<T>::NoFragLink)?
+				- <pallet_frag::FragUsage<T>>::get(&who.clone())
+					.ok_or_else(|| Error::<T>::NoFragLink)?;
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			// ! from now we write...
 
-			// transfer to pallet vault
-			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
-				T::FragToken::get(),
-				&who,
-				&Self::account_id(),
-				amount,
-				true,
-			)
-			.map(|_| ())?;
+			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
+				usage.as_mut().unwrap().saturating_add(amount);
+			});
 
 			// take record of the stake
 			<ProtoStakes<T>>::insert(proto_hash, &who, (amount, current_block_number));
+			<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
 
 			// also emit event
 			Self::deposit_event(Event::Staked(proto_hash, who, amount));
@@ -685,8 +690,6 @@ pub mod pallet {
 
 		#[pallet::weight(50_000)]
 		pub fn unstake(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
-			use frame_support::traits::fungibles::Transfer;
-
 			let who = ensure_signed(origin.clone())?;
 
 			// make sure the proto exists
@@ -704,18 +707,17 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			// transfer to pallet vault
-			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
-				T::FragToken::get(),
-				&Self::account_id(),
-				&who,
-				stake.0,
-				false,
-			)
-			.map(|_| ())?;
+			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
+				usage.as_mut().unwrap().saturating_sub(stake.0);
+			});
 
 			// take record of the unstake
 			<ProtoStakes<T>>::remove(proto_hash, &who);
+			<AccountStakes<T>>::mutate(who.clone(), |stakes| {
+				if let Some(stakes) = stakes {
+					stakes.retain(|h| h != &proto_hash);
+				}
+			});
 
 			// also emit event
 			Self::deposit_event(Event::Unstaked(proto_hash, who, stake.0));
@@ -728,7 +730,16 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain unlinks
-			let _unlinks = <pallet_frag::PendingUnlinks<T>>::take();
+			let unlinks = <pallet_frag::PendingUnlinks<T>>::take();
+			for unlink in unlinks {
+				// take emptying the storage
+				let stakes = <AccountStakes<T>>::take(unlink.clone());
+				if let Some(stakes) = stakes {
+					for stake in stakes {
+						<ProtoStakes<T>>::remove(stake, &unlink);
+					}
+				}
+			}
 		}
 	}
 

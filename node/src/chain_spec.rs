@@ -1,5 +1,5 @@
 use clamor_runtime::{
-	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig,
+	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, FragConfig, GenesisConfig,
 	GrandpaConfig, IndicesConfig, ProtosConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
@@ -199,5 +199,6 @@ fn testnet_genesis(
 			],
 			accounts: vec![],
 		},
+		frag: FragConfig { keys: initial_authorities.iter().map(|x| (x.4.clone())).collect() },
 	}
 }

@@ -322,8 +322,6 @@ impl pallet_fragments::Config for Runtime {
 impl pallet_frag::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
-	/// "FRAG" Token is initialized with ID "0" in `chain_spec.rs`
-	type FragToken = ConstU32<0>;
 	type EthChainId = ConstU64<5>; // goerli
 	type AuthorityId = pallet_frag::crypto::FragAuthId;
 }
