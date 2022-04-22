@@ -307,9 +307,26 @@ pub mod pallet {
 			let amount: T::Balance = amount.saturated_into();
 
 			if data.lock {
+				// ! TODO TEST
+				let linked = <EVMLinksReverse<T>>::get(sender.clone());
+				if let Some(linked) = linked {
+					let used = <FragUsage<T>>::get(linked.clone());
+					if let Some(used) = used {
+						if used > amount {
+							// this is bad, the user just reduced his balance so we just "slash" all the stakes
+							// reset usage counter
+							<FragUsage<T>>::remove(linked.clone());
+							// force dereferencing of protos and more
+							<PendingUnlinks<T>>::append(linked.clone());
+						}
+					}
+				}
+
 				// also emit event
 				Self::deposit_event(Event::Locked(sender, amount));
 			} else {
+				// ! TODO TEST
+
 				// if we have any link to this account, then force unlinking
 				let linked = <EVMLinksReverse<T>>::get(sender.clone());
 				if let Some(linked) = linked {
