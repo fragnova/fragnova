@@ -57,20 +57,13 @@ pub mod crypto {
 	}
 }
 
-use codec::{Compact, Decode, Encode};
+use codec::{Decode, Encode};
 pub use pallet::*;
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use sp_io::{
-	crypto as Crypto, hashing::blake2_256, hashing::keccak_256, offchain, transaction_index,
-};
+use sp_io::{crypto as Crypto, hashing::keccak_256};
 use sp_runtime::offchain::storage::StorageValueRef;
 use sp_runtime::MultiSigner;
-use sp_std::{
-	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
-	vec,
-	vec::Vec,
-};
+use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
@@ -79,7 +72,7 @@ use frame_system::offchain::{
 
 pub use weights::WeightInfo;
 
-use sp_clamor::{http_json_post, Hash256};
+use sp_clamor::http_json_post;
 
 use scale_info::prelude::{format, string::String};
 
@@ -114,11 +107,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
-	use hex::FromHex;
-	use sp_runtime::{
-		offchain::HttpRequestStatus, traits::AccountIdConversion, MultiSignature,
-		SaturatedConversion,
-	};
+	use sp_runtime::SaturatedConversion;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
