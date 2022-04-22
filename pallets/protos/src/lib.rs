@@ -664,8 +664,9 @@ pub mod pallet {
 			// make sure user has enough FRAG
 			let account = <pallet_frag::EVMLinks<T>>::get(&who.clone())
 				.ok_or_else(|| Error::<T>::NoFragLink)?;
-			let balance = <pallet_frag::EthLockedFrag<T>>::get(&account)
-				.ok_or_else(|| Error::<T>::NoFragLink)?
+			let eth_lock = <pallet_frag::EthLockedFrag<T>>::get(&account)
+				.ok_or_else(|| Error::<T>::NoFragLink)?;
+			let balance = eth_lock.amount
 				- <pallet_frag::FragUsage<T>>::get(&who.clone())
 					.ok_or_else(|| Error::<T>::NoFragLink)?;
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);

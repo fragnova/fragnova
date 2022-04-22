@@ -97,6 +97,12 @@ pub struct EthLockUpdate<TPublic> {
 	pub block_number: u64,
 }
 
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub struct EthLock<TBalance, TBlockNum> {
+	pub amount: TBalance,
+	pub block_number: TBlockNum,
+}
+
 impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
 	fn public(&self) -> T::Public {
 		self.public.clone()
@@ -150,7 +156,8 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type EthLockedFrag<T: Config> = StorageMap<_, Identity, H160, T::Balance>;
+	pub type EthLockedFrag<T: Config> =
+		StorageMap<_, Identity, H160, EthLock<T::Balance, T::BlockNumber>>;
 
 	#[pallet::storage]
 	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, H160>;
@@ -305,6 +312,7 @@ pub mod pallet {
 			}
 
 			let amount: T::Balance = amount.saturated_into();
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			if data.lock {
 				// ! TODO TEST
@@ -338,7 +346,10 @@ pub mod pallet {
 			}
 
 			// write this later as unlink_account can fail
-			<EthLockedFrag<T>>::insert(sender.clone(), amount);
+			<EthLockedFrag<T>>::insert(
+				sender.clone(),
+				EthLock { amount, block_number: current_block_number },
+			);
 
 			Ok(())
 		}
