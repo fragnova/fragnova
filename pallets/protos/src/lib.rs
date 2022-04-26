@@ -72,8 +72,6 @@ pub struct GetProtosParams<TAccountId, StringType> {
 	pub desc: bool,
 	pub from: u32,
 	pub limit: u32,
-	// pub metadata_keys: Option<Vec<String>>,
-	// pub metadata_keys: Option<Vec<Vec<u8>>>,
 	pub metadata_keys: Option<Vec<StringType>>,
 	pub owner: Option<TAccountId>,
 	pub return_owners : bool,
