@@ -19,4 +19,5 @@ chainblocks.*log
 .lsp*
 .clj*
 *.lock
-node_data
+rpc/node_modules/*
+rpc/package-lock.json

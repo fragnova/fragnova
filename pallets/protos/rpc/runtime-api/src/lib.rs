@@ -3,9 +3,21 @@ use codec::Codec;
 use sp_clamor::Hash256;
 use sp_std::vec::Vec;
 
+use pallet_protos::GetProtosParams;
+
 sp_api::decl_runtime_apis! {
-		pub trait ProtosApi<Tags> where
-				Tags: Codec, {
-				fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>>;
-		}
+	pub trait ProtosApi<Tags, AccountId>
+	where
+		Tags: Codec,
+		AccountId: Codec
+	{
+
+		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8>;
+
+
+	}
+
+
+
+
 }

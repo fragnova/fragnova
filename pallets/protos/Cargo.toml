@@ -96,23 +96,24 @@ log = { version = "0.4.14", default-features = false }
 sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
+serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
 
 [features]
 default = ['std']
 runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
 std = [
-	'serde',
+    'serde',
     'codec/std',
     'frame-support/std',
     'frame-system/std',
     'frame-benchmarking/std',
     'sp-io/std',
     'sp-std/std',
-	'sp-runtime/std',
+    'sp-runtime/std',
     'pallet-randomness-collective-flip/std',
     'pallet-balances/std',
     'log/std',
-	'sp-keystore',
-	'sp-core/std',
+    'sp-keystore',
+    'sp-core/std',
 ]
 try-runtime = ['frame-support/try-runtime']

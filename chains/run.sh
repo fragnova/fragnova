@@ -13,4 +13,4 @@ ipfs init
 ipfs config profile apply test
 ipfs daemon &
 sleep 5
-cbl fragments-tests.edn
+cbl test-protos-ipfs.edn

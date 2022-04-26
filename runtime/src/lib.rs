@@ -51,7 +51,9 @@ use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
-use pallet_protos::Tags;
+use pallet_protos::{Tags,
+					GetProtosParams,
+ 				   };
 use sp_clamor::Hash256;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
@@ -740,9 +742,10 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Tags> for Runtime {
-		fn get_by_tag(tags: Tags) -> Option<Vec<Hash256>> {
-			Protos::get_by_tag(tags)
+	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Tags, AccountId> for Runtime {
+
+		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8> {
+			Protos::get_protos(params)
 		}
 	}
 
