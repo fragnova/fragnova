@@ -9,34 +9,9 @@ const connectToLocalNode = async () => {
         provider: wsProvider,
         rpc: {
             protos: {
-                getByTags: {description: "this is the description", type: "Vec<Hash256>",
-                    params: [
-                        {name: 'tags', type: 'Vec<Tags>'},
-                        {name: 'owner', type: 'Option<AccountId>'},
-                        {name: 'limit', type: 'u32'},
-                        {name: 'from', type: 'u32'},
-                        {name: 'desc', type: 'bool'},
-                        {name: 'at', type: 'BlockHash', isOptional: true}
-                    ]},
-                getMetadataBatch: {description: "this is the description", type: "Vec<Option<Vec<Option<Hash256>>>>",
-                    params: [
-                        {name: 'batch', type: 'Vec<String>'},
-                        {name: 'keys', type: 'Vec<String>'},
-                        {name: 'at', type: 'BlockHash', isOptional: true}
-                    ]},
-
                 getProtos: {description: "this is the description", type: "String",
                     params: [
                         {name: 'params', type: 'GetProtosParams'},
-
-                        // {name: 'desc', type: 'bool'},
-                        // {name: 'from', type: 'u32'},
-                        // {name: 'limit', type: 'u32'},
-                        // {name: 'metadata_keys', type: 'Vec<String>', isOptional: true},
-                        // {name: 'owner', type: 'AccountId', isOptional: true},
-                        // {name: 'return_owners', type: 'bool'},
-                        // {name: 'tags', type: 'Vec<Tags>', isOptional: true},
-
 
                         {name: 'at', type: 'BlockHash', isOptional: true}
                     ]},
@@ -49,8 +24,6 @@ const connectToLocalNode = async () => {
             },
 
             BlockHash: 'Hash',
-
-            Hash256: '[u8; 32]',
 
             GetProtosParams: {
                 tags: 'Option<Vec<Tags>>',

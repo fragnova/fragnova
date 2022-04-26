@@ -12,10 +12,6 @@ sp_api::decl_runtime_apis! {
 		AccountId: Codec
 	{
 
-		fn get_by_tags(tags: Vec<Tags>, owner: Option<AccountId>, limit: u32, from: u32, desc: bool) -> Vec<Hash256>;
-
-		fn get_metadata_batch(batch: Vec<Hash256>, keys: Vec<Vec<u8>>) -> Vec<Option<Vec<Option<Hash256>>>>;
-
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8>;
 
 

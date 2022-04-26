@@ -14,13 +14,6 @@ pub use pallet_protos_rpc_runtime_api::ProtosApi as ProtosRuntimeApi;
 #[rpc]
 pub trait ProtosApi<BlockHash, Tags, AccountId> {
 
-	#[rpc(name = "protos_getByTags")]
-	fn get_by_tags(&self, tags: Vec<Tags>, owner: Option<AccountId>, limit: u32, from: u32, desc: bool, at: Option<BlockHash>) -> Result<Vec<Hash256>>;
-
-
-	#[rpc(name = "protos_getMetadataBatch")]
-	fn get_metadata_batch(&self, batch: Vec<String>, keys: Vec<String>, at: Option<BlockHash>) -> Result<Vec<Option<Vec<Option<Hash256>>>>>;
-
 	#[rpc(name = "protos_getProtos")]
 	fn get_protos(&self, params: GetProtosParams<AccountId, String>, at: Option<BlockHash>) -> Result<String>;
 }
@@ -65,63 +58,6 @@ where
 	Tags: Codec,
 	AccountId: Codec,
 {
-
-	fn get_by_tags(&self, tags: Vec<Tags>,
-				   owner: Option<AccountId>,
-				   limit: u32, from: u32, desc: bool,
-				   at: Option<<Block as BlockT>::Hash>) -> Result<Vec<Hash256>> {
-
-		let api = self.client.runtime_api();
-
-		// If the block hash is not supplied in `at`, use the best block's hash
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-
-
-
-		api.get_by_tags(&at, tags, owner, limit, from, desc).map_err(|e| RpcError {
-			code: ErrorCode::ServerError(Error::RuntimeError.into()),
-			message: "Unable to fetch data.".into(),
-			data: Some(format!("{:?}", e).into()),
-		})
-
-	}
-
-	fn get_metadata_batch(&self, batch: Vec<String>, keys: Vec<String>, at: Option<<Block as BlockT>::Hash>) -> Result<Vec<Option<Vec<Option<Hash256>>>>> {
-		
-
-		let batch : Result<Vec<Hash256>> = batch.into_iter().map(|s| -> Result<Hash256>  { 
-			let vector : Vec<u8>  = hex::decode(&s).map_err(|e| 
-				RpcError {
-					code: ErrorCode::InvalidParams,
-					message: "An element in `batch` is not a hexadecimal string".into(),
-					data: Some(format!("Hexadecical String: {:?}, Error: {:?}", s, e).into()),
-				}
-			)?;
-			let hash : Hash256 = vector.try_into().map_err(|e| 
-				RpcError {
-					code: ErrorCode::InvalidParams,
-					message: "A hexadecimal string in `batch` is not 32 bytes in length".into(),
-					data: Some(format!("Hexadecical String: {:?}, Error: {:?}", s, e).into()),
-				}
-			)?;
-			Ok(hash)
-		}).collect();
-
-		let batch = batch?;
-
-		let keys = keys.into_iter().map(|s| s.into_bytes()).collect::<Vec<Vec<u8>>>();
-
-		let api = self.client.runtime_api();
-
-		// If the block hash is not supplied in `at`, use the best block's hash
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
-
-		api.get_metadata_batch(&at, batch, keys).map_err(|e| RpcError {
-			code: ErrorCode::ServerError(Error::RuntimeError.into()),
-			message: "Unable to fetch data.".into(),
-			data: Some(format!("{:?}", e).into()),
-		})
-	}
 
 	fn get_protos(&self, params: GetProtosParams<AccountId, String>,
 				  at: Option<<Block as BlockT>::Hash>) -> Result<String> {
