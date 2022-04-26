@@ -3,10 +3,10 @@
 #[cfg(test)]
 mod mock;
 
-#[cfg(test)]
-mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+#[cfg(test)]
+mod tests;
 
 mod weights;
 
@@ -27,8 +27,11 @@ pub use weights::WeightInfo;
 
 use sp_clamor::{get_locked_frag_account, Hash256};
 
-use scale_info::prelude::{format, string::{String, ToString}};
-use serde_json::{Map, Value, json};
+use scale_info::prelude::{
+	format,
+	string::{String, ToString},
+};
+use serde_json::{json, Map, Value};
 
 use frame_support::PalletId;
 const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
@@ -74,7 +77,7 @@ pub struct GetProtosParams<TAccountId, StringType> {
 	pub limit: u32,
 	pub metadata_keys: Option<Vec<StringType>>,
 	pub owner: Option<TAccountId>,
-	pub return_owners : bool,
+	pub return_owners: bool,
 	pub tags: Option<Vec<Tags>>,
 }
 
@@ -148,7 +151,7 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> GenesisBuild<T> for GenesisConfig
 	where
-		T::AccountId: AsRef<[u8]>
+		T::AccountId: AsRef<[u8]>,
 	{
 		fn build(&self) {
 			Pallet::<T>::initialize_upload_authorities(&self.upload_authorities);
@@ -255,9 +258,8 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
-		T::AccountId: AsRef<[u8]>
+		T::AccountId: AsRef<[u8]>,
 	{
-
 		/// Allows the Sudo Account to add an ECDSA public key to current set of designated upload authorities (i.e the designated off-chain validators)
 		///
 		/// # Arguements
@@ -773,11 +775,8 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T>
 	where
-		T::AccountId: AsRef<[u8]>
+		T::AccountId: AsRef<[u8]>,
 	{
-
-
-
 		fn is_proto_having_any_tags(proto_id: &Hash256, tags: &[Tags]) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				tags.into_iter().any(|tag| struct_proto.tags.contains(&tag))
@@ -787,58 +786,67 @@ pub mod pallet {
 		}
 
 		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Vec<u8> {
-
 			// let mut map = HashMap::<String, HashMap<String, String>>::new();
 			let mut map = Map::new();
 
+			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
+				// `owner` exists
+				if let Some(list_protos_owner) =
+					<ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner))
+				{
+					// `owner` exists in `ProtosByOwner`
 
-			let list_protos_final : Vec<Hash256> = if let Some(owner) = params.owner { // `owner` exists
-				if let Some(list_protos_owner) = <ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner)) { // `owner` exists in `ProtosByOwner`
-
-
-					if params.desc { // Sort in descending order
-						list_protos_owner.into_iter()
-										 .rev()
-										 .filter(|proto_id|
-											if let Some(tags) = &params.tags {
-												Self::is_proto_having_any_tags(proto_id, &tags)
-											} else {
-												true
-											})
-										 .skip(params.from as usize)
-										 .take(params.limit as usize)
-										 .collect::<Vec<Hash256>>()
-					} else { // Sort in ascending order
-						list_protos_owner.into_iter()
-										 .filter(|proto_id|
-											if let Some(tags) = &params.tags {
-												Self::is_proto_having_any_tags(proto_id, &tags)
-											} else {
-												true
-											})
-										 .skip(params.from as usize)
-										 .take(params.limit as usize)
-										 .collect::<Vec<Hash256>>()
+					if params.desc {
+						// Sort in descending order
+						list_protos_owner
+							.into_iter()
+							.rev()
+							.filter(|proto_id| {
+								if let Some(tags) = &params.tags {
+									Self::is_proto_having_any_tags(proto_id, &tags)
+								} else {
+									true
+								}
+							})
+							.skip(params.from as usize)
+							.take(params.limit as usize)
+							.collect::<Vec<Hash256>>()
+					} else {
+						// Sort in ascending order
+						list_protos_owner
+							.into_iter()
+							.filter(|proto_id| {
+								if let Some(tags) = &params.tags {
+									Self::is_proto_having_any_tags(proto_id, &tags)
+								} else {
+									true
+								}
+							})
+							.skip(params.from as usize)
+							.take(params.limit as usize)
+							.collect::<Vec<Hash256>>()
 					}
-
-				} else { // // `owner` doesn't exist in `ProtosByOwner`
+				} else {
+					// // `owner` doesn't exist in `ProtosByOwner`
 					Vec::<Hash256>::new()
 				}
-
-			} else if let Some(tags) = params.tags { // `tags` exist
+			} else if let Some(tags) = params.tags {
+				// `tags` exist
 				let mut remaining = params.limit as usize; // Remaining number of protos to get
 
 				tags.into_iter()
-					.map(|tag| -> Vec<Hash256> { // Iterate through every `tag` in `tags`
+					.map(|tag| -> Vec<Hash256> {
+						// Iterate through every `tag` in `tags`
 						let list_protos_tag_final = if remaining <= 0 {
 							<Vec<Hash256>>::new()
-						}
-						else if let Some(list_protos_tag) = <ProtosByTag<T>>::get(&tag) { // Get protos with tag `tag`
+						} else if let Some(list_protos_tag) = <ProtosByTag<T>>::get(&tag) {
+							// Get protos with tag `tag`
 
 							let r = sp_std::cmp::min(list_protos_tag.len(), remaining); // Number of protos to retrieve from `list_protos_tag`
 
 							if params.desc {
-								list_protos_tag[list_protos_tag.len() - r .. list_protos_tag.len()].to_vec() // Return last `r` protos of `list_protos_tag`
+								list_protos_tag[list_protos_tag.len() - r..list_protos_tag.len()]
+									.to_vec() // Return last `r` protos of `list_protos_tag`
 							} else {
 								list_protos_tag[..r].to_vec() // Return first `r` protos of `vec_protos`
 							}
@@ -849,64 +857,59 @@ pub mod pallet {
 						remaining -= list_protos_tag_final.len();
 
 						list_protos_tag_final
-
 					})
 					.flatten()
 					.skip(params.from as usize)
 					.take(params.limit as usize)
 					.collect::<Vec<Hash256>>()
-
-
-			} else { // Don't filter by `owner` or `tags`
-				if params.desc { // TODO: desc is not implemented for Protos. Vector returned has random ordering
+			} else {
+				// Don't filter by `owner` or `tags`
+				if params.desc {
+					// TODO: desc is not implemented for Protos. Vector returned has random ordering
 					<Protos<T>>::iter_keys()
-								.skip(params.from as usize)
-								.take(params.limit as usize)
-								.collect::<Vec<Hash256>>()
-				} else { // TODO: asc is not implemented for Protos. Vector returned has random ordering
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect::<Vec<Hash256>>()
+				} else {
+					// TODO: asc is not implemented for Protos. Vector returned has random ordering
 					<Protos<T>>::iter_keys()
-								.skip(params.from as usize)
-								.take(params.limit as usize)
-								.collect::<Vec<Hash256>>()
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect::<Vec<Hash256>>()
 				}
 			};
 
 			for proto_id in list_protos_final.into_iter() {
-
 				map.insert(hex::encode(proto_id), Value::Object(Map::new()));
 			}
 
-
 			if params.return_owners {
-
 				for (proto_id, map_proto) in map.iter_mut() {
-
-					let array_proto_id : Hash256 = hex::decode(proto_id).unwrap()[..].try_into().unwrap();
+					let array_proto_id: Hash256 =
+						hex::decode(proto_id).unwrap()[..].try_into().unwrap();
 
 					let owner = <Protos<T>>::get(array_proto_id).unwrap().owner;
 
 					let string_owner = match owner {
 						ProtoOwner::User(account_id) => hex::encode(account_id.as_ref()), //format!("{:?}", account_id),
-						ProtoOwner::ExternalAsset(enum_linked_assset) => String::from("No se que debo hago")
+						ProtoOwner::ExternalAsset(enum_linked_assset) => {
+							String::from("No se que debo hago")
+						},
 					};
 
 					match map_proto {
-						Value::Object(map_proto) => (*map_proto).insert(String::from("owner"), Value::String(string_owner)),
-						_ => None
+						Value::Object(map_proto) => {
+							(*map_proto).insert(String::from("owner"), Value::String(string_owner))
+						},
+						_ => None,
 					};
-
-
-
 				}
-
 			}
 
-
 			if let Some(metadata_keys) = params.metadata_keys {
-
 				for (proto_id, map_proto) in map.iter_mut() {
-
-					let array_proto_id : Hash256 = hex::decode(proto_id).unwrap()[..].try_into().unwrap();
+					let array_proto_id: Hash256 =
+						hex::decode(proto_id).unwrap()[..].try_into().unwrap();
 
 					let map_metadata = <Protos<T>>::get(array_proto_id).unwrap().metadata;
 
@@ -921,20 +924,20 @@ pub mod pallet {
 
 						match map_proto {
 							// Value::Object(map_proto) => (*map_proto).insert(metadata_key.clone(), Value::String(metadata_value)), // Cloning `metadata_key` might be inefficient
-							Value::Object(map_proto) => (*map_proto).insert(String::from_utf8(metadata_key.clone()).unwrap(), metadata_value), // Cloning `metadata_key` might be inefficient
-							_ => None
+							Value::Object(map_proto) => (*map_proto).insert(
+								String::from_utf8(metadata_key.clone()).unwrap(),
+								metadata_value,
+							), // Cloning `metadata_key` might be inefficient
+							_ => None,
 						};
 					}
 				}
-
 			}
 
 			let result = json!(map).to_string();
 
 			result.into_bytes()
-
 		}
-
 
 		/// Ensures that the  SECP256k1 ECDSA public key recovered from the digital signature and the blake2-256 hash of the message is of a designated upload authority
 		/// Also ensures that the digital signature was not signed more than a certain number of blocks ago
