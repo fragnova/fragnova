@@ -108,8 +108,8 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Create a Fragment using an existing Proto-Fragment (only the owner of the Proto-Fragment can call this function and create a Fragment)
 		///
-		/// # Arguements
-		/// * `origin` - The origin of the extrisnic/dispatchable function.
+		/// # Arguments
+		/// * `origin` - The origin of the extrinsic/dispatchable function.
 		/// * `proto_hash` - The hash of the existing Proto-Fragment
 		/// * `metadata` - The metadata (name, external url etc.) of the Fragment that is going to be created
 		/// * `unique` - Whether the Fragment that is being created is unique
@@ -146,8 +146,8 @@ pub mod pallet {
 			<Fragments<T>>::insert(&hash, fragment_data);
 
 			Proto2Fragments::<T>::mutate(&proto_hash, |fragment_hash| {
-				if let Some(enti_hash) = fragment_hash.as_mut() {
-					enti_hash.push(hash);
+				if let Some(entity_hash) = fragment_hash.as_mut() {
+					entity_hash.push(hash);
 				} else {
 					*fragment_hash = Some(vec![hash]);
 				}

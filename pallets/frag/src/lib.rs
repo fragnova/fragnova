@@ -15,7 +15,7 @@ const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f862014
 const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
 const CONFIRMATIONS_NUMBER: u64 = 15;
 
-use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, U256};
+use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -108,7 +108,7 @@ impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
+	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Blake2_128Concat};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
 
@@ -124,6 +124,9 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type EthChainId: Get<u64>;
+
+		#[pallet::constant]
+		type Threshold: Get<u64>;
 
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
@@ -160,6 +163,11 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type FragUsage<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, T::Balance>;
 
+	#[pallet::storage]
+	pub type EVMLinkVoting<T: Config> = StorageMap<_, Identity, H256, u64>;
+
+	#[pallet::storage]
+	pub type EVMLinkVotingClosed<T: Config> = StorageMap<_, Identity, H256, T::BlockNumber>;
 	// consumed by Protos pallet
 	#[pallet::storage]
 	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
@@ -189,6 +197,8 @@ pub mod pallet {
 		SystematicFailure,
 		/// Signature verification failed
 		VerificationFailed,
+		/// Link already processed
+		LinkAlreadyProcessed,
 		/// Reference not found
 		LinkNotFound,
 		/// Account already linked
@@ -276,6 +286,15 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
+			let data_tuple =
+				(data.amount, data.sender, data.signature.clone(), data.lock, data.block_number);
+			let data_hash: H256 = data_tuple.using_encoded(blake2_256).into();
+
+			ensure!(
+				!<EVMLinkVotingClosed<T>>::contains_key(data_hash),
+				Error::<T>::LinkAlreadyProcessed
+			);
+
 			let mut message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() };
 			message.extend_from_slice(&data.sender.0[..]);
 			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
@@ -302,6 +321,27 @@ pub mod pallet {
 			} else {
 				ensure!(amount > 0, Error::<T>::SystematicFailure);
 			}
+
+			// verifications ended, let's proceed with voting count and writing
+
+			let threshold = T::Threshold::get();
+			if threshold > 1 {
+				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
+				if let Some(current_votes) = current_votes {
+					if current_votes + 1u64 < threshold {
+						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
+						return Ok(());
+					} else {
+						// we are good to go, but let's remove the record
+						<EVMLinkVoting<T>>::remove(&data_hash);
+					}
+				} else {
+					<EVMLinkVoting<T>>::insert(&data_hash, 1);
+					return Ok(());
+				}
+			}
+
+			// writing here at end
 
 			let amount: T::Balance = amount.saturated_into();
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
@@ -343,6 +383,9 @@ pub mod pallet {
 				EthLock { amount, block_number: current_block_number },
 			);
 
+			// also record link hash
+			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number);
+
 			Ok(())
 		}
 	}
@@ -365,9 +408,14 @@ pub mod pallet {
 		/// By default unsigned transactions are disallowed, but implementing the validator
 		/// here we make sure that some particular calls (the ones produced by offchain worker)
 		/// are being whitelisted and marked as valid.
-		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
 			if let Call::internal_lock_update { ref data, ref signature } = call {
+				// ensure it's a local transaction sent by an offchain worker
+				if source != TransactionSource::Local {
+					return InvalidTransaction::Call.into();
+				}
+
 				// check public is valid
 				let valid_keys = <FragKeys<T>>::get();
 				log::debug!("Valid keys: {:?}", valid_keys);
@@ -387,12 +435,14 @@ pub mod pallet {
 				if !valid_keys.contains(&pub_key) {
 					return InvalidTransaction::BadSigner.into();
 				}
+
 				// most expensive bit last
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
 				if !signature_valid {
 					return InvalidTransaction::BadProof.into();
 				}
+
 				log::debug!("Sending frag lock update extrinsic");
 				ValidTransaction::with_tag_prefix("FragLockUpdate")
 					.and_provides(data.public.clone())
@@ -401,6 +451,7 @@ pub mod pallet {
 					.and_provides(data.signature.clone())
 					.and_provides(data.lock)
 					.and_provides(data.block_number)
+					.and_provides(pub_key)
 					.longevity(5)
 					.propagate(true)
 					.build()

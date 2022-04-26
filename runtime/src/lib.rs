@@ -323,6 +323,7 @@ impl pallet_frag::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
+	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_frag::crypto::FragAuthId;
 }
 
