@@ -187,18 +187,7 @@ fn testnet_genesis(
 			eth_authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
-		assets: AssetsConfig {
-			assets: vec![
-				// id, owner, is_sufficient, min_balance
-				(0, root_key.clone(), true, 1),
-				(1, root_key.clone(), true, 1),
-			],
-			metadata: vec![
-				// id, name, symbol, decimals
-				(0, "Fragnova Network Token".into(), "FRAG".into(), 12),
-			],
-			accounts: vec![],
-		},
+		assets: AssetsConfig { assets: vec![], metadata: vec![], accounts: vec![] },
 		frag: FragConfig { keys: initial_authorities.iter().map(|x| (x.4.clone())).collect() },
 	}
 }

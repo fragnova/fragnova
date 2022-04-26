@@ -59,6 +59,8 @@ pub fn new_partial(
 	>,
 	ServiceError,
 > {
+	sp_core::crypto::set_default_ss58_version(93u16.into());
+
 	if config.keystore_remote.is_some() {
 		return Err(ServiceError::Other(format!("Remote Keystores are not supported.")));
 	}
