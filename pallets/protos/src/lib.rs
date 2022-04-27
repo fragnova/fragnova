@@ -27,10 +27,7 @@ pub use weights::WeightInfo;
 
 use sp_clamor::{get_locked_frag_account, Hash256};
 
-use scale_info::prelude::{
-	format,
-	string::{String, ToString},
-};
+use scale_info::prelude::string::{String, ToString};
 use serde_json::{json, Map, Value};
 
 use frame_support::PalletId;
@@ -262,7 +259,7 @@ pub mod pallet {
 	{
 		/// Allows the Sudo Account to add an ECDSA public key to current set of designated upload authorities (i.e the designated off-chain validators)
 		///
-		/// # Arguements
+		/// # Arguments
 		/// * `origin` - The origin of the extrisnic/dispatchable function
 		/// * `public` - The ECDSA public key to add to the current set of designated upload authorities
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_upload_auth())]
@@ -280,7 +277,7 @@ pub mod pallet {
 
 		/// Allows the Sudo Account to remove an ECDSA public key from current set of designated upload authorities (i.e the designated off-chain validators)
 		///
-		/// # Arguements
+		/// # Arguments
 		/// * `origin` - The origin of the extrisnic/dispatchable function
 		/// * `public` - The ECDSA public key to remove from the current set of designated upload authorities
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::del_upload_auth())]
@@ -892,8 +889,8 @@ pub mod pallet {
 
 					let string_owner = match owner {
 						ProtoOwner::User(account_id) => hex::encode(account_id.as_ref()), //format!("{:?}", account_id),
-						ProtoOwner::ExternalAsset(enum_linked_assset) => {
-							String::from("No se que debo hago")
+						ProtoOwner::ExternalAsset(_linked_asset) => {
+							String::from("ExternalAsset")
 						},
 					};
 

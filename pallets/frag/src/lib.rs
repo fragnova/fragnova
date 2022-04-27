@@ -57,13 +57,13 @@ pub mod crypto {
 	}
 }
 
-use codec::{Compact, Decode, Encode};
-pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_io::{
-	crypto as Crypto, hashing::blake2_256, hashing::keccak_256, offchain, transaction_index,
-};
+
+use codec::{Decode, Encode};
+pub use pallet::*;
+
+use sp_io::{crypto as Crypto, hashing::blake2_256, hashing::keccak_256};
 use sp_runtime::offchain::storage::StorageValueRef;
 use sp_runtime::MultiSigner;
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
