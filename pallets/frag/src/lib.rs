@@ -13,7 +13,6 @@ mod weights;
 
 const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f";
 const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
-const CONFIRMATIONS_NUMBER: u64 = 15;
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
 
@@ -124,6 +123,9 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type EthChainId: Get<u64>;
+
+		#[pallet::constant]
+		type EthConfirmations: Get<u64>;
 
 		#[pallet::constant]
 		type Threshold: Get<u64>;
@@ -523,7 +525,7 @@ pub mod pallet {
 				String::from("0x0")
 			};
 
-			let to_block = current_block.saturating_sub(CONFIRMATIONS_NUMBER);
+			let to_block = current_block.saturating_sub(T::EthConfirmations::get());
 			let to_block = format!("0x{:x}", to_block);
 
 			let req = json!({
