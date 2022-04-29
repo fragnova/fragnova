@@ -127,6 +127,7 @@ impl Config for Test {
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthConfirmations = ConstU64<1>;
+	type EthFragContract = ();
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_frag::crypto::FragAuthId;
 }

@@ -163,7 +163,6 @@ fn remote_keystore(_url: &String) -> Result<Arc<LocalKeystore>, &'static str> {
 pub fn new_full(
 	mut config: Configuration,
 	geth_url: Option<String>,
-	contract: Option<String>,
 ) -> Result<TaskManager, ServiceError> {
 	let sc_service::PartialComponents {
 		client,
@@ -349,7 +348,7 @@ pub fn new_full(
 		);
 	}
 
-	sp_clamor::init(geth_url, contract);
+	sp_clamor::init(geth_url);
 
 	network_starter.start_network();
 	Ok(task_manager)

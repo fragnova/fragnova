@@ -82,6 +82,18 @@ use serde_json::{json, Value};
 
 use ethabi::ParamType;
 
+pub trait EthFragContract {
+	fn get_frag_contract_address() -> String {
+		String::from("0xBADF00D")
+	}
+}
+
+impl EthFragContract for () {
+	fn get_frag_contract_address() -> String {
+		String::from("0xBADF00D")
+	}
+}
+
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct EthLockUpdate<TPublic> {
 	pub public: TPublic,
@@ -126,6 +138,8 @@ pub mod pallet {
 
 		#[pallet::constant]
 		type EthConfirmations: Get<u64>;
+
+		type EthFragContract: EthFragContract;
 
 		#[pallet::constant]
 		type Threshold: Get<u64>;
@@ -483,12 +497,7 @@ pub mod pallet {
 				return Ok(()); // It is fine to have a node not syncing with eth
 			};
 
-			let contract = if let Some(contract) = sp_clamor::clamor::get_eth_contract() {
-				String::from_utf8(contract).unwrap()
-			} else {
-				log::debug!("No contract address found, skipping sync");
-				return Ok(()); // It is fine to have a node not syncing with eth
-			};
+			let contract = T::EthFragContract::get_frag_contract_address();
 
 			let req = json!({
 				"jsonrpc": "2.0",

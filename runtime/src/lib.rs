@@ -44,6 +44,8 @@ use pallet_transaction_payment::CurrencyAdapter;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
+use scale_info::prelude::string::String;
+
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
@@ -318,10 +320,17 @@ impl pallet_fragments::Config for Runtime {
 	type WeightInfo = ();
 }
 
+impl pallet_frag::EthFragContract for Runtime {
+	fn get_frag_contract_address() -> String {
+		String::from("0xc89ce4735882c9f0f0fe26686c53074e09b0d550")
+	}
+}
+
 impl pallet_frag::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
+	type EthFragContract = Runtime;
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_frag::crypto::FragAuthId;

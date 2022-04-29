@@ -33,7 +33,6 @@ mod details {
 
 	lazy_static! {
 		pub static ref GETH_URL: Mutex<Option<Vec<u8>>> = Mutex::new(None);
-		pub static ref ETH_CONTRACT: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 	}
 
 	// lazy_static! {
@@ -75,15 +74,6 @@ mod details {
 			None
 		}
 	}
-
-	pub fn _get_eth_contract() -> Option<Vec<u8>> {
-		if let Some(eth_contract) = ETH_CONTRACT.lock().unwrap().as_ref() {
-			// well, we are doing an allocation every time we call this function here...
-			Some(eth_contract.clone())
-		} else {
-			None
-		}
-	}
 }
 
 #[cfg(not(feature = "std"))]
@@ -96,10 +86,6 @@ mod details {
 	}
 
 	pub fn _get_geth_url() -> Option<Vec<u8>> {
-		None
-	}
-
-	pub fn _get_eth_contract() -> Option<Vec<u8>> {
 		None
 	}
 }
@@ -121,19 +107,12 @@ pub trait Clamor {
 	fn get_geth_url() -> Option<Vec<u8>> {
 		details::_get_geth_url()
 	}
-
-	fn get_eth_contract() -> Option<Vec<u8>> {
-		details::_get_eth_contract()
-	}
 }
 
 #[cfg(feature = "std")]
-pub fn init(geth_url: Option<String>, contract: Option<String>) {
+pub fn init(geth_url: Option<String>) {
 	if let Some(geth_url) = geth_url {
 		*details::GETH_URL.lock().unwrap() = Some(geth_url.into_bytes());
-	}
-	if let Some(contract) = contract {
-		*details::ETH_CONTRACT.lock().unwrap() = Some(contract.into_bytes());
 	}
 
 	// use chainblocks::{cbl_env, cblog};
