@@ -889,9 +889,7 @@ pub mod pallet {
 
 					let string_owner = match owner {
 						ProtoOwner::User(account_id) => hex::encode(account_id.as_ref()), //format!("{:?}", account_id),
-						ProtoOwner::ExternalAsset(_linked_asset) => {
-							String::from("ExternalAsset")
-						},
+						ProtoOwner::ExternalAsset(_linked_asset) => String::from("ExternalAsset"),
 					};
 
 					match map_proto {

@@ -10,9 +10,6 @@ pub struct Cli {
 
 	#[clap(short, long)]
 	pub geth_url: Option<String>,
-
-	#[clap(short, long)]
-	pub eth_contract: Option<String>,
 }
 
 #[derive(Debug, clap::Subcommand)]
