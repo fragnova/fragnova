@@ -322,7 +322,7 @@ impl pallet_fragments::Config for Runtime {
 
 impl pallet_frag::EthFragContract for Runtime {
 	fn get_frag_contract_address() -> String {
-		String::from("0xc89ce4735882c9f0f0fe26686c53074e09b0d550")
+		String::from("0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac")
 	}
 }
 
