@@ -11,8 +11,8 @@ mod benchmarking;
 
 mod weights;
 
-const LOCK_EVENT: &str = "0xb99f80893eb2deae816cdb7a9af80859762537b151f46c82d826e74f0e8d4151";
-const UNLOCK_EVENT: &str = "0xde7d7cdaf48d28bf7c5c983b3eabe1b2972eded537959d20f51d85bc5a83dd13";
+const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f";
+const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
 
