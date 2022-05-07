@@ -313,9 +313,18 @@ pub mod pallet {
 		/// By default unsigned transactions are disallowed, but implementing the validator
 		/// here we make sure that some particular calls (the ones produced by offchain worker)
 		/// are being whitelisted and marked as valid.
-		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
 			if let Call::internal_finalize_detach { ref data, ref signature } = call {
+				// ensure it's a local transaction sent by an offchain worker
+				match source {
+					TransactionSource::InBlock | TransactionSource::Local => {},
+					_ => {
+						log::debug!("Not a local transaction");
+						return InvalidTransaction::Call.into();
+					},
+				}
+
 				// check public is valid
 				let valid_keys = <FragKeys<T>>::get();
 				log::debug!("Valid keys: {:?}", valid_keys);
@@ -342,13 +351,14 @@ pub mod pallet {
 					return InvalidTransaction::BadProof.into();
 				}
 				log::debug!("Sending detach finalization extrinsic");
-				ValidTransaction::with_tag_prefix("Protos-Detach")
-					.and_provides(data.hash)
-					.and_provides(data.target_chain)
-					.and_provides(data.target_account.clone())
-					.and_provides(data.nonce)
-					.longevity(5)
-					.propagate(true)
+				ValidTransaction::with_tag_prefix("Detach")
+					.and_provides((
+						data.hash,
+						data.target_chain,
+						data.target_account.clone(),
+						data.nonce,
+					))
+					.propagate(false)
 					.build()
 			} else {
 				InvalidTransaction::Call.into()

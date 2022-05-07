@@ -430,8 +430,12 @@ pub mod pallet {
 			// Firstly let's check that we call the right function.
 			if let Call::internal_lock_update { ref data, ref signature } = call {
 				// ensure it's a local transaction sent by an offchain worker
-				if source != TransactionSource::Local {
-					return InvalidTransaction::Call.into();
+				match source {
+					TransactionSource::InBlock | TransactionSource::Local => {},
+					_ => {
+						log::debug!("Not a local transaction");
+						return InvalidTransaction::Call.into();
+					},
 				}
 
 				// check public is valid
@@ -463,15 +467,16 @@ pub mod pallet {
 
 				log::debug!("Sending frag lock update extrinsic");
 				ValidTransaction::with_tag_prefix("FragLockUpdate")
-					.and_provides(data.public.clone())
-					.and_provides(data.amount)
-					.and_provides(data.sender)
-					.and_provides(data.signature.clone())
-					.and_provides(data.lock)
-					.and_provides(data.block_number)
-					.and_provides(pub_key)
-					.longevity(5)
-					.propagate(true)
+					.and_provides((
+						data.public.clone(),
+						data.amount,
+						data.sender,
+						data.signature.clone(),
+						data.lock,
+						data.block_number,
+						pub_key,
+					))
+					.propagate(false)
 					.build()
 			} else {
 				InvalidTransaction::Call.into()
