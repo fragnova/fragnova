@@ -9,6 +9,7 @@ use sc_keystore::LocalKeystore;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
+use sp_keystore::SyncCryptoStore;
 use std::{sync::Arc, time::Duration};
 
 // Our native executor instance.
@@ -241,6 +242,8 @@ pub fn new_full(
 		})
 	};
 
+	let chain_type = config.chain_spec.chain_type();
+
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		network: network.clone(),
 		client: client.clone(),
@@ -316,7 +319,7 @@ pub fn new_full(
 		justification_period: 512,
 		name: Some(name),
 		observer_enabled: false,
-		keystore,
+		keystore: keystore.clone(),
 		local_role: role,
 		telemetry: telemetry.as_ref().map(|x| x.handle()),
 		protocol_name: grandpa_protocol_name,
@@ -349,6 +352,18 @@ pub fn new_full(
 	}
 
 	sp_clamor::init(geth_url);
+
+	// add some test keys when needed
+	if chain_type == sc_service::ChainType::Development {
+		if let Some(keystore) = keystore {
+			let bobs =
+				hex::decode("d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69")
+					.unwrap();
+			const KEY_TYPE: sp_runtime::KeyTypeId = sp_runtime::KeyTypeId(*b"frag");
+			SyncCryptoStore::insert_unknown(&*keystore, KEY_TYPE, "//Bob", &bobs)
+				.expect("Inserting test keys");
+		}
+	}
 
 	network_starter.start_network();
 	Ok(task_manager)

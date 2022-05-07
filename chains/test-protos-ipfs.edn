@@ -50,9 +50,10 @@
 
   ; detach
 
+  ; we are doing this internally now
   "//Bob" (Ed25519.PublicKey) = .bob-pub-key (ToHex) (Log "Bobs") = .bob-hex-key
-  {"id" 1 "jsonrpc" "2.0" "method" "author_insertKey" "params" ["frag" "//Bob" .bob-hex-key]}
-  (ToJson) (Http.Post rpc-server) (Log)
+;;   {"id" 1 "jsonrpc" "2.0" "method" "author_insertKey" "params" ["frag" "//Bob" .bob-hex-key]}
+;;   (ToJson) (Http.Post rpc-server) (Log)
 
   "fragments-frag-ecdsa-keys" (StringToBytes) >= .bob-msg
   .bob-pub-key (AppendTo .bob-msg)
