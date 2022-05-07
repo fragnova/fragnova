@@ -302,6 +302,8 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_none(origin)?;
 
+			log::debug!("Lock update: {:?}", data);
+
 			let data_tuple =
 				(data.amount, data.sender, data.signature.clone(), data.lock, data.block_number);
 			let data_hash: H256 = data_tuple.using_encoded(blake2_256).into();
