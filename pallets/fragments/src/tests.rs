@@ -1,7 +1,7 @@
 use crate::{mock::*, Error, FragmentMetadata, Fragments, Proto2Fragments};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
-use pallet_protos::{AuthData, LinkedAsset, Tags};
+use pallet_protos::{AuthData, Categories, LinkedAsset};
 use sp_clamor::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
@@ -12,7 +12,7 @@ fn initial_set_up_and_get_signature(
 	nonce: u64,
 ) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
-	let tags: Vec<Tags> = Vec::new();
+	let categories: Vec<Categories> = Vec::new();
 
 	let proto_hash = blake2_256(&data);
 	let linked_asset: Option<LinkedAsset> = None;
@@ -20,7 +20,7 @@ fn initial_set_up_and_get_signature(
 		&[
 			&proto_hash[..],
 			&references.encode(),
-			&tags.encode(),
+			&categories.encode(),
 			&linked_asset.encode(),
 			&nonce.encode(),
 			&1.encode(),

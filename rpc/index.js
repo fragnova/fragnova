@@ -19,14 +19,14 @@ const connectToLocalNode = async () => {
         },
 
         types: {
-            Tags: {
+            Categories: {
                 _enum: ['Code', 'Audio', 'Image']
             },
 
             BlockHash: 'Hash',
 
             GetProtosParams: {
-                tags: 'Option<Vec<Tags>>',
+                categories: 'Option<Vec<Categories>>',
                 owner: 'Option<AccountId>',
                 limit: 'u32',
                 from: 'u32',
@@ -47,9 +47,9 @@ const connectToLocalNode = async () => {
 
 
 // (async () => {
-//     const api = await connectToLocalNode();   
+//     const api = await connectToLocalNode();
 
-//     const params = api.createType("GetProtosParams", {tags: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
+//     const params = api.createType("GetProtosParams", {categories: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
 //         metadata_keys: ['A', 'A'], return_owners: true});
 
 

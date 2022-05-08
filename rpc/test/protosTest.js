@@ -11,7 +11,7 @@ const index = require("../index");
 //             if (error) {
 //                 reject(error);
 //             } else {
-//                 resolve(stdout); 
+//                 resolve(stdout);
 //             }
 //         });
 //     });
@@ -22,7 +22,7 @@ const index = require("../index");
 describe('Protos RPCs', () => {
 
     before(async () => {
-        await index.connectToLocalNode();  
+        await index.connectToLocalNode();
     });
 
     describe('getProtos', () => {
@@ -31,46 +31,46 @@ describe('Protos RPCs', () => {
         it('should return correct proto', async () => {
 
             let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10}))
-    
+
             assert('b8a6d246ba4324f50e392a2675bfaedea16f23aea727e0454362f213b07eb9bc' in JSON.parse(result.toHuman()))
 
-            result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, 
+            result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10,
                                                     owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"}))
 
 
             assert('b8a6d246ba4324f50e392a2675bfaedea16f23aea727e0454362f213b07eb9bc' in JSON.parse(result.toHuman()))
-    
-    
+
+
         });
 
-        it('should return no protos when filtering Tag', async () => {
-    
-            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, tags: ['Audio']}))
-    
-            assert(result.toHuman() === "{}")
+        it('should return no protos when filtering Category', async () => {
 
-            result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, tags: ['Image']}))
+            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: ['Audio']}))
 
             assert(result.toHuman() === "{}")
-    
-    
+
+            result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: ['Image']}))
+
+            assert(result.toHuman() === "{}")
+
+
         });
 
         it('should return correct owner', async () => {
 
-            const params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, metadata_keys: ['A', 'A'], 
-                                                              owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", tags: ["Code"], return_owners: true});
-    
-    
+            const params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, metadata_keys: ['A', 'A'],
+                                                              owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", categories: ["Code"], return_owners: true});
+
+
             let result = await api.rpc.protos.getProtos(params)
-    
+
             let json = JSON.parse(result.toHuman())
-    
-    
+
+
         });
 
         it('should return correct metadata', async () => {
-            const params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, metadata_keys: ['image', 'json_description'], 
+            const params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, metadata_keys: ['image', 'json_description'],
                                           owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy"});
 
             let result = await api.rpc.protos.getProtos(params)
@@ -92,7 +92,7 @@ describe('Protos RPCs', () => {
 
     });
 
-    
+
 })
 
 

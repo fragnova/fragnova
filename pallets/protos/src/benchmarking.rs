@@ -48,7 +48,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let tags = vec![Tags::Code];
+		let categories = vec![Categories::Code];
 
 		let mut signature: [u8; 65] = [0; 65];
 		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();
@@ -61,7 +61,7 @@ benchmarks! {
 		};
 
 		Protos::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-	}: _(RawOrigin::Signed(caller), auth_data, references, tags, None, None, immutable_data)
+	}: _(RawOrigin::Signed(caller), auth_data, references, categories, None, None, immutable_data)
 	verify {
 		assert_last_event::<T>(Event::<T>::Uploaded(proto_hash).into())
 	}
@@ -74,7 +74,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let tags = vec![Tags::Code];
+		let categories = vec![Categories::Code];
 
 		let mut signature: [u8; 65] = [0; 65];
 		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();
@@ -87,7 +87,7 @@ benchmarks! {
 		};
 
 		Protos::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, tags, None, None, immutable_data.clone())?;
+		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, categories, None, None, immutable_data.clone())?;
 
 		let mut signature: [u8; 65] = [0; 65];
 		hex::decode_to_slice("9b68ce0f7274e50a75196f819f72e41ebdce74f5f0632b6d97f85b09831debc31fc9b82a47fde245349c971ddd148991c1b3f3813ea7d7f64972e5698f029eb401", &mut signature).unwrap();
@@ -114,7 +114,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let tags = vec![Tags::Code];
+		let categories = vec![Categories::Code];
 
 		let mut signature: [u8; 65] = [0; 65];
 		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();
@@ -127,7 +127,7 @@ benchmarks! {
 		};
 
 		Protos::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, tags, None, None, immutable_data.clone())?;
+		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, categories, None, None, immutable_data.clone())?;
 
 		let public: [u8; 33] = [2, 44, 133, 69, 18, 57, 0, 152, 97, 145, 160, 85, 122, 14, 119, 232, 88, 169, 142, 77, 139, 133, 214, 67, 188, 128, 137, 28, 23, 247, 242, 193, 104];
 		let target_account: Vec<u8> = [203, 109, 249, 222, 30, 252, 167, 163, 153, 138, 142, 173, 78, 2, 21, 157, 95, 169, 156, 62, 13, 79, 214, 67, 38, 103, 57, 11, 180, 114, 104, 84].to_vec();
@@ -148,7 +148,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let tags = vec![Tags::Code];
+		let categories = vec![Categories::Code];
 
 		let mut signature: [u8; 65] = [0; 65];
 		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();
@@ -161,7 +161,7 @@ benchmarks! {
 		};
 
 		Protos::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, tags, None, None, immutable_data.clone())?;
+		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, categories, None, None, immutable_data.clone())?;
 	}: _(RawOrigin::Signed(caller), proto_hash, new_owner.clone())
 	verify {
 		assert_last_event::<T>(Event::<T>::Transferred(proto_hash, new_owner).into())

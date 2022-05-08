@@ -11,7 +11,7 @@ use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 pub use pallet_protos_rpc_runtime_api::ProtosApi as ProtosRuntimeApi;
 
 #[rpc]
-pub trait ProtosApi<BlockHash, Tags, AccountId> {
+pub trait ProtosApi<BlockHash, Categories, AccountId> {
 	#[rpc(name = "protos_getProtos")]
 	fn get_protos(
 		&self,
@@ -50,15 +50,15 @@ impl From<Error> for i64 {
 	}
 }
 
-impl<C, Block, Tags, AccountId> ProtosApi<<Block as BlockT>::Hash, Tags, AccountId>
+impl<C, Block, Categories, AccountId> ProtosApi<<Block as BlockT>::Hash, Categories, AccountId>
 	for Protos<C, Block>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static,
 	C: ProvideRuntimeApi<Block>,
 	C: HeaderBackend<Block>,
-	C::Api: ProtosRuntimeApi<Block, Tags, AccountId>,
-	Tags: Codec,
+	C::Api: ProtosRuntimeApi<Block, Categories, AccountId>,
+	Categories: Codec,
 	AccountId: Codec,
 {
 	fn get_protos(
@@ -80,7 +80,7 @@ where
 			limit: params.limit,
 			owner: params.owner,
 			return_owners: params.return_owners,
-			tags: params.tags,
+			categories: params.categories,
 		};
 
 		api.get_protos(&at, params_no_std)

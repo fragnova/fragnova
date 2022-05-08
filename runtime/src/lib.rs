@@ -53,7 +53,7 @@ use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
-use pallet_protos::{GetProtosParams, Tags};
+use pallet_protos::{Categories, GetProtosParams};
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.
@@ -749,7 +749,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Tags, AccountId> for Runtime {
+	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Categories, AccountId> for Runtime {
 
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8> {
 			Protos::get_protos(params)

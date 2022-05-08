@@ -71,7 +71,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Protos UploadAuthorities (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:1)
 	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
-	// Storage: Protos ProtosByTag (r:1 w:1)
+	// Storage: Protos ProtosByCategory (r:1 w:1)
 	// Storage: Protos ProtosByOwner (r:1 w:1)
 	fn upload() -> Weight {
 		(158_000_000 as Weight)
@@ -124,7 +124,7 @@ impl WeightInfo for () {
 	// Storage: Protos UploadAuthorities (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:1)
 	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
-	// Storage: Protos ProtosByTag (r:1 w:1)
+	// Storage: Protos ProtosByCategory (r:1 w:1)
 	// Storage: Protos ProtosByOwner (r:1 w:1)
 	fn upload() -> Weight {
 		(158_000_000 as Weight)

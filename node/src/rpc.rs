@@ -8,7 +8,7 @@
 use std::sync::Arc;
 
 use clamor_runtime::{
-	opaque::Block, pallet_protos::Tags, AccountId, Balance, BlockNumber, Hash, Index,
+	opaque::Block, pallet_protos::Categories, AccountId, Balance, BlockNumber, Hash, Index,
 };
 use pallet_contracts_rpc::{Contracts, ContractsApi};
 use pallet_protos_rpc::{Protos, ProtosApi};
@@ -37,7 +37,7 @@ where
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>,
-	C::Api: pallet_protos_rpc::ProtosRuntimeApi<Block, Tags, AccountId>,
+	C::Api: pallet_protos_rpc::ProtosRuntimeApi<Block, Categories, AccountId>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + 'static,
 {

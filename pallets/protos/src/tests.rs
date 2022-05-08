@@ -1,4 +1,6 @@
-use crate::{mock::*, AuthData, Error, LinkedAsset, ProtoOwner, Protos, Tags, UploadAuthorities};
+use crate::{
+	mock::*, AuthData, Categories, Error, LinkedAsset, ProtoOwner, Protos, UploadAuthorities,
+};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use pallet_detach::{
@@ -23,7 +25,7 @@ fn initial_set_up_and_get_signature(
 	nonce: u64,
 ) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
-	let tags: Vec<Tags> = Vec::new();
+	let categories: Vec<Categories> = Vec::new();
 
 	let proto_hash = blake2_256(&data);
 	let linked_asset: Option<LinkedAsset> = None;
@@ -31,7 +33,7 @@ fn initial_set_up_and_get_signature(
 		&[
 			&proto_hash[..],
 			&references.encode(),
-			&tags.encode(),
+			&categories.encode(),
 			&linked_asset.encode(),
 			&nonce.encode(),
 			&1.encode(),

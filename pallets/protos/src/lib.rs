@@ -33,13 +33,20 @@ use serde_json::{json, Map, Value};
 use frame_support::PalletId;
 const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
 
-/// Types of tags that can be attached to a Proto-Fragment to describe it (e.g Code, Audio, Video etc.)
+/// Types of categories that can be attached to a Proto-Fragment to describe it (e.g Code, Audio, Video etc.)
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum Tags {
-	Code,
-	Audio,
-	Image,
+pub enum Categories {
+	Chain,
+	AudioFile,
+	ImageFile,
+	VideoFile,
+	GltfFile,
+	Shader,
+	JsonString,
+	WasmModule,
+	AudioFilter,
+	AudioInstrument,
 }
 
 /// ¿
@@ -75,7 +82,7 @@ pub struct GetProtosParams<TAccountId, StringType> {
 	pub metadata_keys: Option<Vec<StringType>>,
 	pub owner: Option<TAccountId>,
 	pub return_owners: bool,
-	pub tags: Option<Vec<Tags>>,
+	pub categories: Option<Vec<Categories>>,
 }
 
 /// Struct that represents the digital signature (and other important information) given by the off-chain validator
@@ -101,8 +108,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub owner: ProtoOwner<TAccountId>,
 	/// References to other protos.
 	pub references: Vec<Hash256>,
-	/// Tags associated with this proto
-	pub tags: Vec<Tags>,
+	/// Categories associated with this proto
+	pub categories: Vec<Categories>,
 	/// Metadata attached to the proto.
 	pub metadata: BTreeMap<Vec<u8>, Hash256>,
 }
@@ -171,11 +178,12 @@ pub mod pallet {
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
-	/// Storage Map which keeps track of the Proto-Fragments by Tag type.
-	/// The key is the Tag type and the value is a list of the hash of a Proto-Fragment
+	/// Storage Map which keeps track of the Proto-Fragments by Category type.
+	/// The key is the Category type and the value is a list of the hash of a Proto-Fragment
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
-	pub type ProtosByTag<T: Config> = StorageMap<_, Blake2_128Concat, Tags, Vec<Hash256>>;
+	pub type ProtosByCategory<T: Config> =
+		StorageMap<_, Blake2_128Concat, Categories, Vec<Hash256>>;
 
 	/// UploadAuthorities is a StorageValue that keeps track of the set of ECDSA public keys of the upload authorities
 	/// * Note: An upload authority (also known as the off-chain validator) provides the digital signature needed to upload a Proto-Fragment
@@ -301,7 +309,7 @@ pub mod pallet {
 		/// * `origin` - The origin of the extrisnic/dispatchable function
 		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
 		/// * `references` - A list of references to other Proto-Fragments
-		/// * `tags` - A list of tags to upload along with the Proto-Fragment
+		/// * `categories` - A list of categories to upload along with the Proto-Fragment
 		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Frament (e.g an ERC-721 Contract)
 		/// * `include_cost` (optional) -
 		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
@@ -311,7 +319,7 @@ pub mod pallet {
 			auth: AuthData,
 			// we store this in the state as well
 			references: Vec<Hash256>,
-			tags: Vec<Tags>,
+			categories: Vec<Categories>,
 			linked_asset: Option<LinkedAsset>,
 			include_cost: Option<Compact<u128>>,
 			// let data come last as we record this size in blocks db (storage chain)
@@ -331,7 +339,7 @@ pub mod pallet {
 				&[
 					&proto_hash[..],
 					&references.encode(),
-					&tags.encode(),
+					&categories.encode(),
 					&linked_asset.encode(),
 					&nonce.encode(),
 					&auth.block.encode(),
@@ -391,16 +399,16 @@ pub mod pallet {
 				creator: who.clone(),
 				owner: owner.clone(),
 				references,
-				tags: tags.clone(),
+				categories: categories.clone(),
 				metadata: BTreeMap::new(),
 			};
 
 			// store proto
 			<Protos<T>>::insert(proto_hash, proto);
 
-			// store by tags
-			for tag in tags {
-				<ProtosByTag<T>>::append(tag, proto_hash);
+			// store by categories
+			for category in categories {
+				<ProtosByCategory<T>>::append(category, proto_hash);
 			}
 
 			<ProtosByOwner<T>>::append(owner, proto_hash);
@@ -428,7 +436,7 @@ pub mod pallet {
 		/// * `origin` - The origin of the extrisnic / dispatchable function
 		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
 		/// * `proto_hash` - The hash of the existing Proto-Fragment
-		/// * `tags` - A list of tags to upload along with the Proto-Fragment
+		/// * `categories` - A list of categories to upload along with the Proto-Fragment
 		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Frament (e.g an ERC-721 Contract)
 		/// * `include_cost` (optional) -
 		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
@@ -774,9 +782,11 @@ pub mod pallet {
 	where
 		T::AccountId: AsRef<[u8]>,
 	{
-		fn is_proto_having_any_tags(proto_id: &Hash256, tags: &[Tags]) -> bool {
+		fn is_proto_having_any_categories(proto_id: &Hash256, categories: &[Categories]) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
-				tags.into_iter().any(|tag| struct_proto.tags.contains(&tag))
+				categories
+					.into_iter()
+					.any(|category| struct_proto.categories.contains(&category))
 			} else {
 				false
 			}
@@ -799,8 +809,8 @@ pub mod pallet {
 							.into_iter()
 							.rev()
 							.filter(|proto_id| {
-								if let Some(tags) = &params.tags {
-									Self::is_proto_having_any_tags(proto_id, &tags)
+								if let Some(categories) = &params.categories {
+									Self::is_proto_having_any_categories(proto_id, &categories)
 								} else {
 									true
 								}
@@ -813,8 +823,8 @@ pub mod pallet {
 						list_protos_owner
 							.into_iter()
 							.filter(|proto_id| {
-								if let Some(tags) = &params.tags {
-									Self::is_proto_having_any_tags(proto_id, &tags)
+								if let Some(categories) = &params.categories {
+									Self::is_proto_having_any_categories(proto_id, &categories)
 								} else {
 									true
 								}
@@ -827,17 +837,19 @@ pub mod pallet {
 					// // `owner` doesn't exist in `ProtosByOwner`
 					Vec::<Hash256>::new()
 				}
-			} else if let Some(tags) = params.tags {
-				// `tags` exist
+			} else if let Some(categories) = params.categories {
+				// `categories` exist
 				let mut remaining = params.limit as usize; // Remaining number of protos to get
 
-				tags.into_iter()
-					.map(|tag| -> Vec<Hash256> {
-						// Iterate through every `tag` in `tags`
+				categories
+					.into_iter()
+					.map(|category| -> Vec<Hash256> {
+						// Iterate through every `category` in `categories`
 						let list_protos_tag_final = if remaining <= 0 {
 							<Vec<Hash256>>::new()
-						} else if let Some(list_protos_tag) = <ProtosByTag<T>>::get(&tag) {
-							// Get protos with tag `tag`
+						} else if let Some(list_protos_tag) = <ProtosByCategory<T>>::get(&category)
+						{
+							// Get protos with category `category`
 
 							let r = sp_std::cmp::min(list_protos_tag.len(), remaining); // Number of protos to retrieve from `list_protos_tag`
 
@@ -848,7 +860,7 @@ pub mod pallet {
 								list_protos_tag[..r].to_vec() // Return first `r` protos of `vec_protos`
 							}
 						} else {
-							<Vec<Hash256>>::new() // If no protos exist for tag `tag`
+							<Vec<Hash256>>::new() // If no protos exist for category `category`
 						};
 
 						remaining -= list_protos_tag_final.len();
@@ -860,7 +872,7 @@ pub mod pallet {
 					.take(params.limit as usize)
 					.collect::<Vec<Hash256>>()
 			} else {
-				// Don't filter by `owner` or `tags`
+				// Don't filter by `owner` or `categories`
 				if params.desc {
 					// TODO: desc is not implemented for Protos. Vector returned has random ordering
 					<Protos<T>>::iter_keys()
