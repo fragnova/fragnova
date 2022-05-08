@@ -845,27 +845,27 @@ pub mod pallet {
 					.into_iter()
 					.map(|category| -> Vec<Hash256> {
 						// Iterate through every `category` in `categories`
-						let list_protos_tag_final = if remaining <= 0 {
+						let list_protos_cat_final = if remaining <= 0 {
 							<Vec<Hash256>>::new()
-						} else if let Some(list_protos_tag) = <ProtosByCategory<T>>::get(&category)
+						} else if let Some(list_protos_cat) = <ProtosByCategory<T>>::get(&category)
 						{
 							// Get protos with category `category`
 
-							let r = sp_std::cmp::min(list_protos_tag.len(), remaining); // Number of protos to retrieve from `list_protos_tag`
+							let r = sp_std::cmp::min(list_protos_cat.len(), remaining); // Number of protos to retrieve from `list_protos_cat`
 
 							if params.desc {
-								list_protos_tag[list_protos_tag.len() - r..list_protos_tag.len()]
-									.to_vec() // Return last `r` protos of `list_protos_tag`
+								list_protos_cat[list_protos_cat.len() - r..list_protos_cat.len()]
+									.to_vec() // Return last `r` protos of `list_protos_cat`
 							} else {
-								list_protos_tag[..r].to_vec() // Return first `r` protos of `vec_protos`
+								list_protos_cat[..r].to_vec() // Return first `r` protos of `vec_protos`
 							}
 						} else {
 							<Vec<Hash256>>::new() // If no protos exist for category `category`
 						};
 
-						remaining -= list_protos_tag_final.len();
+						remaining -= list_protos_cat_final.len();
 
-						list_protos_tag_final
+						list_protos_cat_final
 					})
 					.flatten()
 					.skip(params.from as usize)
