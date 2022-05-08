@@ -1,6 +1,6 @@
 const { ApiPromise, WsProvider } = require('@polkadot/api');
 
-const {Text} = require('@polkadot/types')
+const { Text } = require('@polkadot/types')
 
 const connectToLocalNode = async () => {
     const wsProvider = new WsProvider('ws://127.0.0.1:9944');
@@ -9,18 +9,31 @@ const connectToLocalNode = async () => {
         provider: wsProvider,
         rpc: {
             protos: {
-                getProtos: {description: "this is the description", type: "String",
+                getProtos: {
+                    description: "this is the description", type: "String",
                     params: [
-                        {name: 'params', type: 'GetProtosParams'},
+                        { name: 'params', type: 'GetProtosParams' },
 
-                        {name: 'at', type: 'BlockHash', isOptional: true}
-                    ]},
+                        { name: 'at', type: 'BlockHash', isOptional: true }
+                    ]
+                },
             }
         },
 
         types: {
             Categories: {
-                _enum: ['Code', 'Audio', 'Image']
+                _enum: [
+                    "Chain",
+                    "AudioFile",
+                    "ImageFile",
+                    "VideoFile",
+                    "GltfFile",
+                    "Shader",
+                    "JsonString",
+                    "WasmModule",
+                    "AudioFilter",
+                    "AudioInstrument",
+                ]
             },
 
             BlockHash: 'Hash',
