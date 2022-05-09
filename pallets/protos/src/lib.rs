@@ -42,13 +42,23 @@ pub enum Categories {
 	/// An audio file of the supported formats
 	AudioFile,
 	/// An image file of support formats (e.g. PNG, JPEG, Texture types)
-	ImageFile,
+	TextureFile,
+	/// A vector file (e.g. SVG)
+	VectorFile,
+	/// A font file (e.g. TTF)
+	FontFile,
 	/// A video file of the supported formats
 	VideoFile,
 	/// A GLTF binary model file
 	GltfFile,
 	/// A chainblocks script that returns a shader chain (we validate that)
 	Shader,
+	/// A chainblocks script that returns a shader chain constrained to be used as particle fx (we validate that)
+	ParticleEffect,
+	/// An animation sequence in chainblocks edn
+	Animation,
+	/// A physics collision model
+	PhysicsCollider,
 	/// A Json string
 	JsonString,
 	/// A binary wasm module
@@ -89,10 +99,11 @@ pub struct GetProtosParams<TAccountId, StringType> {
 	pub desc: bool,
 	pub from: u32,
 	pub limit: u32,
-	pub metadata_keys: Option<Vec<StringType>>,
+	pub metadata_keys: Vec<StringType>,
 	pub owner: Option<TAccountId>,
 	pub return_owners: bool,
-	pub categories: Option<Vec<Categories>>,
+	pub categories: Vec<Categories>,
+	pub tags: Vec<StringType>,
 }
 
 /// Struct that represents the digital signature (and other important information) given by the off-chain validator
@@ -111,7 +122,7 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub patches: Vec<Hash256>,
 	/// Include price of the proto.
 	/// If None, this proto can't be included into other protos
-	pub include_cost: Option<Compact<u128>>,
+	pub include_cost: Option<Compact<u64>>,
 	/// The original creator of the proto.
 	pub creator: TAccountId,
 	/// The current owner of the proto.
@@ -119,7 +130,9 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	/// References to other protos.
 	pub references: Vec<Hash256>,
 	/// Categories associated with this proto
-	pub categories: Vec<Categories>,
+	pub category: Categories,
+	/// tags associated with this proto
+	pub tags: Vec<Compact<u64>>,
 	/// Metadata attached to the proto.
 	pub metadata: BTreeMap<Vec<u8>, Hash256>,
 }
@@ -176,6 +189,12 @@ pub mod pallet {
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
+
+	#[pallet::storage]
+	pub type Tags<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u64>;
+
+	#[pallet::storage]
+	pub type TagsIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	/// Storage Map that represents the number of transactions the user has performed with the off-chain validator
 	/// * The key is the AccountId of the user
@@ -329,9 +348,9 @@ pub mod pallet {
 			auth: AuthData,
 			// we store this in the state as well
 			references: Vec<Hash256>,
-			categories: Vec<Categories>,
+			category_tags: (Categories, BTreeSet<Vec<u8>>),
 			linked_asset: Option<LinkedAsset>,
-			include_cost: Option<Compact<u128>>,
+			include_cost: Option<Compact<u64>>,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -349,7 +368,7 @@ pub mod pallet {
 				&[
 					&proto_hash[..],
 					&references.encode(),
-					&categories.encode(),
+					&category_tags.encode(),
 					&linked_asset.encode(),
 					&nonce.encode(),
 					&auth.block.encode(),
@@ -376,7 +395,7 @@ pub mod pallet {
 				let cost = <Protos<T>>::get(reference).map(|p| p.include_cost);
 				if let Some(cost) = cost {
 					if let Some(cost) = cost {
-						let cost: u128 = cost.into();
+						let cost: u64 = cost.into();
 						let cost: T::Balance = cost.saturated_into();
 						let stake = <ProtoStakes<T>>::get(reference, who.clone());
 						if let Some(stake) = stake {
@@ -401,6 +420,25 @@ pub mod pallet {
 				ProtoOwner::User(who.clone())
 			};
 
+			let tags = category_tags
+				.1
+				.iter()
+				.map(|s| {
+					let tag_index = <Tags<T>>::get(s);
+					if let Some(tag_index) = tag_index {
+						<Compact<u64>>::from(tag_index)
+					} else {
+						let next_index = <TagsIndex<T>>::try_get().unwrap_or_default() + 1;
+						<Tags<T>>::insert(s, next_index);
+						// storing is dangerous inside an closure
+						// but after this call we start storing..
+						// so it's fine here
+						<TagsIndex<T>>::put(next_index);
+						<Compact<u64>>::from(next_index)
+					}
+				})
+				.collect();
+
 			// store in the state the proto
 			let proto = Proto {
 				block: current_block_number,
@@ -409,17 +447,16 @@ pub mod pallet {
 				creator: who.clone(),
 				owner: owner.clone(),
 				references,
-				categories: categories.clone(),
+				category: category_tags.0,
+				tags,
 				metadata: BTreeMap::new(),
 			};
 
 			// store proto
 			<Protos<T>>::insert(proto_hash, proto);
 
-			// store by categories
-			for category in categories {
-				<ProtosByCategory<T>>::append(category, proto_hash);
-			}
+			// store by category
+			<ProtosByCategory<T>>::append(category_tags.0, proto_hash);
 
 			<ProtosByOwner<T>>::append(owner, proto_hash);
 
@@ -446,8 +483,6 @@ pub mod pallet {
 		/// * `origin` - The origin of the extrisnic / dispatchable function
 		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
 		/// * `proto_hash` - The hash of the existing Proto-Fragment
-		/// * `categories` - A list of categories to upload along with the Proto-Fragment
-		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Frament (e.g an ERC-721 Contract)
 		/// * `include_cost` (optional) -
 		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get())]
@@ -456,7 +491,7 @@ pub mod pallet {
 			auth: AuthData,
 			// proto hash we want to patch
 			proto_hash: Hash256,
-			include_cost: Option<Compact<u128>>,
+			include_cost: Option<Compact<u64>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -788,22 +823,61 @@ pub mod pallet {
 		}
 	}
 
+	impl Categories {
+		pub fn iterator() -> core::slice::Iter<'static, Categories> {
+			static CATS: [Categories; 15] = [
+				Categories::Chain,
+				Categories::AudioFile,
+				Categories::TextureFile,
+				Categories::VectorFile,
+				Categories::FontFile,
+				Categories::VideoFile,
+				Categories::GltfFile,
+				Categories::Shader,
+				Categories::ParticleEffect,
+				Categories::Animation,
+				Categories::PhysicsCollider,
+				Categories::JsonString,
+				Categories::WasmModule,
+				Categories::AudioFilter,
+				Categories::AudioInstrument,
+			];
+			CATS.iter()
+		}
+	}
+
 	impl<T: Config> Pallet<T>
 	where
 		T::AccountId: AsRef<[u8]>,
 	{
-		fn is_proto_having_any_categories(proto_id: &Hash256, categories: &[Categories]) -> bool {
+		fn filter_proto(proto_id: &Hash256, tags: &[Vec<u8>], categories: &[Categories]) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
-				categories
-					.into_iter()
-					.any(|category| struct_proto.categories.contains(&category))
+				if categories.len() == 0
+				// Use any here to match any category towards proto
+					|| categories.into_iter().any(|cat| *cat == struct_proto.category)
+				{
+					// Use all here to match all tags always
+					if tags.len() == 0 {
+						true
+					} else {
+						tags.into_iter().all(|tag| {
+							let tag_idx = <Tags<T>>::get(tag);
+							if let Some(tag_idx) = tag_idx {
+								struct_proto.tags.contains(&Compact::from(tag_idx))
+							} else {
+								false
+							}
+						})
+					}
+				} else {
+					false
+				}
 			} else {
 				false
 			}
 		}
 
 		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Vec<u8> {
-			// let mut map = HashMap::<String, HashMap<String, String>>::new();
 			let mut map = Map::new();
 
 			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
@@ -812,17 +886,16 @@ pub mod pallet {
 					<ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner))
 				{
 					// `owner` exists in `ProtosByOwner`
-
 					if params.desc {
 						// Sort in descending order
 						list_protos_owner
 							.into_iter()
 							.rev()
 							.filter(|proto_id| {
-								if let Some(categories) = &params.categories {
-									Self::is_proto_having_any_categories(proto_id, &categories)
-								} else {
+								if params.tags.len() == 0 {
 									true
+								} else {
+									Self::filter_proto(proto_id, &params.tags, &params.categories)
 								}
 							})
 							.skip(params.from as usize)
@@ -833,10 +906,10 @@ pub mod pallet {
 						list_protos_owner
 							.into_iter()
 							.filter(|proto_id| {
-								if let Some(categories) = &params.categories {
-									Self::is_proto_having_any_categories(proto_id, &categories)
-								} else {
+								if params.tags.len() == 0 {
 									true
+								} else {
+									Self::filter_proto(proto_id, &params.tags, &params.categories)
 								}
 							})
 							.skip(params.from as usize)
@@ -844,58 +917,58 @@ pub mod pallet {
 							.collect::<Vec<Hash256>>()
 					}
 				} else {
-					// // `owner` doesn't exist in `ProtosByOwner`
+					// `owner` doesn't exist in `ProtosByOwner`
 					Vec::<Hash256>::new()
 				}
-			} else if let Some(categories) = params.categories {
-				// `categories` exist
-				let mut remaining = params.limit as usize; // Remaining number of protos to get
-
-				categories
-					.into_iter()
-					.map(|category| -> Vec<Hash256> {
-						// Iterate through every `category` in `categories`
-						let list_protos_cat_final = if remaining <= 0 {
-							<Vec<Hash256>>::new()
-						} else if let Some(list_protos_cat) = <ProtosByCategory<T>>::get(&category)
-						{
-							// Get protos with category `category`
-
-							let r = sp_std::cmp::min(list_protos_cat.len(), remaining); // Number of protos to retrieve from `list_protos_cat`
-
-							if params.desc {
-								list_protos_cat[list_protos_cat.len() - r..list_protos_cat.len()]
-									.to_vec() // Return last `r` protos of `list_protos_cat`
-							} else {
-								list_protos_cat[..r].to_vec() // Return first `r` protos of `vec_protos`
-							}
-						} else {
-							<Vec<Hash256>>::new() // If no protos exist for category `category`
-						};
-
-						remaining -= list_protos_cat_final.len();
-
-						list_protos_cat_final
-					})
-					.flatten()
-					.skip(params.from as usize)
-					.take(params.limit as usize)
-					.collect::<Vec<Hash256>>()
 			} else {
-				// Don't filter by `owner` or `categories`
-				if params.desc {
-					// TODO: desc is not implemented for Protos. Vector returned has random ordering
-					<Protos<T>>::iter_keys()
-						.skip(params.from as usize)
-						.take(params.limit as usize)
-						.collect::<Vec<Hash256>>()
-				} else {
-					// TODO: asc is not implemented for Protos. Vector returned has random ordering
-					<Protos<T>>::iter_keys()
-						.skip(params.from as usize)
-						.take(params.limit as usize)
-						.collect::<Vec<Hash256>>()
+				let mut filtered = Vec::<Hash256>::new();
+				for category in Categories::iterator() {
+					if params.categories.len() != 0 && !params.categories.contains(category) {
+						continue;
+					}
+					let protos = <ProtosByCategory<T>>::get(category);
+					if let Some(protos) = protos {
+						filtered.extend(if params.desc {
+							// Sort in descending order
+							protos
+								.into_iter()
+								.rev()
+								.filter(|proto_id| {
+									if params.tags.len() == 0 {
+										true
+									} else {
+										Self::filter_proto(
+											proto_id,
+											&params.tags,
+											&params.categories,
+										)
+									}
+								})
+								.skip(params.from as usize)
+								.take(params.limit as usize)
+								.collect::<Vec<Hash256>>()
+						} else {
+							// Sort in ascending order
+							protos
+								.into_iter()
+								.filter(|proto_id| {
+									if params.tags.len() == 0 {
+										true
+									} else {
+										Self::filter_proto(
+											proto_id,
+											&params.tags,
+											&params.categories,
+										)
+									}
+								})
+								.skip(params.from as usize)
+								.take(params.limit as usize)
+								.collect::<Vec<Hash256>>()
+						});
+					}
 				}
+				filtered
 			};
 
 			for proto_id in list_protos_final.into_iter() {
@@ -923,14 +996,14 @@ pub mod pallet {
 				}
 			}
 
-			if let Some(metadata_keys) = params.metadata_keys {
+			if params.metadata_keys.len() > 0 {
 				for (proto_id, map_proto) in map.iter_mut() {
 					let array_proto_id: Hash256 =
 						hex::decode(proto_id).unwrap()[..].try_into().unwrap();
 
 					let map_metadata = <Protos<T>>::get(array_proto_id).unwrap().metadata;
 
-					for metadata_key in metadata_keys.iter() {
+					for metadata_key in params.metadata_keys.iter() {
 						let metadata_value =
 						// if let Some(data_hash) = map_metadata.get(metadata_key.as_bytes()) {
 						if let Some(data_hash) = map_metadata.get(metadata_key) {

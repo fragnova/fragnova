@@ -72,15 +72,14 @@ where
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
 		let params_no_std = GetProtosParams::<AccountId, Vec<u8>> {
-			metadata_keys: params.metadata_keys.map(|list_keys| {
-				list_keys.into_iter().map(|s| s.into_bytes()).collect::<Vec<Vec<u8>>>()
-			}),
+			metadata_keys: params.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
 			desc: params.desc,
 			from: params.from,
 			limit: params.limit,
 			owner: params.owner,
 			return_owners: params.return_owners,
 			categories: params.categories,
+			tags: params.tags.into_iter().map(|s| s.into_bytes()).collect(),
 		};
 
 		api.get_protos(&at, params_no_std)
