@@ -37,15 +37,25 @@ const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Categories {
+	/// A chainblocks script that returns a generic chain (we validate that)
 	Chain,
+	/// An audio file of the supported formats
 	AudioFile,
+	/// An image file of support formats (e.g. PNG, JPEG, Texture types)
 	ImageFile,
+	/// A video file of the supported formats
 	VideoFile,
+	/// A GLTF binary model file
 	GltfFile,
+	/// A chainblocks script that returns a shader chain (we validate that)
 	Shader,
+	/// A Json string
 	JsonString,
+	/// A binary wasm module
 	WasmModule,
+	/// A chainblocks script that returns an effect chain that requires an input, validated
 	AudioFilter,
+	/// A chainblocks script that returns an instrument chain (no audio input), validated
 	AudioInstrument,
 }
 
