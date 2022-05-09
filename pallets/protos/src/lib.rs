@@ -114,23 +114,23 @@ pub enum ChainCategories {
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Categories {
-	/// A chainblocks script that returns a generic chain (we validate that)
+	/// Chainblocks chains of various sub-categories
 	Chain(ChainCategories),
-	/// An audio file of the supported formats
+	/// Audio files and effects
 	Audio(AudioCategories),
-	/// An image file of support formats (e.g. PNG, JPEG, Texture types)
+	/// Textures of the supported sub-categories
 	Texture(TextureCategories),
-	/// A vector file (e.g. SVG)
+	/// Vectors of the supported sub-categories (e.g. SVG, Font)
 	Vector(VectorCategories),
-	/// A video file of the supported formats
+	/// Video file of the supported formats
 	Video(VideoCategories),
-	/// A GLTF binary model file
+	/// 2d/3d models of the supported formats
 	Model(ModelCategories),
 	/// A chainblocks script that returns a shader chain (we validate that)
 	Shader(ShaderCategories),
-	/// A Json string
+	/// Text of the supported sub-categories
 	Text(TextCategories),
-	/// A binary wasm module
+	/// Binary of the supported sub-categories
 	Binary(BinaryCategories),
 }
 
