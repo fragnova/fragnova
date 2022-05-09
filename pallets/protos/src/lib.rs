@@ -33,40 +33,105 @@ use serde_json::{json, Map, Value};
 use frame_support::PalletId;
 const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
 
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum AudioCategories {
+	/// An audio file of the supported formats (mp3, ogg, wav, etc.)
+	File,
+	/// A chainblocks script that returns an effect chain that requires an input, validated
+	Effect,
+	/// A chainblocks script that returns an instrument chain (no audio input), validated
+	Instrument,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum ModelCategories {
+	/// A GLTF binary model
+	Gltf,
+	/// ???
+	Sdf,
+	/// A physics collision model
+	PhysicsCollider,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum ShaderCategories {
+	/// A chainblocks script that returns a shader chain (we validate that)
+	Generic,
+	/// A chainblocks script that returns a shader chain constrained to be a compute shader (we validate that)
+	Compute,
+	/// A chainblocks script that returns a shader chain constrained to be used as particle fx (we validate that)
+	Particle,
+	/// A chainblocks script that returns a shader chain constrained to be a screen post effect shader (we validate that)
+	PostEffect,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum TextureCategories {
+	PngFile,
+	JpgFile,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum VectorCategories {
+	SvgFile,
+	FontFile,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum VideoCategories {
+	Mp4File,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum TextCategories {
+	Plain,
+	Json,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum BinaryCategories {
+	WasmModule,
+}
+
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum ChainCategories {
+	/// A chainblocks script that returns a generic chain (we validate that)
+	Generic,
+	/// An animation sequence in chainblocks edn
+	Animation,
+}
+
 /// Types of categories that can be attached to a Proto-Fragment to describe it (e.g Code, Audio, Video etc.)
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Categories {
 	/// A chainblocks script that returns a generic chain (we validate that)
-	Chain,
+	Chain(ChainCategories),
 	/// An audio file of the supported formats
-	AudioFile,
+	Audio(AudioCategories),
 	/// An image file of support formats (e.g. PNG, JPEG, Texture types)
-	TextureFile,
+	Texture(TextureCategories),
 	/// A vector file (e.g. SVG)
-	VectorFile,
-	/// A font file (e.g. TTF)
-	FontFile,
+	Vector(VectorCategories),
 	/// A video file of the supported formats
-	VideoFile,
+	Video(VideoCategories),
 	/// A GLTF binary model file
-	GltfFile,
+	Model(ModelCategories),
 	/// A chainblocks script that returns a shader chain (we validate that)
-	Shader,
-	/// A chainblocks script that returns a shader chain constrained to be used as particle fx (we validate that)
-	ParticleEffect,
-	/// An animation sequence in chainblocks edn
-	Animation,
-	/// A physics collision model
-	PhysicsCollider,
+	Shader(ShaderCategories),
 	/// A Json string
-	JsonString,
+	Text(TextCategories),
 	/// A binary wasm module
-	WasmModule,
-	/// A chainblocks script that returns an effect chain that requires an input, validated
-	AudioFilter,
-	/// A chainblocks script that returns an instrument chain (no audio input), validated
-	AudioInstrument,
+	Binary(BinaryCategories),
 }
 
 /// ¿
@@ -823,29 +888,6 @@ pub mod pallet {
 		}
 	}
 
-	impl Categories {
-		pub fn iterator() -> core::slice::Iter<'static, Categories> {
-			static CATS: [Categories; 15] = [
-				Categories::Chain,
-				Categories::AudioFile,
-				Categories::TextureFile,
-				Categories::VectorFile,
-				Categories::FontFile,
-				Categories::VideoFile,
-				Categories::GltfFile,
-				Categories::Shader,
-				Categories::ParticleEffect,
-				Categories::Animation,
-				Categories::PhysicsCollider,
-				Categories::JsonString,
-				Categories::WasmModule,
-				Categories::AudioFilter,
-				Categories::AudioInstrument,
-			];
-			CATS.iter()
-		}
-	}
-
 	impl<T: Config> Pallet<T>
 	where
 		T::AccountId: AsRef<[u8]>,
@@ -922,10 +964,11 @@ pub mod pallet {
 				}
 			} else {
 				let mut filtered = Vec::<Hash256>::new();
-				for category in Categories::iterator() {
-					if params.categories.len() != 0 && !params.categories.contains(category) {
+				for category in <ProtosByCategory<T>>::iter_keys() {
+					if params.categories.len() != 0 && !params.categories.contains(&category) {
 						continue;
 					}
+
 					let protos = <ProtosByCategory<T>>::get(category);
 					if let Some(protos) = protos {
 						filtered.extend(if params.desc {
