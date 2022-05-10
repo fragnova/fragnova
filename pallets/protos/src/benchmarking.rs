@@ -3,11 +3,11 @@
 use super::*;
 #[allow(unused)]
 use crate::Pallet as Protos;
+use categories::{Categories, ChainCategories};
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_detach::Pallet as Detach;
 use sp_io::hashing::blake2_256;
-use categories::{Categories, ChainCategories};
 
 const PUBLIC: [u8; 33] = [
 	3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79,

@@ -5,8 +5,8 @@ use super::*;
 use crate::Pallet as Fragments;
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
-use pallet_protos::AuthData;
 use pallet_protos::categories::{Categories, ChainCategories};
+use pallet_protos::AuthData;
 use sp_io::hashing::blake2_256;
 use sp_std::collections::btree_set::BTreeSet;
 

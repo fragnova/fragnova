@@ -8,7 +8,8 @@
 use std::sync::Arc;
 
 use clamor_runtime::{
-	opaque::Block, pallet_protos::categories::Categories, AccountId, Balance, BlockNumber, Hash, Index,
+	opaque::Block, pallet_protos::categories::Categories, AccountId, Balance, BlockNumber, Hash,
+	Index,
 };
 use pallet_contracts_rpc::{Contracts, ContractsApi};
 use pallet_protos_rpc::{Protos, ProtosApi};

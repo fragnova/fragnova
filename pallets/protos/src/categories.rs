@@ -32,8 +32,6 @@ pub enum ShaderCategories {
 	Generic,
 	/// A chainblocks script that returns a shader chain constrained to be a compute shader (we validate that)
 	Compute,
-	/// A chainblocks script that returns a shader chain constrained to be used as particle fx (we validate that)
-	Particle,
 	/// A chainblocks script that returns a shader chain constrained to be a screen post effect shader (we validate that)
 	PostEffect,
 }
@@ -78,6 +76,8 @@ pub enum ChainCategories {
 	Generic,
 	/// An animation sequence in chainblocks edn
 	Animation,
+	/// A chainblocks script that returns a chain constrained to be used as particle fx (we validate that)
+	Particle,
 }
 
 /// Types of categories that can be attached to a Proto-Fragment to describe it (e.g Code, Audio, Video etc.)
