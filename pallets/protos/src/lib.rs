@@ -400,7 +400,7 @@ pub mod pallet {
 					} else {
 						let next_index = <TagsIndex<T>>::try_get().unwrap_or_default() + 1;
 						<Tags<T>>::insert(s, next_index);
-						// storing is dangerous inside an closure
+						// storing is dangerous inside a closure
 						// but after this call we start storing..
 						// so it's fine here
 						<TagsIndex<T>>::put(next_index);

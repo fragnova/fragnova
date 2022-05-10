@@ -157,13 +157,13 @@
   ; Vec - 0 len
   [0] (Substrate.Encode ["c"]) = .no-refs
 
-  ; Vec - 1 len
-  [1] (Substrate.Encode ["c"]) >= .one-category
-  [0] (Substrate.Encode ["u8"]) (AppendTo .one-category)
+  ; (Chain(Generic), ["test"]) , vec len 1
+  [0 0 1 4] (Substrate.Encode ["u8" "u8" "c" "c"]) >= .categories
+  "test" (StringToBytes) (AppendTo .categories)
 
   .immutable (Hash.Blake2-256) >= .frag-cid >> .frag-hash-payload = .fragment-hash
   .no-refs >> .frag-hash-payload ; refs
-  .one-category >> .frag-hash-payload ; categories
+  .categories >> .frag-hash-payload ; categories
   "0x00" (HexToBytes) >> .frag-hash-payload ; again no linked asset
   [.frag-nonce] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
   [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
@@ -183,7 +183,7 @@
   .no-refs (AppendTo .payload) ; refs
 
   ;; `category` argument of upload extrinsic
-  .one-category (AppendTo .payload) ; categories
+  .categories (AppendTo .payload) ; categories
 
   "0x00" (HexToBytes)
   ;; `linked_asset` argument of upload extrinsic
