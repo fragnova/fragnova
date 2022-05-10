@@ -6,7 +6,9 @@ use crate::Pallet as Fragments;
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_protos::AuthData;
+use pallet_protos::categories::{Categories, ChainCategories};
 use sp_io::hashing::blake2_256;
+use sp_std::collections::btree_set::BTreeSet;
 
 const PROTO_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
@@ -37,7 +39,7 @@ benchmarks! {
 		};
 
 		pallet_protos::Pallet::<T>::add_upload_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
-		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, Vec::new(), None, None, immutable_data.clone())?;
+		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), auth_data, references, (Categories::Chain(ChainCategories::Generic), <BTreeSet<Vec<u8>>>::new()), None, None, immutable_data.clone())?;
 		let fragment_data = FragmentMetadata {
 			name: "name".as_bytes().to_vec(),
 			external_url: "external_url".as_bytes().to_vec(),

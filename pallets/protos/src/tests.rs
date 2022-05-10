@@ -1,6 +1,7 @@
 use crate::{
-	mock::*, AuthData, Categories, ChainCategories, Error, LinkedAsset, ProtoOwner, Protos,
-	UploadAuthorities,
+	categories::{Categories, ChainCategories},
+	mock::*,
+	AuthData, Error, LinkedAsset, ProtoOwner, Protos, UploadAuthorities,
 };
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
