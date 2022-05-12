@@ -13,7 +13,6 @@ const connectToLocalNode = async () => {
                     description: "this is the description", type: "String",
                     params: [
                         { name: 'params', type: 'GetProtosParams' },
-
                         { name: 'at', type: 'BlockHash', isOptional: true }
                     ]
                 },
@@ -21,31 +20,99 @@ const connectToLocalNode = async () => {
         },
 
         types: {
+            AudioCategories: {
+                _enum: [
+                    /// An audio file of the supported formats (mp3, ogg, wav, etc.)
+                    "File",
+                    /// A chainblocks script that returns an effect chain that requires an input, validated
+                    "Effect",
+                    /// A chainblocks script that returns an instrument chain (no audio input), validated
+                    "Instrument"]
+            },
+
+            ModelCategories: {
+                _enum: [
+                    /// A GLTF binary model
+                    "Gltf",
+                    /// ???
+                    "Sdf",
+                    /// A physics collision model
+                    "PhysicsCollider"]
+            },
+
+            ShaderCategories: {
+                _enum: [
+                    /// A chainblocks script that returns a shader chain (we validate that)
+                    "Generic",
+                    /// A chainblocks script that returns a shader chain constrained to be a compute shader (we validate that)
+                    "Compute",
+                    /// A chainblocks script that returns a shader chain constrained to be a screen post effect shader (we validate that)
+                    "PostEffect"]
+            },
+
+            TextureCategories: {
+                _enum: [
+                    "PngFile",
+                    "JpgFile"]
+            },
+
+            VectorCategories: {
+                _enum: [
+                    "SvgFile",
+                    "FontFile"]
+            },
+
+            VideoCategories: {
+                _enum: [
+                    "Mp4File"]
+            },
+
+            TextCategories: {
+                _enum: [
+                    "Plain",
+                    "Json"]
+            },
+
+            BinaryCategories: {
+                _enum: [
+                    "WasmModule"]
+            },
+
+            ChainCategories: {
+                _enum: [
+                    /// A chainblocks script that returns a generic chain (we validate that)
+                    "Generic",
+                    /// An animation sequence in chainblocks edn
+                    "Animation",
+                    /// A chainblocks script that returns a chain constrained to be used as particle fx (we validate that)
+                    "Particle"]
+            },
+
             Categories: {
                 _enum: [
-                    "Chain",
-                    "AudioFile",
-                    "ImageFile",
-                    "VideoFile",
-                    "GltfFile",
-                    "Shader",
-                    "JsonString",
-                    "WasmModule",
-                    "AudioFilter",
-                    "AudioInstrument",
+                    "Chain(ChainCategories)",
+                    "Audio(AudioCategories)",
+                    "Texture(TextureCategories)",
+                    "Vector(VectorCategories)",
+                    "Video(VideoCategories)",
+                    "Model(ModelCategories)",
+                    "Shader(ShaderCategories)",
+                    "Text(TextCategories)",
+                    "Binary(BinaryCategories)",
                 ]
             },
 
             BlockHash: 'Hash',
 
             GetProtosParams: {
-                categories: 'Option<Vec<Categories>>',
-                owner: 'Option<AccountId>',
-                limit: 'u32',
-                from: 'u32',
                 desc: 'bool',
-                metadata_keys: 'Option<Vec<String>>',
-                return_owners: 'bool'
+                from: 'u32',
+                limit: 'u32',
+                metadata_keys: 'Vec<String>',
+                owner: 'Option<AccountId>',
+                return_owners: 'bool',
+                categories: 'Vec<Categories>',
+                tags: 'Vec<String>',
             }
 
 

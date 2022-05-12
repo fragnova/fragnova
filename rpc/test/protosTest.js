@@ -45,11 +45,11 @@ describe('Protos RPCs', () => {
 
         it('should return no protos when filtering Category', async () => {
 
-            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: ['AudioFile']}))
+            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: ['Audio(File)']}))
 
             assert(result.toHuman() === "{}")
 
-            result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: ['ImageFile']}))
+            result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: ['Texture(PngFile)']}))
 
             assert(result.toHuman() === "{}")
 
