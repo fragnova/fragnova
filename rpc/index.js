@@ -23,31 +23,31 @@ const connectToLocalNode = async () => {
             AudioCategories: {
                 _enum: [
                     /// An audio file of the supported formats (mp3, ogg, wav, etc.)
-                    "File",
+                    "file",
                     /// A chainblocks script that returns an effect chain that requires an input, validated
-                    "Effect",
+                    "effect",
                     /// A chainblocks script that returns an instrument chain (no audio input), validated
-                    "Instrument"]
+                    "instrument"]
             },
 
             ModelCategories: {
                 _enum: [
                     /// A GLTF binary model
-                    "Gltf",
+                    "gltf",
                     /// ???
-                    "Sdf",
+                    "sdf",
                     /// A physics collision model
-                    "PhysicsCollider"]
+                    "physicsCollider"]
             },
 
             ShaderCategories: {
                 _enum: [
                     /// A chainblocks script that returns a shader chain (we validate that)
-                    "Generic",
+                    "generic",
                     /// A chainblocks script that returns a shader chain constrained to be a compute shader (we validate that)
-                    "Compute",
+                    "compute",
                     /// A chainblocks script that returns a shader chain constrained to be a screen post effect shader (we validate that)
-                    "PostEffect"]
+                    "postEffect"]
             },
 
             TextureCategories: {
@@ -58,24 +58,24 @@ const connectToLocalNode = async () => {
 
             VectorCategories: {
                 _enum: [
-                    "SvgFile",
-                    "FontFile"]
+                    "svgFile",
+                    "fontFile"]
             },
 
             VideoCategories: {
                 _enum: [
-                    "Mp4File"]
+                    "mp4File"]
             },
 
             TextCategories: {
                 _enum: [
-                    "Plain",
-                    "Json"]
+                    "plain",
+                    "json"]
             },
 
             BinaryCategories: {
                 _enum: [
-                    "WasmModule"]
+                    "wasmModule"]
             },
 
             ChainCategories: {
@@ -83,22 +83,22 @@ const connectToLocalNode = async () => {
                     /// A chainblocks script that returns a generic chain (we validate that)
                     "generic",
                     /// An animation sequence in chainblocks edn
-                    "Animation",
+                    "animation",
                     /// A chainblocks script that returns a chain constrained to be used as particle fx (we validate that)
-                    "Particle"]
+                    "particle"]
             },
 
             Categories: {
                 _enum: {
                     "chain": "ChainCategories",
-                    "Audio": "AudioCategories",
+                    "audio": "AudioCategories",
                     "texture": "TextureCategories",
-                    "Vector": "VectorCategories",
-                    "Video": "VideoCategories",
-                    "Model": "ModelCategories",
-                    "Shader": "ShaderCategories",
-                    "Text": "TextCategories",
-                    "Binary": "BinaryCategories",
+                    "vector": "VectorCategories",
+                    "video": "VideoCategories",
+                    "model": "ModelCategories",
+                    "shader": "ShaderCategories",
+                    "text": "TextCategories",
+                    "binary": "BinaryCategories",
                 }
             },
 
