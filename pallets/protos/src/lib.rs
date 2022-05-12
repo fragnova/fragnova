@@ -585,7 +585,7 @@ pub mod pallet {
 		///
 		/// # Arguments
 		///
-		/// * `origin` - The origin of the extrisnic / dispatchable function
+		/// * `origin` - The origin of the extrinsic / dispatchable function
 		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
 		/// * `proto_hash` - The hash of the existing Proto-Fragment
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance

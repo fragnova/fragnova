@@ -52,8 +52,8 @@ const connectToLocalNode = async () => {
 
             TextureCategories: {
                 _enum: [
-                    "PngFile",
-                    "JpgFile"]
+                    "pngFile",
+                    "jpgFile"]
             },
 
             VectorCategories: {
@@ -81,7 +81,7 @@ const connectToLocalNode = async () => {
             ChainCategories: {
                 _enum: [
                     /// A chainblocks script that returns a generic chain (we validate that)
-                    "Generic",
+                    "generic",
                     /// An animation sequence in chainblocks edn
                     "Animation",
                     /// A chainblocks script that returns a chain constrained to be used as particle fx (we validate that)
@@ -89,17 +89,17 @@ const connectToLocalNode = async () => {
             },
 
             Categories: {
-                _enum: [
-                    "Chain(ChainCategories)",
-                    "Audio(AudioCategories)",
-                    "Texture(TextureCategories)",
-                    "Vector(VectorCategories)",
-                    "Video(VideoCategories)",
-                    "Model(ModelCategories)",
-                    "Shader(ShaderCategories)",
-                    "Text(TextCategories)",
-                    "Binary(BinaryCategories)",
-                ]
+                _enum: {
+                    "chain": "ChainCategories",
+                    "Audio": "AudioCategories",
+                    "texture": "TextureCategories",
+                    "Vector": "VectorCategories",
+                    "Video": "VideoCategories",
+                    "Model": "ModelCategories",
+                    "Shader": "ShaderCategories",
+                    "Text": "TextCategories",
+                    "Binary": "BinaryCategories",
+                }
             },
 
             BlockHash: 'Hash',
