@@ -45,7 +45,7 @@ describe('Protos RPCs', () => {
 
         it('should return no protos when filtering Category', async () => {
 
-            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: [{"chain": "generic"}]}))
+            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: [{"text": "json"}]}))
 
             assert(result.toHuman() === "{}")
 
