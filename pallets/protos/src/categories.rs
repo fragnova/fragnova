@@ -3,10 +3,10 @@ use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-// serde(rename_all = "camelCase") is needed or polkadotjs will not be able to deserialize
+// serde(rename_all = "camelCase") is needed or polkadot.js will not be able to deserialize
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum AudioCategories {
 	/// An audio file of the supported formats (mp3, ogg, wav, etc.)
 	File,
@@ -17,7 +17,7 @@ pub enum AudioCategories {
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum ModelCategories {
 	/// A GLTF binary model
 	Gltf,
@@ -28,7 +28,7 @@ pub enum ModelCategories {
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum ShaderCategories {
 	/// A chainblocks script that returns a shader chain (we validate that)
 	Generic,
@@ -39,14 +39,14 @@ pub enum ShaderCategories {
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum TextureCategories {
 	PngFile,
 	JpgFile,
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum VectorCategories {
 	SvgFile,
 	FontFile,
@@ -59,20 +59,20 @@ pub enum VideoCategories {
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum TextCategories {
 	Plain,
 	Json,
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum BinaryCategories {
 	WasmModule,
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum ChainCategories {
 	/// A chainblocks script that returns a generic chain (we validate that)
 	Generic,
@@ -84,7 +84,7 @@ pub enum ChainCategories {
 
 /// Types of categories that can be attached to a Proto-Fragment to describe it (e.g Code, Audio, Video etc.)
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum Categories {
 	/// Chainblocks chains of various sub-categories
 	Chain(ChainCategories),
