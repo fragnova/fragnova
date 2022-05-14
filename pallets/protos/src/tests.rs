@@ -12,7 +12,6 @@ use sp_clamor::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
 use sp_keystore::{testing::KeyStore, KeystoreExt};
-use sp_std::collections::btree_set::BTreeSet;
 use std::sync::Arc;
 
 fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
@@ -28,7 +27,7 @@ fn initial_set_up_and_get_signature(
 	nonce: u64,
 ) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
-	let categories = (Categories::Chain(ChainCategories::Generic), <BTreeSet<Vec<u8>>>::new());
+	let categories = (Categories::Chain(ChainCategories::Generic), <Vec<Vec<u8>>>::new());
 
 	let proto_hash = blake2_256(&data);
 	let linked_asset: Option<LinkedAsset> = None;
@@ -57,7 +56,7 @@ fn initial_upload_and_get_signature() -> AuthData {
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 		auth_data.clone(),
 		references,
-		(Categories::Chain(ChainCategories::Generic), BTreeSet::new()),
+		(Categories::Chain(ChainCategories::Generic), Vec::new()),
 		None,
 		None,
 		data,
@@ -115,7 +114,7 @@ fn upload_should_works() {
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			auth_data,
 			references,
-			(Categories::Chain(ChainCategories::Generic), BTreeSet::new()),
+			(Categories::Chain(ChainCategories::Generic), Vec::new()),
 			None,
 			None,
 			data,
@@ -139,7 +138,7 @@ fn upload_should_not_works_if_proto_hash_exists() {
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				auth_data,
 				references,
-				(Categories::Chain(ChainCategories::Generic), BTreeSet::new()),
+				(Categories::Chain(ChainCategories::Generic), Vec::new()),
 				None,
 				None,
 				data,
@@ -162,7 +161,7 @@ fn upload_proto_should_not_work_if_not_verified() {
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				auth_data,
 				references,
-				(Categories::Chain(ChainCategories::Generic), BTreeSet::new()),
+				(Categories::Chain(ChainCategories::Generic), Vec::new()),
 				None,
 				None,
 				immutable_data,

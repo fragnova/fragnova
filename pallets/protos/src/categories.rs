@@ -53,7 +53,7 @@ pub enum VectorCategories {
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"), derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum VideoCategories {
 	Mp4File,
 }

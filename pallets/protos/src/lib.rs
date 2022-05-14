@@ -318,7 +318,7 @@ pub mod pallet {
 			auth: AuthData,
 			// we store this in the state as well
 			references: Vec<Hash256>,
-			category_tags: (Categories, BTreeSet<Vec<u8>>),
+			category_tags: (Categories, Vec<Vec<u8>>),
 			linked_asset: Option<LinkedAsset>,
 			include_cost: Option<Compact<u64>>,
 			// let data come last as we record this size in blocks db (storage chain)

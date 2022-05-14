@@ -8,7 +8,6 @@ use pallet_protos::{
 use sp_clamor::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
-use sp_std::collections::btree_set::BTreeSet;
 
 fn initial_set_up_and_get_signature(
 	data: Vec<u8>,
@@ -16,7 +15,7 @@ fn initial_set_up_and_get_signature(
 	nonce: u64,
 ) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
-	let categories = (Categories::Chain(ChainCategories::Generic), <BTreeSet<Vec<u8>>>::new());
+	let categories = (Categories::Chain(ChainCategories::Generic), <Vec<Vec<u8>>>::new());
 
 	let proto_hash = blake2_256(&data);
 	let linked_asset: Option<LinkedAsset> = None;
@@ -45,7 +44,7 @@ fn initial_upload_and_get_signature() -> AuthData {
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 		auth_data.clone(),
 		references,
-		(Categories::Chain(ChainCategories::Generic), BTreeSet::new()),
+		(Categories::Chain(ChainCategories::Generic), Vec::new()),
 		None,
 		None,
 		data,
