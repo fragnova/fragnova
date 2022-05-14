@@ -3,6 +3,7 @@
 use super::*;
 #[allow(unused)]
 use crate::Pallet as Protos;
+use categories::{Categories, ChainCategories};
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_detach::Pallet as Detach;
@@ -48,7 +49,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let categories = vec![Categories::Chain];
+		let categories = (Categories::Chain(ChainCategories::Generic), <BTreeSet<Vec<u8>>>::new());
 
 		let mut signature: [u8; 65] = [0; 65];
 		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();
@@ -74,7 +75,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let categories = vec![Categories::Chain];
+		let categories = (Categories::Chain(ChainCategories::Generic), <BTreeSet<Vec<u8>>>::new());
 
 		let mut signature: [u8; 65] = [0; 65];
 		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();
@@ -114,7 +115,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let categories = vec![Categories::Chain];
+		let categories = (Categories::Chain(ChainCategories::Generic), <BTreeSet<Vec<u8>>>::new());
 
 		let mut signature: [u8; 65] = [0; 65];
 		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();
@@ -148,7 +149,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let categories = vec![Categories::Chain];
+		let categories = (Categories::Chain(ChainCategories::Generic), <BTreeSet<Vec<u8>>>::new());
 
 		let mut signature: [u8; 65] = [0; 65];
 		hex::decode_to_slice("97a6c44d476f4a3944217d679642c60dac98dc3b2857d6e762e532361ea8185423fa376afc201a36834c57399050a391e3d9d2046790bdd0b49d4c2b307c1ee801", &mut signature).unwrap();

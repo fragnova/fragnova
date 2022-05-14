@@ -1,10 +1,14 @@
 use crate::{mock::*, Error, FragmentMetadata, Fragments, Proto2Fragments};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
-use pallet_protos::{AuthData, Categories, LinkedAsset};
+use pallet_protos::{
+	categories::{Categories, ChainCategories},
+	AuthData, LinkedAsset,
+};
 use sp_clamor::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
+use sp_std::collections::btree_set::BTreeSet;
 
 fn initial_set_up_and_get_signature(
 	data: Vec<u8>,
@@ -12,7 +16,7 @@ fn initial_set_up_and_get_signature(
 	nonce: u64,
 ) -> sp_core::ecdsa::Signature {
 	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
-	let categories: Vec<Categories> = Vec::new();
+	let categories = (Categories::Chain(ChainCategories::Generic), <BTreeSet<Vec<u8>>>::new());
 
 	let proto_hash = blake2_256(&data);
 	let linked_asset: Option<LinkedAsset> = None;
@@ -41,7 +45,7 @@ fn initial_upload_and_get_signature() -> AuthData {
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 		auth_data.clone(),
 		references,
-		Vec::new(),
+		(Categories::Chain(ChainCategories::Generic), BTreeSet::new()),
 		None,
 		None,
 		data,

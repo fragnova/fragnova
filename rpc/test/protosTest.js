@@ -45,11 +45,11 @@ describe('Protos RPCs', () => {
 
         it('should return no protos when filtering Category', async () => {
 
-            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: ['AudioFile']}))
+            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: [{"text": "json"}]}))
 
             assert(result.toHuman() === "{}")
 
-            result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: ['ImageFile']}))
+            result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: [{"texture": "pngFile"}]}))
 
             assert(result.toHuman() === "{}")
 
@@ -59,7 +59,7 @@ describe('Protos RPCs', () => {
         it('should return correct owner', async () => {
 
             const params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, metadata_keys: ['A', 'A'],
-                                                              owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", categories: ["Chain"], return_owners: true});
+                                                              owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", categories: [{"chain": "generic"}], return_owners: true});
 
 
             let result = await api.rpc.protos.getProtos(params)
