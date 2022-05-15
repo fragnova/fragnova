@@ -231,7 +231,6 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic/dispatchable function
-		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
 		/// * `references` - A list of references to other Proto-Fragments
 		/// * `categories` - A list of categories to upload along with the Proto-Fragment
 		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Fragment (e.g an ERC-721 Contract)
@@ -354,8 +353,7 @@ pub mod pallet {
 		///
 		/// # Arguments
 		///
-		/// * `origin` - The origin of the extrisnic / dispatchable function
-		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
+		/// * `origin` - The origin of the extrinsic / dispatchable function
 		/// * `proto_hash` - The hash of the existing Proto-Fragment
 		/// * `include_cost` (optional) -
 		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
@@ -477,7 +475,6 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic / dispatchable function
-		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
 		/// * `proto_hash` - The hash of the existing Proto-Fragment
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance

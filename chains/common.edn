@@ -114,24 +114,11 @@
   (| (Take 4) (ExpectInt) = .set-metadata-nonce)
   (| (Take 5) (ExpectInt) = .frag-nonce)
 
-  .frag-hash >> .message-hash
-  .data (Hash.Blake2-256) >> .message-hash = .data-hash >= .data-cid
-  [.frag-nonce] (Substrate.Encode ["u64"]) >> .message-hash
-  [0] (Substrate.Encode ["u32"]) >> .message-hash ; block
-
-
-
-  .message-hash (Hash.Blake2-256) (| (ToHex) (Log "set_metadata message hash is")) (ECDSA.Sign "//Alice")
-
-  ;; .payload is a sequence that has all the arguments of the set_metadata extrinsic
-  ;; ¿Why isn't the ECDSA.Signature encoded?
-  (| (ToHex) (Log "AUTH SIGNATURE")) >= .payload
-  "//Alice" (ECDSA.PublicKey true) (ToHex) (Log "ALICE PUBLIC ECDSA")
-  [0] (Substrate.Encode ["u32"]) (AppendTo .payload) ; block
-  .frag-hash (AppendTo .payload)
+  .data (Hash.Blake2-256) >= .data-cid
+  
+  .frag-hash >= .payload
   [.metadata-key] (Substrate.Encode [nil]) (AppendTo .payload)
   [.data] (Substrate.Encode [nil]) (AppendTo .payload)
-
 
   ;; .payload is the arguments of the set_metadata extrinsic
   [fragments-index set-metadata-index .payload] (Do make-calldata) = .set-metadata-call (Log "set-metadata-call")
