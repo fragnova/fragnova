@@ -2,7 +2,8 @@ use crate::{mock::*, Error, FragmentMetadata, Fragments, Proto2Fragments};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 use pallet_protos::{
-	categories::{Categories, ChainCategories}, LinkedAsset,
+	categories::{Categories, ChainCategories},
+	LinkedAsset,
 };
 use sp_clamor::Hash256;
 use sp_core::Pair;

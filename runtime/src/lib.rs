@@ -298,16 +298,15 @@ parameter_types! {
 	pub const DeletionWeightLimit: Weight = 500_000_000_000;
 	pub const MaxCodeSize: u32 = 2 * 1024;
 	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
-	pub const TransactionByteFee: Balance = 1;
 	pub OperationalFeeMultiplier: u8 = 5;
 	pub StorageBytesMultiplier: u64 = 10;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-	type TransactionByteFee = TransactionByteFee;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = IdentityFee<Balance>;
+	type LengthToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
 }
 
