@@ -151,9 +151,10 @@ fn upload_should_not_works_if_proto_hash_exists() {
 #[test]
 fn upload_proto_should_not_work_if_not_verified() {
 	new_test_ext().execute_with(|| {
-		let immutable_data = "0x0155a0e40220".as_bytes().to_vec();
+		let data = "0x0155a0e40220".as_bytes().to_vec();
 		let references = vec![];
-		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
+		let _ = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
+		let signature: sp_core::ecdsa::Signature = generate_signature("//Charlie");
 		let auth_data = AuthData { signature, block: 1 };
 
 		assert_noop!(
@@ -164,7 +165,7 @@ fn upload_proto_should_not_work_if_not_verified() {
 				(Categories::Chain(ChainCategories::Generic), Vec::new()),
 				None,
 				None,
-				immutable_data,
+				data,
 			),
 			Error::<Test>::VerificationFailed
 		);
