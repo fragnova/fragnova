@@ -1,7 +1,7 @@
 use crate::{
 	categories::{Categories, ChainCategories},
 	mock::*,
-	AuthData, Error, LinkedAsset, ProtoOwner, Protos, UploadAuthorities,
+	Error, LinkedAsset, ProtoOwner, Protos,
 };
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
@@ -21,47 +21,18 @@ fn generate_signature(suri: &str) -> sp_core::ecdsa::Signature {
 	pair.sign(&msg)
 }
 
-fn initial_set_up_and_get_signature(
-	data: Vec<u8>,
-	references: Vec<Hash256>,
-	nonce: u64,
-) -> sp_core::ecdsa::Signature {
-	let pair = sp_core::ecdsa::Pair::from_string("//Charlie", None).unwrap();
-	let categories = (Categories::Chain(ChainCategories::Generic), <Vec<Vec<u8>>>::new());
-
-	let proto_hash = blake2_256(&data);
-	let linked_asset: Option<LinkedAsset> = None;
-	let signature: sp_core::ecdsa::Signature = pair.sign(
-		&[
-			&proto_hash[..],
-			&references.encode(),
-			&categories.encode(),
-			&linked_asset.encode(),
-			&nonce.encode(),
-			&1.encode(),
-		]
-		.concat(),
-	);
-	assert_ok!(ProtosPallet::add_upload_auth(Origin::root(), pair.public()));
-	signature
-}
-
-fn initial_upload_and_get_signature() -> AuthData {
+fn initial_upload() {
 	let data = DATA.as_bytes().to_vec();
 	let references = vec![];
-	let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
-	let auth_data = AuthData { signature, block: 1 };
 
 	assert_ok!(ProtosPallet::upload(
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-		auth_data.clone(),
 		references,
 		(Categories::Chain(ChainCategories::Generic), Vec::new()),
 		None,
 		None,
 		data,
 	));
-	auth_data
 }
 
 #[test]
@@ -83,36 +54,13 @@ fn del_eth_auth_should_works() {
 }
 
 #[test]
-fn add_upload_auth_should_works() {
-	new_test_ext().execute_with(|| {
-		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
-		assert_ok!(ProtosPallet::add_upload_auth(Origin::root(), validator.clone()));
-		assert!(UploadAuthorities::<Test>::get().contains(&validator));
-	});
-}
-
-#[test]
-fn del_upload_auth_should_works() {
-	new_test_ext().execute_with(|| {
-		let validator: sp_core::ecdsa::Public = sp_core::ecdsa::Public::from_raw(PUBLIC);
-		assert_ok!(ProtosPallet::del_upload_auth(Origin::root(), validator.clone()));
-		assert!(!UploadAuthorities::<Test>::get().contains(&validator));
-	});
-}
-
-#[test]
 fn upload_should_works() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
 		let references = vec![];
 
-		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 0);
-
-		let auth_data = AuthData { signature, block: 1 };
-
 		assert_ok!(ProtosPallet::upload(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-			auth_data,
 			references,
 			(Categories::Chain(ChainCategories::Generic), Vec::new()),
 			None,
@@ -128,15 +76,12 @@ fn upload_should_works() {
 fn upload_should_not_works_if_proto_hash_exists() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
-		initial_upload_and_get_signature();
+		initial_upload();
 		let references = vec![];
 
-		let signature = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
-		let auth_data = AuthData { signature, block: 1 };
 		assert_noop!(
 			ProtosPallet::upload(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-				auth_data,
 				references,
 				(Categories::Chain(ChainCategories::Generic), Vec::new()),
 				None,
@@ -149,48 +94,17 @@ fn upload_should_not_works_if_proto_hash_exists() {
 }
 
 #[test]
-fn upload_proto_should_not_work_if_not_verified() {
-	new_test_ext().execute_with(|| {
-		let data = "0x0155a0e40220".as_bytes().to_vec();
-		let references = vec![];
-		let _ = initial_set_up_and_get_signature(data.clone(), references.clone(), 1);
-		let signature: sp_core::ecdsa::Signature = generate_signature("//Charlie");
-		let auth_data = AuthData { signature, block: 1 };
-
-		assert_noop!(
-			ProtosPallet::upload(
-				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-				auth_data,
-				references,
-				(Categories::Chain(ChainCategories::Generic), Vec::new()),
-				None,
-				None,
-				data,
-			),
-			Error::<Test>::VerificationFailed
-		);
-	});
-}
-
-#[test]
 fn patch_should_works() {
 	new_test_ext().execute_with(|| {
 		let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
 		let immutable_data = DATA.as_bytes().to_vec();
-		initial_upload_and_get_signature();
+		initial_upload();
 
 		let data = immutable_data.clone();
 		let proto_hash = blake2_256(&immutable_data);
-		let data_hash = blake2_256(&data);
-		let nonce: u64 = 1;
-		let signature: sp_core::ecdsa::Signature =
-			pair.sign(&[&proto_hash[..], &data_hash[..], &nonce.encode(), &1.encode()].concat());
-		assert_ok!(ProtosPallet::add_upload_auth(Origin::root(), pair.public()));
 
-		let auth_data = AuthData { signature, block: 1 };
 		assert_ok!(ProtosPallet::patch(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-			auth_data,
 			proto_hash,
 			Some(Compact(123)),
 			data,
@@ -204,14 +118,13 @@ fn patch_should_works() {
 fn patch_proto_should_not_work_if_user_is_unauthorized() {
 	new_test_ext().execute_with(|| {
 		let data = DATA.as_bytes().to_vec();
-		let auth_data = initial_upload_and_get_signature();
+		initial_upload();
 
 		let (pair, _) = sp_core::ed25519::Pair::generate();
 
 		assert_noop!(
 			ProtosPallet::patch(
 				Origin::signed(pair.public()),
-				auth_data,
 				PROTO_HASH,
 				Some(Compact(123)),
 				data,
@@ -225,41 +138,15 @@ fn patch_proto_should_not_work_if_user_is_unauthorized() {
 fn patch_proto_should_not_work_if_proto_not_found() {
 	new_test_ext().execute_with(|| {
 		let immutable_data = DATA.as_bytes().to_vec();
-
 		let proto_hash = blake2_256(immutable_data.as_slice());
-		let signature: sp_core::ecdsa::Signature = generate_signature("//Alice");
-		let auth_data = AuthData { signature, block: 1 };
 		assert_noop!(
 			ProtosPallet::patch(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-				auth_data,
 				proto_hash,
 				Some(Compact(123)),
 				immutable_data,
 			),
 			Error::<Test>::ProtoNotFound
-		);
-	});
-}
-
-#[test]
-fn patch_should_not_work_if_not_verified() {
-	new_test_ext().execute_with(|| {
-		let data = DATA.as_bytes().to_vec();
-		initial_upload_and_get_signature();
-
-		let signature: sp_core::ecdsa::Signature = generate_signature("//Bob");
-		let auth_data = AuthData { signature, block: 1 };
-
-		assert_noop!(
-			ProtosPallet::patch(
-				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-				auth_data,
-				PROTO_HASH,
-				Some(Compact(123)),
-				data,
-			),
-			Error::<Test>::VerificationFailed
 		);
 	});
 }
@@ -273,7 +160,7 @@ fn patch_should_not_work_if_detached() {
 	t.execute_with(|| {
 		let pair = sp_core::ed25519::Pair::from_string("//Alice", None).unwrap();
 		let data = DATA.as_bytes().to_vec();
-		let auth_data = initial_upload_and_get_signature();
+		initial_upload();
 
 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
 		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
@@ -306,7 +193,6 @@ fn patch_should_not_work_if_detached() {
 		assert_noop!(
 			ProtosPallet::patch(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-				auth_data,
 				PROTO_HASH,
 				Some(Compact(123)),
 				data,
@@ -319,7 +205,7 @@ fn patch_should_not_work_if_detached() {
 #[test]
 fn detach_proto_should_not_work_if_user_is_unauthorized() {
 	new_test_ext().execute_with(|| {
-		initial_upload_and_get_signature();
+		initial_upload();
 
 		let (pair, _) = sp_core::ed25519::Pair::generate();
 
@@ -361,7 +247,7 @@ fn detach_should_work() {
 	t.register_extension(KeystoreExt(Arc::new(keystore)));
 	t.execute_with(|| {
 		let pair = sp_core::ecdsa::Pair::from_string("//Alice", None).unwrap();
-		initial_upload_and_get_signature();
+		initial_upload();
 
 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
 		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
@@ -381,7 +267,7 @@ fn detach_should_work() {
 #[test]
 fn transfer_should_works() {
 	new_test_ext().execute_with(|| {
-		initial_upload_and_get_signature();
+		initial_upload();
 
 		let (pair, _) = sp_core::ed25519::Pair::generate();
 		assert_ok!(ProtosPallet::transfer(
@@ -413,7 +299,7 @@ fn transfer_should_not_work_if_proto_not_found() {
 #[test]
 fn transfer_should_not_work_if_user_is_unauthorized() {
 	new_test_ext().execute_with(|| {
-		initial_upload_and_get_signature();
+		initial_upload();
 
 		let (pair, _) = sp_core::ed25519::Pair::generate();
 
@@ -432,7 +318,7 @@ fn transfer_should_not_work_if_detached() {
 	t.register_extension(KeystoreExt(Arc::new(keystore)));
 	t.execute_with(|| {
 		let pair = sp_core::ed25519::Pair::from_string("//Alice", None).unwrap();
-		initial_upload_and_get_signature();
+		initial_upload();
 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
 		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
 

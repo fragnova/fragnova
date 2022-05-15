@@ -1,6 +1,6 @@
 use clamor_runtime::{
 	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, FragConfig, GenesisConfig,
-	GrandpaConfig, IndicesConfig, ProtosConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+	GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -180,9 +180,6 @@ fn testnet_genesis(
 		},
 		transaction_payment: Default::default(),
 		indices: IndicesConfig { indices: vec![] },
-		protos: ProtosConfig {
-			upload_authorities: initial_authorities.iter().map(|x| (x.2.clone())).collect(),
-		},
 		detach: DetachConfig {
 			eth_authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
