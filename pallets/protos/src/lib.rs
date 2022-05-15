@@ -301,15 +301,15 @@ pub mod pallet {
 		}
 
 		/// Uploads a Proto-Fragment onto the Blockchain. To successfully upload a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
-		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and makes it available via bitswap(IPFS) directly from every chain node permanently.
 		///
 		/// # Arguments
 		///
-		/// * `origin` - The origin of the extrisnic/dispatchable function
+		/// * `origin` - The origin of the extrinsic/dispatchable function
 		/// * `auth` - The digital signature given by the off-chain validator that validates the caller of the extrinsic to upload
 		/// * `references` - A list of references to other Proto-Fragments
 		/// * `categories` - A list of categories to upload along with the Proto-Fragment
-		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Frament (e.g an ERC-721 Contract)
+		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Fragment (e.g an ERC-721 Contract)
 		/// * `include_cost` (optional) -
 		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
@@ -330,10 +330,14 @@ pub mod pallet {
 
 			let nonce = <UserNonces<T>>::get(who.clone()).unwrap_or(0);
 
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
 			// hash the immutable data, this is also the unique proto id
 			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
 			// "0x0155a0e40220"))
 			let proto_hash = blake2_256(&data);
+			let data_len = data.len();
+
 			let signature_hash = blake2_256(
 				&[
 					&proto_hash[..],
@@ -345,12 +349,6 @@ pub mod pallet {
 				]
 				.concat(),
 			);
-
-			log::info!("upload nonce is: {}", nonce);
-			log::info!("upload message hash is: {:?}", signature_hash);
-
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
-
 			<Pallet<T>>::ensure_auth(current_block_number, &auth, &signature_hash)?;
 
 			// make sure the proto does not exist already!
@@ -431,7 +429,7 @@ pub mod pallet {
 			<ProtosByOwner<T>>::append(owner, proto_hash);
 
 			// index immutable data for IPFS discovery
-			transaction_index::index(extrinsic_index, data.len() as u32, proto_hash);
+			transaction_index::index(extrinsic_index, data_len as u32, proto_hash);
 
 			// advance nonces
 			<UserNonces<T>>::insert(who, nonce + 1);
@@ -989,6 +987,11 @@ pub mod pallet {
 			data: &AuthData,
 			signature_hash: &[u8; 32],
 		) -> DispatchResult {
+			//! Notice that if we have no auth we pass OK!
+			if <UploadAuthorities<T>>::get().len() == 0 {
+				return Ok(());
+			}
+
 			// check if the signature is valid
 			// we use and off chain services that ensure we are storing valid data
 			let recover =
