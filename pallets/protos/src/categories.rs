@@ -4,6 +4,10 @@ use scale_info::prelude::vec::Vec;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
+#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
+pub struct ChainTrait(Compact<u32>);
+
 // serde(rename_all = "camelCase") is needed or polkadot.js will not be able to deserialize
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -87,7 +91,7 @@ pub enum Categories {
 	Text(TextCategories),
 	/// Chainblocks chains of various sub-categories
 	/// Chains also can have interoperability traits to describe how they can be used in other chains
-	Chain(ChainCategories, Vec<Compact<u32>>),
+	Chain(ChainCategories, Vec<ChainTrait>),
 	/// Audio files and effects
 	Audio(AudioCategories),
 	/// Textures of the supported sub-categories
