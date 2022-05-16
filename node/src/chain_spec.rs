@@ -147,6 +147,46 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	))
 }
 
+pub fn live_config() -> Result<ChainSpec, String> {
+	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
+
+	Ok(ChainSpec::from_genesis(
+		// Name
+		"Live Network",
+		// ID
+		"live",
+		ChainType::Live,
+		move || {
+			GenesisConfig{
+				system: SystemConfig {
+					// Add Wasm runtime to storage.
+					code: wasm_binary.to_vec(),
+				},
+				balances: BalancesConfig::default(),
+				aura: AuraConfig::default(),
+				grandpa: GrandpaConfig::default(),
+				sudo: SudoConfig::default(),
+				transaction_payment: Default::default(),
+				indices: IndicesConfig { indices: vec![] },
+				detach: DetachConfig::default(),
+				assets: AssetsConfig::default(),
+				frag: FragConfig::default()
+			}
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		None,
+		// Properties
+		None,
+		// Extensions
+		None,
+	))
+}
+
 /// Configure initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
