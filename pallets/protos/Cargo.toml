@@ -97,6 +97,7 @@ sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-featu
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
 serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
+protos = { version = "0.1.2", default-features = false }
 
 [features]
 default = ['std']
@@ -115,5 +116,6 @@ std = [
     'log/std',
     'sp-keystore',
     'sp-core/std',
+    'protos/std'
 ]
 try-runtime = ['frame-support/try-runtime']

@@ -1,13 +1,10 @@
-use crate::{
-	categories::{Categories, TextCategories},
-	mock::*,
-	Error, LinkedAsset, ProtoOwner, Protos,
-};
+use crate::{mock::*, Error, LinkedAsset, ProtoOwner, Protos};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use pallet_detach::{
 	DetachInternalData, DetachedHashes, EthereumAuthorities, SupportedChains, KEY_TYPE,
 };
+use protos::categories::{Categories, TextCategories};
 use sp_clamor::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;

@@ -11,9 +11,7 @@ mod tests;
 
 mod weights;
 
-pub mod categories;
-
-use categories::Categories;
+use protos::categories::Categories;
 
 use sp_core::{ecdsa, H160, U256};
 

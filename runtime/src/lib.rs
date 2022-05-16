@@ -54,7 +54,8 @@ use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
-use pallet_protos::{categories::Categories, GetProtosParams};
+use pallet_protos::GetProtosParams;
+use protos::categories::Categories;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.

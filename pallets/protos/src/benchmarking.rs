@@ -3,7 +3,7 @@
 use super::*;
 #[allow(unused)]
 use crate::Pallet as Protos;
-use categories::{Categories, ChainCategories};
+use protos::categories::{Categories, TextCategories};
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_detach::Pallet as Detach;

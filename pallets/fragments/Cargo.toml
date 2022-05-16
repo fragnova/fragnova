@@ -90,6 +90,7 @@ path = '../frag'
 
 [dependencies]
 sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
+protos = { version = "0.1.2", default-features = false }
 
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
@@ -113,6 +114,7 @@ std = [
 	"pallet-randomness-collective-flip/std",
 	'pallet-balances/std',
   'pallet-assets/std',
+	'protos/std'
 ]
 
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]

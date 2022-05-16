@@ -7,12 +7,10 @@
 
 use std::sync::Arc;
 
-use clamor_runtime::{
-	opaque::Block, pallet_protos::categories::Categories, AccountId, Balance, BlockNumber, Hash,
-	Index,
-};
+use clamor_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
 use pallet_contracts_rpc::{Contracts, ContractsApi};
 use pallet_protos_rpc::{Protos, ProtosApi};
+use protos::categories::Categories;
 pub use sc_rpc_api::DenyUnsafe;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
