@@ -12,6 +12,7 @@ mod tests;
 mod weights;
 
 pub mod categories;
+
 use categories::Categories;
 
 use sp_core::{ecdsa, H160, U256};
@@ -323,7 +324,7 @@ pub mod pallet {
 				creator: who.clone(),
 				owner: owner.clone(),
 				references,
-				category: category_tags.0,
+				category: category_tags.0.clone(),
 				tags,
 				metadata: BTreeMap::new(),
 			};

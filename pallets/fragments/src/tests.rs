@@ -2,7 +2,7 @@ use crate::{mock::*, Error, FragmentMetadata, Fragments, Proto2Fragments};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 use pallet_protos::{
-	categories::{Categories, ChainCategories},
+	categories::{Categories, TextCategories},
 	LinkedAsset,
 };
 use sp_clamor::Hash256;
@@ -16,7 +16,7 @@ fn initial_upload() {
 	assert_ok!(ProtosPallet::upload(
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 		references,
-		(Categories::Chain(ChainCategories::Generic), Vec::new()),
+		(Categories::Text(TextCategories::Plain), Vec::new()),
 		None,
 		None,
 		data,

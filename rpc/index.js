@@ -24,80 +24,71 @@ const connectToLocalNode = async () => {
                 _enum: [
                     "oggFile",
                     "mp3File",
-                    /// A chainblocks script that returns an effect chain that requires an input, validated
                     "effect",
-                    /// A chainblocks script that returns an instrument chain (no audio input), validated
-                    "instrument"]
+                    "instrument"
+                ]
             },
 
             ModelCategories: {
                 _enum: [
-                    /// A GLTF binary model
-                    "gltf",
-                    /// ???
+                    "gltfFile",
                     "sdf",
-                    /// A physics collision model
-                    "physicsCollider"]
-            },
-
-            ShaderCategories: {
-                _enum: [
-                    /// A chainblocks script that returns a shader chain (we validate that)
-                    "generic",
-                    /// A chainblocks script that returns a shader chain constrained to be a compute shader (we validate that)
-                    "compute",
-                    /// A chainblocks script that returns a shader chain constrained to be a screen post effect shader (we validate that)
-                    "postEffect"]
+                    "physicsCollider"
+                ]
             },
 
             TextureCategories: {
                 _enum: [
                     "pngFile",
-                    "jpgFile"]
+                    "jpgFile"
+                ]
             },
 
             VectorCategories: {
                 _enum: [
                     "svgFile",
-                    "fontFile"]
+                    "fontFile"
+                ]
             },
 
             VideoCategories: {
                 _enum: [
-                    "mp4File"]
+                    "mp4File"
+                ]
             },
 
             TextCategories: {
                 _enum: [
                     "plain",
-                    "json"]
+                    "json"
+                ]
             },
 
             BinaryCategories: {
                 _enum: [
-                    "wasmModule"]
+                    "wasmModule"
+                ]
             },
 
             ChainCategories: {
                 _enum: [
-                    /// A chainblocks script that returns a generic chain (we validate that)
                     "generic",
-                    /// An animation sequence in chainblocks edn
                     "animation",
-                    /// A chainblocks script that returns a chain constrained to be used as particle fx (we validate that)
-                    "particle"]
+                    "vertexShader",
+                    "fragmentShader",
+                    "computeShader"
+                ]
             },
 
             Categories: {
                 _enum: {
-                    "chain": "ChainCategories",
+                    "text": "TextCategories",
+                    "chain": "(ChainCategories, Vec<u32>)",
                     "audio": "AudioCategories",
                     "texture": "TextureCategories",
                     "vector": "VectorCategories",
                     "video": "VideoCategories",
                     "model": "ModelCategories",
-                    "shader": "ShaderCategories",
-                    "text": "TextCategories",
                     "binary": "BinaryCategories",
                 }
             },

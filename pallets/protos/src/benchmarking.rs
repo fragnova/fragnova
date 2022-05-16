@@ -28,7 +28,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let categories = (Categories::Chain(ChainCategories::Generic), <Vec<Vec<u8>>>::new());
+		let categories = (Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new());
 	}: _(RawOrigin::Signed(caller), references, categories, None, None, immutable_data)
 	verify {
 		assert_last_event::<T>(Event::<T>::Uploaded(proto_hash).into())
@@ -42,7 +42,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let categories = (Categories::Chain(ChainCategories::Generic), <Vec<Vec<u8>>>::new());
+		let categories = (Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new());
 
 		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, categories, None, None, immutable_data.clone())?;
 
@@ -61,7 +61,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let categories = (Categories::Chain(ChainCategories::Generic), <Vec<Vec<u8>>>::new());
+		let categories = (Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new());
 
 		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, categories, None, None, immutable_data.clone())?;
 
@@ -84,7 +84,7 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
-		let categories = (Categories::Chain(ChainCategories::Generic), <Vec<Vec<u8>>>::new());
+		let categories = (Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new());
 
 		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, categories, None, None, immutable_data.clone())?;
 	}: _(RawOrigin::Signed(caller), proto_hash, new_owner.clone())

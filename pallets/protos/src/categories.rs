@@ -1,4 +1,5 @@
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, Compact};
+use scale_info::prelude::vec::Vec;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -23,22 +24,11 @@ pub enum AudioCategories {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum ModelCategories {
 	/// A GLTF binary model
-	Gltf,
+	GltfFile,
 	/// ???
 	Sdf,
 	/// A physics collision model
 	PhysicsCollider,
-}
-
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
-pub enum ShaderCategories {
-	/// A chainblocks script that returns a shader chain (we validate that)
-	Generic,
-	/// A chainblocks script that returns a shader chain constrained to be a compute shader (we validate that)
-	Compute,
-	/// A chainblocks script that returns a shader chain constrained to be a screen post effect shader (we validate that)
-	PostEffect,
 }
 
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -81,16 +71,23 @@ pub enum ChainCategories {
 	Generic,
 	/// An animation sequence in chainblocks edn
 	Animation,
-	/// A chainblocks script that returns a chain constrained to be used as particle fx (we validate that)
-	Particle,
+	/// A chainblocks script that returns a shader chain constrained to be a vertex shader (we validate that)
+	VertexShader,
+	/// A chainblocks script that returns a shader chain constrained to be a fragment shader (we validate that)
+	FragmentShader,
+	/// A chainblocks script that returns a shader chain constrained to be a compute shader (we validate that)
+	ComputeShader,
 }
 
 /// Types of categories that can be attached to a Proto-Fragment to describe it (e.g Code, Audio, Video etc.)
-#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum Categories {
+	/// Text of the supported sub-categories
+	Text(TextCategories),
 	/// Chainblocks chains of various sub-categories
-	Chain(ChainCategories),
+	/// Chains also can have interoperability traits to describe how they can be used in other chains
+	Chain(ChainCategories, Vec<Compact<u32>>),
 	/// Audio files and effects
 	Audio(AudioCategories),
 	/// Textures of the supported sub-categories
@@ -101,10 +98,6 @@ pub enum Categories {
 	Video(VideoCategories),
 	/// 2d/3d models of the supported formats
 	Model(ModelCategories),
-	/// A chainblocks script that returns a shader chain (we validate that)
-	Shader(ShaderCategories),
-	/// Text of the supported sub-categories
-	Text(TextCategories),
 	/// Binary of the supported sub-categories
 	Binary(BinaryCategories),
 }

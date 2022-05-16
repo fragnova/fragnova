@@ -1,5 +1,5 @@
 use crate::{
-	categories::{Categories, ChainCategories},
+	categories::{Categories, TextCategories},
 	mock::*,
 	Error, LinkedAsset, ProtoOwner, Protos,
 };
@@ -28,7 +28,7 @@ fn initial_upload() {
 	assert_ok!(ProtosPallet::upload(
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 		references,
-		(Categories::Chain(ChainCategories::Generic), Vec::new()),
+		(Categories::Text(TextCategories::Plain), Vec::new()),
 		None,
 		None,
 		data,
@@ -62,7 +62,7 @@ fn upload_should_works() {
 		assert_ok!(ProtosPallet::upload(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			references,
-			(Categories::Chain(ChainCategories::Generic), Vec::new()),
+			(Categories::Text(TextCategories::Plain), Vec::new()),
 			None,
 			None,
 			data,
@@ -83,7 +83,7 @@ fn upload_should_not_works_if_proto_hash_exists() {
 			ProtosPallet::upload(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				references,
-				(Categories::Chain(ChainCategories::Generic), Vec::new()),
+				(Categories::Text(TextCategories::Plain), Vec::new()),
 				None,
 				None,
 				data,

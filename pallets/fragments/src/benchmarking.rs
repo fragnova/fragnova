@@ -27,7 +27,7 @@ benchmarks! {
 		let immutable_data = vec![0u8; 1 as usize];
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![PROTO_HASH];
-		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, (Categories::Chain(ChainCategories::Generic), <Vec<Vec<u8>>>::new()), None, None, immutable_data.clone())?;
+		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, (Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new()), None, None, immutable_data.clone())?;
 		let fragment_data = FragmentMetadata {
 			name: "name".as_bytes().to_vec(),
 			external_url: "external_url".as_bytes().to_vec(),
