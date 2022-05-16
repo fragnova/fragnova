@@ -712,11 +712,7 @@ pub mod pallet {
 							.into_iter()
 							.rev()
 							.filter(|proto_id| {
-								if params.tags.len() == 0 {
-									true
-								} else {
-									Self::filter_proto(proto_id, &params.tags, &params.categories)
-								}
+								Self::filter_proto(proto_id, &params.tags, &params.categories)
 							})
 							.skip(params.from as usize)
 							.take(params.limit as usize)
@@ -726,11 +722,7 @@ pub mod pallet {
 						list_protos_owner
 							.into_iter()
 							.filter(|proto_id| {
-								if params.tags.len() == 0 {
-									true
-								} else {
-									Self::filter_proto(proto_id, &params.tags, &params.categories)
-								}
+								Self::filter_proto(proto_id, &params.tags, &params.categories)
 							})
 							.skip(params.from as usize)
 							.take(params.limit as usize)
@@ -755,15 +747,7 @@ pub mod pallet {
 								.into_iter()
 								.rev()
 								.filter(|proto_id| {
-									if params.tags.len() == 0 {
-										true
-									} else {
-										Self::filter_proto(
-											proto_id,
-											&params.tags,
-											&params.categories,
-										)
-									}
+									Self::filter_proto(proto_id, &params.tags, &params.categories)
 								})
 								.skip(params.from as usize)
 								.take(params.limit as usize)
@@ -773,15 +757,7 @@ pub mod pallet {
 							protos
 								.into_iter()
 								.filter(|proto_id| {
-									if params.tags.len() == 0 {
-										true
-									} else {
-										Self::filter_proto(
-											proto_id,
-											&params.tags,
-											&params.categories,
-										)
-									}
+									Self::filter_proto(proto_id, &params.tags, &params.categories)
 								})
 								.skip(params.from as usize)
 								.take(params.limit as usize)

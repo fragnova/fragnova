@@ -1,4 +1,4 @@
-use codec::{Decode, Encode, Compact};
+use codec::{Compact, Decode, Encode};
 use scale_info::prelude::vec::Vec;
 
 #[cfg(feature = "std")]
