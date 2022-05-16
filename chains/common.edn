@@ -13,8 +13,7 @@
 ;; Index of the Set Metadata Function in Protos Pallet
 (def set-metadata-index 3)
 ;; Index of the Detach Function in Protos Pallet
-(def detach-index 6)
-(def frag-index (+ detach-index 5))
+(def detach-index 4)
 
 (defnode root)
 
@@ -189,19 +188,8 @@
   "0xC0FFEE" (HexToBytes) = .patch-data-bytes
   [.patch-data-bytes] (Substrate.Encode [nil]) >= .patch-data
 
-  .fragment-hash >> .frag-hash-payload
-  .patch-data (Hash.Blake2-256) >> .frag-hash-payload ; no data
-  [.frag-nonce] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
-  [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
 
-  .frag-hash-payload (Hash.Blake2-256) (ECDSA.Sign "//Alice")
-  (| (ToHex) (Log "AUTH SIGNATURE")) >= .payload
-  "//Alice" (ECDSA.PublicKey true) (ToHex) (Log "ALICE PUBLIC ECDSA")
-
-  ; block
-  [0] (Substrate.Encode ["u32"]) (AppendTo .payload)
-
-  .fragment-hash (AppendTo .payload)
+  .fragment-hash >= .payload
   "0x01" (HexToBytes) (AppendTo .payload)
   [123] (Substrate.Encode ["c"]) (AppendTo .payload)
   .patch-data (AppendTo .payload)
