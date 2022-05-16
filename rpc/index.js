@@ -22,8 +22,8 @@ const connectToLocalNode = async () => {
         types: {
             AudioCategories: {
                 _enum: [
-                    /// An audio file of the supported formats (mp3, ogg, wav, etc.)
-                    "file",
+                    "oggFile",
+                    "mp3File",
                     /// A chainblocks script that returns an effect chain that requires an input, validated
                     "effect",
                     /// A chainblocks script that returns an instrument chain (no audio input), validated

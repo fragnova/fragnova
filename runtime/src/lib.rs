@@ -19,7 +19,7 @@ use sp_runtime::{
 	traits::{
 		BlakeTwo256, Block as BlockT, Extrinsic as ExtrinsicT, IdentifyAccount, NumberFor, Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	transaction_validity::{InvalidTransaction, TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::prelude::*;
@@ -38,6 +38,7 @@ pub use frame_support::{
 	StorageValue,
 };
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_protos::Call as ProtosCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
 #[cfg(any(feature = "std", test))]
@@ -297,16 +298,15 @@ parameter_types! {
 	pub const DeletionWeightLimit: Weight = 500_000_000_000;
 	pub const MaxCodeSize: u32 = 2 * 1024;
 	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
-	pub const TransactionByteFee: Balance = 1;
 	pub OperationalFeeMultiplier: u8 = 5;
 	pub StorageBytesMultiplier: u64 = 10;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-	type TransactionByteFee = TransactionByteFee;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = IdentityFee<Balance>;
+	type LengthToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ();
 }
 
@@ -622,6 +622,22 @@ impl_runtime_apis! {
 			tx: <Block as BlockT>::Extrinsic,
 			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
+			match tx.function {
+				// We want to prevent polluting blocks with a lot of useless invalid data.
+				// TODO perform quick and preliminary data validation
+				Call::Protos(ProtosCall::upload{ref data, ref category_tags, ..}) => {
+					// TODO
+				},
+				Call::Protos(ProtosCall::patch{ref data, ..}) |
+				Call::Protos(ProtosCall::set_metadata{ref data, ..}) => {
+					// TODO
+					// if let Err(_) = <pallet_protos::Pallet<Runtime>>::ensure_valid_auth(auth) {
+					// 	return InvalidTransaction::BadProof.into();
+					// }
+				},
+				_ => {},
+			}
+			// Always run normally anyways
 			Executive::validate_transaction(source, tx, block_hash)
 		}
 	}

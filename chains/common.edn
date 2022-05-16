@@ -7,11 +7,11 @@
 (def fragments-index 11)
 (def add-upload-auth-index 0)
 ;; Index of the Upload Function in Protos Pallet
-(def upload-index 2)
+(def upload-index 0)
 ;; Index of the Patch Function in Protos Pallet
-(def patch-index 3)
+(def patch-index 1)
 ;; Index of the Set Metadata Function in Protos Pallet
-(def set-metadata-index 5)
+(def set-metadata-index 3)
 ;; Index of the Detach Function in Protos Pallet
 (def detach-index 6)
 (def frag-index (+ detach-index 5))
@@ -114,24 +114,11 @@
   (| (Take 4) (ExpectInt) = .set-metadata-nonce)
   (| (Take 5) (ExpectInt) = .frag-nonce)
 
-  .frag-hash >> .message-hash
-  .data (Hash.Blake2-256) >> .message-hash = .data-hash >= .data-cid
-  [.frag-nonce] (Substrate.Encode ["u64"]) >> .message-hash
-  [0] (Substrate.Encode ["u32"]) >> .message-hash ; block
-
-
-
-  .message-hash (Hash.Blake2-256) (| (ToHex) (Log "set_metadata message hash is")) (ECDSA.Sign "//Alice")
-
-  ;; .payload is a sequence that has all the arguments of the set_metadata extrinsic
-  ;; ¿Why isn't the ECDSA.Signature encoded?
-  (| (ToHex) (Log "AUTH SIGNATURE")) >= .payload
-  "//Alice" (ECDSA.PublicKey true) (ToHex) (Log "ALICE PUBLIC ECDSA")
-  [0] (Substrate.Encode ["u32"]) (AppendTo .payload) ; block
-  .frag-hash (AppendTo .payload)
+  .data (Hash.Blake2-256) >= .data-cid
+  
+  .frag-hash >= .payload
   [.metadata-key] (Substrate.Encode [nil]) (AppendTo .payload)
   [.data] (Substrate.Encode [nil]) (AppendTo .payload)
-
 
   ;; .payload is the arguments of the set_metadata extrinsic
   [fragments-index set-metadata-index .payload] (Do make-calldata) = .set-metadata-call (Log "set-metadata-call")
@@ -150,7 +137,6 @@
   (| (Take 1) (ExpectInt) = .upload-nonce)
   (| (Take 2) (ExpectInt) = .frag-nonce)
 
-
   ;; .immutable is the proto data
   .upload-data (Brotli.Compress) (| (ToHex) (Log "TEST DATA")) = .immutable
 
@@ -161,26 +147,10 @@
   [0 0 1 4] (Substrate.Encode ["u8" "u8" "c" "c"]) >= .categories
   "test" (StringToBytes) (AppendTo .categories)
 
-  .immutable (Hash.Blake2-256) >= .frag-cid >> .frag-hash-payload = .fragment-hash
-  .no-refs >> .frag-hash-payload ; refs
-  .categories >> .frag-hash-payload ; categories
-  "0x00" (HexToBytes) >> .frag-hash-payload ; again no linked asset
-  [.frag-nonce] (Substrate.Encode ["u64"]) >> .frag-hash-payload ; NONCE
-  [0] (Substrate.Encode ["u32"]) >> .frag-hash-payload ; block
-
-  ;; `authority_keys_from_seed ("Alice")` is one of the initial authorities (this is set in chain_spec.rs in `clamor`)
-  .frag-hash-payload (Hash.Blake2-256) (| (ToHex) (Log "upload message hash is")) (ECDSA.Sign "//Alice")
-
-
-  ;; .payload is a sequence that has all the arguments of the upload extrinsic
-  (| (ToHex) (Log "AUTH SIGNATURE")) >= .payload
-  "//Alice" (ECDSA.PublicKey true) (ToHex) (Log "ALICE PUBLIC ECDSA")
-
-  ; block
-  [0] (Substrate.Encode ["u32"]) (AppendTo .payload)
+  .immutable (Hash.Blake2-256) >= .frag-cid = .fragment-hash
 
   ;; `references` argument of upload extrinsic
-  .no-refs (AppendTo .payload) ; refs
+  .no-refs >= .payload ; refs
 
   ;; `category` argument of upload extrinsic
   .categories (AppendTo .payload) ; categories
