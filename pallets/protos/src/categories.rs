@@ -8,8 +8,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize), serde(rename_all = "camelCase"))]
 pub enum AudioCategories {
-	/// An audio file of the supported formats (mp3, ogg, wav, etc.)
-	File,
+	/// A compressed audio file in the ogg container format
+	OggFile,
+	///
+	/// A compressed audio file in the mp3 format
+	Mp3File,
 	/// A chainblocks script that returns an effect chain that requires an input, validated
 	Effect,
 	/// A chainblocks script that returns an instrument chain (no audio input), validated
