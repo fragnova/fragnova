@@ -3,10 +3,10 @@
 use super::*;
 #[allow(unused)]
 use crate::Pallet as Protos;
-use protos::categories::{Categories, TextCategories};
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_detach::Pallet as Detach;
+use protos::categories::{Categories, TextCategories};
 use sp_io::hashing::blake2_256;
 
 const SEED: u32 = 0;

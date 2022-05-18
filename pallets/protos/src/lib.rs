@@ -697,6 +697,11 @@ pub mod pallet {
 
 		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Vec<u8> {
 			let mut map = Map::new();
+			let mut limit = if params.limit == 0 {
+				u32::MAX
+			} else {
+				params.limit
+			};
 
 			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
 				// `owner` exists
@@ -713,7 +718,7 @@ pub mod pallet {
 								Self::filter_proto(proto_id, &params.tags, &params.categories)
 							})
 							.skip(params.from as usize)
-							.take(params.limit as usize)
+							.take(limit as usize)
 							.collect::<Vec<Hash256>>()
 					} else {
 						// Sort in ascending order
@@ -723,7 +728,7 @@ pub mod pallet {
 								Self::filter_proto(proto_id, &params.tags, &params.categories)
 							})
 							.skip(params.from as usize)
-							.take(params.limit as usize)
+							.take(limit as usize)
 							.collect::<Vec<Hash256>>()
 					}
 				} else {
@@ -739,7 +744,7 @@ pub mod pallet {
 
 					let protos = <ProtosByCategory<T>>::get(category);
 					if let Some(protos) = protos {
-						filtered.extend(if params.desc {
+						let collection = if params.desc {
 							// Sort in descending order
 							protos
 								.into_iter()
@@ -748,7 +753,7 @@ pub mod pallet {
 									Self::filter_proto(proto_id, &params.tags, &params.categories)
 								})
 								.skip(params.from as usize)
-								.take(params.limit as usize)
+								.take(limit as usize)
 								.collect::<Vec<Hash256>>()
 						} else {
 							// Sort in ascending order
@@ -758,9 +763,14 @@ pub mod pallet {
 									Self::filter_proto(proto_id, &params.tags, &params.categories)
 								})
 								.skip(params.from as usize)
-								.take(params.limit as usize)
+								.take(limit as usize)
 								.collect::<Vec<Hash256>>()
-						});
+						};
+						limit -= collection.len() as u32;
+						filtered.extend(collection);
+						if limit == 0 {
+							break;
+						}
 					}
 				}
 				filtered
