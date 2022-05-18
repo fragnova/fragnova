@@ -1,7 +1,5 @@
 # Clamor
 
-[![license](https://img.shields.io/github/license/fragcolor-xyz/clamor)](./LICENSE)
-
 Clamor is a custom blockchain built on the [Substrate](https://substrate.io/) framework. 
 
 It is a protocol and networking stack that enables complete on-chain storage and full synchronization of asset data (protos, fragments, chainblocks code etc.) across the blockchain nodes.
@@ -60,4 +58,4 @@ To do this:
 The App Explorer will now connect with your local node and will show the blocks being produced by your node in real-time. 
 
 ## License
-Pallets are licensed under the [BUSL-1.1](https://spdx.org/licenses/BUSL-1.1.html) license, while the rest of the Clamor source code is licensed under [The Unlicense](./LICENSE) license. 
+Clamor is licensed under the terms of the [BUSL-1.1](https://spdx.org/licenses/BUSL-1.1.html) license. 
