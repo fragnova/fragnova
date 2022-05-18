@@ -46,24 +46,18 @@ If you want to run Clamor with a [chain specification](https://docs.substrate.io
 
 ### Connecting to Polkadot's App Explorer
 
-[Polkadot.js](https://github.com/polkadot-js/apps) provides a browser based application that allows you to interact with your locally running Substrate node, with minimal setup.
+[Polkadot.js](https://github.com/polkadot-js/) provides a browser based application, [App Explorer](https://polkadot.js.org/apps/#/explorer) (also available as hosted IPFS and IPNS versions). This application allows you to interact with your locally running Substrate node, with minimal setup.
 
 To do this:
 
 1. Run you Clamor node locally
-2. Head over to Polkadot.js' [App Explorer](https://polkadot.js.org/apps/#/explorer)
+2. Head over to the [App Explorer](https://polkadot.js.org/apps/#/explorer)
 3. Click the top-left Pokadot icon on the header of the page
 4. Expand the **Development** sub-menu (at the bottom of the list)
 5. Click **Local Node** to enable it
 6. Click **Switch** at the top of the panel
 
-The App Explorer will now connect with your local node and will show the blocks being produced by your node in real-time.
-
-### Connecting to your front-end applicaton
-
-You can also create your own front-end application to connect with and consume your Clamor node backend.
-
-For an example of such an application, see [this](https://github.com/fragcolor-xyz/clamor-frontend). 
+The App Explorer will now connect with your local node and will show the blocks being produced by your node in real-time. 
 
 ## License
-Clamor source code is licensed under the [The Unlicense](./LICENSE).
+Pallets are licensed under the [BUSL-1.1](https://spdx.org/licenses/BUSL-1.1.html) license, while the rest of the Clamor source code is licensed under [The Unlicense](./LICENSE) license. 
