@@ -1,6 +1,6 @@
 # Clamor
 
-Clamor is a custom blockchain built on the [Substrate](https://substrate.io/) framework. 
+Clamor is a custom blockchain built on the [Substrate](https://substrate.io/) framework.
 
 It is a protocol and networking stack that enables complete on-chain storage and full synchronization of asset data (protos, fragments, chainblocks code etc.) across the blockchain nodes.
 
@@ -23,13 +23,13 @@ Clone the Clamor repository and checkout the default branch.
 Navigate to the root folder and run the following script to build and run a local instance of Clamor:
 
     ```
-    RUST_LOG=bitswap=trace,pallet_protos::pallet=trace,pallet_frag::pallet=trace cargo run -- --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain
+    RUST_LOG=bitswap=trace,pallet_protos::pallet=trace,pallet_frag::pallet=trace cargo run -- --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server
     ```
 
 If you want to run Clamor with a [chain specification](https://docs.substrate.io/v3/runtime/chain-specs/) instead, use this script:
 
     ```
-    cargo run -- --chain=spec_raw.json --validator --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server --storage-chain -d <DATA PATH>
+    cargo run -- --chain=spec_raw.json --validator --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server -d <DATA PATH>
     ```
 
 ## Usage
@@ -55,7 +55,7 @@ To do this:
 5. Click **Local Node** to enable it
 6. Click **Switch** at the top of the panel
 
-The App Explorer will now connect with your local node and will show the blocks being produced by your node in real-time. 
+The App Explorer will now connect with your local node and will show the blocks being produced by your node in real-time.
 
 ## License
-Clamor is licensed under the terms of the [BUSL-1.1](https://spdx.org/licenses/BUSL-1.1.html) license. 
+Clamor is licensed under the terms of the [BUSL-1.1](https://spdx.org/licenses/BUSL-1.1.html) license.
