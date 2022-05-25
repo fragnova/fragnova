@@ -16,31 +16,31 @@ version = '1.0.119'
 [dependencies.sp-core]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
-tag = 'clamor-15-05-2022'
+tag = 'clamor-25-05-2022'
 version = '6.0.0'
 
 [dependencies.sp-io]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
-tag = 'clamor-15-05-2022'
+tag = 'clamor-25-05-2022'
 version = '6.0.0'
 
 [dependencies.sp-std]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
-tag = 'clamor-15-05-2022'
+tag = 'clamor-25-05-2022'
 version = '4.0.0-dev'
 
 [dependencies.sp-runtime]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
-tag = 'clamor-15-05-2022'
+tag = 'clamor-25-05-2022'
 version = '6.0.0'
 
 [dependencies.sp-keystore]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
-tag = 'clamor-15-05-2022'
+tag = 'clamor-25-05-2022'
 version = '0.12.0'
 optional = true
 
@@ -53,20 +53,20 @@ version = '3.0.0'
 [dependencies.frame-benchmarking]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
-tag = 'clamor-15-05-2022'
+tag = 'clamor-25-05-2022'
 version = '4.0.0-dev'
 optional = true
 
 [dependencies.frame-support]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
-tag = 'clamor-15-05-2022'
+tag = 'clamor-25-05-2022'
 version = '4.0.0-dev'
 
 [dependencies.frame-system]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
-tag = 'clamor-15-05-2022'
+tag = 'clamor-25-05-2022'
 version = '4.0.0-dev'
 
 [dependencies.scale-info]
@@ -77,7 +77,7 @@ version = '2.0'
 [dependencies.pallet-randomness-collective-flip]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
-tag = 'clamor-15-05-2022'
+tag = 'clamor-25-05-2022'
 version = '4.0.0-dev'
 
 [dependencies]
