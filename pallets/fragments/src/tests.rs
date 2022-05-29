@@ -14,7 +14,8 @@ fn initial_upload() {
 	assert_ok!(ProtosPallet::upload(
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 		references,
-		(Categories::Text(TextCategories::Plain), Vec::new()),
+		Categories::Text(TextCategories::Plain),
+		Vec::new(),
 		None,
 		None,
 		data,

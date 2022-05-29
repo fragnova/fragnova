@@ -25,7 +25,8 @@ fn initial_upload() {
 	assert_ok!(ProtosPallet::upload(
 		Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 		references,
-		(Categories::Text(TextCategories::Plain), Vec::new()),
+		Categories::Text(TextCategories::Plain),
+		Vec::new(),
 		None,
 		None,
 		data,
@@ -59,7 +60,8 @@ fn upload_should_works() {
 		assert_ok!(ProtosPallet::upload(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			references,
-			(Categories::Text(TextCategories::Plain), Vec::new()),
+			Categories::Text(TextCategories::Plain),
+			Vec::new(),
 			None,
 			None,
 			data,
@@ -80,7 +82,8 @@ fn upload_should_not_works_if_proto_hash_exists() {
 			ProtosPallet::upload(
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				references,
-				(Categories::Text(TextCategories::Plain), Vec::new()),
+				Categories::Text(TextCategories::Plain),
+				Vec::new(),
 				None,
 				None,
 				data,

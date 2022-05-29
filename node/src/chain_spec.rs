@@ -157,7 +157,7 @@ pub fn live_config() -> Result<ChainSpec, String> {
 		"live",
 		ChainType::Live,
 		move || {
-			GenesisConfig{
+			GenesisConfig {
 				system: SystemConfig {
 					// Add Wasm runtime to storage.
 					code: wasm_binary.to_vec(),
@@ -170,7 +170,7 @@ pub fn live_config() -> Result<ChainSpec, String> {
 				indices: IndicesConfig { indices: vec![] },
 				detach: DetachConfig::default(),
 				assets: AssetsConfig::default(),
-				frag: FragConfig::default()
+				frag: FragConfig::default(),
 			}
 		},
 		// Bootnodes

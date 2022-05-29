@@ -240,7 +240,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			// we store this in the state as well
 			references: Vec<Hash256>,
-			category_tags: (Categories, Vec<Vec<u8>>),
+			category: Categories,
+			tags: Vec<Vec<u8>>,
 			linked_asset: Option<LinkedAsset>,
 			include_cost: Option<Compact<u64>>,
 			// let data come last as we record this size in blocks db (storage chain)
@@ -295,8 +296,7 @@ pub mod pallet {
 				ProtoOwner::User(who.clone())
 			};
 
-			let tags = category_tags
-				.1
+			let tags = tags
 				.iter()
 				.map(|s| {
 					let tag_index = <Tags<T>>::get(s);
@@ -322,7 +322,7 @@ pub mod pallet {
 				creator: who.clone(),
 				owner: owner.clone(),
 				references,
-				category: category_tags.0.clone(),
+				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
 			};
@@ -331,7 +331,7 @@ pub mod pallet {
 			<Protos<T>>::insert(proto_hash, proto);
 
 			// store by category
-			<ProtosByCategory<T>>::append(category_tags.0, proto_hash);
+			<ProtosByCategory<T>>::append(category, proto_hash);
 
 			<ProtosByOwner<T>>::append(owner, proto_hash);
 
@@ -697,11 +697,7 @@ pub mod pallet {
 
 		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Vec<u8> {
 			let mut map = Map::new();
-			let mut limit = if params.limit == 0 {
-				u32::MAX
-			} else {
-				params.limit
-			};
+			let mut limit = if params.limit == 0 { u32::MAX } else { params.limit };
 
 			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
 				// `owner` exists

@@ -18,7 +18,7 @@ jsonrpc-derive = "18.0.0"
 serde = { version = "1", features = ["derive"] }
 sp-clamor = { version = '0.1.0', path = '../../../primitives/clamor', default-features = false }
 hex = "^0.4.3"
-protos = { version = "0.1.4", default-features = false }
+protos = { version = "0.1.6", default-features = false }
 
 # Substrate Dependencies
 [dependencies.sp-api]
