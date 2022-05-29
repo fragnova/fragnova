@@ -21,3 +21,4 @@ chainblocks.*log
 *.lock
 rpc/node_modules/*
 rpc/package-lock.json
+testnet*.json

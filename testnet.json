@@ -26,7 +26,12 @@
         ]
       },
       "balances": {
-        "balances": []
+        "balances": [
+          [
+            "fRgxJR1Ghei8ccgooy4hC1muwfwinNMszgubrbyGT8cS621tA",
+            1000000000000000000000
+          ]
+        ]
       },
       "transactionPayment": null,
       "sudo": {
