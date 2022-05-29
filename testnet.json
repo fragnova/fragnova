@@ -1,0 +1,56 @@
+{
+  "name": "Fragnova Testnet",
+  "id": "live",
+  "chainType": "Live",
+  "bootNodes": [
+    "/dns/bootstrap.fragnova.network/tcp/30337/p2p/12D3KooWQoQhtVUT8j2hV7dXrFpf3pp4Q5FT7c3GdAf2wiKACjD6"
+  ],
+  "telemetryEndpoints": null,
+  "protocolId": "frag",
+  "properties": null,
+  "codeSubstitutes": {},
+  "genesis": {
+    "runtime": {
+      "system": null,
+      "aura": {
+        "authorities": [
+          "fRmdFgE9Fxru1QPPVLSGFkGQvmkzBqNyLDH4irGQEmvBXPmN1"
+        ]
+      },
+      "grandpa": {
+        "authorities": [
+          [
+            "fRh2LoB1qKa4rBDihvYh3ynJGqojdxdHoQ5J48mMtQqK42RJs",
+            1
+          ]
+        ]
+      },
+      "balances": {
+        "balances": []
+      },
+      "transactionPayment": null,
+      "sudo": {
+        "key": "fRgxJR1Ghei8ccgooy4hC1muwfwinNMszgubrbyGT8cS621tA"
+      },
+      "assets": {
+        "assets": [],
+        "metadata": [],
+        "accounts": []
+      },
+      "indices": {
+        "indices": []
+      },
+      "detach": {
+        "ethAuthorities": [],
+        "keys": [
+          "fRkZyMoQoX5iHi3dpQQ9ovw8R9izDufqAEUYTHJ3zUzVFCv6T"
+        ]
+      },
+      "frag": {
+        "keys": [
+          "fRkZyMoQoX5iHi3dpQQ9ovw8R9izDufqAEUYTHJ3zUzVFCv6T"
+        ]
+      }
+    }
+  }
+}
