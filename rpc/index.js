@@ -20,12 +20,17 @@ const connectToLocalNode = async () => {
         },
 
         types: {
+            ShardsFormat: {
+                _enum: [
+                    "edn",
+                    "binary"
+                ]
+            },
+
             AudioCategories: {
                 _enum: [
                     "oggFile",
                     "mp3File",
-                    "effect",
-                    "instrument"
                 ]
             },
 
@@ -47,12 +52,13 @@ const connectToLocalNode = async () => {
             VectorCategories: {
                 _enum: [
                     "svgFile",
-                    "fontFile"
+                    "ttfFile"
                 ]
             },
 
             VideoCategories: {
                 _enum: [
+                    "mkvFile",
                     "mp4File"
                 ]
             },
@@ -66,24 +72,19 @@ const connectToLocalNode = async () => {
 
             BinaryCategories: {
                 _enum: [
-                    "wasmModule"
+                    "wasmProgram",
+                    "wasmReactor",
+                    "blendFile",
                 ]
             },
 
-            ChainCategories: {
-                _enum: [
-                    "generic",
-                    "animation",
-                    "vertexShader",
-                    "fragmentShader",
-                    "computeShader"
-                ]
-            },
+            ShardsTrait: "Compact<u32>",
 
             Categories: {
                 _enum: {
                     "text": "TextCategories",
-                    "chain": "(ChainCategories, Vec<u32>)",
+                    "trait": "(Vec<u32>, Vec<u32>, ShardsTrait)",
+                    "shards": "(ShardsFormat, Vec<ShardsTrait>)",
                     "audio": "AudioCategories",
                     "texture": "TextureCategories",
                     "vector": "VectorCategories",
