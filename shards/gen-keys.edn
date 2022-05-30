@@ -1,6 +1,6 @@
 (def seed (first *command-line-args*))
 
-(defchain generate
+(defwire generate
   seed
   (| (Sr25519.PublicKey)
      (| (ToHex) (Log "Sr25519 public"))
@@ -25,6 +25,6 @@
      (| (ToHex) (Log "ECDSA from Ed25519.Sign public"))
      (| (Substrate.AccountId true) (Log "ECDSA from Ed25519.Sign AccountID")))
 
-(defnode node)
+(defmesh node)
 (schedule node generate)
 (run node)

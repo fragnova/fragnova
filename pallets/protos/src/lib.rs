@@ -71,13 +71,23 @@ pub struct GetProtosParams<TAccountId, StringType> {
 	pub tags: Vec<StringType>,
 }
 
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+pub struct ProtoPatch<TBlockNumber> {
+	/// The block when this patch was created
+	pub block: TBlockNumber,
+	/// The hash of this patch data
+	pub data_hash: Hash256,
+	/// A patch can add references to other protos, or remove references to other protos.
+	pub references: Vec<Hash256>,
+}
+
 /// Struct of a Proto-Fragment
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct Proto<TAccountId, TBlockNumber> {
 	/// Block number this proto was included in
 	pub block: TBlockNumber,
-	/// Plain hash of indexed data.
-	pub patches: Vec<Hash256>,
+	/// Patches to this proto
+	pub patches: Vec<ProtoPatch<TBlockNumber>>,
 	/// Include price of the proto.
 	/// If None, this proto can't be included into other protos
 	pub include_cost: Option<Compact<u64>>,
@@ -92,6 +102,7 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	/// tags associated with this proto
 	pub tags: Vec<Compact<u64>>,
 	/// Metadata attached to the proto.
+	// TODO cache the keys!
 	pub metadata: BTreeMap<Vec<u8>, Hash256>,
 }
 
@@ -267,26 +278,7 @@ pub mod pallet {
 				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// Check FRAG staking
-			for reference in references.iter() {
-				let cost = <Protos<T>>::get(reference).map(|p| p.include_cost);
-				if let Some(cost) = cost {
-					if let Some(cost) = cost {
-						let cost: u64 = cost.into();
-						let cost: T::Balance = cost.saturated_into();
-						let stake = <ProtoStakes<T>>::get(reference, who.clone());
-						if let Some(stake) = stake {
-							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
-						} else {
-							// Stake not found
-							return Err(Error::<T>::StakeNotFound.into());
-						}
-					}
-				// Free to include, just continue
-				} else {
-					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into());
-				}
-			}
+			Self::check_staking_req(&references, &who)?;
 
 			// ! Write STATE from now, ensure no errors from now...
 
@@ -362,6 +354,7 @@ pub mod pallet {
 			// proto hash we want to patch
 			proto_hash: Hash256,
 			include_cost: Option<Compact<u64>>,
+			new_references: Vec<Hash256>,
 			// data we want to patch last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -383,9 +376,14 @@ pub mod pallet {
 
 			let data_hash = blake2_256(&data);
 
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
 			// we need this to index transactions
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
+
+			// Check FRAG staking
+			Self::check_staking_req(&new_references, &who)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -393,7 +391,11 @@ pub mod pallet {
 				let proto = proto.as_mut().unwrap();
 				if data.len() > 0 {
 					// No failures from here on out
-					proto.patches.push(data_hash);
+					proto.patches.push(ProtoPatch {
+						block: current_block_number,
+						data_hash,
+						references: new_references,
+					});
 					// index mutable data for IPFS discovery as well
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 				}
@@ -668,6 +670,51 @@ pub mod pallet {
 	where
 		T::AccountId: AsRef<[u8]>,
 	{
+		fn check_staking_req(references: &[Hash256], who: &T::AccountId) -> DispatchResult {
+			// Check FRAG staking
+			// TODO this is not tested properly
+			for reference in references.iter() {
+				let proto = <Protos<T>>::get(reference);
+				if let Some(proto) = proto {
+					let owner = match proto.owner {
+						ProtoOwner::User(owner) => Some(owner),
+						_ => None,
+					};
+
+					if let Some(owner) = owner {
+						if owner == *who {
+							// owner can include freely
+							continue;
+						}
+					}
+
+					let cost = proto.include_cost;
+					if let Some(cost) = cost {
+						let cost: u64 = cost.into();
+						if cost == 0 {
+							// free
+							continue;
+						}
+						let cost: T::Balance = cost.saturated_into();
+						let stake = <ProtoStakes<T>>::get(reference, who.clone());
+						if let Some(stake) = stake {
+							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
+						} else {
+							// Stake not found
+							return Err(Error::<T>::StakeNotFound.into());
+						}
+						// OK to include, just continue
+					} else {
+						return Err(Error::<T>::Unauthorized.into());
+					}
+				} else {
+					// Proto not found
+					return Err(Error::<T>::ReferenceNotFound.into());
+				}
+			}
+			Ok(())
+		}
+
 		fn filter_proto(proto_id: &Hash256, tags: &[Vec<u8>], categories: &[Categories]) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if categories.len() == 0

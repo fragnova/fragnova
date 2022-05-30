@@ -1,6 +1,6 @@
 (load-file "common.edn")
 
-(defchain upload
+(defwire upload
   ; add test asset
   1 (Do make-test-asset) = .test-asset
   [.test-asset 0 0] (Do test-upload-compressing)

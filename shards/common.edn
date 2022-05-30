@@ -15,7 +15,7 @@
 ;; Index of the Detach Function in Protos Pallet
 (def detach-index 4)
 
-(defnode root)
+(defmesh root)
 
 (defloop wait-port
   (Setup
@@ -30,7 +30,7 @@
   .tries (Assert.IsNot 0)
   (Log "Waiting for port"))
 
-(defchain make-calldata
+(defwire make-calldata
   (| (Take 0) (ExpectInt) = .pallet-idx)
   (| (Take 1) (ExpectInt) = .call-idx)
   ; >= copy to allow nesting
@@ -41,7 +41,7 @@
   .args (AppendTo .call-data)
   .call-data)
 
-(defchain send-signed-extrinsic
+(defwire send-signed-extrinsic
   (| (Take 0) (ExpectString) = .private-key)
   (| (Take 1) (ExpectBytes) = .call-data)
   (| (Take 2) (ExpectInt) = .nonce)
@@ -88,7 +88,7 @@
   (Log "HTTP Response is")
   (FromJson))
 
-(defchain make-test-asset
+(defwire make-test-asset
   (ToString) (StringToBytes)
   ;; >= .test-asset-n
   ;; "Test Asset " (PrependTo .test-asset-n)
@@ -105,7 +105,7 @@
   ;; .test-asset-payload
   )
 
-(defchain test-set-metadata
+(defwire test-set-metadata
   (| (Take 0) (ExpectString) = .frag-owner)
   (| (Take 1) (ExpectBytes) = .frag-hash)
   (| (Take 2) (ExpectBytes) = .data)
@@ -131,7 +131,7 @@
 
   .data-cid-str)
 
-(defchain test-upload-compressing
+(defwire test-upload-compressing
   (| (Take 0) (ExpectBytes) = .upload-data)
   (| (Take 1) (ExpectInt) = .upload-nonce)
   (| (Take 2) (ExpectInt) = .frag-nonce)
@@ -180,7 +180,7 @@
   [.frag-owner .upload-call .upload-nonce] (Do send-signed-extrinsic) (Log "upload-call-result")
   [.frag-cid-str .fragment-hash .frag-owner])
 
-(defchain test-patch
+(defwire test-patch
   (| (Take 0) (ExpectBytes) = .fragment-hash)
   (| (Take 1) (ExpectInt) = .patch-nonce)
   (| (Take 2) (ExpectInt) = .frag-nonce)
@@ -199,7 +199,7 @@
   [fragments-index patch-index .payload] (Do make-calldata) = .patch-call (| (ToHex) (Log "patch-call"))
   ["//Dave" .patch-call .patch-nonce] (Do send-signed-extrinsic) (Log "patch-call-result"))
 
-(defchain test-detach
+(defwire test-detach
   (| (Take 0) (ExpectBytes) >= .detach-payload)
   (| (Take 1) (ExpectInt) = .detach-nonce)
 

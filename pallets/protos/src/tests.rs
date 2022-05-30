@@ -107,6 +107,7 @@ fn patch_should_works() {
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 			proto_hash,
 			Some(Compact(123)),
+			vec![],
 			data,
 		));
 
@@ -127,6 +128,7 @@ fn patch_proto_should_not_work_if_user_is_unauthorized() {
 				Origin::signed(pair.public()),
 				PROTO_HASH,
 				Some(Compact(123)),
+				vec![],
 				data,
 			),
 			Error::<Test>::Unauthorized
@@ -144,6 +146,7 @@ fn patch_proto_should_not_work_if_proto_not_found() {
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				proto_hash,
 				Some(Compact(123)),
+				vec![],
 				immutable_data,
 			),
 			Error::<Test>::ProtoNotFound
@@ -195,6 +198,7 @@ fn patch_should_not_work_if_detached() {
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
 				PROTO_HASH,
 				Some(Compact(123)),
+				vec![],
 				data,
 			),
 			Error::<Test>::Detached

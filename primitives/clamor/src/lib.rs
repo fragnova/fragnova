@@ -115,19 +115,19 @@ pub fn init(geth_url: Option<String>) {
 		*details::GETH_URL.lock().unwrap() = Some(geth_url.into_bytes());
 	}
 
-	// use chainblocks::{cbl_env, cblog};
+	// use chainblocks::{cbl_env, shlog};
 
 	// details::init(fetch_extrinsic);
 
 	// // needs to go first!
 	// chainblocks::core::init();
 
-	// cblog!("Chainblocks initializing...");
+	// shlog!("Chainblocks initializing...");
 
 	// // load default chains
 	// let chain = cbl_env!(include_str!("validate_fragment.edn"));
 
-	// cblog!("Chainblocks initialized!");
+	// shlog!("Chainblocks initialized!");
 }
 
 pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
