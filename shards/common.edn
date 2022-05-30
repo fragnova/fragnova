@@ -192,6 +192,7 @@
   .fragment-hash >= .payload
   "0x01" (HexToBytes) (AppendTo .payload)
   [123] (Substrate.Encode ["c"]) (AppendTo .payload)
+  "0x00" (HexToBytes) (AppendTo .payload) ; no new refs
   .patch-data (AppendTo .payload)
 
   .payload (Log)
