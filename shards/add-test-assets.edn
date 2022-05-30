@@ -18,10 +18,6 @@
   {"name" "monalisa" "desc" "iconic, priceless, renaissance art"} (ToJson) (ToBytes) = .json-data
   [.frag-owner-outer .frag-hash-outer .json-data "json_description" .add-asset-n-plus-2 .add-asset-n-plus-2] (Do test-set-metadata))
 
-
-
-
-
 (defwire add-assets
 
   ; add test assets in parallel
