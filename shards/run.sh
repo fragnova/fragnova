@@ -3,7 +3,7 @@
 apt-get update
 apt-get install -y wget
 
-cd /data/chains
+cd /data/shards
 
 wget -q https://dist.ipfs.io/go-ipfs/v0.10.0/go-ipfs_v0.10.0_linux-amd64.tar.gz
 tar -xvzf go-ipfs_v0.10.0_linux-amd64.tar.gz
