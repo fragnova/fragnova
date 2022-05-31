@@ -7,6 +7,7 @@ use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use protos::categories::{Categories, TextCategories};
 use sp_io::hashing::blake2_256;
+use protos::permissions::FragmentPerms;
 
 const PROTO_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
@@ -33,7 +34,7 @@ benchmarks! {
 			external_url: "external_url".as_bytes().to_vec(),
 		};
 
-	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, true, true, None)
+	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, FragmentPerms::NONE, true, None)
 	verify {
 		assert_last_event::<T>(Event::<T>::FragmentAdded(caller).into())
 	}

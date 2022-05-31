@@ -18,6 +18,8 @@ use sp_io::hashing::blake2_256;
 use sp_std::{vec, vec::Vec};
 pub use weights::WeightInfo;
 
+use protos::permissions::FragmentPerms;
+
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentMetadata {
 	pub name: Vec<u8>,
@@ -26,12 +28,12 @@ pub struct FragmentMetadata {
 
 /// Struct of a Fragment
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentData {
+pub struct FragmentClass {
 	/// The Proto-Fragment that was used to create this Fragment
 	pub proto_hash: Hash256,
 	pub metadata: FragmentMetadata,
+	pub permissions: FragmentPerms,
 	pub unique: bool,
-	pub mutable: bool,
 	pub max_supply: Option<Compact<u128>>,
 }
 
@@ -71,7 +73,7 @@ pub mod pallet {
 	// fragment-hash to fragment-data
 	/// Storage Map of Fragments where the key is the hash of the concatenation of its corresponding Proto-Fragment and the name of the Fragment, and the value is the Fragment struct of the Fragment
 	#[pallet::storage]
-	pub type Fragments<T: Config> = StorageMap<_, Identity, Hash256, FragmentData>;
+	pub type Fragments<T: Config> = StorageMap<_, Identity, Hash256, FragmentClass>;
 
 	// fragment-hash to fragment-id to fragment-instance-data
 	#[pallet::storage]
@@ -106,22 +108,22 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Create a Fragment using an existing Proto-Fragment (only the owner of the Proto-Fragment can call this function and create a Fragment)
+		/// Create a Fragment using an existing Proto-Fragment (only the owner of the Proto-Fragment can call this function and create a new Fragment Class based on the Proto)
 		///
 		/// # Arguments
 		/// * `origin` - The origin of the extrinsic/dispatchable function.
 		/// * `proto_hash` - The hash of the existing Proto-Fragment
 		/// * `metadata` - The metadata (name, external url etc.) of the Fragment that is going to be created
-		/// * `unique` - Whether the Fragment that is being created is unique
-		/// * `mutable` - if the item data can be edited (will be more clear when we add the mint/buy/upload bit)
-		/// * max_supply (optional) - if scarce, the maximum amount of items that can be ever created of this type
+		/// * `permissions` - The permissions that the next owner of the Fragment will have
+		/// * `unique` - If the Fragments generated should be unique (only one Fragment can exist with the same exact data)
+		/// * `max_supply` (optional) - if scarce, the maximum amount of items that can be ever created of this type
 		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
 			metadata: FragmentMetadata,
+			permissions: FragmentPerms,
 			unique: bool,
-			mutable: bool,
 			max_supply: Option<Compact<u128>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -142,7 +144,7 @@ pub mod pallet {
 
 			ensure!(!<Fragments<T>>::contains_key(&hash), Error::<T>::AlreadyExist);
 
-			let fragment_data = FragmentData { proto_hash, metadata, unique, mutable, max_supply };
+			let fragment_data = FragmentClass { proto_hash, metadata, permissions, unique, max_supply };
 			<Fragments<T>>::insert(&hash, fragment_data);
 
 			Proto2Fragments::<T>::mutate(&proto_hash, |fragment_hash| {

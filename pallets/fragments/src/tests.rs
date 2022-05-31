@@ -6,6 +6,7 @@ use protos::categories::{Categories, TextCategories};
 use sp_clamor::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
+use protos::permissions::FragmentPerms;
 
 fn initial_upload() {
 	let data = DATA.as_bytes().to_vec();
@@ -38,7 +39,7 @@ fn create_should_works() {
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 			PROTO_HASH,
 			fragment_data,
-			true,
+			FragmentPerms::NONE,
 			true,
 			None
 		));
@@ -60,7 +61,7 @@ fn create_should_not_work_if_protos_not_found() {
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 				PROTO_HASH,
 				fragment_data,
-				true,
+				FragmentPerms::NONE,
 				true,
 				None
 			),
@@ -89,7 +90,7 @@ fn create_should_not_work_if_proto_owner_not_found() {
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 				PROTO_HASH,
 				fragment_data,
-				true,
+				FragmentPerms::NONE,
 				true,
 				None
 			),
@@ -114,7 +115,7 @@ fn create_should_not_work_if_fragment_already_exist() {
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 			PROTO_HASH,
 			fragment_data.clone(),
-			true,
+			FragmentPerms::NONE,
 			true,
 			None
 		));
@@ -125,7 +126,7 @@ fn create_should_not_work_if_fragment_already_exist() {
 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
 				PROTO_HASH,
 				fragment_data,
-				true,
+				FragmentPerms::NONE,
 				true,
 				None
 			),
