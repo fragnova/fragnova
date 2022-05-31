@@ -875,7 +875,7 @@ pub mod pallet {
 				}
 			}
 
-			if params.metadata_keys.len() > 0 {
+			if !params.metadata_keys.is_empty() {
 				for (proto_id, map_proto) in map.iter_mut() {
 					let array_proto_id: Hash256 =
 						hex::decode(proto_id).unwrap()[..].try_into().unwrap();
@@ -884,23 +884,25 @@ pub mod pallet {
 
 					for metadata_key in params.metadata_keys.iter() {
 						let metadata_key_index = <MetaKeys<T>>::get(metadata_key.clone());
-						if let Some(metadata_key_index) = metadata_key_index {
+						let metadata_value = if let Some(metadata_key_index) = metadata_key_index {
 							let metadata_key_index = <Compact<u64>>::from(metadata_key_index);
-							let metadata_value =
-								if let Some(data_hash) = map_metadata.get(&metadata_key_index) {
-									Value::String(hex::encode(data_hash))
-								} else {
-									Value::Null
-								};
 
-							match map_proto {
-								Value::Object(map_proto) => (*map_proto).insert(
-									String::from_utf8(metadata_key.clone()).unwrap(),
-									metadata_value,
-								), // Cloning `metadata_key` might be inefficient
-								_ => None,
-							};
-						}
+							if let Some(data_hash) = map_metadata.get(&metadata_key_index) {
+								Value::String(hex::encode(data_hash))
+							} else {
+								Value::Null
+							}
+						} else {
+							Value::Null
+						};
+
+						match map_proto {
+							Value::Object(map_proto) => (*map_proto).insert(
+								String::from_utf8(metadata_key.clone()).unwrap(),
+								metadata_value,
+							), // Cloning `metadata_key` might be inefficient
+							_ => None,
+						};
 					}
 				}
 			}
