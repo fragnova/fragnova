@@ -62,7 +62,7 @@ describe('Protos RPCs', () => {
 
             const params = api.createType("GetProtosParams", {
                 desc: true, from: 0, limit: 10, metadata_keys: ['A', 'A'],
-                owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", categories: [{ "chain": ["generic", [888, 999]] }], return_owners: true
+                owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", categories: [{ "text": "plain" }], return_owners: true
             });
 
 
