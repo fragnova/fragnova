@@ -7,6 +7,7 @@ use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_detach::Pallet as Detach;
 use protos::categories::{Categories, TextCategories};
+use sp_clamor::CID_PREFIX;
 use sp_io::hashing::blake2_256;
 
 const SEED: u32 = 0;
@@ -28,9 +29,12 @@ benchmarks! {
 		let immutable_data = immutable_data.to_vec();
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
+		let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
+			let cid = cid.to_base58();
+			let cid = [&b"z"[..], cid.as_bytes()].concat();
 	}: _(RawOrigin::Signed(caller), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, None, immutable_data)
 	verify {
-		assert_last_event::<T>(Event::<T>::Uploaded(proto_hash).into())
+		assert_last_event::<T>(Event::<T>::Uploaded(proto_hash, cid).into())
 	}
 
 	patch {
@@ -46,9 +50,14 @@ benchmarks! {
 
 		let mut data: [u8; 3] = [0; 3];
 		hex::decode_to_slice("C0FFEE", &mut data).unwrap();
-	}: _(RawOrigin::Signed(caller), proto_hash , Some(Compact(123)), data.to_vec())
+
+		let patch_hash = blake2_256(data.as_slice());
+		let cid = [&CID_PREFIX[..], &patch_hash[..]].concat();
+			let cid = cid.to_base58();
+			let cid = [&b"z"[..], cid.as_bytes()].concat();
+	}: _(RawOrigin::Signed(caller), proto_hash , Some(Compact(123)), vec![], data.to_vec())
 	verify {
-		assert_last_event::<T>(Event::<T>::Patched(proto_hash).into())
+		assert_last_event::<T>(Event::<T>::Patched(proto_hash, cid).into())
 	}
 
 	detach {

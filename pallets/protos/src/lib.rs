@@ -104,8 +104,7 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	/// tags associated with this proto
 	pub tags: Vec<Compact<u64>>,
 	/// Metadata attached to the proto.
-	// TODO cache the keys!
-	pub metadata: BTreeMap<Vec<u8>, Hash256>,
+	pub metadata: BTreeMap<Compact<u64>, Hash256>,
 }
 
 #[frame_support::pallet]
@@ -150,6 +149,12 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type TagsIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	#[pallet::storage]
+	pub type MetaKeys<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u64>;
+
+	#[pallet::storage]
+	pub type MetaKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	/// Storage Map of Proto-Fragments where the key is the hash of the data of the Proto-Fragment, and the value is the Proto struct of the Proto-Fragment
 	#[pallet::storage]
@@ -522,12 +527,27 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
+			let metadata_key_index = {
+				let index = <MetaKeys<T>>::get(metadata_key.clone());
+				if let Some(index) = index {
+					<Compact<u64>>::from(index)
+				} else {
+					let next_index = <MetaKeysIndex<T>>::try_get().unwrap_or_default() + 1;
+					<MetaKeys<T>>::insert(metadata_key.clone(), next_index);
+					// storing is dangerous inside a closure
+					// but after this call we start storing..
+					// so it's fine here
+					<MetaKeysIndex<T>>::put(next_index);
+					<Compact<u64>>::from(next_index)
+				}
+			};
+
 			// Write STATE from now, ensure no errors from now...
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
 				// update metadata
-				proto.metadata.insert(metadata_key.clone(), data_hash);
+				proto.metadata.insert(metadata_key_index, data_hash);
 			});
 
 			// index data
@@ -863,22 +883,24 @@ pub mod pallet {
 					let map_metadata = <Protos<T>>::get(array_proto_id).unwrap().metadata;
 
 					for metadata_key in params.metadata_keys.iter() {
-						let metadata_value =
-						// if let Some(data_hash) = map_metadata.get(metadata_key.as_bytes()) {
-						if let Some(data_hash) = map_metadata.get(metadata_key) {
-							Value::String(hex::encode(data_hash))
-						} else {
-							Value::Null
-						};
+						let metadata_key_index = <MetaKeys<T>>::get(metadata_key.clone());
+						if let Some(metadata_key_index) = metadata_key_index {
+							let metadata_key_index = <Compact<u64>>::from(metadata_key_index);
+							let metadata_value =
+								if let Some(data_hash) = map_metadata.get(&metadata_key_index) {
+									Value::String(hex::encode(data_hash))
+								} else {
+									Value::Null
+								};
 
-						match map_proto {
-							// Value::Object(map_proto) => (*map_proto).insert(metadata_key.clone(), Value::String(metadata_value)), // Cloning `metadata_key` might be inefficient
-							Value::Object(map_proto) => (*map_proto).insert(
-								String::from_utf8(metadata_key.clone()).unwrap(),
-								metadata_value,
-							), // Cloning `metadata_key` might be inefficient
-							_ => None,
-						};
+							match map_proto {
+								Value::Object(map_proto) => (*map_proto).insert(
+									String::from_utf8(metadata_key.clone()).unwrap(),
+									metadata_value,
+								), // Cloning `metadata_key` might be inefficient
+								_ => None,
+							};
+						}
 					}
 				}
 			}
