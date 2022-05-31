@@ -6,7 +6,7 @@ const index = require("../index");
 
 // const addDummyMetadata = async () => {
 //     await new Promise((resolve, reject) => {
-//         childProcess.exec("shards ../chains/test-protos-rpc.edn",
+//         childProcess.exec("shards ../shards/test-protos-rpc.edn",
 //         (error, stdout, stderr) => {
 //             if (error) {
 //                 reject(error);

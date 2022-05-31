@@ -39,7 +39,7 @@ If you want to run Clamor with a [chain specification](https://docs.substrate.io
  Once you have a Clamor node running locally you can programatically upload test data to it with the following script (using Docker and Chainblocks):
 
     ```
-    docker run --rm --user root --network host -v `pwd`:/data chainblocks/shards shards /data/chains/add-test-assets.edn
+    docker run --rm --user root --network host -v `pwd`:/data chainblocks/shards shards /data/shards/add-test-assets.edn
     ```
 
 ### Connecting to Polkadot's App Explorer
