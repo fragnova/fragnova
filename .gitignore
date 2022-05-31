@@ -22,3 +22,4 @@ chainblocks.*log
 rpc/node_modules/*
 rpc/package-lock.json
 testnet*.json
+shards.log

@@ -1,10 +1,10 @@
 (def rpc-server "http://127.0.0.1:9933")
-(def runtime-spec-version 100)
+(def runtime-spec-version 1)
 (def transaction-version 1)
 (def sudo-index 7)
 (def sudo-call 0)
 ;; Index of the Protos Pallet
-(def fragments-index 11)
+(def protos-index 11)
 (def add-upload-auth-index 0)
 ;; Index of the Upload Function in Protos Pallet
 (def upload-index 0)
@@ -120,7 +120,7 @@
   [.data] (Substrate.Encode [nil]) (AppendTo .payload)
 
   ;; .payload is the arguments of the set_metadata extrinsic
-  [fragments-index set-metadata-index .payload] (Do make-calldata) = .set-metadata-call (Log "set-metadata-call")
+  [protos-index set-metadata-index .payload] (Do make-calldata) = .set-metadata-call (Log "set-metadata-call")
   [.frag-owner .set-metadata-call .set-metadata-nonce] (Do send-signed-extrinsic) (Log "set-metadata-call-result")
 
   ;; to compose the V1 Cid, add this prefix to the proto hash: (str "z" (base58 "0x0155a0e40220"))
@@ -142,7 +142,7 @@
   ; Vec - 0 len
   [0] (Substrate.Encode ["c"]) = .no-refs
 
-  ; (Chain(Generic), ["test"]) , vec len 1
+  ; Text Plain , vec len 1 vec len 4 (test)
   [0 0 1 4] (Substrate.Encode ["u8" "u8" "c" "c"]) >= .categories
   "test" (StringToBytes) (AppendTo .categories)
 
@@ -174,7 +174,7 @@
   .payload (Log)
 
   ;; .payload is the arguments of the upload extrinsic
-  [fragments-index upload-index .payload] (Do make-calldata) = .upload-call (| (ToHex) (Log "upload-call"))
+  [protos-index upload-index .payload] (Do make-calldata) = .upload-call (| (ToHex) (Log "upload-call"))
   ;; "//Dave" is the private key of an account
   "//Dave" = .frag-owner
   [.frag-owner .upload-call .upload-nonce] (Do send-signed-extrinsic) (Log "upload-call-result")
@@ -197,7 +197,7 @@
 
   .payload (Log)
 
-  [fragments-index patch-index .payload] (Do make-calldata) = .patch-call (| (ToHex) (Log "patch-call"))
+  [protos-index patch-index .payload] (Do make-calldata) = .patch-call (| (ToHex) (Log "patch-call"))
   ["//Dave" .patch-call .patch-nonce] (Do send-signed-extrinsic) (Log "patch-call-result"))
 
 (defwire test-detach
@@ -209,6 +209,6 @@
   [20] (Substrate.Encode ["c"]) (AppendTo .detach-payload)
   "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1" (HexToBytes) (AppendTo .detach-payload)
 
-  [fragments-index detach-index .detach-payload] (Do make-calldata) = .detach-call (| (ToHex) (Log "detach-call"))
+  [protos-index detach-index .detach-payload] (Do make-calldata) = .detach-call (| (ToHex) (Log "detach-call"))
   ["//Dave" .detach-call .detach-nonce] (Do send-signed-extrinsic) (Log "detach-call-result"))
 
