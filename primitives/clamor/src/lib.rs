@@ -10,21 +10,7 @@ use sp_std::vec::Vec;
 
 pub type Hash256 = [u8; 32];
 
-pub enum AudioFormats {
-	Ogg,
-	Mp3,
-	Wav,
-}
-
-pub struct AudioData {
-	pub format: AudioFormats,
-	pub data: Vec<u8>,
-}
-
-pub enum FragmentData {
-	Chain(Vec<u8>),
-	Audio(AudioData),
-}
+pub const CID_PREFIX: [u8; 6] = hex_literal::hex!("0155a0e40220");
 
 #[cfg(feature = "std")]
 mod details {

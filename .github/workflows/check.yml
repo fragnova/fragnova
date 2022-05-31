@@ -43,7 +43,7 @@ jobs:
           cargo build
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
           sleep 10
-          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl cbl /data/chains/test-protos-rpc.edn
+          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards shards /data/shards/test-protos-rpc.edn
           echo "before changing directory"
           cd rpc
           npm install
@@ -54,7 +54,7 @@ jobs:
         run: |
           cargo build
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
-          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/cbl sh /data/chains/run.sh
+          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards sh /data/shards/run.sh
           kill %1
 
       - name: Check Build
