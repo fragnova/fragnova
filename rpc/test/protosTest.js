@@ -32,7 +32,10 @@ describe('Protos RPCs', () => {
 
             let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", { desc: true, from: 0, limit: 10 }))
 
-            assert('b8a6d246ba4324f50e392a2675bfaedea16f23aea727e0454362f213b07eb9bc' in JSON.parse(result.toHuman()))
+            let result_parsed = JSON.parse(result.toHuman());
+            console.log(result_parsed);
+
+            assert('b8a6d246ba4324f50e392a2675bfaedea16f23aea727e0454362f213b07eb9bc' in result_parsed)
 
             result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", {
                 desc: true, from: 0, limit: 10,
