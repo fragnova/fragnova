@@ -31,6 +31,8 @@ use sp_clamor::{get_locked_frag_account, Hash256};
 use scale_info::prelude::string::{String, ToString};
 use serde_json::{json, Map, Value};
 
+use base58::ToBase58;
+
 use frame_support::PalletId;
 const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
 
@@ -112,6 +114,7 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Blake2_128Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
+	use sp_clamor::CID_PREFIX;
 	use sp_runtime::{
 		traits::{AccountIdConversion, Saturating},
 		SaturatedConversion,
@@ -185,9 +188,9 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A Proto-Fragment was uploaded
-		Uploaded(Hash256),
+		Uploaded(Hash256, Vec<u8>),
 		/// A Proto-Fragment was patched
-		Patched(Hash256),
+		Patched(Hash256, Vec<u8>),
 		/// A Proto-Fragment metadata has changed
 		MetadataChanged(Hash256, Vec<u8>),
 		/// A Proto-Fragment was detached
@@ -330,8 +333,12 @@ pub mod pallet {
 			// index immutable data for IPFS discovery
 			transaction_index::index(extrinsic_index, data_len as u32, proto_hash);
 
+			let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
+			let cid = cid.to_base58();
+			let cid = [&b"z"[..], cid.as_bytes()].concat();
+
 			// also emit event
-			Self::deposit_event(Event::Uploaded(proto_hash));
+			Self::deposit_event(Event::Uploaded(proto_hash, cid));
 
 			log::debug!("Uploaded proto: {:?}", proto_hash);
 
@@ -402,8 +409,12 @@ pub mod pallet {
 				proto.include_cost = include_cost;
 			});
 
+			let cid = [&CID_PREFIX[..], &data_hash[..]].concat();
+			let cid = cid.to_base58();
+			let cid = [&b"z"[..], cid.as_bytes()].concat();
+
 			// also emit event
-			Self::deposit_event(Event::Patched(proto_hash));
+			Self::deposit_event(Event::Patched(proto_hash, cid));
 
 			log::debug!("Updated proto: {:?}", proto_hash);
 
@@ -703,7 +714,7 @@ pub mod pallet {
 							// Stake not found
 							return Err(Error::<T>::StakeNotFound.into());
 						}
-						// OK to include, just continue
+					// OK to include, just continue
 					} else {
 						return Err(Error::<T>::Unauthorized.into());
 					}
