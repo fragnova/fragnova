@@ -61,8 +61,8 @@ pub enum ProtoOwner<TAccountId> {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GetProtosParams<TAccountId, TString> {
 	pub desc: bool,
-	pub from: u32,
-	pub limit: u32,
+	pub from: u64,
+	pub limit: u64,
 	pub metadata_keys: Vec<TString>,
 	pub owner: Option<TAccountId>,
 	pub return_owners: bool,
@@ -769,7 +769,7 @@ pub mod pallet {
 
 		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Vec<u8> {
 			let mut map = Map::new();
-			let mut limit = if params.limit == 0 { u32::MAX } else { params.limit };
+			let mut limit = if params.limit == 0 { u64::MAX } else { params.limit };
 
 			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
 				// `owner` exists
@@ -834,7 +834,7 @@ pub mod pallet {
 								.take(limit as usize)
 								.collect::<Vec<Hash256>>()
 						};
-						limit -= collection.len() as u32;
+						limit -= collection.len() as u64;
 						filtered.extend(collection);
 						if limit == 0 {
 							break;
