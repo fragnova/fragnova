@@ -11,6 +11,8 @@ mod benchmarking;
 
 mod weights;
 
+mod impl_nonfungible;
+
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
 use sp_clamor::Hash256;
@@ -19,6 +21,8 @@ use sp_std::{vec, vec::Vec};
 pub use weights::WeightInfo;
 
 use protos::permissions::FragmentPerms;
+
+use scale_info::prelude::hash::Hash;
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentMetadata {
@@ -57,6 +61,12 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
+
+		// nonfungibles
+		/// Identifier for the collection of item.
+		type CollectionId: Member + Parameter + MaxEncodedLen + Copy;
+		/// The type used to identify a unique item within a collection.
+		type ItemId: Member + Parameter + MaxEncodedLen + Copy;
 	}
 
 	#[pallet::pallet]
@@ -108,7 +118,7 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Create a Fragment using an existing Proto-Fragment (only the owner of the Proto-Fragment can call this function and create a new Fragment Class based on the Proto)
+		/// Create a Fragment Class using an existing Proto (only the owner of the Proto can call this function and create a new Fragment Class based on the Proto)
 		///
 		/// # Arguments
 		/// * `origin` - The origin of the extrinsic/dispatchable function.
@@ -116,7 +126,7 @@ pub mod pallet {
 		/// * `metadata` - The metadata (name, external url etc.) of the Fragment that is going to be created
 		/// * `permissions` - The permissions that the next owner of the Fragment will have
 		/// * `unique` - If the Fragments generated should be unique (only one Fragment can exist with the same exact data)
-		/// * `max_supply` (optional) - if scarce, the maximum amount of items that can be ever created of this type
+		/// * `max_supply` (optional) - if scarce, the maximum amount of items that can be ever created (doesn't apply to copies if the item can be copied!) of this type
 		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
 			origin: OriginFor<T>,
