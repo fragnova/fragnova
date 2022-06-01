@@ -33,9 +33,6 @@ use serde_json::{json, Map, Value};
 
 use base58::ToBase58;
 
-use frame_support::PalletId;
-const PROTOS_PALLET_ID: PalletId = PalletId(*b"protos__");
-
 /// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkSource {
@@ -62,15 +59,15 @@ pub enum ProtoOwner<TAccountId> {
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct GetProtosParams<TAccountId, StringType> {
+pub struct GetProtosParams<TAccountId, TString> {
 	pub desc: bool,
-	pub from: u32,
-	pub limit: u32,
-	pub metadata_keys: Vec<StringType>,
+	pub from: u64,
+	pub limit: u64,
+	pub metadata_keys: Vec<TString>,
 	pub owner: Option<TAccountId>,
 	pub return_owners: bool,
 	pub categories: Vec<Categories>,
-	pub tags: Vec<StringType>,
+	pub tags: Vec<TString>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
@@ -114,10 +111,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	use sp_clamor::CID_PREFIX;
-	use sp_runtime::{
-		traits::{AccountIdConversion, Saturating},
-		SaturatedConversion,
-	};
+	use sp_runtime::{traits::Saturating, SaturatedConversion};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -775,7 +769,7 @@ pub mod pallet {
 
 		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Vec<u8> {
 			let mut map = Map::new();
-			let mut limit = if params.limit == 0 { u32::MAX } else { params.limit };
+			let mut limit = if params.limit == 0 { u64::MAX } else { params.limit };
 
 			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
 				// `owner` exists
@@ -840,7 +834,7 @@ pub mod pallet {
 								.take(limit as usize)
 								.collect::<Vec<Hash256>>()
 						};
-						limit -= collection.len() as u32;
+						limit -= collection.len() as u64;
 						filtered.extend(collection);
 						if limit == 0 {
 							break;
@@ -910,10 +904,6 @@ pub mod pallet {
 			let result = json!(map).to_string();
 
 			result.into_bytes()
-		}
-
-		pub fn account_id() -> T::AccountId {
-			PROTOS_PALLET_ID.into_account()
 		}
 	}
 }
