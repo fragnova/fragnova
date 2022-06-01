@@ -1,16 +1,41 @@
+// This file is part of Substrate.
+
+// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //! A collection of node-specific RPC methods.
-//! Substrate provides the `sc-rpc` crate, which defines the core RPC layer
-//! used by Substrate nodes. This file extends those RPC definitions with
-//! capabilities that are specific to this project's runtime configuration.
+//!
+//! Since `substrate` core functionality makes no assumptions
+//! about the modules used inside the runtime, so do
+//! RPC methods defined in `sc-rpc` crate.
+//! It means that `client/rpc` can't have any methods that
+//! need some strong assumptions about the particular runtime.
+//!
+//! The RPCs available in this crate however can make some assumptions
+//! about how the runtime is constructed and what FRAME pallets
+//! are part of it. Therefore all node-runtime-specific RPCs can
+//! be placed here or imported from corresponding FRAME RPC definitions.
 
 #![warn(missing_docs)]
+#![warn(unused_crate_dependencies)]
 
 use std::sync::Arc;
 
 use clamor_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
-use pallet_contracts_rpc::{Contracts, ContractsApi};
-use pallet_protos_rpc::{Protos, ProtosApi};
-use protos::categories::Categories;
+use jsonrpsee::RpcModule;
+use sc_client_api::AuxStore;
 pub use sc_rpc_api::DenyUnsafe;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
@@ -27,39 +52,45 @@ pub struct FullDeps<C, P> {
 	pub deny_unsafe: DenyUnsafe,
 }
 
-/// Instantiate all full RPC extensions.
-pub fn create_full<C, P>(deps: FullDeps<C, P>) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+/// Instantiate all Full RPC extensions.
+pub fn create_full<C, P>(
+	deps: FullDeps<C, P>,
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
-	C: ProvideRuntimeApi<Block>,
-	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
-	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block>
+		+ sc_client_api::BlockBackend<Block>
+		+ HeaderBackend<Block>
+		+ AuxStore
+		+ HeaderMetadata<Block, Error = BlockChainError>
+		+ Sync
+		+ Send
+		+ 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
-	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>,
-	C::Api: pallet_protos_rpc::ProtosRuntimeApi<Block, Categories, AccountId>,
+	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+	C::Api: pallet_protos_rpc::ProtosRuntimeApi<Block, AccountId>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + 'static,
 {
-	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
-	use substrate_frame_rpc_system::{FullSystem, SystemApi};
+	use pallet_contracts_rpc::{Contracts, ContractsApiServer};
+	use pallet_protos_rpc::{Protos, ProtosApiServer};
+	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+	use sc_rpc::dev::{Dev, DevApiServer};
+	use substrate_frame_rpc_system::{System, SystemApiServer};
 
-	let mut io = jsonrpc_core::IoHandler::default();
+	let mut io = RpcModule::new(());
 	let FullDeps { client, pool, deny_unsafe } = deps;
 
-	io.extend_with(SystemApi::to_delegate(FullSystem::new(client.clone(), pool, deny_unsafe)));
+	io.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+	// Making synchronous calls in light client freezes the browser currently,
+	// more context: https://github.com/paritytech/substrate/pull/3480
+	// These RPCs should use an asynchronous caller instead.
+	io.merge(Contracts::new(client.clone()).into_rpc())?;
+	io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
-	io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client.clone())));
+	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
-	// Extend this RPC with a custom API by using the following syntax.
-	// `YourRpcStruct` should have a reference to a client, which is needed
-	// to call into the runtime.
-	// `io.extend_with(YourRpcTrait::to_delegate(YourRpcStruct::new(ReferenceToClient, ...)));`
+	io.merge(Protos::new(client).into_rpc())?;
 
-	// Contracts RPC API extension
-	io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
-
-	// Protos RPCs
-	io.extend_with(ProtosApi::to_delegate(Protos::new(client.clone())));
-
-	io
+	Ok(io)
 }
