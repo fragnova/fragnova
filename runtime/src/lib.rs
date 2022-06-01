@@ -6,8 +6,14 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use frame_support::traits::{ConstU128, ConstU16, ConstU32, ConstU64};
-use frame_system::EnsureRoot;
+use frame_support::{
+	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
+	weights::DispatchClass,
+};
+use frame_system::{
+	limits::{BlockLength, BlockWeights},
+	EnsureRoot,
+};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -161,17 +167,42 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// This is used to limit the maximal weight of a single extrinsic.
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
+/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
+/// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+/// We allow for 2 seconds of compute with a 6 second average block time.
+const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
 	pub const BlockHashCount: BlockNumber = 2400;
-	/// We allow for 2 seconds of compute with a 6 second average block time.
-	pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
-		::with_sensible_defaults(2 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
-	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 	pub const SS58Prefix: u8 = 93;
+
+	/// We allow for 2 seconds of compute with a 6 second average block time.
+	pub RuntimeBlockLength: BlockLength = BlockLength
+		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+
+	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+		.base_block(BlockExecutionWeight::get())
+		.for_class(DispatchClass::all(), |weights| {
+			weights.base_extrinsic = ExtrinsicBaseWeight::get();
+		})
+		.for_class(DispatchClass::Normal, |weights| {
+			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+		})
+		.for_class(DispatchClass::Operational, |weights| {
+			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+			// Operational transactions have some extra reserved space, so that they
+			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+			weights.reserved = Some(
+				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+			);
+		})
+		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+		.build_or_panic();
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -180,9 +211,9 @@ impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = frame_support::traits::Everything;
 	/// Block & extrinsics weights: base values and limits.
-	type BlockWeights = BlockWeights;
+	type BlockWeights = RuntimeBlockWeights;
 	/// The maximum length of a block (in bytes).
-	type BlockLength = BlockLength;
+	type BlockLength = RuntimeBlockLength;
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The aggregated dispatch type that is available for extrinsics.
@@ -370,8 +401,8 @@ impl pallet_proxy::Config for Runtime {
 	type ProxyDepositFactor = ConstU128<1>;
 	type MaxProxies = ConstU32<4>;
 	type WeightInfo = ();
-	type CallHasher = BlakeTwo256;
 	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
 	type AnnouncementDepositBase = ConstU128<1>;
 	type AnnouncementDepositFactor = ConstU128<1>;
 }
@@ -480,6 +511,9 @@ impl pallet_contracts::Config for Runtime {
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<RuntimeBlockWeights>;
+	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 }
 
 parameter_types! {
@@ -766,8 +800,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, Categories, AccountId> for Runtime {
-
+	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, AccountId> for Runtime {
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8> {
 			Protos::get_protos(params)
 		}
