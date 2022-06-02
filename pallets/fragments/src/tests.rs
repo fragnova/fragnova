@@ -30,7 +30,10 @@ fn create_should_works() {
 
 		let fragment_data = FragmentMetadata { name: "name".as_bytes().to_vec(), currency: 0 };
 
-		let hash = blake2_256(&[&PROTO_HASH[..], &fragment_data.name.encode()].concat());
+		let hash = blake2_256(
+			&[&PROTO_HASH[..], &fragment_data.name.encode(), &fragment_data.currency.encode()]
+				.concat(),
+		);
 
 		assert_ok!(FragmentsPallet::create(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),
@@ -97,7 +100,10 @@ fn create_should_not_work_if_fragment_already_exist() {
 
 		let fragment_data = FragmentMetadata { name: "name".as_bytes().to_vec(), currency: 0 };
 
-		let hash = blake2_256(&[&PROTO_HASH[..], &fragment_data.name.encode()].concat());
+		let hash = blake2_256(
+			&[&PROTO_HASH[..], &fragment_data.name.encode(), &fragment_data.currency.encode()]
+				.concat(),
+		);
 
 		assert_ok!(FragmentsPallet::create(
 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC)),

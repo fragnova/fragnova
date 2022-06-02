@@ -147,7 +147,9 @@ pub mod pallet {
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
-			let hash = blake2_256(&[&proto_hash[..], &metadata.name.encode()].concat());
+			let hash = blake2_256(
+				&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
+			);
 
 			ensure!(!<Fragments<T>>::contains_key(&hash), Error::<T>::AlreadyExist);
 
