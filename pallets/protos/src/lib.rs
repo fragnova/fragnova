@@ -44,22 +44,23 @@ pub enum LinkSource {
 	Evm(ecdsa::Signature, u64, U256),
 }
 
-/// Types of Assets that are linked to a Proto-Fragment (e.g an ERC-721 Contract etc.)
+/// **Types** of **Assets that are linked to a Proto-Fragment** (e.g an ERC-721 Contract etc.)
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkedAsset {
 	// Ethereum (ERC721 Contract address, Token ID, Link source)
 	Erc721(H160, U256, LinkSource),
 }
 
-/// Types of Proto-Fragment Owner
+/// **Types** of **Proto-Fragment Owners**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum ProtoOwner<TAccountId> {
-	// A regular account on this chain
+	// A **regular account** on **this chain**
 	User(TAccountId),
-	// An external asset not on this chain
+	// An **external asset** not on this chain
 	ExternalAsset(LinkedAsset),
 }
 
+/// **Data Type** used to **Query and Filter for Proto-Fragments**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GetProtosParams<TAccountId, StringType> {
@@ -73,37 +74,38 @@ pub struct GetProtosParams<TAccountId, StringType> {
 	pub tags: Vec<StringType>,
 }
 
+/// **Struct** of a **Proto-Fragment Patch**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct ProtoPatch<TBlockNumber> {
-	/// The block when this patch was created
+	/// **Block Number** in which the **patch was created**
 	pub block: TBlockNumber,
-	/// The hash of this patch data
+	/// **Hash** of patch data
 	pub data_hash: Hash256,
-	/// A patch can add references to other protos, or remove references to other protos.
+	/// **List of New Proto-Fragments** that was **used** to **create** the **patch** (io non capicsco del tutto)
 	pub references: Vec<Hash256>,
 }
 
-/// Struct of a Proto-Fragment
+/// **Struct** of a **Proto-Fragment**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct Proto<TAccountId, TBlockNumber> {
-	/// Block number this proto was included in
+	/// **Block Number** in which the **Proto-Fragment was minted in**
 	pub block: TBlockNumber,
-	/// Patches to this proto
+	/// **List of *ProtoPatch* structs** of the **Proto-Fragment**
 	pub patches: Vec<ProtoPatch<TBlockNumber>>,
-	/// Include price of the proto.
-	/// If None, this proto can't be included into other protos
+	/// **Price** of the **Proto-Fragment** (*optional*)
+	/// NOTE: If None, the **Proto-Fragment** *<u>can't be included</u>* into **other protos**
 	pub include_cost: Option<Compact<u64>>,
-	/// The original creator of the proto.
+	/// **Original Creator** of the **Proto-Fragment**
 	pub creator: TAccountId,
-	/// The current owner of the proto.
+	/// *Current Owner** of the **Proto-Fragment**
 	pub owner: ProtoOwner<TAccountId>,
-	/// References to other protos.
+	/// **List of other Proto-Fragments** used to create the **Proto-Fragment**
 	pub references: Vec<Hash256>,
-	/// Categories associated with this proto
+	/// **Category** of the **Proto-Fragment**
 	pub category: Categories,
-	/// tags associated with this proto
+	/// **List of Tags** associated with the **Proto-Fragment**
 	pub tags: Vec<Compact<u64>>,
-	/// Metadata attached to the proto.
+	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to the **Hash of the aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
 }
 
@@ -135,6 +137,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
 
+		/// The **Lock-Up Period" for **Staking FRAG Tokens** 
 		#[pallet::constant]
 		type StakeLockupPeriod: Get<u64>;
 	}
@@ -144,36 +147,39 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
+	/// **StorageMap** that maps a **Tag (of type `Vec<u8>`)** to an **index number** 
 	#[pallet::storage]
 	pub type Tags<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u64>;
 
+	/// **StorageValue** that **equals** the **total number of unique tags in the blockchain**
 	#[pallet::storage]
 	pub type TagsIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
+	/// **StorageMap** that maps a **Metadata Key (of type `Vec<u8>`)** to an **index number**
 	#[pallet::storage]
 	pub type MetaKeys<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u64>;
 
+	/// **StorageValue** that **equals** the **total number of unique Metadata Keys in the blockchain**
 	#[pallet::storage]
 	pub type MetaKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// Storage Map of Proto-Fragments where the key is the hash of the data of the Proto-Fragment, and the value is the Proto struct of the Proto-Fragment
+	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the aforementioned Proto-Fragment)**
 	#[pallet::storage]
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
-	/// Storage Map which keeps track of the Proto-Fragments by Category type.
-	/// The key is the Category type and the value is a list of the hash of a Proto-Fragment
+	/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)** 
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
 	pub type ProtosByCategory<T: Config> =
 		StorageMap<_, Blake2_128Concat, Categories, Vec<Hash256>>;
 
-	/// UploadAuthorities is a StorageValue that keeps track of the set of ECDSA public keys of the upload authorities
-	/// * Note: An upload authority (also known as the off-chain validator) provides the digital signature needed to upload a Proto-Fragment
+	/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**  
 	#[pallet::storage]
 	pub type ProtosByOwner<T: Config> =
 		StorageMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
+	/// **StorageDoubleMap** that maps a **Proto-Fragment and an Account ID** to a **tuple that contains the Staked Amount (that was staked by the aforementioned Account ID) and the Block Number**
 	// Staking management
 	// (Amount staked, Last stake time)
 	#[pallet::storage]
@@ -186,6 +192,7 @@ pub mod pallet {
 		(T::Balance, T::BlockNumber),
 	>;
 
+	/// **StorageMap** that maps an **Account ID** to a **list of Proto-Fragments that was staked by the aforementioned Account ID**
 	#[pallet::storage]
 	pub type AccountStakes<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, Vec<Hash256>>;
 
@@ -243,17 +250,18 @@ pub mod pallet {
 	where
 		T::AccountId: AsRef<[u8]>,
 	{
-		/// Uploads a Proto-Fragment onto the Blockchain.
-		/// Furthermore, this function also indexes `data` in the Blockchain's Database and makes it available via bitswap(IPFS) directly from every chain node permanently.
+		/// **Upload** a **Proto-Fragment** onto the **Blockchain**.
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and makes it available via bitswap (IPFS) directly from every chain node permanently.
 		///
 		/// # Arguments
 		///
-		/// * `origin` - The origin of the extrinsic/dispatchable function
-		/// * `references` - A list of references to other Proto-Fragments
-		/// * `categories` - A list of categories to upload along with the Proto-Fragment
-		/// * `linked_asset` - An asset that is linked with the uploaded Proto-Fragment (e.g an ERC-721 Contract)
-		/// * `include_cost` (optional) -
-		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
+		/// * `origin` - The origin of the extrinsic function
+		/// * `references` - **List of other Proto-Fragments** used to create the **Proto-Fragment**
+		/// * `categories` - **Category type** of the **Proto-Fragment**
+		/// * `tags` - **List of tags** to **tag** the **Proto-Fragment** **with**
+		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g an ERC-721 Contract)
+		/// * `include_cost` (*optional*) - **Price** of the **Proto-Fragment**. NOTE: If None, the **Proto-Fragment** *<u>can't be included</u>* into **other protos**
+		/// * `data` - **Data** of the **Proto-Fragment** 
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn upload(
 			origin: OriginFor<T>,
@@ -350,16 +358,16 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Patches (i.e modifies) the existing Proto-Fragment (whose hash is `proto_hash`) by appending the hash of `data` to the Vector field `patches` of the existing Proto-Fragment's Struct Instance.
+		/// **Patch** an **existing Proto-Fragment** (*by appending the hash of `data` to the Vector field `patches` of the existing Proto-Fragment's Struct Instance*)
 		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
-		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
 		///
 		/// # Arguments
 		///
-		/// * `origin` - The origin of the extrinsic / dispatchable function
-		/// * `proto_hash` - The hash of the existing Proto-Fragment
+		/// * `origin` - The origin of the extrinsic function
+		/// * `proto_hash` - Existing Proto-Fragment's hash
 		/// * `include_cost` (optional) -
-		/// * `data` - The data of the Proto-Fragment (represented as a vector of bytes)
+		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the **patch**
+		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get())]
 		pub fn patch(
 			origin: OriginFor<T>,
@@ -426,13 +434,13 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Transfer the ownership of a Proto-Fragment from `origin` to `new_owner`
+		/// **Transfer** the **ownership** of a **Proto-Fragment** from **`origin`** to **`new_owner`**
 		///
 		/// # Arguments
 		///
-		/// * `origin` - The origin of the extrinsic / dispatchable function
-		/// * `proto_hash` - The hash of the data of the Proto-Fragment that you want to transfer
-		/// * `new_owner` - The AccountId of the account you want to transfer the Proto-Fragment to
+		/// * `origin` - The origin of the extrinsic function
+		/// * `proto_hash` - The **hash of the data of the Proto-Fragment** to **transfer**
+		/// * `new_owner` - The **Account ID** to **transfer the Proto-Fragment to**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
 		pub fn transfer(
 			origin: OriginFor<T>,
@@ -485,14 +493,14 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Alters the metadata of an existing Proto-Fragment (whose hash is `proto_hash`) by adding the key-value pair (`metadata_key.clone`,`blake2_256(&data.encode())`) to the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance.
+		/// **Alters** the **metadata** of a **Proto-Fragment** (whose hash is `proto_hash`) by **adding or modifying a key-value pair** (`metadata_key.clone`,`blake2_256(&data.encode())`) to the **BTreeMap field `metadata`** of the **existing Proto-Fragment's Struct Instance**.
 		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
 		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic / dispatchable function
-		/// * `proto_hash` - The hash of the existing Proto-Fragment
+		/// * `proto_hash` - The **hash of the Proto-Fragment**
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
@@ -561,14 +569,14 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Detached a proto from this chain by emitting an event that includes a signature.
-		/// The remote target chain can attach this proto by using this signature.
+		/// **Detach** a **Proto-Fragment** from **this blockchain** by ***initiating* an event** that **includes a signature**. (io non capisco)
+		/// The **remote target chain** can **attach this Proto-Fragment** by **using this signature**. (che signature?)
 		///
 		///
 		/// # Arguments
 		///
-		/// * `origin` - The origin of the extrinsic / dispatchable function
-		/// * `proto_hash` - The hash of the existing Proto-Fragment to detach
+		/// * `origin` - The origin of the extrinsic function
+		/// * `proto_hash` - The **hash of the Proto-Fragment** to **detach**
 		/// * `target_chain` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
 		/// * `target_account` - The public account address on the blockchain `target_chain` that we want to detach the existing Proto-Fragment into
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
@@ -773,6 +781,12 @@ pub mod pallet {
 			}
 		}
 
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return type** is a **JSON string** 
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and makes it available via bitswap (IPFS) directly from every chain node permanently.
+		///
+		/// # Arguments
+		///
+		/// * `params` - A ***GetProtosParams* struct**
 		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Vec<u8> {
 			let mut map = Map::new();
 			let mut limit = if params.limit == 0 { u32::MAX } else { params.limit };

@@ -18,20 +18,27 @@ use sp_io::hashing::blake2_256;
 use sp_std::{vec, vec::Vec};
 pub use weights::WeightInfo;
 
+/// **Struct** that represents a **Fragment's Metadata**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentMetadata {
+	/// **Name** of the **Fragment** (*NOTE: No other Fragment created using the same Proto-Fragment is allowed to have the same name*)
 	pub name: Vec<u8>,
+	/// **URL** to access the **Metadata Object** (*NOTE: URL can be left empty (i.e an empty string)*)
 	pub external_url: Vec<u8>, // can be 0 len/empty
 }
 
-/// Struct of a Fragment
+/// **Struct** of a **Fragment**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentData {
-	/// The Proto-Fragment that was used to create this Fragment
+	/// **Proto-Fragment used** to **create** the **Fragment**
 	pub proto_hash: Hash256,
+	/// ***FragmentMetadata* Struct** (the **struct** contains the **Fragment's name**, among other things)
 	pub metadata: FragmentMetadata,
+	/// Whether the **Fragment** is **unique**
 	pub unique: bool,
+	/// Whether the **Fragment** is **mutable**
 	pub mutable: bool,
+	/// INC
 	pub max_supply: Option<Compact<u128>>,
 }
 
@@ -63,17 +70,17 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	// proto-hash to fragment-hash-sequence
-	/// Storage Map that keeps track of the number of Fragments that were created using a Proto-Fragment.
-	/// The key is the hash of the Proto-Fragment, and the value is the list of hash of the Fragments
+	/// **StorageMap** that maps a **Proto-Fragment** to a **list of hashes, where each hash is: the hash of the concatenation of the aforementioned Proto-Fragment and a corresponding Fragment's name** 
 	#[pallet::storage]
 	pub type Proto2Fragments<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash256>>;
 
 	// fragment-hash to fragment-data
-	/// Storage Map of Fragments where the key is the hash of the concatenation of its corresponding Proto-Fragment and the name of the Fragment, and the value is the Fragment struct of the Fragment
+	/// **StorageMap** that maps the **hash of the concatenation of a Proto-Fragment and a corresponding Fragment's name** to a ***Fragment* struct of the aforementioned Fragment**
 	#[pallet::storage]
 	pub type Fragments<T: Config> = StorageMap<_, Identity, Hash256, FragmentData>;
 
 	// fragment-hash to fragment-id to fragment-instance-data
+	/// INC
 	#[pallet::storage]
 	pub type FragmentInstances<T: Config> =
 		StorageDoubleMap<_, Identity, Hash256, Blake2_128Concat, u128, FragmentInstanceData>;
@@ -106,15 +113,15 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Create a Fragment using an existing Proto-Fragment (only the owner of the Proto-Fragment can call this function and create a Fragment)
+		/// **Create** a **Fragment** using an **existing Proto-Fragment** (NOTE: ***Only* the Proto-Fragment's owner** is **allowed to create a Fragment using the Proto-Fragment**)
 		///
 		/// # Arguments
-		/// * `origin` - The origin of the extrinsic/dispatchable function.
-		/// * `proto_hash` - The hash of the existing Proto-Fragment
-		/// * `metadata` - The metadata (name, external url etc.) of the Fragment that is going to be created
-		/// * `unique` - Whether the Fragment that is being created is unique
-		/// * `mutable` - if the item data can be edited (will be more clear when we add the mint/buy/upload bit)
-		/// * max_supply (optional) - if scarce, the maximum amount of items that can be ever created of this type
+		/// * `origin` - **Origin** of the **extrinsic function**
+		/// * `proto_hash` - **Hash** of an **existing Proto-Fragment**
+		/// * `metadata` -  **Metadata** of the **Fragment**
+		/// * `unique` - **Whether** the **Fragment** is **unique**
+		/// * `mutable` - **Whether** the **Fragment** is **mutable** 
+		/// * `max_supply` (*optional*) - **Maximum amount of items** that **can ever be created** using the **Fragment** (INCDT)
 		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
 			origin: OriginFor<T>,
