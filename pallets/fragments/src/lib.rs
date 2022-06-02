@@ -20,6 +20,13 @@ pub use weights::WeightInfo;
 
 use protos::permissions::FragmentPerms;
 
+use frame_support::PalletId;
+use sp_runtime::{
+	traits::{AccountIdConversion, Saturating, StaticLookup, Zero},
+	Permill, RuntimeDebug,
+};
+const PALLET_ID: PalletId = PalletId(*b"fragment");
+
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentMetadata<TFungibleAsset> {
 	pub name: Vec<u8>,
@@ -45,9 +52,10 @@ pub struct FragmentInstanceData<TAccount> {
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentSaleData<TBalance> {
+pub struct FragmentSaleData<TBalance, TBlockNum> {
 	pub price: TBalance,
-	pub units: Compact<u128>,
+	pub units: Option<Compact<u128>>,
+	pub expiration: Option<TBlockNum>,
 }
 
 #[frame_support::pallet]
@@ -98,8 +106,12 @@ pub mod pallet {
 	/// Storage Map that keeps track of the number of Fragments that were created using a Proto-Fragment.
 	/// The key is the hash of the Proto-Fragment, and the value is the list of hash of the Fragments
 	#[pallet::storage]
-	pub type OpenSales<T: Config> =
-		StorageMap<_, Identity, Hash256, FragmentSaleData<<T as pallet_balances::Config>::Balance>>;
+	pub type OpenSales<T: Config> = StorageMap<
+		_,
+		Identity,
+		Hash256,
+		FragmentSaleData<<T as pallet_assets::Config>::Balance, T::BlockNumber>,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -127,6 +139,10 @@ pub mod pallet {
 		AlreadyExist,
 		/// Not found
 		NotFound,
+		/// Sale has expired
+		Expired,
+		/// Insufficient funds
+		InsufficientBalance,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -227,14 +243,34 @@ pub mod pallet {
 
 		#[pallet::weight(50_000)]
 		pub fn buy(origin: OriginFor<T>, fragment_hash: Hash256) -> DispatchResult {
+			use frame_support::traits::tokens::fungibles::Transfer;
 			let who = ensure_signed(origin)?;
 
 			let sale = <OpenSales<T>>::get(&fragment_hash).ok_or(Error::<T>::NotFound)?;
+			if let Some(expiration) = sale.expiration {
+				let current_block_number = <frame_system::Pallet<T>>::block_number();
+				ensure!(current_block_number < expiration, Error::<T>::Expired);
+			}
 			let fragment_data = <Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
 
-			let balance = <pallet_assets::Pallet<T>>::balance(fragment_data.metadata.currency, &who);
+			// ! Writing if successful
+
+			<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+				fragment_data.metadata.currency,
+				&who,
+				&Self::get_vault_id(fragment_hash),
+				sale.price,
+				true,
+			)
+			.map_err(|_| Error::<T>::InsufficientBalance)?;
 
 			Ok(())
 		}
+	}
+}
+
+impl<T: Config> Pallet<T> {
+	pub fn get_vault_id(fragment_class_hash: Hash256) -> T::AccountId {
+		PALLET_ID.into_sub_account_truncating(fragment_class_hash)
 	}
 }
