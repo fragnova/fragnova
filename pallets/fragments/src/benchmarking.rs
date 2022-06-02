@@ -6,8 +6,8 @@ use crate::Pallet as Fragments;
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use protos::categories::{Categories, TextCategories};
-use sp_io::hashing::blake2_256;
 use protos::permissions::FragmentPerms;
+use sp_io::hashing::blake2_256;
 
 const PROTO_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,

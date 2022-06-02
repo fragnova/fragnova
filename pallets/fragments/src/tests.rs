@@ -3,10 +3,10 @@ use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 use pallet_protos::LinkedAsset;
 use protos::categories::{Categories, TextCategories};
+use protos::permissions::FragmentPerms;
 use sp_clamor::Hash256;
 use sp_core::Pair;
 use sp_io::hashing::blake2_256;
-use protos::permissions::FragmentPerms;
 
 fn initial_upload() {
 	let data = DATA.as_bytes().to_vec();
@@ -30,6 +30,7 @@ fn create_should_works() {
 
 		let fragment_data = FragmentMetadata {
 			name: "name".as_bytes().to_vec(),
+			currency: 0,
 			external_url: "external_url".as_bytes().to_vec(),
 		};
 
@@ -53,6 +54,7 @@ fn create_should_not_work_if_protos_not_found() {
 	new_test_ext().execute_with(|| {
 		let fragment_data = FragmentMetadata {
 			name: "name".as_bytes().to_vec(),
+			currency: 0,
 			external_url: "external_url".as_bytes().to_vec(),
 		};
 
@@ -82,6 +84,7 @@ fn create_should_not_work_if_proto_owner_not_found() {
 
 		let fragment_data = FragmentMetadata {
 			name: "name".as_bytes().to_vec(),
+			currency: 0,
 			external_url: "external_url".as_bytes().to_vec(),
 		};
 
@@ -106,6 +109,7 @@ fn create_should_not_work_if_fragment_already_exist() {
 
 		let fragment_data = FragmentMetadata {
 			name: "name".as_bytes().to_vec(),
+			currency: 0,
 			external_url: "external_url".as_bytes().to_vec(),
 		};
 
