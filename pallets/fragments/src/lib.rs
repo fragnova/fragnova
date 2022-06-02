@@ -25,23 +25,24 @@ use protos::permissions::FragmentPerms;
 pub struct FragmentMetadata<TFungibleAsset> {
 	pub name: Vec<u8>,
 	pub currency: TFungibleAsset,
-	pub external_url: Vec<u8>, // can be 0 len/empty
 }
 
 /// Struct of a Fragment
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentClass<TFungibleAsset> {
+pub struct FragmentClass<TFungibleAsset, TAccountId> {
 	/// The Proto-Fragment that was used to create this Fragment
 	pub proto_hash: Hash256,
 	pub metadata: FragmentMetadata<TFungibleAsset>,
 	pub permissions: FragmentPerms,
 	pub unique: bool,
 	pub max_supply: Option<Compact<u128>>,
+	pub creator: TAccountId,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentInstanceData {
+pub struct FragmentInstanceData<TAccount> {
 	pub data_hash: Option<Hash256>, // mutable block data hash
+	pub owner: TAccount,
 }
 
 #[frame_support::pallet]
@@ -74,19 +75,25 @@ pub mod pallet {
 	// fragment-hash to fragment-data
 	/// Storage Map of Fragments where the key is the hash of the concatenation of its corresponding Proto-Fragment and the name of the Fragment, and the value is the Fragment struct of the Fragment
 	#[pallet::storage]
-	pub type Fragments<T: Config> = StorageMap<_, Identity, Hash256, FragmentClass<T::AssetId>>;
+	pub type Fragments<T: Config> =
+		StorageMap<_, Identity, Hash256, FragmentClass<T::AssetId, T::AccountId>>;
 
 	// fragment-hash to fragment-id to fragment-instance-data
 	#[pallet::storage]
-	pub type FragmentInstances<T: Config> =
-		StorageDoubleMap<_, Identity, Hash256, Blake2_128Concat, u128, FragmentInstanceData>;
+	pub type FragmentInstances<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		Hash256,
+		Blake2_128Concat,
+		u128,
+		FragmentInstanceData<T::AccountId>,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [something, who]
-		FragmentAdded(T::AccountId),
+		/// New class created by account, class hash
+		ClassCreated(T::AccountId, Hash256),
 	}
 
 	// Errors inform users that something went wrong.
@@ -144,8 +151,14 @@ pub mod pallet {
 
 			ensure!(!<Fragments<T>>::contains_key(&hash), Error::<T>::AlreadyExist);
 
-			let fragment_data =
-				FragmentClass { proto_hash, metadata, permissions, unique, max_supply };
+			let fragment_data = FragmentClass {
+				proto_hash,
+				metadata,
+				permissions,
+				unique,
+				max_supply,
+				creator: who.clone(),
+			};
 			<Fragments<T>>::insert(&hash, fragment_data);
 
 			Proto2Fragments::<T>::mutate(&proto_hash, |fragment_hash| {
@@ -156,7 +169,7 @@ pub mod pallet {
 				}
 			});
 
-			Self::deposit_event(Event::FragmentAdded(who));
+			Self::deposit_event(Event::ClassCreated(who, hash));
 			Ok(())
 		}
 	}

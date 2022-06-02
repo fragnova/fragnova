@@ -28,11 +28,7 @@ fn create_should_works() {
 	new_test_ext().execute_with(|| {
 		initial_upload();
 
-		let fragment_data = FragmentMetadata {
-			name: "name".as_bytes().to_vec(),
-			currency: 0,
-			external_url: "external_url".as_bytes().to_vec(),
-		};
+		let fragment_data = FragmentMetadata { name: "name".as_bytes().to_vec(), currency: 0 };
 
 		let hash = blake2_256(&[&PROTO_HASH[..], &fragment_data.name.encode()].concat());
 
@@ -52,11 +48,7 @@ fn create_should_works() {
 #[test]
 fn create_should_not_work_if_protos_not_found() {
 	new_test_ext().execute_with(|| {
-		let fragment_data = FragmentMetadata {
-			name: "name".as_bytes().to_vec(),
-			currency: 0,
-			external_url: "external_url".as_bytes().to_vec(),
-		};
+		let fragment_data = FragmentMetadata { name: "name".as_bytes().to_vec(), currency: 0 };
 
 		assert_noop!(
 			FragmentsPallet::create(
@@ -82,11 +74,7 @@ fn create_should_not_work_if_proto_owner_not_found() {
 			96, 79, 173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251,
 		];
 
-		let fragment_data = FragmentMetadata {
-			name: "name".as_bytes().to_vec(),
-			currency: 0,
-			external_url: "external_url".as_bytes().to_vec(),
-		};
+		let fragment_data = FragmentMetadata { name: "name".as_bytes().to_vec(), currency: 0 };
 
 		assert_noop!(
 			FragmentsPallet::create(
@@ -107,11 +95,7 @@ fn create_should_not_work_if_fragment_already_exist() {
 	new_test_ext().execute_with(|| {
 		initial_upload();
 
-		let fragment_data = FragmentMetadata {
-			name: "name".as_bytes().to_vec(),
-			currency: 0,
-			external_url: "external_url".as_bytes().to_vec(),
-		};
+		let fragment_data = FragmentMetadata { name: "name".as_bytes().to_vec(), currency: 0 };
 
 		let hash = blake2_256(&[&PROTO_HASH[..], &fragment_data.name.encode()].concat());
 
