@@ -12,7 +12,6 @@ mod benchmarking;
 mod weights;
 
 use codec::{Compact, Decode, Encode};
-use frame_support::traits::{tokens::fungibles, Currency};
 pub use pallet::*;
 use sp_clamor::Hash256;
 use sp_io::hashing::blake2_256;
@@ -43,6 +42,12 @@ pub struct FragmentClass<TFungibleAsset, TAccountId> {
 pub struct FragmentInstanceData<TAccount> {
 	pub data_hash: Option<Hash256>, // mutable block data hash
 	pub owner: TAccount,
+}
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub struct FragmentSaleData<TBalance> {
+	pub price: TBalance,
+	pub units: Compact<u128>,
 }
 
 #[frame_support::pallet]
@@ -89,11 +94,22 @@ pub mod pallet {
 		FragmentInstanceData<T::AccountId>,
 	>;
 
+	// proto-hash to fragment-hash-sequence
+	/// Storage Map that keeps track of the number of Fragments that were created using a Proto-Fragment.
+	/// The key is the hash of the Proto-Fragment, and the value is the list of hash of the Fragments
+	#[pallet::storage]
+	pub type OpenSales<T: Config> =
+		StorageMap<_, Identity, Hash256, FragmentSaleData<<T as pallet_balances::Config>::Balance>>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// New class created by account, class hash
 		ClassCreated(T::AccountId, Hash256),
+		/// Fragment sale has been opened
+		SaleOpened(Hash256),
+		/// Fragment sale has been closed
+		SaleClosed(Hash256),
 	}
 
 	// Errors inform users that something went wrong.
@@ -109,6 +125,8 @@ pub mod pallet {
 		Detached,
 		/// Already exist
 		AlreadyExist,
+		/// Not found
+		NotFound,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -172,6 +190,50 @@ pub mod pallet {
 			});
 
 			Self::deposit_event(Event::ClassCreated(who, hash));
+			Ok(())
+		}
+
+		#[pallet::weight(50_000)]
+		pub fn open_sale(origin: OriginFor<T>) -> DispatchResult {
+			Ok(())
+		}
+
+		#[pallet::weight(50_000)]
+		pub fn close_sale(origin: OriginFor<T>, fragment_hash: Hash256) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let proto_hash =
+				<Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?.proto_hash;
+			let proto: Proto<T::AccountId, T::BlockNumber> =
+				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+
+			let proto_owner: T::AccountId = match proto.owner {
+				ProtoOwner::User(owner) => Ok(owner),
+				_ => Err(Error::<T>::ProtoOwnerNotFound),
+			}?;
+
+			ensure!(who == proto_owner, Error::<T>::NoPermission);
+
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
+
+			// ! Writing
+
+			<OpenSales<T>>::remove(&fragment_hash);
+
+			Self::deposit_event(Event::SaleClosed(fragment_hash));
+
+			Ok(())
+		}
+
+		#[pallet::weight(50_000)]
+		pub fn buy(origin: OriginFor<T>, fragment_hash: Hash256) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let sale = <OpenSales<T>>::get(&fragment_hash).ok_or(Error::<T>::NotFound)?;
+			let fragment_data = <Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
+
+			let balance = <pallet_assets::Pallet<T>>::balance(fragment_data.metadata.currency, &who);
+
 			Ok(())
 		}
 	}
