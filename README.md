@@ -32,6 +32,14 @@ If you want to run Clamor with a [chain specification](https://docs.substrate.io
     cargo run -- --chain=spec_raw.json --validator --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server -d <DATA PATH>
     ```
 
+
+### Read Rustdocs
+
+To read the rustdocs, run the following command in the root directory:
+```
+cargo doc --open
+```
+
 ## Usage
 
 ### Uploading test data programatically
