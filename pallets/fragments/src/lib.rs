@@ -23,6 +23,12 @@ use protos::permissions::FragmentPerms;
 use frame_support::PalletId;
 use sp_runtime::traits::AccountIdConversion;
 
+use frame_support::traits::{
+	tokens::fungibles::{InspectHold, Mutate, Transfer},
+	Currency, ExistenceRequirement,
+};
+use sp_runtime::SaturatedConversion;
+
 const PALLET_ID: PalletId = PalletId(*b"fragment");
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -142,6 +148,8 @@ pub mod pallet {
 		InsufficientBalance,
 		/// Fragment sale sold out
 		SoldOut,
+		/// Sale already open
+		SaleAlreadyOpen,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -186,6 +194,16 @@ pub mod pallet {
 
 			ensure!(!<Fragments<T>>::contains_key(&hash), Error::<T>::AlreadyExist);
 
+			// create vault account
+			// we need an existential amount deposit to be able to create the vault account
+			let vault = Self::get_vault_id(hash);
+			let min_balance =
+				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
+			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
+				&vault,
+				min_balance,
+			);
+
 			let fragment_data = FragmentClass {
 				proto_hash,
 				metadata,
@@ -210,7 +228,39 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(50_000)]
-		pub fn open_sale(origin: OriginFor<T>) -> DispatchResult {
+		pub fn open_sale(
+			origin: OriginFor<T>,
+			fragment_hash: Hash256,
+			price: Compact<u128>,
+			quantity: Option<Compact<u128>>,
+			expires: Option<T::BlockNumber>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let proto_hash =
+				<Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?.proto_hash;
+			let proto: Proto<T::AccountId, T::BlockNumber> =
+				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+
+			let proto_owner: T::AccountId = match proto.owner {
+				ProtoOwner::User(owner) => Ok(owner),
+				_ => Err(Error::<T>::ProtoOwnerNotFound),
+			}?;
+
+			ensure!(who == proto_owner, Error::<T>::NoPermission);
+
+			// TO REVIEW
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
+
+			ensure!(!<OpenSales<T>>::contains_key(&fragment_hash), Error::<T>::SaleAlreadyOpen);
+
+			<OpenSales<T>>::insert(
+				fragment_hash,
+				FragmentSaleData { price, units_left: quantity, expiration: expires },
+			);
+
+			Self::deposit_event(Event::SaleOpened(fragment_hash));
+
 			Ok(())
 		}
 
@@ -230,6 +280,7 @@ pub mod pallet {
 
 			ensure!(who == proto_owner, Error::<T>::NoPermission);
 
+			// TO REVIEW
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
 
 			// ! Writing
@@ -243,11 +294,6 @@ pub mod pallet {
 
 		#[pallet::weight(50_000)]
 		pub fn buy(origin: OriginFor<T>, fragment_hash: Hash256) -> DispatchResult {
-			use frame_support::traits::{
-				tokens::fungibles::Transfer, Currency, ExistenceRequirement,
-			};
-			use sp_runtime::SaturatedConversion;
-
 			let who = ensure_signed(origin)?;
 
 			let sale = <OpenSales<T>>::get(&fragment_hash).ok_or(Error::<T>::NotFound)?;
@@ -262,26 +308,11 @@ pub mod pallet {
 
 			let price: u128 = sale.price.into();
 
+			let fragment_data = <Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
+
+			let vault = &Self::get_vault_id(fragment_hash);
+
 			// ! Writing if successful
-
-			// if limited amount let's reduce the amount of units left
-			if let Some(units_left) = sale.units_left {
-				<OpenSales<T>>::mutate(&fragment_hash, |sale| {
-					if let Some(sale) = sale {
-						let left: u128 = units_left.into();
-						sale.units_left = Some(Compact(left - 1));
-					}
-				});
-			}
-
-			let fragment_data = <Fragments<T>>::mutate(fragment_hash, |fragment| {
-				if let Some(fragment) = fragment {
-					let existing: u128 = fragment.existing.into();
-					fragment.existing = Compact(existing + 1);
-				}
-				fragment.clone()
-			})
-			.ok_or(Error::<T>::NotFound)?;
 
 			if let Some(currency) = fragment_data.metadata.currency {
 				<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
@@ -295,12 +326,31 @@ pub mod pallet {
 			} else {
 				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::transfer(
 					&who,
-					&Self::get_vault_id(fragment_hash),
+					&vault,
 					price.saturated_into(),
 					ExistenceRequirement::KeepAlive,
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
+
+			// ! We should be successful here
+
+			// if limited amount let's reduce the amount of units left
+			if let Some(units_left) = sale.units_left {
+				<OpenSales<T>>::mutate(&fragment_hash, |sale| {
+					if let Some(sale) = sale {
+						let left: u128 = units_left.into();
+						sale.units_left = Some(Compact(left - 1));
+					}
+				});
+			}
+
+			<Fragments<T>>::mutate(fragment_hash, |fragment| {
+				if let Some(fragment) = fragment {
+					let existing: u128 = fragment.existing.into();
+					fragment.existing = Compact(existing + 1);
+				}
+			});
 
 			Ok(())
 		}
