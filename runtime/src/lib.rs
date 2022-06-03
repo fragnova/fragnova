@@ -354,8 +354,8 @@ impl pallet_fragments::Config for Runtime {
 }
 
 impl pallet_frag::EthFragContract for Runtime {
-	fn get_frag_contract_address() -> String {
-		String::from("0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac")
+	fn get_partner_contracts() -> Vec<String> {
+		vec![String::from("0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac")]
 	}
 }
 

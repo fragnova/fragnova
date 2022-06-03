@@ -83,16 +83,12 @@ use serde_json::{json, Value};
 use ethabi::ParamType;
 
 pub trait EthFragContract {
-	fn get_frag_contract_address() -> String {
-		String::from("0xBADF00D")
+	fn get_partner_contracts() -> Vec<String> {
+		vec![String::from("0xBADF00D")]
 	}
 }
 
-impl EthFragContract for () {
-	fn get_frag_contract_address() -> String {
-		String::from("0xBADF00D")
-	}
-}
+impl EthFragContract for () {}
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct EthLockUpdate<TPublic> {
@@ -411,9 +407,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(n: T::BlockNumber) {
-			if let Err(error) = Self::sync_frag_locks(n) {
-				log::error!("Error syncing frag locks: {:?}", error);
-			}
+			Self::sync_partner_contracts(n);
 		}
 	}
 
@@ -496,26 +490,21 @@ pub mod pallet {
 			}
 		}
 
-		fn sync_frag_locks(_block_number: T::BlockNumber) -> Result<(), &'static str> {
-			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
-				String::from_utf8(geth).unwrap()
-			} else {
-				log::debug!("No geth url found, skipping sync");
-				return Ok(()); // It is fine to have a node not syncing with eth
-			};
-
-			let contract = T::EthFragContract::get_frag_contract_address();
-
+		fn sync_partner_contract(
+			_block_number: T::BlockNumber,
+			contract: &str,
+			geth_uri: &str,
+		) -> Result<(), &'static str> {
 			let req = json!({
 				"jsonrpc": "2.0",
 				"method": "eth_blockNumber",
-				"id": 1
+				"id": 1u64
 			});
 
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes());
+			let response_body = http_json_post(geth_uri, req.as_bytes());
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -562,7 +551,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes());
+			let response_body = http_json_post(geth_uri, req.as_bytes());
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -638,6 +627,23 @@ pub mod pallet {
 			last_block_ref.set(&to_block.as_bytes().to_vec());
 
 			Ok(())
+		}
+
+		fn sync_partner_contracts(block_number: T::BlockNumber) {
+			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
+				String::from_utf8(geth).unwrap()
+			} else {
+				log::debug!("No geth url found, skipping sync");
+				return; // It is fine to have a node not syncing with eth
+			};
+
+			let contracts = T::EthFragContract::get_partner_contracts();
+
+			for contract in contracts {
+				if let Err(e) = Self::sync_partner_contract(block_number, &contract, &geth_uri) {
+					log::error!("Failed to sync partner contract with error: {}", e);
+				}
+			}
 		}
 
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
