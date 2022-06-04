@@ -932,10 +932,9 @@ pub mod pallet {
 								Value::Null
 							};
 
-							(*map_proto).insert(
-								String::from_utf8(metadata_key.clone()).unwrap(),
-								metadata_value,
-							);
+							if let Ok(key) = String::from_utf8(metadata_key.clone()) {
+								(*map_proto).insert(key, metadata_value);
+							}
 						}
 					}
 				}
