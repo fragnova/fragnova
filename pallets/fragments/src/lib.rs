@@ -23,10 +23,7 @@ use protos::permissions::FragmentPerms;
 use frame_support::PalletId;
 use sp_runtime::traits::AccountIdConversion;
 
-use frame_support::traits::{
-	tokens::fungibles::{InspectHold, Mutate, Transfer},
-	Currency, ExistenceRequirement,
-};
+use frame_support::traits::{tokens::fungibles::Transfer, Currency, ExistenceRequirement};
 use sp_runtime::SaturatedConversion;
 
 const PALLET_ID: PalletId = PalletId(*b"fragment");
