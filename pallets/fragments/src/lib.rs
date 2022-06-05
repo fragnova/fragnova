@@ -34,16 +34,22 @@ pub struct FragmentMetadata<TFungibleAsset> {
 	pub currency: Option<TFungibleAsset>, // Where None is NOVA
 }
 
-/// Struct of a Fragment
+/// Struct of a Fragment Class
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentClass<TFungibleAsset, TAccountId> {
-	/// The Proto-Fragment that was used to create this Fragment
+	/// The Proto-Fragment that was used to create this Fragment Class
 	pub proto_hash: Hash256,
+	/// The metadata of the Fragment Class
 	pub metadata: FragmentMetadata<TFungibleAsset>,
+	/// The next owner permissions
 	pub permissions: FragmentPerms,
+	/// If Fragments must contain unique data when created (injected by buyers, validated by the system)
 	pub unique: bool,
+	/// If scarse, the max supply of the Fragment
 	pub max_supply: Option<Compact<u128>>,
+	/// The amount of the Fragment that is currently in circulation
 	pub existing: Compact<u128>,
+	/// The creator of this class
 	pub creator: TAccountId,
 }
 
