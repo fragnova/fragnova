@@ -22,15 +22,15 @@ Clone the Clamor repository and checkout the default branch.
 
 Navigate to the root folder and run the following script to build and run a local instance of Clamor:
 
-    ```
-    RUST_LOG=bitswap=trace,pallet_protos::pallet=trace,pallet_frag::pallet=trace cargo run -- --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server
-    ```
+```
+RUST_LOG=bitswap=trace,pallet_protos::pallet=trace,pallet_frag::pallet=trace,pallet_fragments::pallet=trace cargo run -- --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server
+```
 
 If you want to run Clamor with a [chain specification](https://docs.substrate.io/v3/runtime/chain-specs/) instead, use this script:
 
-    ```
-    cargo run -- --chain=spec_raw.json --validator --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server -d <DATA PATH>
-    ```
+```
+cargo run -- --chain=spec_raw.json --validator --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server -d <DATA PATH>
+```
 
 ## Usage
 
@@ -38,9 +38,9 @@ If you want to run Clamor with a [chain specification](https://docs.substrate.io
 
  Once you have a Clamor node running locally you can programatically upload test data to it with the following script (using Docker and Chainblocks):
 
-    ```
-    docker run --rm --user root --network host -v `pwd`:/data chainblocks/shards shards /data/shards/add-test-assets.edn
-    ```
+```
+docker run --rm --user root --network host -v `pwd`:/data chainblocks/shards shards /data/shards/add-test-assets.edn
+```
 
 ### Connecting to Polkadot's App Explorer
 

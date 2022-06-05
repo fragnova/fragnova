@@ -48,11 +48,11 @@ pub struct FragmentClass<TFungibleAsset, TAccountId> {
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentInstanceData<TAccount> {
-	pub data_hash: Option<Hash256>, // mutable block data hash
-	pub owner: TAccount,
+pub struct FragmentInstanceData {
 	/// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
 	pub permissions: FragmentPerms,
+	/// The actual item id
+	pub item_id: Compact<u128>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -60,6 +60,12 @@ pub struct FragmentSaleData<TBlockNum> {
 	pub price: Compact<u128>,
 	pub units_left: Option<Compact<u128>>,
 	pub expiration: Option<TBlockNum>,
+}
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub enum FragmentBuyOptions {
+	UniqueData(Vec<u8>),
+	Quantity(Compact<u64>),
 }
 
 #[frame_support::pallet]
@@ -95,23 +101,34 @@ pub mod pallet {
 	pub type Fragments<T: Config> =
 		StorageMap<_, Identity, Hash256, FragmentClass<T::AssetId, T::AccountId>>;
 
-	// fragment-hash to fragment-id to fragment-instance-data
-	#[pallet::storage]
-	pub type FragmentInstances<T: Config> = StorageDoubleMap<
-		_,
-		Identity,
-		Hash256,
-		Blake2_128Concat,
-		u128,
-		FragmentInstanceData<T::AccountId>,
-	>;
-
 	// proto-hash to fragment-hash-sequence
 	/// Storage Map that keeps track of the number of Fragments that were created using a Proto-Fragment.
 	/// The key is the hash of the Proto-Fragment, and the value is the list of hash of the Fragments
 	#[pallet::storage]
 	pub type OpenSales<T: Config> =
 		StorageMap<_, Identity, Hash256, FragmentSaleData<T::BlockNumber>>;
+
+	// {:Account {:Fragment [...Fragments...]} ...}
+	#[pallet::storage]
+	pub type Inventory<T: Config> = StorageDoubleMap<
+		_,
+		Blake2_128Concat,
+		T::AccountId,
+		Identity,
+		Hash256,
+		Vec<FragmentInstanceData>,
+	>;
+
+	// {:Fragment {:Account [...Fragments...]} ...}
+	#[pallet::storage]
+	pub type Owners<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		Hash256,
+		Blake2_128Concat,
+		T::AccountId,
+		Vec<FragmentInstanceData>,
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -122,6 +139,12 @@ pub mod pallet {
 		SaleOpened(Hash256),
 		/// Fragment sale has been closed
 		SaleClosed(Hash256),
+		/// Inventory item has been added to account
+		InventoryAdded(T::AccountId, Hash256, Compact<u128>),
+		/// Inventory item has removed added from account
+		InventoryRemoved(T::AccountId, Hash256, Compact<u128>),
+		/// Inventory has been updated
+		InventoryUpdated(T::AccountId, Hash256, Compact<u128>),
 	}
 
 	// Errors inform users that something went wrong.
@@ -147,6 +170,10 @@ pub mod pallet {
 		SoldOut,
 		/// Sale already open
 		SaleAlreadyOpen,
+		/// Max supply reached
+		MaxSupplyReached,
+		/// Params not valid
+		ParamsNotValid,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -251,6 +278,25 @@ pub mod pallet {
 
 			ensure!(!<OpenSales<T>>::contains_key(&fragment_hash), Error::<T>::SaleAlreadyOpen);
 
+			let fragment_data = <Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
+
+			if let Some(max_supply) = fragment_data.max_supply {
+				let max: u128 = max_supply.into();
+				let existing: u128 = fragment_data.existing.into();
+				let left = max.saturating_sub(existing);
+				if let Some(quantity) = quantity {
+					let quantity: u128 = quantity.into();
+					ensure!(quantity <= left, Error::<T>::MaxSupplyReached);
+				} else {
+					return Err(Error::<T>::ParamsNotValid.into());
+				}
+				if left == 0 {
+					return Err(Error::<T>::MaxSupplyReached.into());
+				}
+			}
+
+			// ! Writing
+
 			<OpenSales<T>>::insert(
 				fragment_hash,
 				FragmentSaleData { price, units_left: quantity, expiration: expires },
@@ -290,7 +336,11 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(50_000)]
-		pub fn buy(origin: OriginFor<T>, fragment_hash: Hash256) -> DispatchResult {
+		pub fn buy(
+			origin: OriginFor<T>,
+			fragment_hash: Hash256,
+			options: FragmentBuyOptions,
+		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			let sale = <OpenSales<T>>::get(&fragment_hash).ok_or(Error::<T>::NotFound)?;
@@ -308,6 +358,11 @@ pub mod pallet {
 			let fragment_data = <Fragments<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
 
 			let vault = &Self::get_vault_id(fragment_hash);
+
+			let quantity = match options {
+				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
+				_ => 1u64,
+			};
 
 			// ! Writing if successful
 
@@ -337,7 +392,7 @@ pub mod pallet {
 				<OpenSales<T>>::mutate(&fragment_hash, |sale| {
 					if let Some(sale) = sale {
 						let left: u128 = units_left.into();
-						sale.units_left = Some(Compact(left - 1));
+						sale.units_left = Some(Compact(left - quantity as u128));
 					}
 				});
 			}
@@ -345,7 +400,18 @@ pub mod pallet {
 			<Fragments<T>>::mutate(fragment_hash, |fragment| {
 				if let Some(fragment) = fragment {
 					let existing: u128 = fragment.existing.into();
-					fragment.existing = Compact(existing + 1);
+					fragment.existing = Compact(existing + quantity as u128);
+
+					for id in existing..(existing + quantity as u128) {
+						let id = Compact(id + 1u128);
+						<Inventory<T>>::append(
+							who.clone(),
+							fragment_hash,
+							FragmentInstanceData { permissions: fragment.permissions, item_id: id },
+						);
+
+						Self::deposit_event(Event::InventoryAdded(who.clone(), fragment_hash, id));
+					}
 				}
 			});
 
