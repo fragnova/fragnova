@@ -8,10 +8,12 @@ services:
     ports:
       - "9944:9944"
     environment:
-      - CARGO_HOME=/var/www/fragnova/.cargo
+      - CARGO_HOME=/home/shards
+      - CARGO_TARGET_DIR=/home/shards/target
     volumes:
       - .:/var/www/fragnova
-      - type: bind
-        source: ./.local
-        target: /root/.local
-    command: bash -c "cargo build --release && ./target/release/fragnova --dev --ws-external"
+      - cargo-home:/home/shards
+    command: bash -c "rustup target add wasm32-unknown-unknown && cargo build --release && ./target/release/fragnova --dev --ws-external"
+
+volumes:
+  cargo-home:
