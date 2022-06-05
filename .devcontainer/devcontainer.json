@@ -15,11 +15,16 @@
     9944
   ],
   "preCreateCommand": ["cargo build", "cargo check"],
-  "postStartCommand": "./target/debug/node-template --dev --ws-external",
+  "postStartCommand": "./target/debug/clamor --dev --ws-external",
   "menuActions": [
     {"id": "polkadotjs",
      "label": "Open PolkadotJS Apps",
      "type": "external-preview",
      "args": ["https://polkadot.js.org/apps/?rpc=wss%3A%2F%2F/$HOST/wss"]}
-  ]
+],
+"dockerComposeFile": [
+	"../docker-compose.yml"
+],
+"service": "dev",
+"workspaceFolder": "/workspace"
 }
