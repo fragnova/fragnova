@@ -31,12 +31,16 @@ benchmarks! {
 		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, None, immutable_data.clone())?;
 		let fragment_data = FragmentMetadata {
 			name: "name".as_bytes().to_vec(),
-			external_url: "external_url".as_bytes().to_vec(),
+			currency: None,
 		};
+
+		let hash = blake2_256(
+			&[&proto_hash[..], &fragment_data.name.encode(), &fragment_data.currency.encode()].concat(),
+		);
 
 	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, FragmentPerms::NONE, true, None)
 	verify {
-		assert_last_event::<T>(Event::<T>::FragmentAdded(caller).into())
+		assert_last_event::<T>(Event::<T>::ClassCreated(caller, hash).into())
 	}
 
 	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);
