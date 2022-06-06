@@ -770,7 +770,7 @@ pub mod pallet {
 			}
 		}
 
-		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Vec<u8> {
+		pub fn get_protos(params: GetProtosParams<T::AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			let mut map = Map::new();
 			let mut limit = if params.limit == 0 { u64::MAX } else { params.limit };
 
@@ -858,22 +858,22 @@ pub mod pallet {
 						if let Ok(array_proto_id) = array_proto_id.try_into() {
 							array_proto_id
 						} else {
-							continue;
+							return Err("Failed to convert proto_id to Hash256".into());
 						}
 					} else {
-						continue;
+						return Err("Failed to decode proto_id".into());
 					};
 
 					let (owner, map_metadata, include_cost) =
 						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
 							(proto.owner, proto.metadata, proto.include_cost)
 						} else {
-							continue;
+							return Err("Failed to get proto".into());
 						};
 
 					let map_proto = match map_proto {
 						Value::Object(map_proto) => map_proto,
-						_ => continue,
+						_ => return Err("Failed to get map_proto".into()),
 					};
 
 					if let Some(include_cost) = include_cost {
@@ -942,7 +942,7 @@ pub mod pallet {
 
 			let result = json!(map).to_string();
 
-			result.into_bytes()
+			Ok(result.into_bytes())
 		}
 	}
 }
