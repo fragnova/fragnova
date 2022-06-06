@@ -69,16 +69,15 @@ where
 			tags: params.tags.into_iter().map(|s| s.into_bytes()).collect(),
 		};
 
-		let result = api.get_protos(&at, params_no_std)
-			.map(|list_bytes| list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from(""))));
+		let result = api.get_protos(&at, params_no_std).map(|list_bytes| {
+			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
+		});
 		match result {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
-			Ok(result) => {
-				match result {
-					Err(e) => Err(runtime_error_into_rpc_err(e)),
-					Ok(result) => Ok(result),
-				}
-			}
+			Ok(result) => match result {
+				Err(e) => Err(runtime_error_into_rpc_err(e)),
+				Ok(result) => Ok(result),
+			},
 		}
 	}
 }
