@@ -190,9 +190,9 @@ git = 'https://github.com/clamor-io/substrate.git'
 tag = 'clamor-01-06-2022'
 version = '5.0.0'
 
-[dependencies.pallet-frag]
+[dependencies.pallet-tickets]
 default-features = false
-path = '../pallets/frag'
+path = '../pallets/tickets'
 version = '0.0.1'
 
 [dependencies.pallet-protos]

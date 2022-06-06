@@ -118,7 +118,7 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config
 		+ pallet_detach::Config
-		+ pallet_frag::Config
+		+ pallet_tickets::Config
 		+ pallet_randomness_collective_flip::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -609,12 +609,12 @@ pub mod pallet {
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
 			// make sure user has enough FRAG
-			let account = <pallet_frag::EVMLinks<T>>::get(&who.clone())
+			let account = <pallet_tickets::EVMLinks<T>>::get(&who.clone())
 				.ok_or_else(|| Error::<T>::NoFragLink)?;
-			let eth_lock = <pallet_frag::EthLockedFrag<T>>::get(&account)
+			let eth_lock = <pallet_tickets::EthLockedFrag<T>>::get(&account)
 				.ok_or_else(|| Error::<T>::NoFragLink)?;
 			let balance = eth_lock.amount
-				- <pallet_frag::FragUsage<T>>::get(&who.clone())
+				- <pallet_tickets::FragUsage<T>>::get(&who.clone())
 					.ok_or_else(|| Error::<T>::NoFragLink)?;
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
@@ -622,7 +622,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
 				usage.as_mut().unwrap().saturating_add(amount);
 			});
 
@@ -655,7 +655,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
 				usage.as_mut().unwrap().saturating_sub(stake.0);
 			});
 
@@ -678,7 +678,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain unlinks
-			let unlinks = <pallet_frag::PendingUnlinks<T>>::take();
+			let unlinks = <pallet_tickets::PendingUnlinks<T>>::take();
 			for unlink in unlinks {
 				// take emptying the storage
 				let stakes = <AccountStakes<T>>::take(unlink.clone());

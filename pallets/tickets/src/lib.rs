@@ -142,6 +142,20 @@ pub mod pallet {
 
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+
+		// TODO
+
+		// #[pallet::constant]
+		// type TicketMultiplier: Get<u128>;
+
+		// #[pallet::constant]
+		// type TicketMaxBonus: Get<u128>;
+
+		// #[pallet::constant]
+		// type TicketMinLockPeriod: Get<u64>;
+
+		// #[pallet::constant]
+		// type TicketMaxLockPeriod: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
