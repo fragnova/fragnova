@@ -9,6 +9,6 @@ sp_api::decl_runtime_apis! {
 	where
 		AccountId: Codec
 	{
-		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8>;
+		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
 	}
 }

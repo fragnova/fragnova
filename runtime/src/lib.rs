@@ -802,7 +802,7 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, AccountId> for Runtime {
-		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8> {
+		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Protos::get_protos(params)
 		}
 	}
