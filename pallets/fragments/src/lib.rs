@@ -15,13 +15,13 @@ use codec::{Compact, Decode, Encode};
 pub use pallet::*;
 use sp_clamor::Hash256;
 use sp_io::{hashing::blake2_256, transaction_index};
-use sp_std::{vec, vec::Vec};
+use sp_std::vec::Vec;
 pub use weights::WeightInfo;
 
 use protos::permissions::FragmentPerms;
 
 use frame_support::{dispatch::DispatchResult, PalletId};
-use sp_runtime::traits::AccountIdConversion;
+use sp_runtime::traits::{AccountIdConversion, StaticLookup};
 
 use frame_support::traits::{tokens::fungibles::Transfer, Currency, ExistenceRequirement};
 use sp_runtime::SaturatedConversion;
@@ -54,11 +54,11 @@ pub struct FragmentClass<TFungibleAsset, TAccountId> {
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentInstanceData<TAccountId, TBlockNum> {
+pub struct FragmentInstanceData<TAccountIndex, TBlockNum> {
 	/// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
 	pub permissions: FragmentPerms,
 	/// The owner of the item
-	pub owner: TAccountId,
+	pub owner: TAccountIndex,
 	/// The block number when the item was created
 	pub created_at: TBlockNum,
 	/// Custom data, if unique, this is the hash of the data that can be fetched using bitswap directly on our nodes
@@ -75,7 +75,7 @@ pub struct FragmentSaleData<TBlockNum> {
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub enum FragmentBuyOptions {
 	UniqueData(Vec<u8>),
-	Quantity(Compact<u64>),
+	Quantity(u64),
 }
 
 #[frame_support::pallet]
@@ -92,6 +92,12 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
+		type AccountIndex: Parameter
+		+ Member
+		+ MaybeSerializeDeserialize
+		+ Default
+		+ Copy
+		+ MaxEncodedLen;
 	}
 
 	#[pallet::pallet]
@@ -125,7 +131,7 @@ pub mod pallet {
 		Hash256,
 		Identity,
 		Compact<u128>,
-		FragmentInstanceData<T::AccountId, T::BlockNumber>,
+		FragmentInstanceData<T::AccountIndex, T::BlockNumber>,
 	>;
 
 	// {:Account {:Fragment [...Fragments...]} ...}
@@ -207,7 +213,7 @@ pub mod pallet {
 			metadata: FragmentMetadata<T::AssetId>,
 			permissions: FragmentPerms,
 			unique: bool,
-			max_supply: Option<Compact<u128>>,
+			max_supply: Option<u128>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			let proto: Proto<T::AccountId, T::BlockNumber> =
@@ -245,7 +251,7 @@ pub mod pallet {
 				metadata,
 				permissions,
 				unique,
-				max_supply,
+				max_supply: max_supply.map(|x| Compact(x)),
 				existing: Compact(0),
 				creator: who.clone(),
 			};
@@ -261,8 +267,8 @@ pub mod pallet {
 		pub fn open_sale(
 			origin: OriginFor<T>,
 			fragment_hash: Hash256,
-			price: Compact<u128>,
-			quantity: Option<Compact<u128>>,
+			price: u128,
+			quantity: Option<u128>,
 			expires: Option<T::BlockNumber>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -305,7 +311,11 @@ pub mod pallet {
 
 			<OpenSales<T>>::insert(
 				fragment_hash,
-				FragmentSaleData { price, units_left: quantity, expiration: expires },
+				FragmentSaleData {
+					price: Compact(price),
+					units_left: quantity.map(|x| Compact(x)),
+					expiration: expires,
+				},
 			);
 
 			Self::deposit_event(Event::SaleOpened(fragment_hash));
@@ -530,7 +540,7 @@ impl<T: Config> Pallet<T> {
 						id,
 						FragmentInstanceData {
 							permissions: fragment.permissions,
-							owner: to.clone(),
+							owner: T::Lookup::unlookup(to.clone()),
 							created_at: current_block_number,
 							custom_data: data,
 						},

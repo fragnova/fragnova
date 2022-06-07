@@ -816,7 +816,6 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-detach",
- "pallet-frag",
  "pallet-fragments",
  "pallet-grandpa",
  "pallet-identity",
@@ -827,6 +826,7 @@ dependencies = [
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
+ "pallet-tickets",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -4133,43 +4133,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-frag"
-version = "0.0.1"
-dependencies = [
- "ethabi",
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "hex",
- "log",
- "pallet-assets",
- "pallet-balances",
- "pallet-randomness-collective-flip",
- "parity-scale-codec 3.1.2",
- "scale-info 2.1.1",
- "serde",
- "serde_json",
- "sp-clamor",
- "sp-core",
- "sp-io",
- "sp-keystore",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-fragments"
 version = "0.0.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "pallet-assets",
  "pallet-balances",
  "pallet-detach",
- "pallet-frag",
  "pallet-protos",
  "pallet-randomness-collective-flip",
+ "pallet-tickets",
  "parity-scale-codec 3.1.2",
  "protos",
  "scale-info 2.1.1",
@@ -4262,8 +4238,8 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-detach",
- "pallet-frag",
  "pallet-randomness-collective-flip",
+ "pallet-tickets",
  "parity-scale-codec 3.1.2",
  "protos",
  "scale-info 2.1.1",
@@ -4369,6 +4345,31 @@ dependencies = [
  "parity-scale-codec 3.1.2",
  "scale-info 2.1.1",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tickets"
+version = "0.0.1"
+dependencies = [
+ "ethabi",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "log",
+ "pallet-assets",
+ "pallet-balances",
+ "pallet-randomness-collective-flip",
+ "parity-scale-codec 3.1.2",
+ "scale-info 2.1.1",
+ "serde",
+ "serde_json",
+ "sp-clamor",
+ "sp-core",
+ "sp-io",
+ "sp-keystore",
  "sp-runtime",
  "sp-std",
 ]
