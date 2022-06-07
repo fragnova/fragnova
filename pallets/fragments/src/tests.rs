@@ -1,4 +1,4 @@
-use crate::{mock::*, Error, FragmentMetadata, Classes, Proto2Fragments};
+use crate::{mock::*, Classes, Error, FragmentMetadata, Proto2Fragments};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 use protos::categories::{Categories, TextCategories};

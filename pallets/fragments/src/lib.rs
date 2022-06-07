@@ -20,7 +20,7 @@ pub use weights::WeightInfo;
 
 use protos::permissions::FragmentPerms;
 
-use frame_support::PalletId;
+use frame_support::{dispatch::DispatchResult, PalletId};
 use sp_runtime::traits::AccountIdConversion;
 
 use frame_support::traits::{tokens::fungibles::Transfer, Currency, ExistenceRequirement};
@@ -81,7 +81,7 @@ pub enum FragmentBuyOptions {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
+	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::DetachedHashes;
 	use pallet_protos::{Proto, ProtoOwner, Protos};
@@ -342,6 +342,48 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(50_000)]
+		pub fn mint(
+			origin: OriginFor<T>,
+			fragment_hash: Hash256,
+			options: FragmentBuyOptions,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			let proto_hash =
+				<Classes<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?.proto_hash;
+			let proto: Proto<T::AccountId, T::BlockNumber> =
+				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+
+			let proto_owner: T::AccountId = match proto.owner {
+				ProtoOwner::User(owner) => Ok(owner),
+				_ => Err(Error::<T>::ProtoOwnerNotFound),
+			}?;
+
+			ensure!(who == proto_owner, Error::<T>::NoPermission);
+
+			// TO REVIEW
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
+
+			let quantity = match options {
+				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
+				_ => 1u64,
+			};
+
+			// ! Writing
+
+			Self::mint_fragments(
+				&who,
+				&fragment_hash,
+				None,
+				&options,
+				quantity,
+				current_block_number,
+			)
+		}
+
+		#[pallet::weight(50_000)]
 		pub fn buy(
 			origin: OriginFor<T>,
 			fragment_hash: Hash256,
@@ -371,6 +413,8 @@ pub mod pallet {
 				_ => 1u64,
 			};
 
+			let price = price.saturating_mul(quantity as u128);
+
 			// ! Writing if successful
 
 			if let Some(currency) = fragment_data.metadata.currency {
@@ -394,60 +438,25 @@ pub mod pallet {
 
 			// ! We should be successful here
 
-			let data = match options {
-				FragmentBuyOptions::UniqueData(data) => {
-					let data_hash = blake2_256(&data);
-					let data_len = data.len();
+			Self::mint_fragments(
+				&who,
+				&fragment_hash,
+				Some(&sale),
+				&options,
+				quantity,
+				current_block_number,
+			)
+		}
 
-					// we need this to index transactions
-					let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
-						.ok_or(Error::<T>::SystematicFailure)?;
-
-					// index immutable data for IPFS discovery
-					transaction_index::index(extrinsic_index, data_len as u32, data_hash);
-
-					Some(data_hash)
-				},
-				_ => None,
-			};
-
-			// if limited amount let's reduce the amount of units left
-			if let Some(units_left) = sale.units_left {
-				<OpenSales<T>>::mutate(&fragment_hash, |sale| {
-					if let Some(sale) = sale {
-						let left: u128 = units_left.into();
-						sale.units_left = Some(Compact(left - quantity as u128));
-					}
-				});
-			}
-
-			<Classes<T>>::mutate(fragment_hash, |fragment| {
-				if let Some(fragment) = fragment {
-					let existing: u128 = fragment.existing.into();
-					fragment.existing = Compact(existing + quantity as u128);
-
-					for id in existing..(existing + quantity as u128) {
-						let id = Compact(id + 1u128);
-
-						<Fragments<T>>::insert(
-							fragment_hash,
-							id,
-							FragmentInstanceData {
-								permissions: fragment.permissions,
-								owner: who.clone(),
-								created_at: current_block_number,
-								custom_data: data,
-							},
-						);
-
-						<Inventory<T>>::append(who.clone(), fragment_hash, id);
-
-						<Owners<T>>::append(fragment_hash, who.clone(), id);
-
-						Self::deposit_event(Event::InventoryAdded(who.clone(), fragment_hash, id));
-					}
-				}
-			});
+		/// Used when someone is reselling a Fragment.
+		#[pallet::weight(50_000)]
+		pub fn buy_from(
+			origin: OriginFor<T>,
+			seller: T::AccountId,
+			fragment_hash: Hash256,
+			ids: Vec<Compact<u128>>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
 
 			Ok(())
 		}
@@ -457,5 +466,85 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	pub fn get_vault_id(fragment_class_hash: Hash256) -> T::AccountId {
 		PALLET_ID.into_sub_account_truncating(fragment_class_hash)
+	}
+
+	pub fn mint_fragments(
+		to: &T::AccountId,
+		fragment_hash: &Hash256,
+		sale: Option<&FragmentSaleData<T::BlockNumber>>,
+		options: &FragmentBuyOptions,
+		quantity: u64,
+		current_block_number: T::BlockNumber,
+	) -> DispatchResult {
+		let data = match options {
+			FragmentBuyOptions::UniqueData(data) => {
+				let data_hash = blake2_256(&data);
+				let data_len = data.len();
+
+				// we need this to index transactions
+				let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+					.ok_or(Error::<T>::SystematicFailure)?;
+
+				// index immutable data for IPFS discovery
+				transaction_index::index(extrinsic_index, data_len as u32, data_hash);
+
+				Some(data_hash)
+			},
+			_ => None,
+		};
+
+		if let Some(sale) = sale {
+			// if limited amount let's reduce the amount of units left
+			if let Some(units_left) = sale.units_left {
+				<OpenSales<T>>::mutate(&fragment_hash, |sale| {
+					if let Some(sale) = sale {
+						let left: u128 = units_left.into();
+						sale.units_left = Some(Compact(left - quantity as u128));
+					}
+				});
+			}
+		} else {
+			// We still don't wanna go over supply limit
+			let fragment_data = <Classes<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
+
+			if let Some(max_supply) = fragment_data.max_supply {
+				let max: u128 = max_supply.into();
+				let existing: u128 = fragment_data.existing.into();
+				let left = max.saturating_sub(existing);
+				if quantity as u128 <= left {
+					return Err(Error::<T>::MaxSupplyReached.into());
+				}
+			}
+		}
+
+		<Classes<T>>::mutate(fragment_hash, |fragment| {
+			if let Some(fragment) = fragment {
+				let existing: u128 = fragment.existing.into();
+				fragment.existing = Compact(existing + quantity as u128);
+
+				for id in existing..(existing + quantity as u128) {
+					let id = Compact(id + 1u128);
+
+					<Fragments<T>>::insert(
+						fragment_hash,
+						id,
+						FragmentInstanceData {
+							permissions: fragment.permissions,
+							owner: to.clone(),
+							created_at: current_block_number,
+							custom_data: data,
+						},
+					);
+
+					<Inventory<T>>::append(to.clone(), fragment_hash, id);
+
+					<Owners<T>>::append(fragment_hash, to.clone(), id);
+
+					Self::deposit_event(Event::InventoryAdded(to.clone(), *fragment_hash, id));
+				}
+			}
+		});
+
+		Ok(())
 	}
 }

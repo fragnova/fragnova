@@ -1,6 +1,6 @@
 use clamor_runtime::{
-	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, TicketsConfig, GenesisConfig,
-	GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig,
+	GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, TicketsConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -225,6 +225,8 @@ fn testnet_genesis(
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
 		assets: AssetsConfig { assets: vec![], metadata: vec![], accounts: vec![] },
-		tickets: TicketsConfig { keys: initial_authorities.iter().map(|x| (x.4.clone())).collect() },
+		tickets: TicketsConfig {
+			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
+		},
 	}
 }
