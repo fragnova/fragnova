@@ -4136,6 +4136,7 @@ dependencies = [
 name = "pallet-fragments"
 version = "0.0.1"
 dependencies = [
+ "bitflags",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

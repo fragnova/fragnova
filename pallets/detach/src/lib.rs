@@ -161,7 +161,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
-		StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, SupportedChains, u64>;
+		StorageDoubleMap<_, Twox64Concat, Vec<u8>, Twox64Concat, SupportedChains, u64>;
 
 	#[pallet::storage]
 	pub type DetachedHashes<T: Config> = StorageMap<_, Identity, Hash256, ExportData>;

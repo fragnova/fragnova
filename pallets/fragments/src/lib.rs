@@ -15,7 +15,7 @@ use codec::{Compact, Decode, Encode};
 pub use pallet::*;
 use sp_clamor::Hash256;
 use sp_io::{hashing::blake2_256, transaction_index};
-use sp_std::vec::Vec;
+use sp_std::{collections::btree_set::BTreeSet, vec::Vec};
 pub use weights::WeightInfo;
 
 use protos::permissions::FragmentPerms;
@@ -58,7 +58,7 @@ pub struct FragmentInstanceData<TAccount, TBlockNum> {
 	/// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
 	pub permissions: FragmentPerms,
 	/// The owner of the item
-	pub owner: TAccount,
+	pub owners: BTreeSet<TAccount>,
 	/// The block number when the item was created
 	pub created_at: TBlockNum,
 	/// Custom data, if unique, this is the hash of the data that can be fetched using bitswap directly on our nodes
@@ -81,7 +81,7 @@ pub enum FragmentBuyOptions {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::pallet_prelude::*;
+	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::DetachedHashes;
 	use pallet_protos::{Proto, ProtoOwner, Protos};
@@ -131,12 +131,17 @@ pub mod pallet {
 	// {:Account {:Fragment [...Fragments...]} ...}
 	#[pallet::storage]
 	pub type Inventory<T: Config> =
-		StorageDoubleMap<_, Blake2_128Concat, T::AccountId, Identity, Hash256, Vec<Compact<u128>>>;
+		StorageDoubleMap<_, Twox64Concat, T::AccountId, Identity, Hash256, Vec<Compact<u128>>>;
 
 	// {:Fragment {:Account [...Fragments...]} ...}
 	#[pallet::storage]
 	pub type Owners<T: Config> =
-		StorageDoubleMap<_, Identity, Hash256, Blake2_128Concat, T::AccountId, Vec<Compact<u128>>>;
+		StorageDoubleMap<_, Identity, Hash256, Twox64Concat, T::AccountId, Vec<Compact<u128>>>;
+
+		// {:Fragment {:Account [...Fragments...]} ...}
+	#[pallet::storage]
+	pub type Owners2<T: Config> =
+		StorageNMap<_, (storage::Key<Identity, Hash256>, storage::Key<Twox64Concat, u128>, storage::Key<Twox64Concat, T::AccountId>), bool>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -454,6 +459,40 @@ pub mod pallet {
 			)
 		}
 
+		#[pallet::weight(50_000)]
+		pub fn set_for_sale(
+			origin: OriginFor<T>,
+			class: Hash256,
+			id: u128,
+			price: u128,
+			new_permissions: Option<FragmentPerms>,
+			expiration: Option<T::BlockNumber>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			let class_data = <Classes<T>>::get(class).ok_or(Error::<T>::NotFound)?;
+			let item_data = <Fragments<T>>::get(class, Compact(id)).ok_or(Error::<T>::NotFound)?;
+
+			// Only the owner of this fragment can set it for sale
+			ensure!(item_data.owners.contains(&who), Error::<T>::NoPermission);
+
+			// first of all make sure the item can be transferred
+			ensure!(
+				(item_data.permissions & FragmentPerms::TRANSFER) == FragmentPerms::TRANSFER,
+				Error::<T>::NoPermission
+			);
+
+			// now we take two different paths if item can be copied or not
+			if (item_data.permissions & FragmentPerms::COPY) == FragmentPerms::COPY {
+				// we will copy the item to the new account
+			} else {
+				// we will remove from this account to give to new account
+			}
+
+			Ok(())
+		}
+
 		/// Used when someone is reselling a Fragment.
 		#[pallet::weight(50_000)]
 		pub fn buy_from(
@@ -533,24 +572,27 @@ impl<T: Config> Pallet<T> {
 				fragment.existing = Compact(existing + quantity as u128);
 
 				for id in existing..(existing + quantity as u128) {
-					let id = Compact(id + 1u128);
+					let id = id + 1u128;
+					let cid = Compact(id);
 
 					<Fragments<T>>::insert(
 						fragment_hash,
-						id,
+						cid,
 						FragmentInstanceData {
 							permissions: fragment.permissions,
-							owner: to.clone(),
+							owners: BTreeSet::from([to.clone()]),
 							created_at: current_block_number,
 							custom_data: data,
 						},
 					);
 
-					<Inventory<T>>::append(to.clone(), fragment_hash, id);
+					<Inventory<T>>::append(to.clone(), fragment_hash, cid);
 
-					<Owners<T>>::append(fragment_hash, to.clone(), id);
+					<Owners<T>>::append(fragment_hash, to.clone(), cid);
 
-					Self::deposit_event(Event::InventoryAdded(to.clone(), *fragment_hash, id));
+					<Owners2<T>>::insert((fragment_hash, id, to.clone()), true);
+
+					Self::deposit_event(Event::InventoryAdded(to.clone(), *fragment_hash, cid));
 				}
 			}
 		});

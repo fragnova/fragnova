@@ -112,7 +112,7 @@ impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Blake2_128Concat};
+	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
 
@@ -178,13 +178,13 @@ pub mod pallet {
 		StorageMap<_, Identity, H160, EthLock<T::Balance, T::BlockNumber>>;
 
 	#[pallet::storage]
-	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, H160>;
+	pub type EVMLinks<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, H160>;
 
 	#[pallet::storage]
 	pub type EVMLinksReverse<T: Config> = StorageMap<_, Identity, H160, T::AccountId>;
 
 	#[pallet::storage]
-	pub type FragUsage<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, T::Balance>;
+	pub type FragUsage<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, T::Balance>;
 
 	#[pallet::storage]
 	pub type EVMLinkVoting<T: Config> = StorageMap<_, Identity, H256, u64>;
