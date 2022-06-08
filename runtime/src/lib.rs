@@ -403,11 +403,19 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = ();
 }
 
+/// Implement SigningTypes and SendTransactionTypes in the runtime to support submitting transactions by an off-chain worker, 
+/// whether they are signed or unsigned.
+/// 
+/// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 impl frame_system::offchain::SigningTypes for Runtime {
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;
 }
 
+/// Implement SigningTypes and SendTransactionTypes in the runtime to support submitting transactions by an off-chain worker, 
+/// whether they are signed or unsigned.
+/// 
+/// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Runtime
 where
 	Call: From<LocalCall>,
@@ -416,10 +424,20 @@ where
 	type Extrinsic = UncheckedExtrinsic;
 }
 
+/// Because you configured the Config trait for detach pallet and frag pallet
+/// to implement the CreateSignedTransaction trait, you also need to implement that trait for the runtime.
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
 where
 	Call: From<LocalCall>,
 {
+	/// The code seems long, but what it tries to do is really:
+	/// 	- Create and prepare extra of SignedExtra type, and put various checkers in-place.
+	/// 	- Create a raw payload based on the passed in call and extra.
+	/// 	- Sign the raw payload with the account public key.
+	/// 	- Finally, bundle all data up and return a tuple of the call, the caller, its signature, 
+	/// 	  and any signed extension data.
+	/// 
+	/// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: Call,
 		public: <Signature as Verify>::Signer,

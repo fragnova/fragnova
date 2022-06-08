@@ -116,6 +116,7 @@ pub fn init(geth_url: Option<String>) {
 	// shlog!("Chainblocks initialized!");
 }
 
+/// Make an HTTP POST Request with data `body` to the URL `url` 
 pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
 	log::debug!("sp_clamor http_request called...");
 
@@ -161,6 +162,8 @@ pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
 	}
 }
 
+/// Returns an account ID that can stake FRAG tokens.  
+/// This returned account ID is determinstically computed from the given account ID (`who`).
 pub fn get_locked_frag_account<TAccountId: Encode + Decode>(
 	who: &TAccountId,
 ) -> Result<TAccountId, CodecError> {

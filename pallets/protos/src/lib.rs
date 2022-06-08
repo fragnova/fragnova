@@ -81,7 +81,7 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub block: TBlockNumber,
 	/// **Hash** of patch data
 	pub data_hash: Hash256,
-	/// **List of New Proto-Fragments** that was **used** to **create** the **patch** (io non capicsco del tutto)
+	/// **List of New Proto-Fragments** that was **used** to **create** the **patch** (INCDT)
 	pub references: Vec<Hash256>,
 }
 
@@ -92,8 +92,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub block: TBlockNumber,
 	/// **List of *ProtoPatch* structs** of the **Proto-Fragment**
 	pub patches: Vec<ProtoPatch<TBlockNumber>>,
-	/// **Price** of the **Proto-Fragment** (*optional*)
-	/// NOTE: If None, the **Proto-Fragment** *<u>can't be included</u>* into **other protos**
+	/// **Amount of FRAG tokens** that **need to be staked on the Proto-Fragment** to **use the Proto-Fragment in other Proto-Fragments** (*optional*)
+	/// NOTE: If None, the **Proto-Fragment** *<u>can't be used</u>* in **other Proto-Fragments**
 	pub include_cost: Option<Compact<u64>>,
 	/// **Original Creator** of the **Proto-Fragment**
 	pub creator: TAccountId,
@@ -179,7 +179,7 @@ pub mod pallet {
 	pub type ProtosByOwner<T: Config> =
 		StorageMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
-	/// **StorageDoubleMap** that maps a **Proto-Fragment and an Account ID** to a **tuple that contains the Staked Amount (that was staked by the aforementioned Account ID) and the Block Number**
+	/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple that contains the Staked Amount (that was staked by the aforementioned Clamor Account ID) and the Block Number**
 	// Staking management
 	// (Amount staked, Last stake time)
 	#[pallet::storage]
@@ -192,7 +192,7 @@ pub mod pallet {
 		(T::Balance, T::BlockNumber),
 	>;
 
-	/// **StorageMap** that maps an **Account ID** to a **list of Proto-Fragments that was staked by the aforementioned Account ID**
+	/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was staked on by the aforementioned Clamor Account ID**
 	#[pallet::storage]
 	pub type AccountStakes<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, Vec<Hash256>>;
 
@@ -495,7 +495,7 @@ pub mod pallet {
 
 		/// **Alters** the **metadata** of a **Proto-Fragment** (whose hash is `proto_hash`) by **adding or modifying a key-value pair** (`metadata_key.clone`,`blake2_256(&data.encode())`) to the **BTreeMap field `metadata`** of the **existing Proto-Fragment's Struct Instance**.
 		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
-		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned
+		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned (问Gio - what happened to auth?)
 		///
 		/// # Arguments
 		///
@@ -569,16 +569,16 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// **Detach** a **Proto-Fragment** from **this blockchain** by ***initiating* an event** that **includes a signature**. (io non capisco)
-		/// The **remote target chain** can **attach this Proto-Fragment** by **using this signature**. (che signature?)
+		/// **Detach** a **Proto-Fragment** from **this blockchain** to an **external blockchain** by ***initiating*** an **event** that **includes a signature**. (NC)
+		/// The **owner of this Proto-Fragment** can then **attach this Proto-Fragment** to the **external blockchain** by **using the aforementioned signature**. 
 		///
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - The **hash of the Proto-Fragment** to **detach**
-		/// * `target_chain` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
-		/// * `target_account` - The public account address on the blockchain `target_chain` that we want to detach the existing Proto-Fragment into
+		/// * `proto_hash` - **Hash of the Proto-Fragment** to **detach**
+		/// * `target_chain` - **External Blockchain** that we **want to attach the **Proto-Fragment into**
+		/// * `target_account` - **Public account address** of the **blockchain `target_chain`** that we **want to detach the Proto-Fragment into**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
 		pub fn detach(
 			origin: OriginFor<T>,
@@ -610,6 +610,13 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Stake FRAG tokens on a Proto-Fragment 
+		/// 
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrinsic function
+		/// * `proto_hash` - **Hash of the Proto-Fragment** to **stake on**
+		/// * `amount` - **Amount of FRAG tokens** to **stake**
 		#[pallet::weight(50_000)]
 		pub fn stake(
 			origin: OriginFor<T>,
@@ -623,21 +630,21 @@ pub mod pallet {
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
 			// make sure user has enough FRAG
-			let account = <pallet_frag::EVMLinks<T>>::get(&who.clone())
+			let account = <pallet_frag::EVMLinks<T>>::get(&who.clone()) 
 				.ok_or_else(|| Error::<T>::NoFragLink)?;
-			let eth_lock = <pallet_frag::EthLockedFrag<T>>::get(&account)
+			let eth_lock = <pallet_frag::EthLockedFrag<T>>::get(&account) // Amount of FRAG locked by Ethereum Account `account`
 				.ok_or_else(|| Error::<T>::NoFragLink)?;
 			let balance = eth_lock.amount
 				- <pallet_frag::FragUsage<T>>::get(&who.clone())
-					.ok_or_else(|| Error::<T>::NoFragLink)?;
+					.ok_or_else(|| Error::<T>::NoFragLink)?; // Balance = Amount of FRAG locked - Amount of FRAG already staked
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			// ! from now we write...
 
-			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
-				usage.as_mut().unwrap().saturating_add(amount);
+			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| { // Add `amount` to the FragUsage of `who` 
+				usage.as_mut().unwrap().saturating_add(amount); 
 			});
 
 			// take record of the stake
@@ -645,11 +652,17 @@ pub mod pallet {
 			<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
 
 			// also emit event
-			Self::deposit_event(Event::Staked(proto_hash, who, amount));
+			Self::deposit_event(Event::Staked(proto_hash, who, amount)); // 问Gio
 
 			Ok(())
 		}
-
+		
+		/// Unstake the FRAG tokens that were staked on a Proto-Fragment by `origin`
+		/// 
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrinsic function
+		/// * `proto_hash` - **Hash of the Proto-Fragment** on which the FRAG tokens were staked on
 		#[pallet::weight(50_000)]
 		pub fn unstake(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
 			let who = ensure_signed(origin.clone())?;
@@ -670,14 +683,14 @@ pub mod pallet {
 			// ! from now we write...
 
 			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
-				usage.as_mut().unwrap().saturating_sub(stake.0);
+				usage.as_mut().unwrap().saturating_sub(stake.0); // Reduce the Frag usage of `who` by `stak.0`
 			});
 
 			// take record of the unstake
 			<ProtoStakes<T>>::remove(proto_hash, &who);
 			<AccountStakes<T>>::mutate(who.clone(), |stakes| {
 				if let Some(stakes) = stakes {
-					stakes.retain(|h| h != &proto_hash);
+					stakes.retain(|h| h != &proto_hash); // Retain all Proto-Fragments except `proto_hash`
 				}
 			});
 
@@ -690,6 +703,9 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		/// During the block finalization phase, 
+		/// clear all the staking-related (of FRAG Token) Storage Items of any information regarding 
+		/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain unlinks
 			let unlinks = <pallet_frag::PendingUnlinks<T>>::take();
