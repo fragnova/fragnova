@@ -21,7 +21,7 @@ pub use weights::WeightInfo;
 use protos::permissions::FragmentPerms;
 
 use frame_support::{dispatch::DispatchResult, PalletId};
-use sp_runtime::traits::{AccountIdConversion, StaticLookup};
+use sp_runtime::traits::AccountIdConversion;
 
 use frame_support::traits::{tokens::fungibles::Transfer, Currency, ExistenceRequirement};
 use sp_runtime::SaturatedConversion;
@@ -54,11 +54,11 @@ pub struct FragmentClass<TFungibleAsset, TAccountId> {
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentInstanceData<TAccountIndex, TBlockNum> {
+pub struct FragmentInstanceData<TAccount, TBlockNum> {
 	/// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
 	pub permissions: FragmentPerms,
 	/// The owner of the item
-	pub owner: TAccountIndex,
+	pub owner: TAccount,
 	/// The block number when the item was created
 	pub created_at: TBlockNum,
 	/// Custom data, if unique, this is the hash of the data that can be fetched using bitswap directly on our nodes
@@ -92,12 +92,6 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
-		type AccountIndex: Parameter
-		+ Member
-		+ MaybeSerializeDeserialize
-		+ Default
-		+ Copy
-		+ MaxEncodedLen;
 	}
 
 	#[pallet::pallet]
@@ -131,7 +125,7 @@ pub mod pallet {
 		Hash256,
 		Identity,
 		Compact<u128>,
-		FragmentInstanceData<T::AccountIndex, T::BlockNumber>,
+		FragmentInstanceData<T::AccountId, T::BlockNumber>,
 	>;
 
 	// {:Account {:Fragment [...Fragments...]} ...}
@@ -351,6 +345,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Proto owner can mint fragments (compatible with supply requirements)
 		#[pallet::weight(50_000)]
 		pub fn mint(
 			origin: OriginFor<T>,
@@ -393,6 +388,7 @@ pub mod pallet {
 			)
 		}
 
+		/// When a sale is open users can buy fragments
 		#[pallet::weight(50_000)]
 		pub fn buy(
 			origin: OriginFor<T>,
@@ -478,6 +474,10 @@ impl<T: Config> Pallet<T> {
 		PALLET_ID.into_sub_account_truncating(fragment_class_hash)
 	}
 
+	pub fn get_fragment_account_id(fragment_class_hash: Hash256, id: u128) -> T::AccountId {
+		PALLET_ID.into_sub_account_truncating((fragment_class_hash, id))
+	}
+
 	pub fn mint_fragments(
 		to: &T::AccountId,
 		fragment_hash: &Hash256,
@@ -540,7 +540,7 @@ impl<T: Config> Pallet<T> {
 						id,
 						FragmentInstanceData {
 							permissions: fragment.permissions,
-							owner: T::Lookup::unlookup(to.clone()),
+							owner: to.clone(),
 							created_at: current_block_number,
 							custom_data: data,
 						},
