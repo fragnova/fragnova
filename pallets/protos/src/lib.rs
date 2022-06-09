@@ -162,8 +162,7 @@ pub mod pallet {
 	/// The key is the Category type and the value is a list of the hash of a Proto-Fragment
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
-	pub type ProtosByCategory<T: Config> =
-		StorageMap<_, Twox64Concat, Categories, Vec<Hash256>>;
+	pub type ProtosByCategory<T: Config> = StorageMap<_, Twox64Concat, Categories, Vec<Hash256>>;
 
 	/// UploadAuthorities is a StorageValue that keeps track of the set of ECDSA public keys of the upload authorities
 	/// * Note: An upload authority (also known as the off-chain validator) provides the digital signature needed to upload a Proto-Fragment
