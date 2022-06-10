@@ -75,8 +75,8 @@ pub struct PublishingData<TBlockNum> {
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub enum FragmentBuyOptions {
-	UniqueData(Vec<u8>),
 	Quantity(u64),
+	UniqueData(Vec<u8>),
 }
 
 #[frame_support::pallet]
@@ -117,10 +117,11 @@ pub mod pallet {
 		StorageMap<_, Identity, Hash128, PublishingData<T::BlockNumber>>;
 
 	#[pallet::storage]
-	pub type EditionsCount<T: Config> = StorageMap<_, Identity, Hash128, u64>;
+	pub type EditionsCount<T: Config> = StorageMap<_, Identity, Hash128, Compact<Unit>>;
 
 	#[pallet::storage]
-	pub type CopiesCount<T: Config> = StorageMap<_, Twox64Concat, (Hash128, Compact<u64>), u64>;
+	pub type CopiesCount<T: Config> =
+		StorageMap<_, Twox64Concat, (Hash128, Compact<u64>), Compact<Unit>>;
 
 	#[pallet::storage]
 	pub type Fragments<T: Config> = StorageNMap<
@@ -305,7 +306,7 @@ pub mod pallet {
 			if let Some(max_supply) = fragment_data.max_supply {
 				let max: Unit = max_supply.into();
 				let existing: Unit =
-					<EditionsCount<T>>::get(&fragment_hash).unwrap_or(0);
+					<EditionsCount<T>>::get(&fragment_hash).unwrap_or(Compact(0)).into();
 				let left = max.saturating_sub(existing);
 				if let Some(quantity) = quantity {
 					let quantity: Unit = quantity.into();
@@ -472,7 +473,7 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(50_000)]
-		pub fn transfer(
+		pub fn give(
 			origin: OriginFor<T>,
 			class: Hash128,
 			edition: Unit,
@@ -482,10 +483,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			let item_data = <Fragments<T>>::get((class, Compact(edition), Compact(copy)))
+			let mut item_data = <Fragments<T>>::get((class, Compact(edition), Compact(copy)))
 				.ok_or(Error::<T>::NotFound)?;
 
-			// Only the owner of this fragment can set it for sale
+			// Only the owner of this fragment can transfer it
 			let ids = <Inventory<T>>::get(who.clone(), class).ok_or(Error::<T>::NotFound)?;
 
 			ensure!(ids.contains(&(Compact(edition), Compact(copy))), Error::<T>::NoPermission);
@@ -526,7 +527,23 @@ pub mod pallet {
 			// now we take two different paths if item can be copied or not
 			if (item_data.permissions & FragmentPerms::COPY) == FragmentPerms::COPY {
 				// we will copy the item to the new account
-				// TODO
+				item_data.permissions = perms;
+
+				let copy: u64 = <CopiesCount<T>>::get((class, Compact(edition)))
+					.ok_or(Error::<T>::NotFound)?
+					.into();
+
+				let copy = copy + 1;
+
+				<Fragments<T>>::insert((class, Compact(edition), Compact(copy)), item_data);
+
+				<CopiesCount<T>>::insert((class, Compact(edition)), Compact(copy));
+
+				<Owners<T>>::append(class, to.clone(), (Compact(edition), Compact(copy)));
+
+				<Inventory<T>>::append(to.clone(), class, (Compact(edition), Compact(copy)));
+
+				Self::deposit_event(Event::InventoryAdded(to, class, (edition, copy)));
 			} else {
 				// we will remove from this account to give to new account
 				<Owners<T>>::mutate(class, who.clone(), |ids| {
@@ -596,7 +613,7 @@ impl<T: Config> Pallet<T> {
 			_ => None,
 		};
 
-		let existing: Unit = <EditionsCount<T>>::get(&fragment_hash).unwrap_or(0);
+		let existing: Unit = <EditionsCount<T>>::get(&fragment_hash).unwrap_or(Compact(0)).into();
 
 		if let Some(sale) = sale {
 			// if limited amount let's reduce the amount of units left
@@ -636,7 +653,7 @@ impl<T: Config> Pallet<T> {
 						},
 					);
 
-					<CopiesCount<T>>::insert((fragment_hash, cid), 1);
+					<CopiesCount<T>>::insert((fragment_hash, cid), Compact(1));
 
 					<Inventory<T>>::append(to.clone(), fragment_hash, (cid, Compact(1)));
 
@@ -644,7 +661,7 @@ impl<T: Config> Pallet<T> {
 
 					Self::deposit_event(Event::InventoryAdded(to.clone(), *fragment_hash, (id, 1)));
 				}
-				<EditionsCount<T>>::insert(fragment_hash, existing + quantity);
+				<EditionsCount<T>>::insert(fragment_hash, Compact(existing + quantity));
 			}
 		});
 
