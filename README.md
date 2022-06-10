@@ -37,7 +37,7 @@ If you want to run Clamor with a [chain specification](https://docs.substrate.io
 
 To read the rustdocs, run the following command in the root directory:
 ```
-cargo doc --open
+cargo doc --no-deps --open
 ```
 
 ## Usage
