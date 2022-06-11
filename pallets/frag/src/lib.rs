@@ -1,9 +1,7 @@
 //! This pallet `frag` performs logic related to FRAG Token
 //! IMPORTANT NOTE: The term "lock" refers to the *"effective transfer"* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain. 
 //! 				The term "unlock" refers to the *"effective transfer"* of all the previously locked ERC-20 FRAG tokens from the Clamor Blockchain to the aforementioned Fragnova-owned FRAG Ethereum Smart Contract.
-//! 
 //! 				The term "staking" refers to the staking of the FRAG Token that is done in the Clamor Blockchain itself. It is different to the term "locking" which is defined above.
-//! 
 //! 				IMPORTANT: locking != staking
 
 #![cfg_attr(not(feature = "std"), no_std)]
