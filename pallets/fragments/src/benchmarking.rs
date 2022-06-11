@@ -7,7 +7,7 @@ use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use protos::categories::{Categories, TextCategories};
 use protos::permissions::FragmentPerms;
-use sp_io::hashing::blake2_256;
+use sp_io::hashing::blake2_128;
 
 const PROTO_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
@@ -34,13 +34,13 @@ benchmarks! {
 			currency: None,
 		};
 
-		let hash = blake2_256(
+		let hash = blake2_128(
 			&[&proto_hash[..], &fragment_data.name.encode(), &fragment_data.currency.encode()].concat(),
 		);
 
 	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, FragmentPerms::NONE, true, None)
 	verify {
-		assert_last_event::<T>(Event::<T>::ClassCreated(caller, hash).into())
+		assert_last_event::<T>(Event::<T>::ClassCreated(hash).into())
 	}
 
 	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);
