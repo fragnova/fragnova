@@ -3,7 +3,7 @@ use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 use protos::categories::{Categories, TextCategories};
 use protos::permissions::FragmentPerms;
-use sp_io::hashing::blake2_256;
+use sp_io::hashing::blake2_128;
 
 fn initial_upload() {
 	let data = DATA.as_bytes().to_vec();
@@ -27,7 +27,7 @@ fn create_should_works() {
 
 		let fragment_data = FragmentMetadata { name: "name".as_bytes().to_vec(), currency: None };
 
-		let hash = blake2_256(
+		let hash = blake2_128(
 			&[&PROTO_HASH[..], &fragment_data.name.encode(), &fragment_data.currency.encode()]
 				.concat(),
 		);
@@ -97,7 +97,7 @@ fn create_should_not_work_if_fragment_already_exist() {
 
 		let fragment_data = FragmentMetadata { name: "name".as_bytes().to_vec(), currency: None };
 
-		let hash = blake2_256(
+		let hash = blake2_128(
 			&[&PROTO_HASH[..], &fragment_data.name.encode(), &fragment_data.currency.encode()]
 				.concat(),
 		);
