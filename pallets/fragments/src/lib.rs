@@ -23,13 +23,11 @@ pub use weights::WeightInfo;
 
 use protos::permissions::FragmentPerms;
 
-use frame_support::{dispatch::DispatchResult, PalletId};
-use sp_runtime::traits::{AccountIdConversion, StaticLookup};
+use frame_support::dispatch::DispatchResult;
+use sp_runtime::traits::StaticLookup;
 
 use frame_support::traits::{tokens::fungibles::Transfer, Currency, ExistenceRequirement};
 use sp_runtime::SaturatedConversion;
-
-const PALLET_ID: PalletId = PalletId(*b"fragment");
 
 type Unit = u64;
 
@@ -445,7 +443,7 @@ pub mod pallet {
 				<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
 					currency,
 					&who,
-					&Self::get_vault_id(fragment_hash),
+					&vault,
 					price.saturated_into(),
 					true,
 				)
@@ -576,16 +574,50 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		#[pallet::weight(50_000)]
+		pub fn create_account(
+			origin: OriginFor<T>,
+			class: Hash128,
+			edition: Unit,
+			copy: Unit,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// Only the owner of this fragment can transfer it
+			let ids = <Inventory<T>>::get(who.clone(), class).ok_or(Error::<T>::NotFound)?;
+
+			ensure!(ids.contains(&(Compact(edition), Compact(copy))), Error::<T>::NoPermission);
+
+			// create vault account
+			// we need an existential amount deposit to be able to create the vault account
+			let vault = Self::get_fragment_account_id(class, edition, copy);
+			let min_balance =
+				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
+			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
+				&vault,
+				min_balance,
+			);
+
+			// TODO Make owner pay for deposit actually!
+			// TODO setup proxy
+
+			Ok(())
+		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
 	pub fn get_vault_id(class_hash: Hash128) -> T::AccountId {
-		PALLET_ID.into_sub_account_truncating(class_hash)
+		let hash = blake2_256(&[&b"fragments-vault"[..], &class_hash].concat());
+		T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 	}
 
-	pub fn get_fragment_account_id(class_hash: Hash128, id: Unit) -> T::AccountId {
-		PALLET_ID.into_sub_account_truncating((class_hash, id))
+	pub fn get_fragment_account_id(class_hash: Hash128, edition: Unit, copy: Unit) -> T::AccountId {
+		let hash = blake2_256(
+			&[&b"fragments-account"[..], &class_hash, &edition.encode(), &copy.encode()].concat(),
+		);
+		T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 	}
 
 	pub fn mint_fragments(
