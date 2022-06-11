@@ -2,16 +2,18 @@ version: "3.2"
 
 services:
   dev:
-    container_name: node-fragments
-    image: paritytech/ci-linux:974ba3ac-20201006
-    working_dir: /var/www/node-fragments
+    container_name: fragnova
+    image: chainblocks/devenv
+    working_dir: /var/www/fragnova
     ports:
       - "9944:9944"
     environment:
-      - CARGO_HOME=/var/www/node-fragments/.cargo
+      - CARGO_HOME=/home/shards
+      - CARGO_TARGET_DIR=/home/shards/target
     volumes:
-      - .:/var/www/node-fragments
-      - type: bind
-        source: ./.local
-        target: /root/.local
-    command: bash -c "cargo build --release && ./target/release/node-fragments --dev --ws-external"
+      - .:/var/www/fragnova
+      - cargo-home:/home/shards
+    command: bash -c "rustup target add wasm32-unknown-unknown && cargo build --release && ./target/release/fragnova --dev --ws-external"
+
+volumes:
+  cargo-home:

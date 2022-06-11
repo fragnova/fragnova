@@ -76,9 +76,6 @@ pub mod crypto {
 	}
 }
 
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
 use codec::{Decode, Encode};
 pub use pallet::*;
 

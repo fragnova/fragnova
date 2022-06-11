@@ -72,7 +72,7 @@ describe('Protos RPCs', () => {
             let result = await api.rpc.protos.getProtos(params)
 
             let json = JSON.parse(result.toHuman())
-
+            console.log(json);
 
         });
 
@@ -85,6 +85,7 @@ describe('Protos RPCs', () => {
             let result = await api.rpc.protos.getProtos(params)
 
             let json = JSON.parse(result.toHuman())
+            console.log(json);
 
             assert(json['b8a6d246ba4324f50e392a2675bfaedea16f23aea727e0454362f213b07eb9bc']['image'] === 'fa99f4d939e6615bae7910a85689c5bebb2292f88572d8b90ba986200c401e30')
 
@@ -95,6 +96,7 @@ describe('Protos RPCs', () => {
             let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", { desc: true, from: 0, limit: 10, metadata_keys: ['A'] }))
 
             let json = JSON.parse(result.toHuman())
+            console.log(json);
 
             assert(json['b8a6d246ba4324f50e392a2675bfaedea16f23aea727e0454362f213b07eb9bc']['A'] === null)
         });

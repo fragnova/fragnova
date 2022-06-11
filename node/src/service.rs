@@ -238,7 +238,7 @@ pub fn new_full(
 			let deps =
 				crate::rpc::FullDeps { client: client.clone(), pool: pool.clone(), deny_unsafe };
 
-			Ok(crate::rpc::create_full(deps))
+			crate::rpc::create_full(deps).map_err(Into::into)
 		})
 	};
 
@@ -250,7 +250,7 @@ pub fn new_full(
 		keystore: keystore_container.sync_keystore(),
 		task_manager: &mut task_manager,
 		transaction_pool: transaction_pool.clone(),
-		rpc_extensions_builder,
+		rpc_builder: rpc_extensions_builder,
 		backend,
 		system_rpc_tx,
 		config,
