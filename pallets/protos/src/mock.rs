@@ -27,11 +27,16 @@ pub const PUBLIC1: [u8; 32] = [
 	173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251,
 ];
 
-// Configure a mock runtime to test the pallet.
+/// Construct a mock runtime environment.
 frame_support::construct_runtime!(
+	// The **configuration type `Test`** is defined as a **Rust enum** with **implementations**
+	// for **each of the pallet configuration trait** that are **used in the mock runtime**. (https://docs.substrate.io/v3/runtime/testing/)
+	// 
+	// Basically the **enum `Test`** is mock-up of **`Runtime` in pallet-protos (i.e in `pallet/protos/src/lib.rs`)
+	// NOTE: The aforementioned `T` is bound by **trait `pallet:Config`**, if you didn't know
 	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
+		Block = Block, //  Block is the block type that is used in the runtime
+		NodeBlock = Block, // NodeBlock is the block type that is used in the node	
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
@@ -43,6 +48,16 @@ frame_support::construct_runtime!(
 	}
 );
 
+/// When to use:
+/// 
+/// To declare parameter types for a pallet's relevant associated types during runtime construction.
+/// 
+/// What it does:
+/// 
+/// The macro replaces each parameter specified into a struct type with a get() function returning its specified value. 
+/// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
+/// 
+/// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
@@ -108,6 +123,11 @@ where
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
+/// If `Test` implements `pallet_balances::Config`, the assignment might use `u64` for the `Balance` type. (https://docs.substrate.io/v3/runtime/testing/)
+/// 
+/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block `impl system::Config for Test` above) to `u64`, 
+/// mock runtimes ease the mental overhead of comprehensive, conscientious testers. 
+/// Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
 impl pallet_balances::Config for Test {
 	type Balance = u64;
 	type DustRemoval = ();
@@ -147,3 +167,46 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	t.into()
 }
+
+
+/* 
+
+pub struct ExtBuilder;
+
+impl ExtBuilder {
+	/// Returns an **instance of `sp_io::TestExternalities`** using the **default genesis configuration** and 
+	/// sets its (i.e the aforementioned instance's) block number to 1
+	/// 
+	/// NOTE: **`sp_io::TestExternalities`** is **frequently used** for **mocking storage** in **tests**. 
+	/// It is the type alias for an in-memory, hashmap-based externalities implementation in `substrate_state_machine` referred to as `substrate_state_machine::TestExternalities`.
+    pub fn build(self) -> sp_io::TestExternalities {
+        let mut t = system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+		// Generate a `sp_io::TestExternalities` using the **default genesis configuration**.
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
+}
+
+
+/// Simulate block production
+/// 
+/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls 
+/// from all modules with `System::block_number()` as the sole input. 
+/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should 
+/// prioritize readability to facilitate future maintenance.
+/// 
+/// Source: https://docs.substrate.io/v3/runtime/testing/
+fn run_to_block(n: u64) {
+    while System::block_number() < n {
+        if System::block_number() > 0 {
+            ExamplePallet::on_finalize(System::block_number());
+            System::on_finalize(System::block_number());
+        }
+        System::set_block_number(System::block_number() + 1);
+        System::on_initialize(System::block_number());
+        ExamplePallet::on_initialize(System::block_number());
+    }
+}
+
+*/
