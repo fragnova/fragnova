@@ -84,13 +84,15 @@ git = 'https://github.com/clamor-io/substrate.git'
 tag = 'clamor-01-06-2022'
 version = '4.0.0-dev'
 
-[dependencies.pallet-frag]
+[dependencies.pallet-tickets]
 default-features = false
-path = '../frag'
+path = '../tickets'
 
 [dependencies]
 sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
-protos = { version = "0.1.6", default-features = false }
+protos = { version = "0.1.8", default-features = false }
+log = { version = "0.4.14", default-features = false }
+bitflags = "1.3.2"
 
 [dependencies.pallet-randomness-collective-flip]
 default-features = false

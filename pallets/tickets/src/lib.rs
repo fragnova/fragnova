@@ -80,16 +80,12 @@ use serde_json::{json, Value};
 use ethabi::ParamType;
 
 pub trait EthFragContract {
-	fn get_frag_contract_address() -> String {
-		String::from("0xBADF00D")
+	fn get_partner_contracts() -> Vec<String> {
+		vec![String::from("0xBADF00D")]
 	}
 }
 
-impl EthFragContract for () {
-	fn get_frag_contract_address() -> String {
-		String::from("0xBADF00D")
-	}
-}
+impl EthFragContract for () {}
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct EthLockUpdate<TPublic> {
@@ -116,7 +112,7 @@ impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Blake2_128Concat};
+	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
 
@@ -143,6 +139,20 @@ pub mod pallet {
 
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+
+		// TODO
+
+		// #[pallet::constant]
+		// type TicketMultiplier: Get<u128>;
+
+		// #[pallet::constant]
+		// type TicketMaxBonus: Get<u128>;
+
+		// #[pallet::constant]
+		// type TicketMinLockPeriod: Get<u64>;
+
+		// #[pallet::constant]
+		// type TicketMaxLockPeriod: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
@@ -168,13 +178,13 @@ pub mod pallet {
 		StorageMap<_, Identity, H160, EthLock<T::Balance, T::BlockNumber>>;
 
 	#[pallet::storage]
-	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, H160>;
+	pub type EVMLinks<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, H160>;
 
 	#[pallet::storage]
 	pub type EVMLinksReverse<T: Config> = StorageMap<_, Identity, H160, T::AccountId>;
 
 	#[pallet::storage]
-	pub type FragUsage<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, T::Balance>;
+	pub type FragUsage<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, T::Balance>;
 
 	#[pallet::storage]
 	pub type EVMLinkVoting<T: Config> = StorageMap<_, Identity, H256, u64>;
@@ -408,9 +418,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(n: T::BlockNumber) {
-			if let Err(error) = Self::sync_frag_locks(n) {
-				log::error!("Error syncing frag locks: {:?}", error);
-			}
+			Self::sync_partner_contracts(n);
 		}
 	}
 
@@ -493,26 +501,21 @@ pub mod pallet {
 			}
 		}
 
-		fn sync_frag_locks(_block_number: T::BlockNumber) -> Result<(), &'static str> {
-			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
-				String::from_utf8(geth).unwrap()
-			} else {
-				log::debug!("No geth url found, skipping sync");
-				return Ok(()); // It is fine to have a node not syncing with eth
-			};
-
-			let contract = T::EthFragContract::get_frag_contract_address();
-
+		fn sync_partner_contract(
+			_block_number: T::BlockNumber,
+			contract: &str,
+			geth_uri: &str,
+		) -> Result<(), &'static str> {
 			let req = json!({
 				"jsonrpc": "2.0",
 				"method": "eth_blockNumber",
-				"id": 1
+				"id": 1u64
 			});
 
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes());
+			let response_body = http_json_post(geth_uri, req.as_bytes());
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -559,7 +562,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes());
+			let response_body = http_json_post(geth_uri, req.as_bytes());
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -635,6 +638,23 @@ pub mod pallet {
 			last_block_ref.set(&to_block.as_bytes().to_vec());
 
 			Ok(())
+		}
+
+		fn sync_partner_contracts(block_number: T::BlockNumber) {
+			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
+				String::from_utf8(geth).unwrap()
+			} else {
+				log::debug!("No geth url found, skipping sync");
+				return; // It is fine to have a node not syncing with eth
+			};
+
+			let contracts = T::EthFragContract::get_partner_contracts();
+
+			for contract in contracts {
+				if let Err(e) = Self::sync_partner_contract(block_number, &contract, &geth_uri) {
+					log::error!("Failed to sync partner contract with error: {}", e);
+				}
+			}
 		}
 
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {

@@ -110,7 +110,7 @@ pub struct Proto<TAccountId, TBlockNumber> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Blake2_128Concat};
+	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	use sp_clamor::CID_PREFIX;
@@ -121,7 +121,7 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config
 		+ pallet_detach::Config
-		+ pallet_frag::Config
+		+ pallet_tickets::Config
 		+ pallet_randomness_collective_flip::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -142,13 +142,13 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	#[pallet::storage]
-	pub type Tags<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u64>;
+	pub type Tags<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, u64>;
 
 	#[pallet::storage]
 	pub type TagsIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
 	#[pallet::storage]
-	pub type MetaKeys<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u64>;
+	pub type MetaKeys<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, u64>;
 
 	#[pallet::storage]
 	pub type MetaKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
@@ -162,14 +162,13 @@ pub mod pallet {
 	/// The key is the Category type and the value is a list of the hash of a Proto-Fragment
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
-	pub type ProtosByCategory<T: Config> =
-		StorageMap<_, Blake2_128Concat, Categories, Vec<Hash256>>;
+	pub type ProtosByCategory<T: Config> = StorageMap<_, Twox64Concat, Categories, Vec<Hash256>>;
 
 	/// UploadAuthorities is a StorageValue that keeps track of the set of ECDSA public keys of the upload authorities
 	/// * Note: An upload authority (also known as the off-chain validator) provides the digital signature needed to upload a Proto-Fragment
 	#[pallet::storage]
 	pub type ProtosByOwner<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
+		StorageMap<_, Twox64Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
 	// Staking management
 	// (Amount staked, Last stake time)
@@ -178,13 +177,13 @@ pub mod pallet {
 		_,
 		Identity,
 		Hash256,
-		Blake2_128Concat,
+		Twox64Concat,
 		T::AccountId,
 		(T::Balance, T::BlockNumber),
 	>;
 
 	#[pallet::storage]
-	pub type AccountStakes<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, Vec<Hash256>>;
+	pub type AccountStakes<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -612,12 +611,12 @@ pub mod pallet {
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
 			// make sure user has enough FRAG
-			let account =
-				<pallet_frag::EVMLinks<T>>::get(&who.clone()).ok_or(Error::<T>::NoFragLink)?;
-			let eth_lock =
-				<pallet_frag::EthLockedFrag<T>>::get(&account).ok_or(Error::<T>::NoFragLink)?;
+			let account = <pallet_tickets::EVMLinks<T>>::get(&who.clone())
+				.ok_or_else(|| Error::<T>::NoFragLink)?;
+			let eth_lock = <pallet_tickets::EthLockedFrag<T>>::get(&account)
+				.ok_or_else(|| Error::<T>::NoFragLink)?;
 			let balance = eth_lock.amount
-				- <pallet_frag::FragUsage<T>>::get(&who.clone())
+				- <pallet_tickets::FragUsage<T>>::get(&who.clone())
 					.ok_or_else(|| Error::<T>::NoFragLink)?;
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
@@ -625,7 +624,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
 				usage.as_mut().unwrap().saturating_add(amount);
 			});
 
@@ -658,7 +657,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
 				usage.as_mut().unwrap().saturating_sub(stake.0);
 			});
 
@@ -681,7 +680,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain unlinks
-			let unlinks = <pallet_frag::PendingUnlinks<T>>::take();
+			let unlinks = <pallet_tickets::PendingUnlinks<T>>::take();
 			for unlink in unlinks {
 				// take emptying the storage
 				let stakes = <AccountStakes<T>>::take(unlink.clone());

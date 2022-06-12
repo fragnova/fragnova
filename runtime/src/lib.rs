@@ -353,20 +353,20 @@ impl pallet_fragments::Config for Runtime {
 	type WeightInfo = ();
 }
 
-impl pallet_frag::EthFragContract for Runtime {
-	fn get_frag_contract_address() -> String {
-		String::from("0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac")
+impl pallet_tickets::EthFragContract for Runtime {
+	fn get_partner_contracts() -> Vec<String> {
+		vec![String::from("0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac")]
 	}
 }
 
-impl pallet_frag::Config for Runtime {
+impl pallet_tickets::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = Runtime;
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_frag::crypto::FragAuthId;
+	type AuthorityId = pallet_tickets::crypto::FragAuthId;
 }
 
 impl pallet_protos::Config for Runtime {
@@ -540,7 +540,7 @@ parameter_types! {
 impl pallet_assets::Config for Runtime {
 	type Event = Event;
 	type Balance = Balance;
-	type AssetId = u32;
+	type AssetId = u64;
 	type Currency = Balances;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
@@ -580,7 +580,7 @@ construct_runtime!(
 		Proxy: pallet_proxy,
 		Identity: pallet_identity,
 		Utility: pallet_utility,
-		Frag: pallet_frag,
+		Tickets: pallet_tickets,
 	}
 );
 
@@ -824,7 +824,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			// list_benchmark!(list, extra, pallet_frag, Frag);
+			// list_benchmark!(list, extra, pallet_tickets, Tickets);
 			list_benchmark!(list, extra, pallet_protos, Protos);
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, pallet_fragments, Fragments);
@@ -870,7 +870,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			// add_benchmark!(params, batches, pallet_frag, Frag);
+			// add_benchmark!(params, batches, pallet_tickets, Tickets);
 			add_benchmark!(params, batches, pallet_protos, Protos);
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_fragments, Fragments);
