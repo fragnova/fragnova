@@ -177,6 +177,16 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
+/// When to use:
+/// 
+/// To declare parameter types for a pallet's relevant associated types during runtime construction.
+/// 
+/// What it does:
+/// 
+/// The macro replaces each parameter specified into a struct type with a get() function returning its specified value. 
+/// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
+/// 
+/// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
 	pub const BlockHashCount: BlockNumber = 2400;
@@ -572,13 +582,38 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
-// Create the runtime by composing the FRAME pallets that were previously configured.
+/// Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
+/// 
+/// The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
+/// 
+/// Each pallet is declared as such:
+/// 
+/// - `Identifier`: name given to the pallet that uniquely identifies it.
+/// - `:`: colon separator
+/// - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
+/// - `::{ Part1, Part2<T>, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**. 
+/// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
+/// 	- `Pallet` - Required for all pallets
+/// 	- `Call` - If the pallet has callable functions
+/// 	- `Storage` - If the pallet uses storage
+/// 	- `Event` or `Event<T>` (if the event is generic) - If the pallet emits events
+/// 	- `Origin` or `Origin<T>` (if the origin is generic) - If the pallet has instanciable origins
+/// 	- `Config` or `Config<T>` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
+/// 	- `Inherent` - If the pallet provides/can check inherents.
+/// 	- `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
+/// 
+/// 
+/// NOTE 1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
+/// 
+/// NOTE 2: The population of the genesis storage depends on the order of pallets. 
+/// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
 construct_runtime!(
 	pub enum Runtime where
-		Block = Block,
-		NodeBlock = opaque::Block,
-		UncheckedExtrinsic = UncheckedExtrinsic
+		Block = Block, //  Block is the block type that is used in the runtime
+		NodeBlock = opaque::Block, // NodeBlock is the block type that is used in the node
+		UncheckedExtrinsic = UncheckedExtrinsic 
 	{
+		// The System pallet is responsible for accumulating the weight of each block as it gets executed and making sure that it does not exceed the limit.
 		System: frame_system,
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip,
 		Timestamp: pallet_timestamp,
