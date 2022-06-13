@@ -57,5 +57,39 @@ To do this:
 
 The App Explorer will now connect with your local node and will show the blocks being produced by your node in real-time.
 
+### Setting up a testnet/mainnet genesis
+
+Build to make sure wasm runtime is uptodate
+
+```
+cargo build --release
+```
+
+Build the spec, in order to generate the json spec we need to grab stuff from
+
+```
+./target/release/clamor build-spec > spec.json
+```
+
+Grab `"system"` the wasm runtime and paste it into your template, in our case `testnet.json`
+
+Produce a raw spec
+
+```
+./target/release/clamor build-spec --chain testnet.json --raw > testnet-raw.json
+```
+
+Run the validator with permissive external rpcs in order to add "aura" and "gran" keys calling author_insertKey rpc
+
+```
+ ./target/release/clamor --node-key-file p2p-node.key --chain testnet-raw.json --ipfs-server --validator --enable-offchain-indexing 1 --rpc-methods=Unsafe --rpc-external --rpc-cors all --ws-external --port 30337
+```
+
+Now run again in a more restrictive environment, also including rpc/bootstrap known nodes
+
+```
+./target/release/clamor --node-key-file p2p-node.key --chain testnet-raw.json --ipfs-server --validator --enable-offchain-indexing 1 --bootnodes /ip4/20.225.200.219/tcp/30337/ws/p2p/12D3KooWQoQhtVUT8j2hV7dXrFpf3pp4Q5FT7c3GdAf2wiKACjD6 --port 30337
+```
+
 ## License
 Clamor is licensed under the terms of the [BUSL-1.1](https://spdx.org/licenses/BUSL-1.1.html) license.
