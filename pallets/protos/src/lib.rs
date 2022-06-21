@@ -83,6 +83,12 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub references: Vec<Hash256>,
 }
 
+#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+pub struct TicketsInfo {
+	pub active_tickets: u128,
+	pub liftime_tickets: u128,
+}
+
 /// Struct of a Proto-Fragment
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct Proto<TAccountId, TBlockNumber> {
@@ -105,6 +111,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub tags: Vec<Compact<u64>>,
 	/// Metadata attached to the proto.
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
+	/// Tickets information for this proto.
+	pub tickets_info: TicketsInfo,
 }
 
 #[frame_support::pallet]
@@ -321,6 +329,7 @@ pub mod pallet {
 				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
+				tickets_info: TicketsInfo::default(),
 			};
 
 			// store proto

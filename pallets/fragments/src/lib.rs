@@ -62,6 +62,8 @@ pub struct InstanceData<TBlockNum> {
 	pub created_at: TBlockNum,
 	/// Custom data, if unique, this is the hash of the data that can be fetched using bitswap directly on our nodes
 	pub custom_data: Option<Hash256>,
+	/// Expiring at block, if not None, the item will be removed after this date
+	pub expiring_at: Option<TBlockNum>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -153,6 +155,10 @@ pub mod pallet {
 		Hash128,
 		Vec<(Compact<Unit>, Compact<Unit>)>,
 	>;
+
+	#[pallet::storage]
+	pub type Expirations<T: Config> =
+		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(Hash128, Compact<Unit>, Compact<Unit>)>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -401,6 +407,7 @@ pub mod pallet {
 				&options,
 				quantity,
 				current_block_number,
+				None,
 			)
 		}
 
@@ -467,6 +474,7 @@ pub mod pallet {
 				&options,
 				quantity,
 				current_block_number,
+				None,
 			)
 		}
 
@@ -478,11 +486,23 @@ pub mod pallet {
 			copy: Unit,
 			to: <T::Lookup as StaticLookup>::Source,
 			new_permissions: Option<FragmentPerms>,
+			expiration: Option<T::BlockNumber>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
 			let mut item_data = <Fragments<T>>::get((class, Compact(edition), Compact(copy)))
 				.ok_or(Error::<T>::NotFound)?;
+
+			// no go if will expire this block
+			if let Some(item_expiration) = item_data.expiring_at {
+				ensure!(current_block_number < item_expiration, Error::<T>::NotFound);
+			}
+
+			if let Some(expiration) = expiration {
+				ensure!(current_block_number < expiration, Error::<T>::ParamsNotValid);
+			}
 
 			// Only the owner of this fragment can transfer it
 			let ids = <Inventory<T>>::get(who.clone(), class).ok_or(Error::<T>::NotFound)?;
@@ -533,13 +553,29 @@ pub mod pallet {
 
 				let copy = copy + 1;
 
-				<Fragments<T>>::insert((class, Compact(edition), Compact(copy)), item_data);
-
 				<CopiesCount<T>>::insert((class, Compact(edition)), Compact(copy));
 
 				<Owners<T>>::append(class, to.clone(), (Compact(edition), Compact(copy)));
 
 				<Inventory<T>>::append(to.clone(), class, (Compact(edition), Compact(copy)));
+
+				// handle expiration
+				if let Some(expiring_at) = item_data.expiring_at {
+					let expiration = if let Some(expiration) = expiration {
+						if expiration < expiring_at {
+							expiration
+						} else {
+							expiring_at
+						}
+					} else {
+						expiring_at
+					};
+					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
+				} else if let Some(expiration) = expiration {
+					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
+				}
+
+				<Fragments<T>>::insert((class, Compact(edition), Compact(copy)), item_data);
 
 				Self::deposit_event(Event::InventoryAdded(to, class, (edition, copy)));
 			} else {
@@ -627,7 +663,14 @@ impl<T: Config> Pallet<T> {
 		options: &FragmentBuyOptions,
 		quantity: u64,
 		current_block_number: T::BlockNumber,
+		expiring_at: Option<T::BlockNumber>,
 	) -> DispatchResult {
+		use frame_support::ensure;
+
+		if let Some(expiring_at) = expiring_at {
+			ensure!(expiring_at > current_block_number, Error::<T>::ParamsNotValid);
+		}
+
 		let data = match options {
 			FragmentBuyOptions::UniqueData(data) => {
 				let data_hash = blake2_256(&data);
@@ -682,6 +725,7 @@ impl<T: Config> Pallet<T> {
 							permissions: fragment.permissions,
 							created_at: current_block_number,
 							custom_data: data,
+							expiring_at,
 						},
 					);
 
@@ -690,6 +734,10 @@ impl<T: Config> Pallet<T> {
 					<Inventory<T>>::append(to.clone(), fragment_hash, (cid, Compact(1)));
 
 					<Owners<T>>::append(fragment_hash, to.clone(), (cid, Compact(1)));
+
+					if let Some(expiring_at) = expiring_at {
+						<Expirations<T>>::append(expiring_at, (*fragment_hash, cid, Compact(1)));
+					}
 
 					Self::deposit_event(Event::InventoryAdded(to.clone(), *fragment_hash, (id, 1)));
 				}
