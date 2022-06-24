@@ -126,12 +126,13 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type Fragments<T: Config> = StorageNMap<
 		_,
+		// Keys are using Identity for compression, as we deteministically create fragments
 		(
 			storage::Key<Identity, Hash128>,
 			// Editions
-			storage::Key<Twox64Concat, Compact<Unit>>,
+			storage::Key<Identity, Unit>,
 			// Copies
-			storage::Key<Twox64Concat, Compact<Unit>>,
+			storage::Key<Identity, Unit>,
 		),
 		InstanceData<T::BlockNumber>,
 	>;
@@ -494,8 +495,8 @@ pub mod pallet {
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-			let mut item_data = <Fragments<T>>::get((class, Compact(edition), Compact(copy)))
-				.ok_or(Error::<T>::NotFound)?;
+			let mut item_data =
+				<Fragments<T>>::get((class, edition, copy)).ok_or(Error::<T>::NotFound)?;
 
 			// no go if will expire this block
 			if let Some(item_expiration) = item_data.expiring_at {
@@ -577,7 +578,7 @@ pub mod pallet {
 					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
 				}
 
-				<Fragments<T>>::insert((class, Compact(edition), Compact(copy)), item_data);
+				<Fragments<T>>::insert((class, edition, copy), item_data);
 
 				Self::deposit_event(Event::InventoryAdded(to, class, (edition, copy)));
 			} else {
@@ -603,7 +604,7 @@ pub mod pallet {
 				Self::deposit_event(Event::InventoryAdded(to, class, (edition, copy)));
 
 				// finally fix permissions that might have changed
-				<Fragments<T>>::mutate((class, Compact(edition), Compact(copy)), |item_data| {
+				<Fragments<T>>::mutate((class, edition, copy), |item_data| {
 					if let Some(item_data) = item_data {
 						item_data.permissions = perms;
 					}
@@ -651,7 +652,7 @@ pub mod pallet {
 			if let Some(expiring) = expiring {
 				for item in expiring {
 					// remove from Fragments
-					<Fragments<T>>::remove(item);
+					<Fragments<T>>::remove((item.0, u64::from(item.1), u64::from(item.2)));
 					for (owner, items) in <Owners<T>>::iter_prefix(item.0) {
 						let index = items.iter().position(|x| x == &(item.1, item.2));
 						if let Some(index) = index {
@@ -766,7 +767,7 @@ impl<T: Config> Pallet<T> {
 					let cid = Compact(id);
 
 					<Fragments<T>>::insert(
-						(fragment_hash, cid, Compact(1)),
+						(fragment_hash, id, 1),
 						InstanceData {
 							permissions: fragment.permissions,
 							created_at: current_block_number,
