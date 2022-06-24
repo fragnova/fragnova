@@ -175,6 +175,8 @@ pub mod pallet {
 		InventoryRemoved(T::AccountId, Hash128, (Unit, Unit)),
 		/// Inventory has been updated
 		InventoryUpdated(T::AccountId, Hash128, (Unit, Unit)),
+		/// Fragment Expiration event
+		Expired(T::AccountId, Hash128, (Unit, Unit)),
 	}
 
 	// Errors inform users that something went wrong.
@@ -639,6 +641,50 @@ pub mod pallet {
 			// TODO setup proxy
 
 			Ok(())
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(n: T::BlockNumber) {
+			let expiring = <Expirations<T>>::take(n);
+			if let Some(expiring) = expiring {
+				for item in expiring {
+					// remove from Fragments
+					<Fragments<T>>::remove(item);
+					for (owner, items) in <Owners<T>>::iter_prefix(item.0) {
+						let index = items.iter().position(|x| x == &(item.1, item.2));
+						if let Some(index) = index {
+							// remove from Owners
+							<Owners<T>>::mutate(item.0, owner.clone(), |x| {
+								if let Some(x) = x {
+									x.remove(index);
+								}
+							});
+
+							// remove from Inventory
+							<Inventory<T>>::mutate(owner.clone(), item.0, |x| {
+								if let Some(x) = x {
+									let index = x.iter().position(|y| y == &(item.1, item.2));
+									if let Some(index) = index {
+										x.remove(index);
+									}
+								}
+							});
+
+							// trigger an Event
+							Self::deposit_event(Event::Expired(
+								owner,
+								item.0,
+								(item.1.into(), item.2.into()),
+							));
+
+							// fragments are unique so we are done here
+							break;
+						}
+					}
+				}
+			}
 		}
 	}
 }

@@ -25,7 +25,7 @@ use sp_runtime::{
 	traits::{
 		BlakeTwo256, Block as BlockT, Extrinsic as ExtrinsicT, IdentifyAccount, NumberFor, Verify,
 	},
-	transaction_validity::{InvalidTransaction, TransactionSource, TransactionValidity},
+	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::prelude::*;
@@ -61,7 +61,6 @@ pub use pallet_protos;
 
 pub use pallet_contracts::Schedule;
 use pallet_protos::GetProtosParams;
-use protos::categories::Categories;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.
