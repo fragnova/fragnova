@@ -39,7 +39,7 @@ pub struct FragmentMetadata<TFungibleAsset> {
 
 /// Struct of a Fragment Class
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentClass<TFungibleAsset, TAccountId> {
+pub struct FragmentClass<TFungibleAsset, TAccountId, TBlockNum> {
 	/// The Proto-Fragment that was used to create this Fragment Class
 	pub proto_hash: Hash256,
 	/// The metadata of the Fragment Class
@@ -52,6 +52,8 @@ pub struct FragmentClass<TFungibleAsset, TAccountId> {
 	pub max_supply: Option<Compact<Unit>>,
 	/// The creator of this class
 	pub creator: TAccountId,
+	/// The block number when the item was created
+	pub created_at: TBlockNum,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -110,7 +112,7 @@ pub mod pallet {
 	/// Storage Map of Fragments where the key is the hash of the concatenation of its corresponding Proto-Fragment and the name of the Fragment, and the value is the Fragment struct of the Fragment
 	#[pallet::storage]
 	pub type Classes<T: Config> =
-		StorageMap<_, Identity, Hash128, FragmentClass<T::AssetId, T::AccountId>>;
+		StorageMap<_, Identity, Hash128, FragmentClass<T::AssetId, T::AccountId, T::BlockNumber>>;
 
 	#[pallet::storage]
 	pub type Publishing<T: Config> =
@@ -253,6 +255,8 @@ pub mod pallet {
 
 			ensure!(!<Classes<T>>::contains_key(&hash), Error::<T>::AlreadyExist);
 
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
 			// ! Writing
 
 			// create vault account
@@ -272,6 +276,7 @@ pub mod pallet {
 				unique,
 				max_supply: max_supply.map(|x| Compact(x)),
 				creator: who.clone(),
+				created_at: current_block_number,
 			};
 			<Classes<T>>::insert(&hash, fragment_data);
 
