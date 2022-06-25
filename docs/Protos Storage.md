@@ -91,7 +91,10 @@ An `ExternalAsset` can represent anything external that can be unequivocally ide
 ### GetProtosParams
 **This is used only in the `get_protos` RPC call.**
 ### ProtoPatch
+#### Remarks
+While references can be added. They cannot be removed as both Shards side would be hard (imagine removing a dependency from a released library), but especially because of the royalties distribution we don't allow removal.
 ### TicketsInfo
+This struct is purely to collect stats and metrics about a proto for now.
 ### Proto
 ## Storage
 ```rust

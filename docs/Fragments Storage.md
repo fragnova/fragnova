@@ -1,5 +1,5 @@
 # Fragments Storage
-#fragment #fragments
+#fragment #fragments 
 ## Structs
 ```rust
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -71,6 +71,8 @@ Fragments classes are the DNA of fragments. This is the way to program fragments
   * Big, 32 bytes
   * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.
 ### PublishingData
+#### Remarks
+`price` is using `u128` and not `T::Balance` because the latter requires a whole lot of traits to be satisfied.. rust headakes.
 ### FragmentBuyOptions
 When buying fragments if they are not unique, and so there is no need to have extra data attached, users will be able to buy in bulk. If not this will be the data, which is indexed and fully stored #immutable on chain for IPFS retrieval.
 ## Storage Mapping
@@ -94,9 +96,9 @@ pub type Publishing<T: Config> =
 #[pallet::storage]
 pub type EditionsCount<T: Config> = StorageMap<_, Identity, Hash128, Compact<Unit>>;
 
+
 #[pallet::storage]
-pub type CopiesCount<T: Config> =
-	StorageMap<_, Twox64Concat, (Hash128, Compact<u64>), Compact<Unit>>;
+pub type CopiesCount<T: Config> = StorageMap<_, Identity, (Hash128, Unit), Compact<Unit>>;
 
 #[pallet::storage]
 pub type Fragments<T: Config> = StorageNMap<

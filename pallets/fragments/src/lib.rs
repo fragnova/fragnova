@@ -127,8 +127,7 @@ pub mod pallet {
 	pub type EditionsCount<T: Config> = StorageMap<_, Identity, Hash128, Compact<Unit>>;
 
 	#[pallet::storage]
-	pub type CopiesCount<T: Config> =
-		StorageMap<_, Twox64Concat, (Hash128, Compact<u64>), Compact<Unit>>;
+	pub type CopiesCount<T: Config> = StorageMap<_, Identity, (Hash128, Unit), Compact<Unit>>;
 
 	#[pallet::storage]
 	pub type Fragments<T: Config> = StorageNMap<
@@ -560,13 +559,12 @@ pub mod pallet {
 				// we will copy the item to the new account
 				item_data.permissions = perms;
 
-				let copy: u64 = <CopiesCount<T>>::get((class, Compact(edition)))
-					.ok_or(Error::<T>::NotFound)?
-					.into();
+				let copy: u64 =
+					<CopiesCount<T>>::get((class, edition)).ok_or(Error::<T>::NotFound)?.into();
 
 				let copy = copy + 1;
 
-				<CopiesCount<T>>::insert((class, Compact(edition)), Compact(copy));
+				<CopiesCount<T>>::insert((class, edition), Compact(copy));
 
 				<Owners<T>>::append(class, to.clone(), (Compact(edition), Compact(copy)));
 
@@ -786,7 +784,7 @@ impl<T: Config> Pallet<T> {
 						},
 					);
 
-					<CopiesCount<T>>::insert((fragment_hash, cid), Compact(1));
+					<CopiesCount<T>>::insert((fragment_hash, id), Compact(1));
 
 					<Inventory<T>>::append(to.clone(), fragment_hash, (cid, Compact(1)));
 
