@@ -79,7 +79,7 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub block: TBlockNumber,
 	/// The hash of this patch data
 	pub data_hash: Hash256,
-	/// A patch can add references to other protos, or remove references to other protos.
+	/// A patch can add references to other protos.
 	pub references: Vec<Hash256>,
 }
 

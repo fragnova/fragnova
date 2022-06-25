@@ -1,11 +1,16 @@
 # Fragments Storage
+#fragment #fragments
 ## Structs
-### Code Is Law
 ```rust
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentMetadata<TFungibleAsset> {
 	pub name: Vec<u8>,
 	pub currency: Option<TFungibleAsset>, // Where None is NOVA
+}
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub struct UniqueOptions {
+	pub mutable: bool,
 }
 
 /// Struct of a Fragment Class
@@ -18,7 +23,7 @@ pub struct FragmentClass<TFungibleAsset, TAccountId, TBlockNum> {
 	/// The next owner permissions
 	pub permissions: FragmentPerms,
 	/// If Fragments must contain unique data when created (injected by buyers, validated by the system)
-	pub unique: bool,
+	pub unique: Option<UniqueOptions>,
 	/// If scarce, the max supply of the Fragment
 	pub max_supply: Option<Compact<Unit>>,
 	/// The creator of this class
@@ -53,9 +58,11 @@ pub enum FragmentBuyOptions {
 }
 ```
 ### FragmentMetadata
+Proto-hash + this metadata compose the Fragment class unique id.
 #### Remarks
 * #immutable - once created there is no way to edit, intentionally.
 ### FragmentClass
+Fragments classes are the DNA of fragments. This is the way to program fragments distribution, expiration and starting permissions before even creating any fragment yet.
 #### Remarks
 * #immutable - once created there is no way to edit, intentionally.
 ### InstanceData
@@ -65,6 +72,7 @@ pub enum FragmentBuyOptions {
   * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.
 ### PublishingData
 ### FragmentBuyOptions
+When buying fragments if they are not unique, and so there is no need to have extra data attached, users will be able to buy in bulk. If not this will be the data, which is indexed and fully stored #immutable on chain for IPFS retrieval.
 ## Storage Mapping
 ```rust
 // proto-hash to fragment-hash-sequence
@@ -129,6 +137,7 @@ pub type Expirations<T: Config> =
 	StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(Hash128, Compact<Unit>, Compact<Unit>)>>;
 ```
 ### Proto2Fragments
+Self-explanatory, a way to find all the fragments made out of a proto.
 ### Classes
 ### Publishing
 ### EditionsCount

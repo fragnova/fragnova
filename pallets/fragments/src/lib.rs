@@ -37,6 +37,11 @@ pub struct FragmentMetadata<TFungibleAsset> {
 	pub currency: Option<TFungibleAsset>, // Where None is NOVA
 }
 
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub struct UniqueOptions {
+	pub mutable: bool,
+}
+
 /// Struct of a Fragment Class
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentClass<TFungibleAsset, TAccountId, TBlockNum> {
@@ -47,7 +52,7 @@ pub struct FragmentClass<TFungibleAsset, TAccountId, TBlockNum> {
 	/// The next owner permissions
 	pub permissions: FragmentPerms,
 	/// If Fragments must contain unique data when created (injected by buyers, validated by the system)
-	pub unique: bool,
+	pub unique: Option<UniqueOptions>,
 	/// If scarce, the max supply of the Fragment
 	pub max_supply: Option<Compact<Unit>>,
 	/// The creator of this class
@@ -233,7 +238,7 @@ pub mod pallet {
 			proto_hash: Hash256,
 			metadata: FragmentMetadata<T::AssetId>,
 			permissions: FragmentPerms,
-			unique: bool,
+			unique: Option<UniqueOptions>,
 			max_supply: Option<Unit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;

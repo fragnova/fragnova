@@ -37,7 +37,7 @@ fn create_should_works() {
 			PROTO_HASH,
 			fragment_data,
 			FragmentPerms::NONE,
-			true,
+			None,
 			None
 		));
 		assert!(Classes::<Test>::contains_key(&hash));
@@ -56,7 +56,7 @@ fn create_should_not_work_if_protos_not_found() {
 				PROTO_HASH,
 				fragment_data,
 				FragmentPerms::NONE,
-				true,
+				None,
 				None
 			),
 			Error::<Test>::ProtoNotFound
@@ -82,7 +82,7 @@ fn create_should_not_work_if_proto_owner_not_found() {
 				PROTO_HASH,
 				fragment_data,
 				FragmentPerms::NONE,
-				true,
+				None,
 				None
 			),
 			Error::<Test>::NoPermission
@@ -107,7 +107,7 @@ fn create_should_not_work_if_fragment_already_exist() {
 			PROTO_HASH,
 			fragment_data.clone(),
 			FragmentPerms::NONE,
-			true,
+			None,
 			None
 		));
 		assert!(Classes::<Test>::contains_key(&hash));
@@ -118,7 +118,7 @@ fn create_should_not_work_if_fragment_already_exist() {
 				PROTO_HASH,
 				fragment_data,
 				FragmentPerms::NONE,
-				true,
+				None,
 				None
 			),
 			Error::<Test>::AlreadyExist
