@@ -59,6 +59,10 @@ pub enum FragmentBuyOptions {
 #### Remarks
 * #immutable - once created there is no way to edit, intentionally.
 ### InstanceData
+#### Remarks
+* On purpose not storing owner because:
+  * Big, 32 bytes
+  * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.
 ### PublishingData
 ### FragmentBuyOptions
 ## Storage Mapping
@@ -134,12 +138,12 @@ pub type Expirations<T: Config> =
 Very long key, means takes a lot of redundant storage (because we will have **many** Instances!), we try to limit the  damage by using `Identity` so that the final key will be:
 `[16 bytes of Fragment class hash]+[8 bytes of u64, edition]+[8 bytes of u64, copy id]` for a total of 32 bytes.
 ### Owners
+*Notice this pulls from memory (and deserializes (scale)) the whole `Vec<_,_>`, this is on purpose as it should not be too big.*
+
 A shortcut to map from Class to owners.
 ### Inventory
 *Notice this pulls from memory (and deserializes (scale)) the whole `Vec<_,_>`, this is on purpose as it should not be too big.*
 
 A shortcut to map from owners to Class and finally instances.
 ### Expirations
-*Notice this pulls from memory (and deserializes (scale)) the whole `Vec<_,_>`, this is on purpose as it should not be too big.*
-
 Fragments can expire, we process expirations every `on_finalize`
