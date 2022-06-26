@@ -42,6 +42,8 @@ pub struct InstanceData<TBlockNum> {
 	pub custom_data: Option<Hash256>,
 	/// Expiring at block, if not None, the item will be removed after this date
 	pub expiring_at: Option<TBlockNum>,
+	/// If the item is a stack, the amount of units left in the stack
+	pub amount: Option<Compact<Unit>>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -49,6 +51,8 @@ pub struct PublishingData<TBlockNum> {
 	pub price: Compact<u128>,
 	pub units_left: Option<Compact<Unit>>,
 	pub expiration: Option<TBlockNum>,
+	/// If the item is a stack, the amount of units to top up
+	pub amount: Option<Compact<Unit>>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]

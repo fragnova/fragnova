@@ -71,6 +71,8 @@ pub struct InstanceData<TBlockNum> {
 	pub custom_data: Option<Hash256>,
 	/// Expiring at block, if not None, the item will be removed after this date
 	pub expiring_at: Option<TBlockNum>,
+	/// If the item is a stack, the amount of units left in the stack
+	pub amount: Option<Compact<Unit>>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -78,6 +80,8 @@ pub struct PublishingData<TBlockNum> {
 	pub price: Compact<u128>,
 	pub units_left: Option<Compact<Unit>>,
 	pub expiration: Option<TBlockNum>,
+	/// If the item is a stack, the amount of units to top up
+	pub amount: Option<Compact<Unit>>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -297,6 +301,7 @@ pub mod pallet {
 			price: u128,
 			quantity: Option<Unit>,
 			expires: Option<T::BlockNumber>,
+			amount: Option<Unit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -343,6 +348,7 @@ pub mod pallet {
 					price: Compact(price),
 					units_left: quantity.map(|x| Compact(x)),
 					expiration: expires,
+					amount: amount.map(|x| Compact(x)),
 				},
 			);
 
@@ -385,6 +391,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			fragment_hash: Hash128,
 			options: FragmentBuyOptions,
+			amount: Option<Unit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -420,6 +427,7 @@ pub mod pallet {
 				quantity,
 				current_block_number,
 				None,
+				amount.map(|x| Compact(x)),
 			)
 		}
 
@@ -487,6 +495,7 @@ pub mod pallet {
 				quantity,
 				current_block_number,
 				None,
+				sale.amount,
 			)
 		}
 
@@ -719,6 +728,7 @@ impl<T: Config> Pallet<T> {
 		quantity: u64,
 		current_block_number: T::BlockNumber,
 		expiring_at: Option<T::BlockNumber>,
+		amount: Option<Compact<Unit>>,
 	) -> DispatchResult {
 		use frame_support::ensure;
 
@@ -781,6 +791,7 @@ impl<T: Config> Pallet<T> {
 							created_at: current_block_number,
 							custom_data: data,
 							expiring_at,
+							amount,
 						},
 					);
 
