@@ -38,7 +38,7 @@ benchmarks! {
 			&[&proto_hash[..], &fragment_data.name.encode(), &fragment_data.currency.encode()].concat(),
 		);
 
-	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, FragmentPerms::NONE, true, None)
+	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, FragmentPerms::NONE, None, None)
 	verify {
 		assert_last_event::<T>(Event::<T>::ClassCreated(hash).into())
 	}
