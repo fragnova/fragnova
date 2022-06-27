@@ -86,7 +86,7 @@ pub struct ProtoPatch<TBlockNumber> {
 #[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct TicketsInfo {
 	pub active_tickets: u128,
-	pub liftime_tickets: u128,
+	pub lifetime_tickets: u128,
 }
 
 /// Struct of a Proto-Fragment
