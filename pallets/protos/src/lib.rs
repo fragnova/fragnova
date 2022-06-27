@@ -71,6 +71,7 @@ pub struct GetProtosParams<TAccountId, TString> {
 	pub return_owners: bool,
 	pub categories: Vec<Categories>,
 	pub tags: Vec<TString>,
+	pub available: Option<bool>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
@@ -751,8 +752,16 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn filter_proto(proto_id: &Hash256, tags: &[Vec<u8>], categories: &[Categories]) -> bool {
+		fn filter_proto(proto_id: &Hash256, tags: &[Vec<u8>], categories: &[Categories], avail: Option<bool>) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
+				if let Some(avail) = avail {
+					if avail && struct_proto.include_cost.is_none() {
+						return false;
+					} else if !avail && struct_proto.include_cost.is_some() {
+						return false;
+					}
+				}
+
 				if categories.len() == 0
 				// Use any here to match any category towards proto
 					|| categories.into_iter().any(|cat| *cat == struct_proto.category)
@@ -795,7 +804,7 @@ pub mod pallet {
 							.into_iter()
 							.rev()
 							.filter(|proto_id| {
-								Self::filter_proto(proto_id, &params.tags, &params.categories)
+								Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
 							})
 							.skip(params.from as usize)
 							.take(params.limit as usize)
@@ -805,7 +814,7 @@ pub mod pallet {
 						list_protos_owner
 							.into_iter()
 							.filter(|proto_id| {
-								Self::filter_proto(proto_id, &params.tags, &params.categories)
+								Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
 							})
 							.skip(params.from as usize)
 							.take(params.limit as usize)
@@ -836,7 +845,7 @@ pub mod pallet {
 								.into_iter()
 								.rev()
 								.filter(|proto_id| {
-									Self::filter_proto(proto_id, &params.tags, &params.categories)
+									Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
 								})
 								.collect()
 						} else {
@@ -844,7 +853,7 @@ pub mod pallet {
 							protos
 								.into_iter()
 								.filter(|proto_id| {
-									Self::filter_proto(proto_id, &params.tags, &params.categories)
+									Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
 								})
 								.collect()
 						};
