@@ -37,7 +37,7 @@ frame_support::construct_runtime!(
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Frag: pallet_frag::{Pallet, Call, Storage, Event<T>},
+		Tickets: pallet_tickets::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -142,14 +142,14 @@ impl pallet_protos::Config for Test {
 	type StakeLockupPeriod = ConstU64<100800>; // one week
 }
 
-impl pallet_frag::Config for Test {
+impl pallet_tickets::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = ();
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_frag::crypto::FragAuthId;
+	type AuthorityId = pallet_tickets::crypto::FragAuthId;
 }
 
 impl pallet_fragments::Config for Test {

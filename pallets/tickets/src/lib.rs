@@ -104,16 +104,12 @@ use ethabi::ParamType;
 /// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
 pub trait EthFragContract {
 	/// **Return** the **contract address** of the **FRAG Token Smart Contract** 
-	fn get_frag_contract_address() -> String {
-		String::from("0xBADF00D")
+	fn get_partner_contracts() -> Vec<String> {
+		vec![String::from("0xBADF00D")]
 	}
 }
 
-impl EthFragContract for () {
-	fn get_frag_contract_address() -> String {
-		String::from("0xBADF00D")
-	}
-}
+impl EthFragContract for () {}
 
 /// **Struct** representing a **recent confirmed (i.e with sufficient blockchain confirmations) log** for the **event `Lock` or `Unlock`** of the **FRAG token Smart Contract**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
@@ -150,7 +146,7 @@ impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Blake2_128Concat};
+	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
 
@@ -179,6 +175,20 @@ pub mod pallet {
 
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+
+		// TODO
+
+		// #[pallet::constant]
+		// type TicketMultiplier: Get<u128>;
+
+		// #[pallet::constant]
+		// type TicketMaxBonus: Get<u128>;
+
+		// #[pallet::constant]
+		// type TicketMinLockPeriod: Get<u64>;
+
+		// #[pallet::constant]
+		// type TicketMaxLockPeriod: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
@@ -209,7 +219,7 @@ pub mod pallet {
 	/// 
 	/// NOTE: The **Ethereum Account ID** had to be **manually mapped to the Clamor Account ID** by the owner itself to show up in this `StorageMap`.
 	#[pallet::storage]
-	pub type EVMLinks<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, H160>;
+	pub type EVMLinks<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, H160>;
 
 	/// This **StorageMap** is the reverse mapping of `EVMLinks`.
 	#[pallet::storage]
@@ -217,7 +227,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Clamor Account ID** to the **Amount of FRAG token staked by the aforementioned Clamor Account ID**
 	#[pallet::storage]
-	pub type FragUsage<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, T::Balance>;
+	pub type FragUsage<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, T::Balance>;
 
 	/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**. 
 	/// The key for this map is:
@@ -487,9 +497,7 @@ pub mod pallet {
 		/// that make (by default) validators generate transactions that feed results
 		/// of those long-running computations back on chain.
 		fn offchain_worker(n: T::BlockNumber) {
-			if let Err(error) = Self::sync_frag_locks(n) {
-				log::error!("Error syncing frag locks: {:?}", error);
-			}
+			Self::sync_partner_contracts(n);
 		}
 	}
 
@@ -601,26 +609,21 @@ pub mod pallet {
 		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`) (问Gio)
 		/// 
 		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
-		fn sync_frag_locks(_block_number: T::BlockNumber) -> Result<(), &'static str> {
-			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
-				String::from_utf8(geth).unwrap()
-			} else {
-				log::debug!("No geth url found, skipping sync");
-				return Ok(()); // It is fine to have a node not syncing with eth
-			};
-
-			let contract = T::EthFragContract::get_frag_contract_address();
-
+		fn sync_partner_contract(
+			_block_number: T::BlockNumber,
+			contract: &str,
+			geth_uri: &str,
+		) -> Result<(), &'static str> {
 			let req = json!({
 				"jsonrpc": "2.0",
 				"method": "eth_blockNumber",
-				"id": 1
+				"id": 1u64
 			});
 
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes()); // Get the latest block number of the Ethereum Blockchain
+			let response_body = http_json_post(geth_uri, req.as_bytes()); // Get the latest block number of the Ethereum Blockchain
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -668,7 +671,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri.as_str(), req.as_bytes()); // Make HTTP POST request with `req` to URL `get_uri`
+			let response_body = http_json_post(geth_uri, req.as_bytes()); // Make HTTP POST request with `req` to URL `get_uri`
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -752,6 +755,32 @@ pub mod pallet {
 			last_block_ref.set(&to_block.as_bytes().to_vec()); // Recall that the `to_block` is the latest block that is considered final （问Gio）
 
 			Ok(())
+		}
+
+		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
+		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
+		/// 
+		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
+		/// (NOTE: the signed payload consists of a payload and a signature. 
+		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
+		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`) (问Gio)
+		/// 
+		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
+		fn sync_partner_contracts(block_number: T::BlockNumber) {
+			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
+				String::from_utf8(geth).unwrap()
+			} else {
+				log::debug!("No geth url found, skipping sync");
+				return; // It is fine to have a node not syncing with eth
+			};
+
+			let contracts = T::EthFragContract::get_partner_contracts();
+
+			for contract in contracts {
+				if let Err(e) = Self::sync_partner_contract(block_number, &contract, &geth_uri) {
+					log::error!("Failed to sync partner contract with error: {}", e);
+				}
+			}
 		}
 
 		/// Unlink the **Clamor public account address `sender`** from **its linked EVM public account address `account`**

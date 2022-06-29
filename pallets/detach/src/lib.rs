@@ -183,7 +183,7 @@ pub mod pallet {
 	/// **StorageDoubleMap** that maps an **account address on an external blockchain and the external blockchain itself** to a **nonce** 
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
-		StorageDoubleMap<_, Blake2_128Concat, Vec<u8>, Blake2_128Concat, SupportedChains, u64>;
+		StorageDoubleMap<_, Twox64Concat, Vec<u8>, Twox64Concat, SupportedChains, u64>;
 
 	/// **StorageMap** that maps a **detached Proto-Fragment's hash** to an ***ExportData* enum (this enum contains information about the Proto-Fragment' detachment)**
 	#[pallet::storage]

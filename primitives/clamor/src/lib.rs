@@ -9,6 +9,7 @@ use sp_io::{hashing::blake2_256, offchain};
 use sp_std::vec::Vec;
 
 pub type Hash256 = [u8; 32];
+pub type Hash128 = [u8; 16];
 
 pub const CID_PREFIX: [u8; 6] = hex_literal::hex!("0155a0e40220");
 

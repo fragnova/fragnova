@@ -6,8 +6,8 @@
 
 
 use clamor_runtime::{
-	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, FragConfig, GenesisConfig,
-	GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig,
+	GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, TicketsConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -177,7 +177,7 @@ pub fn live_config() -> Result<ChainSpec, String> {
 				indices: IndicesConfig { indices: vec![] },
 				detach: DetachConfig::default(),
 				assets: AssetsConfig::default(),
-				frag: FragConfig::default(),
+				tickets: TicketsConfig::default(),
 			}
 		},
 		// Bootnodes
@@ -232,6 +232,8 @@ fn testnet_genesis(
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
 		assets: AssetsConfig { assets: vec![], metadata: vec![], accounts: vec![] },
-		frag: FragConfig { keys: initial_authorities.iter().map(|x| (x.4.clone())).collect() },
+		tickets: TicketsConfig {
+			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
+		},
 	}
 }
