@@ -1,4 +1,4 @@
-use crate as pallet_frag;
+use crate as pallet_tickets;
 use crate::*;
 
 use frame_support::{
@@ -60,7 +60,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		FragPallet: pallet_frag::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
+		TicketsPallet: pallet_tickets::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 	}
@@ -160,20 +160,20 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
-impl pallet_frag::EthFragContract for Test {
-	fn get_frag_contract_address() -> String {
-		String::from("0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac")
+impl pallet_tickets::EthFragContract for Test {
+	fn get_partner_contracts() -> Vec<String> {
+		vec![String::from("0xBADF00D")]
 	}
 }
 
-impl pallet_frag::Config for Test {
+impl pallet_tickets::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthConfirmations = ConstU64<1>;
 	type EthFragContract = Test;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_frag::crypto::FragAuthId;
+	type AuthorityId = pallet_tickets::crypto::FragAuthId;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

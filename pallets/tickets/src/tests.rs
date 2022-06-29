@@ -1,5 +1,5 @@
 use crate::mock;
-use crate as pallet_frag;
+use crate as pallet_tickets;
 
 use crate::*;
 
@@ -52,7 +52,7 @@ mod link_tests {
     use super::*;
 
     pub fn link_(signer: <Test as frame_system::Config>::AccountId, link_signature: &sp_core::ecdsa::Signature) -> DispatchResult {
-        FragPallet::link(
+        TicketsPallet::link(
             Origin::signed(signer),
             link_signature.clone()
         )
@@ -78,7 +78,7 @@ mod link_tests {
             assert!(<FragUsage<Test>>::get(&link.clamor_account_id).unwrap() == 0);
 
             let event = <frame_system::Pallet<Test>>::events().pop().expect("Expected at least one EventRecord to be found").event;
-        	assert_eq!(event, mock::Event::from(pallet_frag::Event::Linked(link.clamor_account_id, link.get_ethereum_account_id())));
+        	assert_eq!(event, mock::Event::from(pallet_tickets::Event::Linked(link.clamor_account_id, link.get_ethereum_account_id())));
 
         });
 
@@ -104,7 +104,7 @@ mod link_tests {
     }
 
     #[test]
-    #[ignore = "seems there's a bug with linking"]
+    // #[ignore = "seems there's a bug with linking"]
     fn link_should_not_work_if_hashed_message_is_invalid() { 
 
         new_test_ext().execute_with(|| {
@@ -114,7 +114,7 @@ mod link_tests {
             let link = dd.link;
 
             // let mut message = b"EVM2Fragnova".to_vec();
-            // message.extend_from_slice(&<Test as pallet_frag::Config>::EthChainId::get().to_be_bytes());
+            // message.extend_from_slice(&<Test as pallet_tickets::Config>::EthChainId::get().to_be_bytes());
             // message.extend_from_slice(&dd.account_id.encode());
             // let hashed_message = sp_core::keccak_256(&message);
             // println!(
@@ -162,7 +162,7 @@ mod link_tests {
     }
 
     #[test]
-    #[ignore = "i think this is a bug!"]
+    // #[ignore = "i think this is a bug!"]
     fn link_should_not_work_if_ethereum_account_is_already_linked() { 
 
         new_test_ext().execute_with(|| {
@@ -203,7 +203,7 @@ mod unlink_tests {
     use super::*;
 
     pub fn unlink(signer: <Test as frame_system::Config>::AccountId, ethereum_accound_id: H160) -> DispatchResult {
-        FragPallet::unlink(
+        TicketsPallet::unlink(
             Origin::signed(signer),
             ethereum_accound_id
         )
@@ -230,7 +230,7 @@ mod unlink_tests {
             assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
 
             let event = <frame_system::Pallet<Test>>::events().pop().expect("Expected at least one EventRecord to be found").event;
-        	assert_eq!(event, mock::Event::from(pallet_frag::Event::Unlinked(link.clamor_account_id, link.get_ethereum_account_id())));
+        	assert_eq!(event, mock::Event::from(pallet_tickets::Event::Unlinked(link.clamor_account_id, link.get_ethereum_account_id())));
 
         });
 
@@ -253,7 +253,7 @@ mod unlink_tests {
     }
 
     #[test]
-    #[ignore = "this is a known bug"]
+    // #[ignore = "this is a known bug"]
     fn unlink_should_not_work_if_ethereum_account_id_is_linked_with_different_clamor_account_id() {
 
         new_test_ext().execute_with(|| {
@@ -299,7 +299,7 @@ mod sync_frag_locks_tests {
 
         let latest_block_number = 
         lock.block_number // ensure that `lock.block_number` exists by making `latest_block_number` greater than or equal to it
-        .saturating_add(<Test as pallet_frag::Config>::EthConfirmations::get())
+        .saturating_add(<Test as pallet_tickets::Config>::EthConfirmations::get())
         .saturating_add(69); 
 
         offchain_state.write().expect_request(testing::PendingRequest {
@@ -321,7 +321,7 @@ mod sync_frag_locks_tests {
         });
 
         let from_block = 0;
-        let to_block = latest_block_number.saturating_sub(<Test as pallet_frag::Config>::EthConfirmations::get());
+        let to_block = latest_block_number.saturating_sub(<Test as pallet_tickets::Config>::EthConfirmations::get());
 
         offchain_state.write().expect_request(testing::PendingRequest {
             method: String::from("POST"),
@@ -334,10 +334,10 @@ mod sync_frag_locks_tests {
                 "params": [{
                     "fromBlock": format!("0x{:x}", from_block), 
                     "toBlock": format!("0x{:x}", to_block), // Give us the event logs that were emitted (if any) from the block number `from_block` to the block number `to_block`, inclusive
-                    "address": <<Test as pallet_frag::Config>::EthFragContract as pallet_frag::EthFragContract>::get_frag_contract_address(),
+                    "address": <<Test as pallet_tickets::Config>::EthFragContract as pallet_tickets::EthFragContract>::get_partner_contracts()[0],
                     "topics": [ 
                         // [] to OR
-                        [pallet_frag::LOCK_EVENT, pallet_frag::UNLOCK_EVENT]
+                        [pallet_tickets::LOCK_EVENT, pallet_tickets::UNLOCK_EVENT]
                     ],
                 }]
             }).to_string().into_bytes(),
@@ -346,9 +346,9 @@ mod sync_frag_locks_tests {
                 "jsonrpc": "2.0",
                 "result": [
                     {
-                        "address":  <<Test as pallet_frag::Config>::EthFragContract as pallet_frag::EthFragContract>::get_frag_contract_address(),
+                        "address": <<Test as pallet_tickets::Config>::EthFragContract as pallet_tickets::EthFragContract>::get_partner_contracts()[0],
                         "topics": [
-                            pallet_frag::LOCK_EVENT,
+                            pallet_tickets::LOCK_EVENT,
                             format!("0x{}", hex::encode(ethabi::encode(&[Token::Address(lock.get_ethereum_account_id())])))
                         ],
                         "data": format!("0x{}", hex::encode(ethabi::encode(&[Token::Bytes(lock.get_lock_signature().0.to_vec()), Token::Uint(lock.lock_amount)]))),
@@ -380,14 +380,14 @@ mod sync_frag_locks_tests {
         
         t.execute_with(|| {               
             // when
-            FragPallet::sync_frag_locks(1).unwrap(); // THIS IS BIG DADDY!
+            TicketsPallet::sync_partner_contracts(1); // THIS IS BIG DADDY!
             // then
             let tx = pool_state.write().transactions.pop().unwrap();
             let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
             assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
             
 
-            if let Call::FragPallet(crate::Call::internal_lock_update { 
+            if let Call::TicketsPallet(crate::Call::internal_lock_update { 
                 data: payload,
                 signature: signature,
             }) = tx.call {
@@ -399,7 +399,7 @@ mod sync_frag_locks_tests {
                     <EthLockUpdate<
                         <Test as SigningTypes>::Public 
                     > as SignedPayload<Test>
-                    >::verify::<crypto::FragAuthId>(&payload, signature); // Notice in `pallet_frag` that `EthLockUpdate<T::Public>` implements the trait `SignedPayload`
+                    >::verify::<crypto::FragAuthId>(&payload, signature); // Notice in `pallet_tickets` that `EthLockUpdate<T::Public>` implements the trait `SignedPayload`
                     
 
                 assert!(signature_valid); // If `signature_valid` is true, it means `payload` and `signature` recovered the public address `payload.public`
@@ -440,7 +440,7 @@ mod internal_lock_update_tests {
             block_number: lock.block_number,
         };
 
-        FragPallet::internal_lock_update(Origin::none(), payload, sp_core::ed25519::Signature([69u8; 64]))
+        TicketsPallet::internal_lock_update(Origin::none(), payload, sp_core::ed25519::Signature([69u8; 64]))
     }
 
     fn unlock_(unlock: &Unlock) -> DispatchResult {
@@ -454,7 +454,7 @@ mod internal_lock_update_tests {
             block_number: unlock.block_number,
         };
 
-        FragPallet::internal_lock_update(Origin::none(), payload, sp_core::ed25519::Signature([69u8; 64]))
+        TicketsPallet::internal_lock_update(Origin::none(), payload, sp_core::ed25519::Signature([69u8; 64]))
     
     }
 
@@ -492,7 +492,7 @@ mod internal_lock_update_tests {
             assert_eq!(
                 event, 
                 mock::Event::from(
-                    pallet_frag::Event::Locked(
+                    pallet_tickets::Event::Locked(
                         lock.get_ethereum_account_id(), 
                         SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(lock.lock_amount)
                     )
@@ -502,7 +502,7 @@ mod internal_lock_update_tests {
     }
 
     #[test]
-    #[ignore = "i have no idea how to import pallet-protos"]
+    // #[ignore = "i have no idea how to import pallet-protos"]
     fn lock_should_remove_staking_information_if_linked_clamor_account_has_a_greater_used_amount_than_the_lock_amount() { // TODO
         new_test_ext().execute_with(|| {
 
@@ -568,7 +568,7 @@ mod internal_lock_update_tests {
             assert_eq!(
                 event, 
                 mock::Event::from(
-                    pallet_frag::Event::Unlocked(
+                    pallet_tickets::Event::Unlocked(
                         unlock.get_ethereum_account_id(), 
                         SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(unlock.unlock_amount)
                     )
@@ -602,7 +602,7 @@ mod internal_lock_update_tests {
             assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
 
             let event = System::events().get(System::events().len() - 2).expect("Expected at least two EventRecords to be found").event.clone();
-        	assert_eq!(event, mock::Event::from(pallet_frag::Event::Unlinked(link.clamor_account_id, link.get_ethereum_account_id())));
+        	assert_eq!(event, mock::Event::from(pallet_tickets::Event::Unlinked(link.clamor_account_id, link.get_ethereum_account_id())));
 
         });
 

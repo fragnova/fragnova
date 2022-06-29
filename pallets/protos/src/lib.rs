@@ -89,7 +89,7 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub references: Vec<Hash256>,
 }
 
-#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct TicketsInfo {
 	pub active_tickets: u128,
 	pub lifetime_tickets: u128,

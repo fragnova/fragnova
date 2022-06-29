@@ -770,7 +770,7 @@ pub mod pallet {
 		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`) (问Gio)
 		/// 
 		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
-		fn sync_partner_contracts(block_number: T::BlockNumber) {
+		pub fn sync_partner_contracts(block_number: T::BlockNumber) {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
 			} else {

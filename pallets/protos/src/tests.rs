@@ -27,13 +27,13 @@ use upload_tests::upload as upload;
 use stake_tests::stake_ as stake_;
 
 
-use pallet_frag::EthLockUpdate;
+use pallet_tickets::EthLockUpdate;
 use frame_system::offchain::SigningTypes;
-use copied_from_pallet_frag::lock_ as lock_;
-use copied_from_pallet_frag::link_ as link_;
+use copied_from_pallet_tickets::lock_ as lock_;
+use copied_from_pallet_tickets::link_ as link_;
 
 
-mod copied_from_pallet_frag {
+mod copied_from_pallet_tickets {
 
 	use super::*;
 
@@ -119,6 +119,7 @@ mod upload_tests {
 				category: proto.category.clone(),
 				tags: Vec::new(), // proto.tags,
 				metadata: BTreeMap::new(),
+				tickets_info: TicketsInfo::default(),
 			};
 
 			// Ensure that this test case fails if a new field is ever added to the `Proto` struct
@@ -657,7 +658,7 @@ mod stake_tests {
 	
 			upload(dd.account_id, &stake.proto_fragment);
 
-			let frag_staked = <pallet_frag::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
+			let frag_staked = <pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
 
 			let current_block_number = System::block_number(); //@sinkingsugar
 
@@ -672,7 +673,7 @@ mod stake_tests {
 			);
 
 			assert_eq!(
-				<pallet_frag::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap(), 
+				<pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap(), 
 				frag_staked.saturating_add(stake.get_stake_amount())
 			);
 
@@ -733,9 +734,9 @@ mod stake_tests {
 			lock_(&stake.lock);
 			link_(stake.lock.get_link().clamor_account_id, &stake.lock.get_link().get_link_signature());
 
-			let frag_locked = <pallet_frag::EthLockedFrag<Test>>::get(stake.lock.get_link().get_ethereum_account_id()).unwrap()
+			let frag_locked = <pallet_tickets::EthLockedFrag<Test>>::get(stake.lock.get_link().get_ethereum_account_id()).unwrap()
 							.amount;
-			let frag_staked = <pallet_frag::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
+			let frag_staked = <pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
 			let balance = frag_locked - frag_staked;
 
 			assert_ok!(
@@ -764,9 +765,9 @@ mod stake_tests {
 			lock_(&stake.lock);
 			link_(stake.lock.get_link().clamor_account_id, &stake.lock.get_link().get_link_signature());
 
-			let frag_locked = <pallet_frag::EthLockedFrag<Test>>::get(stake.lock.get_link().get_ethereum_account_id()).unwrap()
+			let frag_locked = <pallet_tickets::EthLockedFrag<Test>>::get(stake.lock.get_link().get_ethereum_account_id()).unwrap()
 							.amount;
-			let frag_staked = <pallet_frag::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
+			let frag_staked = <pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
 			let balance = frag_locked - frag_staked;
 
 			assert_noop!(
@@ -804,7 +805,7 @@ mod unstake_tests {
 	
 			upload(dd.account_id, &stake.proto_fragment);
 
-			let frag_staked = <pallet_frag::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
+			let frag_staked = <pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
 
 			let current_block_number = System::block_number(); //@sinkingsugar
 
@@ -824,7 +825,7 @@ mod unstake_tests {
 			assert_ok!(unstake_(stake.lock.get_link().clamor_account_id, &stake.proto_fragment));
 
 			assert_eq!(
-				<pallet_frag::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap(), 
+				<pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap(), 
 				frag_staked
 			);
 	
