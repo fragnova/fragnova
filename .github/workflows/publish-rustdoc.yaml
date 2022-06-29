@@ -20,6 +20,11 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
+
+      - uses: actions-rs/toolchain@v1
+        with: 
+          toolchain: nightly
+          override: true
         
       - run: sh ./scripts/update-gh-pages.sh
         env:
