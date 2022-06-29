@@ -48,11 +48,11 @@ mod copied_from_pallet_frag {
             block_number: lock.block_number,
         };
 
-        FragPallet::internal_lock_update(Origin::none(), payload, sp_core::ed25519::Signature([69u8; 64]))
+        TicketsPallet::internal_lock_update(Origin::none(), payload, sp_core::ed25519::Signature([69u8; 64]))
     }
 
 	pub fn link_(signer: <Test as frame_system::Config>::AccountId, link_signature: &sp_core::ecdsa::Signature) -> DispatchResult {
-        FragPallet::link(
+        TicketsPallet::link(
             Origin::signed(signer),
             link_signature.clone()
         )

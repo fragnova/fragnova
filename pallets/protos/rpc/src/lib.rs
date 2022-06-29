@@ -67,6 +67,7 @@ where
 			return_owners: params.return_owners,
 			categories: params.categories,
 			tags: params.tags.into_iter().map(|s| s.into_bytes()).collect(),
+			available: params.available,
 		};
 
 		let result = api.get_protos(&at, params_no_std).map(|list_bytes| {

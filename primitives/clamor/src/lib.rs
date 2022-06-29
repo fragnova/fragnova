@@ -9,6 +9,7 @@ use sp_io::{hashing::blake2_256, offchain};
 use sp_std::vec::Vec;
 
 pub type Hash256 = [u8; 32];
+pub type Hash128 = [u8; 16];
 
 pub const CID_PREFIX: [u8; 6] = hex_literal::hex!("0155a0e40220");
 
@@ -76,11 +77,27 @@ mod details {
 	}
 }
 
+/// A runtime interface for the Clamor Blockchain
+/// 
+/// Background:
+/// 
+/// `#[sp_runtime_interface::runtime_interface]` is an attribute macro for transforming a trait declaration into a runtime interface.
+/// 
+/// A runtime interface is a fixed interface between a Substrate compatible runtime and the native node. 
+/// This interface is callable from a native and a wasm runtime. 
+/// The **macro** will **generate** the **corresponding code for the native implementation** and the **code for calling from the wasm side to the native implementation**.
+/// The macro expects the runtime interface declaration as trait declaration.
+/// 
+/// Source: https://paritytech.github.io/substrate/latest/sp_runtime_interface/attr.runtime_interface.html 
 #[sp_runtime_interface::runtime_interface]
 pub trait Clamor {
 	// these are called NATIVE from even WASM
 	// that's the deal
 
+	
+	/// A function that can be called from native/wasm.
+    ///
+    /// The implementation given to this function is only compiled on native.
 	fn say_hello_world(data: &str) {
 		details::_say_hello_world(data);
 	}

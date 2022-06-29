@@ -75,6 +75,7 @@ pub struct GetProtosParams<TAccountId, TString> {
 	pub return_owners: bool,
 	pub categories: Vec<Categories>,
 	pub tags: Vec<TString>,
+	pub available: Option<bool>,
 }
 
 /// **Struct** of a **Proto-Fragment Patch**
@@ -86,6 +87,12 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub data_hash: Hash256,
 	/// **List of New Proto-Fragments** that was **used** to **create** the **patch** (INCDT)
 	pub references: Vec<Hash256>,
+}
+
+#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+pub struct TicketsInfo {
+	pub active_tickets: u128,
+	pub lifetime_tickets: u128,
 }
 
 /// **Struct** of a **Proto-Fragment**
@@ -110,12 +117,14 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub tags: Vec<Compact<u64>>,
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to the **Hash of the aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
+	/// Tickets information for this proto.
+	pub tickets_info: TicketsInfo,
 }
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Blake2_128Concat};
+	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	use sp_clamor::CID_PREFIX;
@@ -126,7 +135,7 @@ pub mod pallet {
 	pub trait Config:
 		frame_system::Config
 		+ pallet_detach::Config
-		+ pallet_frag::Config
+		+ pallet_tickets::Config
 		+ pallet_randomness_collective_flip::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
@@ -149,7 +158,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Tag (of type `Vec<u8>`)** to an **index number** 
 	#[pallet::storage]
-	pub type Tags<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u64>;
+	pub type Tags<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, u64>;
 
 	/// **StorageValue** that **equals** the **total number of unique tags in the blockchain**
 	#[pallet::storage]
@@ -157,7 +166,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Metadata Key (of type `Vec<u8>`)** to an **index number**
 	#[pallet::storage]
-	pub type MetaKeys<T: Config> = StorageMap<_, Blake2_128Concat, Vec<u8>, u64>;
+	pub type MetaKeys<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, u64>;
 
 	/// **StorageValue** that **equals** the **total number of unique Metadata Keys in the blockchain**
 	#[pallet::storage]
@@ -171,13 +180,12 @@ pub mod pallet {
 	/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)** 
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
-	pub type ProtosByCategory<T: Config> =
-		StorageMap<_, Blake2_128Concat, Categories, Vec<Hash256>>;
+	pub type ProtosByCategory<T: Config> = StorageMap<_, Twox64Concat, Categories, Vec<Hash256>>;
 
 	/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**  
 	#[pallet::storage]
 	pub type ProtosByOwner<T: Config> =
-		StorageMap<_, Blake2_128Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
+		StorageMap<_, Twox64Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
 	/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple that contains the Staked Amount (that was staked by the aforementioned Clamor Account ID) and the Block Number**
 	// Staking management
@@ -187,14 +195,14 @@ pub mod pallet {
 		_,
 		Identity,
 		Hash256,
-		Blake2_128Concat,
+		Twox64Concat,
 		T::AccountId,
 		(T::Balance, T::BlockNumber),
 	>;
 
 	/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was staked on by the aforementioned Clamor Account ID**
 	#[pallet::storage]
-	pub type AccountStakes<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, Vec<Hash256>>;
+	pub type AccountStakes<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -333,6 +341,7 @@ pub mod pallet {
 				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
+				tickets_info: TicketsInfo::default(),
 			};
 
 			// store proto
@@ -631,21 +640,21 @@ pub mod pallet {
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
 			// make sure user has enough FRAG
-			let account =
-				<pallet_frag::EVMLinks<T>>::get(&who.clone()).ok_or(Error::<T>::NoFragLink)?;
-			let eth_lock =
-				<pallet_frag::EthLockedFrag<T>>::get(&account).ok_or(Error::<T>::NoFragLink)?; // Amount of FRAG locked by Ethereum Account `account`
+			let account = <pallet_tickets::EVMLinks<T>>::get(&who.clone())
+				.ok_or_else(|| Error::<T>::NoFragLink)?;
+			let eth_lock = <pallet_tickets::EthLockedFrag<T>>::get(&account)
+				.ok_or_else(|| Error::<T>::NoFragLink)?; // Amount of FRAG locked by Ethereum Account `account`
 			let balance = eth_lock.amount
-				- <pallet_frag::FragUsage<T>>::get(&who.clone())
+				- <pallet_tickets::FragUsage<T>>::get(&who.clone())
 					.ok_or_else(|| Error::<T>::NoFragLink)?; // Balance = Amount of FRAG locked - Amount of FRAG already staked
-			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
+			ensure!(balance >= amount, Error::<T>::InsufficientBalance); 
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			// ! from now we write...
 
-			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| { // Add `amount` to the FragUsage of `who` 
-				usage.as_mut().unwrap().saturating_add(amount); 
+			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| { // Add `amount` to the FragUsage of `who` 
+				usage.as_mut().unwrap().saturating_add(amount);
 			});
 
 			// take record of the stake
@@ -683,8 +692,8 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_frag::FragUsage<T>>::mutate(&who, |usage| {
-				usage.as_mut().unwrap().saturating_sub(stake.0); // Reduce the Frag usage of `who` by `stak.0`
+			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
+				usage.as_mut().unwrap().saturating_sub(stake.0); // Reduce the Frag usage of `who` by `stake.0`
 			});
 
 			// take record of the unstake
@@ -709,7 +718,7 @@ pub mod pallet {
 		/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain unlinks
-			let unlinks = <pallet_frag::PendingUnlinks<T>>::take();
+			let unlinks = <pallet_tickets::PendingUnlinks<T>>::take();
 			for unlink in unlinks {
 				// take emptying the storage
 				let stakes = <AccountStakes<T>>::take(unlink.clone());
@@ -771,8 +780,16 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn filter_proto(proto_id: &Hash256, tags: &[Vec<u8>], categories: &[Categories]) -> bool {
+		fn filter_proto(proto_id: &Hash256, tags: &[Vec<u8>], categories: &[Categories], avail: Option<bool>) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
+				if let Some(avail) = avail {
+					if avail && struct_proto.include_cost.is_none() {
+						return false;
+					} else if !avail && struct_proto.include_cost.is_some() {
+						return false;
+					}
+				}
+
 				if categories.len() == 0
 				// Use any here to match any category towards proto
 					|| categories.into_iter().any(|cat| *cat == struct_proto.category)
@@ -823,7 +840,7 @@ pub mod pallet {
 							.into_iter()
 							.rev()
 							.filter(|proto_id| {
-								Self::filter_proto(proto_id, &params.tags, &params.categories)
+								Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
 							})
 							.skip(params.from as usize)
 							.take(params.limit as usize)
@@ -833,7 +850,7 @@ pub mod pallet {
 						list_protos_owner
 							.into_iter()
 							.filter(|proto_id| {
-								Self::filter_proto(proto_id, &params.tags, &params.categories)
+								Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
 							})
 							.skip(params.from as usize)
 							.take(params.limit as usize)
@@ -864,7 +881,7 @@ pub mod pallet {
 								.into_iter()
 								.rev()
 								.filter(|proto_id| {
-									Self::filter_proto(proto_id, &params.tags, &params.categories)
+									Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
 								})
 								.collect()
 						} else {
@@ -872,7 +889,7 @@ pub mod pallet {
 							protos
 								.into_iter()
 								.filter(|proto_id| {
-									Self::filter_proto(proto_id, &params.tags, &params.categories)
+									Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
 								})
 								.collect()
 						};

@@ -28,11 +28,16 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 
-// Configure a mock runtime to test the pallet.
+/// Construct a mock runtime environment.
 frame_support::construct_runtime!(
+	// The **configuration type `Test`** is defined as a **Rust enum** with **implementations**
+	// for **each of the pallet configuration trait** that are **used in the mock runtime**. (https://docs.substrate.io/v3/runtime/testing/)
+	// 
+	// Basically the **enum `Test`** is mock-up of **`Runtime` in pallet-protos (i.e in `pallet/protos/src/lib.rs`)
+	// NOTE: The aforementioned `T` is bound by **trait `pallet:Config`**, if you didn't know
 	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
+		Block = Block, //  Block is the block type that is used in the runtime
+		NodeBlock = Block, // NodeBlock is the block type that is used in the node	
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
@@ -40,10 +45,20 @@ frame_support::construct_runtime!(
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		FragPallet: pallet_frag::{Pallet, Call, Storage, Event<T>},
+		TicketsPallet: pallet_tickets::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
+/// When to use:
+/// 
+/// To declare parameter types for a pallet's relevant associated types during runtime construction.
+/// 
+/// What it does:
+/// 
+/// The macro replaces each parameter specified into a struct type with a get() function returning its specified value. 
+/// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
+/// 
+/// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
@@ -110,6 +125,11 @@ where
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
+/// If `Test` implements `pallet_balances::Config`, the assignment might use `u64` for the `Balance` type. (https://docs.substrate.io/v3/runtime/testing/)
+/// 
+/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block `impl system::Config for Test` above) to `u64`, 
+/// mock runtimes ease the mental overhead of comprehensive, conscientious testers. 
+/// Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
 impl pallet_balances::Config for Test {
 	type Balance = u64;
 	type DustRemoval = ();
@@ -122,14 +142,14 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 }
 
-impl pallet_frag::Config for Test {
+impl pallet_tickets::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = ();
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_frag::crypto::FragAuthId;
+	type AuthorityId = pallet_tickets::crypto::FragAuthId;
 }
 
 impl pallet_protos::Config for Test {
@@ -170,3 +190,46 @@ pub fn run_to_block(n: u64) {
         // ProtosPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/protos/src/lib.rs
     }
 }
+
+
+/* 
+
+pub struct ExtBuilder;
+
+impl ExtBuilder {
+	/// Returns an **instance of `sp_io::TestExternalities`** using the **default genesis configuration** and 
+	/// sets its (i.e the aforementioned instance's) block number to 1
+	/// 
+	/// NOTE: **`sp_io::TestExternalities`** is **frequently used** for **mocking storage** in **tests**. 
+	/// It is the type alias for an in-memory, hashmap-based externalities implementation in `substrate_state_machine` referred to as `substrate_state_machine::TestExternalities`.
+    pub fn build(self) -> sp_io::TestExternalities {
+        let mut t = system::GenesisConfig::default().build_storage::<TestRuntime>().unwrap();
+		// Generate a `sp_io::TestExternalities` using the **default genesis configuration**.
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
+    }
+}
+
+
+/// Simulate block production
+/// 
+/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls 
+/// from all modules with `System::block_number()` as the sole input. 
+/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should 
+/// prioritize readability to facilitate future maintenance.
+/// 
+/// Source: https://docs.substrate.io/v3/runtime/testing/
+fn run_to_block(n: u64) {
+    while System::block_number() < n {
+        if System::block_number() > 0 {
+            ExamplePallet::on_finalize(System::block_number());
+            System::on_finalize(System::block_number());
+        }
+        System::set_block_number(System::block_number() + 1);
+        System::on_initialize(System::block_number());
+        ExamplePallet::on_initialize(System::block_number());
+    }
+}
+
+*/
