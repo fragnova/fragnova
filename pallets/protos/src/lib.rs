@@ -1,6 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
+mod dummy_data;
+
+#[cfg(test)]
 mod mock;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -75,7 +78,7 @@ pub struct GetProtosParams<TAccountId, TString> {
 }
 
 /// **Struct** of a **Proto-Fragment Patch**
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct ProtoPatch<TBlockNumber> {
 	/// **Block Number** in which the **patch was created**
 	pub block: TBlockNumber,
@@ -86,7 +89,7 @@ pub struct ProtoPatch<TBlockNumber> {
 }
 
 /// **Struct** of a **Proto-Fragment**
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct Proto<TAccountId, TBlockNumber> {
 	/// **Block Number** in which the **Proto-Fragment was minted in**
 	pub block: TBlockNumber,
@@ -674,7 +677,7 @@ pub mod pallet {
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 			ensure!(
-				current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()),
+				current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()), 
 				Error::<T>::StakeLocked
 			);
 
