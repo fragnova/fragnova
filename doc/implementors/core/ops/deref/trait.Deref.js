@@ -1,0 +1,4 @@
+(function() {var implementors = {};
+implementors["pallet_detach"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.Deref.html\" title=\"trait core::ops::deref::Deref\">Deref</a> for <a class=\"struct\" href=\"pallet_detach/crypto/struct.Signature.html\" title=\"struct pallet_detach::crypto::Signature\">Signature</a>","synthetic":false,"types":["pallet_detach::crypto::Signature"]}];
+implementors["pallet_tickets"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.Deref.html\" title=\"trait core::ops::deref::Deref\">Deref</a> for <a class=\"struct\" href=\"pallet_tickets/crypto/struct.Signature.html\" title=\"struct pallet_tickets::crypto::Signature\">Signature</a>","synthetic":false,"types":["pallet_tickets::crypto::Signature"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

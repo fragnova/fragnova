@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["pallet_protos_rpc_runtime_api"] = [{"text":"impl&lt;Block:&nbsp;BlockT, AccountId&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_protos_rpc_runtime_api/trait.ProtosApi.html\" title=\"trait pallet_protos_rpc_runtime_api::ProtosApi\">ProtosApi</a>&lt;Block, AccountId&gt;","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["Protos","An implementation of protos specific RPC methods."]],"trait":[["ProtosApiClient","Client implementation for the `ProtosApi` RPC API."],["ProtosApiServer","Server trait implementation for the `ProtosApi` RPC API."],["ProtosRuntimeApi",""]]};
