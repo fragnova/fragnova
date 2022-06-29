@@ -77,11 +77,27 @@ mod details {
 	}
 }
 
+/// A runtime interface for the Clamor Blockchain
+/// 
+/// Background:
+/// 
+/// `#[sp_runtime_interface::runtime_interface]` is an attribute macro for transforming a trait declaration into a runtime interface.
+/// 
+/// A runtime interface is a fixed interface between a Substrate compatible runtime and the native node. 
+/// This interface is callable from a native and a wasm runtime. 
+/// The **macro** will **generate** the **corresponding code for the native implementation** and the **code for calling from the wasm side to the native implementation**.
+/// The macro expects the runtime interface declaration as trait declaration.
+/// 
+/// Source: https://paritytech.github.io/substrate/latest/sp_runtime_interface/attr.runtime_interface.html 
 #[sp_runtime_interface::runtime_interface]
 pub trait Clamor {
 	// these are called NATIVE from even WASM
 	// that's the deal
 
+	
+	/// A function that can be called from native/wasm.
+    ///
+    /// The implementation given to this function is only compiled on native.
 	fn say_hello_world(data: &str) {
 		details::_say_hello_world(data);
 	}
@@ -117,6 +133,7 @@ pub fn init(geth_url: Option<String>) {
 	// shlog!("Chainblocks initialized!");
 }
 
+/// Make an HTTP POST Request with data `body` to the URL `url` 
 pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
 	log::debug!("sp_clamor http_request called...");
 
@@ -162,6 +179,8 @@ pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
 	}
 }
 
+/// Returns an account ID that can stake FRAG tokens.  
+/// This returned account ID is determinstically computed from the given account ID (`who`).
 pub fn get_locked_frag_account<TAccountId: Encode + Decode>(
 	who: &TAccountId,
 ) -> Result<TAccountId, CodecError> {

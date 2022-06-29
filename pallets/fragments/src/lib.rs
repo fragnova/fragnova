@@ -31,8 +31,10 @@ use sp_runtime::SaturatedConversion;
 
 type Unit = u64;
 
+/// **Struct** that represents a **Fragment's Metadata**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentMetadata<TFungibleAsset> {
+	/// **Name** of the **Fragment** (*NOTE: No other Fragment created using the same Proto-Fragment is allowed to have the same name*)
 	pub name: Vec<u8>,
 	pub currency: Option<TFungibleAsset>, // Where None is NOVA
 }
@@ -42,16 +44,17 @@ pub struct UniqueOptions {
 	pub mutable: bool,
 }
 
-/// Struct of a Fragment Class
+/// **Struct** of a **Fragment**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentClass<TFungibleAsset, TAccountId, TBlockNum> {
-	/// The Proto-Fragment that was used to create this Fragment Class
+	/// **Proto-Fragment used** to **create** the **Fragment**
 	pub proto_hash: Hash256,
-	/// The metadata of the Fragment Class
+	/// ***FragmentMetadata* Struct** (the **struct** contains the **Fragment's name**, among other things)
 	pub metadata: FragmentMetadata<TFungibleAsset>,
 	/// The next owner permissions
 	pub permissions: FragmentPerms,
-	/// If Fragments must contain unique data when created (injected by buyers, validated by the system)
+	// If Fragments must contain unique data when created (injected by buyers, validated by the system)
+	/// Whether the **Fragment** is **mutable**
 	pub unique: Option<UniqueOptions>,
 	/// If scarce, the max supply of the Fragment
 	pub max_supply: Option<Compact<Unit>>,
@@ -112,13 +115,12 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	// proto-hash to fragment-hash-sequence
-	/// Storage Map that keeps track of the number of Fragments that were created using a Proto-Fragment.
-	/// The key is the hash of the Proto-Fragment, and the value is the list of hash of the Fragments
+	/// **StorageMap** that maps a **Proto-Fragment** to a **list of hashes, where each hash is: the hash of the concatenation of the aforementioned Proto-Fragment and a corresponding Fragment's name** 
 	#[pallet::storage]
 	pub type Proto2Fragments<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash128>>;
 
 	// fragment-hash to fragment-data
-	/// Storage Map of Fragments where the key is the hash of the concatenation of its corresponding Proto-Fragment and the name of the Fragment, and the value is the Fragment struct of the Fragment
+	/// **StorageMap** that maps the **hash of the concatenation of a Proto-Fragment and a corresponding Fragment's name** to a ***Fragment* struct of the aforementioned Fragment**
 	#[pallet::storage]
 	pub type Classes<T: Config> =
 		StorageMap<_, Identity, Hash128, FragmentClass<T::AssetId, T::AccountId, T::BlockNumber>>;
@@ -226,15 +228,15 @@ pub mod pallet {
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Create a Fragment Class using an existing Proto (only the owner of the Proto can call this function and create a new Fragment Class based on the Proto)
+		/// **Create** a **Fragment** using an **existing Proto-Fragment** (NOTE: ***Only* the Proto-Fragment's owner** is **allowed to create a Fragment using the Proto-Fragment**)
 		///
 		/// # Arguments
-		/// * `origin` - The origin of the extrinsic/dispatchable function.
-		/// * `proto_hash` - The hash of the existing Proto-Fragment
-		/// * `metadata` - The metadata (name, external url etc.) of the Fragment that is going to be created
-		/// * `permissions` - The permissions that the next owner of the Fragment will have
-		/// * `unique` - If the Fragments generated should be unique (only one Fragment can exist with the same exact data)
-		/// * `max_supply` (optional) - if scarce, the maximum amount of items that can be ever created (doesn't apply to copies if the item can be copied!) of this type
+		/// * `origin` - **Origin** of the **extrinsic function**
+		/// * `proto_hash` - **Hash** of an **existing Proto-Fragment**
+		/// * `metadata` -  **Metadata** of the **Fragment**
+		/// * `unique` - **Whether** the **Fragment** is **unique**
+		/// * `mutable` - **Whether** the **Fragment** is **mutable** 
+		/// * `max_supply` (*optional*) - **Maximum amount of items** that **can ever be created** using the **Fragment** (INCDT)
 		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
 			origin: OriginFor<T>,

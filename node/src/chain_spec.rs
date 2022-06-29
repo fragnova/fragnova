@@ -1,3 +1,10 @@
+//! A chain specification, or "chain spec", is a collection of configuration information that dictates which network a blockchain node will connect to, 
+//! which entities it will initially communicate with, and what consensus-critical state it must have at genesis.
+//! 
+//! Source: https://docs.substrate.io/v3/runtime/chain-specs/
+
+
+
 use clamor_runtime::{
 	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig,
 	GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, TicketsConfig, WASM_BINARY,

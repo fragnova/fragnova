@@ -1,3 +1,13 @@
+//! This pallet `frag` performs logic related to FRAG Token
+//! 
+//! IMPORTANT NOTE: The term "lock" refers to the *"effective transfer"* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain. 
+//! 
+//! The term "unlock" refers to the *"effective transfer"* of all the previously locked ERC-20 FRAG tokens from the Clamor Blockchain to the aforementioned Fragnova-owned FRAG Ethereum Smart Contract.
+//! 
+//! The term "staking" refers to the staking of the FRAG Token that is done in the Clamor Blockchain itself. It is different to the term "locking" which is defined above.
+//! 
+//! IMPORTANT: locking != staking
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -10,9 +20,15 @@ mod tests;
 mod benchmarking;
 
 mod weights;
-
-const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f";
-const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
+ 
+/// keccak256(Lock(address,bytes,uint256)). Try it here: https://emn178.github.io/online-tools/keccak_256.html   
+/// 
+/// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
+const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f"; 
+/// keccak256(Lock(address,bytes,uint256))
+/// 
+/// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
+const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe"; 
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
 
@@ -36,6 +52,12 @@ pub mod crypto {
 		traits::Verify,
 		MultiSignature, MultiSigner,
 	};
+
+	/// The app_crypto macro declares an account with an ed25519 signature that is identified by KEY_TYPE. 
+	/// Note that this doesn't create a new account. The macro simply declares that a crypto account 
+	/// is available for this pallet. You will need to initialize this account in the next step.
+	/// 
+	/// https://docs.substrate.io/how-to-guides/v3/ocw/transactions/	
 	app_crypto!(ed25519, KEY_TYPE);
 
 	pub struct FragAuthId;
@@ -79,7 +101,9 @@ use serde_json::{json, Value};
 
 use ethabi::ParamType;
 
+/// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
 pub trait EthFragContract {
+	/// **Return** the **contract address** of the **FRAG Token Smart Contract** 
 	fn get_partner_contracts() -> Vec<String> {
 		vec![String::from("0xBADF00D")]
 	}
@@ -87,19 +111,29 @@ pub trait EthFragContract {
 
 impl EthFragContract for () {}
 
+/// **Struct** representing a **recent confirmed (i.e with sufficient blockchain confirmations) log** for the **event `Lock` or `Unlock`** of the **FRAG token Smart Contract**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct EthLockUpdate<TPublic> {
-	pub public: TPublic,
+	/// Public Account Address of What? (问Gio)
+	pub public: TPublic, 
+	/// If the event was `Lock`, it represents the **total amount of FRAG token** that is **currently locked** (not just the newly locked FRAG token) on the **FRAG Token Smart Contract**
+	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
 	pub amount: U256,
+	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
 	pub signature: ecdsa::Signature,
+	/// Whether the event was `Lock` or `Unlock`
 	pub lock: bool,
+	/// Block number in which the event was emitted
 	pub block_number: u64,
 }
 
+/// **Struct** representing the details about the **total amount of locked FRAG Token of a particular Ethereum Account** in the **Fragnova-owned Ethereum Smart Contract** .
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct EthLock<TBalance, TBlockNum> {
+	/// Total amount of FRAG token locked (not just the newly locked FRAG token) by a particular Ethereum Account
 	pub amount: TBalance,
+	/// Clamor Block Number in which the locked FRAG tokens was "effectively transfered" to the Clamor Blockchain
 	pub block_number: TBlockNum,
 }
 
@@ -129,11 +163,13 @@ pub mod pallet {
 		#[pallet::constant]
 		type EthChainId: Get<u64>;
 
+		/// The **number of confirmations required** to consider a **transaction** on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
 		#[pallet::constant]
 		type EthConfirmations: Get<u64>;
 
 		type EthFragContract: EthFragContract;
 
+		/// Number of votes needed to do something (问Gio)
 		#[pallet::constant]
 		type Threshold: Get<u64>;
 
@@ -173,30 +209,46 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
+	/// **StorageMap** that maps an **Ethereum Account ID** to a to an ***Ethlock* struct of the aforementioned Ethereum Account Id (the struct contains the amount of FRAG token locked, amongst other things)**
 	#[pallet::storage]
 	pub type EthLockedFrag<T: Config> =
 		StorageMap<_, Identity, H160, EthLock<T::Balance, T::BlockNumber>>;
 
+	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**, 
+	/// where **both accounts** are **owned by the same owner**.
+	/// 
+	/// NOTE: The **Ethereum Account ID** had to be **manually mapped to the Clamor Account ID** by the owner itself to show up in this `StorageMap`.
 	#[pallet::storage]
 	pub type EVMLinks<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, H160>;
 
+	/// This **StorageMap** is the reverse mapping of `EVMLinks`.
 	#[pallet::storage]
 	pub type EVMLinksReverse<T: Config> = StorageMap<_, Identity, H160, T::AccountId>;
 
+	/// **StorageMap** that maps a **Clamor Account ID** to the **Amount of FRAG token staked by the aforementioned Clamor Account ID**
 	#[pallet::storage]
 	pub type FragUsage<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, T::Balance>;
 
+	/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**. 
+	/// The key for this map is:
+	/// `blake2_256(encoded(<Amount of FRAG token that was locked/unlocked, Signature written by the owner of the FRAG token on a determinstic message, 
+	/// 					Whether it was locked or unlocked, Ethereum Block Number where it was locked/unlocked>))`
 	#[pallet::storage]
 	pub type EVMLinkVoting<T: Config> = StorageMap<_, Identity, H256, u64>;
 
+	/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a boolean indicating whether voting on the aforementioned event has ended**.
 	#[pallet::storage]
 	pub type EVMLinkVotingClosed<T: Config> = StorageMap<_, Identity, H256, T::BlockNumber>;
 	// consumed by Protos pallet
+	/// **List of Clamor Accounts** whose **(FRAG staking)-related Storage Items** are **yet to be cleared**
 	#[pallet::storage]
 	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
-	/// These are the public keys representing the actual keys that can Sign messages
-	/// to present to external chains to detach onto
+	// These are the public keys representing the actual keys that can Sign messages
+	// to present to external chains to detach onto
+	/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
+	/// 
+	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit `this list
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
@@ -233,6 +285,10 @@ pub mod pallet {
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
 	// These functions materialize as "extrinsics", which are often compared to transactions.
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
+
+	/// Add a Clamor Account ID to `FragKeys`. 
+	/// 
+	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::weight(25_000)] // TODO #1 - weight
@@ -248,6 +304,9 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Remove a Clamor Account ID from `FragKeys`
+		
+		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -261,7 +320,15 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// TODO
+		// Firstly: Verify the `signature` for the message keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)
+		// Secondly: After verification, recover the public key used to sign the aforementioned `signature` for the aforementioned message
+		// Third: Add 
+		// TODO
+		/// **Link** the **Clamor public account address that calls this extrinsic** with the **public account address that 
+		/// is returned from verifying the signature `signature` for the message `keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)`** 
+		/// (NOTE: The returned public account address is of the account that signed the signature `signature`).
+		/// 
+		/// After linking, also emit an event indicating that the two accounts were linked.
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
@@ -273,7 +340,7 @@ pub mod pallet {
 			let message_hash = keccak_256(&message);
 
 			let recovered = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
-				.map_err(|_| Error::<T>::VerificationFailed)?;
+				.map_err(|_| Error::<T>::VerificationFailed)?; // Verify the `signature` for the message keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)
 
 			let eth_key = keccak_256(&recovered[..]);
 			let eth_key = &eth_key[12..];
@@ -293,13 +360,16 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// TODO
+		// TODO
+		/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			Self::unlink_account(sender, account)
 		}
 
+		/// Update 'data'
+		/// 
 		/// TODO
 		#[pallet::weight(25_000)] // TODO #1 - weight
 		pub fn internal_lock_update(
@@ -316,16 +386,17 @@ pub mod pallet {
 			let data_hash: H256 = data_tuple.using_encoded(blake2_256).into();
 
 			ensure!(
-				!<EVMLinkVotingClosed<T>>::contains_key(data_hash),
+				!<EVMLinkVotingClosed<T>>::contains_key(data_hash), // Make sure `data_hash` isn't in `EVMLinkVotingClosed`
 				Error::<T>::LinkAlreadyProcessed
 			);
 
-			let mut message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() };
-			message.extend_from_slice(&data.sender.0[..]);
-			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
-			let amount: [u8; 32] = data.amount.into();
-			message.extend_from_slice(&amount[..]);
-			let message_hash = keccak_256(&message);
+			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+			let mut message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
+			message.extend_from_slice(&data.sender.0[..]); // Add data.sender.0 ("msg.sender" in Solidity) to message
+			message.extend_from_slice(&T::EthChainId::get().to_be_bytes()); // Add EthChainId ("block.chainid" in Solidity) to message
+			let amount: [u8; 32] = data.amount.into(); 
+			message.extend_from_slice(&amount[..]); // Add amount to message
+			let message_hash = keccak_256(&message); // This should be
 
 			let message = [b"\x19Ethereum Signed Message:\n32", &message_hash[..]].concat();
 			let message_hash = keccak_256(&message);
@@ -333,6 +404,8 @@ pub mod pallet {
 			let signature = data.signature;
 			let sender = data.sender;
 
+			// We check if the `message_hash` and **the signature in the emitted event `Lock` or `Unlock`** 
+			// **allow us** to **recover the Ethereum sender account address** that was in the **same aforementioned emitted event `Lock` or `Unlock`**
 			let pub_key = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
 				.map_err(|_| Error::<T>::VerificationFailed)?;
 			let pub_key = keccak_256(&pub_key[..]);
@@ -350,66 +423,67 @@ pub mod pallet {
 			// verifications ended, let's proceed with voting count and writing
 
 			let threshold = T::Threshold::get();
-			if threshold > 1 {
+			if threshold > 1 { // 问Gio
 				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
-				if let Some(current_votes) = current_votes {
-					if current_votes + 1u64 < threshold {
+				if let Some(current_votes) = current_votes { // Number of votes for the key `data_hash` in EVMLinkVoting
+					if current_votes + 1u64 < threshold { // Current Votes has not passed the threshold
 						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
 						return Ok(());
-					} else {
+					} else { // Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
 						// we are good to go, but let's remove the record
 						<EVMLinkVoting<T>>::remove(&data_hash);
 					}
-				} else {
+				} else { // If key `data_hash` doesn't exist in EVMLinkVoting
 					<EVMLinkVoting<T>>::insert(&data_hash, 1);
 					return Ok(());
 				}
 			}
 
-			// writing here at end
+			// writing here at end (THE lines below only execute if the number of votes receieved by `data_hash` passes the `threshold`)
 
 			let amount: T::Balance = amount.saturated_into();
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-			if data.lock {
+			if data.lock { // If FRAG tokens were locked on Ethereum
 				// ! TODO TEST
-				let linked = <EVMLinksReverse<T>>::get(sender.clone());
-				if let Some(linked) = linked {
+				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
+				if let Some(linked) = linked { // If there is no linked account, shouldn't we throw an error? - 问Gio
 					let used = <FragUsage<T>>::get(linked.clone());
 					if let Some(used) = used {
-						if used > amount {
+						if used > amount { // Amount is the total amount of FRAG token locked on the Fragnova-owned Ethereum Smart Contract. So that means that if `amount` is smaller than `used`, there's a systemic/catastropic failure somewhere!
 							// this is bad, the user just reduced his balance so we just "slash" all the stakes
 							// reset usage counter
-							<FragUsage<T>>::remove(linked.clone());
+							<FragUsage<T>>::remove(linked.clone()); // Remove the Clamor Account `linked` from FragUsage
 							// force dereferencing of protos and more
-							<PendingUnlinks<T>>::append(linked.clone());
+							<PendingUnlinks<T>>::append(linked.clone()); // Unlink `linked` from `sender`
 						}
 					}
 				}
 
 				// also emit event
-				Self::deposit_event(Event::Locked(sender, amount));
-			} else {
+				Self::deposit_event(Event::Locked(sender, amount)); // 问Gio for clarification
+				
+			} else { // If we want to unlock all the FRAG tokens that were
 				// ! TODO TEST
 
 				// if we have any link to this account, then force unlinking
 				let linked = <EVMLinksReverse<T>>::get(sender.clone());
-				if let Some(linked) = linked {
-					Self::unlink_account(linked, sender.clone())?;
+				if let Some(linked) = linked { 
+					Self::unlink_account(linked, sender.clone())?; // Unlink Ethereum Account `sender` and Clamor Account `linked`
 				}
 
 				// also emit event
-				Self::deposit_event(Event::Unlocked(sender, amount));
+				Self::deposit_event(Event::Unlocked(sender, amount)); // 问Gio for clarification
 			}
 
 			// write this later as unlink_account can fail
-			<EthLockedFrag<T>>::insert(
+			<EthLockedFrag<T>>::insert( // VERY IMPORTANT TO NOTE
 				sender.clone(),
 				EthLock { amount, block_number: current_block_number },
 			);
 
 			// also record link hash
-			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number);
+			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
 
 			Ok(())
 		}
@@ -417,15 +491,32 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		/// This function is being called after every block import (when fully synced).
+		/// 
+		/// Implementing this function on a module allows you to perform long-running tasks
+		/// that make (by default) validators generate transactions that feed results
+		/// of those long-running computations back on chain.
 		fn offchain_worker(n: T::BlockNumber) {
 			Self::sync_partner_contracts(n);
 		}
 	}
 
+	/// By default, all unsigned transactions are rejected in Substrate. 
+	/// To enable Substrate to accept certain unsigned transactions, you must implement the ValidateUnsigned trait for the pallet.
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T> {
 		type Call = Call<T>;
 
+		/// For the call `Call:internal_lock_update` which is an unsigned transaction with a signed payload (see: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/), 
+		/// verify that when we put the signature parameter (written as `signature`) and the payload parameter (written as `data`) of the aforementioned call into an "Ethereum Verify function",
+		/// it returns the public key that is in the payload parameter. 
+		/// 
+		/// Furthermore, also verify that `data.public` is in `FragKeys` - 问Gio
+		/// 
+		/// If both the aforementioned, allow the call to execute. Otherwise, do not allow it to.
+		/// 
+		/// ## Footnote:
+		/// 
 		/// Validate unsigned call to this module.
 		///
 		/// By default unsigned transactions are disallowed, but implementing the validator
@@ -439,6 +530,7 @@ pub mod pallet {
 					TransactionSource::InBlock | TransactionSource::Local => {},
 					_ => {
 						log::debug!("Not a local transaction");
+						// Return TransactionValidityError˘ if the call is not allowed.
 						return InvalidTransaction::Call.into();
 					},
 				}
@@ -455,23 +547,29 @@ pub mod pallet {
 					{
 						pub_key
 					} else {
-						return InvalidTransaction::BadSigner.into();
+						// Return TransactionValidityError if the call is not allowed.
+						return InvalidTransaction::BadSigner.into(); // // 问Gio
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
+					// return TransactionValidityError if the call is not allowed.
 					return InvalidTransaction::BadSigner.into();
 				}
 
 				// most expensive bit last
+				// Check whether a provided signature matches the public key used to sign the payload
 				let signature_valid =
-					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone());
+					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key (if valid)
+				// The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
+					// Return TransactionValidityError if the call is not allowed.
 					return InvalidTransaction::BadProof.into();
 				}
 
 				log::debug!("Sending frag lock update extrinsic");
-				ValidTransaction::with_tag_prefix("FragLockUpdate")
+				// Return ValidTransaction if the call is allowed
+				ValidTransaction::with_tag_prefix("FragLockUpdate") // The tag prefix prevents other nodes to do the same transaction that have the same tag prefixes
 					.and_provides((
 						data.public.clone(),
 						data.amount,
@@ -484,6 +582,7 @@ pub mod pallet {
 					.propagate(false)
 					.build()
 			} else {
+				// Return TransactionValidityError if the call is not allowed.
 				InvalidTransaction::Call.into()
 			}
 		}
@@ -501,6 +600,15 @@ pub mod pallet {
 			}
 		}
 
+		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
+		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
+		/// 
+		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
+		/// (NOTE: the signed payload consists of a payload and a signature. 
+		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
+		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`) (问Gio)
+		/// 
+		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		fn sync_partner_contract(
 			_block_number: T::BlockNumber,
 			contract: &str,
@@ -515,7 +623,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri, req.as_bytes());
+			let response_body = http_json_post(geth_uri, req.as_bytes()); // Get the latest block number of the Ethereum Blockchain
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -528,31 +636,32 @@ pub mod pallet {
 			let v: Value =
 				serde_json::from_str(&response).map_err(|_| "Invalid response - json parse")?;
 
-			let current_block = v["result"].as_str().ok_or("Invalid response - no result")?;
+			let current_block = v["result"].as_str().ok_or("Invalid response - no result")?; // Get the latest block number of the Ethereum Blockchain
 			let current_block = u64::from_str_radix(&current_block[2..], 16)
 				.map_err(|_| "Invalid response - invalid block number")?;
 			log::trace!("Current block: {}", current_block);
 
-			let last_block_ref = StorageValueRef::persistent(b"frag_sync_last_block");
-			let last_block: Option<Vec<u8>> = last_block_ref.get().unwrap_or_default();
-			let last_block = if let Some(last_block) = last_block {
+			let last_block_ref = StorageValueRef::persistent(b"frag_sync_last_block"); // This key does not exist when the blockchain is first launched
+			let last_block: Option<Vec<u8>> = last_block_ref.get().unwrap_or_default(); // If `last_block` doesn't exist, set it to `Vec<u8>`
+			let last_block = if let Some(last_block) = last_block { // Convert `last_block` from `Vec<u8>` to `String`   
 				String::from_utf8(last_block).map_err(|_| "Invalid last block")?
 			} else {
-				String::from("0x0")
+				String::from("0x0") // If `last_block` is None, set it to `String::from("0x0")`
 			};
 
-			let to_block = current_block.saturating_sub(T::EthConfirmations::get());
+			let to_block = current_block.saturating_sub(T::EthConfirmations::get()); // The `to_block` is the latest block that is considered final 
 			let to_block = format!("0x{:x}", to_block);
 
+			// This is basically a RPC query asking how much FRAG token was locked/unlocked by who all from block number `fromBlock` to block number `toBlock`
 			let req = json!({
 				"jsonrpc": "2.0",
-				"method": "eth_getLogs",
+				"method": "eth_getLogs", // i.e get the event logs of the smart contract (more info: https://docs.alchemy.com/alchemy/guides/eth_getlogs#what-are-logs)
 				"id": "0",
 				"params": [{
-					"fromBlock": last_block,
-					"toBlock": to_block,
+					"fromBlock": last_block, 
+					"toBlock": to_block, // Give us the event logs that were emitted (if any) from the block number `last_block` to the block number `to_block`, inclusive
 					"address": contract,
-					"topics": [
+					"topics": [ 
 						// [] to OR
 						[LOCK_EVENT, UNLOCK_EVENT]
 					],
@@ -562,7 +671,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri, req.as_bytes());
+			let response_body = http_json_post(geth_uri, req.as_bytes()); // Make HTTP POST request with `req` to URL `get_uri`
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -575,36 +684,37 @@ pub mod pallet {
 			let v: Value =
 				serde_json::from_str(&response).map_err(|_| "Invalid response - json parse")?;
 
-			let logs = v["result"].as_array().ok_or_else(|| "Invalid response - no result")?;
-			for log in logs {
+			let logs = v["result"].as_array().ok_or_else(|| "Invalid response - no result")?; // `logs` is a list of event logs
+			for log in logs { // `logs` is a list of event logs
 				let block_number =
 					log["blockNumber"].as_str().ok_or("Invalid response - no block number")?;
 				let block_number = u64::from_str_radix(&block_number[2..], 16)
 					.map_err(|_| "Invalid response - invalid block number")?;
 				let topics =
-					log["topics"].as_array().ok_or_else(|| "Invalid response - no topics")?;
-				let topic = topics[0].as_str().ok_or_else(|| "Invalid response - no topic")?;
+					log["topics"].as_array().ok_or_else(|| "Invalid response - no topics")?; 
+				let topic = topics[0].as_str().ok_or_else(|| "Invalid response - no topic")?; // The topic can either be `LOCK_EVENT` or `UNLOCK_EVENT`
 				let data = log["data"].as_str().ok_or_else(|| "Invalid response - no data")?;
 				let data =
-					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?;
-				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256)], &data)
-					.map_err(|_| "Invalid response - invalid eth data")?;
-				let locked = match topic {
+					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?; // Convert the hexadecimal `data` from hexadecimal to binary (i.e raw bits)
+				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256)], &data)  // First parameter is a signature and the second paramteter is the amount of FRAG token that was locked/unlocked (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+					.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
+				let locked = match topic { // Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
 					LOCK_EVENT => true,
 					UNLOCK_EVENT => false,
 					_ => return Err("Invalid topic"),
 				};
 
-				let sender = topics[1].as_str().ok_or_else(|| "Invalid response - no sender")?;
-				let sender =
-					hex::decode(&sender[2..]).map_err(|_| "Invalid response - invalid sender")?;
-				let sender = H160::from_slice(&sender[12..]);
+				// Since the first parameter of the Lock or Unlock event is declared as indexed, they are treated like additional topics (https://medium.com/mycrypto/understanding-event-logs-on-the-ethereum-blockchain-f4ae7ba50378)
+				let sender = topics[1].as_str().ok_or_else(|| "Invalid response - no sender")?; // `sender` is the account that locked/unlocked FRAG (i.e the first parameter of the event `Lock` or `Unlock`)
+				let sender = 
+					hex::decode(&sender[2..]).map_err(|_| "Invalid response - invalid sender")?; 
+				let sender = H160::from_slice(&sender[12..]); // Hash the array slice `&sender[12..]`
 
-				let eth_signature = data[0].clone().into_bytes().ok_or_else(|| "Invalid data")?;
+				let eth_signature = data[0].clone().into_bytes().ok_or_else(|| "Invalid data")?; // (`data[0]` is actually a signature - https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol btw )
 				let eth_signature: ecdsa::Signature =
 					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
 
-				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?;
+				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
 
 				log::trace!(
 					"Block: {}, sender: {}, locked: {}, amount: {}, signature: {:?}",
@@ -615,31 +725,47 @@ pub mod pallet {
 					eth_signature.clone(),
 				);
 
-				Signer::<T, T::AuthorityId>::any_account()
+				// `send_unsigned_transaction` is returning a type of `Option<(Account<T>, Result<(), ()>)>`.
+				//   The returned result means:
+				//   - `None`: no account is available for sending transaction
+				//   - `Some((account, Ok(())))`: transaction is successfully sent
+				//   - `Some((account, Err(())))`: error occurred when sending the transaction
+				Signer::<T, T::AuthorityId>::any_account() // `Signer::<T, T::AuthorityId>::any_account()` is the signer that signs the payload
 					.send_unsigned_transaction(
-						|account| EthLockUpdate {
-							public: account.public.clone(),
+						// this line is to prepare and return payload to be used
+						|account| EthLockUpdate { // `account` is an account `Signer::<T, T::AuthorityId>::any_account()`
+							public: account.public.clone(), // 问Gio what is account.public and why is it supposed to be in FragKey
 							amount,
 							sender,
 							signature: eth_signature.clone(),
 							lock: locked,
 							block_number,
 						},
+						// The second function closure returns the on-chain call with payload and signature passed in
 						|payload, signature| Call::internal_lock_update {
 							data: payload,
 							signature,
 						},
 					)
-					.ok_or_else(|| "Failed to sign transaction")?
+					.ok_or_else(|| "Failed to sign transaction")? 
 					.1
-					.map_err(|_| "Failed to send transaction")?;
+					.map_err(|_| "Failed to send transaction")?; 
 			}
 
-			last_block_ref.set(&to_block.as_bytes().to_vec());
+			last_block_ref.set(&to_block.as_bytes().to_vec()); // Recall that the `to_block` is the latest block that is considered final （问Gio）
 
 			Ok(())
 		}
 
+		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
+		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
+		/// 
+		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
+		/// (NOTE: the signed payload consists of a payload and a signature. 
+		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
+		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`) (问Gio)
+		/// 
+		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		fn sync_partner_contracts(block_number: T::BlockNumber) {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
@@ -657,6 +783,7 @@ pub mod pallet {
 			}
 		}
 
+		/// Unlink the **Clamor public account address `sender`** from **its linked EVM public account address `account`**
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
 			ensure!(<EVMLinks<T>>::contains_key(sender.clone()), Error::<T>::AccountNotLinked);
 			ensure!(<EVMLinksReverse<T>>::contains_key(account), Error::<T>::AccountNotLinked);
