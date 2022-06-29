@@ -320,7 +320,7 @@ pub mod pallet {
 	/// Define some logic that should be executed regularly in some context, for e.g. `on_initialize`.
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		/// During the block finalization phase, the **list** in **DetachRequests** is **stored in the Offchain DB** under the **index "fragments-detach-requests"**. Afterwhich, **DetachRequests** is **cleared**
+		/// During the block finalization phase, the **list** in **DetachRequests** is **stored in the Offchain DB** under the **index "fragments-detach-requests"**. After which, **DetachRequests** is **cleared**
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain and process requests
 			let requests = <DetachRequests<T>>::take();
@@ -600,7 +600,7 @@ pub mod pallet {
 										.send_unsigned_transaction( // INC questo block
 											// this line is to prepare and return payload to be used
 											|account| DetachInternalData { // `account` is the account `Signer::<T, T::AuthorityId>::any_account()`
-												public: account.public.clone(), // 问Gio what is account.public and why is it supposed to be in FragKey
+												public: account.public.clone(), // `account.public` is supposed to be in `FragKey`
 												hash: request.hash,
 												target_chain: request.target_chain,
 												target_account: request.target_account.clone(),
