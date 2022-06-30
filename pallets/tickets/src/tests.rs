@@ -113,20 +113,6 @@ mod link_tests {
 
             let link = dd.link;
 
-            // let mut message = b"EVM2Fragnova".to_vec();
-            // message.extend_from_slice(&<Test as pallet_tickets::Config>::EthChainId::get().to_be_bytes());
-            // message.extend_from_slice(&dd.account_id.encode());
-            // let hashed_message = sp_core::keccak_256(&message);
-            // println!(
-            //     "recovered eth_key is: {:?}", 
-            //     H160::from_slice(
-            //         &sp_io::hashing::keccak_256(
-            //             &sp_io::crypto::secp256k1_ecdsa_recover(&link.get_link_signature().0, &hashed_message)
-            //             .map_err(|_| Error::<Test>::VerificationFailed).unwrap()
-            //         )[12..]
-            //     )
-            // );
-
             assert_noop!(
                 link_(dd.account_id, &link.get_link_signature()),   
                 Error::<Test>::VerificationFailed,
