@@ -4433,6 +4433,7 @@ dependencies = [
  "log",
  "pallet-assets",
  "pallet-balances",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
  "parity-scale-codec 3.1.5",
  "scale-info 2.1.2",
