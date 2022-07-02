@@ -143,7 +143,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
 
-		/// The **Lock-Up Period" for **Staking FRAG Tokens** 
+		/// The **Lock-Up Period" for **Staking FRAG Tokens**
 		#[pallet::constant]
 		type StakeLockupPeriod: Get<u64>;
 	}
@@ -153,7 +153,7 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// **StorageMap** that maps a **Tag (of type `Vec<u8>`)** to an **index number** 
+	/// **StorageMap** that maps a **Tag (of type `Vec<u8>`)** to an **index number**
 	#[pallet::storage]
 	pub type Tags<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, u64>;
 
@@ -174,7 +174,7 @@ pub mod pallet {
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
-	/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)** 
+	/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
 	pub type ProtosByCategory<T: Config> = StorageMap<_, Twox64Concat, Categories, Vec<Hash256>>;
@@ -266,7 +266,7 @@ pub mod pallet {
 		/// * `tags` - **List of tags** to **tag** the **Proto-Fragment** **with**
 		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g an ERC-721 Contract)
 		/// * `include_cost` (*optional*) - **Price** of the **Proto-Fragment**. NOTE: If None, the **Proto-Fragment** *<u>can't be included</u>* into **other protos**
-		/// * `data` - **Data** of the **Proto-Fragment** 
+		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn upload(
 			origin: OriginFor<T>,
@@ -575,9 +575,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-
 		/// **Detach** a **Proto-Fragment** from **this blockchain** to an **external blockchain** by ***initiating*** an **event** that **includes a signature**. (NC)
-		/// The **owner of this Proto-Fragment** can then **attach this Proto-Fragment** to the **external blockchain** by **using the aforementioned signature**. 
+		/// The **owner of this Proto-Fragment** can then **attach this Proto-Fragment** to the **external blockchain** by **using the aforementioned signature**.
 		///
 		///
 		/// # Arguments
@@ -617,8 +616,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Stake FRAG tokens on a Proto-Fragment 
-		/// 
+		/// Stake FRAG tokens on a Proto-Fragment
+		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
@@ -644,13 +643,14 @@ pub mod pallet {
 			let balance = eth_lock.amount
 				- <pallet_tickets::FragUsage<T>>::get(&who.clone())
 					.ok_or_else(|| Error::<T>::NoFragLink)?; // Balance = Amount of FRAG locked - Amount of FRAG already staked
-			ensure!(balance >= amount, Error::<T>::InsufficientBalance); 
+			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			// ! from now we write...
 
-			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| { // Add `amount` to the FragUsage of `who` 
+			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
+				// Add `amount` to the FragUsage of `who`
 				usage.as_mut().unwrap().saturating_add(amount);
 			});
 
@@ -663,9 +663,9 @@ pub mod pallet {
 
 			Ok(())
 		}
-		
+
 		/// Unstake the FRAG tokens that were staked on a Proto-Fragment by `origin`
-		/// 
+		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
@@ -710,8 +710,8 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		/// During the block finalization phase, 
-		/// clear all the staking-related (of FRAG Token) Storage Items of any information regarding 
+		/// During the block finalization phase,
+		/// clear all the staking-related (of FRAG Token) Storage Items of any information regarding
 		/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain unlinks
@@ -777,7 +777,12 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn filter_proto(proto_id: &Hash256, tags: &[Vec<u8>], categories: &[Categories], avail: Option<bool>) -> bool {
+		fn filter_proto(
+			proto_id: &Hash256,
+			tags: &[Vec<u8>],
+			categories: &[Categories],
+			avail: Option<bool>,
+		) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.include_cost.is_none() {
@@ -812,8 +817,7 @@ pub mod pallet {
 			}
 		}
 
-
-		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return type** is a **JSON string** 
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return type** is a **JSON string**
 		/// Furthermore, this function also indexes `data` in the Blockchain's Database and makes it available via bitswap (IPFS) directly from every chain node permanently.
 		///
 		/// # Arguments
@@ -822,7 +826,6 @@ pub mod pallet {
 		pub fn get_protos(
 			params: GetProtosParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
-
 			let mut map = Map::new();
 
 			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
@@ -837,7 +840,12 @@ pub mod pallet {
 							.into_iter()
 							.rev()
 							.filter(|proto_id| {
-								Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
+								Self::filter_proto(
+									proto_id,
+									&params.tags,
+									&params.categories,
+									params.available,
+								)
 							})
 							.skip(params.from as usize)
 							.take(params.limit as usize)
@@ -847,7 +855,12 @@ pub mod pallet {
 						list_protos_owner
 							.into_iter()
 							.filter(|proto_id| {
-								Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
+								Self::filter_proto(
+									proto_id,
+									&params.tags,
+									&params.categories,
+									params.available,
+								)
 							})
 							.skip(params.from as usize)
 							.take(params.limit as usize)
@@ -878,7 +891,12 @@ pub mod pallet {
 								.into_iter()
 								.rev()
 								.filter(|proto_id| {
-									Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
+									Self::filter_proto(
+										proto_id,
+										&params.tags,
+										&params.categories,
+										params.available,
+									)
 								})
 								.collect()
 						} else {
@@ -886,7 +904,12 @@ pub mod pallet {
 							protos
 								.into_iter()
 								.filter(|proto_id| {
-									Self::filter_proto(proto_id, &params.tags, &params.categories, params.available)
+									Self::filter_proto(
+										proto_id,
+										&params.tags,
+										&params.categories,
+										params.available,
+									)
 								})
 								.collect()
 						};

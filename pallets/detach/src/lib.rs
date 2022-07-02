@@ -24,7 +24,7 @@ use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, U256};
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
 
-/// Add a crypto module with an ed25519 signature key to ensure that your pallet owns an account 
+/// Add a crypto module with an ed25519 signature key to ensure that your pallet owns an account
 /// that can be used for signing transactions.
 pub mod crypto {
 	use super::KEY_TYPE;
@@ -35,17 +35,16 @@ pub mod crypto {
 		MultiSignature, MultiSigner,
 	};
 
-	/// The app_crypto macro declares an account with an `ed25519` signature that is identified by KEY_TYPE. 
-	/// Note that this doesn't create a new account. 
-	/// The macro simply declares that a crypto account is available for this pallet. 
-	/// You will need to initialize this account yourself.
-	/// 
-	/// More info: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/	
+	// The app_crypto macro declares an account with an `ed25519` signature that is identified by KEY_TYPE.
+	// Note that this doesn't create a new account.
+	// The macro simply declares that a crypto account is available for this pallet.
+	// You will need to initialize this account yourself.
+	//
+	// More info: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	app_crypto!(ed25519, KEY_TYPE);
 
 	pub struct DetachAuthId;
 
-	
 	// implemented for runtime
 	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for DetachAuthId {
 		type RuntimeAppPublic = Public;
@@ -86,7 +85,7 @@ pub enum SupportedChains {
 	EthereumGoerli,
 }
 
-/// **Struct** that **represents** a **request to detach a Proto-Fragment** 
+/// **Struct** that **represents** a **request to detach a Proto-Fragment**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct DetachRequest {
 	/// **Hash** of the **data** of the **Proto-Fragment**
@@ -114,7 +113,7 @@ pub struct DetachInternalData<TPublic> {
 	pub nonce: u64,
 }
 
-/// To make your data structure (i.e the payload - i.e `DetachInternalData`) signable when sending unsigned transactions with signed payload, 
+/// To make your data structure (i.e the payload - i.e `DetachInternalData`) signable when sending unsigned transactions with signed payload,
 /// implement the SignedPayload trait.
 impl<T: SigningTypes> SignedPayload<T> for DetachInternalData<T::Public> {
 	fn public(&self) -> T::Public {
@@ -180,7 +179,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
 
-	/// **StorageDoubleMap** that maps an **account address on an external blockchain and the external blockchain itself** to a **nonce** 
+	/// **StorageDoubleMap** that maps an **account address on an external blockchain and the external blockchain itself** to a **nonce**
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
 		StorageDoubleMap<_, Twox64Concat, Vec<u8>, Twox64Concat, SupportedChains, u64>;
@@ -227,8 +226,6 @@ pub mod pallet {
 	/// Functions that are callable from outside the runtime.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
-
 		/// **Add** an **ECDSA public key** to the **set of Ethereum accounts that are authorized to detach a Proto-Fragment onto Fragnova's Ethereum Smart Contract**
 		#[pallet::weight(T::WeightInfo::add_eth_auth())]
 		pub fn add_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
@@ -330,9 +327,8 @@ pub mod pallet {
 			}
 		}
 
-
 		/// This function is being called after every block import (when fully synced).
-		/// 
+		///
 		/// Implementing this function on a module allows you to perform long-running tasks
 		/// that make (by default) validators generate transactions that feed results
 		/// of those long-running computations back on chain.
@@ -341,22 +337,22 @@ pub mod pallet {
 		}
 	}
 
-	/// By default, all unsigned transactions are rejected in Substrate. 
+	/// By default, all unsigned transactions are rejected in Substrate.
 	/// To enable Substrate to accept certain unsigned transactions, you must implement the ValidateUnsigned trait for the pallet.
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T> {
 		type Call = Call<T>;
 
-		/// For the call `Call:internal_finalize_detach` which is an unsigned transaction with a signed payload (see: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/), 
+		/// For the call `Call:internal_finalize_detach` which is an unsigned transaction with a signed payload (see: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/),
 		/// verify that when we put the signature parameter (written as `signature`) and the payload parameter (written as `data`) of the aforementioned call into an "Ethereum Verify function",
-		/// it returns the public key that is in the payload parameter. 
-		/// 
+		/// it returns the public key that is in the payload parameter.
+		///
 		/// Furthermore, also verify that `data.public` is in `FragKeys` - 问Gio
-		/// 
+		///
 		/// If both the aforementioned conditions meet, allow the call to execute. Otherwise, do not allow it to.
-		/// 
+		///
 		/// ## Footnote:
-		/// 
+		///
 		/// Validate unsigned call to this module.
 		///
 		/// By default unsigned transactions are disallowed, but implementing the validator
@@ -386,7 +382,7 @@ pub mod pallet {
 					{
 						pub_key
 					} else {
-						return InvalidTransaction::BadSigner.into(); 
+						return InvalidTransaction::BadSigner.into();
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
@@ -395,7 +391,7 @@ pub mod pallet {
 				}
 				// most expensive bit last
 				let signature_valid =
-					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key 
+					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key
 				if !signature_valid {
 					return InvalidTransaction::BadProof.into();
 				}
@@ -444,21 +440,22 @@ pub mod pallet {
 		}
 
 		// NOTE: This function runs off-chain, so it can access the block state, but cannot preform any alterations. More specifically alterations are not forbidden, but they are not persisted in any way
-		/// Signs the list of detach requests using an authority in `EthereumAuthorities`.  
-		/// The format of each detach request (which is then signed) is of a tuple as follows: 
+		/// Signs the list of detach requests using an authority in `EthereumAuthorities`.
+		/// The format of each detach request (which is then signed) is of a tuple as follows:
 		/// (<Proto-Fragment Hash>, <Target Chain ID>, <An Account Address on the Target Chain>, <Nonce>)
-		/// 
+		///
 		/// Then, for each of the signed detach requests - send an unsigned transaction with a signed payload onto the Clamor Blockchain
-		/// (NOTE: the signed payload consists of a payload and a signature. 
+		/// (NOTE: the signed payload consists of a payload and a signature.
 		/// The payload is the detach request which is represented as a `DetachInternalData` struct (the struct contains the signature on the aforementioned tuple, amongst other things)
 		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`) (问Gio)
-		/// 
+		///
 		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		fn process_detach_requests() {
 			const FAILED: () = ();
 			let requests = StorageValueRef::persistent(b"fragments-detach-requests"); // Reference to list of detach requests
 			let _ =
-				requests.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| match requests { // Loop through the list of detach requests
+				requests.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| match requests {
+					// Loop through the list of detach requests
 					Ok(Some(requests)) => {
 						log::debug!("Got {} detach requests", requests.len());
 						for request in requests {
@@ -474,7 +471,7 @@ pub mod pallet {
 								| SupportedChains::EthereumGoerli => {
 									// check if we need to generate new ecdsa keys
 									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE); // defined in service.rs
-									// 
+													 //
 									let keys_ref =
 										StorageValueRef::persistent(b"fragments-frag-ecdsa-keys"); // This key does not exist when the blockchain is first launched
 									let keys = keys_ref
@@ -482,37 +479,38 @@ pub mod pallet {
 										.unwrap_or_default(); // If `keys` doesn't exist, set it to `BTreeSet<ed25519::Public>`
 									let mut keys =
 										if let Some(keys) = keys { keys } else { BTreeSet::new() }; // If `keys` is None, set it to `BTreeSet<ed25519::Public>`
-									// doing this cos mutate was insane...
+															// doing this cos mutate was insane...
 									let mut edited = false;
-									for ed_key in &ed_keys { // INC questo block
+									for ed_key in &ed_keys {
+										// INC questo block
 										if !keys.contains(ed_key) {
 											let mut msg = b"fragments-frag-ecdsa-keys".to_vec();
 											msg.append(&mut ed_key.to_vec());
 											let signed =
-												Crypto::ed25519_sign(KEY_TYPE, ed_key, &msg) 
+												Crypto::ed25519_sign(KEY_TYPE, ed_key, &msg)
 													.unwrap(); // Determistically sign a constant message `msg` with Ed25519 key `ed_key`
 											let key = keccak_256(&signed.0[..]); // Determistically Keccak Hash the determestic signature `signed`
-											let mut key_hex = [0u8; 64]; 
-											hex::encode_to_slice(key, &mut key_hex) 
+											let mut key_hex = [0u8; 64];
+											hex::encode_to_slice(key, &mut key_hex)
 												.map_err(|_| FAILED)?; // (Determinstically )UTF-8 encode the hexadecimal representation of `key` and save it in `key_hex` (see the example of `encode_to_slice` if you're confused)
 											let key_hex = [b"0x", &key_hex[..]].concat();
 											log::debug!("Adding new key from seed: {:?}", key_hex);
-											// Generate an ECSDSA key for the given key type using the seed `seed` (WHICH WAS DETERMINSTICALLY COMPUTED 
-											// FROM THE ED25519 KEY `ed_key`) and store it in the keystore. 
+											// Generate an ECSDSA key for the given key type using the seed `seed` (WHICH WAS DETERMINSTICALLY COMPUTED
+											// FROM THE ED25519 KEY `ed_key`) and store it in the keystore.
 											let _public =
-												Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex)); 
-											
+												Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
+
 											keys.insert(*ed_key);
 											edited = true;
 										}
 									}
 									if edited {
-										/// Set the list of determinstically computed ECSDA keys `keys` (they were determintically computed using `ed_keys`) 
-										/// to the `keys_ref` (i.e to **`StorageValueRef::persistent(b"fragments-frag-ecdsa-keys")`**)
+										// Set the list of determinstically computed ECSDA keys `keys` (they were determintically computed using `ed_keys`)
+										// to the `keys_ref` (i.e to **`StorageValueRef::persistent(b"fragments-frag-ecdsa-keys")`**)
 										keys_ref.set(&keys);
 									}
 									// get local keys
-									let keys = Crypto::ecdsa_public_keys(KEY_TYPE); // Get the list of ECDSA public keys for the key id `KEY_STORE` in the keystore 
+									let keys = Crypto::ecdsa_public_keys(KEY_TYPE); // Get the list of ECDSA public keys for the key id `KEY_STORE` in the keystore
 									log::debug!("ecdsa local keys {:x?}", keys);
 									// make sure the local key is in the global authorities set!
 									let key = keys
@@ -563,7 +561,7 @@ pub mod pallet {
 											[b"\x19Ethereum Signed Message:\n32", &payload[..]]
 												.concat();
 										let msg = keccak_256(&msg); // Hash the msg!!
-										// Sign the payload with a trusted validation key
+							// Sign the payload with a trusted validation key
 										let signature =
 											Crypto::ecdsa_sign_prehashed(KEY_TYPE, key, &msg); // Sign the message `msg` with the ECDSA public key `key` (note: `key` is in `EthereumAuthorities`)
 										if let Some(signature) = signature {
@@ -590,16 +588,17 @@ pub mod pallet {
 										nonce
 									);
 
-
 									// `send_unsigned_transaction` is returning a type of `Option<(Account<T>, Result<(), ()>)>`.
 									//   The returned result means:
 									//   - `None`: no account is available for sending transaction
 									//   - `Some((account, Ok(())))`: transaction is successfully sent
 									//   - `Some((account, Err(())))`: error occurred when sending the transaction
 									if let Err(e) = Signer::<T, T::AuthorityId>::any_account() // `Signer::<T, T::AuthorityId>::any_account()` is the signer that signs the payload
-										.send_unsigned_transaction( // INC questo block
+										.send_unsigned_transaction(
+											// INC questo block
 											// this line is to prepare and return payload to be used
-											|account| DetachInternalData { // `account` is the account `Signer::<T, T::AuthorityId>::any_account()`
+											|account| DetachInternalData {
+												// `account` is the account `Signer::<T, T::AuthorityId>::any_account()`
 												public: account.public.clone(), // `account.public` is supposed to be in `FragKey`
 												hash: request.hash,
 												target_chain: request.target_chain,
