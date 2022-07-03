@@ -12,7 +12,7 @@ Protos ^qTIBN5py
 
 Detach ^IXd1SryL
 
-Tickets ^M6gzfv9K
+Accounts ^M6gzfv9K
 
 Randomness Collective
 Flip ^ZMq6V6GW
@@ -255,13 +255,13 @@ Proxy ^Pb38Xgz3
 			"locked": false,
 			"fontSize": 20,
 			"fontFamily": 1,
-			"text": "Tickets",
-			"rawText": "Tickets",
+			"text": "Accounts",
+			"rawText": "Accounts",
 			"baseline": 18,
 			"textAlign": "center",
 			"verticalAlign": "middle",
 			"containerId": "1VCxGMFgXIYPhjJc3itMh",
-			"originalText": "Tickets"
+			"originalText": "Accounts"
 		},
 		{
 			"type": "rectangle",

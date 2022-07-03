@@ -537,6 +537,7 @@ pub mod pallet {
 				Error::<T>::AccountAlreadyExists
 			);
 
+			// use the same logic of proxy anonymous
 			let proxy_def = pallet_proxy::ProxyDefinition {
 				delegate: who.clone(),
 				proxy_type: T::ProxyType::default(),

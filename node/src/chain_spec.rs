@@ -4,8 +4,8 @@
 //! Source: https://docs.substrate.io/v3/runtime/chain-specs/
 
 use clamor_runtime::{
-	AccountId, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig, GenesisConfig,
-	GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, TicketsConfig, WASM_BINARY,
+	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
+	GenesisConfig, GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -175,7 +175,7 @@ pub fn live_config() -> Result<ChainSpec, String> {
 				indices: IndicesConfig { indices: vec![] },
 				detach: DetachConfig::default(),
 				assets: AssetsConfig::default(),
-				tickets: TicketsConfig::default(),
+				accounts: AccountsConfig::default(),
 			}
 		},
 		// Bootnodes
@@ -230,7 +230,7 @@ fn testnet_genesis(
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
 		assets: AssetsConfig { assets: vec![], metadata: vec![], accounts: vec![] },
-		tickets: TicketsConfig {
+		accounts: AccountsConfig {
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
 	}

@@ -1,9 +1,9 @@
 [package]
 authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
-description = 'Proto-Tickets pallet.'
+description = 'Proto-Accounts pallet.'
 edition = '2021'
 license = 'BUSL-1.1'
-name = 'pallet-tickets'
+name = 'pallet-accounts'
 readme = 'README.md'
 version = '0.0.1'
 

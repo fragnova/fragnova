@@ -81,9 +81,9 @@ version = '4.0.0-dev'
 default-features = false
 path = '../detach'
 
-[dependencies.pallet-tickets]
+[dependencies.pallet-accounts]
 default-features = false
-path = '../tickets'
+path = '../accounts'
 
 [dependencies.pallet-balances]
 default-features = false

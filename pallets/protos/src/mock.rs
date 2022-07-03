@@ -44,7 +44,7 @@ frame_support::construct_runtime!(
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Tickets: pallet_tickets::{Pallet, Call, Storage, Event<T>},
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -140,14 +140,14 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 }
 
-impl pallet_tickets::Config for Test {
+impl pallet_accounts::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = ();
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_tickets::crypto::FragAuthId;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
 impl Config for Test {

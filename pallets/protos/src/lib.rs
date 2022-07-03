@@ -87,9 +87,9 @@ pub struct ProtoPatch<TBlockNumber> {
 }
 
 #[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
-pub struct TicketsInfo {
-	pub active_tickets: u128,
-	pub lifetime_tickets: u128,
+pub struct AccountsInfo {
+	pub active_accounts: u128,
+	pub lifetime_accounts: u128,
 }
 
 /// **Struct** of a **Proto-Fragment**
@@ -114,8 +114,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub tags: Vec<Compact<u64>>,
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to the **Hash of the aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
-	/// Tickets information for this proto.
-	pub tickets_info: TicketsInfo,
+	/// Accounts information for this proto.
+	pub accounts_info: AccountsInfo,
 }
 
 #[frame_support::pallet]
@@ -130,7 +130,7 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + pallet_detach::Config + pallet_tickets::Config
+		frame_system::Config + pallet_detach::Config + pallet_accounts::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -335,7 +335,7 @@ pub mod pallet {
 				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
-				tickets_info: TicketsInfo::default(),
+				accounts_info: AccountsInfo::default(),
 			};
 
 			// store proto
@@ -633,12 +633,12 @@ pub mod pallet {
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
 			// make sure user has enough FRAG
-			let account = <pallet_tickets::EVMLinks<T>>::get(&who.clone())
+			let account = <pallet_accounts::EVMLinks<T>>::get(&who.clone())
 				.ok_or_else(|| Error::<T>::NoFragLink)?;
-			let eth_lock = <pallet_tickets::EthLockedFrag<T>>::get(&account)
+			let eth_lock = <pallet_accounts::EthLockedFrag<T>>::get(&account)
 				.ok_or_else(|| Error::<T>::NoFragLink)?; // Amount of FRAG locked by Ethereum Account `account`
 			let balance = eth_lock.amount
-				- <pallet_tickets::FragUsage<T>>::get(&who.clone())
+				- <pallet_accounts::FragUsage<T>>::get(&who.clone())
 					.ok_or_else(|| Error::<T>::NoFragLink)?; // Balance = Amount of FRAG locked - Amount of FRAG already staked
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
@@ -646,7 +646,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
 				// Add `amount` to the FragUsage of `who`
 				usage.as_mut().unwrap().saturating_add(amount);
 			});
@@ -686,7 +686,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
 				usage.as_mut().unwrap().saturating_sub(stake.0); // Reduce the Frag usage of `who` by `stake.0`
 			});
 
@@ -712,7 +712,7 @@ pub mod pallet {
 		/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain unlinks
-			let unlinks = <pallet_tickets::PendingUnlinks<T>>::take();
+			let unlinks = <pallet_accounts::PendingUnlinks<T>>::take();
 			for unlink in unlinks {
 				// take emptying the storage
 				let stakes = <AccountStakes<T>>::take(unlink.clone());
