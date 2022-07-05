@@ -26,7 +26,9 @@ use protos::permissions::FragmentPerms;
 use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::StaticLookup;
 
-use frame_support::traits::{tokens::fungibles::Transfer, Currency, ExistenceRequirement};
+use frame_support::traits::{
+	tokens::fungibles::Transfer, Currency, ExistenceRequirement, ReservableCurrency,
+};
 use sp_runtime::SaturatedConversion;
 
 type Unit = u64;
@@ -115,7 +117,7 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	// proto-hash to fragment-hash-sequence
-	/// **StorageMap** that maps a **Proto-Fragment** to a **list of hashes, where each hash is: the hash of the concatenation of the aforementioned Proto-Fragment and a corresponding Fragment's name** 
+	/// **StorageMap** that maps a **Proto-Fragment** to a **list of hashes, where each hash is: the hash of the concatenation of the aforementioned Proto-Fragment and a corresponding Fragment's name**
 	#[pallet::storage]
 	pub type Proto2Fragments<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash128>>;
 
@@ -235,7 +237,7 @@ pub mod pallet {
 		/// * `proto_hash` - **Hash** of an **existing Proto-Fragment**
 		/// * `metadata` -  **Metadata** of the **Fragment**
 		/// * `unique` - **Whether** the **Fragment** is **unique**
-		/// * `mutable` - **Whether** the **Fragment** is **mutable** 
+		/// * `mutable` - **Whether** the **Fragment** is **mutable**
 		/// * `max_supply` (*optional*) - **Maximum amount of items** that **can ever be created** using the **Fragment** (INCDT)
 		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
@@ -272,12 +274,8 @@ pub mod pallet {
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
 			let vault = Self::get_vault_id(hash);
-			let min_balance =
-				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
-			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
-				&vault,
-				min_balance,
-			);
+			let min_balance = T::Currency::minimum_balance();
+			T::Currency::reserve(&vault, min_balance)?;
 
 			let fragment_data = FragmentClass {
 				proto_hash,
@@ -650,12 +648,8 @@ pub mod pallet {
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
 			let vault = Self::get_fragment_account_id(class, edition, copy);
-			let min_balance =
-				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
-			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
-				&vault,
-				min_balance,
-			);
+			let min_balance = T::Currency::minimum_balance();
+			T::Currency::reserve(&vault, min_balance)?;
 
 			// TODO Make owner pay for deposit actually!
 			// TODO setup proxy
