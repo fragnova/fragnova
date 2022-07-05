@@ -1,4 +1,0 @@
-(function() {var implementors = {};
-implementors["clamor_runtime"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html\" title=\"trait core::marker::Copy\">Copy</a> for <a class=\"struct\" href=\"clamor_runtime/struct.Runtime.html\" title=\"struct clamor_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["clamor_runtime::Runtime"]}];
-implementors["pallet_detach"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html\" title=\"trait core::marker::Copy\">Copy</a> for <a class=\"enum\" href=\"pallet_detach/enum.SupportedChains.html\" title=\"enum pallet_detach::SupportedChains\">SupportedChains</a>","synthetic":false,"types":["pallet_detach::SupportedChains"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
