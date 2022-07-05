@@ -21,6 +21,10 @@ cargo doc --no-deps # saves doc in $DOC_FOLDER_MAIN_BRANCH
 git fetch
 git checkout "$TARGET_BRANCH"
 
+echo "printing out PWD"
+pwd
+echo "done printing PWD"
+
 rm -rf DOC_FOLDER_TARGET_BRANCH
 mv -f "${DOC_FOLDER_MAIN_BRANCH}" "${DOC_FOLDER_TARGET_BRANCH}" 
 echo "<meta http-equiv=refresh content=0;url=${DOC_FOLDER_TARGET_BRANCH}/${DOC_INDEX_PAGE}>" > "index.html"
