@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["get_geth_url",""],["on_new_fragment",""],["say_hello_world","A function that can be called from native/wasm."]],"struct":[["HostFunctions","Provides implementations for the extern host functions."]]};

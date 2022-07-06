@@ -1,0 +1,4 @@
+(function() {var implementors = {};
+implementors["pallet_detach"] = [{"text":"impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_detach/struct.DetachInternalData.html\" title=\"struct pallet_detach::DetachInternalData\">DetachInternalData</a>&lt;T::Public&gt;","synthetic":false,"types":["pallet_detach::DetachInternalData"]}];
+implementors["pallet_tickets"] = [{"text":"impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_tickets/struct.EthLockUpdate.html\" title=\"struct pallet_tickets::EthLockUpdate\">EthLockUpdate</a>&lt;T::Public&gt;","synthetic":false,"types":["pallet_tickets::EthLockUpdate"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
