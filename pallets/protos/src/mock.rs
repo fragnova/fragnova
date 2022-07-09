@@ -1,31 +1,32 @@
-pub use crate as pallet_protos;
+use crate as pallet_protos;
 use crate::*;
+
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, ConstU64},
 };
-use frame_system as system;
-use sp_core::{ed25519::Signature, H256};
-use sp_runtime::{
-	testing::{Header, TestXt},
-	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
+use frame_system;
+
+use sp_core::{
+
+	ed25519::Signature,
+
+	H256
 };
+
+use sp_runtime::{
+	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify}
+};
+
+use sp_runtime::testing::{
+	Header, TestXt, 
+};
+
+
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-pub const DATA: &str = "0x0155a0e40220";
-pub const PROTO_HASH: Hash256 = [
-	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
-	51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
-];
-pub const PUBLIC: [u8; 33] = [
-	3, 137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79,
-	173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251,
-];
-pub const PUBLIC1: [u8; 32] = [
-	137, 65, 23, 149, 81, 74, 241, 98, 119, 101, 236, 239, 252, 189, 0, 39, 25, 240, 49, 96, 79,
-	173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251,
-];
+
 
 /// Construct a mock runtime environment.
 frame_support::construct_runtime!(
@@ -44,7 +45,7 @@ frame_support::construct_runtime!(
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Tickets: pallet_tickets::{Pallet, Call, Storage, Event<T>},
+		TicketsPallet: pallet_tickets::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -64,7 +65,7 @@ parameter_types! {
 	pub StorageBytesMultiplier: u64 = 10;
 }
 
-impl system::Config for Test {
+impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -106,6 +107,7 @@ where
 	type OverarchingCall = Call;
 	type Extrinsic = Extrinsic;
 }
+
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
 where
@@ -150,11 +152,11 @@ impl pallet_tickets::Config for Test {
 	type AuthorityId = pallet_tickets::crypto::FragAuthId;
 }
 
-impl Config for Test {
+impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type StakeLockupPeriod = ConstU64<100800>; // one week
+	type StakeLockupPeriod = ConstU64<5>; // one week
 }
 
 impl pallet_detach::Config for Test {
@@ -165,5 +167,34 @@ impl pallet_detach::Config for Test {
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	t.into()
+
+	let mut ext = sp_io::TestExternalities::new(t);
+
+	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
+
+	ext
+}
+
+
+/// Simulate block production
+/// 
+/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls 
+/// from all modules with `System::block_number()` as the sole input. 
+/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should 
+/// prioritize readability to facilitate future maintenance.
+/// 
+/// Source: https://docs.substrate.io/v3/runtime/testing/
+pub fn run_to_block(n: u64) {
+    while System::block_number() < n {
+
+		use frame_support::traits::{OnInitialize, OnFinalize}; 
+
+        if System::block_number() > 0 {
+            ProtosPallet::on_finalize(System::block_number());
+            System::on_finalize(System::block_number());
+        }
+        System::set_block_number(System::block_number() + 1);
+        System::on_initialize(System::block_number());
+        // ProtosPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/protos/src/lib.rs
+    }
 }
