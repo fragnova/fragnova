@@ -1,3 +1,9 @@
+//! This pallet `fragments` performs logic related to Proto-Fragments.
+//! 
+//! IMPORTANT STUFF TO KNOW:
+//! 
+//! A Proto-Fragment is a digital asset that can be used to build a game or application
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
