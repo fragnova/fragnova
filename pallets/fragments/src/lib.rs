@@ -56,7 +56,9 @@ use protos::permissions::FragmentPerms;
 use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::StaticLookup;
 
-use frame_support::traits::{tokens::fungibles::Transfer, Currency, ExistenceRequirement};
+use frame_support::traits::{
+	tokens::fungibles::Transfer, Currency, ExistenceRequirement, ReservableCurrency,
+};
 use sp_runtime::SaturatedConversion;
 
 type Unit = u64;
@@ -201,7 +203,7 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	// proto-hash to fragment-hash-sequence
+
 	/// **StorageMap** that maps a **Proto-Fragment** 
 	/// to a 
 	/// **list of Fragment Definitions that were created using the aforementioned Proto-Fragment**
@@ -421,12 +423,8 @@ pub mod pallet {
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
 			let vault = Self::get_vault_id(hash);
-			let min_balance =
-				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(); // `frame_support::traits::Currency::minumum_balance()` is defined as: "The minimum balance any single account may have. This is equivalent to the Balances module's ExistentialDeposit." (https://docs.rs/frame-support/latest/frame_support/traits/trait.Currency.html) // Pallet Balances implements the `Currency` trait (https://docs.rs/pallet-balances/latest/pallet_balances/pallet/struct.Pallet.html#impl-Currency%3C%3CT%20as%20Config%3E%3A%3AAccountId%3E)
-			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
-				&vault,
-				min_balance,
-			); // **Adds** **up to `min_balance`** to the **free balance of the account ID `vault`**. If the account ID `vault` doesn't exist, it is created.
+			let min_balance = T::Currency::minimum_balance();
+			T::Currency::reserve(&vault, min_balance)?;
 
 			let fragment_data = FragmentDefinition {
 				proto_hash,
@@ -889,12 +887,8 @@ pub mod pallet {
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
 			let vault = Self::get_fragment_account_id(class, edition, copy);
-			let min_balance =
-				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(); // `frame_support::traits::Currency::minumum_balance()` is defined as: "The minimum balance any single account may have. This is equivalent to the Balances module's ExistentialDeposit." (https://docs.rs/frame-support/latest/frame_support/traits/trait.Currency.html) // Pallet Balances implements the `Currency` trait (https://docs.rs/pallet-balances/latest/pallet_balances/pallet/struct.Pallet.html#impl-Currency%3C%3CT%20as%20Config%3E%3A%3AAccountId%3E)
-			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
-				&vault,
-				min_balance,
-			); // **Adds up to `min_balance`** to the **free balance of the account ID `vault`**. If the account ID `vault` doesn't exist, it is created.
+			let min_balance = T::Currency::minimum_balance();
+			T::Currency::reserve(&vault, min_balance)?;
 
 			// TODO Make owner pay for deposit actually!
 			// TODO setup proxy

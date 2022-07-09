@@ -31,12 +31,12 @@ pub const PUBLIC1: [u8; 32] = [
 frame_support::construct_runtime!(
 	// The **configuration type `Test`** is defined as a **Rust enum** with **implementations**
 	// for **each of the pallet configuration trait** that are **used in the mock runtime**. (https://docs.substrate.io/v3/runtime/testing/)
-	// 
+	//
 	// Basically the **enum `Test`** is mock-up of **`Runtime` in pallet-protos (i.e in `pallet/protos/src/lib.rs`)
 	// NOTE: The aforementioned `T` is bound by **trait `pallet:Config`**, if you didn't know
 	pub enum Test where
 		Block = Block, //  Block is the block type that is used in the runtime
-		NodeBlock = Block, // NodeBlock is the block type that is used in the node	
+		NodeBlock = Block, // NodeBlock is the block type that is used in the node
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
@@ -49,14 +49,14 @@ frame_support::construct_runtime!(
 );
 
 /// When to use:
-/// 
+///
 /// To declare parameter types for a pallet's relevant associated types during runtime construction.
-/// 
+///
 /// What it does:
-/// 
-/// The macro replaces each parameter specified into a struct type with a get() function returning its specified value. 
+///
+/// The macro replaces each parameter specified into a struct type with a get() function returning its specified value.
 /// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
-/// 
+///
 /// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -124,9 +124,9 @@ where
 impl pallet_randomness_collective_flip::Config for Test {}
 
 /// If `Test` implements `pallet_balances::Config`, the assignment might use `u64` for the `Balance` type. (https://docs.substrate.io/v3/runtime/testing/)
-/// 
-/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block `impl system::Config for Test` above) to `u64`, 
-/// mock runtimes ease the mental overhead of comprehensive, conscientious testers. 
+///
+/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block `impl system::Config for Test` above) to `u64`,
+/// mock runtimes ease the mental overhead of comprehensive, conscientious testers.
 /// Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
 impl pallet_balances::Config for Test {
 	type Balance = u64;
