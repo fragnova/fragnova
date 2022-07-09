@@ -195,7 +195,6 @@
 <span id="189">189</span>
 <span id="190">190</span>
 <span id="191">191</span>
-<span id="192">192</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
 <span class="comment">// #[cfg(feature = &quot;std&quot;)]</span>
@@ -276,26 +275,25 @@
 }
 
 <span class="doccomment">/// A runtime interface for the Clamor Blockchain</span>
-<span class="doccomment">/// </span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// Background:</span>
-<span class="doccomment">/// </span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// `#[sp_runtime_interface::runtime_interface]` is an attribute macro for transforming a trait declaration into a runtime interface.</span>
-<span class="doccomment">/// </span>
-<span class="doccomment">/// A runtime interface is a fixed interface between a Substrate compatible runtime and the native node. </span>
-<span class="doccomment">/// This interface is callable from a native and a wasm runtime. </span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// A runtime interface is a fixed interface between a Substrate compatible runtime and the native node.</span>
+<span class="doccomment">/// This interface is callable from a native and a wasm runtime.</span>
 <span class="doccomment">/// The **macro** will **generate** the **corresponding code for the native implementation** and the **code for calling from the wasm side to the native implementation**.</span>
 <span class="doccomment">/// The macro expects the runtime interface declaration as trait declaration.</span>
-<span class="doccomment">/// </span>
-<span class="doccomment">/// Source: https://paritytech.github.io/substrate/latest/sp_runtime_interface/attr.runtime_interface.html </span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Source: https://paritytech.github.io/substrate/latest/sp_runtime_interface/attr.runtime_interface.html</span>
 <span class="attribute">#[<span class="ident">sp_runtime_interface::runtime_interface</span>]</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Clamor</span> {
 	<span class="comment">// these are called NATIVE from even WASM</span>
 	<span class="comment">// that&#39;s the deal</span>
 
-	
 	<span class="doccomment">/// A function that can be called from native/wasm.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// The implementation given to this function is only compiled on native.</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// The implementation given to this function is only compiled on native.</span>
 	<span class="kw">fn</span> <span class="ident">say_hello_world</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) {
 		<span class="ident">details::_say_hello_world</span>(<span class="ident">data</span>);
 	}
@@ -331,7 +329,7 @@
 	<span class="comment">// shlog!(&quot;Chainblocks initialized!&quot;);</span>
 }
 
-<span class="doccomment">/// Make an HTTP POST Request with data `body` to the URL `url` </span>
+<span class="doccomment">/// Make an HTTP POST Request with data `body` to the URL `url`</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">http_json_post</span>(<span class="ident">url</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">body</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
 	<span class="macro">log::debug!</span>(<span class="string">&quot;sp_clamor http_request called...&quot;</span>);
 
@@ -389,5 +387,5 @@
 	<span class="ident">TAccountId::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">who</span>[..])
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sp_clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (27eb6d701 2022-07-04)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sp_clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (06754d885 2022-07-08)" ></div>
 </body></html>

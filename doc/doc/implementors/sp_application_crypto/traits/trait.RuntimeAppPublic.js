@@ -1,4 +1,0 @@
-(function() {var implementors = {};
-implementors["pallet_detach"] = [{"text":"impl RuntimeAppPublic for <a class=\"struct\" href=\"pallet_detach/crypto/struct.Public.html\" title=\"struct pallet_detach::crypto::Public\">Public</a> <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Public: RuntimePublic&lt;Signature = Signature&gt;,&nbsp;</span>","synthetic":false,"types":["pallet_detach::crypto::Public"]}];
-implementors["pallet_tickets"] = [{"text":"impl RuntimeAppPublic for <a class=\"struct\" href=\"pallet_tickets/crypto/struct.Public.html\" title=\"struct pallet_tickets::crypto::Public\">Public</a> <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Public: RuntimePublic&lt;Signature = Signature&gt;,&nbsp;</span>","synthetic":false,"types":["pallet_tickets::crypto::Public"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

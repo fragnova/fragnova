@@ -1,5 +1,0 @@
-(function() {var implementors = {};
-implementors["clamor_runtime"] = [{"text":"impl MaxEncodedLen for <a class=\"enum\" href=\"clamor_runtime/enum.OriginCaller.html\" title=\"enum clamor_runtime::OriginCaller\">OriginCaller</a>","synthetic":false,"types":["clamor_runtime::OriginCaller"]}];
-implementors["pallet_detach"] = [{"text":"impl MaxEncodedLen for <a class=\"struct\" href=\"pallet_detach/crypto/struct.Public.html\" title=\"struct pallet_detach::crypto::Public\">Public</a>","synthetic":false,"types":["pallet_detach::crypto::Public"]}];
-implementors["pallet_tickets"] = [{"text":"impl MaxEncodedLen for <a class=\"struct\" href=\"pallet_tickets/crypto/struct.Public.html\" title=\"struct pallet_tickets::crypto::Public\">Public</a>","synthetic":false,"types":["pallet_tickets::crypto::Public"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

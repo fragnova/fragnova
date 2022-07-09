@@ -1,4 +1,0 @@
-(function() {var implementors = {};
-implementors["pallet_detach"] = [{"text":"impl AppPair for <a class=\"struct\" href=\"pallet_detach/crypto/struct.Pair.html\" title=\"struct pallet_detach::crypto::Pair\">Pair</a>","synthetic":false,"types":["pallet_detach::crypto::Pair"]}];
-implementors["pallet_tickets"] = [{"text":"impl AppPair for <a class=\"struct\" href=\"pallet_tickets/crypto/struct.Pair.html\" title=\"struct pallet_tickets::crypto::Pair\">Pair</a>","synthetic":false,"types":["pallet_tickets::crypto::Pair"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
