@@ -101,8 +101,10 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 	pub proto_hash: Hash256,
 	/// ***FragmentMetadata* Struct** (the **struct** contains the **Fragment's name**, among other things)
 	pub metadata: FragmentMetadata<TFungibleAsset>,
-	/// **Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to 
-	/// **any Fragment Instance** that is **created from** the **Fragment Definition** (e.g edit, transfer etc.)
+	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to 
+	/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)
+	/// 
+	/// These **allowed set of actions of the Fragment Instance** ***may change*** when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
 	pub permissions: FragmentPerms,
 	// Notes from Giovanni:
 	//
