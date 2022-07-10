@@ -318,8 +318,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// New class created by account, class hash
-		ClassCreated(Hash128),
+		/// New definition created by account, definition hash
+		DefinitionCreated(Hash128),
 		/// Fragment sale has been opened
 		Publishing(Hash128),
 		/// Fragment sale has been closed
@@ -439,7 +439,7 @@ pub mod pallet {
 
 			Proto2Fragments::<T>::append(&proto_hash, hash);
 
-			Self::deposit_event(Event::ClassCreated(hash));
+			Self::deposit_event(Event::DefinitionCreated(hash));
 			Ok(())
 		}
 
