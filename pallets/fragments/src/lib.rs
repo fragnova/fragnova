@@ -60,7 +60,7 @@ use sp_runtime::SaturatedConversion;
 
 type Unit = u64;
 
-/// **Struct** of a **Fragment Definition 's Metadata**
+/// **Struct** of a **Fragment Definition's Metadata**
 ///
 /// Notes from Giovanni:
 /// 
@@ -73,8 +73,9 @@ type Unit = u64;
 pub struct FragmentMetadata<TFungibleAsset> {
 	/// **Name** of the **Fragment Definition** 
 	pub name: Vec<u8>,
-	/// @sinkingsugar what currencies does Clamor support (apart from NOVA) ???
-	pub currency: Option<TFungibleAsset>, // Where None is NOVA
+	/// **Currency** that the **buyer** of a **Fragment Instance that is created from the Fragment Definition** must **pay in**.
+	/// If this field is `None`, the currency the buyer must pay in is NOVA.
+	pub currency: Option<TFungibleAsset>, 
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
