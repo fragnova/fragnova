@@ -28,9 +28,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
-mod dummy_data;
-
-#[cfg(test)]
 mod mock;
 
 #[cfg(test)]
@@ -63,7 +60,7 @@ use sp_runtime::SaturatedConversion;
 
 type Unit = u64;
 
-/// **Struct** of a **Fragment Definition 's Metadata**
+/// **Struct** of a **Fragment Definition's Metadata**
 ///
 /// Notes from Giovanni:
 /// 
@@ -76,8 +73,9 @@ type Unit = u64;
 pub struct FragmentMetadata<TFungibleAsset> {
 	/// **Name** of the **Fragment Definition** 
 	pub name: Vec<u8>,
-	/// @sinkingsugar what currencies does Clamor support (apart from NOVA) ???
-	pub currency: Option<TFungibleAsset>, // Where None is NOVA
+	/// **Currency** that the **buyer** of a **Fragment Instance that is created from the Fragment Definition** must **pay in**.
+	/// If this field is `None`, the currency the buyer must pay in is NOVA.
+	pub currency: Option<TFungibleAsset>, 
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -103,8 +101,10 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 	pub proto_hash: Hash256,
 	/// ***FragmentMetadata* Struct** (the **struct** contains the **Fragment's name**, among other things)
 	pub metadata: FragmentMetadata<TFungibleAsset>,
-	/// **Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to 
-	/// **any Fragment Instance** that is **created from** the **Fragment Definition** (e.g edit, transfer etc.)
+	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to 
+	/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)
+	/// 
+	/// These **allowed set of actions of the Fragment Instance** ***may change*** when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
 	pub permissions: FragmentPerms,
 	// Notes from Giovanni:
 	//
@@ -318,8 +318,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// New class created by account, class hash
-		ClassCreated(Hash128),
+		/// New definition created by account, definition hash
+		DefinitionCreated(Hash128),
 		/// Fragment sale has been opened
 		Publishing(Hash128),
 		/// Fragment sale has been closed
@@ -439,7 +439,7 @@ pub mod pallet {
 
 			Proto2Fragments::<T>::append(&proto_hash, hash);
 
-			Self::deposit_event(Event::ClassCreated(hash));
+			Self::deposit_event(Event::DefinitionCreated(hash));
 			Ok(())
 		}
 
