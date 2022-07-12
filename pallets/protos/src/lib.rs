@@ -370,6 +370,7 @@ pub mod pallet {
 		/// * `proto_hash` - Existing Proto-Fragment's hash
 		/// * `include_cost` (optional) -
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the **patch**
+		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get())]
 		pub fn patch(
@@ -378,6 +379,7 @@ pub mod pallet {
 			proto_hash: Hash256,
 			include_cost: Option<Compact<u64>>,
 			new_references: Vec<Hash256>,
+			new_tags: Option<Vec<Vec<u8>>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -412,6 +414,8 @@ pub mod pallet {
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
+
+				// Add a data patch if not empty
 				if !data.is_empty() {
 					// No failures from here on out
 					proto.patches.push(ProtoPatch {
@@ -422,7 +426,32 @@ pub mod pallet {
 					// index mutable data for IPFS discovery as well
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 				}
+
+				// Overwrite include cost
 				proto.include_cost = include_cost;
+
+				// Replace previous tags if not None
+				if let Some(new_tags) = new_tags {
+					let tags = new_tags
+						.iter()
+						.map(|s| {
+							let tag_index = <Tags<T>>::get(s);
+							if let Some(tag_index) = tag_index {
+								<Compact<u64>>::from(tag_index)
+							} else {
+								let next_index = <TagsIndex<T>>::try_get().unwrap_or_default() + 1;
+								<Tags<T>>::insert(s, next_index);
+								// storing is dangerous inside a closure
+								// but after this call we start storing..
+								// so it's fine here
+								<TagsIndex<T>>::put(next_index);
+								<Compact<u64>>::from(next_index)
+							}
+						})
+						.collect();
+
+					proto.tags = tags;
+				}
 			});
 
 			let cid = [&CID_PREFIX[..], &data_hash[..]].concat();
