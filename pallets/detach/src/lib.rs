@@ -202,11 +202,11 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		Uploaded(Hash256),
-		Patched(Hash256),
-		MetadataChanged(Hash256, Vec<u8>),
-		Detached(Hash256, Vec<u8>),
-		Transferred(Hash256, T::AccountId),
+		Uploaded { fragment_data_hash: Hash256 },
+		Patched { fragment_data_hash: Hash256 },
+		MetadataChanged { fragment_data_hash: Hash256, remote_signature: Vec<u8> },
+		Detached { fragment_data_hash: Hash256, remote_signature: Vec<u8> },
+		Transferred { fragment_data_hash: Hash256, account_id: T::AccountId },
 	}
 
 	// Errors inform users that something went wrong.
@@ -268,7 +268,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Rmove an **Ed25519 public key** from the **set of Clamor accounts that are authorized to sign a message**, where the **message** is a **request to detach a Proto-Fragment from Clamor**
+		/// Remove an **Ed25519 public key** from the **set of Clamor accounts that are authorized to sign a message**, where the **message** is a **request to detach a Proto-Fragment from Clamor**
 		#[pallet::weight(T::WeightInfo::del_eth_auth())]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -306,7 +306,10 @@ pub mod pallet {
 
 			// emit event
 			// The function `deposit_event` places the event in the System pallet's runtime storage for that block (https://docs.substrate.io/v3/runtime/events-and-errors/)
-			Self::deposit_event(Event::Detached(data.hash, data.remote_signature.clone()));
+			Self::deposit_event(Event::Detached {
+				fragment_data_hash: data.hash,
+				remote_signature: data.remote_signature.clone(),
+			});
 
 			log::debug!("Detached hash: {:?} signature: {:?}", data.hash, data.remote_signature);
 
@@ -366,7 +369,7 @@ pub mod pallet {
 					TransactionSource::InBlock | TransactionSource::Local => {},
 					_ => {
 						log::debug!("Not a local transaction");
-						return InvalidTransaction::Call.into();
+						return InvalidTransaction::Call.into()
 					},
 				}
 
@@ -382,18 +385,18 @@ pub mod pallet {
 					{
 						pub_key
 					} else {
-						return InvalidTransaction::BadSigner.into();
+						return InvalidTransaction::BadSigner.into()
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
-					return InvalidTransaction::BadSigner.into(); // 问Gio
+					return InvalidTransaction::BadSigner.into() // 问Gio
 				}
 				// most expensive bit last
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 				log::debug!("Sending detach finalization extrinsic");
 				ValidTransaction::with_tag_prefix("Detach") // The tag prefix prevents other nodes to do the same transaction that have the same tag prefixes
@@ -528,7 +531,7 @@ pub mod pallet {
 										payload.extend(&chain_id_be[..]); // Add `chain_id_be` to payload
 										let mut target_account: [u8; 20] = [0u8; 20];
 										if request.target_account.len() != 20 {
-											return Err(FAILED);
+											return Err(FAILED)
 										}
 										target_account.copy_from_slice(&request.target_account[..]);
 										payload.extend(&target_account[..]); // Add `target_account` to payload

@@ -54,8 +54,9 @@ frame_support::construct_runtime!(
 ///
 /// What it does:
 ///
-/// The macro replaces each parameter specified into a struct type with a get() function returning its specified value.
-/// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
+/// The macro replaces each parameter specified into a struct type with a get() function returning
+/// its specified value. Each parameter struct type also implements the
+/// frame_support::traits::Get<I> trait to convert the type to its specified value.
 ///
 /// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
@@ -125,9 +126,9 @@ impl pallet_randomness_collective_flip::Config for Test {}
 
 /// If `Test` implements `pallet_balances::Config`, the assignment might use `u64` for the `Balance` type. (https://docs.substrate.io/v3/runtime/testing/)
 ///
-/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block `impl system::Config for Test` above) to `u64`,
-/// mock runtimes ease the mental overhead of comprehensive, conscientious testers.
-/// Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
+/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block
+/// `impl system::Config for Test` above) to `u64`, mock runtimes ease the mental overhead of
+/// comprehensive, conscientious testers. Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
 impl pallet_balances::Config for Test {
 	type Balance = u64;
 	type DustRemoval = ();

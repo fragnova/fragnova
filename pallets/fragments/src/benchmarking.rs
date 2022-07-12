@@ -5,8 +5,10 @@ use super::*;
 use crate::Pallet as Fragments;
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
-use protos::categories::{Categories, TextCategories};
-use protos::permissions::FragmentPerms;
+use protos::{
+	categories::{Categories, TextCategories},
+	permissions::FragmentPerms,
+};
 use sp_io::hashing::blake2_128;
 
 const PROTO_HASH: Hash256 = [
@@ -40,7 +42,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, FragmentPerms::NONE, None, None)
 	verify {
-		assert_last_event::<T>(Event::<T>::ClassCreated(hash).into())
+		assert_last_event::<T>(Event::<T>::ClassCreated { fragment_hash: hash }.into())
 	}
 
 	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);

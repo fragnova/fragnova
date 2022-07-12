@@ -179,19 +179,31 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// New class created by account, class hash
-		ClassCreated(Hash128),
+		ClassCreated { fragment_hash: Hash128 },
 		/// Fragment sale has been opened
-		Publishing(Hash128),
+		Publishing { fragment_hash: Hash128 },
 		/// Fragment sale has been closed
-		Unpublishing(Hash128),
+		Unpublishing { fragment_hash: Hash128 },
 		/// Inventory item has been added to account
-		InventoryAdded(T::AccountId, Hash128, (Unit, Unit)),
+		InventoryAdded {
+			account_id: T::AccountId,
+			fragment_hash: Hash128,
+			fragment_id: (Unit, Unit),
+		},
 		/// Inventory item has removed added from account
-		InventoryRemoved(T::AccountId, Hash128, (Unit, Unit)),
+		InventoryRemoved {
+			account_id: T::AccountId,
+			fragment_hash: Hash128,
+			fragment_id: (Unit, Unit),
+		},
 		/// Inventory has been updated
-		InventoryUpdated(T::AccountId, Hash128, (Unit, Unit)),
+		InventoryUpdated {
+			account_id: T::AccountId,
+			fragment_hash: Hash128,
+			fragment_id: (Unit, Unit),
+		},
 		/// Fragment Expiration event
-		Expired(T::AccountId, Hash128, (Unit, Unit)),
+		Expired { account_id: T::AccountId, fragment_hash: Hash128, fragment_id: (Unit, Unit) },
 	}
 
 	// Errors inform users that something went wrong.
@@ -290,7 +302,7 @@ pub mod pallet {
 
 			Proto2Fragments::<T>::append(&proto_hash, hash);
 
-			Self::deposit_event(Event::ClassCreated(hash));
+			Self::deposit_event(Event::ClassCreated { fragment_hash: hash });
 			Ok(())
 		}
 
@@ -333,10 +345,10 @@ pub mod pallet {
 					let quantity: Unit = quantity.into();
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached);
 				} else {
-					return Err(Error::<T>::ParamsNotValid.into());
+					return Err(Error::<T>::ParamsNotValid.into())
 				}
 				if left == 0 {
-					return Err(Error::<T>::MaxSupplyReached.into());
+					return Err(Error::<T>::MaxSupplyReached.into())
 				}
 			}
 
@@ -352,7 +364,7 @@ pub mod pallet {
 				},
 			);
 
-			Self::deposit_event(Event::Publishing(fragment_hash));
+			Self::deposit_event(Event::Publishing { fragment_hash });
 
 			Ok(())
 		}
@@ -380,7 +392,7 @@ pub mod pallet {
 
 			<Publishing<T>>::remove(&fragment_hash);
 
-			Self::deposit_event(Event::Unpublishing(fragment_hash));
+			Self::deposit_event(Event::Unpublishing { fragment_hash });
 
 			Ok(())
 		}
@@ -597,7 +609,11 @@ pub mod pallet {
 
 				<Fragments<T>>::insert((class, edition, copy), item_data);
 
-				Self::deposit_event(Event::InventoryAdded(to, class, (edition, copy)));
+				Self::deposit_event(Event::InventoryAdded {
+					account_id: to,
+					fragment_hash: class,
+					fragment_id: (edition, copy),
+				});
 			} else {
 				// we will remove from this account to give to new account
 				<Owners<T>>::mutate(class, who.clone(), |ids| {
@@ -612,13 +628,21 @@ pub mod pallet {
 					}
 				});
 
-				Self::deposit_event(Event::InventoryRemoved(who.clone(), class, (edition, copy)));
+				Self::deposit_event(Event::InventoryRemoved {
+					account_id: who.clone(),
+					fragment_hash: class,
+					fragment_id: (edition, copy),
+				});
 
 				<Owners<T>>::append(class, to.clone(), (Compact(edition), Compact(copy)));
 
 				<Inventory<T>>::append(to.clone(), class, (Compact(edition), Compact(copy)));
 
-				Self::deposit_event(Event::InventoryAdded(to, class, (edition, copy)));
+				Self::deposit_event(Event::InventoryAdded {
+					account_id: to,
+					fragment_hash: class,
+					fragment_id: (edition, copy),
+				});
 
 				// finally fix permissions that might have changed
 				<Fragments<T>>::mutate((class, edition, copy), |item_data| {
@@ -687,11 +711,11 @@ pub mod pallet {
 							});
 
 							// trigger an Event
-							Self::deposit_event(Event::Expired(
-								owner,
-								item.0,
-								(item.1.into(), item.2.into()),
-							));
+							Self::deposit_event(Event::Expired {
+								account_id: owner,
+								fragment_hash: item.0,
+								fragment_id: (item.1.into(), item.2.into()),
+							});
 
 							// fragments are unique so we are done here
 							break;
@@ -769,7 +793,7 @@ impl<T: Config> Pallet<T> {
 				let max: Unit = max_supply.into();
 				let left = max.saturating_sub(existing);
 				if quantity <= left {
-					return Err(Error::<T>::MaxSupplyReached.into());
+					return Err(Error::<T>::MaxSupplyReached.into())
 				}
 			}
 		}
@@ -800,8 +824,11 @@ impl<T: Config> Pallet<T> {
 					if let Some(expiring_at) = expiring_at {
 						<Expirations<T>>::append(expiring_at, (*fragment_hash, cid, Compact(1)));
 					}
-
-					Self::deposit_event(Event::InventoryAdded(to.clone(), *fragment_hash, (id, 1)));
+					Self::deposit_event(Event::InventoryAdded {
+						account_id: to.clone(),
+						fragment_hash: *fragment_hash,
+						fragment_id: (id, 1),
+					});
 				}
 				<EditionsCount<T>>::insert(fragment_hash, Compact(existing + quantity));
 			}
