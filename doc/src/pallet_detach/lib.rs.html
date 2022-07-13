@@ -635,7 +635,51 @@
 <span id="629">629</span>
 <span id="630">630</span>
 <span id="631">631</span>
-</pre><pre class="rust"><code><span class="doccomment">//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Clamor Blockchain to an External Blockchain</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+</pre><pre class="rust"><code><span class="doccomment">//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Clamor</span>
+<span class="doccomment">//! Blockchain to an External Blockchain</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
@@ -672,8 +716,8 @@
 		<span class="ident">MultiSignature</span>, <span class="ident">MultiSigner</span>,
 	};
 
-	<span class="comment">// The app_crypto macro declares an account with an `ed25519` signature that is identified by KEY_TYPE.</span>
-	<span class="comment">// Note that this doesn&#39;t create a new account.</span>
+	<span class="comment">// The app_crypto macro declares an account with an `ed25519` signature that is identified by</span>
+	<span class="comment">// KEY_TYPE. Note that this doesn&#39;t create a new account.</span>
 	<span class="comment">// The macro simply declares that a crypto account is available for this pallet.</span>
 	<span class="comment">// You will need to initialize this account yourself.</span>
 	<span class="comment">//</span>
@@ -773,9 +817,10 @@
 
 <span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">pallet_prelude</span>::<span class="kw-2">*</span>};
 	<span class="kw">use</span> <span class="ident">frame_system::pallet_prelude</span>::<span class="kw-2">*</span>;
+	<span class="kw">use</span> <span class="ident">sp_core::ed25519::Public</span>;
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.</span>
 	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
@@ -863,7 +908,8 @@
 	<span class="doccomment">/// Functions that are callable from outside the runtime.</span>
 	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
 	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// **Add** an **ECDSA public key** to the **set of Ethereum accounts that are authorized to detach a Proto-Fragment onto Fragnova&#39;s Ethereum Smart Contract**</span>
+		<span class="doccomment">/// **Add** an **ECDSA public key** to the **set of Ethereum accounts that are authorized to</span>
+		<span class="doccomment">/// detach a Proto-Fragment onto Fragnova&#39;s Ethereum Smart Contract**</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="ident">T::WeightInfo::add_eth_auth</span>())]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_eth_auth</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">public</span>: <span class="ident">ecdsa::Public</span>) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
@@ -1096,111 +1142,75 @@
 					<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">requests</span>)) =&gt; {
 						<span class="macro">log::debug!</span>(<span class="string">&quot;Got {} detach requests&quot;</span>, <span class="ident">requests</span>.<span class="ident">len</span>());
 						<span class="kw">for</span> <span class="ident">request</span> <span class="kw">in</span> <span class="ident">requests</span> {
-							<span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">target_chain</span> {
-								<span class="ident">SupportedChains::EthereumMainnet</span> =&gt; <span class="ident">U256::from</span>(<span class="number">1</span>),
-								<span class="ident">SupportedChains::EthereumRinkeby</span> =&gt; <span class="ident">U256::from</span>(<span class="number">4</span>),
-								<span class="ident">SupportedChains::EthereumGoerli</span> =&gt; <span class="ident">U256::from</span>(<span class="number">5</span>),
-							};
-
 							<span class="kw">let</span> <span class="ident">values</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">target_chain</span> {
-								<span class="ident">SupportedChains::EthereumMainnet</span>
-								<span class="op">|</span> <span class="ident">SupportedChains::EthereumRinkeby</span>
-								<span class="op">|</span> <span class="ident">SupportedChains::EthereumGoerli</span> =&gt; {
-									<span class="comment">// check if we need to generate new ecdsa keys</span>
-									<span class="kw">let</span> <span class="ident">ed_keys</span> <span class="op">=</span> <span class="ident">Crypto::ed25519_public_keys</span>(<span class="ident">KEY_TYPE</span>); <span class="comment">// defined in service.rs</span>
-													 <span class="comment">//</span>
-									<span class="kw">let</span> <span class="ident">keys_ref</span> <span class="op">=</span>
-										<span class="ident">StorageValueRef::persistent</span>(<span class="string">b&quot;fragments-frag-ecdsa-keys&quot;</span>); <span class="comment">// This key does not exist when the blockchain is first launched</span>
-									<span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="ident">keys_ref</span>
-										.<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">ed25519::Public</span><span class="op">&gt;</span><span class="op">&gt;</span>()
-										.<span class="ident">unwrap_or_default</span>(); <span class="comment">// If `keys` doesn&#39;t exist, set it to `BTreeSet&lt;ed25519::Public&gt;`</span>
-									<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">keys</span> <span class="op">=</span>
-										<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">keys</span>) <span class="op">=</span> <span class="ident">keys</span> { <span class="ident">keys</span> } <span class="kw">else</span> { <span class="ident">BTreeSet::new</span>() }; <span class="comment">// If `keys` is None, set it to `BTreeSet&lt;ed25519::Public&gt;`</span>
-															<span class="comment">// doing this cos mutate was insane...</span>
-									<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">edited</span> <span class="op">=</span> <span class="bool-val">false</span>;
-									<span class="kw">for</span> <span class="ident">ed_key</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">ed_keys</span> {
-										<span class="comment">// INC questo block</span>
-										<span class="kw">if</span> <span class="op">!</span><span class="ident">keys</span>.<span class="ident">contains</span>(<span class="ident">ed_key</span>) {
-											<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span> <span class="op">=</span> <span class="string">b&quot;fragments-frag-ecdsa-keys&quot;</span>.<span class="ident">to_vec</span>();
-											<span class="ident">msg</span>.<span class="ident">append</span>(<span class="kw-2">&amp;mut</span> <span class="ident">ed_key</span>.<span class="ident">to_vec</span>());
-											<span class="kw">let</span> <span class="ident">signed</span> <span class="op">=</span>
-												<span class="ident">Crypto::ed25519_sign</span>(<span class="ident">KEY_TYPE</span>, <span class="ident">ed_key</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>)
-													.<span class="ident">unwrap</span>(); <span class="comment">// Determistically sign a constant message `msg` with Ed25519 key `ed_key`</span>
-											<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">signed</span>.<span class="number">0</span>[..]); <span class="comment">// Determistically Keccak Hash the determestic signature `signed`</span>
-											<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">key_hex</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
-											<span class="ident">hex::encode_to_slice</span>(<span class="ident">key</span>, <span class="kw-2">&amp;mut</span> <span class="ident">key_hex</span>)
-												.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">FAILED</span>)<span class="question-mark">?</span>; <span class="comment">// (Determinstically )UTF-8 encode the hexadecimal representation of `key` and save it in `key_hex` (see the example of `encode_to_slice` if you&#39;re confused)</span>
-											<span class="kw">let</span> <span class="ident">key_hex</span> <span class="op">=</span> [<span class="string">b&quot;0x&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">key_hex</span>[..]].<span class="ident">concat</span>();
-											<span class="macro">log::debug!</span>(<span class="string">&quot;Adding new key from seed: {:?}&quot;</span>, <span class="ident">key_hex</span>);
-											<span class="comment">// Generate an ECSDSA key for the given key type using the seed `seed` (WHICH WAS DETERMINSTICALLY COMPUTED</span>
-											<span class="comment">// FROM THE ED25519 KEY `ed_key`) and store it in the keystore.</span>
-											<span class="kw">let</span> <span class="ident">_public</span> <span class="op">=</span>
-												<span class="ident">Crypto::ecdsa_generate</span>(<span class="ident">KEY_TYPE</span>, <span class="prelude-val">Some</span>(<span class="ident">key_hex</span>));
+								<span class="ident">SupportedChains::EthereumMainnet</span> <span class="op">|</span>
+								<span class="ident">SupportedChains::EthereumRinkeby</span> <span class="op">|</span>
+								<span class="ident">SupportedChains::EthereumGoerli</span> =&gt; {
+									<span class="comment">// Get ECDSA public keys from Local Storage.</span>
+									<span class="comment">// If no key exist, return an empty BTreeSet&lt;ed25519::Public&gt; to be filled with keys</span>
+									<span class="comment">// This storage_ref key does not exist when the blockchain is first launched</span>
+									<span class="kw">let</span> <span class="ident">storage_ref</span> <span class="op">=</span> <span class="ident">StorageValueRef::persistent</span>(<span class="string">b&quot;fragments-frag-ecdsa-keys&quot;</span>);
+									<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ecdsa_keys</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_keys_set_from_local_storage</span>(<span class="kw-2">&amp;</span><span class="ident">storage_ref</span>);
+									<span class="comment">// doing this cos mutate was insane...</span>
 
-											<span class="ident">keys</span>.<span class="ident">insert</span>(<span class="kw-2">*</span><span class="ident">ed_key</span>);
+									<span class="comment">// Returns all existing ed25519 public keys for the given key type.</span>
+									<span class="kw">let</span> <span class="ident">ed_keys</span> <span class="op">=</span> <span class="ident">Crypto::ed25519_public_keys</span>(<span class="ident">KEY_TYPE</span>); <span class="comment">// defined in service.rs</span>
+									<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">edited</span> <span class="op">=</span> <span class="bool-val">false</span>;
+
+									<span class="kw">for</span> <span class="ident">ed_key</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">ed_keys</span> {
+										<span class="kw">if</span> <span class="op">!</span><span class="ident">ecdsa_keys</span>.<span class="ident">contains</span>(<span class="ident">ed_key</span>) {
+											<span class="kw">let</span> <span class="ident">key_hex</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::generate_seed_from_ed_key</span>(<span class="kw-2">&amp;</span><span class="ident">ed_key</span>).<span class="ident">unwrap</span>();
+											<span class="macro">log::debug!</span>(<span class="string">&quot;Adding new key from seed: {:?}&quot;</span>, <span class="ident">key_hex</span>);
+											<span class="comment">// Generate an ECSDSA key for the given key type using the seed `seed` (WHICH WAS</span>
+											<span class="comment">// DETERMINISTICALLY COMPUTED FROM THE ED25519 KEY `ed_key`) and store it in the</span>
+											<span class="comment">// keystore.</span>
+											<span class="kw">let</span> <span class="ident">_public</span> <span class="op">=</span> <span class="ident">Crypto::ecdsa_generate</span>(<span class="ident">KEY_TYPE</span>, <span class="prelude-val">Some</span>(<span class="ident">key_hex</span>));
+											<span class="ident">ecdsa_keys</span>.<span class="ident">insert</span>(<span class="kw-2">*</span><span class="ident">ed_key</span>);
 											<span class="ident">edited</span> <span class="op">=</span> <span class="bool-val">true</span>;
 										}
 									}
 									<span class="kw">if</span> <span class="ident">edited</span> {
-										<span class="comment">// Set the list of determinstically computed ECSDA keys `keys` (they were determintically computed using `ed_keys`)</span>
-										<span class="comment">// to the `keys_ref` (i.e to **`StorageValueRef::persistent(b&quot;fragments-frag-ecdsa-keys&quot;)`**)</span>
-										<span class="ident">keys_ref</span>.<span class="ident">set</span>(<span class="kw-2">&amp;</span><span class="ident">keys</span>);
+										<span class="comment">// Set the list of deterministically computed ECSDA keys `keys` (they were</span>
+										<span class="comment">// deterministically computed using `ed_keys`) to the `storage_ref` (i.e to</span>
+										<span class="comment">// **`StorageValueRef::persistent(b&quot;fragments-frag-ecdsa-keys&quot;)`**)</span>
+										<span class="ident">storage_ref</span>.<span class="ident">set</span>(<span class="kw-2">&amp;</span><span class="ident">ecdsa_keys</span>);
 									}
-									<span class="comment">// get local keys</span>
-									<span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="ident">Crypto::ecdsa_public_keys</span>(<span class="ident">KEY_TYPE</span>); <span class="comment">// Get the list of ECDSA public keys for the key id `KEY_STORE` in the keystore</span>
+
+									<span class="comment">// Get the list of ECDSA public keys for the key id `KEY_STORE` in the keystore</span>
+									<span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="ident">Crypto::ecdsa_public_keys</span>(<span class="ident">KEY_TYPE</span>);
 									<span class="macro">log::debug!</span>(<span class="string">&quot;ecdsa local keys {:x?}&quot;</span>, <span class="ident">keys</span>);
 									<span class="comment">// make sure the local key is in the global authorities set!</span>
 									<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">keys</span>
 										.<span class="ident">iter</span>()
 										.<span class="ident">find</span>(<span class="op">|</span><span class="ident">k</span><span class="op">|</span> <span class="op">&lt;</span><span class="ident">EthereumAuthorities</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">contains</span>(<span class="ident">k</span>)); <span class="comment">// Get the first key and return it</span>
 									<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">key</span>) <span class="op">=</span> <span class="ident">key</span> {
-										<span class="comment">// This is critical, we send over to the ethereum smart</span>
-										<span class="comment">// contract this signature The ethereum smart contract call</span>
-										<span class="comment">// will be the following attach(proto_hash, local_owner,</span>
-										<span class="comment">// signature, clamor_nonce); on this target chain the nonce</span>
-										<span class="comment">// needs to be exactly the same as the one here</span>
-										<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">hash</span>.<span class="ident">encode</span>(); <span class="comment">// The creation of the payload // Add `request.hash.encode()` to payload</span>
-										<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">chain_id_be</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
-										<span class="ident">chain_id</span>.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">chain_id_be</span>);
-										<span class="ident">payload</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span><span class="ident">chain_id_be</span>[..]); <span class="comment">// Add `chain_id_be` to payload</span>
-										<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">target_account</span>: [<span class="ident">u8</span>; <span class="number">20</span>] <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">20</span>];
+										<span class="comment">/*
+										This is critical, we send over to the ethereum smart contract this signature The ethereum smart contract call
+										will be the following attach(proto_hash, local_owner, signature, clamor_nonce); on this target chain the nonce
+										needs to be exactly the same as the one here
+										*/</span>
+
+										<span class="comment">// The creation of the payload</span>
+										<span class="comment">// Add `request.hash.encode()` to payload</span>
+										<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">payload</span> <span class="op">=</span> <span class="ident">request</span>.<span class="ident">hash</span>.<span class="ident">encode</span>();
+
+										<span class="ident"><span class="self">Self</span>::add_chainid_to_payload</span>(<span class="kw-2">&amp;</span><span class="ident">request</span>, <span class="kw-2">&amp;mut</span> <span class="ident">payload</span>);
+
 										<span class="kw">if</span> <span class="ident">request</span>.<span class="ident">target_account</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">20</span> {
-											<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FAILED</span>);
+											<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">FAILED</span>)
 										}
-										<span class="ident">target_account</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">request</span>.<span class="ident">target_account</span>[..]);
-										<span class="ident">payload</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span><span class="ident">target_account</span>[..]); <span class="comment">// Add `target_account` to payload</span>
-										<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">DetachNonces</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(
-											<span class="kw-2">&amp;</span><span class="ident">request</span>.<span class="ident">target_account</span>,
-											<span class="ident">request</span>.<span class="ident">target_chain</span>,
-										);
-										<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">nonce</span>) <span class="op">=</span> <span class="ident">nonce</span> {
-											<span class="comment">// add 1, remote will add 1</span>
-											<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="ident">nonce</span>.<span class="ident">checked_add</span>(<span class="number">1</span>).<span class="ident">unwrap</span>();
-											<span class="ident">payload</span>.<span class="ident">extend</span>(<span class="ident">nonce</span>.<span class="ident">to_be_bytes</span>()); <span class="comment">// Add `nonce` to payload (if)</span>
-											<span class="ident">nonce</span> <span class="comment">// for storage</span>
-										} <span class="kw">else</span> {
-											<span class="comment">// there never was a nonce</span>
-											<span class="ident">payload</span>.<span class="ident">extend</span>(<span class="number">1u64</span>.<span class="ident">to_be_bytes</span>()); <span class="comment">// Add `nonce` to payload (else)</span>
-											<span class="number">1u64</span>
-										};
+										<span class="ident"><span class="self">Self</span>::add_target_account_to_payload</span>(<span class="kw-2">&amp;</span><span class="ident">request</span>, <span class="kw-2">&amp;mut</span> <span class="ident">payload</span>);
+
+										<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::add_nonce_to_payload</span>(<span class="kw-2">&amp;</span><span class="ident">request</span>, <span class="kw-2">&amp;mut</span> <span class="ident">payload</span>);
+
 										<span class="macro">log::debug!</span>(
 											<span class="string">&quot;payload: {:x?}, len: {}&quot;</span>,
 											<span class="ident">payload</span>,
 											<span class="ident">payload</span>.<span class="ident">len</span>()
 										);
-										<span class="kw">let</span> <span class="ident">payload</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">payload</span>); <span class="comment">// Hash the payload!!</span>
-										<span class="macro">log::debug!</span>(
-											<span class="string">&quot;payload hash: {:x?}, len: {}&quot;</span>,
-											<span class="ident">payload</span>,
-											<span class="ident">payload</span>.<span class="ident">len</span>()
-										);
-										<span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span>
-											[<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">payload</span>[..]]
-												.<span class="ident">concat</span>();
-										<span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">msg</span>); <span class="comment">// Hash the msg!!</span>
-							<span class="comment">// Sign the payload with a trusted validation key</span>
-										<span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span>
-											<span class="ident">Crypto::ecdsa_sign_prehashed</span>(<span class="ident">KEY_TYPE</span>, <span class="ident">key</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>); <span class="comment">// Sign the message `msg` with the ECDSA public key `key` (note: `key` is in `EthereumAuthorities`)</span>
+										<span class="comment">// Sign the payload</span>
+										<span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::sign_payload</span>(<span class="ident">key</span>, <span class="kw-2">&amp;mut</span> <span class="ident">payload</span>);
+
 										<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">signature</span>) <span class="op">=</span> <span class="ident">signature</span> {
 											<span class="comment">// No more failures from this path!!</span>
 											<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">signature</span>.<span class="number">0</span>.<span class="ident">to_vec</span>();
@@ -1232,7 +1242,6 @@
 									<span class="comment">//   - `Some((account, Err(())))`: error occurred when sending the transaction</span>
 									<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident">Signer</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">T::AuthorityId</span><span class="op">&gt;</span><span class="ident">::any_account</span>() <span class="comment">// `Signer::&lt;T, T::AuthorityId&gt;::any_account()` is the signer that signs the payload</span>
 										.<span class="ident">send_unsigned_transaction</span>(
-											<span class="comment">// INC questo block</span>
 											<span class="comment">// this line is to prepare and return payload to be used</span>
 											<span class="op">|</span><span class="ident">account</span><span class="op">|</span> <span class="ident">DetachInternalData</span> {
 												<span class="comment">// `account` is the account `Signer::&lt;T, T::AuthorityId&gt;::any_account()`</span>
@@ -1264,8 +1273,85 @@
 					<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">FAILED</span>),
 				});
 		}
+
+		<span class="kw">fn</span> <span class="ident">generate_seed_from_ed_key</span>(<span class="ident">ed_key</span>: <span class="kw-2">&amp;</span><span class="ident">Public</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, ()<span class="op">&gt;</span> {
+			<span class="kw">const</span> <span class="ident">FAILED</span>: () <span class="op">=</span> ();
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">msg</span> <span class="op">=</span> <span class="string">b&quot;fragments-frag-ecdsa-keys&quot;</span>.<span class="ident">to_vec</span>();
+			<span class="ident">msg</span>.<span class="ident">append</span>(<span class="kw-2">&amp;mut</span> <span class="ident">ed_key</span>.<span class="ident">to_vec</span>());
+			<span class="comment">// Deterministically sign a constant message `msg` with Ed25519 key `ed_key`</span>
+			<span class="kw">let</span> <span class="ident">signed</span> <span class="op">=</span> <span class="ident">Crypto::ed25519_sign</span>(<span class="ident">KEY_TYPE</span>, <span class="ident">ed_key</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>).<span class="ident">unwrap</span>();
+			<span class="comment">// Deterministically Keccak Hash the deterministic signature `signed`</span>
+			<span class="kw">let</span> <span class="ident">key</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">signed</span>.<span class="number">0</span>[..]);
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">key_hex</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">64</span>];
+			<span class="comment">// (Deterministically ) UTF-8 encode the hexadecimal representation of `key` and</span>
+			<span class="comment">// save it in `key_hex` (see the example of `encode_to_slice` if you&#39;re confused)</span>
+			<span class="ident">hex::encode_to_slice</span>(<span class="ident">key</span>, <span class="kw-2">&amp;mut</span> <span class="ident">key_hex</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">FAILED</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">key_hex</span> <span class="op">=</span> [<span class="string">b&quot;0x&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">key_hex</span>[..]].<span class="ident">concat</span>();
+			<span class="prelude-val">Ok</span>(<span class="ident">key_hex</span>)
+		}
+
+		<span class="kw">fn</span> <span class="ident">sign_payload</span>(<span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">ecdsa::Public</span>, <span class="ident">payload</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ecdsa::Signature</span><span class="op">&gt;</span> {
+			<span class="kw">let</span> <span class="ident">payload</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">payload</span>);
+			<span class="comment">// Hash the payload!!</span>
+			<span class="macro">log::debug!</span>(
+				<span class="string">&quot;payload hash: {:x?}, len: {}&quot;</span>,
+				<span class="ident">payload</span>,
+				<span class="ident">payload</span>.<span class="ident">len</span>()
+			);
+			<span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> [<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">payload</span>[..]].<span class="ident">concat</span>();
+			<span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">msg</span>); <span class="comment">// Hash the msg!!</span>
+
+			<span class="comment">// Sign the payload with a trusted validation key</span>
+			<span class="comment">// Sign the message `msg` with the ECDSA public key `key`</span>
+			<span class="comment">// (note: `key` is in `EthereumAuthorities`)</span>
+			<span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">Crypto::ecdsa_sign_prehashed</span>(<span class="ident">KEY_TYPE</span>, <span class="ident">key</span>, <span class="kw-2">&amp;</span><span class="ident">msg</span>);
+			<span class="ident">signature</span>
+		}
+
+		<span class="kw">fn</span> <span class="ident">add_nonce_to_payload</span>(<span class="ident">request</span>: <span class="kw-2">&amp;</span><span class="ident">DetachRequest</span>, <span class="ident">payload</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) -&gt; <span class="ident">u64</span> {
+			<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">DetachNonces</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(
+				<span class="kw-2">&amp;</span><span class="ident">request</span>.<span class="ident">target_account</span>,
+				<span class="ident">request</span>.<span class="ident">target_chain</span>,
+			);
+			<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">nonce</span>) <span class="op">=</span> <span class="ident">nonce</span> {
+				<span class="comment">// add 1, remote will add 1</span>
+				<span class="kw">let</span> <span class="ident">nonce</span> <span class="op">=</span> <span class="ident">nonce</span>.<span class="ident">checked_add</span>(<span class="number">1</span>).<span class="ident">unwrap</span>();
+				<span class="ident">payload</span>.<span class="ident">extend</span>(<span class="ident">nonce</span>.<span class="ident">to_be_bytes</span>()); <span class="comment">// Add `nonce` to payload (if)</span>
+				<span class="ident">nonce</span> <span class="comment">// for storage</span>
+			} <span class="kw">else</span> {
+				<span class="comment">// there never was a nonce</span>
+				<span class="ident">payload</span>.<span class="ident">extend</span>(<span class="number">1u64</span>.<span class="ident">to_be_bytes</span>()); <span class="comment">// Add `nonce` to payload (else)</span>
+				<span class="number">1u64</span>
+			};
+			<span class="ident">nonce</span>
+		}
+
+		<span class="kw">fn</span> <span class="ident">add_chainid_to_payload</span>(<span class="ident">request</span>: <span class="kw-2">&amp;</span><span class="ident">DetachRequest</span>, <span class="ident">payload</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
+			<span class="kw">let</span> <span class="ident">chain_id</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">request</span>.<span class="ident">target_chain</span> {
+				<span class="ident">SupportedChains::EthereumMainnet</span> =&gt; <span class="ident">U256::from</span>(<span class="number">1</span>),
+				<span class="ident">SupportedChains::EthereumRinkeby</span> =&gt; <span class="ident">U256::from</span>(<span class="number">4</span>),
+				<span class="ident">SupportedChains::EthereumGoerli</span> =&gt; <span class="ident">U256::from</span>(<span class="number">5</span>),
+			};
+
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">chain_id_be</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
+			<span class="ident">chain_id</span>.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;mut</span> <span class="ident">chain_id_be</span>);
+			<span class="ident">payload</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span><span class="ident">chain_id_be</span>[..]);
+		}
+
+		<span class="kw">fn</span> <span class="ident">get_keys_set_from_local_storage</span>(<span class="ident">storage_ref</span>: <span class="kw-2">&amp;</span><span class="ident">StorageValueRef</span>) -&gt; <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">Public</span><span class="op">&gt;</span> {
+			<span class="comment">// If `stored_keys` doesn&#39;t exist, set it to `BTreeSet&lt;ed25519::Public&gt;`</span>
+			<span class="kw">let</span> <span class="ident">stored_keys</span> <span class="op">=</span> <span class="ident">storage_ref</span>.<span class="ident">get</span>::<span class="op">&lt;</span><span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">ed25519::Public</span><span class="op">&gt;</span><span class="op">&gt;</span>().<span class="ident">unwrap_or_default</span>();
+			<span class="comment">// If `keys` is None, set it to `BTreeSet&lt;ed25519::Public&gt;`</span>
+			<span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">keys</span>) <span class="op">=</span> <span class="ident">stored_keys</span> { <span class="ident">keys</span> } <span class="kw">else</span> { <span class="ident">BTreeSet::new</span>() };
+			<span class="ident">keys</span>
+		}
+		<span class="kw">fn</span> <span class="ident">add_target_account_to_payload</span>(<span class="ident">request</span>: <span class="kw-2">&amp;</span><span class="ident">DetachRequest</span>, <span class="ident">payload</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
+			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">target_account</span>: [<span class="ident">u8</span>; <span class="number">20</span>] <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">20</span>];
+			<span class="ident">target_account</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">request</span>.<span class="ident">target_account</span>[..]);
+			<span class="ident">payload</span>.<span class="ident">extend</span>(<span class="kw-2">&amp;</span><span class="ident">target_account</span>[..]);
+		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_detach" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (38b72154d 2022-07-11)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_detach" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (1c7b36d4d 2022-07-12)" ></div>
 </body></html>
