@@ -1,4 +1,5 @@
-//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Clamor Blockchain to an External Blockchain
+//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Clamor
+//! Blockchain to an External Blockchain
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -35,8 +36,8 @@ pub mod crypto {
 		MultiSignature, MultiSigner,
 	};
 
-	// The app_crypto macro declares an account with an `ed25519` signature that is identified by KEY_TYPE.
-	// Note that this doesn't create a new account.
+	// The app_crypto macro declares an account with an `ed25519` signature that is identified by
+	// KEY_TYPE. Note that this doesn't create a new account.
 	// The macro simply declares that a crypto account is available for this pallet.
 	// You will need to initialize this account yourself.
 	//
@@ -136,9 +137,10 @@ pub struct ExportData {
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::*;
+use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
+	use sp_core::ed25519::Public;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -226,7 +228,8 @@ pub mod pallet {
 	/// Functions that are callable from outside the runtime.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// **Add** an **ECDSA public key** to the **set of Ethereum accounts that are authorized to detach a Proto-Fragment onto Fragnova's Ethereum Smart Contract**
+		/// **Add** an **ECDSA public key** to the **set of Ethereum accounts that are authorized to
+		/// detach a Proto-Fragment onto Fragnova's Ethereum Smart Contract**
 		#[pallet::weight(T::WeightInfo::add_eth_auth())]
 		pub fn add_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -459,111 +462,75 @@ pub mod pallet {
 					Ok(Some(requests)) => {
 						log::debug!("Got {} detach requests", requests.len());
 						for request in requests {
-							let chain_id = match request.target_chain {
-								SupportedChains::EthereumMainnet => U256::from(1),
-								SupportedChains::EthereumRinkeby => U256::from(4),
-								SupportedChains::EthereumGoerli => U256::from(5),
-							};
-
 							let values = match request.target_chain {
-								SupportedChains::EthereumMainnet
-								| SupportedChains::EthereumRinkeby
-								| SupportedChains::EthereumGoerli => {
-									// check if we need to generate new ecdsa keys
-									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE); // defined in service.rs
-													 //
-									let keys_ref =
-										StorageValueRef::persistent(b"fragments-frag-ecdsa-keys"); // This key does not exist when the blockchain is first launched
-									let keys = keys_ref
-										.get::<BTreeSet<ed25519::Public>>()
-										.unwrap_or_default(); // If `keys` doesn't exist, set it to `BTreeSet<ed25519::Public>`
-									let mut keys =
-										if let Some(keys) = keys { keys } else { BTreeSet::new() }; // If `keys` is None, set it to `BTreeSet<ed25519::Public>`
-															// doing this cos mutate was insane...
-									let mut edited = false;
-									for ed_key in &ed_keys {
-										// INC questo block
-										if !keys.contains(ed_key) {
-											let mut msg = b"fragments-frag-ecdsa-keys".to_vec();
-											msg.append(&mut ed_key.to_vec());
-											let signed =
-												Crypto::ed25519_sign(KEY_TYPE, ed_key, &msg)
-													.unwrap(); // Determistically sign a constant message `msg` with Ed25519 key `ed_key`
-											let key = keccak_256(&signed.0[..]); // Determistically Keccak Hash the determestic signature `signed`
-											let mut key_hex = [0u8; 64];
-											hex::encode_to_slice(key, &mut key_hex)
-												.map_err(|_| FAILED)?; // (Determinstically )UTF-8 encode the hexadecimal representation of `key` and save it in `key_hex` (see the example of `encode_to_slice` if you're confused)
-											let key_hex = [b"0x", &key_hex[..]].concat();
-											log::debug!("Adding new key from seed: {:?}", key_hex);
-											// Generate an ECSDSA key for the given key type using the seed `seed` (WHICH WAS DETERMINSTICALLY COMPUTED
-											// FROM THE ED25519 KEY `ed_key`) and store it in the keystore.
-											let _public =
-												Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
+								SupportedChains::EthereumMainnet |
+								SupportedChains::EthereumRinkeby |
+								SupportedChains::EthereumGoerli => {
+									// Get ECDSA public keys from Local Storage.
+									// If no key exist, return an empty BTreeSet<ed25519::Public> to be filled with keys
+									// This storage_ref key does not exist when the blockchain is first launched
+									let storage_ref = StorageValueRef::persistent(b"fragments-frag-ecdsa-keys");
+									let mut ecdsa_keys = Self::get_keys_set_from_local_storage(&storage_ref);
+									// doing this cos mutate was insane...
 
-											keys.insert(*ed_key);
+									// Returns all existing ed25519 public keys for the given key type.
+									let ed_keys = Crypto::ed25519_public_keys(KEY_TYPE); // defined in service.rs
+									let mut edited = false;
+
+									for ed_key in &ed_keys {
+										if !ecdsa_keys.contains(ed_key) {
+											let key_hex = Self::generate_seed_from_ed_key(&ed_key).unwrap();
+											log::debug!("Adding new key from seed: {:?}", key_hex);
+											// Generate an ECSDSA key for the given key type using the seed `seed` (WHICH WAS
+											// DETERMINISTICALLY COMPUTED FROM THE ED25519 KEY `ed_key`) and store it in the
+											// keystore.
+											let _public = Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
+											ecdsa_keys.insert(*ed_key);
 											edited = true;
 										}
 									}
 									if edited {
-										// Set the list of determinstically computed ECSDA keys `keys` (they were determintically computed using `ed_keys`)
-										// to the `keys_ref` (i.e to **`StorageValueRef::persistent(b"fragments-frag-ecdsa-keys")`**)
-										keys_ref.set(&keys);
+										// Set the list of deterministically computed ECSDA keys `keys` (they were
+										// deterministically computed using `ed_keys`) to the `storage_ref` (i.e to
+										// **`StorageValueRef::persistent(b"fragments-frag-ecdsa-keys")`**)
+										storage_ref.set(&ecdsa_keys);
 									}
-									// get local keys
-									let keys = Crypto::ecdsa_public_keys(KEY_TYPE); // Get the list of ECDSA public keys for the key id `KEY_STORE` in the keystore
+
+									// Get the list of ECDSA public keys for the key id `KEY_STORE` in the keystore
+									let keys = Crypto::ecdsa_public_keys(KEY_TYPE);
 									log::debug!("ecdsa local keys {:x?}", keys);
 									// make sure the local key is in the global authorities set!
 									let key = keys
 										.iter()
 										.find(|k| <EthereumAuthorities<T>>::get().contains(k)); // Get the first key and return it
 									if let Some(key) = key {
-										// This is critical, we send over to the ethereum smart
-										// contract this signature The ethereum smart contract call
-										// will be the following attach(proto_hash, local_owner,
-										// signature, clamor_nonce); on this target chain the nonce
-										// needs to be exactly the same as the one here
-										let mut payload = request.hash.encode(); // The creation of the payload // Add `request.hash.encode()` to payload
-										let mut chain_id_be: [u8; 32] = [0u8; 32];
-										chain_id.to_big_endian(&mut chain_id_be);
-										payload.extend(&chain_id_be[..]); // Add `chain_id_be` to payload
-										let mut target_account: [u8; 20] = [0u8; 20];
+										/*
+										This is critical, we send over to the ethereum smart contract this signature The ethereum smart contract call
+										will be the following attach(proto_hash, local_owner, signature, clamor_nonce); on this target chain the nonce
+										needs to be exactly the same as the one here
+										*/
+
+										// The creation of the payload
+										// Add `request.hash.encode()` to payload
+										let mut payload = request.hash.encode();
+
+										Self::add_chainid_to_payload(&request, &mut payload);
+
 										if request.target_account.len() != 20 {
-											return Err(FAILED);
+											return Err(FAILED)
 										}
-										target_account.copy_from_slice(&request.target_account[..]);
-										payload.extend(&target_account[..]); // Add `target_account` to payload
-										let nonce = <DetachNonces<T>>::get(
-											&request.target_account,
-											request.target_chain,
-										);
-										let nonce = if let Some(nonce) = nonce {
-											// add 1, remote will add 1
-											let nonce = nonce.checked_add(1).unwrap();
-											payload.extend(nonce.to_be_bytes()); // Add `nonce` to payload (if)
-											nonce // for storage
-										} else {
-											// there never was a nonce
-											payload.extend(1u64.to_be_bytes()); // Add `nonce` to payload (else)
-											1u64
-										};
+										Self::add_target_account_to_payload(&request, &mut payload);
+
+										let nonce = Self::add_nonce_to_payload(&request, &mut payload);
+
 										log::debug!(
 											"payload: {:x?}, len: {}",
 											payload,
 											payload.len()
 										);
-										let payload = keccak_256(&payload); // Hash the payload!!
-										log::debug!(
-											"payload hash: {:x?}, len: {}",
-											payload,
-											payload.len()
-										);
-										let msg =
-											[b"\x19Ethereum Signed Message:\n32", &payload[..]]
-												.concat();
-										let msg = keccak_256(&msg); // Hash the msg!!
-							// Sign the payload with a trusted validation key
-										let signature =
-											Crypto::ecdsa_sign_prehashed(KEY_TYPE, key, &msg); // Sign the message `msg` with the ECDSA public key `key` (note: `key` is in `EthereumAuthorities`)
+										// Sign the payload
+										let signature = Self::sign_payload(key, &mut payload);
+
 										if let Some(signature) = signature {
 											// No more failures from this path!!
 											let mut signature = signature.0.to_vec();
@@ -595,7 +562,6 @@ pub mod pallet {
 									//   - `Some((account, Err(())))`: error occurred when sending the transaction
 									if let Err(e) = Signer::<T, T::AuthorityId>::any_account() // `Signer::<T, T::AuthorityId>::any_account()` is the signer that signs the payload
 										.send_unsigned_transaction(
-											// INC questo block
 											// this line is to prepare and return payload to be used
 											|account| DetachInternalData {
 												// `account` is the account `Signer::<T, T::AuthorityId>::any_account()`
@@ -626,6 +592,83 @@ pub mod pallet {
 					},
 					_ => Err(FAILED),
 				});
+		}
+
+		fn generate_seed_from_ed_key(ed_key: &Public) -> Result<Vec<u8>, ()> {
+			const FAILED: () = ();
+			let mut msg = b"fragments-frag-ecdsa-keys".to_vec();
+			msg.append(&mut ed_key.to_vec());
+			// Deterministically sign a constant message `msg` with Ed25519 key `ed_key`
+			let signed = Crypto::ed25519_sign(KEY_TYPE, ed_key, &msg).unwrap();
+			// Deterministically Keccak Hash the deterministic signature `signed`
+			let key = keccak_256(&signed.0[..]);
+			let mut key_hex = [0u8; 64];
+			// (Deterministically ) UTF-8 encode the hexadecimal representation of `key` and
+			// save it in `key_hex` (see the example of `encode_to_slice` if you're confused)
+			hex::encode_to_slice(key, &mut key_hex).map_err(|_| FAILED)?;
+			let key_hex = [b"0x", &key_hex[..]].concat();
+			Ok(key_hex)
+		}
+
+		fn sign_payload(key: &ecdsa::Public, payload: &mut Vec<u8>) -> Option<ecdsa::Signature> {
+			let payload = keccak_256(&payload);
+			// Hash the payload!!
+			log::debug!(
+				"payload hash: {:x?}, len: {}",
+				payload,
+				payload.len()
+			);
+			let msg = [b"\x19Ethereum Signed Message:\n32", &payload[..]].concat();
+			let msg = keccak_256(&msg); // Hash the msg!!
+
+			// Sign the payload with a trusted validation key
+			// Sign the message `msg` with the ECDSA public key `key`
+			// (note: `key` is in `EthereumAuthorities`)
+			let signature = Crypto::ecdsa_sign_prehashed(KEY_TYPE, key, &msg);
+			signature
+		}
+
+		fn add_nonce_to_payload(request: &DetachRequest, payload: &mut Vec<u8>) -> u64 {
+			let nonce = <DetachNonces<T>>::get(
+				&request.target_account,
+				request.target_chain,
+			);
+			let nonce = if let Some(nonce) = nonce {
+				// add 1, remote will add 1
+				let nonce = nonce.checked_add(1).unwrap();
+				payload.extend(nonce.to_be_bytes()); // Add `nonce` to payload (if)
+				nonce // for storage
+			} else {
+				// there never was a nonce
+				payload.extend(1u64.to_be_bytes()); // Add `nonce` to payload (else)
+				1u64
+			};
+			nonce
+		}
+
+		fn add_chainid_to_payload(request: &DetachRequest, payload: &mut Vec<u8>) {
+			let chain_id = match request.target_chain {
+				SupportedChains::EthereumMainnet => U256::from(1),
+				SupportedChains::EthereumRinkeby => U256::from(4),
+				SupportedChains::EthereumGoerli => U256::from(5),
+			};
+
+			let mut chain_id_be: [u8; 32] = [0u8; 32];
+			chain_id.to_big_endian(&mut chain_id_be);
+			payload.extend(&chain_id_be[..]);
+		}
+
+		fn get_keys_set_from_local_storage(storage_ref: &StorageValueRef) -> BTreeSet<Public> {
+			// If `stored_keys` doesn't exist, set it to `BTreeSet<ed25519::Public>`
+			let stored_keys = storage_ref.get::<BTreeSet<ed25519::Public>>().unwrap_or_default();
+			// If `keys` is None, set it to `BTreeSet<ed25519::Public>`
+			let keys = if let Some(keys) = stored_keys { keys } else { BTreeSet::new() };
+			keys
+		}
+		fn add_target_account_to_payload(request: &DetachRequest, payload: &mut Vec<u8>) {
+			let mut target_account: [u8; 20] = [0u8; 20];
+			target_account.copy_from_slice(&request.target_account[..]);
+			payload.extend(&target_account[..]);
 		}
 	}
 }
