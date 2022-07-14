@@ -1,4 +1,4 @@
-use crate::{mock::*, Error, LinkedAsset, ProtoOwner, Protos};
+use crate::{mock::*, Error, ProtoOwner, Protos};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use pallet_detach::{

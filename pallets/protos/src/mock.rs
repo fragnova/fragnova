@@ -27,7 +27,7 @@ pub const PUBLIC1: [u8; 32] = [
 	173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251,
 ];
 
-/// Construct a mock runtime environment.
+// Construct a mock runtime environment.
 frame_support::construct_runtime!(
 	// The **configuration type `Test`** is defined as a **Rust enum** with **implementations**
 	// for **each of the pallet configuration trait** that are **used in the mock runtime**. (https://docs.substrate.io/v3/runtime/testing/)
@@ -45,6 +45,7 @@ frame_support::construct_runtime!(
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -161,6 +162,21 @@ impl pallet_detach::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU64<1>;
+	type ProxyDepositFactor = ConstU64<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU64<1>;
+	type AnnouncementDepositFactor = ConstU64<1>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
