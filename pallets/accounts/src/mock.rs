@@ -126,16 +126,16 @@ impl pallet_assets::Config for Test {
 impl pallet_proxy::Config for Test {
 	type Event = Event;
 	type Call = Call;
-	type Currency = Balances;
+	type Currency = ();
 	type ProxyType = ();
-	type ProxyDepositBase = ConstU64<1>;
-	type ProxyDepositFactor = ConstU64<1>;
+	type ProxyDepositBase = ConstU32<1>;
+	type ProxyDepositFactor = ConstU32<1>;
 	type MaxProxies = ConstU32<4>;
 	type WeightInfo = ();
 	type MaxPending = ConstU32<2>;
 	type CallHasher = BlakeTwo256;
-	type AnnouncementDepositBase = ConstU64<1>;
-	type AnnouncementDepositFactor = ConstU64<1>;
+	type AnnouncementDepositBase = ConstU32<1>;
+	type AnnouncementDepositFactor = ConstU32<1>;
 }
 
 impl Config for Test {
