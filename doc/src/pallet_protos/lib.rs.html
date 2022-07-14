@@ -1035,6 +1035,32 @@
 <span id="1029">1029</span>
 <span id="1030">1030</span>
 <span id="1031">1031</span>
+<span id="1032">1032</span>
+<span id="1033">1033</span>
+<span id="1034">1034</span>
+<span id="1035">1035</span>
+<span id="1036">1036</span>
+<span id="1037">1037</span>
+<span id="1038">1038</span>
+<span id="1039">1039</span>
+<span id="1040">1040</span>
+<span id="1041">1041</span>
+<span id="1042">1042</span>
+<span id="1043">1043</span>
+<span id="1044">1044</span>
+<span id="1045">1045</span>
+<span id="1046">1046</span>
+<span id="1047">1047</span>
+<span id="1048">1048</span>
+<span id="1049">1049</span>
+<span id="1050">1050</span>
+<span id="1051">1051</span>
+<span id="1052">1052</span>
+<span id="1053">1053</span>
+<span id="1054">1054</span>
+<span id="1055">1055</span>
+<span id="1056">1056</span>
+<span id="1057">1057</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Proto-Fragments.</span>
 <span class="doccomment">//! </span>
 <span class="doccomment">//! IMPORTANT STUFF TO KNOW:</span>
@@ -1130,9 +1156,9 @@
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TicketsInfo</span> {
-	<span class="kw">pub</span> <span class="ident">active_tickets</span>: <span class="ident">u128</span>,
-	<span class="kw">pub</span> <span class="ident">lifetime_tickets</span>: <span class="ident">u128</span>,
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AccountsInfo</span> {
+	<span class="kw">pub</span> <span class="ident">active_accounts</span>: <span class="ident">u128</span>,
+	<span class="kw">pub</span> <span class="ident">lifetime_accounts</span>: <span class="ident">u128</span>,
 }
 
 <span class="doccomment">/// **Struct** of a **Proto-Fragment**</span>
@@ -1157,8 +1183,8 @@
 	<span class="kw">pub</span> <span class="ident">tags</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// **Map** that maps the **Key of a Proto-Fragment&#39;s Metadata Object** to the **Hash of the aforementioned Metadata Object**</span>
 	<span class="kw">pub</span> <span class="ident">metadata</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>, <span class="ident">Hash256</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Tickets information for this proto.</span>
-	<span class="kw">pub</span> <span class="ident">tickets_info</span>: <span class="ident">TicketsInfo</span>,
+	<span class="doccomment">/// Accounts information for this proto.</span>
+	<span class="kw">pub</span> <span class="ident">accounts_info</span>: <span class="ident">AccountsInfo</span>,
 }
 
 <span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
@@ -1173,10 +1199,7 @@
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.</span>
 	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
 	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>:
-		<span class="ident">frame_system::Config</span>
-		<span class="op">+</span> <span class="ident">pallet_detach::Config</span>
-		<span class="op">+</span> <span class="ident">pallet_tickets::Config</span>
-		<span class="op">+</span> <span class="ident">pallet_randomness_collective_flip::Config</span>
+		<span class="ident">frame_system::Config</span> <span class="op">+</span> <span class="ident">pallet_detach::Config</span> <span class="op">+</span> <span class="ident">pallet_accounts::Config</span>
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.</span>
 		<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
@@ -1222,7 +1245,7 @@
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ProtosByCategory</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Twox64Concat</span>, <span class="ident">Categories</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Hash256</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
-	<span class="doccomment">/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**  </span>
+	<span class="doccomment">/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ProtosByOwner</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
 		<span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Twox64Concat</span>, <span class="ident">ProtoOwner</span><span class="op">&lt;</span><span class="ident">T::AccountId</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Hash256</span><span class="op">&gt;</span><span class="op">&gt;</span>;
@@ -1381,7 +1404,7 @@
 				<span class="ident">category</span>: <span class="ident">category</span>.<span class="ident">clone</span>(),
 				<span class="ident">tags</span>,
 				<span class="ident">metadata</span>: <span class="ident">BTreeMap::new</span>(),
-				<span class="ident">tickets_info</span>: <span class="ident">TicketsInfo::default</span>(),
+				<span class="ident">accounts_info</span>: <span class="ident">AccountsInfo::default</span>(),
 			};
 
 			<span class="comment">// store proto</span>
@@ -1416,6 +1439,7 @@
 		<span class="doccomment">/// * `proto_hash` - Existing Proto-Fragment&#39;s hash</span>
 		<span class="doccomment">/// * `include_cost` (optional) -</span>
 		<span class="doccomment">/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the **patch**</span>
+		<span class="doccomment">/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None</span>
 		<span class="doccomment">/// * `data` - **Data** of the **Proto-Fragment**</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet::Config</span><span class="op">&gt;</span><span class="ident">::WeightInfo::patch</span>() <span class="op">+</span> <span class="ident">data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u64</span> <span class="op">*</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet::Config</span><span class="op">&gt;</span><span class="ident">::StorageBytesMultiplier::get</span>())]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">patch</span>(
@@ -1424,6 +1448,7 @@
 			<span class="ident">proto_hash</span>: <span class="ident">Hash256</span>,
 			<span class="ident">include_cost</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 			<span class="ident">new_references</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Hash256</span><span class="op">&gt;</span>,
+			<span class="ident">new_tags</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 			<span class="comment">// data we want to patch last because of the way we store blocks (storage chain)</span>
 			<span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
 		) -&gt; <span class="ident">DispatchResult</span> {
@@ -1458,6 +1483,8 @@
 
 			<span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>, <span class="op">|</span><span class="ident">proto</span><span class="op">|</span> {
 				<span class="kw">let</span> <span class="ident">proto</span> <span class="op">=</span> <span class="ident">proto</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>();
+
+				<span class="comment">// Add a data patch if not empty</span>
 				<span class="kw">if</span> <span class="op">!</span><span class="ident">data</span>.<span class="ident">is_empty</span>() {
 					<span class="comment">// No failures from here on out</span>
 					<span class="ident">proto</span>.<span class="ident">patches</span>.<span class="ident">push</span>(<span class="ident">ProtoPatch</span> {
@@ -1468,7 +1495,32 @@
 					<span class="comment">// index mutable data for IPFS discovery as well</span>
 					<span class="ident">transaction_index::index</span>(<span class="ident">extrinsic_index</span>, <span class="ident">data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>, <span class="ident">data_hash</span>);
 				}
+
+				<span class="comment">// Overwrite include cost</span>
 				<span class="ident">proto</span>.<span class="ident">include_cost</span> <span class="op">=</span> <span class="ident">include_cost</span>;
+
+				<span class="comment">// Replace previous tags if not None</span>
+				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">new_tags</span>) <span class="op">=</span> <span class="ident">new_tags</span> {
+					<span class="kw">let</span> <span class="ident">tags</span> <span class="op">=</span> <span class="ident">new_tags</span>
+						.<span class="ident">iter</span>()
+						.<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> {
+							<span class="kw">let</span> <span class="ident">tag_index</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Tags</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">s</span>);
+							<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">tag_index</span>) <span class="op">=</span> <span class="ident">tag_index</span> {
+								<span class="op">&lt;</span><span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::from</span>(<span class="ident">tag_index</span>)
+							} <span class="kw">else</span> {
+								<span class="kw">let</span> <span class="ident">next_index</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">TagsIndex</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::try_get</span>().<span class="ident">unwrap_or_default</span>() <span class="op">+</span> <span class="number">1</span>;
+								<span class="op">&lt;</span><span class="ident">Tags</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">s</span>, <span class="ident">next_index</span>);
+								<span class="comment">// storing is dangerous inside a closure</span>
+								<span class="comment">// but after this call we start storing..</span>
+								<span class="comment">// so it&#39;s fine here</span>
+								<span class="op">&lt;</span><span class="ident">TagsIndex</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="ident">next_index</span>);
+								<span class="op">&lt;</span><span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::from</span>(<span class="ident">next_index</span>)
+							}
+						})
+						.<span class="ident">collect</span>();
+
+					<span class="ident">proto</span>.<span class="ident">tags</span> <span class="op">=</span> <span class="ident">tags</span>;
+				}
 			});
 
 			<span class="kw">let</span> <span class="ident">cid</span> <span class="op">=</span> [<span class="kw-2">&amp;</span><span class="ident">CID_PREFIX</span>[..], <span class="kw-2">&amp;</span><span class="ident">data_hash</span>[..]].<span class="ident">concat</span>();
@@ -1679,12 +1731,12 @@
 			<span class="macro">ensure!</span>(<span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoNotFound</span>);
 
 			<span class="comment">// make sure user has enough FRAG</span>
-			<span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">pallet_tickets::EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>.<span class="ident">clone</span>())
+			<span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">pallet_accounts::EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>.<span class="ident">clone</span>())
 				.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoFragLink</span>)<span class="question-mark">?</span>;
-			<span class="kw">let</span> <span class="ident">eth_lock</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">pallet_tickets::EthLockedFrag</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>)
+			<span class="kw">let</span> <span class="ident">eth_lock</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">pallet_accounts::EthLockedFrag</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>)
 				.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoFragLink</span>)<span class="question-mark">?</span>; <span class="comment">// Amount of FRAG locked by Ethereum Account `account`</span>
 			<span class="kw">let</span> <span class="ident">balance</span> <span class="op">=</span> <span class="ident">eth_lock</span>.<span class="ident">amount</span>
-				<span class="op">-</span> <span class="op">&lt;</span><span class="ident">pallet_tickets::FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>.<span class="ident">clone</span>())
+				<span class="op">-</span> <span class="op">&lt;</span><span class="ident">pallet_accounts::FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>.<span class="ident">clone</span>())
 					.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoFragLink</span>)<span class="question-mark">?</span>; <span class="comment">// Balance = Amount of FRAG locked - Amount of FRAG already staked</span>
 			<span class="macro">ensure!</span>(<span class="ident">balance</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">amount</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InsufficientBalance</span>);
 
@@ -1692,7 +1744,7 @@
 
 			<span class="comment">// ! from now we write...</span>
 
-			<span class="op">&lt;</span><span class="ident">pallet_tickets::FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>, <span class="op">|</span><span class="ident">usage</span><span class="op">|</span> {
+			<span class="op">&lt;</span><span class="ident">pallet_accounts::FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>, <span class="op">|</span><span class="ident">usage</span><span class="op">|</span> {
 				<span class="comment">// Add `amount` to the FragUsage of `who`</span>
 				<span class="ident">usage</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>().<span class="ident">saturating_add</span>(<span class="ident">amount</span>);
 			});
@@ -1732,7 +1784,7 @@
 
 			<span class="comment">// ! from now we write...</span>
 
-			<span class="op">&lt;</span><span class="ident">pallet_tickets::FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>, <span class="op">|</span><span class="ident">usage</span><span class="op">|</span> {
+			<span class="op">&lt;</span><span class="ident">pallet_accounts::FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>, <span class="op">|</span><span class="ident">usage</span><span class="op">|</span> {
 				<span class="ident">usage</span>.<span class="ident">as_mut</span>().<span class="ident">unwrap</span>().<span class="ident">saturating_sub</span>(<span class="ident">stake</span>.<span class="number">0</span>); <span class="comment">// Reduce the Frag usage of `who` by `stake.0`</span>
 			});
 
@@ -1758,7 +1810,7 @@
 		<span class="doccomment">/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.</span>
 		<span class="kw">fn</span> <span class="ident">on_finalize</span>(<span class="ident">_n</span>: <span class="ident">T::BlockNumber</span>) {
 			<span class="comment">// drain unlinks</span>
-			<span class="kw">let</span> <span class="ident">unlinks</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">pallet_tickets::PendingUnlinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::take</span>();
+			<span class="kw">let</span> <span class="ident">unlinks</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">pallet_accounts::PendingUnlinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::take</span>();
 			<span class="kw">for</span> <span class="ident">unlink</span> <span class="kw">in</span> <span class="ident">unlinks</span> {
 				<span class="comment">// take emptying the storage</span>
 				<span class="kw">let</span> <span class="ident">stakes</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">AccountStakes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::take</span>(<span class="ident">unlink</span>.<span class="ident">clone</span>());
@@ -2067,5 +2119,5 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (1c7b36d4d 2022-07-12)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (87588a2af 2022-07-13)" ></div>
 </body></html>

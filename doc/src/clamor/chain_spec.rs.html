@@ -247,8 +247,8 @@
 <span class="doccomment">//! Source: https://docs.substrate.io/v3/runtime/chain-specs/</span>
 
 <span class="kw">use</span> <span class="ident">clamor_runtime</span>::{
-	<span class="ident">AccountId</span>, <span class="ident">AssetsConfig</span>, <span class="ident">AuraConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">DetachConfig</span>, <span class="ident">GenesisConfig</span>,
-	<span class="ident">GrandpaConfig</span>, <span class="ident">IndicesConfig</span>, <span class="ident">Signature</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">TicketsConfig</span>, <span class="ident">WASM_BINARY</span>,
+	<span class="ident">AccountId</span>, <span class="ident">AccountsConfig</span>, <span class="ident">AssetsConfig</span>, <span class="ident">AuraConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">DetachConfig</span>,
+	<span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>, <span class="ident">IndicesConfig</span>, <span class="ident">Signature</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">WASM_BINARY</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_consensus_aura::sr25519::AuthorityId</span> <span class="kw">as</span> <span class="ident">AuraId</span>;
@@ -418,7 +418,7 @@
 				<span class="ident">indices</span>: <span class="ident">IndicesConfig</span> { <span class="ident">indices</span>: <span class="macro">vec!</span>[] },
 				<span class="ident">detach</span>: <span class="ident">DetachConfig::default</span>(),
 				<span class="ident">assets</span>: <span class="ident">AssetsConfig::default</span>(),
-				<span class="ident">tickets</span>: <span class="ident">TicketsConfig::default</span>(),
+				<span class="ident">accounts</span>: <span class="ident">AccountsConfig::default</span>(),
 			}
 		},
 		<span class="comment">// Bootnodes</span>
@@ -473,11 +473,11 @@
 			<span class="ident">keys</span>: <span class="ident">initial_authorities</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">4</span>.<span class="ident">clone</span>())).<span class="ident">collect</span>(),
 		},
 		<span class="ident">assets</span>: <span class="ident">AssetsConfig</span> { <span class="ident">assets</span>: <span class="macro">vec!</span>[], <span class="ident">metadata</span>: <span class="macro">vec!</span>[], <span class="ident">accounts</span>: <span class="macro">vec!</span>[] },
-		<span class="ident">tickets</span>: <span class="ident">TicketsConfig</span> {
+		<span class="ident">accounts</span>: <span class="ident">AccountsConfig</span> {
 			<span class="ident">keys</span>: <span class="ident">initial_authorities</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">4</span>.<span class="ident">clone</span>())).<span class="ident">collect</span>(),
 		},
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (1c7b36d4d 2022-07-12)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (87588a2af 2022-07-13)" ></div>
 </body></html>

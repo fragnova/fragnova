@@ -1309,20 +1309,20 @@
 	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_tickets::EthFragContract</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">pallet_accounts::EthFragContract</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">fn</span> <span class="ident">get_partner_contracts</span>() -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
 		<span class="macro">vec!</span>[<span class="ident">String::from</span>(<span class="string">&quot;0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac&quot;</span>)]
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">pallet_tickets::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">pallet_accounts::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
 	<span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 	<span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 	<span class="kw">type</span> <span class="ident">EthChainId</span> <span class="op">=</span> <span class="ident">ConstU64</span><span class="op">&lt;</span><span class="number">5</span><span class="op">&gt;</span>; <span class="comment">// goerli</span>
 	<span class="kw">type</span> <span class="ident">EthFragContract</span> <span class="op">=</span> <span class="ident">Runtime</span>;
 	<span class="kw">type</span> <span class="ident">EthConfirmations</span> <span class="op">=</span> <span class="ident">ConstU64</span><span class="op">&lt;</span><span class="number">1</span><span class="op">&gt;</span>;
 	<span class="kw">type</span> <span class="ident">Threshold</span> <span class="op">=</span> <span class="ident">ConstU64</span><span class="op">&lt;</span><span class="number">1</span><span class="op">&gt;</span>;
-	<span class="kw">type</span> <span class="ident">AuthorityId</span> <span class="op">=</span> <span class="ident">pallet_tickets::crypto::FragAuthId</span>;
+	<span class="kw">type</span> <span class="ident">AuthorityId</span> <span class="op">=</span> <span class="ident">pallet_accounts::crypto::FragAuthId</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_protos::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1580,7 +1580,7 @@
 		<span class="ident">Proxy</span>: <span class="ident">pallet_proxy</span>,
 		<span class="ident">Identity</span>: <span class="ident">pallet_identity</span>,
 		<span class="ident">Utility</span>: <span class="ident">pallet_utility</span>,
-		<span class="ident">Tickets</span>: <span class="ident">pallet_tickets</span>,
+		<span class="ident">Accounts</span>: <span class="ident">pallet_accounts</span>,
 	}
 );
 
@@ -1824,7 +1824,7 @@
 			<span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">frame_system</span>, <span class="ident">SystemBench</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>);
 			<span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">pallet_balances</span>, <span class="ident">Balances</span>);
 			<span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">pallet_timestamp</span>, <span class="ident">Timestamp</span>);
-			<span class="comment">// list_benchmark!(list, extra, pallet_tickets, Tickets);</span>
+			<span class="comment">// list_benchmark!(list, extra, pallet_accounts, Accounts);</span>
 			<span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">pallet_protos</span>, <span class="ident">Protos</span>);
 			<span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">pallet_assets</span>, <span class="ident">Assets</span>);
 			<span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">pallet_fragments</span>, <span class="ident">Fragments</span>);
@@ -1870,7 +1870,7 @@
 			<span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">frame_system</span>, <span class="ident">SystemBench</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>);
 			<span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">pallet_balances</span>, <span class="ident">Balances</span>);
 			<span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">pallet_timestamp</span>, <span class="ident">Timestamp</span>);
-			<span class="comment">// add_benchmark!(params, batches, pallet_tickets, Tickets);</span>
+			<span class="comment">// add_benchmark!(params, batches, pallet_accounts, Accounts);</span>
 			<span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">pallet_protos</span>, <span class="ident">Protos</span>);
 			<span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">pallet_assets</span>, <span class="ident">Assets</span>);
 			<span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">pallet_fragments</span>, <span class="ident">Fragments</span>);
@@ -1885,5 +1885,5 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (1c7b36d4d 2022-07-12)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (87588a2af 2022-07-13)" ></div>
 </body></html>

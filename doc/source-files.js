@@ -1,11 +1,11 @@
 var sourcesIndex = {};
 sourcesIndex["clamor"] = {"name":"","files":["chain_spec.rs","clamor.rs","lib.rs","rpc.rs","service.rs"]};
 sourcesIndex["clamor_runtime"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_accounts"] = {"name":"","files":["lib.rs","weights.rs"]};
 sourcesIndex["pallet_detach"] = {"name":"","files":["lib.rs","weights.rs"]};
 sourcesIndex["pallet_fragments"] = {"name":"","files":["lib.rs","weights.rs"]};
 sourcesIndex["pallet_protos"] = {"name":"","files":["lib.rs","weights.rs"]};
 sourcesIndex["pallet_protos_rpc"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_protos_rpc_runtime_api"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["pallet_tickets"] = {"name":"","files":["lib.rs","weights.rs"]};
 sourcesIndex["sp_clamor"] = {"name":"","files":["lib.rs"]};
 createSourceSidebar();
