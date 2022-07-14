@@ -1,4 +1,4 @@
-use crate::{mock::*, Error, LinkedAsset, ProtoOwner, Protos};
+use crate::{mock::*, Error, ProtoOwner, Protos};
 use codec::{Compact, Encode};
 use frame_support::{assert_noop, assert_ok};
 use pallet_detach::{
@@ -108,6 +108,7 @@ fn patch_should_works() {
 			proto_hash,
 			Some(Compact(123)),
 			vec![],
+			None,
 			data,
 		));
 
@@ -129,6 +130,7 @@ fn patch_proto_should_not_work_if_user_is_unauthorized() {
 				PROTO_HASH,
 				Some(Compact(123)),
 				vec![],
+				None,
 				data,
 			),
 			Error::<Test>::Unauthorized
@@ -147,6 +149,7 @@ fn patch_proto_should_not_work_if_proto_not_found() {
 				proto_hash,
 				Some(Compact(123)),
 				vec![],
+				None,
 				immutable_data,
 			),
 			Error::<Test>::ProtoNotFound
@@ -199,6 +202,7 @@ fn patch_should_not_work_if_detached() {
 				PROTO_HASH,
 				Some(Compact(123)),
 				vec![],
+				None,
 				data,
 			),
 			Error::<Test>::Detached

@@ -363,20 +363,20 @@ impl pallet_fragments::Config for Runtime {
 	type WeightInfo = ();
 }
 
-impl pallet_tickets::EthFragContract for Runtime {
+impl pallet_accounts::EthFragContract for Runtime {
 	fn get_partner_contracts() -> Vec<String> {
 		vec![String::from("0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac")]
 	}
 }
 
-impl pallet_tickets::Config for Runtime {
+impl pallet_accounts::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = Runtime;
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_tickets::crypto::FragAuthId;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
 impl pallet_protos::Config for Runtime {
@@ -634,7 +634,7 @@ construct_runtime!(
 		Proxy: pallet_proxy,
 		Identity: pallet_identity,
 		Utility: pallet_utility,
-		Tickets: pallet_tickets,
+		Accounts: pallet_accounts,
 	}
 );
 
@@ -878,7 +878,7 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			// list_benchmark!(list, extra, pallet_tickets, Tickets);
+			// list_benchmark!(list, extra, pallet_accounts, Accounts);
 			list_benchmark!(list, extra, pallet_protos, Protos);
 			list_benchmark!(list, extra, pallet_assets, Assets);
 			list_benchmark!(list, extra, pallet_fragments, Fragments);
@@ -924,7 +924,7 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			// add_benchmark!(params, batches, pallet_tickets, Tickets);
+			// add_benchmark!(params, batches, pallet_accounts, Accounts);
 			add_benchmark!(params, batches, pallet_protos, Protos);
 			add_benchmark!(params, batches, pallet_assets, Assets);
 			add_benchmark!(params, batches, pallet_fragments, Fragments);
