@@ -274,12 +274,8 @@ pub mod pallet {
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
 			let vault = Self::get_vault_id(hash);
-			let min_balance =
-				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
-			<pallet_balances::Pallet<T> as ReservableCurrency<T::AccountId>>::reserve(
-				&vault,
-				min_balance,
-			)?;
+			let min_balance = <T as pallet_assets::Config>::Currency::minimum_balance();
+			<T as pallet_assets::Config>::Currency::reserve(&vault, min_balance)?;
 
 			let fragment_data = FragmentClass {
 				proto_hash,
