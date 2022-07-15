@@ -2,9 +2,9 @@ pub use crate as pallet_fragments;
 use crate::*;
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, ConstU64},
+	traits::{ConstU32, ConstU64, ConstU128},
 };
-use frame_system as system;
+use frame_system;
 use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
 	testing::{Header, TestXt},
@@ -35,7 +35,7 @@ frame_support::construct_runtime!(
 		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
 		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
-		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		BalancesPallet: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Tickets: pallet_tickets::{Pallet, Call, Storage, Event<T>},
 	}
@@ -47,7 +47,7 @@ parameter_types! {
 	pub StorageBytesMultiplier: u64 = 10;
 }
 
-impl system::Config for Test {
+impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -65,7 +65,7 @@ impl system::Config for Test {
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = pallet_balances::AccountData<u64>;
+	type AccountData = pallet_balances::AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -107,10 +107,10 @@ where
 impl pallet_randomness_collective_flip::Config for Test {}
 
 impl pallet_balances::Config for Test {
-	type Balance = u64;
+	type Balance = u128;
 	type DustRemoval = ();
 	type Event = Event;
-	type ExistentialDeposit = ConstU64<1>;
+	type ExistentialDeposit = ConstU128<1>;
 	type AccountStore = System;
 	type WeightInfo = ();
 	type MaxLocks = ();
@@ -120,8 +120,8 @@ impl pallet_balances::Config for Test {
 
 impl pallet_assets::Config for Test {
 	type Event = Event;
-	type Balance = u64;
-	type AssetId = u32;
+	type Balance = u128;
+	type AssetId = u64;
 	type Currency = ();
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type AssetDeposit = ConstU32<1>;
@@ -166,4 +166,28 @@ impl pallet_detach::Config for Test {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	t.into()
+}
+
+
+/// Simulate block production
+/// 
+/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls 
+/// from all modules with `System::block_number()` as the sole input. 
+/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should 
+/// prioritize readability to facilitate future maintenance.
+/// 
+/// Source: https://docs.substrate.io/v3/runtime/testing/
+pub fn run_to_block(n: u64) {
+    while System::block_number() < n {
+
+		use frame_support::traits::{OnInitialize, OnFinalize}; 
+
+        if System::block_number() > 0 {
+            FragmentsPallet::on_finalize(System::block_number());
+            System::on_finalize(System::block_number());
+        }
+        System::set_block_number(System::block_number() + 1);
+        System::on_initialize(System::block_number());
+        // FragmentsPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/fragments/src/lib.rs
+    }
 }
