@@ -101,6 +101,15 @@ use serde_json::{json, Value};
 
 use ethabi::ParamType;
 
+use frame_support::traits::ReservableCurrency;
+
+pub type DiscordID = u64;
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub enum ExternalID {
+	Discord(DiscordID),
+}
+
 /// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
 pub trait EthFragContract {
 	/// **Return** the **contract address** of the **FRAG Token Smart Contract**
@@ -153,7 +162,10 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + CreateSignedTransaction<Call<Self>> + pallet_balances::Config
+		frame_system::Config
+		+ CreateSignedTransaction<Call<Self>>
+		+ pallet_balances::Config
+		+ pallet_proxy::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -252,6 +264,9 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
+	#[pallet::storage]
+	pub type ExternalID2Account<T: Config> = StorageMap<_, Twox64Concat, ExternalID, T::AccountId>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -263,6 +278,8 @@ pub mod pallet {
 		Locked { eth_key: H160, balance: T::Balance },
 		/// ETH side lock was unlocked
 		Unlocked { eth_key: H160, balance: T::Balance },
+		/// A new sponsored account was added
+		SponsoredAccount { sponsor: T::AccountId, sponsored: T::AccountId, external_id: ExternalID },
 	}
 
 	// Errors inform users that something went wrong.
@@ -280,6 +297,10 @@ pub mod pallet {
 		AccountAlreadyLinked,
 		/// Account not linked
 		AccountNotLinked,
+		/// Account already exists
+		AccountAlreadyExists,
+		/// Too many proxies
+		TooManyProxies,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -495,6 +516,52 @@ pub mod pallet {
 
 			// also record link hash
 			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
+
+			Ok(())
+		}
+
+		/// Update 'data'
+		///
+		/// TODO
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn sponsor_account(origin: OriginFor<T>, external_id: ExternalID) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// generate a unique, deterministic hash that we decode into our account
+			let hash = blake2_256(
+				&[&b"fragnova-sponsor-account"[..], &who.encode(), &external_id.encode()].concat(),
+			);
+			let account =
+				T::AccountId::decode(&mut &hash[..]).map_err(|_| Error::<T>::SystematicFailure)?;
+
+			ensure!(
+				!pallet_proxy::Proxies::<T>::contains_key(&account),
+				Error::<T>::AccountAlreadyExists
+			);
+
+			// use the same logic of proxy anonymous
+			let proxy_def = pallet_proxy::ProxyDefinition {
+				delegate: who.clone(),
+				proxy_type: T::ProxyType::default(),
+				delay: T::BlockNumber::default(),
+			};
+			let bounded_proxies: BoundedVec<_, T::MaxProxies> =
+				vec![proxy_def].try_into().map_err(|_| Error::<T>::TooManyProxies)?;
+
+			// ! Writing state
+
+			let deposit = T::ProxyDepositBase::get() + T::ProxyDepositFactor::get();
+			T::Currency::reserve(&who, deposit)?;
+
+			pallet_proxy::Proxies::<T>::insert(&account, (bounded_proxies, deposit));
+
+			<ExternalID2Account<T>>::insert(external_id.clone(), account.clone());
+
+			Self::deposit_event(Event::SponsoredAccount {
+				sponsor: who,
+				sponsored: account,
+				external_id,
+			});
 
 			Ok(())
 		}

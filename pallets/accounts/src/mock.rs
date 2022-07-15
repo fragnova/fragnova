@@ -25,6 +25,7 @@ frame_support::construct_runtime!(
 		FragPallet: pallet_frag::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -120,6 +121,21 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
+}
+
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = ();
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU32<1>;
+	type ProxyDepositFactor = ConstU32<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU32<1>;
+	type AnnouncementDepositFactor = ConstU32<1>;
 }
 
 impl Config for Test {

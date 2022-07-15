@@ -27,7 +27,7 @@ pub const PUBLIC1: [u8; 32] = [
 	173, 215, 209, 136, 226, 220, 88, 91, 78, 26, 251,
 ];
 
-/// Construct a mock runtime environment.
+// Construct a mock runtime environment.
 frame_support::construct_runtime!(
 	// The **configuration type `Test`** is defined as a **Rust enum** with **implementations**
 	// for **each of the pallet configuration trait** that are **used in the mock runtime**. (https://docs.substrate.io/v3/runtime/testing/)
@@ -44,7 +44,8 @@ frame_support::construct_runtime!(
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Tickets: pallet_tickets::{Pallet, Call, Storage, Event<T>},
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -141,14 +142,14 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 }
 
-impl pallet_tickets::Config for Test {
+impl pallet_accounts::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = ();
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_tickets::crypto::FragAuthId;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
 impl Config for Test {
@@ -162,6 +163,21 @@ impl pallet_detach::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = ();
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU32<1>;
+	type ProxyDepositFactor = ConstU32<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU32<1>;
+	type AnnouncementDepositFactor = ConstU32<1>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

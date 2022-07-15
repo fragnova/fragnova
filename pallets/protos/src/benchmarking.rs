@@ -55,7 +55,7 @@ benchmarks! {
 		let cid = [&CID_PREFIX[..], &patch_hash[..]].concat();
 			let cid = cid.to_base58();
 			let cid = [&b"z"[..], cid.as_bytes()].concat();
-	}: _(RawOrigin::Signed(caller), proto_hash , Some(Compact(123)), vec![], data.to_vec())
+	}: _(RawOrigin::Signed(caller), proto_hash , Some(Compact(123)), vec![], None, data.to_vec())
 	verify {
 		assert_last_event::<T>(Event::<T>::Patched { proto_hash: proto_hash, cid: cid }.into())
 	}

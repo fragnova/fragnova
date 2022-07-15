@@ -93,9 +93,9 @@ pub struct ProtoPatch<TBlockNumber> {
 }
 
 #[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
-pub struct TicketsInfo {
-	pub active_tickets: u128,
-	pub lifetime_tickets: u128,
+pub struct AccountsInfo {
+	pub active_accounts: u128,
+	pub lifetime_accounts: u128,
 }
 
 /// **Struct** of a **Proto-Fragment**
@@ -120,8 +120,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub tags: Vec<Compact<u64>>,
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to the **Hash of the aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
-	/// Tickets information for this proto.
-	pub tickets_info: TicketsInfo,
+	/// Accounts information for this proto.
+	pub accounts_info: AccountsInfo,
 }
 
 #[frame_support::pallet]
@@ -136,10 +136,7 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config
-		+ pallet_detach::Config
-		+ pallet_tickets::Config
-		+ pallet_randomness_collective_flip::Config
+		frame_system::Config + pallet_detach::Config + pallet_accounts::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -185,7 +182,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ProtosByCategory<T: Config> = StorageMap<_, Twox64Concat, Categories, Vec<Hash256>>;
 
-	/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**  
+	/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**
 	#[pallet::storage]
 	pub type ProtosByOwner<T: Config> =
 		StorageMap<_, Twox64Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
@@ -344,7 +341,7 @@ pub mod pallet {
 				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
-				tickets_info: TicketsInfo::default(),
+				accounts_info: AccountsInfo::default(),
 			};
 
 			// store proto
@@ -379,6 +376,7 @@ pub mod pallet {
 		/// * `proto_hash` - Existing Proto-Fragment's hash
 		/// * `include_cost` (optional) -
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the **patch**
+		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get())]
 		pub fn patch(
@@ -387,6 +385,7 @@ pub mod pallet {
 			proto_hash: Hash256,
 			include_cost: Option<Compact<u64>>,
 			new_references: Vec<Hash256>,
+			new_tags: Option<Vec<Vec<u8>>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -421,6 +420,8 @@ pub mod pallet {
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
+
+				// Add a data patch if not empty
 				if !data.is_empty() {
 					// No failures from here on out
 					proto.patches.push(ProtoPatch {
@@ -431,7 +432,32 @@ pub mod pallet {
 					// index mutable data for IPFS discovery as well
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 				}
+
+				// Overwrite include cost
 				proto.include_cost = include_cost;
+
+				// Replace previous tags if not None
+				if let Some(new_tags) = new_tags {
+					let tags = new_tags
+						.iter()
+						.map(|s| {
+							let tag_index = <Tags<T>>::get(s);
+							if let Some(tag_index) = tag_index {
+								<Compact<u64>>::from(tag_index)
+							} else {
+								let next_index = <TagsIndex<T>>::try_get().unwrap_or_default() + 1;
+								<Tags<T>>::insert(s, next_index);
+								// storing is dangerous inside a closure
+								// but after this call we start storing..
+								// so it's fine here
+								<TagsIndex<T>>::put(next_index);
+								<Compact<u64>>::from(next_index)
+							}
+						})
+						.collect();
+
+					proto.tags = tags;
+				}
 			});
 
 			let cid = [&CID_PREFIX[..], &data_hash[..]].concat();
@@ -642,12 +668,12 @@ pub mod pallet {
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
 			// make sure user has enough FRAG
-			let account = <pallet_tickets::EVMLinks<T>>::get(&who.clone())
+			let account = <pallet_accounts::EVMLinks<T>>::get(&who.clone())
 				.ok_or_else(|| Error::<T>::NoFragLink)?;
-			let eth_lock = <pallet_tickets::EthLockedFrag<T>>::get(&account)
+			let eth_lock = <pallet_accounts::EthLockedFrag<T>>::get(&account)
 				.ok_or_else(|| Error::<T>::NoFragLink)?; // Amount of FRAG locked by Ethereum Account `account`
 			let balance = eth_lock.amount
-				- <pallet_tickets::FragUsage<T>>::get(&who.clone())
+				- <pallet_accounts::FragUsage<T>>::get(&who.clone())
 					.ok_or_else(|| Error::<T>::NoFragLink)?; // Balance = Amount of FRAG locked - Amount of FRAG already staked
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
@@ -655,7 +681,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
 				// Add `amount` to the FragUsage of `who`
 				usage.as_mut().unwrap().saturating_add(amount);
 			});
@@ -695,7 +721,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
 				usage.as_mut().unwrap().saturating_sub(stake.0); // Reduce the Frag usage of `who` by `stake.0`
 			});
 
@@ -721,7 +747,7 @@ pub mod pallet {
 		/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain unlinks
-			let unlinks = <pallet_tickets::PendingUnlinks<T>>::take();
+			let unlinks = <pallet_accounts::PendingUnlinks<T>>::take();
 			for unlink in unlinks {
 				// take emptying the storage
 				let stakes = <AccountStakes<T>>::take(unlink.clone());
