@@ -31,7 +31,7 @@ log = { version = "0.4.14", default-features = false }
 clap = { version = "3.0", features = ["derive"] }
 sp-clamor = { version = '0.1.0', path = '../primitives/clamor' }
 hex = { version = "0.4.3", default-features = false }
-protos = { version = "0.1.11", default-features = false }
+protos = { version = "0.1.13", default-features = false }
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/clamor-io/substrate.git'
