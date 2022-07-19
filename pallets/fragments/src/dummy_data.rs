@@ -47,14 +47,7 @@ mod copied_from_pallet_protos {
 
 use protos::permissions::FragmentPerms;
 
-use sp_core::{
-	Pair,
-
-	H160, // Ethereum Account Addresses use this type
-	U256,
-};
-
-use sp_clamor::{Hash256, CID_PREFIX};
+use sp_clamor::Hash256;
 
 use protos::categories::{Categories, TextCategories};
 

@@ -7,11 +7,8 @@ use crate::dummy_data::*;
 
 use crate::mock::*;
 
-use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
-use protos::categories::{Categories, TextCategories};
 use protos::permissions::FragmentPerms;
-use sp_io::hashing::blake2_128;
 
 
 use copied_from_pallet_protos::upload as upload;
@@ -61,7 +58,7 @@ mod create_tests {
 
 			let definition = dd.definition;
 
-			upload(dd.account_id, &definition.proto_fragment);
+			_ = upload(dd.account_id, &definition.proto_fragment);
 
 			assert_ok!(create(dd.account_id, &definition));
 
@@ -108,9 +105,9 @@ mod create_tests {
 
 			let definition = dd.definition;
 
-			upload(dd.account_id, &definition.proto_fragment);
+			_ = upload(dd.account_id, &definition.proto_fragment);
 
-			create(dd.account_id, &definition);
+			_ = create(dd.account_id, &definition);
 
 			assert_noop!(
 				create(dd.account_id, &definition),
@@ -148,7 +145,7 @@ mod create_tests {
 
 			let definition = dd.definition;
 
-			upload(dd.account_id, &definition.proto_fragment);
+			_ = upload(dd.account_id, &definition.proto_fragment);
 
 			assert_noop!(
 				create(dd.account_id_second, &definition),
@@ -192,8 +189,8 @@ mod publish_tests {
 
 			let publish = dd.publish;
 
-			upload(dd.account_id, &publish.definition.proto_fragment);
-			create(dd.account_id, &publish.definition);
+			_ = upload(dd.account_id, &publish.definition.proto_fragment);
+			_ = create(dd.account_id, &publish.definition);
 
 			assert_ok!(publish_(dd.account_id, &publish));
 
@@ -228,8 +225,8 @@ mod publish_tests {
 
 			let publish = dd.publish;
 
-			upload(dd.account_id, &publish.definition.proto_fragment);
-			create(dd.account_id, &publish.definition);
+			_ = upload(dd.account_id, &publish.definition.proto_fragment);
+			_ = create(dd.account_id, &publish.definition);
 
 			assert_noop!(
 				publish_(dd.account_id_second, &publish),
@@ -261,9 +258,9 @@ mod publish_tests {
 
 			let publish = dd.publish;
 
-			upload(dd.account_id, &publish.definition.proto_fragment);
-			create(dd.account_id, &publish.definition);
-			publish_(dd.account_id, &publish);
+			_ = upload(dd.account_id, &publish.definition.proto_fragment);
+			_ =create(dd.account_id, &publish.definition);
+			_ = publish_(dd.account_id, &publish);
 
 			assert_noop!(
 				publish_(dd.account_id, &publish),
@@ -280,8 +277,8 @@ mod publish_tests {
 
 			let publish_with_max_supply = dd.publish_with_max_supply;
 
-			upload(dd.account_id, &publish_with_max_supply.definition.proto_fragment);
-			create(dd.account_id, &publish_with_max_supply.definition);
+			_ = upload(dd.account_id, &publish_with_max_supply.definition.proto_fragment);
+			_ = create(dd.account_id, &publish_with_max_supply.definition);
 
 			assert_noop!(
 				publish_(
@@ -305,8 +302,8 @@ mod publish_tests {
 
 			let publish_with_max_supply = dd.publish_with_max_supply;
 
-			upload(dd.account_id, &publish_with_max_supply.definition.proto_fragment);
-			create(dd.account_id, &publish_with_max_supply.definition);
+			_ = upload(dd.account_id, &publish_with_max_supply.definition.proto_fragment);
+			_ = create(dd.account_id, &publish_with_max_supply.definition);
 
 			assert_ok!(
 				publish_(
@@ -330,8 +327,8 @@ mod publish_tests {
 
 			let publish_with_max_supply = dd.publish_with_max_supply;
 
-			upload(dd.account_id, &publish_with_max_supply.definition.proto_fragment);
-			create(dd.account_id, &publish_with_max_supply.definition);
+			_ = upload(dd.account_id, &publish_with_max_supply.definition.proto_fragment);
+			_ = create(dd.account_id, &publish_with_max_supply.definition);
 
 			assert_noop!(
 				publish_(
@@ -378,9 +375,9 @@ mod unpublish_tests {
 
 			let publish = dd.publish;
 
-			upload(dd.account_id, &publish.definition.proto_fragment);
-			create(dd.account_id, &publish.definition);
-			publish_(dd.account_id, &publish);
+			_ = upload(dd.account_id, &publish.definition.proto_fragment);
+			_ = create(dd.account_id, &publish.definition);
+			_ = publish_(dd.account_id, &publish);
 
 			assert_ok!(unpublish_(dd.account_id, &publish.definition));
 
@@ -408,9 +405,9 @@ mod unpublish_tests {
 
 			let publish = dd.publish;
 
-			upload(dd.account_id, &publish.definition.proto_fragment);
-			create(dd.account_id, &publish.definition);
-			publish_(dd.account_id, &publish);
+			_ = upload(dd.account_id, &publish.definition.proto_fragment);
+			_ = create(dd.account_id, &publish.definition);
+			_ = publish_(dd.account_id, &publish);
 
 			assert_noop!(
 				unpublish_(dd.account_id_second, &publish.definition),
@@ -445,8 +442,8 @@ mod unpublish_tests {
 
 			let publish = dd.publish;
 
-			upload(dd.account_id, &publish.definition.proto_fragment);
-			create(dd.account_id, &publish.definition);
+			_ = upload(dd.account_id, &publish.definition.proto_fragment);
+			_ = create(dd.account_id, &publish.definition);
 
 			assert_noop!(
 				unpublish_(dd.account_id, &publish.definition),
@@ -493,8 +490,8 @@ mod mint_tests {
 
 			let mint_non_unique = dd.mint_non_unique;
 
-			upload(dd.account_id, &mint_non_unique.definition.proto_fragment);
-			create(dd.account_id, &mint_non_unique.definition);
+			_ = upload(dd.account_id, &mint_non_unique.definition.proto_fragment);
+			_ = create(dd.account_id, &mint_non_unique.definition);
 
 			assert_ok!(mint_(dd.account_id, &mint_non_unique));
 
@@ -578,8 +575,8 @@ mod mint_tests {
 
 			let mint_unique = dd.mint_unique;
 
-			upload(dd.account_id, &mint_unique.definition.proto_fragment);
-			create(dd.account_id, &mint_unique.definition);
+			_ = upload(dd.account_id, &mint_unique.definition.proto_fragment);
+			_ = create(dd.account_id, &mint_unique.definition);
 
 			assert_ok!(mint_(dd.account_id, &mint_unique));
 
@@ -655,8 +652,8 @@ mod mint_tests {
 
 			let mint = dd.mint_non_unique;
 
-			upload(dd.account_id, &mint.definition.proto_fragment);
-			create(dd.account_id, &mint.definition);
+			_ = upload(dd.account_id, &mint.definition.proto_fragment);
+			_ = create(dd.account_id, &mint.definition);
 
 			assert_noop!(
 				mint_(dd.account_id_second, &mint),
@@ -675,7 +672,7 @@ mod mint_tests {
 
 			let mint = dd.mint_non_unique;
 
-			upload(dd.account_id, &mint.definition.proto_fragment);
+			_ = upload(dd.account_id, &mint.definition.proto_fragment);
 
 			assert_noop!(
 				mint_(dd.account_id, &mint),
@@ -697,8 +694,8 @@ mod mint_tests {
 			assert!(mint.definition.unique.is_none()); // we use non-unique because we can create multiple instances in a single extrinsic call (basically we're lazy)
 			assert!(mint.definition.max_supply.is_some()); // max supply exists
 
-			upload(dd.account_id, &mint.definition.proto_fragment);
-			create(dd.account_id, &mint.definition);
+			_ = upload(dd.account_id, &mint.definition.proto_fragment);
+			_ = create(dd.account_id, &mint.definition);
 
 			assert_ok!(
 				mint_(
@@ -726,8 +723,8 @@ mod mint_tests {
 			assert!(mint.definition.unique.is_none()); // we use non-unique because we can create multiple instances in a single extrinsic call (basically we're lazy)
 			assert!(mint.definition.max_supply.is_some()); // max supply exists
 
-			upload(dd.account_id, &mint.definition.proto_fragment);
-			create(dd.account_id, &mint.definition);
+			_ = upload(dd.account_id, &mint.definition.proto_fragment);
+			_ = create(dd.account_id, &mint.definition);
 
 			assert_noop!(
 				mint_(
@@ -754,8 +751,8 @@ mod mint_tests {
 
 			let mint_non_unique = dd.mint_non_unique; // fragment definition is not unique
 
-			upload(dd.account_id, &mint_non_unique.definition.proto_fragment);
-			create(dd.account_id, &mint_non_unique.definition);
+			_ = upload(dd.account_id, &mint_non_unique.definition.proto_fragment);
+			_ = create(dd.account_id, &mint_non_unique.definition);
 
 			assert_noop!(
 				mint_(
@@ -784,8 +781,8 @@ mod mint_tests {
 
 			let mint_unique = dd.mint_unique; // fragment definition is unique
 
-			upload(dd.account_id, &mint_unique.definition.proto_fragment);
-			create(dd.account_id, &mint_unique.definition);
+			_ = upload(dd.account_id, &mint_unique.definition.proto_fragment);
+			_ = create(dd.account_id, &mint_unique.definition);
 
 			assert_noop!(
 				mint_(
@@ -813,19 +810,13 @@ mod mint_tests {
 
 			let mint_unique = dd.mint_unique; 
 
-			upload(dd.account_id, &mint_unique.definition.proto_fragment);
-			create(dd.account_id, &mint_unique.definition);
+			_ = upload(dd.account_id, &mint_unique.definition.proto_fragment);
+			_ = create(dd.account_id, &mint_unique.definition);
 
-			mint_(
-				dd.account_id, 
-				&mint_unique
-			);
+			_ = mint_(dd.account_id, &mint_unique);
 
 			assert_noop!(
-				mint_(
-					dd.account_id, 
-					&mint_unique
-				),
+				mint_(dd.account_id, &mint_unique),
 				// this error does not exist yet @sinkingsugar ???
 				Error::<Test>::UniqueDataExists
 			);
@@ -869,10 +860,10 @@ mod buy_tests {
 
 			let buy_non_unique = dd.buy_non_unique;
 
-			upload(dd.account_id, &buy_non_unique.publish.definition.proto_fragment);
-			create(dd.account_id, &buy_non_unique.publish.definition);
+			_ = upload(dd.account_id, &buy_non_unique.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy_non_unique.publish.definition);
 			
-			publish_(dd.account_id, &buy_non_unique.publish);
+			_ = publish_(dd.account_id, &buy_non_unique.publish);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy_non_unique.buy_options {
@@ -880,7 +871,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_non_unique.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -989,10 +980,10 @@ mod buy_tests {
 
 			let buy_unique = dd.buy_unique;
 
-			upload(dd.account_id, &buy_unique.publish.definition.proto_fragment);
-			create(dd.account_id, &buy_unique.publish.definition);
+			_ = upload(dd.account_id, &buy_unique.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy_unique.publish.definition);
 
-			publish_(dd.account_id, &buy_unique.publish);
+			_ = publish_(dd.account_id, &buy_unique.publish);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy_unique.buy_options {
@@ -1000,7 +991,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_unique.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1106,8 +1097,8 @@ mod buy_tests {
 
 			let buy = dd.buy_non_unique;
 
-			upload(dd.account_id, &buy.publish.definition.proto_fragment);
-			create(dd.account_id, &buy.publish.definition);
+			_ = upload(dd.account_id, &buy.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy.publish.definition);
 
 			assert_noop!(
 				buy_(dd.account_id_second, &buy),
@@ -1127,9 +1118,9 @@ mod buy_tests {
 
 			let buy = dd.buy_non_unique;
 
-			upload(dd.account_id, &buy.publish.definition.proto_fragment);
-			create(dd.account_id, &buy.publish.definition);
-			publish_(dd.account_id, &buy.publish);
+			_ = upload(dd.account_id, &buy.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy.publish.definition);
+			_ = publish_(dd.account_id, &buy.publish);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
@@ -1137,7 +1128,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1158,9 +1149,9 @@ mod buy_tests {
 
 			let buy = dd.buy_non_unique;
 
-			upload(dd.account_id, &buy.publish.definition.proto_fragment);
-			create(dd.account_id, &buy.publish.definition);
-			publish_(dd.account_id, &buy.publish);
+			_ = upload(dd.account_id, &buy.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy.publish.definition);
+			_ = publish_(dd.account_id, &buy.publish);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
@@ -1168,7 +1159,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1
 			);
@@ -1194,15 +1185,11 @@ mod buy_tests {
 
 			buy.publish.definition.metadata.currency = Some(69);
 
-			upload(dd.account_id, &buy.publish.definition.proto_fragment);
-			create(dd.account_id, &buy.publish.definition);
-			publish_(dd.account_id, &buy.publish);
+			_ = upload(dd.account_id, &buy.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy.publish.definition);
+			_ = publish_(dd.account_id, &buy.publish);
 
 			// Deposit `quantity` to buyer's account
-			let quantity = match buy.buy_options {
-				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
-				_ => 1u64,
-			};
 			todo!();
 
 			assert_ok!(buy_(dd.account_id_second, &buy));
@@ -1223,15 +1210,11 @@ mod buy_tests {
 
 			buy.publish.definition.metadata.currency = Some(69);
 
-			upload(dd.account_id, &buy.publish.definition.proto_fragment);
-			create(dd.account_id, &buy.publish.definition);
-			publish_(dd.account_id, &buy.publish);
+			_ = upload(dd.account_id, &buy.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy.publish.definition);
+			_ = publish_(dd.account_id, &buy.publish);
 
 			// Deposit `quantity` to buyer's account
-			let quantity = match buy.buy_options {
-				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
-				_ => 1u64,
-			};
 			todo!();
 
 			assert_noop!(
@@ -1257,9 +1240,9 @@ mod buy_tests {
 			assert!(buy.publish.definition.unique.is_none()); // we use non-unique because we can create multiple instances in a single extrinsic call (basically we're lazy)
 			assert!(buy.publish.definition.max_supply.is_some()); // max supply exists
 
-			upload(dd.account_id, &buy.publish.definition.proto_fragment);
-			create(dd.account_id, &buy.publish.definition);
-			publish_(dd.account_id, &buy.publish);
+			_ = upload(dd.account_id, &buy.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy.publish.definition);
+			_ = publish_(dd.account_id, &buy.publish);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
@@ -1267,7 +1250,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1296,9 +1279,9 @@ mod buy_tests {
 			assert!(buy.publish.definition.unique.is_none()); // we use non-unique because we can create multiple instances in a single extrinsic call (basically we're lazy)
 			assert!(buy.publish.definition.max_supply.is_some()); // max supply exists
 
-			upload(dd.account_id, &buy.publish.definition.proto_fragment);
-			create(dd.account_id, &buy.publish.definition);
-			publish_(dd.account_id, &buy.publish);
+			_ = upload(dd.account_id, &buy.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy.publish.definition);
+			_ = publish_(dd.account_id, &buy.publish);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
@@ -1306,7 +1289,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1332,14 +1315,14 @@ mod buy_tests {
 
 			let buy_non_unique = dd.buy_non_unique; // fragment definition is not unique
 
-			upload(dd.account_id, &buy_non_unique.publish.definition.proto_fragment);
-			create(dd.account_id, &buy_non_unique.publish.definition);
-			publish_(dd.account_id, &buy_non_unique.publish);
+			_ = upload(dd.account_id, &buy_non_unique.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy_non_unique.publish.definition);
+			_ = publish_(dd.account_id, &buy_non_unique.publish);
 
 			// We deposit (Price * 1) + `minimum_balance` 
 			// because that's all we need to deposit if our options parameter is unique
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_non_unique.publish.price.saturating_mul(1 as u128) + minimum_balance
 			);
@@ -1368,14 +1351,14 @@ mod buy_tests {
 
 			let buy_unique = dd.buy_unique; // fragment definition is unique
 
-			upload(dd.account_id, &buy_unique.publish.definition.proto_fragment);
-			create(dd.account_id, &buy_unique.publish.definition);
-			publish_(dd.account_id, &buy_unique.publish);
+			_ = upload(dd.account_id, &buy_unique.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy_unique.publish.definition);
+			_ = publish_(dd.account_id, &buy_unique.publish);
 
 			// Since our options parameter is `FragmentBuyOptions::Quantity(123)`, 
 			// we deposit (Price * 123) + `minimum_balance`
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_unique.publish.price.saturating_mul(123 as u128) + minimum_balance
 			);
@@ -1405,9 +1388,9 @@ mod buy_tests {
 
 			assert!(buy.publish.expires.is_some()); // sale must have an expiration
 
-			upload(dd.account_id, &buy.publish.definition.proto_fragment);
-			create(dd.account_id, &buy.publish.definition);
-			publish_(dd.account_id, &buy.publish);
+			_ = upload(dd.account_id, &buy.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy.publish.definition);
+			_ = publish_(dd.account_id, &buy.publish);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
@@ -1415,7 +1398,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1439,9 +1422,9 @@ mod buy_tests {
 
 			assert!(buy.publish.expires.is_some()); // sale must have an expiration
 
-			upload(dd.account_id, &buy.publish.definition.proto_fragment);
-			create(dd.account_id, &buy.publish.definition);
-			publish_(dd.account_id, &buy.publish);
+			_ = upload(dd.account_id, &buy.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy.publish.definition);
+			_ = publish_(dd.account_id, &buy.publish);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
@@ -1449,7 +1432,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1475,36 +1458,30 @@ mod buy_tests {
 
 			let buy_unique = dd.buy_unique; 
 
-			upload(dd.account_id, &buy_unique.publish.definition.proto_fragment);
-			create(dd.account_id, &buy_unique.publish.definition);
-			publish_(dd.account_id, &buy_unique.publish);
+			_ = upload(dd.account_id, &buy_unique.publish.definition.proto_fragment);
+			_ = create(dd.account_id, &buy_unique.publish.definition);
+			_ = publish_(dd.account_id, &buy_unique.publish);
 
 			// We deposit (Price * 1) + `minimum_balance` 
 			// because that's all we need to deposit if our options parameter is unique
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_unique.publish.price.saturating_mul(1 as u128) + minimum_balance
 			);
 
-			buy_(
-				dd.account_id_second, 
-				&buy_unique
-			);
+			_ = buy_(dd.account_id_second, &buy_unique);
 
 			// We deposit (Price * 1) + `minimum_balance` 
 			// because that's all we need to deposit if our options parameter is unique
 			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			<BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_unique.publish.price.saturating_mul(1 as u128) + minimum_balance
 			);
 
 			assert_noop!(
-				buy_(
-					dd.account_id_second, 
-					&buy_unique
-				),
+				buy_(dd.account_id_second, &buy_unique),
 				// this error does not exist yet @sinkingsugar ???
 				Error::<Test>::UniqueDataExists
 			);
@@ -1548,9 +1525,9 @@ mod give_tests {
 
 			let give = dd.give_no_copy_perms;
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
 			assert_ok!(give_(dd.account_id, &give));
 
@@ -1633,9 +1610,9 @@ mod give_tests {
 
 			let give = dd.give_copy_perms;
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
 			assert_ok!(give_(dd.account_id, &give));
 
@@ -1722,9 +1699,9 @@ mod give_tests {
 
 			let give = dd.give_no_copy_perms;
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
 			assert_noop!(
 				give_(dd.account_id_second, &give), 
@@ -1767,9 +1744,9 @@ mod give_tests {
 								|acc, x| acc | x
 							);
 							
-							upload(dd.account_id, &give.mint.definition.proto_fragment);
-							create(dd.account_id, &give.mint.definition);
-							mint_(dd.account_id, &give.mint);
+							_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+							_ = create(dd.account_id, &give.mint.definition);
+							_ = mint_(dd.account_id, &give.mint);
 
 							give.new_permissions = Some(
 								new_permissions_parameter.into_iter().fold(
@@ -1834,9 +1811,9 @@ mod give_tests {
 								|acc, x| acc | x
 							);
 				
-							upload(dd.account_id, &give.mint.definition.proto_fragment);
-							create(dd.account_id, &give.mint.definition);
-							mint_(dd.account_id, &give.mint);
+							_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+							_ = create(dd.account_id, &give.mint.definition);
+							_ = mint_(dd.account_id, &give.mint);
 
 							give.new_permissions = Some(
 								new_permissions_parameter.into_iter().fold(
@@ -1869,9 +1846,9 @@ mod give_tests {
 
 			give.mint.definition.permissions = FragmentPerms::ALL - FragmentPerms::TRANSFER; // does not have transfer permission
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
 			assert_noop!(
 				give_(dd.account_id, &give),
@@ -1891,11 +1868,11 @@ mod give_tests {
 			assert!(give.expiration.is_some()); 
 			give.new_permissions =  Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the duplicated instance can also be used to create duplicates
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
-			give_(dd.account_id, &give); 
+			_ = give_(dd.account_id, &give); 
 
 			run_to_block(give.expiration.unwrap() - 1); 
 
@@ -1926,11 +1903,11 @@ mod give_tests {
 			assert!(give.expiration.is_some()); 
 			give.new_permissions =  Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the duplicated instance can also be used to create duplicates
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
-			give_(dd.account_id, &give); 
+			_ = give_(dd.account_id, &give); 
 
 			run_to_block(give.expiration.unwrap()); 
 
@@ -1968,9 +1945,9 @@ mod give_tests {
 				..dd.give_no_copy_perms
 			};
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
 			assert_ok!(give_(dd.account_id, &give));
 		});
@@ -1988,9 +1965,9 @@ mod give_tests {
 				..dd.give_no_copy_perms
 			};
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
 			assert_noop!(
 				give_(dd.account_id, &give),
@@ -2010,11 +1987,11 @@ mod give_tests {
 			assert!(give.expiration.is_some()); 
 			give.new_permissions =  Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the duplicated instance can also be used to create duplicates
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
-			give_(dd.account_id, &give); 
+			_ = give_(dd.account_id, &give); 
 
 			let give_second_time = Give {
 				mint: give.mint,
@@ -2062,11 +2039,11 @@ mod give_tests {
 			assert!(give.expiration.is_some()); 
 			give.new_permissions =  Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the duplicated instance can also be used to create duplicates
 
-			upload(dd.account_id, &give.mint.definition.proto_fragment);
-			create(dd.account_id, &give.mint.definition);
-			mint_(dd.account_id, &give.mint);
+			_ = upload(dd.account_id, &give.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &give.mint.definition);
+			_ = mint_(dd.account_id, &give.mint);
 
-			give_(dd.account_id, &give); 
+			_ = give_(dd.account_id, &give); 
 
 			let give_second_time = Give {
 				mint: give.mint,
@@ -2123,9 +2100,9 @@ mod create_account_tests {
 
 			let create_account = dd.create_account;
 
-			upload(dd.account_id, &create_account.mint.definition.proto_fragment);
-			create(dd.account_id, &create_account.mint.definition);
-			mint_(dd.account_id, &create_account.mint);
+			_ = upload(dd.account_id, &create_account.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &create_account.mint.definition);
+			_ = mint_(dd.account_id, &create_account.mint);
 
 			assert_ok!(create_account_(dd.account_id, &create_account));
 
@@ -2143,9 +2120,9 @@ mod create_account_tests {
 
 			let create_account = dd.create_account;
 
-			upload(dd.account_id, &create_account.mint.definition.proto_fragment);
-			create(dd.account_id, &create_account.mint.definition);
-			mint_(dd.account_id, &create_account.mint);
+			_ = upload(dd.account_id, &create_account.mint.definition.proto_fragment);
+			_ = create(dd.account_id, &create_account.mint.definition);
+			_ = mint_(dd.account_id, &create_account.mint);
 
 			assert_noop!(
 				create_account_(dd.account_id_second, &create_account),
