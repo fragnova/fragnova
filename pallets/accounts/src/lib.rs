@@ -105,6 +105,15 @@ use serde_json::{json, Value};
 
 use ethabi::ParamType;
 
+use frame_support::traits::ReservableCurrency;
+
+pub type DiscordID = u64;
+
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub enum ExternalID {
+	Discord(DiscordID),
+}
+
 /// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
 pub trait EthFragContract {
 	/// **Return** the **contract address** of the **FRAG Token Smart Contract**
@@ -157,7 +166,10 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + CreateSignedTransaction<Call<Self>> + pallet_balances::Config
+		frame_system::Config
+		+ CreateSignedTransaction<Call<Self>>
+		+ pallet_balances::Config
+		+ pallet_proxy::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -256,17 +268,22 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
+	#[pallet::storage]
+	pub type ExternalID2Account<T: Config> = StorageMap<_, Twox64Concat, ExternalID, T::AccountId>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A link happened between native and ethereum account.
-		Linked(T::AccountId, H160),
+		Linked { sender: T::AccountId, eth_key: H160 },
 		/// A link was removed between native and ethereum account.
-		Unlinked(T::AccountId, H160),
+		Unlinked { sender: T::AccountId, eth_key: H160 },
 		/// ETH side lock was updated
-		Locked(H160, T::Balance),
+		Locked { eth_key: H160, balance: T::Balance },
 		/// ETH side lock was unlocked
-		Unlocked(H160, T::Balance),
+		Unlocked { eth_key: H160, balance: T::Balance },
+		/// A new sponsored account was added
+		SponsoredAccount { sponsor: T::AccountId, sponsored: T::AccountId, external_id: ExternalID },
 	}
 
 	// Errors inform users that something went wrong.
@@ -284,6 +301,10 @@ pub mod pallet {
 		AccountAlreadyLinked,
 		/// Account not linked
 		AccountNotLinked,
+		/// Account already exists
+		AccountAlreadyExists,
+		/// Too many proxies
+		TooManyProxies,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -328,9 +349,11 @@ pub mod pallet {
 		// Secondly: After verification, recover the public key used to sign the aforementioned `signature` for the aforementioned message
 		// Third: Add
 		// TODO
-		/// **Link** the **Clamor public account address that calls this extrinsic** with the **public account address that
-		/// is returned from verifying the signature `signature` for the message `keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)`**
-		/// (NOTE: The returned public account address is of the account that signed the signature `signature`).
+		/// **Link** the **Clamor public account address that calls this extrinsic** with the
+		/// **public account address that is returned from verifying the signature `signature` for
+		/// the message `keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)`** (NOTE: The
+		/// returned public account address is of the account that signed the signature
+		/// `signature`).
 		///
 		/// After linking, also emit an event indicating that the two accounts were linked.
 		#[pallet::weight(25_000)] // TODO #1 - weight
@@ -359,7 +382,7 @@ pub mod pallet {
 			<FragUsage<T>>::insert(sender.clone(), zero);
 
 			// also emit event
-			Self::deposit_event(Event::Linked(sender, eth_key));
+			Self::deposit_event(Event::Linked { sender, eth_key });
 
 			Ok(())
 		}
@@ -435,7 +458,7 @@ pub mod pallet {
 					if current_votes + 1u64 < threshold {
 						// Current Votes has not passed the threshold
 						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
-						return Ok(());
+						return Ok(())
 					} else {
 						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
 						// we are good to go, but let's remove the record
@@ -444,7 +467,7 @@ pub mod pallet {
 				} else {
 					// If key `data_hash` doesn't exist in EVMLinkVoting
 					<EVMLinkVoting<T>>::insert(&data_hash, 1);
-					return Ok(());
+					return Ok(())
 				}
 			}
 
@@ -473,7 +496,7 @@ pub mod pallet {
 				}
 
 				// also emit event
-				Self::deposit_event(Event::Locked(sender, amount)); // 问Gio for clarification
+				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount }); // 问Gio for clarification
 			} else {
 				// If we want to unlock all the FRAG tokens that were
 				// ! TODO TEST
@@ -485,7 +508,7 @@ pub mod pallet {
 				}
 
 				// also emit event
-				Self::deposit_event(Event::Unlocked(sender, amount)); // 问Gio for clarification
+				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: amount }); // 问Gio for clarification
 			}
 
 			// write this later as unlink_account can fail
@@ -497,6 +520,52 @@ pub mod pallet {
 
 			// also record link hash
 			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
+
+			Ok(())
+		}
+
+		/// Update 'data'
+		///
+		/// TODO
+		#[pallet::weight(25_000)] // TODO #1 - weight
+		pub fn sponsor_account(origin: OriginFor<T>, external_id: ExternalID) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// generate a unique, deterministic hash that we decode into our account
+			let hash = blake2_256(
+				&[&b"fragnova-sponsor-account"[..], &who.encode(), &external_id.encode()].concat(),
+			);
+			let account =
+				T::AccountId::decode(&mut &hash[..]).map_err(|_| Error::<T>::SystematicFailure)?;
+
+			ensure!(
+				!pallet_proxy::Proxies::<T>::contains_key(&account),
+				Error::<T>::AccountAlreadyExists
+			);
+
+			// use the same logic of proxy anonymous
+			let proxy_def = pallet_proxy::ProxyDefinition {
+				delegate: who.clone(),
+				proxy_type: T::ProxyType::default(),
+				delay: T::BlockNumber::default(),
+			};
+			let bounded_proxies: BoundedVec<_, T::MaxProxies> =
+				vec![proxy_def].try_into().map_err(|_| Error::<T>::TooManyProxies)?;
+
+			// ! Writing state
+
+			let deposit = T::ProxyDepositBase::get() + T::ProxyDepositFactor::get();
+			T::Currency::reserve(&who, deposit)?;
+
+			pallet_proxy::Proxies::<T>::insert(&account, (bounded_proxies, deposit));
+
+			<ExternalID2Account<T>>::insert(external_id.clone(), account.clone());
+
+			Self::deposit_event(Event::SponsoredAccount {
+				sponsor: who,
+				sponsored: account,
+				external_id,
+			});
 
 			Ok(())
 		}
@@ -544,7 +613,7 @@ pub mod pallet {
 					_ => {
 						log::debug!("Not a local transaction");
 						// Return TransactionValidityError˘ if the call is not allowed.
-						return InvalidTransaction::Call.into();
+						return InvalidTransaction::Call.into()
 					},
 				}
 
@@ -561,13 +630,13 @@ pub mod pallet {
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into(); // // 问Gio
+						return InvalidTransaction::BadSigner.into() // // 问Gio
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
 					// return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadSigner.into();
+					return InvalidTransaction::BadSigner.into()
 				}
 
 				// most expensive bit last
@@ -577,7 +646,7 @@ pub mod pallet {
 																	   // The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 
 				log::debug!("Sending frag lock update extrinsic");
@@ -640,7 +709,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth");
+				return Err("Failed to get response from geth")
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -689,7 +758,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth");
+				return Err("Failed to get response from geth")
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -800,7 +869,8 @@ pub mod pallet {
 			}
 		}
 
-		/// Unlink the **Clamor public account address `sender`** from **its linked EVM public account address `account`**
+		/// Unlink the **Clamor public account address `sender`** from **its linked EVM public
+		/// account address `account`**
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
 			ensure!(<EVMLinks<T>>::contains_key(sender.clone()), Error::<T>::AccountNotLinked);
 			ensure!(<EVMLinksReverse<T>>::contains_key(account), Error::<T>::AccountNotLinked);
@@ -813,7 +883,7 @@ pub mod pallet {
 			<PendingUnlinks<T>>::append(sender.clone());
 
 			// also emit event
-			Self::deposit_event(Event::Unlinked(sender, account));
+			Self::deposit_event(Event::Unlinked { sender, eth_key: account });
 
 			Ok(())
 		}

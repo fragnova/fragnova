@@ -95,10 +95,10 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub references: Vec<Hash256>,
 }
 
-#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct TicketsInfo {
-	pub active_tickets: u128,
-	pub lifetime_tickets: u128,
+#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
+pub struct AccountsInfo {
+	pub active_accounts: u128,
+	pub lifetime_accounts: u128,
 }
 
 /// **Struct** of a **Proto-Fragment**
@@ -123,8 +123,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub tags: Vec<Compact<u64>>,
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to the **Hash of the aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
-	/// Tickets information for this proto.
-	pub tickets_info: TicketsInfo,
+	/// Accounts information for this proto.
+	pub accounts_info: AccountsInfo,
 }
 
 #[frame_support::pallet]
@@ -139,10 +139,7 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config
-		+ pallet_detach::Config
-		+ pallet_tickets::Config
-		+ pallet_randomness_collective_flip::Config
+		frame_system::Config + pallet_detach::Config + pallet_accounts::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -188,7 +185,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ProtosByCategory<T: Config> = StorageMap<_, Twox64Concat, Categories, Vec<Hash256>>;
 
-	/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**  
+	/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**
 	#[pallet::storage]
 	pub type ProtosByOwner<T: Config> =
 		StorageMap<_, Twox64Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
@@ -214,19 +211,19 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A Proto-Fragment was uploaded
-		Uploaded(Hash256, Vec<u8>),
+		Uploaded { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment was patched
-		Patched(Hash256, Vec<u8>),
+		Patched { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment metadata has changed
-		MetadataChanged(Hash256, Vec<u8>),
+		MetadataChanged { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment was detached
-		Detached(Hash256, Vec<u8>),
+		Detached { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment was transferred
-		Transferred(Hash256, T::AccountId),
+		Transferred { proto_hash: Hash256, owner_id: T::AccountId },
 		/// Stake was created
-		Staked(Hash256, T::AccountId, T::Balance),
+		Staked { proto_hash: Hash256, account_id: T::AccountId, balance: T::Balance },
 		/// Stake was unlocked
-		Unstaked(Hash256, T::AccountId, T::Balance),
+		Unstaked { proto_hash: Hash256, account_id: T::AccountId, balance: T::Balance },
 	}
 
 	// Errors inform users that something went wrong.
@@ -347,7 +344,7 @@ pub mod pallet {
 				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
-				tickets_info: TicketsInfo::default(),
+				accounts_info: AccountsInfo::default(),
 			};
 
 			// store proto
@@ -366,7 +363,7 @@ pub mod pallet {
 			let cid = [&b"z"[..], cid.as_bytes()].concat();
 
 			// also emit event
-			Self::deposit_event(Event::Uploaded(proto_hash, cid));
+			Self::deposit_event(Event::Uploaded { proto_hash, cid });
 
 			log::debug!("Uploaded proto: {:?}", proto_hash);
 
@@ -382,6 +379,7 @@ pub mod pallet {
 		/// * `proto_hash` - Existing Proto-Fragment's hash
 		/// * `include_cost` (optional) -
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the **patch**
+		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get())]
 		pub fn patch(
@@ -390,6 +388,7 @@ pub mod pallet {
 			proto_hash: Hash256,
 			include_cost: Option<Compact<u64>>,
 			new_references: Vec<Hash256>,
+			new_tags: Option<Vec<Vec<u8>>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -424,6 +423,8 @@ pub mod pallet {
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
+
+				// Add a data patch if not empty
 				if !data.is_empty() {
 					// No failures from here on out
 					proto.patches.push(ProtoPatch {
@@ -434,7 +435,32 @@ pub mod pallet {
 					// index mutable data for IPFS discovery as well
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 				}
+
+				// Overwrite include cost
 				proto.include_cost = include_cost;
+
+				// Replace previous tags if not None
+				if let Some(new_tags) = new_tags {
+					let tags = new_tags
+						.iter()
+						.map(|s| {
+							let tag_index = <Tags<T>>::get(s);
+							if let Some(tag_index) = tag_index {
+								<Compact<u64>>::from(tag_index)
+							} else {
+								let next_index = <TagsIndex<T>>::try_get().unwrap_or_default() + 1;
+								<Tags<T>>::insert(s, next_index);
+								// storing is dangerous inside a closure
+								// but after this call we start storing..
+								// so it's fine here
+								<TagsIndex<T>>::put(next_index);
+								<Compact<u64>>::from(next_index)
+							}
+						})
+						.collect();
+
+					proto.tags = tags;
+				}
 			});
 
 			let cid = [&CID_PREFIX[..], &data_hash[..]].concat();
@@ -442,7 +468,7 @@ pub mod pallet {
 			let cid = [&b"z"[..], cid.as_bytes()].concat();
 
 			// also emit event
-			Self::deposit_event(Event::Patched(proto_hash, cid));
+			Self::deposit_event(Event::Patched { proto_hash, cid });
 
 			log::debug!("Updated proto: {:?}", proto_hash);
 
@@ -503,7 +529,7 @@ pub mod pallet {
 			});
 
 			// emit event
-			Self::deposit_event(Event::Transferred(proto_hash, new_owner));
+			Self::deposit_event(Event::Transferred { proto_hash, owner_id: new_owner });
 
 			Ok(())
 		}
@@ -577,7 +603,7 @@ pub mod pallet {
 			transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 
 			// also emit event
-			Self::deposit_event(Event::MetadataChanged(proto_hash, metadata_key.clone()));
+			Self::deposit_event(Event::MetadataChanged { proto_hash, cid: metadata_key.clone() });
 
 			log::debug!("Added metadata to proto: {:x?} with key: {:x?}", proto_hash, metadata_key);
 
@@ -645,12 +671,12 @@ pub mod pallet {
 			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
 			// make sure user has enough FRAG
-			let account = <pallet_tickets::EVMLinks<T>>::get(&who.clone())
+			let account = <pallet_accounts::EVMLinks<T>>::get(&who.clone())
 				.ok_or_else(|| Error::<T>::NoFragLink)?;
-			let eth_lock = <pallet_tickets::EthLockedFrag<T>>::get(&account)
+			let eth_lock = <pallet_accounts::EthLockedFrag<T>>::get(&account)
 				.ok_or_else(|| Error::<T>::NoFragLink)?; // Amount of FRAG locked by Ethereum Account `account`
 			let balance = eth_lock.amount
-				- <pallet_tickets::FragUsage<T>>::get(&who.clone())
+				- <pallet_accounts::FragUsage<T>>::get(&who.clone())
 					.ok_or_else(|| Error::<T>::NoFragLink)?; // Balance = Amount of FRAG locked - Amount of FRAG already staked
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
@@ -658,7 +684,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
 				// Add `amount` to the FragUsage of `who`
 				usage.as_mut().unwrap().saturating_add(amount);
 			});
@@ -668,7 +694,7 @@ pub mod pallet {
 			<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
 
 			// also emit event
-			Self::deposit_event(Event::Staked(proto_hash, who, amount)); // 问Gio
+			Self::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); // 问Gio
 
 			Ok(())
 		}
@@ -698,7 +724,7 @@ pub mod pallet {
 
 			// ! from now we write...
 
-			<pallet_tickets::FragUsage<T>>::mutate(&who, |usage| {
+			<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
 				usage.as_mut().unwrap().saturating_sub(stake.0); // Reduce the Frag usage of `who` by `stake.0`
 			});
 
@@ -711,7 +737,7 @@ pub mod pallet {
 			});
 
 			// also emit event
-			Self::deposit_event(Event::Unstaked(proto_hash, who, stake.0));
+			Self::deposit_event(Event::Unstaked { proto_hash, account_id: who, balance: stake.0 });
 
 			Ok(())
 		}
@@ -724,7 +750,7 @@ pub mod pallet {
 		/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.
 		fn on_finalize(_n: T::BlockNumber) {
 			// drain unlinks
-			let unlinks = <pallet_tickets::PendingUnlinks<T>>::take();
+			let unlinks = <pallet_accounts::PendingUnlinks<T>>::take();
 			for unlink in unlinks {
 				// take emptying the storage
 				let stakes = <AccountStakes<T>>::take(unlink.clone());
@@ -755,7 +781,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue;
+							continue
 						}
 					}
 
@@ -764,7 +790,7 @@ pub mod pallet {
 						let cost: u64 = cost.into();
 						if cost == 0 {
 							// free
-							continue;
+							continue
 						}
 						let cost: T::Balance = cost.saturated_into();
 						let stake = <ProtoStakes<T>>::get(reference, who.clone());
@@ -772,15 +798,15 @@ pub mod pallet {
 							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
 						} else {
 							// Stake not found
-							return Err(Error::<T>::StakeNotFound.into());
+							return Err(Error::<T>::StakeNotFound.into())
 						}
 					// OK to include, just continue
 					} else {
-						return Err(Error::<T>::Unauthorized.into());
+						return Err(Error::<T>::Unauthorized.into())
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into());
+					return Err(Error::<T>::ReferenceNotFound.into())
 				}
 			}
 			Ok(())
@@ -795,9 +821,9 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.include_cost.is_none() {
-						return false;
+						return false
 					} else if !avail && struct_proto.include_cost.is_some() {
-						return false;
+						return false
 					}
 				}
 
@@ -877,7 +903,7 @@ pub mod pallet {
 					}
 				} else {
 					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into());
+					return Err("Owner not found".into())
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -889,7 +915,7 @@ pub mod pallet {
 
 				for category in cats {
 					if params.categories.len() != 0 && !params.categories.contains(&category) {
-						continue;
+						continue
 					}
 
 					let protos = <ProtosByCategory<T>>::get(category);
@@ -944,17 +970,17 @@ pub mod pallet {
 						if let Ok(array_proto_id) = array_proto_id.try_into() {
 							array_proto_id
 						} else {
-							return Err("Failed to convert proto_id to Hash256".into());
+							return Err("Failed to convert proto_id to Hash256".into())
 						}
 					} else {
-						return Err("Failed to decode proto_id".into());
+						return Err("Failed to decode proto_id".into())
 					};
 
 					let (owner, map_metadata, include_cost) =
 						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
 							(proto.owner, proto.metadata, proto.include_cost)
 						} else {
-							return Err("Failed to get proto".into());
+							return Err("Failed to get proto".into())
 						};
 
 					let map_proto = match map_proto {

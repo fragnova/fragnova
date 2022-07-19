@@ -34,7 +34,7 @@ benchmarks! {
 			let cid = [&b"z"[..], cid.as_bytes()].concat();
 	}: _(RawOrigin::Signed(caller), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, None, immutable_data)
 	verify {
-		assert_last_event::<T>(Event::<T>::Uploaded(proto_hash, cid).into())
+		assert_last_event::<T>(Event::<T>::Uploaded { proto_hash: proto_hash, cid: cid }.into())
 	}
 
 	patch {
@@ -55,9 +55,9 @@ benchmarks! {
 		let cid = [&CID_PREFIX[..], &patch_hash[..]].concat();
 			let cid = cid.to_base58();
 			let cid = [&b"z"[..], cid.as_bytes()].concat();
-	}: _(RawOrigin::Signed(caller), proto_hash , Some(Compact(123)), vec![], data.to_vec())
+	}: _(RawOrigin::Signed(caller), proto_hash , Some(Compact(123)), vec![], None, data.to_vec())
 	verify {
-		assert_last_event::<T>(Event::<T>::Patched(proto_hash, cid).into())
+		assert_last_event::<T>(Event::<T>::Patched { proto_hash: proto_hash, cid: cid }.into())
 	}
 
 	detach {
@@ -94,7 +94,7 @@ benchmarks! {
 		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, None, immutable_data.clone())?;
 	}: _(RawOrigin::Signed(caller), proto_hash, new_owner.clone())
 	verify {
-		assert_last_event::<T>(Event::<T>::Transferred(proto_hash, new_owner).into())
+		assert_last_event::<T>(Event::<T>::Transferred { proto_hash: proto_hash, owner_id: new_owner }.into())
 	}
 
 	impl_benchmark_test_suite!(Protos, crate::mock::new_test_ext(), crate::mock::Test);

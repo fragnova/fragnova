@@ -63,6 +63,7 @@ frame_support::construct_runtime!(
 		TicketsPallet: pallet_tickets::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -160,6 +161,7 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
+<<<<<<< HEAD:pallets/tickets/src/mock.rs
 impl pallet_tickets::EthFragContract for Test {
 	fn get_partner_contracts() -> Vec<String> {
 		vec![String::from("0xBADF00D")]
@@ -167,6 +169,24 @@ impl pallet_tickets::EthFragContract for Test {
 }
 
 impl pallet_tickets::Config for Test {
+=======
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = ();
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU32<1>;
+	type ProxyDepositFactor = ConstU32<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU32<1>;
+	type AnnouncementDepositFactor = ConstU32<1>;
+}
+
+impl Config for Test {
+>>>>>>> origin:pallets/accounts/src/mock.rs
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli

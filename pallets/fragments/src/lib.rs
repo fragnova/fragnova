@@ -331,20 +331,32 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// New definition created by account, definition hash
-		DefinitionCreated(Hash128),
+		/// New class created by account, class hash
+		ClassCreated { fragment_hash: Hash128 },
 		/// Fragment sale has been opened
-		Publishing(Hash128),
+		Publishing { fragment_hash: Hash128 },
 		/// Fragment sale has been closed
-		Unpublishing(Hash128),
+		Unpublishing { fragment_hash: Hash128 },
 		/// Inventory item has been added to account
-		InventoryAdded(T::AccountId, Hash128, (Unit, Unit)),
+		InventoryAdded {
+			account_id: T::AccountId,
+			fragment_hash: Hash128,
+			fragment_id: (Unit, Unit),
+		},
 		/// Inventory item has removed added from account
-		InventoryRemoved(T::AccountId, Hash128, (Unit, Unit)),
+		InventoryRemoved {
+			account_id: T::AccountId,
+			fragment_hash: Hash128,
+			fragment_id: (Unit, Unit),
+		},
 		/// Inventory has been updated
-		InventoryUpdated(T::AccountId, Hash128, (Unit, Unit)),
+		InventoryUpdated {
+			account_id: T::AccountId,
+			fragment_hash: Hash128,
+			fragment_id: (Unit, Unit),
+		},
 		/// Fragment Expiration event
-		Expired(T::AccountId, Hash128, (Unit, Unit)),
+		Expired { account_id: T::AccountId, fragment_hash: Hash128, fragment_id: (Unit, Unit) },
 	}
 
 	// Errors inform users that something went wrong.
@@ -440,8 +452,8 @@ pub mod pallet {
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
 			let vault = Self::get_vault_id(hash);
-			let min_balance = T::Currency::minimum_balance();
-			T::Currency::reserve(&vault, min_balance)?;
+			let min_balance = <T as pallet_assets::Config>::Currency::minimum_balance();
+			<T as pallet_assets::Config>::Currency::reserve(&vault, min_balance)?;
 
 			let fragment_data = FragmentDefinition {
 				proto_hash,
@@ -456,7 +468,7 @@ pub mod pallet {
 
 			Proto2Fragments::<T>::append(&proto_hash, hash);
 
-			Self::deposit_event(Event::DefinitionCreated(hash));
+			Self::deposit_event(Event::ClassCreated { fragment_hash: hash });
 			Ok(())
 		}
 
@@ -513,11 +525,10 @@ pub mod pallet {
 					let quantity: Unit = quantity.into();
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached); // Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				} else {
-					// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
-					return Err(Error::<T>::ParamsNotValid.into());
+					return Err(Error::<T>::ParamsNotValid.into())
 				}
 				if left == 0 {
-					return Err(Error::<T>::MaxSupplyReached.into());
+					return Err(Error::<T>::MaxSupplyReached.into())
 				}
 			}
 
@@ -533,7 +544,7 @@ pub mod pallet {
 				},
 			);
 
-			Self::deposit_event(Event::Publishing(fragment_hash));
+			Self::deposit_event(Event::Publishing { fragment_hash });
 
 			Ok(())
 		}
@@ -573,7 +584,7 @@ pub mod pallet {
 
 			<Publishing<T>>::remove(&fragment_hash); // Remove Fragment Definition `fragment_hash` from `Publishing`
 
-			Self::deposit_event(Event::Unpublishing(fragment_hash));
+			Self::deposit_event(Event::Unpublishing { fragment_hash });
 
 			Ok(())
 		}
@@ -875,7 +886,11 @@ pub mod pallet {
 
 				<Fragments<T>>::insert((class, edition, copy), item_data);
 
-				Self::deposit_event(Event::InventoryAdded(to, class, (edition, copy)));
+				Self::deposit_event(Event::InventoryAdded {
+					account_id: to,
+					fragment_hash: class,
+					fragment_id: (edition, copy),
+				});
 			} else {
 				// we will remove from this account to give to new account
 				<Owners<T>>::mutate(class, who.clone(), |ids| {
@@ -890,13 +905,21 @@ pub mod pallet {
 					}
 				});
 
-				Self::deposit_event(Event::InventoryRemoved(who.clone(), class, (edition, copy)));
+				Self::deposit_event(Event::InventoryRemoved {
+					account_id: who.clone(),
+					fragment_hash: class,
+					fragment_id: (edition, copy),
+				});
 
 				<Owners<T>>::append(class, to.clone(), (Compact(edition), Compact(copy)));
 
 				<Inventory<T>>::append(to.clone(), class, (Compact(edition), Compact(copy)));
 
-				Self::deposit_event(Event::InventoryAdded(to, class, (edition, copy)));
+				Self::deposit_event(Event::InventoryAdded {
+					account_id: to,
+					fragment_hash: class,
+					fragment_id: (edition, copy),
+				});
 
 				// finally fix permissions that might have changed
 				<Fragments<T>>::mutate((class, edition, copy), |item_data| {
@@ -932,11 +955,15 @@ pub mod pallet {
 
 			ensure!(ids.contains(&(Compact(edition), Compact(copy))), Error::<T>::NoPermission);
 
-			// create vault account
+			// create an account for a specific fragment
 			// we need an existential amount deposit to be able to create the vault account
-			let vault = Self::get_fragment_account_id(class, edition, copy);
-			let min_balance = T::Currency::minimum_balance();
-			T::Currency::reserve(&vault, min_balance)?;
+			let frag_account = Self::get_fragment_account_id(class, edition, copy);
+			let min_balance =
+				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
+			<pallet_balances::Pallet<T> as ReservableCurrency<T::AccountId>>::reserve(
+				&frag_account,
+				min_balance,
+			)?;
 
 			// TODO Make owner pay for deposit actually!
 			// TODO setup proxy
@@ -977,11 +1004,11 @@ pub mod pallet {
 							});
 
 							// trigger an Event
-							Self::deposit_event(Event::Expired(
-								owner,
-								item.0,
-								(item.1.into(), item.2.into()),
-							));
+							Self::deposit_event(Event::Expired {
+								account_id: owner,
+								fragment_hash: item.0,
+								fragment_id: (item.1.into(), item.2.into()),
+							});
 
 							// fragments are unique so we are done here
 							break;
@@ -1131,8 +1158,11 @@ impl<T: Config> Pallet<T> {
 					if let Some(expiring_at) = expiring_at {
 						<Expirations<T>>::append(expiring_at, (*fragment_hash, cid, Compact(1)));
 					}
-
-					Self::deposit_event(Event::InventoryAdded(to.clone(), *fragment_hash, (id, 1)));
+					Self::deposit_event(Event::InventoryAdded {
+						account_id: to.clone(),
+						fragment_hash: *fragment_hash,
+						fragment_id: (id, 1),
+					});
 				}
 
 				if let (Some(data_hash), Some(data_len)) = (data_hash, data_len)  {

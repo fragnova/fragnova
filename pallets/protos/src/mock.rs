@@ -28,7 +28,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 
-/// Construct a mock runtime environment.
+// Construct a mock runtime environment.
 frame_support::construct_runtime!(
 	// The **configuration type `Test`** is defined as a **Rust enum** with **implementations**
 	// for **each of the pallet configuration trait** that are **used in the mock runtime**. (https://docs.substrate.io/v3/runtime/testing/)
@@ -45,7 +45,8 @@ frame_support::construct_runtime!(
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TicketsPallet: pallet_tickets::{Pallet, Call, Storage, Event<T>},
+		TicketsPallet: pallet_accounts::{Pallet, Call, Storage, Event<T>},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -55,8 +56,9 @@ frame_support::construct_runtime!(
 ///
 /// What it does:
 ///
-/// The macro replaces each parameter specified into a struct type with a get() function returning its specified value.
-/// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
+/// The macro replaces each parameter specified into a struct type with a get() function returning
+/// its specified value. Each parameter struct type also implements the
+/// frame_support::traits::Get<I> trait to convert the type to its specified value.
 ///
 /// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
@@ -127,9 +129,9 @@ impl pallet_randomness_collective_flip::Config for Test {}
 
 /// If `Test` implements `pallet_balances::Config`, the assignment might use `u64` for the `Balance` type. (https://docs.substrate.io/v3/runtime/testing/)
 ///
-/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block `impl system::Config for Test` above) to `u64`,
-/// mock runtimes ease the mental overhead of comprehensive, conscientious testers.
-/// Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
+/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block
+/// `impl system::Config for Test` above) to `u64`, mock runtimes ease the mental overhead of
+/// comprehensive, conscientious testers. Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
 impl pallet_balances::Config for Test {
 	type Balance = u64;
 	type DustRemoval = ();
@@ -142,14 +144,14 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 }
 
-impl pallet_tickets::Config for Test {
+impl pallet_accounts::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = ();
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_tickets::crypto::FragAuthId;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
 impl pallet_protos::Config for Test {
@@ -163,6 +165,21 @@ impl pallet_detach::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = ();
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU32<1>;
+	type ProxyDepositFactor = ConstU32<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU32<1>;
+	type AnnouncementDepositFactor = ConstU32<1>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

@@ -37,7 +37,8 @@ frame_support::construct_runtime!(
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		BalancesPallet: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Tickets: pallet_tickets::{Pallet, Call, Storage, Event<T>},
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -142,14 +143,29 @@ impl pallet_protos::Config for Test {
 	type StakeLockupPeriod = ConstU64<100800>; // one week
 }
 
-impl pallet_tickets::Config for Test {
+impl pallet_accounts::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = ();
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_tickets::crypto::FragAuthId;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+}
+
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = ();
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU32<1>;
+	type ProxyDepositFactor = ConstU32<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU32<1>;
+	type AnnouncementDepositFactor = ConstU32<1>;
 }
 
 impl pallet_fragments::Config for Test {
