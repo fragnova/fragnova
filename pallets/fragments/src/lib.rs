@@ -267,6 +267,16 @@ pub mod pallet {
 		FragmentInstance<T::BlockNumber>,
 	>;
 
+	#[pallet::storage]
+	pub type UniqueData2Edition<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		Hash128, // Fragment Definition ID
+		Identity,
+		Hash256, // Unique Data's Hash
+		Unit // Edition ID
+	>;
+
 	/// StorageDoubleMap that maps a **Fragment Definition and the 
 	/// Owner of a Fragment Instance that was created from the aforementioned Fragment Definition** 
 	/// to a 
@@ -362,10 +372,14 @@ pub mod pallet {
 		SaleAlreadyOpen,
 		/// Max supply reached
 		MaxSupplyReached,
+		/// Published quantity reached
+		PublishedQuantityReached, // Need to think of a better name!
 		/// Params not valid
 		ParamsNotValid,
 		/// This should not really happen
 		SystematicFailure,
+		/// Fragment Instance already uploaded with the same unique data
+		UniqueDataExists
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -553,6 +567,8 @@ pub mod pallet {
 			// TO REVIEW
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
 
+			ensure!(<Publishing<T>>::contains_key(&fragment_hash), Error::<T>::NotFound); // Ensure `fragment_hash` is currently published
+
 			// ! Writing
 
 			<Publishing<T>>::remove(&fragment_hash); // Remove Fragment Definition `fragment_hash` from `Publishing`
@@ -678,7 +694,43 @@ pub mod pallet {
 
 			let price = price.saturating_mul(quantity as u128); // `price` = `price` * `quantity`
 
-			// ! Writing if successful
+			if let Some(currency) = fragment_data.metadata.currency { 
+
+				use frame_support::traits::tokens::fungibles::Inspect;
+
+				let minimum_balance_needed_to_exist = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(currency);
+
+				let price_balance : <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::Balance = price.saturated_into();
+				
+				ensure!(
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who) >= price_balance + minimum_balance_needed_to_exist, 
+					Error::<T>::InsufficientBalance
+				);
+
+			} else {
+				let minimum_balance_needed_to_exist = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
+
+				let price_balance : <pallet_balances::Pallet<T> as Currency<T::AccountId>>::Balance = price.saturated_into();
+				
+				ensure!(
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who) >= price_balance + minimum_balance_needed_to_exist, 
+					Error::<T>::InsufficientBalance
+				);
+			}
+
+
+			// ! Writing
+
+			Self::mint_fragments(
+				&who,
+				&fragment_hash,
+				Some(&sale), // PublishingData (optional)
+				&options,
+				quantity,
+				current_block_number,
+				None, // Block Number that the Fragment Instance will expire at (optional)
+				sale.amount,
+			)?;
 
 			if let Some(currency) = fragment_data.metadata.currency {
 				<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
@@ -701,18 +753,8 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
 
-			// ! We should be successful here
+			Ok(())
 
-			Self::mint_fragments(
-				&who,
-				&fragment_hash,
-				Some(&sale), // PublishingData (optional)
-				&options,
-				quantity,
-				current_block_number,
-				None, // Block Number that the Fragment Instance will expire at (optional)
-				sale.amount,
-			)
 		}
 
 		/// Give the **Fragment Instance whose Fragment Definition ID is `class`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
@@ -814,8 +856,10 @@ pub mod pallet {
 
 				// handle expiration
 				if let Some(expiring_at) = item_data.expiring_at {
-					let expiration = if let Some(expiration) = expiration {
+					let expiration = 
+					if let Some(expiration) = expiration {
 						if expiration < expiring_at {
+							item_data.expiring_at = Some(expiration); 
 							expiration
 						} else {
 							expiring_at
@@ -825,6 +869,7 @@ pub mod pallet {
 					};
 					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
 				} else if let Some(expiration) = expiration {
+					item_data.expiring_at = Some(expiration); 
 					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
 				}
 
@@ -1000,21 +1045,33 @@ impl<T: Config> Pallet<T> {
 			ensure!(expiring_at > current_block_number, Error::<T>::ParamsNotValid); // Ensure `expiring_at` > `current_block_number`
 		}
 
-		let data = match options {
+		let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
+		
+		// we need this to index transactions
+		let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index() // `<frame_system::Pallet<T>>::extrinsic_index()` is defined as: "Gets the index of extrinsic that is currently executing." (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)
+		.ok_or(Error::<T>::SystematicFailure)?;
+
+		let (data_hash, data_len) = match options {
 			FragmentBuyOptions::UniqueData(data) => {
+
+				if fragment_data.unique.is_none() || quantity != 1 {
+					return Err(Error::<T>::ParamsNotValid.into())
+				}
+
 				let data_hash = blake2_256(&data);
-				let data_len = data.len();
 
-				// we need this to index transactions
-				let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index() // `<frame_system::Pallet<T>>::extrinsic_index()` is defined as: "Gets the index of extrinsic that is currently executing." (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)
-					.ok_or(Error::<T>::SystematicFailure)?;
+				ensure!(!<UniqueData2Edition<T>>::contains_key(fragment_hash, data_hash), Error::<T>::UniqueDataExists);
 
-				// index immutable data for IPFS discovery
-				transaction_index::index(extrinsic_index, data_len as u32, data_hash);
-
-				Some(data_hash)
+				(Some(data_hash), Some(data.len()))
 			},
-			_ => None,
+			FragmentBuyOptions::Quantity(_) => { 
+				
+				if fragment_data.unique.is_some() {
+					return Err(Error::<T>::ParamsNotValid.into())
+				}
+
+				(None, None)
+			},
 		};
 
 		let existing: Unit = <EditionsCount<T>>::get(&fragment_hash).unwrap_or(Compact(0)).into();
@@ -1022,26 +1079,30 @@ impl<T: Config> Pallet<T> {
 		if let Some(sale) = sale {
 			// if limited amount let's reduce the amount of units left
 			if let Some(units_left) = sale.units_left {
-				<Publishing<T>>::mutate(&*fragment_hash, |sale| {
-					if let Some(sale) = sale {
-						let left: Unit = units_left.into();
-						sale.units_left = Some(Compact(left - quantity));
-					}
-				});
+				if quantity > units_left.into() {
+					return Err(Error::<T>::PublishedQuantityReached.into());
+				} else {
+					<Publishing<T>>::mutate(&*fragment_hash, |sale| {
+						if let Some(sale) = sale {
+							let left: Unit = units_left.into();
+							sale.units_left = Some(Compact(left - quantity));
+						}
+					});
+				}
 			}
 		} else {
 			// We still don't wanna go over supply limit
-			let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
-
 			if let Some(max_supply) = fragment_data.max_supply {
 				let max: Unit = max_supply.into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
-				if quantity <= left {
+				if quantity > left {
 					// Ensure the function parameter `quantity` is smaller than or equal to `left`
 					return Err(Error::<T>::MaxSupplyReached.into());
 				}
 			}
 		}
+
+		// ! Writing if successful
 
 		<Definitions<T>>::mutate(fragment_hash, |fragment| {
 			// Get the `FragmentDefinition` struct from `fragment_hash`
@@ -1055,7 +1116,7 @@ impl<T: Config> Pallet<T> {
 						FragmentInstance {
 							permissions: fragment.permissions,
 							created_at: current_block_number,
-							custom_data: data,
+							custom_data: data_hash,
 							expiring_at,
 							amount,
 						},
@@ -1073,6 +1134,14 @@ impl<T: Config> Pallet<T> {
 
 					Self::deposit_event(Event::InventoryAdded(to.clone(), *fragment_hash, (id, 1)));
 				}
+
+				if let (Some(data_hash), Some(data_len)) = (data_hash, data_len)  {
+					<UniqueData2Edition<T>>::insert(fragment_hash, data_hash, existing); // if `data` exists, `quantity` is ensured to be 1
+
+					// index immutable data for IPFS discovery
+					transaction_index::index(extrinsic_index, data_len as u32, data_hash);
+				}
+
 				<EditionsCount<T>>::insert(fragment_hash, Compact(existing + quantity));
 			}
 		});
