@@ -694,7 +694,43 @@ pub mod pallet {
 
 			let price = price.saturating_mul(quantity as u128); // `price` = `price` * `quantity`
 
-			// ! Writing if successful
+			if let Some(currency) = fragment_data.metadata.currency { 
+
+				use frame_support::traits::tokens::fungibles::Inspect;
+
+				let minimum_balance_needed_to_exist = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(currency);
+
+				let price_balance : <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::Balance = price.saturated_into();
+				
+				ensure!(
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who) >= price_balance + minimum_balance_needed_to_exist, 
+					Error::<T>::InsufficientBalance
+				);
+
+			} else {
+				let minimum_balance_needed_to_exist = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
+
+				let price_balance : <pallet_balances::Pallet<T> as Currency<T::AccountId>>::Balance = price.saturated_into();
+				
+				ensure!(
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who) >= price_balance + minimum_balance_needed_to_exist, 
+					Error::<T>::InsufficientBalance
+				);
+			}
+
+
+			// ! Writing
+
+			Self::mint_fragments(
+				&who,
+				&fragment_hash,
+				Some(&sale), // PublishingData (optional)
+				&options,
+				quantity,
+				current_block_number,
+				None, // Block Number that the Fragment Instance will expire at (optional)
+				sale.amount,
+			)?;
 
 			if let Some(currency) = fragment_data.metadata.currency {
 				<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
@@ -717,18 +753,8 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
 
-			// ! We should be successful here
+			Ok(())
 
-			Self::mint_fragments(
-				&who,
-				&fragment_hash,
-				Some(&sale), // PublishingData (optional)
-				&options,
-				quantity,
-				current_block_number,
-				None, // Block Number that the Fragment Instance will expire at (optional)
-				sale.amount,
-			)
 		}
 
 		/// Give the **Fragment Instance whose Fragment Definition ID is `class`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
