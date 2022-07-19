@@ -888,6 +888,9 @@
 <span id="882">882</span>
 <span id="883">883</span>
 <span id="884">884</span>
+<span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `frag` performs logic related to FRAG Token</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.</span>
@@ -1161,13 +1164,13 @@
 	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
 		<span class="doccomment">/// A link happened between native and ethereum account.</span>
-		<span class="ident">Linked</span>(<span class="ident">T::AccountId</span>, <span class="ident">H160</span>),
+		<span class="ident">Linked</span> { <span class="ident">sender</span>: <span class="ident">T::AccountId</span>, <span class="ident">eth_key</span>: <span class="ident">H160</span> },
 		<span class="doccomment">/// A link was removed between native and ethereum account.</span>
-		<span class="ident">Unlinked</span>(<span class="ident">T::AccountId</span>, <span class="ident">H160</span>),
+		<span class="ident">Unlinked</span> { <span class="ident">sender</span>: <span class="ident">T::AccountId</span>, <span class="ident">eth_key</span>: <span class="ident">H160</span> },
 		<span class="doccomment">/// ETH side lock was updated</span>
-		<span class="ident">Locked</span>(<span class="ident">H160</span>, <span class="ident">T::Balance</span>),
+		<span class="ident">Locked</span> { <span class="ident">eth_key</span>: <span class="ident">H160</span>, <span class="ident">balance</span>: <span class="ident">T::Balance</span> },
 		<span class="doccomment">/// ETH side lock was unlocked</span>
-		<span class="ident">Unlocked</span>(<span class="ident">H160</span>, <span class="ident">T::Balance</span>),
+		<span class="ident">Unlocked</span> { <span class="ident">eth_key</span>: <span class="ident">H160</span>, <span class="ident">balance</span>: <span class="ident">T::Balance</span> },
 		<span class="doccomment">/// A new sponsored account was added</span>
 		<span class="ident">SponsoredAccount</span> { <span class="ident">sponsor</span>: <span class="ident">T::AccountId</span>, <span class="ident">sponsored</span>: <span class="ident">T::AccountId</span>, <span class="ident">external_id</span>: <span class="ident">ExternalID</span> },
 	}
@@ -1235,9 +1238,11 @@
 		<span class="comment">// Secondly: After verification, recover the public key used to sign the aforementioned `signature` for the aforementioned message</span>
 		<span class="comment">// Third: Add</span>
 		<span class="comment">// TODO</span>
-		<span class="doccomment">/// **Link** the **Clamor public account address that calls this extrinsic** with the **public account address that</span>
-		<span class="doccomment">/// is returned from verifying the signature `signature` for the message `keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)`**</span>
-		<span class="doccomment">/// (NOTE: The returned public account address is of the account that signed the signature `signature`).</span>
+		<span class="doccomment">/// **Link** the **Clamor public account address that calls this extrinsic** with the</span>
+		<span class="doccomment">/// **public account address that is returned from verifying the signature `signature` for</span>
+		<span class="doccomment">/// the message `keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)`** (NOTE: The</span>
+		<span class="doccomment">/// returned public account address is of the account that signed the signature</span>
+		<span class="doccomment">/// `signature`).</span>
 		<span class="doccomment">///</span>
 		<span class="doccomment">/// After linking, also emit an event indicating that the two accounts were linked.</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">25_000</span>)]</span> <span class="comment">// TODO #1 - weight</span>
@@ -1266,7 +1271,7 @@
 			<span class="op">&lt;</span><span class="ident">FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">sender</span>.<span class="ident">clone</span>(), <span class="ident">zero</span>);
 
 			<span class="comment">// also emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Linked</span>(<span class="ident">sender</span>, <span class="ident">eth_key</span>));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Linked</span> { <span class="ident">sender</span>, <span class="ident">eth_key</span> });
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -1342,7 +1347,7 @@
 					<span class="kw">if</span> <span class="ident">current_votes</span> <span class="op">+</span> <span class="number">1u64</span> <span class="op">&lt;</span> <span class="ident">threshold</span> {
 						<span class="comment">// Current Votes has not passed the threshold</span>
 						<span class="op">&lt;</span><span class="ident">EVMLinkVoting</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="kw-2">&amp;</span><span class="ident">data_hash</span>, <span class="ident">current_votes</span> <span class="op">+</span> <span class="number">1</span>);
-						<span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+						<span class="kw">return</span> <span class="prelude-val">Ok</span>(())
 					} <span class="kw">else</span> {
 						<span class="comment">// Current votes passes the threshold, let&#39;s remove EVMLinkVoting perque perque non! (问Gio)</span>
 						<span class="comment">// we are good to go, but let&#39;s remove the record</span>
@@ -1351,7 +1356,7 @@
 				} <span class="kw">else</span> {
 					<span class="comment">// If key `data_hash` doesn&#39;t exist in EVMLinkVoting</span>
 					<span class="op">&lt;</span><span class="ident">EVMLinkVoting</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="kw-2">&amp;</span><span class="ident">data_hash</span>, <span class="number">1</span>);
-					<span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+					<span class="kw">return</span> <span class="prelude-val">Ok</span>(())
 				}
 			}
 
@@ -1380,7 +1385,7 @@
 				}
 
 				<span class="comment">// also emit event</span>
-				<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Locked</span>(<span class="ident">sender</span>, <span class="ident">amount</span>)); <span class="comment">// 问Gio for clarification</span>
+				<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Locked</span> { <span class="ident">eth_key</span>: <span class="ident">sender</span>, <span class="ident">balance</span>: <span class="ident">amount</span> }); <span class="comment">// 问Gio for clarification</span>
 			} <span class="kw">else</span> {
 				<span class="comment">// If we want to unlock all the FRAG tokens that were</span>
 				<span class="comment">// ! TODO TEST</span>
@@ -1392,7 +1397,7 @@
 				}
 
 				<span class="comment">// also emit event</span>
-				<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Unlocked</span>(<span class="ident">sender</span>, <span class="ident">amount</span>)); <span class="comment">// 问Gio for clarification</span>
+				<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Unlocked</span> { <span class="ident">eth_key</span>: <span class="ident">sender</span>, <span class="ident">balance</span>: <span class="ident">amount</span> }); <span class="comment">// 问Gio for clarification</span>
 			}
 
 			<span class="comment">// write this later as unlink_account can fail</span>
@@ -1497,7 +1502,7 @@
 					<span class="kw">_</span> =&gt; {
 						<span class="macro">log::debug!</span>(<span class="string">&quot;Not a local transaction&quot;</span>);
 						<span class="comment">// Return TransactionValidityError˘ if the call is not allowed.</span>
-						<span class="kw">return</span> <span class="ident">InvalidTransaction::Call</span>.<span class="ident">into</span>();
+						<span class="kw">return</span> <span class="ident">InvalidTransaction::Call</span>.<span class="ident">into</span>()
 					},
 				}
 
@@ -1514,13 +1519,13 @@
 						<span class="ident">pub_key</span>
 					} <span class="kw">else</span> {
 						<span class="comment">// Return TransactionValidityError if the call is not allowed.</span>
-						<span class="kw">return</span> <span class="ident">InvalidTransaction::BadSigner</span>.<span class="ident">into</span>(); <span class="comment">// // 问Gio</span>
+						<span class="kw">return</span> <span class="ident">InvalidTransaction::BadSigner</span>.<span class="ident">into</span>() <span class="comment">// // 问Gio</span>
 					}
 				};
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Public key: {:?}&quot;</span>, <span class="ident">pub_key</span>);
 				<span class="kw">if</span> <span class="op">!</span><span class="ident">valid_keys</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">pub_key</span>) {
 					<span class="comment">// return TransactionValidityError if the call is not allowed.</span>
-					<span class="kw">return</span> <span class="ident">InvalidTransaction::BadSigner</span>.<span class="ident">into</span>();
+					<span class="kw">return</span> <span class="ident">InvalidTransaction::BadSigner</span>.<span class="ident">into</span>()
 				}
 
 				<span class="comment">// most expensive bit last</span>
@@ -1530,7 +1535,7 @@
 																	   <span class="comment">// The provided signature does not match the public key used to sign the payload</span>
 				<span class="kw">if</span> <span class="op">!</span><span class="ident">signature_valid</span> {
 					<span class="comment">// Return TransactionValidityError if the call is not allowed.</span>
-					<span class="kw">return</span> <span class="ident">InvalidTransaction::BadProof</span>.<span class="ident">into</span>();
+					<span class="kw">return</span> <span class="ident">InvalidTransaction::BadProof</span>.<span class="ident">into</span>()
 				}
 
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Sending frag lock update extrinsic&quot;</span>);
@@ -1593,7 +1598,7 @@
 			<span class="kw">let</span> <span class="ident">response_body</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">response</span>) <span class="op">=</span> <span class="ident">response_body</span> {
 				<span class="ident">response</span>
 			} <span class="kw">else</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>)
 			};
 
 			<span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">String::from_utf8</span>(<span class="ident">response_body</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
@@ -1642,7 +1647,7 @@
 			<span class="kw">let</span> <span class="ident">response_body</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">response</span>) <span class="op">=</span> <span class="ident">response_body</span> {
 				<span class="ident">response</span>
 			} <span class="kw">else</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>)
 			};
 
 			<span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">String::from_utf8</span>(<span class="ident">response_body</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
@@ -1753,7 +1758,8 @@
 			}
 		}
 
-		<span class="doccomment">/// Unlink the **Clamor public account address `sender`** from **its linked EVM public account address `account`**</span>
+		<span class="doccomment">/// Unlink the **Clamor public account address `sender`** from **its linked EVM public</span>
+		<span class="doccomment">/// account address `account`**</span>
 		<span class="kw">fn</span> <span class="ident">unlink_account</span>(<span class="ident">sender</span>: <span class="ident">T::AccountId</span>, <span class="ident">account</span>: <span class="ident">H160</span>) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="macro">ensure!</span>(<span class="op">&lt;</span><span class="ident">EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="ident">sender</span>.<span class="ident">clone</span>()), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountNotLinked</span>);
 			<span class="macro">ensure!</span>(<span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="ident">account</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountNotLinked</span>);
@@ -1766,12 +1772,12 @@
 			<span class="op">&lt;</span><span class="ident">PendingUnlinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::append</span>(<span class="ident">sender</span>.<span class="ident">clone</span>());
 
 			<span class="comment">// also emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Unlinked</span>(<span class="ident">sender</span>, <span class="ident">account</span>));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Unlinked</span> { <span class="ident">sender</span>, <span class="ident">eth_key</span>: <span class="ident">account</span> });
 
 			<span class="prelude-val">Ok</span>(())
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (87588a2af 2022-07-13)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (f8588549c 2022-07-18)" ></div>
 </body></html>

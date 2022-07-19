@@ -1271,19 +1271,19 @@
 	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
 		<span class="doccomment">/// A Proto-Fragment was uploaded</span>
-		<span class="ident">Uploaded</span>(<span class="ident">Hash256</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
+		<span class="ident">Uploaded</span> { <span class="ident">proto_hash</span>: <span class="ident">Hash256</span>, <span class="ident">cid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> },
 		<span class="doccomment">/// A Proto-Fragment was patched</span>
-		<span class="ident">Patched</span>(<span class="ident">Hash256</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
+		<span class="ident">Patched</span> { <span class="ident">proto_hash</span>: <span class="ident">Hash256</span>, <span class="ident">cid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> },
 		<span class="doccomment">/// A Proto-Fragment metadata has changed</span>
-		<span class="ident">MetadataChanged</span>(<span class="ident">Hash256</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
+		<span class="ident">MetadataChanged</span> { <span class="ident">proto_hash</span>: <span class="ident">Hash256</span>, <span class="ident">cid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> },
 		<span class="doccomment">/// A Proto-Fragment was detached</span>
-		<span class="ident">Detached</span>(<span class="ident">Hash256</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
+		<span class="ident">Detached</span> { <span class="ident">proto_hash</span>: <span class="ident">Hash256</span>, <span class="ident">cid</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> },
 		<span class="doccomment">/// A Proto-Fragment was transferred</span>
-		<span class="ident">Transferred</span>(<span class="ident">Hash256</span>, <span class="ident">T::AccountId</span>),
+		<span class="ident">Transferred</span> { <span class="ident">proto_hash</span>: <span class="ident">Hash256</span>, <span class="ident">owner_id</span>: <span class="ident">T::AccountId</span> },
 		<span class="doccomment">/// Stake was created</span>
-		<span class="ident">Staked</span>(<span class="ident">Hash256</span>, <span class="ident">T::AccountId</span>, <span class="ident">T::Balance</span>),
+		<span class="ident">Staked</span> { <span class="ident">proto_hash</span>: <span class="ident">Hash256</span>, <span class="ident">account_id</span>: <span class="ident">T::AccountId</span>, <span class="ident">balance</span>: <span class="ident">T::Balance</span> },
 		<span class="doccomment">/// Stake was unlocked</span>
-		<span class="ident">Unstaked</span>(<span class="ident">Hash256</span>, <span class="ident">T::AccountId</span>, <span class="ident">T::Balance</span>),
+		<span class="ident">Unstaked</span> { <span class="ident">proto_hash</span>: <span class="ident">Hash256</span>, <span class="ident">account_id</span>: <span class="ident">T::AccountId</span>, <span class="ident">balance</span>: <span class="ident">T::Balance</span> },
 	}
 
 	<span class="comment">// Errors inform users that something went wrong.</span>
@@ -1423,7 +1423,7 @@
 			<span class="kw">let</span> <span class="ident">cid</span> <span class="op">=</span> [<span class="kw-2">&amp;</span><span class="string">b&quot;z&quot;</span>[..], <span class="ident">cid</span>.<span class="ident">as_bytes</span>()].<span class="ident">concat</span>();
 
 			<span class="comment">// also emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Uploaded</span>(<span class="ident">proto_hash</span>, <span class="ident">cid</span>));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Uploaded</span> { <span class="ident">proto_hash</span>, <span class="ident">cid</span> });
 
 			<span class="macro">log::debug!</span>(<span class="string">&quot;Uploaded proto: {:?}&quot;</span>, <span class="ident">proto_hash</span>);
 
@@ -1528,7 +1528,7 @@
 			<span class="kw">let</span> <span class="ident">cid</span> <span class="op">=</span> [<span class="kw-2">&amp;</span><span class="string">b&quot;z&quot;</span>[..], <span class="ident">cid</span>.<span class="ident">as_bytes</span>()].<span class="ident">concat</span>();
 
 			<span class="comment">// also emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Patched</span>(<span class="ident">proto_hash</span>, <span class="ident">cid</span>));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Patched</span> { <span class="ident">proto_hash</span>, <span class="ident">cid</span> });
 
 			<span class="macro">log::debug!</span>(<span class="string">&quot;Updated proto: {:?}&quot;</span>, <span class="ident">proto_hash</span>);
 
@@ -1589,7 +1589,7 @@
 			});
 
 			<span class="comment">// emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Transferred</span>(<span class="ident">proto_hash</span>, <span class="ident">new_owner</span>));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Transferred</span> { <span class="ident">proto_hash</span>, <span class="ident">owner_id</span>: <span class="ident">new_owner</span> });
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -1663,7 +1663,7 @@
 			<span class="ident">transaction_index::index</span>(<span class="ident">extrinsic_index</span>, <span class="ident">data</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u32</span>, <span class="ident">data_hash</span>);
 
 			<span class="comment">// also emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::MetadataChanged</span>(<span class="ident">proto_hash</span>, <span class="ident">metadata_key</span>.<span class="ident">clone</span>()));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::MetadataChanged</span> { <span class="ident">proto_hash</span>, <span class="ident">cid</span>: <span class="ident">metadata_key</span>.<span class="ident">clone</span>() });
 
 			<span class="macro">log::debug!</span>(<span class="string">&quot;Added metadata to proto: {:x?} with key: {:x?}&quot;</span>, <span class="ident">proto_hash</span>, <span class="ident">metadata_key</span>);
 
@@ -1754,7 +1754,7 @@
 			<span class="op">&lt;</span><span class="ident">AccountStakes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::append</span>(<span class="ident">who</span>.<span class="ident">clone</span>(), <span class="ident">proto_hash</span>.<span class="ident">clone</span>());
 
 			<span class="comment">// also emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Staked</span>(<span class="ident">proto_hash</span>, <span class="ident">who</span>, <span class="ident">amount</span>)); <span class="comment">// 问Gio</span>
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Staked</span> { <span class="ident">proto_hash</span>, <span class="ident">account_id</span>: <span class="ident">who</span>, <span class="ident">balance</span>: <span class="ident">amount</span> }); <span class="comment">// 问Gio</span>
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -1797,7 +1797,7 @@
 			});
 
 			<span class="comment">// also emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Unstaked</span>(<span class="ident">proto_hash</span>, <span class="ident">who</span>, <span class="ident">stake</span>.<span class="number">0</span>));
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Unstaked</span> { <span class="ident">proto_hash</span>, <span class="ident">account_id</span>: <span class="ident">who</span>, <span class="ident">balance</span>: <span class="ident">stake</span>.<span class="number">0</span> });
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -1841,7 +1841,7 @@
 					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">owner</span>) <span class="op">=</span> <span class="ident">owner</span> {
 						<span class="kw">if</span> <span class="ident">owner</span> <span class="op">==</span> <span class="kw-2">*</span><span class="ident">who</span> {
 							<span class="comment">// owner can include freely</span>
-							<span class="kw">continue</span>;
+							<span class="kw">continue</span>
 						}
 					}
 
@@ -1850,7 +1850,7 @@
 						<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">cost</span>.<span class="ident">into</span>();
 						<span class="kw">if</span> <span class="ident">cost</span> <span class="op">==</span> <span class="number">0</span> {
 							<span class="comment">// free</span>
-							<span class="kw">continue</span>;
+							<span class="kw">continue</span>
 						}
 						<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">T::Balance</span> <span class="op">=</span> <span class="ident">cost</span>.<span class="ident">saturated_into</span>();
 						<span class="kw">let</span> <span class="ident">stake</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ProtoStakes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">reference</span>, <span class="ident">who</span>.<span class="ident">clone</span>());
@@ -1858,15 +1858,15 @@
 							<span class="macro">ensure!</span>(<span class="ident">stake</span>.<span class="number">0</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">cost</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotEnoughStaked</span>);
 						} <span class="kw">else</span> {
 							<span class="comment">// Stake not found</span>
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::StakeNotFound</span>.<span class="ident">into</span>());
+							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::StakeNotFound</span>.<span class="ident">into</span>())
 						}
 					<span class="comment">// OK to include, just continue</span>
 					} <span class="kw">else</span> {
-						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Unauthorized</span>.<span class="ident">into</span>());
+						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Unauthorized</span>.<span class="ident">into</span>())
 					}
 				} <span class="kw">else</span> {
 					<span class="comment">// Proto not found</span>
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ReferenceNotFound</span>.<span class="ident">into</span>());
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ReferenceNotFound</span>.<span class="ident">into</span>())
 				}
 			}
 			<span class="prelude-val">Ok</span>(())
@@ -1881,9 +1881,9 @@
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">struct_proto</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">proto_id</span>) {
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">avail</span>) <span class="op">=</span> <span class="ident">avail</span> {
 					<span class="kw">if</span> <span class="ident">avail</span> <span class="op">&amp;&amp;</span> <span class="ident">struct_proto</span>.<span class="ident">include_cost</span>.<span class="ident">is_none</span>() {
-						<span class="kw">return</span> <span class="bool-val">false</span>;
+						<span class="kw">return</span> <span class="bool-val">false</span>
 					} <span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">avail</span> <span class="op">&amp;&amp;</span> <span class="ident">struct_proto</span>.<span class="ident">include_cost</span>.<span class="ident">is_some</span>() {
-						<span class="kw">return</span> <span class="bool-val">false</span>;
+						<span class="kw">return</span> <span class="bool-val">false</span>
 					}
 				}
 
@@ -1963,7 +1963,7 @@
 					}
 				} <span class="kw">else</span> {
 					<span class="comment">// `owner` doesn&#39;t exist in `ProtosByOwner`</span>
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Owner not found&quot;</span>.<span class="ident">into</span>());
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Owner not found&quot;</span>.<span class="ident">into</span>())
 				}
 			} <span class="kw">else</span> {
 				<span class="comment">// Notice this wastes time and memory and needs a better implementation</span>
@@ -1975,7 +1975,7 @@
 
 				<span class="kw">for</span> <span class="ident">category</span> <span class="kw">in</span> <span class="ident">cats</span> {
 					<span class="kw">if</span> <span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">category</span>) {
-						<span class="kw">continue</span>;
+						<span class="kw">continue</span>
 					}
 
 					<span class="kw">let</span> <span class="ident">protos</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ProtosByCategory</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">category</span>);
@@ -2030,17 +2030,17 @@
 						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">array_proto_id</span>) <span class="op">=</span> <span class="ident">array_proto_id</span>.<span class="ident">try_into</span>() {
 							<span class="ident">array_proto_id</span>
 						} <span class="kw">else</span> {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to convert proto_id to Hash256&quot;</span>.<span class="ident">into</span>());
+							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to convert proto_id to Hash256&quot;</span>.<span class="ident">into</span>())
 						}
 					} <span class="kw">else</span> {
-						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to decode proto_id&quot;</span>.<span class="ident">into</span>());
+						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to decode proto_id&quot;</span>.<span class="ident">into</span>())
 					};
 
 					<span class="kw">let</span> (<span class="ident">owner</span>, <span class="ident">map_metadata</span>, <span class="ident">include_cost</span>) <span class="op">=</span>
 						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">proto</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">array_proto_id</span>) {
 							(<span class="ident">proto</span>.<span class="ident">owner</span>, <span class="ident">proto</span>.<span class="ident">metadata</span>, <span class="ident">proto</span>.<span class="ident">include_cost</span>)
 						} <span class="kw">else</span> {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get proto&quot;</span>.<span class="ident">into</span>());
+							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get proto&quot;</span>.<span class="ident">into</span>())
 						};
 
 					<span class="kw">let</span> <span class="ident">map_proto</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">map_proto</span> {
@@ -2119,5 +2119,5 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (87588a2af 2022-07-13)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (f8588549c 2022-07-18)" ></div>
 </body></html>
