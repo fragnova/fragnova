@@ -553,6 +553,8 @@ pub mod pallet {
 			// TO REVIEW
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
 
+			ensure!(<Publishing<T>>::contains_key(&fragment_hash), Error::<T>::NotFound); // Ensure `fragment_hash` is currently published
+
 			// ! Writing
 
 			<Publishing<T>>::remove(&fragment_hash); // Remove Fragment Definition `fragment_hash` from `Publishing`
