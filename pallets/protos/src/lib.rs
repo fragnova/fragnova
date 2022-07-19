@@ -208,19 +208,19 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A Proto-Fragment was uploaded
-		Uploaded(Hash256, Vec<u8>),
+		Uploaded { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment was patched
-		Patched(Hash256, Vec<u8>),
+		Patched { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment metadata has changed
-		MetadataChanged(Hash256, Vec<u8>),
+		MetadataChanged { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment was detached
-		Detached(Hash256, Vec<u8>),
+		Detached { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment was transferred
-		Transferred(Hash256, T::AccountId),
+		Transferred { proto_hash: Hash256, owner_id: T::AccountId },
 		/// Stake was created
-		Staked(Hash256, T::AccountId, T::Balance),
+		Staked { proto_hash: Hash256, account_id: T::AccountId, balance: T::Balance },
 		/// Stake was unlocked
-		Unstaked(Hash256, T::AccountId, T::Balance),
+		Unstaked { proto_hash: Hash256, account_id: T::AccountId, balance: T::Balance },
 	}
 
 	// Errors inform users that something went wrong.
@@ -360,7 +360,7 @@ pub mod pallet {
 			let cid = [&b"z"[..], cid.as_bytes()].concat();
 
 			// also emit event
-			Self::deposit_event(Event::Uploaded(proto_hash, cid));
+			Self::deposit_event(Event::Uploaded { proto_hash, cid });
 
 			log::debug!("Uploaded proto: {:?}", proto_hash);
 
@@ -465,7 +465,7 @@ pub mod pallet {
 			let cid = [&b"z"[..], cid.as_bytes()].concat();
 
 			// also emit event
-			Self::deposit_event(Event::Patched(proto_hash, cid));
+			Self::deposit_event(Event::Patched { proto_hash, cid });
 
 			log::debug!("Updated proto: {:?}", proto_hash);
 
@@ -526,7 +526,7 @@ pub mod pallet {
 			});
 
 			// emit event
-			Self::deposit_event(Event::Transferred(proto_hash, new_owner));
+			Self::deposit_event(Event::Transferred { proto_hash, owner_id: new_owner });
 
 			Ok(())
 		}
@@ -600,7 +600,7 @@ pub mod pallet {
 			transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 
 			// also emit event
-			Self::deposit_event(Event::MetadataChanged(proto_hash, metadata_key.clone()));
+			Self::deposit_event(Event::MetadataChanged { proto_hash, cid: metadata_key.clone() });
 
 			log::debug!("Added metadata to proto: {:x?} with key: {:x?}", proto_hash, metadata_key);
 
@@ -691,7 +691,7 @@ pub mod pallet {
 			<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
 
 			// also emit event
-			Self::deposit_event(Event::Staked(proto_hash, who, amount)); // 问Gio
+			Self::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); // 问Gio
 
 			Ok(())
 		}
@@ -734,7 +734,7 @@ pub mod pallet {
 			});
 
 			// also emit event
-			Self::deposit_event(Event::Unstaked(proto_hash, who, stake.0));
+			Self::deposit_event(Event::Unstaked { proto_hash, account_id: who, balance: stake.0 });
 
 			Ok(())
 		}
@@ -778,7 +778,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue;
+							continue
 						}
 					}
 
@@ -787,7 +787,7 @@ pub mod pallet {
 						let cost: u64 = cost.into();
 						if cost == 0 {
 							// free
-							continue;
+							continue
 						}
 						let cost: T::Balance = cost.saturated_into();
 						let stake = <ProtoStakes<T>>::get(reference, who.clone());
@@ -795,15 +795,15 @@ pub mod pallet {
 							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
 						} else {
 							// Stake not found
-							return Err(Error::<T>::StakeNotFound.into());
+							return Err(Error::<T>::StakeNotFound.into())
 						}
 					// OK to include, just continue
 					} else {
-						return Err(Error::<T>::Unauthorized.into());
+						return Err(Error::<T>::Unauthorized.into())
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into());
+					return Err(Error::<T>::ReferenceNotFound.into())
 				}
 			}
 			Ok(())
@@ -818,9 +818,9 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.include_cost.is_none() {
-						return false;
+						return false
 					} else if !avail && struct_proto.include_cost.is_some() {
-						return false;
+						return false
 					}
 				}
 
@@ -900,7 +900,7 @@ pub mod pallet {
 					}
 				} else {
 					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into());
+					return Err("Owner not found".into())
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -912,7 +912,7 @@ pub mod pallet {
 
 				for category in cats {
 					if params.categories.len() != 0 && !params.categories.contains(&category) {
-						continue;
+						continue
 					}
 
 					let protos = <ProtosByCategory<T>>::get(category);
@@ -967,17 +967,17 @@ pub mod pallet {
 						if let Ok(array_proto_id) = array_proto_id.try_into() {
 							array_proto_id
 						} else {
-							return Err("Failed to convert proto_id to Hash256".into());
+							return Err("Failed to convert proto_id to Hash256".into())
 						}
 					} else {
-						return Err("Failed to decode proto_id".into());
+						return Err("Failed to decode proto_id".into())
 					};
 
 					let (owner, map_metadata, include_cost) =
 						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
 							(proto.owner, proto.metadata, proto.include_cost)
 						} else {
-							return Err("Failed to get proto".into());
+							return Err("Failed to get proto".into())
 						};
 
 					let map_proto = match map_proto {
