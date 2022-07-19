@@ -814,8 +814,10 @@ pub mod pallet {
 
 				// handle expiration
 				if let Some(expiring_at) = item_data.expiring_at {
-					let expiration = if let Some(expiration) = expiration {
+					let expiration = 
+					if let Some(expiration) = expiration {
 						if expiration < expiring_at {
+							item_data.expiring_at = Some(expiration); 
 							expiration
 						} else {
 							expiring_at
@@ -825,6 +827,7 @@ pub mod pallet {
 					};
 					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
 				} else if let Some(expiration) = expiration {
+					item_data.expiring_at = Some(expiration); 
 					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
 				}
 
