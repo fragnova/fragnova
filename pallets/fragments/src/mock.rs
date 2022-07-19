@@ -36,7 +36,7 @@ frame_support::construct_runtime!(
 		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		BalancesPallet: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+		AssetsPallet: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Tickets: pallet_tickets::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -165,7 +165,12 @@ impl pallet_detach::Config for Test {
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	t.into()
+
+	let mut ext = sp_io::TestExternalities::new(t);
+
+	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
+
+	ext
 }
 
 

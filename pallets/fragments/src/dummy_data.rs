@@ -80,6 +80,11 @@ impl Definition {
 			.concat(),
 		)
 	}
+
+	pub fn get_vault_account_id(&self) -> sp_core::ed25519::Public { 
+		let hash = blake2_256(&[&b"fragments-vault"[..], &self.get_definition_id()].concat());
+		sp_core::ed25519::Public::from_raw(hash)
+	}
 }
 
 
@@ -201,10 +206,10 @@ impl DummyData {
 				metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None },
 				permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 				unique: None, 
-				max_supply: Some(123456789), // with max supply!
+				max_supply: Some(1234), // with max supply!
 			},
 			price: 3,
-			quantity: Some(333),
+			quantity: Some(123),
 			expires: None,
 			amount: None, 
 		};
@@ -223,9 +228,9 @@ impl DummyData {
 				metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
 				permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 				unique: None, 
-				max_supply: Some(123456789),
+				max_supply: Some(1234),
 			},
-			buy_options: FragmentBuyOptions::Quantity(12345),
+			buy_options: FragmentBuyOptions::Quantity(123),
 			amount: None,
 		};
 
@@ -242,7 +247,7 @@ impl DummyData {
 				metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
 				permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 				unique: Some(UniqueOptions { mutable: false }), 
-				max_supply: Some(123456789),
+				max_supply: Some(1234),
 			},
 			buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
 			amount: None,
@@ -263,14 +268,14 @@ impl DummyData {
 					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
 					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER, 
 					unique: None, 
-					max_supply: Some(123456789) 
+					max_supply: Some(1234) 
 				}, 
 				price: 6, 
-				quantity: None, 
-				expires: Some(999999999), 
+				quantity: Some(123), 
+				expires: Some(999), 
 				amount: None, 
 			},
-			buy_options: FragmentBuyOptions::Quantity(12345),
+			buy_options: FragmentBuyOptions::Quantity(123),
 		};
 
 		let buy_unique = Buy {
@@ -287,11 +292,11 @@ impl DummyData {
 					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
 					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER, 
 					unique: Some(UniqueOptions { mutable: false }), 
-					max_supply: Some(123456789) 
+					max_supply: Some(1234) 
 				}, 
 				price: 6, 
-				quantity: None, 
-				expires: Some(999999999), 
+				quantity: Some(123), 
+				expires: Some(999), 
 				amount: None, 
 			},
 			buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
@@ -313,16 +318,16 @@ impl DummyData {
 					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
 					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER, // no copy perms
 					unique: Some(UniqueOptions { mutable: false }), 
-					max_supply: Some(123456789),
+					max_supply: Some(1234),
 				},
 				buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
 				amount: None,
 			},
-			edition_id: 0,
+			edition_id: 1,
 			copy_id: 1,
 			to: sp_core::ed25519::Public::from_raw([69u8; 32]),
 			new_permissions: Some(FragmentPerms::NONE),
-			expiration: Some(999999999),
+			expiration: Some(999),
 		};
 
 		let give_copy_perms = Give {
@@ -339,16 +344,16 @@ impl DummyData {
 					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
 					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER | FragmentPerms::COPY, // copy perms
 					unique: Some(UniqueOptions { mutable: false }), 
-					max_supply: Some(123456789),
+					max_supply: Some(1234),
 				},
 				buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
 				amount: None,
 			},
-			edition_id: 0,
+			edition_id: 1,
 			copy_id: 1,
 			to: sp_core::ed25519::Public::from_raw([69u8; 32]),
 			new_permissions: Some(FragmentPerms::NONE),
-			expiration: Some(999999999),
+			expiration: Some(999),
 		};
 
 		let create_account = CreateAccount {
@@ -365,12 +370,12 @@ impl DummyData {
 					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
 					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 					unique: Some(UniqueOptions { mutable: false }), 
-					max_supply: Some(123456789),
+					max_supply: Some(1234),
 				},
 				buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
 				amount: None,
 			},
-			edition_id: 0,
+			edition_id: 1,
 			copy_id: 1,		
 		};
 
