@@ -267,6 +267,16 @@ pub mod pallet {
 		FragmentInstance<T::BlockNumber>,
 	>;
 
+	#[pallet::storage]
+	pub type UniqueData2Edition<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		Hash128, // Fragment Definition ID
+		Identity,
+		Hash256, // Unique Data's Hash
+		Unit // Edition ID
+	>;
+
 	/// StorageDoubleMap that maps a **Fragment Definition and the 
 	/// Owner of a Fragment Instance that was created from the aforementioned Fragment Definition** 
 	/// to a 
@@ -368,6 +378,8 @@ pub mod pallet {
 		ParamsNotValid,
 		/// This should not really happen
 		SystematicFailure,
+		/// Fragment Instance already uploaded with the same unique data
+		UniqueDataExists
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -1007,21 +1019,33 @@ impl<T: Config> Pallet<T> {
 			ensure!(expiring_at > current_block_number, Error::<T>::ParamsNotValid); // Ensure `expiring_at` > `current_block_number`
 		}
 
-		let data = match options {
+		let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
+		
+		// we need this to index transactions
+		let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index() // `<frame_system::Pallet<T>>::extrinsic_index()` is defined as: "Gets the index of extrinsic that is currently executing." (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)
+		.ok_or(Error::<T>::SystematicFailure)?;
+
+		let (data_hash, data_len) = match options {
 			FragmentBuyOptions::UniqueData(data) => {
+
+				if fragment_data.unique.is_none() || quantity != 1 {
+					return Err(Error::<T>::ParamsNotValid.into())
+				}
+
 				let data_hash = blake2_256(&data);
-				let data_len = data.len();
 
-				// we need this to index transactions
-				let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index() // `<frame_system::Pallet<T>>::extrinsic_index()` is defined as: "Gets the index of extrinsic that is currently executing." (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)
-					.ok_or(Error::<T>::SystematicFailure)?;
+				ensure!(!<UniqueData2Edition<T>>::contains_key(fragment_hash, data_hash), Error::<T>::UniqueDataExists);
 
-				// index immutable data for IPFS discovery
-				transaction_index::index(extrinsic_index, data_len as u32, data_hash);
-
-				Some(data_hash)
+				(Some(data_hash), Some(data.len()))
 			},
-			_ => None,
+			FragmentBuyOptions::Quantity(_) => { 
+				
+				if fragment_data.unique.is_some() {
+					return Err(Error::<T>::ParamsNotValid.into())
+				}
+
+				(None, None)
+			},
 		};
 
 		let existing: Unit = <EditionsCount<T>>::get(&fragment_hash).unwrap_or(Compact(0)).into();
@@ -1042,8 +1066,6 @@ impl<T: Config> Pallet<T> {
 			}
 		} else {
 			// We still don't wanna go over supply limit
-			let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
-
 			if let Some(max_supply) = fragment_data.max_supply {
 				let max: Unit = max_supply.into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
@@ -1053,6 +1075,8 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 		}
+
+		// ! Writing if successful
 
 		<Definitions<T>>::mutate(fragment_hash, |fragment| {
 			// Get the `FragmentDefinition` struct from `fragment_hash`
@@ -1066,7 +1090,7 @@ impl<T: Config> Pallet<T> {
 						FragmentInstance {
 							permissions: fragment.permissions,
 							created_at: current_block_number,
-							custom_data: data,
+							custom_data: data_hash,
 							expiring_at,
 							amount,
 						},
@@ -1084,6 +1108,14 @@ impl<T: Config> Pallet<T> {
 
 					Self::deposit_event(Event::InventoryAdded(to.clone(), *fragment_hash, (id, 1)));
 				}
+
+				if let (Some(data_hash), Some(data_len)) = (data_hash, data_len)  {
+					<UniqueData2Edition<T>>::insert(fragment_hash, data_hash, existing); // if `data` exists, `quantity` is ensured to be 1
+
+					// index immutable data for IPFS discovery
+					transaction_index::index(extrinsic_index, data_len as u32, data_hash);
+				}
+
 				<EditionsCount<T>>::insert(fragment_hash, Compact(existing + quantity));
 			}
 		});
