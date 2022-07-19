@@ -81,11 +81,17 @@ version = '4.0.0-dev'
 default-features = false
 path = '../detach'
 
-[dependencies.pallet-tickets]
+[dependencies.pallet-accounts]
 default-features = false
-path = '../tickets'
+path = '../accounts'
 
 [dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/clamor-io/substrate.git'
+tag = 'clamor-04-07-2022'
+version = '4.0.0-dev'
+
+[dependencies.pallet-proxy]
 default-features = false
 git = 'https://github.com/clamor-io/substrate.git'
 tag = 'clamor-04-07-2022'
@@ -97,7 +103,7 @@ sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-featu
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
 serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
-protos = { version = "0.1.11", default-features = false }
+protos = { version = "0.1.13", default-features = false }
 base58 = { version = "0.2.0", default-features = false }
 
 # [dev-dependencies]

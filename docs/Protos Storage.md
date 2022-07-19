@@ -50,9 +50,9 @@ pub struct ProtoPatch<TBlockNumber> {
 }
 
 #[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
-pub struct TicketsInfo {
-	pub active_tickets: u128,
-	pub liftime_tickets: u128,
+pub struct AccountsInfo {
+	pub active_accounts: u128,
+	pub liftime_accounts: u128,
 }
 
 /// Struct of a Proto-Fragment
@@ -77,8 +77,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub tags: Vec<Compact<u64>>,
 	/// Metadata attached to the proto.
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
-	/// Tickets information for this proto.
-	pub tickets_info: TicketsInfo,
+	/// Accounts information for this proto.
+	pub accounts_info: AccountsInfo,
 }
 ```
 ### LinkSource
@@ -93,7 +93,7 @@ An `ExternalAsset` can represent anything external that can be unequivocally ide
 ### ProtoPatch
 #### Remarks
 While references can be added. They cannot be removed as both Shards side would be hard (imagine removing a dependency from a released library), but especially because of the royalties distribution we don't allow removal.
-### TicketsInfo
+### AccountsInfo
 This struct is purely to collect stats and metrics about a proto for now.
 ### Proto
 ## Storage
