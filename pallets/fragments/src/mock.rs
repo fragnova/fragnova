@@ -27,7 +27,7 @@ frame_support::construct_runtime!(
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		BalancesPallet: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		AssetsPallet: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Tickets: pallet_accounts::{Pallet, Call, Storage, Event<T>},
+		AccountsPallet: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 	}
 );

@@ -27,13 +27,13 @@ use upload_tests::upload as upload;
 use stake_tests::stake_ as stake_;
 
 
-use pallet_tickets::EthLockUpdate;
+use pallet_accounts::EthLockUpdate;
 use frame_system::offchain::SigningTypes;
-use copied_from_pallet_tickets::lock_ as lock_;
-use copied_from_pallet_tickets::link_ as link_;
+use copied_from_pallet_accounts::lock_ as lock_;
+use copied_from_pallet_accounts::link_ as link_;
 
 
-mod copied_from_pallet_tickets {
+mod copied_from_pallet_accounts {
 
 	use super::*;
 
@@ -48,11 +48,11 @@ mod copied_from_pallet_tickets {
             block_number: lock.block_number,
         };
 
-        TicketsPallet::internal_lock_update(Origin::none(), payload, sp_core::ed25519::Signature([69u8; 64]))
+        AccountsPallet::internal_lock_update(Origin::none(), payload, sp_core::ed25519::Signature([69u8; 64]))
     }
 
 	pub fn link_(signer: <Test as frame_system::Config>::AccountId, link_signature: &sp_core::ecdsa::Signature) -> DispatchResult {
-        TicketsPallet::link(
+        AccountsPallet::link(
             Origin::signed(signer),
             link_signature.clone()
         )
@@ -119,7 +119,7 @@ mod upload_tests {
 				category: proto.category.clone(),
 				tags: Vec::new(), // proto.tags,
 				metadata: BTreeMap::new(),
-				tickets_info: TicketsInfo::default(),
+				accounts_info: AccountsInfo::default(),
 			};
 
 			// Ensure that this test case fails if a new field is ever added to the `Proto` struct
@@ -133,7 +133,7 @@ mod upload_tests {
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id)).unwrap().contains(&proto.get_proto_hash()));
 
 			let event = <frame_system::Pallet<Test>>::events().pop().expect("Expected at least one EventRecord to be found").event;
-        	assert_eq!(event, mock::Event::from(pallet_protos::Event::Uploaded(proto.get_proto_hash(), proto.get_proto_cid())));
+        	assert_eq!(event, mock::Event::from(pallet_protos::Event::Uploaded { proto_hash: proto.get_proto_hash(), cid: proto.get_proto_cid() }));
 		});
 	}
 
@@ -259,6 +259,7 @@ mod patch_tests {
 			patch.proto_fragment.clone().get_proto_hash(), 
 			patch.include_cost.map(|cost| Compact::from(cost)), 
 			patch.new_references.clone(), 
+			None, // TODO
 			patch.new_data.clone()
 		)
 	}
@@ -283,7 +284,7 @@ mod patch_tests {
 			let event = <frame_system::Pallet<Test>>::events().pop().expect("Expected at least one EventRecord to be found").event;
         	assert_eq!(
 				event, 
-				mock::Event::from(pallet_protos::Event::Patched(patch.proto_fragment.get_proto_hash(), patch.get_data_cid()))
+				mock::Event::from(pallet_protos::Event::Patched { proto_hash: patch.proto_fragment.get_proto_hash(), cid: patch.get_data_cid() })
 			);
 				
 
@@ -522,7 +523,7 @@ mod transfer_tests {
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second)).unwrap().contains(&proto.get_proto_hash()));	
 
 			let event = <frame_system::Pallet<Test>>::events().pop().expect("Expected at least one EventRecord to be found").event;
-			assert_eq!(event, mock::Event::from(pallet_protos::Event::Transferred(proto.get_proto_hash(), dd.account_id_second)));
+			assert_eq!(event, mock::Event::from(pallet_protos::Event::Transferred { proto_hash: proto.get_proto_hash(), owner_id: dd.account_id_second }));
 			
 		});
 	}
@@ -601,7 +602,7 @@ mod set_metadata_tests {
 			assert_eq!(<MetaKeysIndex<Test>>::get(), key_count + 1); // @sinkingsugar
 
 			let event = <frame_system::Pallet<Test>>::events().pop().expect("Expected at least one EventRecord to be found").event;
-			assert_eq!(event, mock::Event::from(pallet_protos::Event::MetadataChanged(metadata.proto_fragment.get_proto_hash(), metadata.metadata_key.clone())));
+			assert_eq!(event, mock::Event::from(pallet_protos::Event::MetadataChanged { proto_hash: metadata.proto_fragment.get_proto_hash(), cid: metadata.metadata_key.clone() }));
 		});
 
 	}
@@ -658,7 +659,7 @@ mod stake_tests {
 	
 			upload(dd.account_id, &stake.proto_fragment);
 
-			let frag_staked = <pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
+			let frag_staked = <pallet_accounts::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
 
 			let current_block_number = System::block_number(); //@sinkingsugar
 
@@ -673,7 +674,7 @@ mod stake_tests {
 			);
 
 			assert_eq!(
-				<pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap(), 
+				<pallet_accounts::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap(), 
 				frag_staked.saturating_add(stake.get_stake_amount())
 			);
 
@@ -687,11 +688,11 @@ mod stake_tests {
 			assert_eq!(
 				event, 
 				mock::Event::from(
-					pallet_protos::Event::Staked(
-						stake.proto_fragment.get_proto_hash(), 
-						dd.account_id, 
-						stake.get_stake_amount()
-					)
+					pallet_protos::Event::Staked {
+						proto_hash: stake.proto_fragment.get_proto_hash(), 
+						account_id: dd.account_id, 
+						balance: stake.get_stake_amount()
+					}
 				)
 			);
 
@@ -734,9 +735,9 @@ mod stake_tests {
 			lock_(&stake.lock);
 			link_(stake.lock.get_link().clamor_account_id, &stake.lock.get_link().get_link_signature());
 
-			let frag_locked = <pallet_tickets::EthLockedFrag<Test>>::get(stake.lock.get_link().get_ethereum_account_id()).unwrap()
+			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(stake.lock.get_link().get_ethereum_account_id()).unwrap()
 							.amount;
-			let frag_staked = <pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
+			let frag_staked = <pallet_accounts::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
 			let balance = frag_locked - frag_staked;
 
 			assert_ok!(
@@ -765,9 +766,9 @@ mod stake_tests {
 			lock_(&stake.lock);
 			link_(stake.lock.get_link().clamor_account_id, &stake.lock.get_link().get_link_signature());
 
-			let frag_locked = <pallet_tickets::EthLockedFrag<Test>>::get(stake.lock.get_link().get_ethereum_account_id()).unwrap()
+			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(stake.lock.get_link().get_ethereum_account_id()).unwrap()
 							.amount;
-			let frag_staked = <pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
+			let frag_staked = <pallet_accounts::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
 			let balance = frag_locked - frag_staked;
 
 			assert_noop!(
@@ -805,7 +806,7 @@ mod unstake_tests {
 	
 			upload(dd.account_id, &stake.proto_fragment);
 
-			let frag_staked = <pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
+			let frag_staked = <pallet_accounts::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap_or_default();
 
 			let current_block_number = System::block_number(); //@sinkingsugar
 
@@ -825,7 +826,7 @@ mod unstake_tests {
 			assert_ok!(unstake_(stake.lock.get_link().clamor_account_id, &stake.proto_fragment));
 
 			assert_eq!(
-				<pallet_tickets::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap(), 
+				<pallet_accounts::FragUsage<Test>>::get(stake.lock.get_link().clamor_account_id).unwrap(), 
 				frag_staked
 			);
 	
@@ -845,11 +846,11 @@ mod unstake_tests {
 			assert_eq!(
 				event, 
 				mock::Event::from(
-					pallet_protos::Event::Unstaked(
-						stake.proto_fragment.get_proto_hash(), 
-						stake.lock.get_link().clamor_account_id, 
-						stake.get_stake_amount()
-					)
+					pallet_protos::Event::Unstaked{
+						proto_hash: stake.proto_fragment.get_proto_hash(), 
+						account_id: stake.lock.get_link().clamor_account_id, 
+						balance: stake.get_stake_amount()
+					}
 				)
 			);
 

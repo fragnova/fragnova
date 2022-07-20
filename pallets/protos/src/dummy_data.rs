@@ -1,6 +1,6 @@
 use crate::*;
 
-pub use pallet_tickets::dummy_data::{
+pub use pallet_accounts::dummy_data::{
 	Lock, Link,
 };
 

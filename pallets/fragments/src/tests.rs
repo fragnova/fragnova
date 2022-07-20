@@ -210,7 +210,9 @@ mod publish_tests {
         	assert_eq!(
 				event, 
 				mock::Event::from(
-					pallet_fragments::Event::Publishing(publish.definition.get_definition_id())
+					pallet_fragments::Event::Publishing { 
+						fragment_hash: publish.definition.get_definition_id()
+					}
 				)
 			);
 
@@ -390,7 +392,9 @@ mod unpublish_tests {
         	assert_eq!(
 				event, 
 				mock::Event::from(
-					pallet_fragments::Event::Unpublishing(publish.definition.get_definition_id())
+					pallet_fragments::Event::Unpublishing { 
+						fragment_hash: publish.definition.get_definition_id()
+					}
 				)
 			);
 
@@ -544,11 +548,11 @@ mod mint_tests {
 				assert_eq!(
 					event, 
 					mock::Event::from(
-						pallet_fragments::Event::InventoryAdded(
-							dd.account_id,
-							mint_non_unique.definition.get_definition_id(),
-							(edition_id, 1)
-						)
+						pallet_fragments::Event::InventoryAdded{
+							account_id: dd.account_id,
+							fragment_hash: mint_non_unique.definition.get_definition_id(),
+							fragment_id: (edition_id, 1)
+						}
 					)
 				);
 
@@ -626,11 +630,11 @@ mod mint_tests {
 			assert_eq!(
 				event, 
 				mock::Event::from(
-					pallet_fragments::Event::InventoryAdded(
-						dd.account_id,
-						mint_unique.definition.get_definition_id(),
-						(1, 1)
-					)
+					pallet_fragments::Event::InventoryAdded {
+						account_id: dd.account_id,
+						fragment_hash: mint_unique.definition.get_definition_id(),
+						fragment_id: (1, 1)
+					}
 				)
 			);
 
@@ -920,11 +924,11 @@ mod buy_tests {
 				assert_eq!(
 					System::events()[5 + edition_id as usize].event.clone(), // we do `5 +` because events were also emitted when we did `upload()` and `create()` and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events) 
 					mock::Event::from(
-						pallet_fragments::Event::InventoryAdded(
-							dd.account_id_second,
-							buy_non_unique.publish.definition.get_definition_id(),
-							(edition_id, 1)
-						)
+						pallet_fragments::Event::InventoryAdded {
+							account_id: dd.account_id_second,
+							fragment_hash: buy_non_unique.publish.definition.get_definition_id(),
+							fragment_id: (edition_id, 1)
+						}
 					)
 				);
 
@@ -1042,11 +1046,11 @@ mod buy_tests {
 			assert_eq!(
 				System::events()[6 as usize].event.clone(), // we do `6` because events were also emitted when we did `upload()` and `create()` and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
 				mock::Event::from(
-					pallet_fragments::Event::InventoryAdded(
-						dd.account_id_second,
-						buy_unique.publish.definition.get_definition_id(),
-						(1, 1)
-					)
+					pallet_fragments::Event::InventoryAdded {
+						account_id: dd.account_id_second,
+						fragment_hash: buy_unique.publish.definition.get_definition_id(),
+						fragment_id: (1, 1)
+					}
 				)
 			);
 
@@ -1577,11 +1581,11 @@ mod give_tests {
         	assert_eq!(
 				event, 
 				mock::Event::from(
-					pallet_fragments::Event::InventoryRemoved(
-						dd.account_id,
-						give.mint.definition.get_definition_id(), 
-						(give.edition_id, give.copy_id)
-					)
+					pallet_fragments::Event::InventoryRemoved {
+						account_id: dd.account_id,
+						fragment_hash: give.mint.definition.get_definition_id(), 
+						fragment_id: (give.edition_id, give.copy_id)
+					}
 				)
 			);
 			
@@ -1589,11 +1593,11 @@ mod give_tests {
         	assert_eq!(
 				event, 
 				mock::Event::from(
-					pallet_fragments::Event::InventoryAdded(
-						give.to,
-						give.mint.definition.get_definition_id(), 
-						(give.edition_id, give.copy_id)
-					)
+					pallet_fragments::Event::InventoryAdded {
+						account_id: give.to,
+						fragment_hash: give.mint.definition.get_definition_id(), 
+						fragment_id: (give.edition_id, give.copy_id)
+					}
 				)
 			);
 
@@ -1676,11 +1680,11 @@ mod give_tests {
         	assert_eq!(
 				event, 
 				mock::Event::from(
-					pallet_fragments::Event::InventoryAdded(
-						give.to,
-						give.mint.definition.get_definition_id(), 
-						(give.edition_id, give.copy_id + 1)
-					)
+					pallet_fragments::Event::InventoryAdded {
+						account_id: give.to,
+						fragment_hash: give.mint.definition.get_definition_id(), 
+						fragment_id: (give.edition_id, give.copy_id + 1)
+					}
 				)
 			);
 

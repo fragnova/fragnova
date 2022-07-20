@@ -1,4 +1,4 @@
-use crate as pallet_tickets;
+use crate as pallet_accounts;
 use crate::*;
 
 use frame_support::{
@@ -60,7 +60,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		TicketsPallet: pallet_tickets::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
+		AccountsPallet: pallet_accounts::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
@@ -162,20 +162,20 @@ impl pallet_assets::Config for Test {
 }
 
 
-impl pallet_tickets::EthFragContract for Test {
+impl pallet_accounts::EthFragContract for Test {
 	fn get_partner_contracts() -> Vec<String> {
 		vec![String::from("0xBADF00D")]
 	}
 }
 
-impl pallet_tickets::Config for Test {
+impl pallet_accounts::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthConfirmations = ConstU64<1>;
 	type EthFragContract = Test;
 	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_tickets::crypto::FragAuthId;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
 impl pallet_proxy::Config for Test {
