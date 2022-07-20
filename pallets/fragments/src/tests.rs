@@ -1,4 +1,4 @@
-use crate::{mock::*, Classes, Error, FragmentMetadata, Proto2Fragments};
+use crate::{mock::*, Definitions, Error, FragmentMetadata, Proto2Fragments};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
 use protos::categories::{Categories, TextCategories};
@@ -40,7 +40,7 @@ fn create_should_works() {
 			None,
 			None
 		));
-		assert!(Classes::<Test>::contains_key(&hash));
+		assert!(Definitions::<Test>::contains_key(&hash));
 		assert!(Proto2Fragments::<Test>::contains_key(&PROTO_HASH));
 	});
 }
@@ -110,7 +110,7 @@ fn create_should_not_work_if_fragment_already_exist() {
 			None,
 			None
 		));
-		assert!(Classes::<Test>::contains_key(&hash));
+		assert!(Definitions::<Test>::contains_key(&hash));
 
 		assert_noop!(
 			FragmentsPallet::create(
