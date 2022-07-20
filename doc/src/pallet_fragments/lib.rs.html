@@ -847,7 +847,299 @@
 <span id="841">841</span>
 <span id="842">842</span>
 <span id="843">843</span>
-</pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+<span id="844">844</span>
+<span id="845">845</span>
+<span id="846">846</span>
+<span id="847">847</span>
+<span id="848">848</span>
+<span id="849">849</span>
+<span id="850">850</span>
+<span id="851">851</span>
+<span id="852">852</span>
+<span id="853">853</span>
+<span id="854">854</span>
+<span id="855">855</span>
+<span id="856">856</span>
+<span id="857">857</span>
+<span id="858">858</span>
+<span id="859">859</span>
+<span id="860">860</span>
+<span id="861">861</span>
+<span id="862">862</span>
+<span id="863">863</span>
+<span id="864">864</span>
+<span id="865">865</span>
+<span id="866">866</span>
+<span id="867">867</span>
+<span id="868">868</span>
+<span id="869">869</span>
+<span id="870">870</span>
+<span id="871">871</span>
+<span id="872">872</span>
+<span id="873">873</span>
+<span id="874">874</span>
+<span id="875">875</span>
+<span id="876">876</span>
+<span id="877">877</span>
+<span id="878">878</span>
+<span id="879">879</span>
+<span id="880">880</span>
+<span id="881">881</span>
+<span id="882">882</span>
+<span id="883">883</span>
+<span id="884">884</span>
+<span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
+<span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
+<span id="891">891</span>
+<span id="892">892</span>
+<span id="893">893</span>
+<span id="894">894</span>
+<span id="895">895</span>
+<span id="896">896</span>
+<span id="897">897</span>
+<span id="898">898</span>
+<span id="899">899</span>
+<span id="900">900</span>
+<span id="901">901</span>
+<span id="902">902</span>
+<span id="903">903</span>
+<span id="904">904</span>
+<span id="905">905</span>
+<span id="906">906</span>
+<span id="907">907</span>
+<span id="908">908</span>
+<span id="909">909</span>
+<span id="910">910</span>
+<span id="911">911</span>
+<span id="912">912</span>
+<span id="913">913</span>
+<span id="914">914</span>
+<span id="915">915</span>
+<span id="916">916</span>
+<span id="917">917</span>
+<span id="918">918</span>
+<span id="919">919</span>
+<span id="920">920</span>
+<span id="921">921</span>
+<span id="922">922</span>
+<span id="923">923</span>
+<span id="924">924</span>
+<span id="925">925</span>
+<span id="926">926</span>
+<span id="927">927</span>
+<span id="928">928</span>
+<span id="929">929</span>
+<span id="930">930</span>
+<span id="931">931</span>
+<span id="932">932</span>
+<span id="933">933</span>
+<span id="934">934</span>
+<span id="935">935</span>
+<span id="936">936</span>
+<span id="937">937</span>
+<span id="938">938</span>
+<span id="939">939</span>
+<span id="940">940</span>
+<span id="941">941</span>
+<span id="942">942</span>
+<span id="943">943</span>
+<span id="944">944</span>
+<span id="945">945</span>
+<span id="946">946</span>
+<span id="947">947</span>
+<span id="948">948</span>
+<span id="949">949</span>
+<span id="950">950</span>
+<span id="951">951</span>
+<span id="952">952</span>
+<span id="953">953</span>
+<span id="954">954</span>
+<span id="955">955</span>
+<span id="956">956</span>
+<span id="957">957</span>
+<span id="958">958</span>
+<span id="959">959</span>
+<span id="960">960</span>
+<span id="961">961</span>
+<span id="962">962</span>
+<span id="963">963</span>
+<span id="964">964</span>
+<span id="965">965</span>
+<span id="966">966</span>
+<span id="967">967</span>
+<span id="968">968</span>
+<span id="969">969</span>
+<span id="970">970</span>
+<span id="971">971</span>
+<span id="972">972</span>
+<span id="973">973</span>
+<span id="974">974</span>
+<span id="975">975</span>
+<span id="976">976</span>
+<span id="977">977</span>
+<span id="978">978</span>
+<span id="979">979</span>
+<span id="980">980</span>
+<span id="981">981</span>
+<span id="982">982</span>
+<span id="983">983</span>
+<span id="984">984</span>
+<span id="985">985</span>
+<span id="986">986</span>
+<span id="987">987</span>
+<span id="988">988</span>
+<span id="989">989</span>
+<span id="990">990</span>
+<span id="991">991</span>
+<span id="992">992</span>
+<span id="993">993</span>
+<span id="994">994</span>
+<span id="995">995</span>
+<span id="996">996</span>
+<span id="997">997</span>
+<span id="998">998</span>
+<span id="999">999</span>
+<span id="1000">1000</span>
+<span id="1001">1001</span>
+<span id="1002">1002</span>
+<span id="1003">1003</span>
+<span id="1004">1004</span>
+<span id="1005">1005</span>
+<span id="1006">1006</span>
+<span id="1007">1007</span>
+<span id="1008">1008</span>
+<span id="1009">1009</span>
+<span id="1010">1010</span>
+<span id="1011">1011</span>
+<span id="1012">1012</span>
+<span id="1013">1013</span>
+<span id="1014">1014</span>
+<span id="1015">1015</span>
+<span id="1016">1016</span>
+<span id="1017">1017</span>
+<span id="1018">1018</span>
+<span id="1019">1019</span>
+<span id="1020">1020</span>
+<span id="1021">1021</span>
+<span id="1022">1022</span>
+<span id="1023">1023</span>
+<span id="1024">1024</span>
+<span id="1025">1025</span>
+<span id="1026">1026</span>
+<span id="1027">1027</span>
+<span id="1028">1028</span>
+<span id="1029">1029</span>
+<span id="1030">1030</span>
+<span id="1031">1031</span>
+<span id="1032">1032</span>
+<span id="1033">1033</span>
+<span id="1034">1034</span>
+<span id="1035">1035</span>
+<span id="1036">1036</span>
+<span id="1037">1037</span>
+<span id="1038">1038</span>
+<span id="1039">1039</span>
+<span id="1040">1040</span>
+<span id="1041">1041</span>
+<span id="1042">1042</span>
+<span id="1043">1043</span>
+<span id="1044">1044</span>
+<span id="1045">1045</span>
+<span id="1046">1046</span>
+<span id="1047">1047</span>
+<span id="1048">1048</span>
+<span id="1049">1049</span>
+<span id="1050">1050</span>
+<span id="1051">1051</span>
+<span id="1052">1052</span>
+<span id="1053">1053</span>
+<span id="1054">1054</span>
+<span id="1055">1055</span>
+<span id="1056">1056</span>
+<span id="1057">1057</span>
+<span id="1058">1058</span>
+<span id="1059">1059</span>
+<span id="1060">1060</span>
+<span id="1061">1061</span>
+<span id="1062">1062</span>
+<span id="1063">1063</span>
+<span id="1064">1064</span>
+<span id="1065">1065</span>
+<span id="1066">1066</span>
+<span id="1067">1067</span>
+<span id="1068">1068</span>
+<span id="1069">1069</span>
+<span id="1070">1070</span>
+<span id="1071">1071</span>
+<span id="1072">1072</span>
+<span id="1073">1073</span>
+<span id="1074">1074</span>
+<span id="1075">1075</span>
+<span id="1076">1076</span>
+<span id="1077">1077</span>
+<span id="1078">1078</span>
+<span id="1079">1079</span>
+<span id="1080">1080</span>
+<span id="1081">1081</span>
+<span id="1082">1082</span>
+<span id="1083">1083</span>
+<span id="1084">1084</span>
+<span id="1085">1085</span>
+<span id="1086">1086</span>
+<span id="1087">1087</span>
+<span id="1088">1088</span>
+<span id="1089">1089</span>
+<span id="1090">1090</span>
+<span id="1091">1091</span>
+<span id="1092">1092</span>
+<span id="1093">1093</span>
+<span id="1094">1094</span>
+<span id="1095">1095</span>
+<span id="1096">1096</span>
+<span id="1097">1097</span>
+<span id="1098">1098</span>
+<span id="1099">1099</span>
+<span id="1100">1100</span>
+<span id="1101">1101</span>
+<span id="1102">1102</span>
+<span id="1103">1103</span>
+<span id="1104">1104</span>
+<span id="1105">1105</span>
+<span id="1106">1106</span>
+<span id="1107">1107</span>
+<span id="1108">1108</span>
+</pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! IMPORTANT STUFF TO KNOW:</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! # Fragment Definition</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! A Fragment Definition is created using a Proto-Fragment (see pallet `protos`).</span>
+<span class="doccomment">//! A Fragment Definition&#39;s ID can be determinstically computed using its Proto-Fragment hash and </span>
+<span class="doccomment">//! its metadata struct `FragmentMetadata`.</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! A Fragment Definition is essentially a digital asset that can be used to enhance the user experience in a game or application, </span>
+<span class="doccomment">//! like an in-game item or user account. A Fragment has its own storage, metadata and digital life on its own.</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! # Fragment Instance</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! A Fragment Instance is created from a Fragment Definition. </span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! It is a digital asset that can be used to enhance the user experience in a game or application, </span>
+<span class="doccomment">//! like an in-game item or user account.</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! Each Fragment Instance also has an edition number. </span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! Therefore, a Fragment Instance can be uniquely identified using its Fragment Definition&#39;s ID, its Edition ID and its Copy ID.</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! The Copy ID allows us to distinguish a Fragment Instance that has the same Fragment Definition ID and the same Edition ID.</span>
+
+<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">mock</span>;
@@ -882,12 +1174,14 @@
 
 <span class="kw">type</span> <span class="ident">Unit</span> <span class="op">=</span> <span class="ident">u64</span>;
 
-<span class="doccomment">/// **Struct** that represents a **Fragment&#39;s Metadata**</span>
+<span class="doccomment">/// **Struct** of a **Fragment Definition&#39;s Metadata**</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FragmentMetadata</span><span class="op">&lt;</span><span class="ident">TFungibleAsset</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// **Name** of the **Fragment** (*NOTE: No other Fragment created using the same Proto-Fragment is allowed to have the same name*)</span>
+	<span class="doccomment">/// **Name** of the **Fragment Definition** </span>
 	<span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">currency</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TFungibleAsset</span><span class="op">&gt;</span>, <span class="comment">// Where None is NOVA</span>
+	<span class="doccomment">/// **Currency** that the **buyer** of a **Fragment Instance that is created from the Fragment Definition** must **pay in**.</span>
+	<span class="doccomment">/// If this field is `None`, the currency the buyer must pay in is NOVA.</span>
+	<span class="kw">pub</span> <span class="ident">currency</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TFungibleAsset</span><span class="op">&gt;</span>, 
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
@@ -895,17 +1189,23 @@
 	<span class="kw">pub</span> <span class="ident">mutable</span>: <span class="ident">bool</span>,
 }
 
-<span class="doccomment">/// **Struct** of a **Fragment**</span>
+<span class="doccomment">/// **Struct** of a **Fragment Definition**</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FragmentClass</span><span class="op">&lt;</span><span class="ident">TFungibleAsset</span>, <span class="ident">TAccountId</span>, <span class="ident">TBlockNum</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FragmentDefinition</span><span class="op">&lt;</span><span class="ident">TFungibleAsset</span>, <span class="ident">TAccountId</span>, <span class="ident">TBlockNum</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// **Proto-Fragment used** to **create** the **Fragment**</span>
 	<span class="kw">pub</span> <span class="ident">proto_hash</span>: <span class="ident">Hash256</span>,
 	<span class="doccomment">/// ***FragmentMetadata* Struct** (the **struct** contains the **Fragment&#39;s name**, among other things)</span>
 	<span class="kw">pub</span> <span class="ident">metadata</span>: <span class="ident">FragmentMetadata</span><span class="op">&lt;</span><span class="ident">TFungibleAsset</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// The next owner permissions</span>
+	<span class="doccomment">/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to </span>
+	<span class="doccomment">/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)</span>
+	<span class="doccomment">/// </span>
+	<span class="doccomment">/// These **allowed set of actions of the Fragment Instance** ***may change*** </span>
+	<span class="doccomment">/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).</span>
 	<span class="kw">pub</span> <span class="ident">permissions</span>: <span class="ident">FragmentPerms</span>,
-	<span class="comment">// If Fragments must contain unique data when created (injected by buyers, validated by the system)</span>
-	<span class="doccomment">/// Whether the **Fragment** is **mutable**</span>
+	<span class="comment">// Notes from Giovanni:</span>
+	<span class="comment">//</span>
+	<span class="comment">// If Fragment Instances (created from the Fragment Definition) must contain unique data when created (injected by buyers, validated by the system) </span>
+	<span class="doccomment">/// Whether the **Fragment Definition** is **mutable**</span>
 	<span class="kw">pub</span> <span class="ident">unique</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">UniqueOptions</span><span class="op">&gt;</span>,
 	<span class="doccomment">/// If scarce, the max supply of the Fragment</span>
 	<span class="kw">pub</span> <span class="ident">max_supply</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span><span class="op">&gt;</span>,
@@ -915,32 +1215,69 @@
 	<span class="kw">pub</span> <span class="ident">created_at</span>: <span class="ident">TBlockNum</span>,
 }
 
+<span class="doccomment">/// **Struct** of a **Fragment Instance**</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Footnotes:</span>
+<span class="doccomment">/// </span>
+<span class="doccomment">/// #### Remarks</span>
+<span class="doccomment">///  </span>
+<span class="doccomment">/// * On purpose not storing owner because:</span>
+<span class="doccomment">///   * Big, 32 bytes</span>
+<span class="doccomment">///   * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InstanceData</span><span class="op">&lt;</span><span class="ident">TBlockNum</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FragmentInstance</span><span class="op">&lt;</span><span class="ident">TBlockNum</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive</span>
+	<span class="doccomment">/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) **allowed to be done** </span>
+	<span class="doccomment">/// to the **Fragment Instance** (e.g edit, transfer etc.)</span>
+	<span class="doccomment">/// </span>
+	<span class="doccomment">/// These **allowed set of actions of the Fragment Instance** ***may change*** </span>
+	<span class="doccomment">/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).</span>
 	<span class="kw">pub</span> <span class="ident">permissions</span>: <span class="ident">FragmentPerms</span>,
-	<span class="doccomment">/// The block number when the item was created</span>
+	<span class="doccomment">/// Block number in which the Fragment Instance was created</span>
 	<span class="kw">pub</span> <span class="ident">created_at</span>: <span class="ident">TBlockNum</span>,
 	<span class="doccomment">/// Custom data, if unique, this is the hash of the data that can be fetched using bitswap directly on our nodes</span>
 	<span class="kw">pub</span> <span class="ident">custom_data</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Hash256</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Expiring at block, if not None, the item will be removed after this date</span>
+	<span class="doccomment">/// Block number that the Fragment Instance expires at (*optional*)</span>
 	<span class="kw">pub</span> <span class="ident">expiring_at</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TBlockNum</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// If the item is a stack, the amount of units left in the stack</span>
+	<span class="doccomment">/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), </span>
+	<span class="doccomment">/// the **number of items** that are **left** in the **stack of stackable items**</span>
 	<span class="kw">pub</span> <span class="ident">amount</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
+<span class="doccomment">/// Struct **representing** a sale of the **Fragment Definition** . </span>
+<span class="doccomment">/// </span>
+<span class="doccomment">/// Note: When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Footnotes:</span>
+<span class="doccomment">/// </span>
+<span class="doccomment">/// #### Remarks</span>
+<span class="doccomment">///</span>
+<span class="doccomment">///`price` is using `u128` and not `T::Balance` because the latter requires a whole lot of traits to be satisfied.. rust headakes.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PublishingData</span><span class="op">&lt;</span><span class="ident">TBlockNum</span><span class="op">&gt;</span> {
+	<span class="doccomment">/// **Fee** that is **needed to be paid** to create a **single Fragment Instance** from the **Fragment Definition**</span>
 	<span class="kw">pub</span> <span class="ident">price</span>: <span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// **Amount of Fragment Instances** that **can be bought** </span>
 	<span class="kw">pub</span> <span class="ident">units_left</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Block number that the sale ends at (*optional*)</span>
 	<span class="kw">pub</span> <span class="ident">expiration</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">TBlockNum</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// If the item is a stack, the amount of units to top up</span>
+	<span class="doccomment">/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), </span>
+	<span class="doccomment">/// the **number of items** to **top up** in the **stack of stackable items** // EMERICK</span>
 	<span class="kw">pub</span> <span class="ident">amount</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
+
+<span class="doccomment">/// **Enum** indicating whether to </span>
+<span class="doccomment">/// **create one Fragment Instance with custom data attached to it** </span>
+<span class="doccomment">/// or whether to</span>
+<span class="doccomment">/// **create multiple Fragment Instances (with no custom data attached)**</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">FragmentBuyOptions</span> {
+	<span class="doccomment">/// Create create *&quot;x&quot;* Number of Fragment Instances to create,</span>
+	<span class="doccomment">/// where *&quot;x&quot;* is the associated `u64` value inside the enum variant</span>
 	<span class="ident">Quantity</span>(<span class="ident">u64</span>),
+	<span class="doccomment">/// Create a single Fragment Instance with custom data *&quot;x&quot;* attached to it, </span>
+	<span class="doccomment">/// where *&quot;x&quot;* is the assosicated `Vec&lt;u8&gt;` value inside the enum variant</span>
 	<span class="ident">UniqueData</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>),
 }
 
@@ -965,27 +1302,53 @@
 	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
 	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
 
-	<span class="comment">// proto-hash to fragment-hash-sequence</span>
-	<span class="doccomment">/// **StorageMap** that maps a **Proto-Fragment** to a **list of hashes, where each hash is: the hash of the concatenation of the aforementioned Proto-Fragment and a corresponding Fragment&#39;s name**</span>
+
+	<span class="doccomment">/// **StorageMap** that maps a **Proto-Fragment** </span>
+	<span class="doccomment">/// to a </span>
+	<span class="doccomment">/// **list of Fragment Definitions that were created using the aforementioned Proto-Fragment**</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Proto2Fragments</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, <span class="ident">Hash256</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Hash128</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
 	<span class="comment">// fragment-hash to fragment-data</span>
-	<span class="doccomment">/// **StorageMap** that maps the **hash of the concatenation of a Proto-Fragment and a corresponding Fragment&#39;s name** to a ***Fragment* struct of the aforementioned Fragment**</span>
+	<span class="doccomment">/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `FragmentMetadata`)**</span>
+	<span class="doccomment">/// to a </span>
+	<span class="doccomment">/// ***FragmentDefinition* struct**</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
-		<span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, <span class="ident">Hash128</span>, <span class="ident">FragmentClass</span><span class="op">&lt;</span><span class="ident">T::AssetId</span>, <span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
+		<span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, <span class="ident">Hash128</span>, <span class="ident">FragmentDefinition</span><span class="op">&lt;</span><span class="ident">T::AssetId</span>, <span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
+	<span class="doccomment">/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `FragmentMetadata`)** </span>
+	<span class="doccomment">/// to a </span>
+	<span class="doccomment">/// ***PublishingData* struct (of the aforementioned Fragment Definition)**</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Publishing</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
 		<span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, <span class="ident">Hash128</span>, <span class="ident">PublishingData</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
+	<span class="doccomment">/// **StorageMap** that maps a **Fragment Definition ID**</span>
+	<span class="doccomment">/// to the </span>
+	<span class="doccomment">/// **total number of unique Edition IDs** found in the </span>
+	<span class="doccomment">/// **Fragment Instances that have the aforementioned Fragment Definition ID**</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">EditionsCount</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, <span class="ident">Hash128</span>, <span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
+	<span class="doccomment">/// **StorageMap** that maps a **tuple that contains a Fragment Definition ID and an Edition ID** </span>
+	<span class="doccomment">/// to the </span>
+	<span class="doccomment">/// **total number of Fragment Instances that have the Fragment Definition ID and the Edition ID** </span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CopiesCount</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, (<span class="ident">Hash128</span>, <span class="ident">Unit</span>), <span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
+	<span class="doccomment">/// **StorageNMap** that maps the **Fragment Definition ID of a Fragment Instance, </span>
+	<span class="doccomment">/// the Fragment Edition ID of the aforementioned Fragment Instance and </span>
+	<span class="doccomment">/// the Copy ID of the aforementioned Fragment Instance** </span>
+	<span class="doccomment">/// to a </span>
+	<span class="doccomment">/// ***`FragmentInstance`* struct**</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// Footnotes:</span>
+	<span class="doccomment">/// </span>
+	<span class="doccomment">///  #### Keys hashing reasoning</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// Very long key, means takes a lot of redundant storage (because we will have **many** Instances!), we try to limit the  damage by using `Identity` so that the final key will be:</span>
+	<span class="doccomment">/// `[16 bytes of Fragment class hash]+[8 bytes of u64, edition]+[8 bytes of u64, copy id]` for a total of 32 bytes.</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Fragments</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageNMap</span><span class="op">&lt;</span>
 		<span class="kw">_</span>,
@@ -997,9 +1360,19 @@
 			<span class="comment">// Copies</span>
 			<span class="ident">storage::Key</span><span class="op">&lt;</span><span class="ident">Identity</span>, <span class="ident">Unit</span><span class="op">&gt;</span>,
 		),
-		<span class="ident">InstanceData</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span><span class="op">&gt;</span>,
+		<span class="ident">FragmentInstance</span><span class="op">&lt;</span><span class="ident">T::BlockNumber</span><span class="op">&gt;</span>,
 	<span class="op">&gt;</span>;
 
+	<span class="doccomment">/// StorageDoubleMap that maps a **Fragment Definition and the </span>
+	<span class="doccomment">/// Owner of a Fragment Instance that was created from the aforementioned Fragment Definition** </span>
+	<span class="doccomment">/// to a </span>
+	<span class="doccomment">/// **tuple that contains the Fragment Instance&#39;s Edition ID and the Fragment Instance&#39;s Copy ID**</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// This storage item stores the exact same thing as `Inventory`, except that the primary key and the secondary key are swapped</span>
+	<span class="doccomment">/// </span>
+	<span class="doccomment">/// Footnotes:</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// Notice this pulls from memory (and deserializes (scale)) the whole `Vec&lt;_,_&gt;`, this is on purpose as it should not be too big.</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Owners</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageDoubleMap</span><span class="op">&lt;</span>
 		<span class="kw">_</span>,
@@ -1010,6 +1383,15 @@
 		<span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span>, <span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 	<span class="op">&gt;</span>;
 
+	<span class="doccomment">/// StorageDoubleMap that maps the **Owner of a Fragment Instance and the Fragment Instance&#39;s Fragment Definition** </span>
+	<span class="doccomment">/// to a </span>
+	<span class="doccomment">/// **tuple that contains the Fragment Instance&#39;s Edition ID and the Fragment Instance&#39;s Copy ID**</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// This storage item stores the exact same thing as `Owners`, except that the primary key and the secondary key are swapped</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// Footnotes:</span>
+	<span class="doccomment">/// </span>
+	<span class="doccomment">/// Notice this pulls from memory (and deserializes (scale)) the whole `Vec&lt;_,_&gt;`, this is on purpose as it should not be too big.</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Inventory</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageDoubleMap</span><span class="op">&lt;</span>
 		<span class="kw">_</span>,
@@ -1020,6 +1402,14 @@
 		<span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span>, <span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span>)<span class="op">&gt;</span>,
 	<span class="op">&gt;</span>;
 
+	<span class="doccomment">/// StorageMap that maps the **Block Number that a Fragment Instance expires at** </span>
+	<span class="doccomment">/// to a </span>
+	<span class="doccomment">/// **tuple that contains the Fragment Instance&#39;s Fragment Definition ID, the Fragment Instance&#39;s Edition ID and </span>
+	<span class="doccomment">/// the Fragment Instance&#39;s Copy ID**</span>
+	<span class="doccomment">/// </span>
+	<span class="doccomment">/// Footnotes:</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">///  Fragment Instances can expire, we process expirations every `on_finalize`</span>
 	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
 	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Expirations</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
 		<span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Twox64Concat</span>, <span class="ident">T::BlockNumber</span>, <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Hash128</span>, <span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span>, <span class="ident">Compact</span><span class="op">&lt;</span><span class="ident">Unit</span><span class="op">&gt;</span>)<span class="op">&gt;</span><span class="op">&gt;</span>;
@@ -1027,8 +1417,8 @@
 	<span class="attribute">#[<span class="ident">pallet::event</span>]</span>
 	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// New class created by account, class hash</span>
-		<span class="ident">ClassCreated</span> { <span class="ident">fragment_hash</span>: <span class="ident">Hash128</span> },
+		<span class="doccomment">/// New definition created by account, definition hash</span>
+		<span class="ident">DefinitionCreated</span> {<span class="ident">fragment_hash</span>: <span class="ident">Hash128</span>},
 		<span class="doccomment">/// Fragment sale has been opened</span>
 		<span class="ident">Publishing</span> { <span class="ident">fragment_hash</span>: <span class="ident">Hash128</span> },
 		<span class="doccomment">/// Fragment sale has been closed</span>
@@ -1091,15 +1481,27 @@
 	<span class="comment">// Dispatchable functions must be annotated with a weight and must return a DispatchResult.</span>
 	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
 	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// **Create** a **Fragment** using an **existing Proto-Fragment** (NOTE: ***Only* the Proto-Fragment&#39;s owner** is **allowed to create a Fragment using the Proto-Fragment**)</span>
+		<span class="doccomment">/// **Create** a **Fragment Definition** using an **existing Proto-Fragment**.</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// Note: **Only** the **Proto-Fragment&#39;s owner** is **allowed** to **create** a **Fragment Definition**</span>
+		<span class="doccomment">/// using the **Proto-Fragment**</span>
 		<span class="doccomment">///</span>
 		<span class="doccomment">/// # Arguments</span>
+		<span class="doccomment">///</span>
 		<span class="doccomment">/// * `origin` - **Origin** of the **extrinsic function**</span>
 		<span class="doccomment">/// * `proto_hash` - **Hash** of an **existing Proto-Fragment**</span>
-		<span class="doccomment">/// * `metadata` -  **Metadata** of the **Fragment**</span>
-		<span class="doccomment">/// * `unique` - **Whether** the **Fragment** is **unique**</span>
-		<span class="doccomment">/// * `mutable` - **Whether** the **Fragment** is **mutable**</span>
-		<span class="doccomment">/// * `max_supply` (*optional*) - **Maximum amount of items** that **can ever be created** using the **Fragment** (INCDT)</span>
+		<span class="doccomment">/// * `metadata` -  **Metadata** of the **Fragment Definition**</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// * `permissions` - **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) </span>
+		<span class="doccomment">/// that are **allowed to be done** to **any Fragment Instance** when it **first gets created** </span>
+		<span class="doccomment">/// from the **Fragment Definition that is created in this extrnisic function** (e.g edit, transfer etc.)</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// Note: These **allowed set of actions of a created Fragment Instance** ***may change*** </span>
+		<span class="doccomment">/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// * `unique` (*optional*) - **Whether** the **Fragment Definiton** is **unique**</span>
+		<span class="doccomment">/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)** </span>
+		<span class="doccomment">/// that **can be created** using the **Fragment Definition** </span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::WeightInfo::create</span>())]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
@@ -1111,22 +1513,24 @@
 		) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 			<span class="kw">let</span> <span class="ident">proto</span>: <span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span> <span class="op">=</span>
-				<span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">proto_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoNotFound</span>)<span class="question-mark">?</span>;
+				<span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">proto_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoNotFound</span>)<span class="question-mark">?</span>; <span class="comment">// Get `Proto` struct from `proto_hash`</span>
 
 			<span class="kw">let</span> <span class="ident">proto_owner</span>: <span class="ident">T::AccountId</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">proto</span>.<span class="ident">owner</span> {
+				<span class="comment">// Get `proto_owner` from `proto.owner`</span>
 				<span class="ident">ProtoOwner::User</span>(<span class="ident">owner</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">owner</span>),
 				<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoOwnerNotFound</span>),
 			}<span class="question-mark">?</span>;
 
-			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">==</span> <span class="ident">proto_owner</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoPermission</span>);
+			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">==</span> <span class="ident">proto_owner</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoPermission</span>); <span class="comment">// Only proto owner can create a fragment definition from proto</span>
 
-			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">DetachedHashes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Detached</span>);
+			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">DetachedHashes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Detached</span>); <span class="comment">// proto must not have been detached</span>
 
 			<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">blake2_128</span>(
+				<span class="comment">// This is the unique id of the Fragment Definition that will be created</span>
 				<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>[..], <span class="kw-2">&amp;</span><span class="ident">metadata</span>.<span class="ident">name</span>.<span class="ident">encode</span>(), <span class="kw-2">&amp;</span><span class="ident">metadata</span>.<span class="ident">currency</span>.<span class="ident">encode</span>()].<span class="ident">concat</span>(),
 			);
 
-			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AlreadyExist</span>);
+			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AlreadyExist</span>); <span class="comment">// If fragment already exists, throw error</span>
 
 			<span class="kw">let</span> <span class="ident">current_block_number</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::block_number</span>();
 
@@ -1138,7 +1542,7 @@
 			<span class="kw">let</span> <span class="ident">min_balance</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_assets::Config</span><span class="op">&gt;</span><span class="ident">::Currency::minimum_balance</span>();
 			<span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">pallet_assets::Config</span><span class="op">&gt;</span><span class="ident">::Currency::reserve</span>(<span class="kw-2">&amp;</span><span class="ident">vault</span>, <span class="ident">min_balance</span>)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">fragment_data</span> <span class="op">=</span> <span class="ident">FragmentClass</span> {
+			<span class="kw">let</span> <span class="ident">fragment_data</span> <span class="op">=</span> <span class="ident">FragmentDefinition</span> {
 				<span class="ident">proto_hash</span>,
 				<span class="ident">metadata</span>,
 				<span class="ident">permissions</span>,
@@ -1147,14 +1551,27 @@
 				<span class="ident">creator</span>: <span class="ident">who</span>.<span class="ident">clone</span>(),
 				<span class="ident">created_at</span>: <span class="ident">current_block_number</span>,
 			};
-			<span class="op">&lt;</span><span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>, <span class="ident">fragment_data</span>);
+			<span class="op">&lt;</span><span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="kw-2">&amp;</span><span class="ident">hash</span>, <span class="ident">fragment_data</span>);
 
 			<span class="ident">Proto2Fragments</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::append</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>, <span class="ident">hash</span>);
 
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::ClassCreated</span> { <span class="ident">fragment_hash</span>: <span class="ident">hash</span> });
+			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::DefinitionCreated</span>{ <span class="ident">fragment_hash</span>: <span class="ident">hash</span>});
 			<span class="prelude-val">Ok</span>(())
 		}
 
+		<span class="doccomment">/// Put the **Fragment Definition `fragment_hash`** on sale. When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// Note: **Only** the **Fragment&#39;s Proto-Fragment&#39;s owner** is **allowed** to put the **Fragment** on sale</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// # Arguments</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// * `origin` - **Origin** of the **extrinsic function**</span>
+		<span class="doccomment">/// * `fragment_hash` - ID of the **Fragment Definition** to put on sale</span>
+		<span class="doccomment">/// * `price` -  **Price** to **buy** a **single Fragment Instance** that is created from the **Fragment Definition*</span>
+		<span class="doccomment">/// * `quantity` (*optional*) - **Maximum amount of Fragment Instances** that **can be bought** </span>
+		<span class="doccomment">/// * `expires` (*optional*) - **Block number** that the sale ends at (*optional*)</span>
+		<span class="doccomment">/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), </span>
+		<span class="doccomment">/// the **number of items** to **top up** in the **stack of stackable items**</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">50_000</span>)]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">publish</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
@@ -1167,34 +1584,36 @@
 			<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">proto_hash</span> <span class="op">=</span>
-				<span class="op">&lt;</span><span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>.<span class="ident">proto_hash</span>;
+				<span class="op">&lt;</span><span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>.<span class="ident">proto_hash</span>; <span class="comment">// Get `proto_hash` from `fragment_hash`</span>
 			<span class="kw">let</span> <span class="ident">proto</span>: <span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span> <span class="op">=</span>
-				<span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">proto_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoNotFound</span>)<span class="question-mark">?</span>;
+				<span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">proto_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoNotFound</span>)<span class="question-mark">?</span>; <span class="comment">// Get `proto` from `proto_hash`</span>
 
 			<span class="kw">let</span> <span class="ident">proto_owner</span>: <span class="ident">T::AccountId</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">proto</span>.<span class="ident">owner</span> {
+				<span class="comment">// Get `proto_owner` from `proto`</span>
 				<span class="ident">ProtoOwner::User</span>(<span class="ident">owner</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">owner</span>),
 				<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoOwnerNotFound</span>),
 			}<span class="question-mark">?</span>;
 
-			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">==</span> <span class="ident">proto_owner</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoPermission</span>);
+			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">==</span> <span class="ident">proto_owner</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoPermission</span>); <span class="comment">// Ensure `who` is `proto_owner`</span>
 
 			<span class="comment">// TO REVIEW</span>
-			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">DetachedHashes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Detached</span>);
+			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">DetachedHashes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Detached</span>); <span class="comment">// Ensure `proto_hash` isn&#39;t detached</span>
 
-			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">Publishing</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">fragment_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SaleAlreadyOpen</span>);
+			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">Publishing</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">fragment_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SaleAlreadyOpen</span>); <span class="comment">// Ensure `fragment_hash` isn&#39;t already published</span>
 
-			<span class="kw">let</span> <span class="ident">fragment_data</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">fragment_data</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>; <span class="comment">// Get `FragmentDefinition` struct from `fragment_hash`</span>
 
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_supply</span>) <span class="op">=</span> <span class="ident">fragment_data</span>.<span class="ident">max_supply</span> {
 				<span class="kw">let</span> <span class="ident">max</span>: <span class="ident">Unit</span> <span class="op">=</span> <span class="ident">max_supply</span>.<span class="ident">into</span>();
-				<span class="kw">let</span> <span class="ident">existing</span>: <span class="ident">Unit</span> <span class="op">=</span>
+				<span class="kw">let</span> <span class="ident">existing</span>: <span class="ident">Unit</span> <span class="op">=</span> 
 					<span class="op">&lt;</span><span class="ident">EditionsCount</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">fragment_hash</span>).<span class="ident">unwrap_or</span>(<span class="ident">Compact</span>(<span class="number">0</span>)).<span class="ident">into</span>();
-				<span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="ident">max</span>.<span class="ident">saturating_sub</span>(<span class="ident">existing</span>);
+				<span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="ident">max</span>.<span class="ident">saturating_sub</span>(<span class="ident">existing</span>); <span class="comment">// `left` = `max` - `existing`</span>
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">quantity</span>) <span class="op">=</span> <span class="ident">quantity</span> {
 					<span class="kw">let</span> <span class="ident">quantity</span>: <span class="ident">Unit</span> <span class="op">=</span> <span class="ident">quantity</span>.<span class="ident">into</span>();
-					<span class="macro">ensure!</span>(<span class="ident">quantity</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">left</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::MaxSupplyReached</span>);
+					<span class="macro">ensure!</span>(<span class="ident">quantity</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">left</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::MaxSupplyReached</span>); <span class="comment">// Ensure that the function parameter `quantity` is smaller than or equal to `left`</span>
 				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ParamsNotValid</span>.<span class="ident">into</span>())
+					<span class="comment">// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist</span>
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ParamsNotValid</span>.<span class="ident">into</span>());
 				}
 				<span class="kw">if</span> <span class="ident">left</span> <span class="op">==</span> <span class="number">0</span> {
 					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::MaxSupplyReached</span>.<span class="ident">into</span>())
@@ -1218,35 +1637,63 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
+		<span class="doccomment">/// Take the **Fragment Definition `fragment_hash`** off sale. </span>
+		<span class="doccomment">/// When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// Note: **Only** the **Fragment&#39;s Proto-Fragment&#39;s owner** is **allowed** to take the Fragment off sale</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// # Arguments</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// * `origin` - **Origin** of the **extrinsic function**</span>
+		<span class="doccomment">/// * `fragment_hash` - **ID** of the **Fragment Definition** to take off sale</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">50_000</span>)]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">unpublish</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">fragment_hash</span>: <span class="ident">Hash128</span>) -&gt; <span class="ident">DispatchResult</span> {
 			<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
-
+			
 			<span class="kw">let</span> <span class="ident">proto_hash</span> <span class="op">=</span>
-				<span class="op">&lt;</span><span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>.<span class="ident">proto_hash</span>;
+				<span class="op">&lt;</span><span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>.<span class="ident">proto_hash</span>; <span class="comment">// Get `proto_hash` from `fragment_hash`</span>
 			<span class="kw">let</span> <span class="ident">proto</span>: <span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span> <span class="op">=</span>
 				<span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">proto_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoNotFound</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let</span> <span class="ident">proto_owner</span>: <span class="ident">T::AccountId</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">proto</span>.<span class="ident">owner</span> {
+				<span class="comment">// Get `proto_owner` from `proto`</span>
 				<span class="ident">ProtoOwner::User</span>(<span class="ident">owner</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">owner</span>),
 				<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoOwnerNotFound</span>),
 			}<span class="question-mark">?</span>;
 
-			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">==</span> <span class="ident">proto_owner</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoPermission</span>);
+			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">==</span> <span class="ident">proto_owner</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoPermission</span>); <span class="comment">// Ensure `who` is `proto_owner`</span>
 
 			<span class="comment">// TO REVIEW</span>
-			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">DetachedHashes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Detached</span>);
+			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">DetachedHashes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Detached</span>); <span class="comment">// Ensure `proto_hash` isn&#39;t detached</span>
 
 			<span class="comment">// ! Writing</span>
 
-			<span class="op">&lt;</span><span class="ident">Publishing</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="kw-2">&amp;</span><span class="ident">fragment_hash</span>);
+			<span class="op">&lt;</span><span class="ident">Publishing</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="kw-2">&amp;</span><span class="ident">fragment_hash</span>); <span class="comment">// Remove Fragment Definition `fragment_hash` from `Publishing`</span>
 
 			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Unpublishing</span> { <span class="ident">fragment_hash</span> });
 
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Proto owner can mint fragments (compatible with supply requirements)</span>
+		
+		<span class="doccomment">/// Create **Fragment instance(s)** from the **Fragment Definition `fragment_hash`** and </span>
+		<span class="doccomment">/// **assign their ownership** to **`origin`**</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// Note: **Each created Fragment instance** will have a **different Edition ID** and a **Copy ID of &quot;1&quot;**.</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// Note: **Only** the **Fragment Definition&#39;s Proto-Fragment&#39;s owner** is **allowed** to </span>
+		<span class="doccomment">/// create instance(s) of the Fragment in this extrinsic function.</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// # Arguments</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// * `origin` - **Origin** of the **extrinsic function**</span>
+		<span class="doccomment">/// * `fragment_hash` - **ID* of the **Fragment Definition**</span>
+		<span class="doccomment">/// * `options` - **Enum** indicating whether to </span>
+		<span class="doccomment">/// **create one Fragment Instance with custom data attached to it** or whether to  </span>
+		<span class="doccomment">/// **create multiple Fragment Instances (with no custom data attached)**</span>
+		<span class="doccomment">/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items** </span>
+		<span class="doccomment">/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), </span>
+		<span class="doccomment">/// `amount` is the **number of items** to **top up** in the **stack of stackable items**</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">50_000</span>)]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mint</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
@@ -1259,21 +1706,23 @@
 			<span class="kw">let</span> <span class="ident">current_block_number</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::block_number</span>();
 
 			<span class="kw">let</span> <span class="ident">proto_hash</span> <span class="op">=</span>
-				<span class="op">&lt;</span><span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>.<span class="ident">proto_hash</span>;
+				<span class="op">&lt;</span><span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>.<span class="ident">proto_hash</span>; <span class="comment">// Get `proto_hash` from `fragment_hash`</span>
 			<span class="kw">let</span> <span class="ident">proto</span>: <span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span> <span class="op">=</span>
-				<span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">proto_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoNotFound</span>)<span class="question-mark">?</span>;
+				<span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">proto_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoNotFound</span>)<span class="question-mark">?</span>; <span class="comment">// Get `proto` from `proto_hash`</span>
 
 			<span class="kw">let</span> <span class="ident">proto_owner</span>: <span class="ident">T::AccountId</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">proto</span>.<span class="ident">owner</span> {
+				<span class="comment">// Get `proto_owner` from `proto`</span>
 				<span class="ident">ProtoOwner::User</span>(<span class="ident">owner</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">owner</span>),
 				<span class="kw">_</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ProtoOwnerNotFound</span>),
 			}<span class="question-mark">?</span>;
 
-			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">==</span> <span class="ident">proto_owner</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoPermission</span>);
+			<span class="macro">ensure!</span>(<span class="ident">who</span> <span class="op">==</span> <span class="ident">proto_owner</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NoPermission</span>); <span class="comment">// Ensure `who` is `proto_owner`</span>
 
 			<span class="comment">// TO REVIEW</span>
-			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">DetachedHashes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Detached</span>);
+			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">DetachedHashes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">proto_hash</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Detached</span>); <span class="comment">// Ensure `proto_hash` isn&#39;t detached</span>
 
 			<span class="kw">let</span> <span class="ident">quantity</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">options</span> {
+				<span class="comment">// Number of fragment instances to mint</span>
 				<span class="ident">FragmentBuyOptions::Quantity</span>(<span class="ident">amount</span>) =&gt; <span class="ident">u64::from</span>(<span class="ident">amount</span>),
 				<span class="kw">_</span> =&gt; <span class="number">1u64</span>,
 			};
@@ -1283,16 +1732,33 @@
 			<span class="ident"><span class="self">Self</span>::mint_fragments</span>(
 				<span class="kw-2">&amp;</span><span class="ident">who</span>,
 				<span class="kw-2">&amp;</span><span class="ident">fragment_hash</span>,
-				<span class="prelude-val">None</span>,
+				<span class="prelude-val">None</span>, <span class="comment">// PublishingData (optional)</span>
 				<span class="kw-2">&amp;</span><span class="ident">options</span>,
 				<span class="ident">quantity</span>,
 				<span class="ident">current_block_number</span>,
-				<span class="prelude-val">None</span>,
+				<span class="prelude-val">None</span>, <span class="comment">// Block Number the Fragment(s) expire at (optional)</span>
 				<span class="ident">amount</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">Compact</span>(<span class="ident">x</span>)),
 			)
 		}
 
-		<span class="doccomment">/// When a sale is open users can buy fragments</span>
+		<span class="doccomment">/// Allows the Caller Account ID `origin` to create Fragment instance(s) of the Fragment Definition `fragment_hash`, </span>
+		<span class="doccomment">/// for a fee. The ownership of the created Fragment instance(s) is assigned to the Caller Account ID.</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// Note: Each created Fragment instance will have a different Edition ID and a Copy ID of &quot;1&quot;.</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// Note: The total fee that the buyer (i.e the Caller Account ID `origin`) must pay is the </span>
+		<span class="doccomment">/// specified price-per-instance multiplied by the total number of instance(s) that the buyer wants to create. (@karan)</span>
+		<span class="doccomment">/// This amount will be transferred to the Fragment Definition&#39;s Vault&#39;s Account ID.</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// # Arguments</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// * `origin` - **Origin** of the **extrinsic function**</span>
+		<span class="doccomment">/// * `fragment_hash` - **ID** of the **Fragment Definition**</span>
+		<span class="doccomment">/// * `options` - **Enum** indicating whether to </span>
+		<span class="doccomment">/// **create one Fragment Instance with custom data attached to it** or whether to </span>
+		<span class="doccomment">/// **create multiple Fragment Instances (with no custom data attached)**</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">50_000</span>)]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">buy</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
@@ -1303,7 +1769,7 @@
 
 			<span class="kw">let</span> <span class="ident">current_block_number</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::block_number</span>();
 
-			<span class="kw">let</span> <span class="ident">sale</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Publishing</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">sale</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Publishing</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>; <span class="comment">// if Fragment Definition `fragment_hash` is not published (i.e on sale), you cannot buy it</span>
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">expiration</span>) <span class="op">=</span> <span class="ident">sale</span>.<span class="ident">expiration</span> {
 				<span class="macro">ensure!</span>(<span class="ident">current_block_number</span> <span class="op">&lt;</span> <span class="ident">expiration</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Expired</span>);
 			}
@@ -1314,34 +1780,36 @@
 
 			<span class="kw">let</span> <span class="ident">price</span>: <span class="ident">u128</span> <span class="op">=</span> <span class="ident">sale</span>.<span class="ident">price</span>.<span class="ident">into</span>();
 
-			<span class="kw">let</span> <span class="ident">fragment_data</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">fragment_data</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">vault</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::get_vault_id</span>(<span class="ident">fragment_hash</span>);
+			<span class="kw">let</span> <span class="ident">vault</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::get_vault_id</span>(<span class="ident">fragment_hash</span>); <span class="comment">// Get the Vault Account ID of `fragment_hash`</span>
 
 			<span class="kw">let</span> <span class="ident">quantity</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">options</span> {
 				<span class="ident">FragmentBuyOptions::Quantity</span>(<span class="ident">amount</span>) =&gt; <span class="ident">u64::from</span>(<span class="ident">amount</span>),
 				<span class="kw">_</span> =&gt; <span class="number">1u64</span>,
 			};
 
-			<span class="kw">let</span> <span class="ident">price</span> <span class="op">=</span> <span class="ident">price</span>.<span class="ident">saturating_mul</span>(<span class="ident">quantity</span> <span class="kw">as</span> <span class="ident">u128</span>);
+			<span class="kw">let</span> <span class="ident">price</span> <span class="op">=</span> <span class="ident">price</span>.<span class="ident">saturating_mul</span>(<span class="ident">quantity</span> <span class="kw">as</span> <span class="ident">u128</span>); <span class="comment">// `price` = `price` * `quantity`</span>
 
 			<span class="comment">// ! Writing if successful</span>
 
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">currency</span>) <span class="op">=</span> <span class="ident">fragment_data</span>.<span class="ident">metadata</span>.<span class="ident">currency</span> {
 				<span class="op">&lt;</span><span class="ident">pallet_assets::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">Transfer</span><span class="op">&lt;</span><span class="ident">T::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::transfer</span>(
+					<span class="comment">// transfer `price` units of `currency` from `who` to `vault`</span>
 					<span class="ident">currency</span>,
 					<span class="kw-2">&amp;</span><span class="ident">who</span>,
 					<span class="kw-2">&amp;</span><span class="ident">vault</span>,
 					<span class="ident">price</span>.<span class="ident">saturated_into</span>(),
-					<span class="bool-val">true</span>,
+					<span class="bool-val">true</span>, <span class="comment">// investigate ???</span>
 				)
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InsufficientBalance</span>)<span class="question-mark">?</span>;
 			} <span class="kw">else</span> {
 				<span class="op">&lt;</span><span class="ident">pallet_balances::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="ident">T::AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::transfer</span>(
+					<span class="comment">// transfer `price` units of NOVA from `who` to `vault`</span>
 					<span class="kw-2">&amp;</span><span class="ident">who</span>,
 					<span class="kw-2">&amp;</span><span class="ident">vault</span>,
 					<span class="ident">price</span>.<span class="ident">saturated_into</span>(),
-					<span class="ident">ExistenceRequirement::KeepAlive</span>,
+					<span class="ident">ExistenceRequirement::KeepAlive</span>, <span class="comment">// investigate ???</span>
 				)
 				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::InsufficientBalance</span>)<span class="question-mark">?</span>;
 			}
@@ -1351,15 +1819,40 @@
 			<span class="ident"><span class="self">Self</span>::mint_fragments</span>(
 				<span class="kw-2">&amp;</span><span class="ident">who</span>,
 				<span class="kw-2">&amp;</span><span class="ident">fragment_hash</span>,
-				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">sale</span>),
+				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">sale</span>), <span class="comment">// PublishingData (optional)</span>
 				<span class="kw-2">&amp;</span><span class="ident">options</span>,
 				<span class="ident">quantity</span>,
 				<span class="ident">current_block_number</span>,
-				<span class="prelude-val">None</span>,
+				<span class="prelude-val">None</span>, <span class="comment">// Block Number that the Fragment Instance will expire at (optional)</span>
 				<span class="ident">sale</span>.<span class="ident">amount</span>,
 			)
 		}
 
+		<span class="doccomment">/// Give the **Fragment Instance whose Fragment Definition ID is `class`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// If the **current permitted actions of the Fragment Instance** allows for it to be duplicated (i.e if it has the permission **FragmentPerms::COPY**),</span>
+		<span class="doccomment">/// then it is duplicated and the duplicate&#39;s ownership is assigned to `to`.</span>
+		<span class="doccomment">/// Otherwise, its ownernship is transferred from `origin` to `to`.</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// Note: **Only** the **Fragment Instance&#39;s owner** is **allowed** to give the Fragment Instance</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// # Arguments</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// * `origin` - **Origin** of the **extrinsic function**</span>
+		<span class="doccomment">/// * `class` - Fragment Definition ID of the Fragment Instance to give</span>
+		<span class="doccomment">/// * `edition` - Edition ID of the Fragment Insance to give</span>
+		<span class="doccomment">/// * `copy` - Copy ID of the Fragment instance to give</span>
+		<span class="doccomment">/// * `to` - **Account ID** to give the Fragment instance to</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// * `new_permissions` (*optional*) - The permitted set of actions (encapsulated in a `FragmentPerms` bitflag enum) </span>
+		<span class="doccomment">/// that the account that is given the Fragment instance can do with it.</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// Note: `new_permissions` must be a subset of the current `permissions` field of the Fragment Instance; </span>
+		<span class="doccomment">/// therefore, the `new_permissions` can only be more restrictive (than the current `permissions` field of the Fragment Instance), </span>
+		<span class="doccomment">/// never more permissive</span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// * `expiration` (*optional*) - Block number that the duplicated Fragment Instance expires at. </span>
+		<span class="doccomment">/// If the Fragment Instance was not duplicated, this parameter is irrelevant.</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">50_000</span>)]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">give</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
@@ -1504,6 +1997,15 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
+		<span class="doccomment">/// Create the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class`, </span>
+		<span class="doccomment">/// whose Edition ID is `edition`** and whose Copy ID is `copy`**  </span>
+		<span class="doccomment">/// </span>
+		<span class="doccomment">/// # Arguments</span>
+		<span class="doccomment">///</span>
+		<span class="doccomment">/// * `origin` - **Origin** of the **extrinsic function**</span>
+		<span class="doccomment">/// * `class` - **Fragment Definition 	ID** of the **Fragment Instance**</span>
+		<span class="doccomment">/// * `edition` - **Edition ID** of the **Fragment Instance**</span>
+		<span class="doccomment">/// * `copy` - **Copy ID** of the **Fragment Instance**</span>
 		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">50_000</span>)]</span>
 		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_account</span>(
 			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
@@ -1537,6 +2039,9 @@
 
 	<span class="attribute">#[<span class="ident">pallet::hooks</span>]</span>
 	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Hooks</span><span class="op">&lt;</span><span class="ident">BlockNumberFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+		<span class="doccomment">/// During the block finalization phase,</span>
+		<span class="doccomment">/// clear all the *Fragment instance*-related Storage Items of any information regarding</span>
+		<span class="doccomment">/// Fragment instances that have already expired</span>
 		<span class="kw">fn</span> <span class="ident">on_finalize</span>(<span class="ident">n</span>: <span class="ident">T::BlockNumber</span>) {
 			<span class="kw">let</span> <span class="ident">expiring</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Expirations</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::take</span>(<span class="ident">n</span>);
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">expiring</span>) <span class="op">=</span> <span class="ident">expiring</span> {
@@ -1581,11 +2086,18 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+	<span class="doccomment">/// **Get** the **Account ID** of the Fragment Definition `class_hash`**</span>
+	<span class="doccomment">/// </span>
+	<span class="doccomment">/// This Account ID is determinstically computed using the Fragment Definition `class_hash`</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_vault_id</span>(<span class="ident">class_hash</span>: <span class="ident">Hash128</span>) -&gt; <span class="ident">T::AccountId</span> {
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">blake2_256</span>(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragments-vault&quot;</span>[..], <span class="kw-2">&amp;</span><span class="ident">class_hash</span>].<span class="ident">concat</span>());
 		<span class="ident">T::AccountId::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">hash</span>[..]).<span class="ident">expect</span>(<span class="string">&quot;T::AccountId should decode&quot;</span>)
 	}
 
+	<span class="doccomment">/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class_hash`, </span>
+	<span class="doccomment">/// whose Edition ID is `edition`** and whose Copy ID is `copy`** </span>
+	<span class="doccomment">/// </span>
+	<span class="doccomment">/// This Account ID is determinstically computed using the Fragment Definition ID `class_hash`, the Edition ID `edition` and the Copy ID `copy`</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_fragment_account_id</span>(<span class="ident">class_hash</span>: <span class="ident">Hash128</span>, <span class="ident">edition</span>: <span class="ident">Unit</span>, <span class="ident">copy</span>: <span class="ident">Unit</span>) -&gt; <span class="ident">T::AccountId</span> {
 		<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">blake2_256</span>(
 			<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragments-account&quot;</span>[..], <span class="kw-2">&amp;</span><span class="ident">class_hash</span>, <span class="kw-2">&amp;</span><span class="ident">edition</span>.<span class="ident">encode</span>(), <span class="kw-2">&amp;</span><span class="ident">copy</span>.<span class="ident">encode</span>()].<span class="ident">concat</span>(),
@@ -1593,6 +2105,22 @@
 		<span class="ident">T::AccountId::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">hash</span>[..]).<span class="ident">expect</span>(<span class="string">&quot;T::AccountId should decode&quot;</span>)
 	}
 
+	<span class="doccomment">/// Create `quantity` number of Fragment Instances from the Fragment Definition `fragment_hash` and assigns their ownership to `to`</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// # Arguments</span>
+	<span class="doccomment">///</span>
+	<span class="doccomment">/// * `to` - **Account ID** to assign ownernship of the created Fragment instances to</span>
+	<span class="doccomment">/// * `fragment_hash` - ID of the Fragment Definition</span>
+	<span class="doccomment">/// * `sale` - Struct **representing** a **sale of the Fragment Definition**, if the **Fragment Definition** is **currently on sale**</span>
+	<span class="doccomment">/// * `options` - **Enum** indicating whether to </span>
+	<span class="doccomment">/// **create one Fragment Instance with custom data attached to it** or whether to </span>
+	<span class="doccomment">/// **create multiple Fragment Instances (with no custom data attached)**</span>
+	<span class="doccomment">/// * `quantity` - **Number of Fragment Instances** to **create**</span>
+	<span class="doccomment">/// * `current_block_number` - **Current block number** of the **Clamor Blockchain**</span>
+	<span class="doccomment">/// * `expiring_at` (*optional*) - **Block Number** that the **Fragment Instance** will **expire at**</span>
+	<span class="doccomment">/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items** </span>
+	<span class="doccomment">/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), </span>
+	<span class="doccomment">/// `amount` is the **number of items** to **top up** in the **stack of stackable items**</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">mint_fragments</span>(
 		<span class="ident">to</span>: <span class="kw-2">&amp;</span><span class="ident">T::AccountId</span>,
 		<span class="ident">fragment_hash</span>: <span class="kw-2">&amp;</span><span class="ident">Hash128</span>,
@@ -1606,7 +2134,7 @@
 		<span class="kw">use</span> <span class="ident">frame_support::ensure</span>;
 
 		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">expiring_at</span>) <span class="op">=</span> <span class="ident">expiring_at</span> {
-			<span class="macro">ensure!</span>(<span class="ident">expiring_at</span> <span class="op">&gt;</span> <span class="ident">current_block_number</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ParamsNotValid</span>);
+			<span class="macro">ensure!</span>(<span class="ident">expiring_at</span> <span class="op">&gt;</span> <span class="ident">current_block_number</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ParamsNotValid</span>); <span class="comment">// Ensure `expiring_at` &gt; `current_block_number`</span>
 		}
 
 		<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">options</span> {
@@ -1615,7 +2143,7 @@
 				<span class="kw">let</span> <span class="ident">data_len</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">len</span>();
 
 				<span class="comment">// we need this to index transactions</span>
-				<span class="kw">let</span> <span class="ident">extrinsic_index</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::extrinsic_index</span>()
+				<span class="kw">let</span> <span class="ident">extrinsic_index</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::extrinsic_index</span>() <span class="comment">// `&lt;frame_system::Pallet&lt;T&gt;&gt;::extrinsic_index()` is defined as: &quot;Gets the index of extrinsic that is currently executing.&quot; (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)</span>
 					.<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SystematicFailure</span>)<span class="question-mark">?</span>;
 
 				<span class="comment">// index immutable data for IPFS discovery</span>
@@ -1640,26 +2168,28 @@
 			}
 		} <span class="kw">else</span> {
 			<span class="comment">// We still don&#39;t wanna go over supply limit</span>
-			<span class="kw">let</span> <span class="ident">fragment_data</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">fragment_data</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">fragment_hash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotFound</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">max_supply</span>) <span class="op">=</span> <span class="ident">fragment_data</span>.<span class="ident">max_supply</span> {
 				<span class="kw">let</span> <span class="ident">max</span>: <span class="ident">Unit</span> <span class="op">=</span> <span class="ident">max_supply</span>.<span class="ident">into</span>();
-				<span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="ident">max</span>.<span class="ident">saturating_sub</span>(<span class="ident">existing</span>);
+				<span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="ident">max</span>.<span class="ident">saturating_sub</span>(<span class="ident">existing</span>); <span class="comment">// `left` = `max` - `existing`</span>
 				<span class="kw">if</span> <span class="ident">quantity</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">left</span> {
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::MaxSupplyReached</span>.<span class="ident">into</span>())
+					<span class="comment">// Ensure the function parameter `quantity` is smaller than or equal to `left`</span>
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::MaxSupplyReached</span>.<span class="ident">into</span>());
 				}
 			}
 		}
 
-		<span class="op">&lt;</span><span class="ident">Classes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="ident">fragment_hash</span>, <span class="op">|</span><span class="ident">fragment</span><span class="op">|</span> {
+		<span class="op">&lt;</span><span class="ident">Definitions</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="ident">fragment_hash</span>, <span class="op">|</span><span class="ident">fragment</span><span class="op">|</span> {
+			<span class="comment">// Get the `FragmentDefinition` struct from `fragment_hash`</span>
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">fragment</span>) <span class="op">=</span> <span class="ident">fragment</span> {
 				<span class="kw">for</span> <span class="ident">id</span> <span class="kw">in</span> <span class="ident">existing</span>..(<span class="ident">existing</span> <span class="op">+</span> <span class="ident">quantity</span>) {
 					<span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">id</span> <span class="op">+</span> <span class="number">1u64</span>;
-					<span class="kw">let</span> <span class="ident">cid</span> <span class="op">=</span> <span class="ident">Compact</span>(<span class="ident">id</span>);
+					<span class="kw">let</span> <span class="ident">cid</span> <span class="op">=</span> <span class="ident">Compact</span>(<span class="ident">id</span>); <span class="comment">// `cid` stands for &quot;compact id&quot;</span>
 
 					<span class="op">&lt;</span><span class="ident">Fragments</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(
 						(<span class="ident">fragment_hash</span>, <span class="ident">id</span>, <span class="number">1</span>),
-						<span class="ident">InstanceData</span> {
+						<span class="ident">FragmentInstance</span> {
 							<span class="ident">permissions</span>: <span class="ident">fragment</span>.<span class="ident">permissions</span>,
 							<span class="ident">created_at</span>: <span class="ident">current_block_number</span>,
 							<span class="ident">custom_data</span>: <span class="ident">data</span>,
@@ -1670,7 +2200,7 @@
 
 					<span class="op">&lt;</span><span class="ident">CopiesCount</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>((<span class="ident">fragment_hash</span>, <span class="ident">id</span>), <span class="ident">Compact</span>(<span class="number">1</span>));
 
-					<span class="op">&lt;</span><span class="ident">Inventory</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::append</span>(<span class="ident">to</span>.<span class="ident">clone</span>(), <span class="ident">fragment_hash</span>, (<span class="ident">cid</span>, <span class="ident">Compact</span>(<span class="number">1</span>)));
+					<span class="op">&lt;</span><span class="ident">Inventory</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::append</span>(<span class="ident">to</span>.<span class="ident">clone</span>(), <span class="ident">fragment_hash</span>, (<span class="ident">cid</span>, <span class="ident">Compact</span>(<span class="number">1</span>))); <span class="comment">// **Add** the **Fragment Intstance whose Fragment Definition is `fragment_hash`, Edition ID is `cid` and Copy ID is 1**  to the **inventory of `to`**</span>
 
 					<span class="op">&lt;</span><span class="ident">Owners</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::append</span>(<span class="ident">fragment_hash</span>, <span class="ident">to</span>.<span class="ident">clone</span>(), (<span class="ident">cid</span>, <span class="ident">Compact</span>(<span class="number">1</span>)));
 
@@ -1691,5 +2221,5 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (f8588549c 2022-07-18)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (9a7b7d5e5 2022-07-19)" ></div>
 </body></html>
