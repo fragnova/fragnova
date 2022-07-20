@@ -356,6 +356,8 @@ pub mod pallet {
 		SaleAlreadyOpen,
 		/// Max supply reached
 		MaxSupplyReached,
+		/// Published quantity reached
+		PublishedQuantityReached, // Need to think of a better name!
 		/// Params not valid
 		ParamsNotValid,
 		/// This should not really happen
