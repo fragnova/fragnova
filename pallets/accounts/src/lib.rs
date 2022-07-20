@@ -868,8 +868,12 @@ pub mod pallet {
 		/// Unlink the **Clamor public account address `sender`** from **its linked EVM public
 		/// account address `account`**
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
-			ensure!(<EVMLinks<T>>::contains_key(sender.clone()), Error::<T>::AccountNotLinked);
-			ensure!(<EVMLinksReverse<T>>::contains_key(account), Error::<T>::AccountNotLinked);
+			if <EVMLinks<T>>::get(sender.clone()).ok_or(Error::<T>::AccountNotLinked)? != account {
+				return Err(Error::<T>::AccountNotLinked.into());
+			}
+			if <EVMLinksReverse<T>>::get(account).ok_or(Error::<T>::AccountNotLinked)? != sender {
+				return Err(Error::<T>::AccountNotLinked.into());
+			}
 
 			<EVMLinks<T>>::remove(sender.clone());
 			<EVMLinksReverse<T>>::remove(account);
