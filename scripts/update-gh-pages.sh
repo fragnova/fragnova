@@ -6,7 +6,7 @@ set -eu
 
 REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 REMOTE_NAME="origin"
-MAIN_BRANCH="main"
+MAIN_BRANCH="devel"
 TARGET_BRANCH="gh-pages"
 DOC_FOLDER_MAIN_BRANCH="target/doc"
 DOC_FOLDER_TARGET_BRANCH="doc"
@@ -21,11 +21,11 @@ cargo doc --no-deps # saves doc in $DOC_FOLDER_MAIN_BRANCH
 git fetch
 git checkout "$TARGET_BRANCH"
 
-rm -rf DOC_FOLDER_TARGET_BRANCH
-mv -f "${DOC_FOLDER_MAIN_BRANCH}" "${DOC_FOLDER_TARGET_BRANCH}" 
+rm -rf "${DOC_FOLDER_TARGET_BRANCH}" # because of the `-f` flag, no errors will be outputted if the folder doesn't exist
+cp -r "${DOC_FOLDER_MAIN_BRANCH}/." "${DOC_FOLDER_TARGET_BRANCH}" 
 echo "<meta http-equiv=refresh content=0;url=${DOC_FOLDER_TARGET_BRANCH}/${DOC_INDEX_PAGE}>" > "index.html"
 
-git add "$DOC_FOLDER_TARGET_BRANCH"
+git add "${DOC_FOLDER_TARGET_BRANCH}"
 git add "index.html"
 
 git commit -m "Updated GitHub Pages"
