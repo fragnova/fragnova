@@ -1059,7 +1059,7 @@ impl<T: Config> Pallet<T> {
 			if let Some(max_supply) = fragment_data.max_supply {
 				let max: Unit = max_supply.into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
-				if quantity <= left {
+				if quantity > left {
 					// Ensure the function parameter `quantity` is smaller than or equal to `left`
 					return Err(Error::<T>::MaxSupplyReached.into());
 				}
