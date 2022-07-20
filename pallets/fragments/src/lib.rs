@@ -1050,12 +1050,16 @@ impl<T: Config> Pallet<T> {
 		if let Some(sale) = sale {
 			// if limited amount let's reduce the amount of units left
 			if let Some(units_left) = sale.units_left {
-				<Publishing<T>>::mutate(&*fragment_hash, |sale| {
-					if let Some(sale) = sale {
-						let left: Unit = units_left.into();
-						sale.units_left = Some(Compact(left - quantity));
-					}
-				});
+				if quantity > units_left.into() {
+					return Err(Error::<T>::PublishedQuantityReached.into());
+				} else {
+					<Publishing<T>>::mutate(&*fragment_hash, |sale| {
+						if let Some(sale) = sale {
+							let left: Unit = units_left.into();
+							sale.units_left = Some(Compact(left - quantity));
+						}
+					});
+				}
 			}
 		} else {
 			// We still don't wanna go over supply limit
