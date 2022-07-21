@@ -46,20 +46,21 @@ frame_support::construct_runtime!(
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 	}
 );
 
-/// When to use:
-///
-/// To declare parameter types for a pallet's relevant associated types during runtime construction.
-///
-/// What it does:
-///
-/// The macro replaces each parameter specified into a struct type with a get() function returning
-/// its specified value. Each parameter struct type also implements the
-/// frame_support::traits::Get<I> trait to convert the type to its specified value.
-///
-/// Source: https://docs.substrate.io/v3/runtime/macros/
+// When to use:
+//
+// To declare parameter types for a pallet's relevant associated types during runtime construction.
+//
+// What it does:
+//
+// The macro replaces each parameter specified into a struct type with a get() function returning
+// its specified value. Each parameter struct type also implements the
+// frame_support::traits::Get<I> trait to convert the type to its specified value.
+//
+// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
@@ -163,6 +164,14 @@ impl pallet_detach::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_timestamp::Config for Test {
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = ();
+	type WeightInfo = ();
 }
 
 impl pallet_proxy::Config for Test {
