@@ -4,6 +4,10 @@ Clamor is a custom blockchain built on the [Substrate](https://substrate.io/) fr
 
 It is a protocol and networking stack that enables complete on-chain storage and full synchronization of asset data (protos, fragments, chainblocks code etc.) across the blockchain nodes.
 
+## Rustdocs
+
+The Rustdocs can be read at: https://fragcolor-xyz.github.io/clamor/
+
 ## Installation
 
 ### Requirements
@@ -30,14 +34,6 @@ If you want to run Clamor with a [chain specification](https://docs.substrate.io
 
 ```
 cargo run -- --chain=spec_raw.json --validator --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server -d <DATA PATH>
-```
-
-
-### Read Rustdocs
-
-To read the rustdocs, run the following command in the root directory:
-```
-cargo doc --no-deps --open
 ```
 
 ## Usage
