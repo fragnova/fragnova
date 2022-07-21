@@ -891,6 +891,12 @@
 <span id="885">885</span>
 <span id="886">886</span>
 <span id="887">887</span>
+<span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
+<span id="891">891</span>
+<span id="892">892</span>
+<span id="893">893</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `frag` performs logic related to FRAG Token</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.</span>
@@ -1190,6 +1196,8 @@
 		<span class="ident">AccountAlreadyLinked</span>,
 		<span class="doccomment">/// Account not linked</span>
 		<span class="ident">AccountNotLinked</span>,
+		<span class="comment">// Account linked to different account</span>
+		<span class="ident">DifferentAccountLinked</span>,
 		<span class="doccomment">/// Account already exists</span>
 		<span class="ident">AccountAlreadyExists</span>,
 		<span class="doccomment">/// Too many proxies</span>
@@ -1761,8 +1769,12 @@
 		<span class="doccomment">/// Unlink the **Clamor public account address `sender`** from **its linked EVM public</span>
 		<span class="doccomment">/// account address `account`**</span>
 		<span class="kw">fn</span> <span class="ident">unlink_account</span>(<span class="ident">sender</span>: <span class="ident">T::AccountId</span>, <span class="ident">account</span>: <span class="ident">H160</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="macro">ensure!</span>(<span class="op">&lt;</span><span class="ident">EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="ident">sender</span>.<span class="ident">clone</span>()), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountNotLinked</span>);
-			<span class="macro">ensure!</span>(<span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="ident">account</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountNotLinked</span>);
+			<span class="kw">if</span> <span class="op">&lt;</span><span class="ident">EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">sender</span>.<span class="ident">clone</span>()).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountNotLinked</span>)<span class="question-mark">?</span> <span class="op">!</span><span class="op">=</span> <span class="ident">account</span> {
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DifferentAccountLinked</span>.<span class="ident">into</span>());
+			}
+			<span class="kw">if</span> <span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">account</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountNotLinked</span>)<span class="question-mark">?</span> <span class="op">!</span><span class="op">=</span> <span class="ident">sender</span> {
+				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DifferentAccountLinked</span>.<span class="ident">into</span>());
+			}
 
 			<span class="op">&lt;</span><span class="ident">EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">sender</span>.<span class="ident">clone</span>());
 			<span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">account</span>);
