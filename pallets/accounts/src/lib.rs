@@ -355,7 +355,7 @@ pub mod pallet {
 		///
 		/// After linking, also emit an event indicating that the two accounts were linked.
 		#[pallet::weight(25_000)] // TODO #1 - weight
-		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
+		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature, ethereum_account_id: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
 			// the idea is to prove to this chain that the sender knows the private key of the external address
@@ -370,6 +370,8 @@ pub mod pallet {
 			let eth_key = keccak_256(&recovered[..]);
 			let eth_key = &eth_key[12..];
 			let eth_key = H160::from_slice(&eth_key[..]);
+
+			ensure!(ethereum_account_id == eth_key, Error::<T>::VerificationFailed);
 
 			ensure!(!<EVMLinks<T>>::contains_key(&sender), Error::<T>::AccountAlreadyLinked);
 			ensure!(!<EVMLinksReverse<T>>::contains_key(eth_key), Error::<T>::AccountAlreadyLinked);
