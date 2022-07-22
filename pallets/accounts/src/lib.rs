@@ -152,6 +152,15 @@ impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
 	}
 }
 
+/// **Struct** representing the details about accounts created off-chain by various parties and integrations.
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub struct AccountInfo<TAccountID, TMoment> {
+	/// The actual account ID
+	pub account_id: TAccountID,
+	/// The timestamp when this account was created
+	pub created_at: TMoment,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -166,6 +175,7 @@ pub mod pallet {
 		+ CreateSignedTransaction<Call<Self>>
 		+ pallet_balances::Config
 		+ pallet_proxy::Config
+		+ pallet_timestamp::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -187,20 +197,6 @@ pub mod pallet {
 
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
-
-		// TODO
-
-		// #[pallet::constant]
-		// type TicketMultiplier: Get<u128>;
-
-		// #[pallet::constant]
-		// type TicketMaxBonus: Get<u128>;
-
-		// #[pallet::constant]
-		// type TicketMinLockPeriod: Get<u64>;
-
-		// #[pallet::constant]
-		// type TicketMaxLockPeriod: Get<u64>;
 	}
 
 	#[pallet::genesis_config]
@@ -265,7 +261,8 @@ pub mod pallet {
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
 	#[pallet::storage]
-	pub type ExternalID2Account<T: Config> = StorageMap<_, Twox64Concat, ExternalID, T::AccountId>;
+	pub type ExternalID2Account<T: Config> =
+		StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -456,7 +453,7 @@ pub mod pallet {
 					if current_votes + 1u64 < threshold {
 						// Current Votes has not passed the threshold
 						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
-						return Ok(())
+						return Ok(());
 					} else {
 						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
 						// we are good to go, but let's remove the record
@@ -465,7 +462,7 @@ pub mod pallet {
 				} else {
 					// If key `data_hash` doesn't exist in EVMLinkVoting
 					<EVMLinkVoting<T>>::insert(&data_hash, 1);
-					return Ok(())
+					return Ok(());
 				}
 			}
 
@@ -557,7 +554,13 @@ pub mod pallet {
 
 			pallet_proxy::Proxies::<T>::insert(&account, (bounded_proxies, deposit));
 
-			<ExternalID2Account<T>>::insert(external_id.clone(), account.clone());
+			<ExternalID2Account<T>>::insert(
+				external_id.clone(),
+				AccountInfo {
+					account_id: account.clone(),
+					created_at: <pallet_timestamp::Pallet<T>>::get(),
+				},
+			);
 
 			Self::deposit_event(Event::SponsoredAccount {
 				sponsor: who,
@@ -611,7 +614,7 @@ pub mod pallet {
 					_ => {
 						log::debug!("Not a local transaction");
 						// Return TransactionValidityError˘ if the call is not allowed.
-						return InvalidTransaction::Call.into()
+						return InvalidTransaction::Call.into();
 					},
 				}
 
@@ -628,13 +631,13 @@ pub mod pallet {
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into() // // 问Gio
+						return InvalidTransaction::BadSigner.into(); // // 问Gio
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
 					// return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadSigner.into()
+					return InvalidTransaction::BadSigner.into();
 				}
 
 				// most expensive bit last
@@ -644,7 +647,7 @@ pub mod pallet {
 																	   // The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadProof.into()
+					return InvalidTransaction::BadProof.into();
 				}
 
 				log::debug!("Sending frag lock update extrinsic");
@@ -707,7 +710,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth")
+				return Err("Failed to get response from geth");
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -756,7 +759,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth")
+				return Err("Failed to get response from geth");
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
