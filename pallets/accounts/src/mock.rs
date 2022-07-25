@@ -1,14 +1,30 @@
-pub use crate as pallet_frag;
+use crate as pallet_accounts;
 use crate::*;
+
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, ConstU64},
 };
-use frame_system as system;
-use sp_core::{ed25519::Signature, H256};
+
+use parking_lot::RwLock;
+
+use sp_core::{
+	ed25519::Signature,
+	offchain::{
+		testing::{self, OffchainState, PoolState},
+		OffchainDbExt, OffchainWorkerExt, TransactionPoolExt,
+	},
+	H256,
+};
+
+use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
+
+use std::sync::Arc;
+
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
+	RuntimeAppPublic,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -22,7 +38,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		FragPallet: pallet_frag::{Pallet, Call, Storage, Event<T>},
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
@@ -36,7 +52,7 @@ parameter_types! {
 	pub StorageBytesMultiplier: u64 = 10;
 }
 
-impl system::Config for Test {
+impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -68,7 +84,7 @@ type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 impl frame_system::offchain::SigningTypes for Test {
 	type Public = <Signature as Verify>::Signer;
-	type Signature = Signature;
+	type Signature = Signature; // The RHS is `sp_core::ed25519::Signature` (which you also find at the top as an import)
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
@@ -124,6 +140,22 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
+impl pallet_accounts::EthFragContract for Test {
+	fn get_partner_contracts() -> Vec<String> {
+		vec![String::from("0xBADF00D")]
+	}
+}
+
+impl pallet_accounts::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type EthChainId = ConstU64<5>; // goerli
+	type EthConfirmations = ConstU64<1>;
+	type EthFragContract = Test;
+	type Threshold = ConstU64<1>;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+}
+
 impl pallet_proxy::Config for Test {
 	type Event = Event;
 	type Call = Call;
@@ -147,17 +179,53 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-impl Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type EthChainId = ConstU64<5>; // goerli
-	type EthConfirmations = ConstU64<1>;
-	type EthFragContract = ();
-	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_frag::crypto::FragAuthId;
-}
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	t.into()
+
+	let mut ext = sp_io::TestExternalities::new(t);
+
+	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
+
+	ext
+}
+
+pub fn new_test_ext_with_ocw() -> (
+	sp_io::TestExternalities,
+	Arc<RwLock<PoolState>>,
+	Arc<RwLock<OffchainState>>,
+	sp_core::ed25519::Public,
+) {
+	const PHRASE: &str =
+		"news slush supreme milk chapter athlete soap sausage put clutch what kitten";
+
+	let (offchain, offchain_state) = testing::TestOffchainExt::new();
+	let (pool, pool_state) = testing::TestTransactionPoolExt::new();
+
+	let keystore = KeyStore::new();
+
+	SyncCryptoStore::ed25519_generate_new(
+		&keystore,
+		<crate::crypto::Public as RuntimeAppPublic>::ID,
+		Some(&format!("{}", PHRASE)),
+	)
+	.unwrap();
+
+	let ed25519_public_key =
+		SyncCryptoStore::ed25519_public_keys(&keystore, crate::crypto::Public::ID)
+			.get(0)
+			.unwrap()
+			.clone();
+
+	let mut t = sp_io::TestExternalities::default();
+	t.register_extension(OffchainDbExt::new(offchain.clone()));
+	t.register_extension(OffchainWorkerExt::new(offchain));
+	t.register_extension(TransactionPoolExt::new(pool));
+	t.register_extension(KeystoreExt(Arc::new(keystore)));
+
+	// Karan Da Kiya Hua
+
+	t.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
+
+	(t, pool_state, offchain_state, ed25519_public_key) // copied from https://github.com/JoshOrndorff/recipes/blob/master/pallets/ocw-demo/src/tests.rs
 }

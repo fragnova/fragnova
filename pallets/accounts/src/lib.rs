@@ -10,11 +10,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(test)]
-mod mock;
+#[cfg(any(test, feature = "compile-dummy-data"))]
+pub mod dummy_data;
 
 #[cfg(test)]
-mod tests;
+pub mod mock;
+
+#[cfg(test)]
+pub mod tests;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -853,7 +856,7 @@ pub mod pallet {
 		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`) (问Gio)
 		///
 		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
-		fn sync_partner_contracts(block_number: T::BlockNumber) {
+		pub fn sync_partner_contracts(block_number: T::BlockNumber) {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
 			} else {
