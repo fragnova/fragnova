@@ -1,34 +1,31 @@
 //! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
-//! 
+//!
 //! IMPORTANT STUFF TO KNOW:
-//! 
+//!
 //! # Fragment Definition
-//! 
+//!
 //! A Fragment Definition is created using a Proto-Fragment (see pallet `protos`).
-//! A Fragment Definition's ID can be determinstically computed using its Proto-Fragment hash and 
+//! A Fragment Definition's ID can be determinstically computed using its Proto-Fragment hash and
 //! its metadata struct `FragmentMetadata`.
-//! 
-//! A Fragment Definition is essentially a digital asset that can be used to enhance the user experience in a game or application, 
+//!
+//! A Fragment Definition is essentially a digital asset that can be used to enhance the user experience in a game or application,
 //! like an in-game item or user account. A Fragment has its own storage, metadata and digital life on its own.
-//! 
-//! 
+//!
+//!
 //! # Fragment Instance
-//! 
-//! A Fragment Instance is created from a Fragment Definition. 
-//! 
-//! It is a digital asset that can be used to enhance the user experience in a game or application, 
+//!
+//! A Fragment Instance is created from a Fragment Definition.
+//!
+//! It is a digital asset that can be used to enhance the user experience in a game or application,
 //! like an in-game item or user account.
-//! 
-//! Each Fragment Instance also has an edition number. 
-//! 
+//!
+//! Each Fragment Instance also has an edition number.
+//!
 //! Therefore, a Fragment Instance can be uniquely identified using its Fragment Definition's ID, its Edition ID and its Copy ID.
-//! 
+//!
 //! The Copy ID allows us to distinguish a Fragment Instance that has the same Fragment Definition ID and the same Edition ID.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-
-#[cfg(test)]
-mod dummy_data;
 
 #[cfg(test)]
 mod mock;
@@ -57,28 +54,21 @@ use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::StaticLookup;
 
 use frame_support::traits::{
-	tokens::fungibles::Transfer, Currency, ExistenceRequirement, ReservableCurrency,
+	tokens::fungibles::Inspect, tokens::fungibles::Transfer, Currency, ExistenceRequirement,
+	ReservableCurrency,
 };
 use sp_runtime::SaturatedConversion;
 
 type Unit = u64;
 
 /// **Struct** of a **Fragment Definition's Metadata**
-///
-/// Notes from Giovanni:
-/// 
-/// Proto-hash + this metadata compose the Fragment class unique id.
-///
-/// #### Remarks
-///
-/// * #immutable - once created there is no way to edit, intentionally.
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentMetadata<TFungibleAsset> {
-	/// **Name** of the **Fragment Definition** 
+	/// **Name** of the **Fragment Definition**
 	pub name: Vec<u8>,
 	/// **Currency** that the **buyer** of a **Fragment Instance that is created from the Fragment Definition** must **pay in**.
 	/// If this field is `None`, the currency the buyer must pay in is NOVA.
-	pub currency: Option<TFungibleAsset>, 
+	pub currency: Option<TFungibleAsset>,
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -87,31 +77,21 @@ pub struct UniqueOptions {
 }
 
 /// **Struct** of a **Fragment Definition**
-///
-/// Notes from Giovanni:
-/// 
-/// Fragments definitions are the DNA of fragments.
-///
-/// This is the way to program fragments instances' distribution, expiration and starting permissions
-/// before even creating any fragment instances yet.
-///
-/// #### Remarks
-///
-/// * #immutable - once created there is no way to edit, intentionally.
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 	/// **Proto-Fragment used** to **create** the **Fragment**
 	pub proto_hash: Hash256,
 	/// ***FragmentMetadata* Struct** (the **struct** contains the **Fragment's name**, among other things)
 	pub metadata: FragmentMetadata<TFungibleAsset>,
-	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to 
+	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to
 	/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)
-	/// 
-	/// These **allowed set of actions of the Fragment Instance** ***may change*** when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
+	///
+	/// These **allowed set of actions of the Fragment Instance** ***may change***
+	/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
 	pub permissions: FragmentPerms,
 	// Notes from Giovanni:
 	//
-	// If Fragment Instances (created from the Fragment Definition) must contain unique data when created (injected by buyers, validated by the system) 
+	// If Fragment Instances (created from the Fragment Definition) must contain unique data when created (injected by buyers, validated by the system)
 	/// Whether the **Fragment Definition** is **mutable**
 	pub unique: Option<UniqueOptions>,
 	/// If scarce, the max supply of the Fragment
@@ -124,8 +104,8 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 
 /// **Struct** of a **Fragment Instance**
 ///
-/// Notes from Giovanni:
-/// 
+/// Footnotes:
+///
 /// #### Remarks
 ///  
 /// * On purpose not storing owner because:
@@ -134,8 +114,11 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentInstance<TBlockNum> {
 	/// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
-	/// **Actions** (encapsulated in a `FragmentPerms` bitflag enum) **allowed to be done** to the **Fragment Instance**
-	/// (e.g edit, transfer etc.)
+	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) **allowed to be done**
+	/// to the **Fragment Instance** (e.g edit, transfer etc.)
+	///
+	/// These **allowed set of actions of the Fragment Instance** ***may change***
+	/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
 	pub permissions: FragmentPerms,
 	/// Block number in which the Fragment Instance was created
 	pub created_at: TBlockNum,
@@ -143,17 +126,17 @@ pub struct FragmentInstance<TBlockNum> {
 	pub custom_data: Option<Hash256>,
 	/// Block number that the Fragment Instance expires at (*optional*)
 	pub expiring_at: Option<TBlockNum>,
-	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), 
+	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** that are **left** in the **stack of stackable items**
 	pub amount: Option<Compact<Unit>>,
 }
 
-/// Struct **representing** a sale of the **Fragment Definition** . 
-/// 
+/// Struct **representing** a sale of the **Fragment Definition** .
+///
 /// Note: When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
 ///
-/// Notes from Giovanni:
-/// 
+/// Footnotes:
+///
 /// #### Remarks
 ///
 ///`price` is using `u128` and not `T::Balance` because the latter requires a whole lot of traits to be satisfied.. rust headakes.
@@ -161,18 +144,17 @@ pub struct FragmentInstance<TBlockNum> {
 pub struct PublishingData<TBlockNum> {
 	/// **Fee** that is **needed to be paid** to create a **single Fragment Instance** from the **Fragment Definition**
 	pub price: Compact<u128>,
-	/// **Amount of Fragment Instances** that **can be bought** 
+	/// **Amount of Fragment Instances** that **can be bought**
 	pub units_left: Option<Compact<Unit>>,
 	/// Block number that the sale ends at (*optional*)
 	pub expiration: Option<TBlockNum>,
-	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), 
+	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** to **top up** in the **stack of stackable items** // EMERICK
 	pub amount: Option<Compact<Unit>>,
 }
 
-
-/// **Enum** indicating whether to 
-/// **create one Fragment Instance with custom data attached to it** 
+/// **Enum** indicating whether to
+/// **create one Fragment Instance with custom data attached to it**
 /// or whether to
 /// **create multiple Fragment Instances (with no custom data attached)**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -180,7 +162,7 @@ pub enum FragmentBuyOptions {
 	/// Create create *"x"* Number of Fragment Instances to create,
 	/// where *"x"* is the associated `u64` value inside the enum variant
 	Quantity(u64),
-	/// Create a single Fragment Instance with custom data *"x"* attached to it, 
+	/// Create a single Fragment Instance with custom data *"x"* attached to it,
 	/// where *"x"* is the assosicated `Vec<u8>` value inside the enum variant
 	UniqueData(Vec<u8>),
 }
@@ -206,49 +188,52 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-
-	/// **StorageMap** that maps a **Proto-Fragment** 
-	/// to a 
+	/// **StorageMap** that maps a **Proto-Fragment**
+	/// to a
 	/// **list of Fragment Definitions that were created using the aforementioned Proto-Fragment**
 	#[pallet::storage]
 	pub type Proto2Fragments<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash128>>;
 
 	// fragment-hash to fragment-data
 	/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `FragmentMetadata`)**
-	/// to a 
+	/// to a
 	/// ***FragmentDefinition* struct**
 	#[pallet::storage]
-	pub type Definitions<T: Config> =
-		StorageMap<_, Identity, Hash128, FragmentDefinition<T::AssetId, T::AccountId, T::BlockNumber>>;
+	pub type Definitions<T: Config> = StorageMap<
+		_,
+		Identity,
+		Hash128,
+		FragmentDefinition<T::AssetId, T::AccountId, T::BlockNumber>,
+	>;
 
-	/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `FragmentMetadata`)** 
-	/// to a 
+	/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `FragmentMetadata`)**
+	/// to a
 	/// ***PublishingData* struct (of the aforementioned Fragment Definition)**
 	#[pallet::storage]
 	pub type Publishing<T: Config> =
 		StorageMap<_, Identity, Hash128, PublishingData<T::BlockNumber>>;
 
 	/// **StorageMap** that maps a **Fragment Definition ID**
-	/// to the 
-	/// **total number of unique Edition IDs** found in the 
+	/// to the
+	/// **total number of unique Edition IDs** found in the
 	/// **Fragment Instances that have the aforementioned Fragment Definition ID**
 	#[pallet::storage]
 	pub type EditionsCount<T: Config> = StorageMap<_, Identity, Hash128, Compact<Unit>>;
 
-	/// **StorageMap** that maps a **tuple that contains a Fragment Definition ID and an Edition ID** 
-	/// to the 
-	/// **total number of Fragment Instances that have the Fragment Definition ID and the Edition ID** 
+	/// **StorageMap** that maps a **tuple that contains a Fragment Definition ID and an Edition ID**
+	/// to the
+	/// **total number of Fragment Instances that have the Fragment Definition ID and the Edition ID**
 	#[pallet::storage]
 	pub type CopiesCount<T: Config> = StorageMap<_, Identity, (Hash128, Unit), Compact<Unit>>;
 
-	/// **StorageNMap** that maps the **Fragment Definition ID of a Fragment Instance, 
-	/// the Fragment Edition ID of the aforementioned Fragment Instance and 
-	/// the Copy ID of the aforementioned Fragment Instance** 
-	/// to a 
+	/// **StorageNMap** that maps the **Fragment Definition ID of a Fragment Instance,
+	/// the Fragment Edition ID of the aforementioned Fragment Instance and
+	/// the Copy ID of the aforementioned Fragment Instance**
+	/// to a
 	/// ***`FragmentInstance`* struct**
 	///
-	/// Notes from Giovanni:
-	/// 
+	/// Footnotes:
+	///
 	///  #### Keys hashing reasoning
 	///
 	/// Very long key, means takes a lot of redundant storage (because we will have **many** Instances!), we try to limit the  damage by using `Identity` so that the final key will be:
@@ -274,17 +259,17 @@ pub mod pallet {
 		Hash128, // Fragment Definition ID
 		Identity,
 		Hash256, // Unique Data's Hash
-		Unit // Edition ID
+		Unit,    // Edition ID
 	>;
 
-	/// StorageDoubleMap that maps a **Fragment Definition and the 
-	/// Owner of a Fragment Instance that was created from the aforementioned Fragment Definition** 
-	/// to a 
+	/// StorageDoubleMap that maps a **Fragment Definition and the
+	/// Owner of a Fragment Instance that was created from the aforementioned Fragment Definition**
+	/// to a
 	/// **tuple that contains the Fragment Instance's Edition ID and the Fragment Instance's Copy ID**
 	///
 	/// This storage item stores the exact same thing as `Inventory`, except that the primary key and the secondary key are swapped
-	/// 
-	/// Notes from Giovanni:
+	///
+	/// Footnotes:
 	///
 	/// Notice this pulls from memory (and deserializes (scale)) the whole `Vec<_,_>`, this is on purpose as it should not be too big.
 	#[pallet::storage]
@@ -297,14 +282,14 @@ pub mod pallet {
 		Vec<(Compact<Unit>, Compact<Unit>)>,
 	>;
 
-	/// StorageDoubleMap that maps the **Owner of a Fragment Instance and the Fragment Instance's Fragment Definition** 
-	/// to a 
+	/// StorageDoubleMap that maps the **Owner of a Fragment Instance and the Fragment Instance's Fragment Definition**
+	/// to a
 	/// **tuple that contains the Fragment Instance's Edition ID and the Fragment Instance's Copy ID**
 	///
 	/// This storage item stores the exact same thing as `Owners`, except that the primary key and the secondary key are swapped
 	///
-	/// Notes from Giovanni:
-	/// 
+	/// Footnotes:
+	///
 	/// Notice this pulls from memory (and deserializes (scale)) the whole `Vec<_,_>`, this is on purpose as it should not be too big.
 	#[pallet::storage]
 	pub type Inventory<T: Config> = StorageDoubleMap<
@@ -316,12 +301,12 @@ pub mod pallet {
 		Vec<(Compact<Unit>, Compact<Unit>)>,
 	>;
 
-	/// StorageMap that maps the **Block Number that a Fragment Instance expires at** 
-	/// to a 
-	/// **tuple that contains the Fragment Instance's Fragment Definition ID, the Fragment Instance's Edition ID and 
+	/// StorageMap that maps the **Block Number that a Fragment Instance expires at**
+	/// to a
+	/// **tuple that contains the Fragment Instance's Fragment Definition ID, the Fragment Instance's Edition ID and
 	/// the Fragment Instance's Copy ID**
-	/// 
-	/// Notes from Giovanni:
+	///
+	/// Footnotes:
 	///
 	///  Fragment Instances can expire, we process expirations every `on_finalize`
 	#[pallet::storage]
@@ -332,7 +317,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// New definition created by account, definition hash
-		DefinitionCreated(Hash128),
+		DefinitionCreated { fragment_hash: Hash128 },
 		/// Fragment sale has been opened
 		Publishing { fragment_hash: Hash128 },
 		/// Fragment sale has been closed
@@ -391,7 +376,7 @@ pub mod pallet {
 		/// This should not really happen
 		SystematicFailure,
 		/// Fragment Instance already uploaded with the same unique data
-		UniqueDataExists
+		UniqueDataExists,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -409,12 +394,17 @@ pub mod pallet {
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `proto_hash` - **Hash** of an **existing Proto-Fragment**
 		/// * `metadata` -  **Metadata** of the **Fragment Definition**
-		/// * `permissions` - **Actions** (encapsulated in a `FragmentPerms` bitflag enum) 
-		/// that are **allowed to be done** to **any Fragment Instance** that is **created** from** the
-		/// **Fragment Definition that is created in this extrnisic function** (e.g edit, transfer etc.)	
+		///
+		/// * `permissions` - **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum)
+		/// that are **allowed to be done** to **any Fragment Instance** when it **first gets created**
+		/// from the **Fragment Definition that is created in this extrnisic function** (e.g edit, transfer etc.)
+		///
+		/// Note: These **allowed set of actions of a created Fragment Instance** ***may change***
+		/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
+		///
 		/// * `unique` (*optional*) - **Whether** the **Fragment Definiton** is **unique**
-		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)** 
-		/// that **can be created** using the **Fragment Definition** 
+		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)**
+		/// that **can be created** using the **Fragment Definition**
 		#[pallet::weight(<T as Config>::WeightInfo::create())]
 		pub fn create(
 			origin: OriginFor<T>,
@@ -468,7 +458,7 @@ pub mod pallet {
 
 			Proto2Fragments::<T>::append(&proto_hash, hash);
 
-			Self::deposit_event(Event::DefinitionCreated(hash));
+			Self::deposit_event(Event::DefinitionCreated { fragment_hash: hash });
 			Ok(())
 		}
 
@@ -481,9 +471,9 @@ pub mod pallet {
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `fragment_hash` - ID of the **Fragment Definition** to put on sale
 		/// * `price` -  **Price** to **buy** a **single Fragment Instance** that is created from the **Fragment Definition*
-		/// * `quantity` (*optional*) - **Maximum amount of Fragment Instances** that **can be bought** 
+		/// * `quantity` (*optional*) - **Maximum amount of Fragment Instances** that **can be bought**
 		/// * `expires` (*optional*) - **Block number** that the sale ends at (*optional*)
-		/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), 
+		/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// the **number of items** to **top up** in the **stack of stackable items**
 		#[pallet::weight(50_000)]
 		pub fn publish(
@@ -518,7 +508,7 @@ pub mod pallet {
 
 			if let Some(max_supply) = fragment_data.max_supply {
 				let max: Unit = max_supply.into();
-				let existing: Unit = 
+				let existing: Unit =
 					<EditionsCount<T>>::get(&fragment_hash).unwrap_or(Compact(0)).into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 				if let Some(quantity) = quantity {
@@ -529,7 +519,7 @@ pub mod pallet {
 					return Err(Error::<T>::ParamsNotValid.into());
 				}
 				if left == 0 {
-					return Err(Error::<T>::MaxSupplyReached.into())
+					return Err(Error::<T>::MaxSupplyReached.into());
 				}
 			}
 
@@ -550,7 +540,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Take the **Fragment Definition `fragment_hash`** off sale. 
+		/// Take the **Fragment Definition `fragment_hash`** off sale.
 		/// When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
 		///
 		/// Note: **Only** the **Fragment's Proto-Fragment's owner** is **allowed** to take the Fragment off sale
@@ -562,7 +552,7 @@ pub mod pallet {
 		#[pallet::weight(50_000)]
 		pub fn unpublish(origin: OriginFor<T>, fragment_hash: Hash128) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			
+
 			let proto_hash =
 				<Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `fragment_hash`
 			let proto: Proto<T::AccountId, T::BlockNumber> =
@@ -590,24 +580,23 @@ pub mod pallet {
 			Ok(())
 		}
 
-		
-		/// Create **Fragment instance(s)** from the **Fragment Definition `fragment_hash`** and 
+		/// Create **Fragment instance(s)** from the **Fragment Definition `fragment_hash`** and
 		/// **assign their ownership** to **`origin`**
 		///
 		/// Note: **Each created Fragment instance** will have a **different Edition ID** and a **Copy ID of "1"**.
-		/// 
-		/// Note: **Only** the **Fragment Definition's Proto-Fragment's owner** is **allowed** to 
+		///
+		/// Note: **Only** the **Fragment Definition's Proto-Fragment's owner** is **allowed** to
 		/// create instance(s) of the Fragment in this extrinsic function.
 		///
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `fragment_hash` - **ID* of the **Fragment Definition**
-		/// * `options` - **Enum** indicating whether to 
+		/// * `options` - **Enum** indicating whether to
 		/// **create one Fragment Instance with custom data attached to it** or whether to  
 		/// **create multiple Fragment Instances (with no custom data attached)**
-		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items** 
-		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), 
+		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
+		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
 		#[pallet::weight(50_000)]
 		pub fn mint(
@@ -656,23 +645,23 @@ pub mod pallet {
 			)
 		}
 
-		/// Allows the Caller Account ID `origin` to create Fragment instance(s) of the Fragment Definition `fragment_hash`, 
+		/// Allows the Caller Account ID `origin` to create Fragment instance(s) of the Fragment Definition `fragment_hash`,
 		/// for a fee. The ownership of the created Fragment instance(s) is assigned to the Caller Account ID.
-		/// 
+		///
 		/// Note: Each created Fragment instance will have a different Edition ID and a Copy ID of "1".
-		/// 
-		/// Note: The total fee that the buyer (i.e the Caller Account ID `origin`) must pay is the 
+		///
+		/// Note: The total fee that the buyer (i.e the Caller Account ID `origin`) must pay is the
 		/// specified price-per-instance multiplied by the total number of instance(s) that the buyer wants to create. (@karan)
 		/// This amount will be transferred to the Fragment Definition's Vault's Account ID.
-		/// 
+		///
 		///
 		///
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `fragment_hash` - **ID** of the **Fragment Definition**
-		/// * `options` - **Enum** indicating whether to 
-		/// **create one Fragment Instance with custom data attached to it** or whether to 
+		/// * `options` - **Enum** indicating whether to
+		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
 		#[pallet::weight(50_000)]
 		pub fn buy(
@@ -706,30 +695,29 @@ pub mod pallet {
 
 			let price = price.saturating_mul(quantity as u128); // `price` = `price` * `quantity`
 
-			if let Some(currency) = fragment_data.metadata.currency { 
+			if let Some(currency) = fragment_data.metadata.currency {
+				let minimum_balance_needed_to_exist =
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(currency);
+				let price_balance: <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::Balance =
+					price.saturated_into();
 
-				use frame_support::traits::tokens::fungibles::Inspect;
-
-				let minimum_balance_needed_to_exist = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(currency);
-
-				let price_balance : <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::Balance = price.saturated_into();
-				
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who) >= price_balance + minimum_balance_needed_to_exist, 
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who)
+						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
-
 			} else {
-				let minimum_balance_needed_to_exist = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
+				let minimum_balance_needed_to_exist =
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
+				let price_balance: <pallet_balances::Pallet<T> as Currency<T::AccountId>>::Balance =
+					price.saturated_into();
 
-				let price_balance : <pallet_balances::Pallet<T> as Currency<T::AccountId>>::Balance = price.saturated_into();
-				
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who) >= price_balance + minimum_balance_needed_to_exist, 
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who)
+						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 			}
-
 
 			// ! Writing
 
@@ -766,7 +754,6 @@ pub mod pallet {
 			}
 
 			Ok(())
-
 		}
 
 		/// Give the **Fragment Instance whose Fragment Definition ID is `class`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
@@ -776,7 +763,7 @@ pub mod pallet {
 		/// Otherwise, its ownernship is transferred from `origin` to `to`.
 		///
 		/// Note: **Only** the **Fragment Instance's owner** is **allowed** to give the Fragment Instance
-		/// 
+		///
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
@@ -784,8 +771,16 @@ pub mod pallet {
 		/// * `edition` - Edition ID of the Fragment Insance to give
 		/// * `copy` - Copy ID of the Fragment instance to give
 		/// * `to` - **Account ID** to give the Fragment instance to
-		/// * `new_permissions` (*optional*) - The permitted actions (encapsulated in a `FragmentPerms` bitflag enum) that the account that is given the Fragment instance can do with it
-		/// * `expiration` (*optional*) - Block number that the duplicated Fragment Instance expires at. If the Fragment Instance was not duplicated, this parameter is irrelevant.
+		///
+		/// * `new_permissions` (*optional*) - The permitted set of actions (encapsulated in a `FragmentPerms` bitflag enum)
+		/// that the account that is given the Fragment instance can do with it.
+		///
+		/// Note: `new_permissions` must be a subset of the current `permissions` field of the Fragment Instance;
+		/// therefore, the `new_permissions` can only be more restrictive (than the current `permissions` field of the Fragment Instance),
+		/// never more permissive
+		///
+		/// * `expiration` (*optional*) - Block number that the duplicated Fragment Instance expires at.
+		/// If the Fragment Instance was not duplicated, this parameter is irrelevant.
 		#[pallet::weight(50_000)]
 		pub fn give(
 			origin: OriginFor<T>,
@@ -868,10 +863,9 @@ pub mod pallet {
 
 				// handle expiration
 				if let Some(expiring_at) = item_data.expiring_at {
-					let expiration = 
-					if let Some(expiration) = expiration {
+					let expiration = if let Some(expiration) = expiration {
 						if expiration < expiring_at {
-							item_data.expiring_at = Some(expiration); 
+							item_data.expiring_at = Some(expiration);
 							expiration
 						} else {
 							expiring_at
@@ -881,7 +875,7 @@ pub mod pallet {
 					};
 					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
 				} else if let Some(expiration) = expiration {
-					item_data.expiring_at = Some(expiration); 
+					item_data.expiring_at = Some(expiration);
 					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
 				}
 
@@ -933,9 +927,9 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Create the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class`, 
+		/// Create the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class`,
 		/// whose Edition ID is `edition`** and whose Copy ID is `copy`**  
-		/// 
+		///
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
@@ -1023,16 +1017,16 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	/// **Get** the **Account ID** of the Fragment Definition `class_hash`**
-	/// 
+	///
 	/// This Account ID is determinstically computed using the Fragment Definition `class_hash`
 	pub fn get_vault_id(class_hash: Hash128) -> T::AccountId {
 		let hash = blake2_256(&[&b"fragments-vault"[..], &class_hash].concat());
 		T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 	}
 
-	/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class_hash`, 
-	/// whose Edition ID is `edition`** and whose Copy ID is `copy`** 
-	/// 
+	/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class_hash`,
+	/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
+	///
 	/// This Account ID is determinstically computed using the Fragment Definition ID `class_hash`, the Edition ID `edition` and the Copy ID `copy`
 	pub fn get_fragment_account_id(class_hash: Hash128, edition: Unit, copy: Unit) -> T::AccountId {
 		let hash = blake2_256(
@@ -1048,14 +1042,14 @@ impl<T: Config> Pallet<T> {
 	/// * `to` - **Account ID** to assign ownernship of the created Fragment instances to
 	/// * `fragment_hash` - ID of the Fragment Definition
 	/// * `sale` - Struct **representing** a **sale of the Fragment Definition**, if the **Fragment Definition** is **currently on sale**
-	/// * `options` - **Enum** indicating whether to 
-	/// **create one Fragment Instance with custom data attached to it** or whether to 
+	/// * `options` - **Enum** indicating whether to
+	/// **create one Fragment Instance with custom data attached to it** or whether to
 	/// **create multiple Fragment Instances (with no custom data attached)**
 	/// * `quantity` - **Number of Fragment Instances** to **create**
 	/// * `current_block_number` - **Current block number** of the **Clamor Blockchain**
 	/// * `expiring_at` (*optional*) - **Block Number** that the **Fragment Instance** will **expire at**
-	/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items** 
-	/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items), 
+	/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
+	/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
 	pub fn mint_fragments(
 		to: &T::AccountId,
@@ -1074,28 +1068,29 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
-		
+
 		// we need this to index transactions
 		let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index() // `<frame_system::Pallet<T>>::extrinsic_index()` is defined as: "Gets the index of extrinsic that is currently executing." (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)
-		.ok_or(Error::<T>::SystematicFailure)?;
+			.ok_or(Error::<T>::SystematicFailure)?;
 
 		let (data_hash, data_len) = match options {
 			FragmentBuyOptions::UniqueData(data) => {
-
 				if fragment_data.unique.is_none() || quantity != 1 {
-					return Err(Error::<T>::ParamsNotValid.into())
+					return Err(Error::<T>::ParamsNotValid.into());
 				}
 
 				let data_hash = blake2_256(&data);
 
-				ensure!(!<UniqueData2Edition<T>>::contains_key(fragment_hash, data_hash), Error::<T>::UniqueDataExists);
+				ensure!(
+					!<UniqueData2Edition<T>>::contains_key(fragment_hash, data_hash),
+					Error::<T>::UniqueDataExists
+				);
 
 				(Some(data_hash), Some(data.len()))
 			},
-			FragmentBuyOptions::Quantity(_) => { 
-				
+			FragmentBuyOptions::Quantity(_) => {
 				if fragment_data.unique.is_some() {
-					return Err(Error::<T>::ParamsNotValid.into())
+					return Err(Error::<T>::ParamsNotValid.into());
 				}
 
 				(None, None)
@@ -1166,7 +1161,7 @@ impl<T: Config> Pallet<T> {
 					});
 				}
 
-				if let (Some(data_hash), Some(data_len)) = (data_hash, data_len)  {
+				if let (Some(data_hash), Some(data_len)) = (data_hash, data_len) {
 					<UniqueData2Edition<T>>::insert(fragment_hash, data_hash, existing); // if `data` exists, `quantity` is ensured to be 1
 
 					// index immutable data for IPFS discovery

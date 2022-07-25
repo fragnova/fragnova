@@ -42,7 +42,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, FragmentPerms::NONE, None, None)
 	verify {
-		assert_last_event::<T>(Event::<T>::ClassCreated { fragment_hash: hash }.into())
+		assert_last_event::<T>(Event::<T>::DefinitionCreated { fragment_hash: hash }.into())
 	}
 
 	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);
