@@ -10,7 +10,6 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-
 #[cfg(any(test, feature = "compile-dummy-data"))]
 pub mod dummy_data;
 
