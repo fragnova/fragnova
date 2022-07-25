@@ -7,26 +7,16 @@ use frame_support::{
 };
 use frame_system;
 
-use sp_core::{
+use sp_core::{ed25519::Signature, H256};
 
-	ed25519::Signature,
-
-	H256
+use sp_runtime::traits::{
+	BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
 };
 
-use sp_runtime::{
-	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify}
-};
-
-use sp_runtime::testing::{
-	Header, TestXt, 
-};
-
-
+use sp_runtime::testing::{Header, TestXt};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
-
 
 // Construct a mock runtime environment.
 frame_support::construct_runtime!(
@@ -42,25 +32,25 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
-		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
+		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		AccountsPallet: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 	}
 );
 
-/// When to use:
-///
-/// To declare parameter types for a pallet's relevant associated types during runtime construction.
-///
-/// What it does:
-///
-/// The macro replaces each parameter specified into a struct type with a get() function returning
-/// its specified value. Each parameter struct type also implements the
-/// frame_support::traits::Get<I> trait to convert the type to its specified value.
-///
-/// Source: https://docs.substrate.io/v3/runtime/macros/
+// When to use:
+//
+// To declare parameter types for a pallet's relevant associated types during runtime construction.
+//
+// What it does:
+//
+// The macro replaces each parameter specified into a struct type with a get() function returning its specified value.
+// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
+//
+// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
@@ -129,9 +119,9 @@ impl pallet_randomness_collective_flip::Config for Test {}
 
 /// If `Test` implements `pallet_balances::Config`, the assignment might use `u64` for the `Balance` type. (https://docs.substrate.io/v3/runtime/testing/)
 ///
-/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block
-/// `impl system::Config for Test` above) to `u64`, mock runtimes ease the mental overhead of
-/// comprehensive, conscientious testers. Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
+/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block `impl system::Config for Test` above) to `u64`,
+/// mock runtimes ease the mental overhead of comprehensive, conscientious testers.
+/// Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
 impl pallet_balances::Config for Test {
 	type Balance = u64;
 	type DustRemoval = ();
@@ -167,6 +157,14 @@ impl pallet_detach::Config for Test {
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
+impl pallet_timestamp::Config for Test {
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = ();
+	type WeightInfo = ();
+}
+
 impl pallet_proxy::Config for Test {
 	type Event = Event;
 	type Call = Call;
@@ -192,26 +190,24 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext
 }
 
-
 /// Simulate block production
-/// 
-/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls 
-/// from all modules with `System::block_number()` as the sole input. 
-/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should 
+///
+/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls
+/// from all modules with `System::block_number()` as the sole input.
+/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should
 /// prioritize readability to facilitate future maintenance.
-/// 
+///
 /// Source: https://docs.substrate.io/v3/runtime/testing/
 pub fn run_to_block(n: u64) {
-    while System::block_number() < n {
+	while System::block_number() < n {
+		use frame_support::traits::{OnFinalize, OnInitialize};
 
-		use frame_support::traits::{OnInitialize, OnFinalize}; 
-
-        if System::block_number() > 0 {
-            ProtosPallet::on_finalize(System::block_number());
-            System::on_finalize(System::block_number());
-        }
-        System::set_block_number(System::block_number() + 1);
-        System::on_initialize(System::block_number());
-        // ProtosPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/protos/src/lib.rs
-    }
+		if System::block_number() > 0 {
+			ProtosPallet::on_finalize(System::block_number());
+			System::on_finalize(System::block_number());
+		}
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+		// ProtosPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/protos/src/lib.rs
+	}
 }

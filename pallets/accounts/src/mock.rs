@@ -30,20 +30,24 @@ use sp_core::{
 
 };
 
-use sp_keystore::{
-    testing::KeyStore,
-    KeystoreExt,
-    SyncCryptoStore,
+use parking_lot::RwLock;
+
+use sp_core::{
+	ed25519::Signature,
+	offchain::{
+		testing::{self, OffchainState, PoolState},
+		OffchainDbExt, OffchainWorkerExt, TransactionPoolExt,
+	},
+	H256,
 };
 
+use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
+
 use std::sync::Arc;
-
-
 
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
-
 	RuntimeAppPublic,
 };
 
@@ -60,10 +64,11 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		AccountsPallet: pallet_accounts::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 	}
 );
 
@@ -161,7 +166,6 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
-
 impl pallet_accounts::EthFragContract for Test {
 	fn get_partner_contracts() -> Vec<String> {
 		vec![String::from("0xBADF00D")]
@@ -193,6 +197,14 @@ impl pallet_proxy::Config for Test {
 	type AnnouncementDepositFactor = ConstU32<1>;
 }
 
+impl pallet_timestamp::Config for Test {
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = ();
+	type WeightInfo = ();
+}
+
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	
@@ -203,6 +215,46 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
 
 	ext
+}
+
+pub fn new_test_ext_with_ocw() -> (
+	sp_io::TestExternalities,
+	Arc<RwLock<PoolState>>,
+	Arc<RwLock<OffchainState>>,
+	sp_core::ed25519::Public,
+) {
+	const PHRASE: &str =
+		"news slush supreme milk chapter athlete soap sausage put clutch what kitten";
+
+	let (offchain, offchain_state) = testing::TestOffchainExt::new();
+	let (pool, pool_state) = testing::TestTransactionPoolExt::new();
+
+	let keystore = KeyStore::new();
+
+	SyncCryptoStore::ed25519_generate_new(
+		&keystore,
+		<crate::crypto::Public as RuntimeAppPublic>::ID,
+		Some(&format!("{}", PHRASE)),
+	)
+	.unwrap();
+
+	let ed25519_public_key =
+		SyncCryptoStore::ed25519_public_keys(&keystore, crate::crypto::Public::ID)
+			.get(0)
+			.unwrap()
+			.clone();
+
+	let mut t = sp_io::TestExternalities::default();
+	t.register_extension(OffchainDbExt::new(offchain.clone()));
+	t.register_extension(OffchainWorkerExt::new(offchain));
+	t.register_extension(TransactionPoolExt::new(pool));
+	t.register_extension(KeystoreExt(Arc::new(keystore)));
+
+	// Karan Da Kiya Hua
+
+	t.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
+
+	(t, pool_state, offchain_state, ed25519_public_key) // copied from https://github.com/JoshOrndorff/recipes/blob/master/pallets/ocw-demo/src/tests.rs
 }
 
 
