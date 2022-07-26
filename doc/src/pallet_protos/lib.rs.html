@@ -1061,6 +1061,9 @@
 <span id="1055">1055</span>
 <span id="1056">1056</span>
 <span id="1057">1057</span>
+<span id="1058">1058</span>
+<span id="1059">1059</span>
+<span id="1060">1060</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Proto-Fragments.</span>
 <span class="doccomment">//! </span>
 <span class="doccomment">//! IMPORTANT STUFF TO KNOW:</span>
@@ -1068,6 +1071,9 @@
 <span class="doccomment">//! A Proto-Fragment is a digital asset that can be used to build a game or application</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">dummy_data</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">mock</span>;
@@ -1145,7 +1151,7 @@
 }
 
 <span class="doccomment">/// **Struct** of a **Proto-Fragment Patch**</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ProtoPatch</span><span class="op">&lt;</span><span class="ident">TBlockNumber</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// **Block Number** in which the **patch was created**</span>
 	<span class="kw">pub</span> <span class="ident">block</span>: <span class="ident">TBlockNumber</span>,
@@ -1155,14 +1161,14 @@
 	<span class="kw">pub</span> <span class="ident">references</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Hash256</span><span class="op">&gt;</span>,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AccountsInfo</span> {
 	<span class="kw">pub</span> <span class="ident">active_accounts</span>: <span class="ident">u128</span>,
 	<span class="kw">pub</span> <span class="ident">lifetime_accounts</span>: <span class="ident">u128</span>,
 }
 
 <span class="doccomment">/// **Struct** of a **Proto-Fragment**</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">TAccountId</span>, <span class="ident">TBlockNumber</span><span class="op">&gt;</span> {
 	<span class="doccomment">/// **Block Number** in which the **Proto-Fragment was minted in**</span>
 	<span class="kw">pub</span> <span class="ident">block</span>: <span class="ident">TBlockNumber</span>,
@@ -1778,7 +1784,7 @@
 
 			<span class="kw">let</span> <span class="ident">current_block_number</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::block_number</span>();
 			<span class="macro">ensure!</span>(
-				<span class="ident">current_block_number</span> <span class="op">&gt;</span> (<span class="ident">stake</span>.<span class="number">1</span> <span class="op">+</span> <span class="ident">T::StakeLockupPeriod::get</span>().<span class="ident">saturated_into</span>()),
+				<span class="ident">current_block_number</span> <span class="op">&gt;</span> (<span class="ident">stake</span>.<span class="number">1</span> <span class="op">+</span> <span class="ident">T::StakeLockupPeriod::get</span>().<span class="ident">saturated_into</span>()), 
 				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::StakeLocked</span>
 			);
 
@@ -2119,5 +2125,5 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (62b272d25 2022-07-21)" ></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (6dbae3ad1 2022-07-25)" ></div>
 </body></html>

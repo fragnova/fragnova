@@ -1,7 +1,7 @@
 var sourcesIndex = {};
 sourcesIndex["clamor"] = {"name":"","files":["chain_spec.rs","clamor.rs","lib.rs","rpc.rs","service.rs"]};
 sourcesIndex["clamor_runtime"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["pallet_accounts"] = {"name":"","files":["lib.rs","weights.rs"]};
+sourcesIndex["pallet_accounts"] = {"name":"","files":["dummy_data.rs","lib.rs","weights.rs"]};
 sourcesIndex["pallet_detach"] = {"name":"","files":["lib.rs","weights.rs"]};
 sourcesIndex["pallet_fragments"] = {"name":"","files":["lib.rs","weights.rs"]};
 sourcesIndex["pallet_protos"] = {"name":"","files":["lib.rs","weights.rs"]};
