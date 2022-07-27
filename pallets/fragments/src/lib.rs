@@ -445,8 +445,12 @@ pub mod pallet {
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
 			let vault = Self::get_vault_id(hash);
-			let min_balance = <T as pallet_assets::Config>::Currency::minimum_balance();
-			<T as pallet_assets::Config>::Currency::reserve(&vault, min_balance)?;
+			let min_balance =
+				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
+			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
+				&vault,
+				min_balance,
+			);
 
 			let fragment_data = FragmentDefinition {
 				proto_hash,
@@ -958,10 +962,10 @@ pub mod pallet {
 			let frag_account = Self::get_fragment_account_id(class, edition, copy);
 			let min_balance =
 				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
-			<pallet_balances::Pallet<T> as ReservableCurrency<T::AccountId>>::reserve(
+			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
 				&frag_account,
 				min_balance,
-			)?;
+			);
 
 			// TODO Make owner pay for deposit actually!
 			// TODO setup proxy

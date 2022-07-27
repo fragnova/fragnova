@@ -84,9 +84,28 @@ mod create_tests {
 				.contains(&definition.get_definition_id())
 			);
 
-			let event = System::events().pop().expect("Expected at least one EventRecord to be found").event;
+			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+
+			assert_eq!(
+				System::events()[System::events().len() - 4].event, 
+				mock::Event::from(
+					pallet_balances::Event::Deposit { who: definition.get_vault_account_id(), amount: minimum_balance}
+				)
+			);
+			assert_eq!(
+				System::events()[System::events().len() - 3].event, 
+				mock::Event::from(
+					frame_system::Event::NewAccount { account: definition.get_vault_account_id() }
+				)
+			);
+			assert_eq!(
+				System::events()[System::events().len() - 2].event, 
+				mock::Event::from(
+					pallet_balances::Event::Endowed { account: definition.get_vault_account_id(), free_balance: minimum_balance}
+				)
+			);
         	assert_eq!(
-				event, 
+				System::events()[System::events().len() - 1].event, 
 				mock::Event::from(
 					pallet_fragments::Event::DefinitionCreated { fragment_hash: definition.get_definition_id() }
 				)
@@ -544,7 +563,7 @@ mod mint_tests {
 					.contains(&(Compact(edition_id), Compact(1)))
 				);
 
-				let event = System::events()[2 + (edition_id - 1) as usize].event.clone(); // we do `2 +` because events were also emitted when we did `upload()` and `create()`
+				let event = System::events()[5 + (edition_id - 1) as usize].event.clone(); // we do `5 +` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events)
 				assert_eq!(
 					event, 
 					mock::Event::from(
@@ -626,7 +645,7 @@ mod mint_tests {
 				.contains(&(Compact(1), Compact(1)))
 			);
 
-			let event = System::events()[2 as usize].event.clone(); // we write `2` because events were also emitted when we did `upload()` and `create()`
+			let event = System::events()[5 as usize].event.clone(); // we write `5` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events)
 			assert_eq!(
 				event, 
 				mock::Event::from(
@@ -922,7 +941,7 @@ mod buy_tests {
 				);
 
 				assert_eq!(
-					System::events()[5 + edition_id as usize].event.clone(), // we do `5 +` because events were also emitted when we did `upload()` and `create()` and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events) 
+					System::events()[9 + (edition_id - 1) as usize].event.clone(), // we do `9 +` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events) 
 					mock::Event::from(
 						pallet_fragments::Event::InventoryAdded {
 							account_id: dd.account_id_second,
@@ -940,23 +959,23 @@ mod buy_tests {
 				Compact(quantity)
 			);
 
-			assert_eq!(
-				System::events()[System::events().len() - 3].event, 
-				mock::Event::from(
-					frame_system::Event::NewAccount {
-						account: buy_non_unique.publish.definition.get_vault_account_id(),
-					}
-				)
-			);
-			assert_eq!(
-				System::events()[System::events().len() - 2].event,
-				mock::Event::from(
-					pallet_balances::Event::Endowed {
-						account: buy_non_unique.publish.definition.get_vault_account_id(),
-						free_balance: buy_non_unique.publish.price.saturating_mul(quantity as u128),
-					}
-				)
-			);
+			// assert_eq!(
+			// 	System::events()[System::events().len() - 3].event, 
+			// 	mock::Event::from(
+			// 		frame_system::Event::NewAccount {
+			// 			account: buy_non_unique.publish.definition.get_vault_account_id(),
+			// 		}
+			// 	)
+			// );
+			// assert_eq!(
+			// 	System::events()[System::events().len() - 2].event,
+			// 	mock::Event::from(
+			// 		pallet_balances::Event::Endowed {
+			// 			account: buy_non_unique.publish.definition.get_vault_account_id(),
+			// 			free_balance: buy_non_unique.publish.price.saturating_mul(quantity as u128),
+			// 		}
+			// 	)
+			// );
 			assert_eq!(
 				System::events()[System::events().len() - 1].event, 
 				mock::Event::from(
@@ -1044,7 +1063,7 @@ mod buy_tests {
 
 			
 			assert_eq!(
-				System::events()[6 as usize].event.clone(), // we do `6` because events were also emitted when we did `upload()` and `create()` and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
+				System::events()[9 as usize].event.clone(), // we write `9` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events) 
 				mock::Event::from(
 					pallet_fragments::Event::InventoryAdded {
 						account_id: dd.account_id_second,
@@ -1059,24 +1078,26 @@ mod buy_tests {
 				Compact(1)
 			);
 
+			println!("les events are: {:#?}", System::events());
 
-			assert_eq!(
-				System::events()[System::events().len() - 3].event, 
-				mock::Event::from(
-					frame_system::Event::NewAccount {
-						account: buy_unique.publish.definition.get_vault_account_id(),
-					}
-				)
-			);
-			assert_eq!(
-				System::events()[System::events().len() - 2].event,
-				mock::Event::from(
-					pallet_balances::Event::Endowed {
-						account: buy_unique.publish.definition.get_vault_account_id(),
-						free_balance: buy_unique.publish.price.saturating_mul(quantity as u128),
-					}
-				)
-			);
+
+			// assert_eq!(
+			// 	System::events()[System::events().len() - 3].event, 
+			// 	mock::Event::from(
+			// 		frame_system::Event::NewAccount {
+			// 			account: buy_unique.publish.definition.get_vault_account_id(),
+			// 		}
+			// 	)
+			// );
+			// assert_eq!(
+			// 	System::events()[System::events().len() - 2].event,
+			// 	mock::Event::from(
+			// 		pallet_balances::Event::Endowed {
+			// 			account: buy_unique.publish.definition.get_vault_account_id(),
+			// 			free_balance: buy_unique.publish.price.saturating_mul(quantity as u128),
+			// 		}
+			// 	)
+			// );
 			assert_eq!(
 				System::events()[System::events().len() - 1].event, 
 				mock::Event::from(

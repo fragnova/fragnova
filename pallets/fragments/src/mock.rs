@@ -2,7 +2,7 @@ pub use crate as pallet_fragments;
 use crate::*;
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, ConstU64, ConstU128},
+	traits::{ConstU128, ConstU32, ConstU64},
 };
 use frame_system;
 use sp_core::{ed25519::Signature, H256};
@@ -13,6 +13,13 @@ use sp_runtime::{
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+
+/// Balance of an account.
+pub type Balance = u128;
+
+pub const MILLICENTS: Balance = 1_000_000_000;
+pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
+pub const DOLLARS: Balance = 100 * CENTS;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -33,6 +40,16 @@ frame_support::construct_runtime!(
 	}
 );
 
+// When to use:
+//
+// To declare parameter types for a pallet's relevant associated types during runtime construction.
+//
+// What it does:
+//
+// The macro replaces each parameter specified into a struct type with a get() function returning its specified value.
+// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
+//
+// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
@@ -99,7 +116,7 @@ where
 impl pallet_randomness_collective_flip::Config for Test {}
 
 impl pallet_balances::Config for Test {
-	type Balance = u128;
+	type Balance = Balance;
 	type DustRemoval = ();
 	type Event = Event;
 	type ExistentialDeposit = ConstU128<1>;
@@ -110,21 +127,29 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 }
 
+parameter_types! {
+	pub const AssetDeposit: Balance = 100 * DOLLARS;
+	pub const ApprovalDeposit: Balance = 1 * DOLLARS;
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 10 * DOLLARS;
+	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
+}
+
 impl pallet_assets::Config for Test {
 	type Event = Event;
-	type Balance = u128;
+	type Balance = Balance;
 	type AssetId = u64;
-	type Currency = ();
+	type Currency = BalancesPallet;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type AssetDeposit = ConstU32<1>;
-	type AssetAccountDeposit = ConstU32<10>;
-	type MetadataDepositBase = ConstU32<1>;
-	type MetadataDepositPerByte = ConstU32<1>;
-	type ApprovalDeposit = ConstU32<1>;
-	type StringLimit = ConstU32<50>;
+	type AssetDeposit = AssetDeposit;
+	type AssetAccountDeposit = ConstU128<DOLLARS>;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
 	type Freezer = ();
-	type WeightInfo = ();
 	type Extra = ();
+	type WeightInfo = ();
 }
 
 impl pallet_protos::Config for Test {
@@ -147,16 +172,16 @@ impl pallet_accounts::Config for Test {
 impl pallet_proxy::Config for Test {
 	type Event = Event;
 	type Call = Call;
-	type Currency = ();
+	type Currency = BalancesPallet;
 	type ProxyType = ();
-	type ProxyDepositBase = ConstU32<1>;
-	type ProxyDepositFactor = ConstU32<1>;
+	type ProxyDepositBase = ConstU128<1>;
+	type ProxyDepositFactor = ConstU128<1>;
 	type MaxProxies = ConstU32<4>;
 	type WeightInfo = ();
 	type MaxPending = ConstU32<2>;
 	type CallHasher = BlakeTwo256;
-	type AnnouncementDepositBase = ConstU32<1>;
-	type AnnouncementDepositFactor = ConstU32<1>;
+	type AnnouncementDepositBase = ConstU128<1>;
+	type AnnouncementDepositFactor = ConstU128<1>;
 }
 
 impl pallet_fragments::Config for Test {
@@ -188,26 +213,24 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext
 }
 
-
 /// Simulate block production
-/// 
-/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls 
-/// from all modules with `System::block_number()` as the sole input. 
-/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should 
+///
+/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls
+/// from all modules with `System::block_number()` as the sole input.
+/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should
 /// prioritize readability to facilitate future maintenance.
-/// 
+///
 /// Source: https://docs.substrate.io/v3/runtime/testing/
 pub fn run_to_block(n: u64) {
-    while System::block_number() < n {
+	while System::block_number() < n {
+		use frame_support::traits::{OnFinalize, OnInitialize};
 
-		use frame_support::traits::{OnInitialize, OnFinalize}; 
-
-        if System::block_number() > 0 {
-            FragmentsPallet::on_finalize(System::block_number());
-            System::on_finalize(System::block_number());
-        }
-        System::set_block_number(System::block_number() + 1);
-        System::on_initialize(System::block_number());
-        // FragmentsPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/fragments/src/lib.rs
-    }
+		if System::block_number() > 0 {
+			FragmentsPallet::on_finalize(System::block_number());
+			System::on_finalize(System::block_number());
+		}
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+		// FragmentsPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/fragments/src/lib.rs
+	}
 }
