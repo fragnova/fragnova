@@ -88,7 +88,7 @@ mod create_tests {
         	assert_eq!(
 				event, 
 				mock::Event::from(
-					pallet_fragments::Event::DefinitionCreated(definition.get_definition_id())
+					pallet_fragments::Event::DefinitionCreated { fragment_hash: definition.get_definition_id() }
 				)
 			);
 

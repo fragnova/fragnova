@@ -28,6 +28,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
+mod dummy_data;
+
+#[cfg(test)]
 mod mock;
 
 #[cfg(test)]
