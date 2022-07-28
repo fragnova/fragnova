@@ -16,7 +16,7 @@ mod copied_from_pallet_protos {
 	use super::*;
 
 	pub fn upload(signer: <Test as frame_system::Config>::AccountId, proto: &ProtoFragment) -> DispatchResult {
-		ProtosPallet::upload(
+		Protos::upload(
 			Origin::signed(signer), 
 			proto.references.clone(), 
 			proto.category.clone(), 
@@ -84,7 +84,7 @@ mod create_tests {
 				.contains(&definition.get_definition_id())
 			);
 
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
 
 			assert_eq!(
 				System::events()[System::events().len() - 4].event, 
@@ -893,8 +893,8 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_non_unique.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1013,8 +1013,8 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_unique.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1152,8 +1152,8 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1183,8 +1183,8 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1
 			);
@@ -1274,8 +1274,8 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1313,8 +1313,8 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1346,8 +1346,8 @@ mod buy_tests {
 
 			// We deposit (Price * 1) + `minimum_balance` 
 			// because that's all we need to deposit if our options parameter is unique
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_non_unique.publish.price.saturating_mul(1 as u128) + minimum_balance
 			);
@@ -1382,8 +1382,8 @@ mod buy_tests {
 
 			// Since our options parameter is `FragmentBuyOptions::Quantity(123)`, 
 			// we deposit (Price * 123) + `minimum_balance`
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_unique.publish.price.saturating_mul(123 as u128) + minimum_balance
 			);
@@ -1422,8 +1422,8 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1456,8 +1456,8 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
@@ -1489,8 +1489,8 @@ mod buy_tests {
 
 			// We deposit (Price * 1) + `minimum_balance` 
 			// because that's all we need to deposit if our options parameter is unique
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_unique.publish.price.saturating_mul(1 as u128) + minimum_balance
 			);
@@ -1499,8 +1499,8 @@ mod buy_tests {
 
 			// We deposit (Price * 1) + `minimum_balance` 
 			// because that's all we need to deposit if our options parameter is unique
-			let minimum_balance = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
-			_ = <BalancesPallet as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			let minimum_balance = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::minimum_balance();
+			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
 				&dd.account_id_second, 
 				buy_unique.publish.price.saturating_mul(1 as u128) + minimum_balance
 			);

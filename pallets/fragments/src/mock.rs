@@ -29,12 +29,12 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
+		Protos: pallet_protos::{Pallet, Call, Storage, Event<T>},
 		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
-		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
-		BalancesPallet: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		AssetsPallet: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		AccountsPallet: pallet_accounts::{Pallet, Call, Storage, Event<T>},
+		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 	}
@@ -139,7 +139,7 @@ impl pallet_assets::Config for Test {
 	type Event = Event;
 	type Balance = Balance;
 	type AssetId = u64;
-	type Currency = BalancesPallet;
+	type Currency = Balances;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
 	type AssetAccountDeposit = ConstU128<DOLLARS>;
@@ -172,7 +172,7 @@ impl pallet_accounts::Config for Test {
 impl pallet_proxy::Config for Test {
 	type Event = Event;
 	type Call = Call;
-	type Currency = BalancesPallet;
+	type Currency = Balances;
 	type ProxyType = ();
 	type ProxyDepositBase = ConstU128<1>;
 	type ProxyDepositFactor = ConstU128<1>;
