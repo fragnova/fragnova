@@ -1,7 +1,7 @@
 //! This pallet `fragments` performs logic related to Proto-Fragments.
-//! 
+//!
 //! IMPORTANT STUFF TO KNOW:
-//! 
+//!
 //! A Proto-Fragment is a digital asset that can be used to build a game or application
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -718,7 +718,7 @@ pub mod pallet {
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 			ensure!(
-				current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()), 
+				current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()),
 				Error::<T>::StakeLocked
 			);
 
@@ -827,33 +827,67 @@ pub mod pallet {
 					}
 				}
 
-				if categories.len() == 0
-				// Use any here to match any category towards proto
-					|| categories.into_iter().any(|cat| *cat == struct_proto.category)
-				{
-					// Use all here to match all tags always
-					if tags.len() == 0 {
-						true
-					} else {
-						tags.into_iter().all(|tag| {
-							let tag_idx = <Tags<T>>::get(tag);
-							if let Some(tag_idx) = tag_idx {
-								struct_proto.tags.contains(&Compact::from(tag_idx))
-							} else {
-								false
-							}
-						})
-					}
-				} else {
-					false
+				if categories.len() == 0 {
+					return Self::filter_tags(tags, &struct_proto)
+				} else {					
+					return Self::filter_category(tags, &struct_proto, categories)
 				}
 			} else {
 				false
 			}
 		}
 
-		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return type** is a **JSON string**
-		/// Furthermore, this function also indexes `data` in the Blockchain's Database and makes it available via bitswap (IPFS) directly from every chain node permanently.
+		fn filter_category(tags: &[Vec<u8>], struct_proto: &Proto<T::AccountId, T::BlockNumber>, categories: &[Categories]) -> bool {
+			let category = categories.into_iter().next();
+				match category {
+					Some(Categories::Trait(proto_shard_trait)) => {
+						if let Categories::Trait(struct_proto_shard_trait) = &struct_proto.category {
+							// search by trait name (the ID must be all zeros)
+							if (proto_shard_trait.id == [0u8; 16] && proto_shard_trait.name == struct_proto_shard_trait.name) || 
+								// search by trait id (the name must be empty)
+								(proto_shard_trait.name.is_empty() && proto_shard_trait.id == struct_proto_shard_trait.id) || 
+								// search by full match of trait info
+								(proto_shard_trait == struct_proto_shard_trait)
+							{
+								return Self::filter_tags(tags, struct_proto)
+							}
+							else {
+								return false
+							}
+						} else {
+							// it should never go here
+							return false
+						}
+					},
+					_ => {
+						if categories.into_iter().any(|cat| *cat == struct_proto.category) {
+							return Self::filter_tags(tags, struct_proto)
+						} else {
+							return false
+						}
+					},
+				}
+		}
+
+		fn filter_tags (tags: &[Vec<u8>], struct_proto: &Proto<T::AccountId, T::BlockNumber>) -> bool {
+			if tags.len() == 0 {
+				true
+			} else {
+				tags.into_iter().all(|tag| {
+					let tag_idx = <Tags<T>>::get(tag);
+					if let Some(tag_idx) = tag_idx {
+						struct_proto.tags.contains(&Compact::from(tag_idx))
+					} else {
+						false
+					}
+				})
+			}
+		}
+
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
+		/// type** is a **JSON string** Furthermore, this function also indexes `data` in the
+		/// Blockchain's Database and makes it available via bitswap (IPFS) directly from every
+		/// chain node permanently.
 		///
 		/// # Arguments
 		///
@@ -914,10 +948,37 @@ pub mod pallet {
 					if params.desc { cats.iter().rev().map(|x| x.clone()).collect() } else { cats };
 
 				for category in cats {
-					if params.categories.len() != 0 && !params.categories.contains(&category) {
-						continue
+					if params.categories.len() != 0 { 
+						let param_category = &params.categories.clone().into_iter().next();
+						match param_category {
+							// If Category == Trait, check if the search is by name or ID
+							Some(Categories::Trait(param_shard_trait)) => {
+								if let Categories::Trait(stored_shard_trait) = &category { 
+								
+									// search by trait name (the ID must be all zeros)
+									if (param_shard_trait.id == [0u8; 16] && param_shard_trait.name == stored_shard_trait.name) || 
+											(param_shard_trait.name.is_empty() && param_shard_trait.id == stored_shard_trait.id)
+									{
+										// OK. Found the category matching name OR id. Do nothing here.
+									} 
+									else {
+										// Search by all info contained in Trait category
+										if !&params.categories.contains(&category) {
+												continue
+										}
+									}
+								}
+							},
+							// for all other types of Categories
+							_ => {
+								if !&params.categories.contains(&category) {
+									continue
+								}
+							},
+						}
 					}
-
+					// Found the category. 
+					// Now collect all the protos linked to the category type in input
 					let protos = <ProtosByCategory<T>>::get(category);
 					if let Some(protos) = protos {
 						let collection: Vec<Hash256> = if params.desc {
@@ -951,7 +1012,6 @@ pub mod pallet {
 						flat.extend(collection);
 					}
 				}
-
 				flat.iter()
 					.skip(params.from as usize)
 					.take(params.limit as usize)

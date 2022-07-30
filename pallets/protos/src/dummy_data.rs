@@ -13,7 +13,7 @@ use sp_core::{
 
 use sp_clamor::{Hash256, CID_PREFIX};
 
-use protos::categories::{Categories, TextCategories};
+use protos::categories::{Categories, ShardsTraitInfo, TextCategories};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
@@ -89,6 +89,9 @@ impl Stake {
 pub struct DummyData {
 	pub proto_fragment: ProtoFragment,
 	pub proto_fragment_second: ProtoFragment,
+	pub proto_fragment_third: ProtoFragment,
+	pub proto_fragment_fourth: ProtoFragment,
+	pub proto_fragment_fifth: ProtoFragment,
 	pub patch: Patch,
 	pub metadata: Metadata,
 	pub stake: Stake,
@@ -115,6 +118,54 @@ impl DummyData {
 			linked_asset: None,
 			include_cost: Some(2),
 			data: "0x222".as_bytes().to_vec(),
+		};
+
+		let num: [u8; 16] = [1u8; 16];
+		let shard = ShardsTraitInfo {
+			name: "Shards1".to_string(),
+			description: "test 1".to_string(),
+			id: num,
+		};
+
+		let proto_third = ProtoFragment {
+			references: Vec::new(),
+			category: Categories::Trait(shard),
+			tags: Vec::new(),
+			linked_asset: None,
+			include_cost: Some(2),
+			data: "0x224".as_bytes().to_vec(),
+		};
+
+		let num2: [u8; 16] = [13u8; 16];
+		let shard2 = ShardsTraitInfo {
+			name: "NameOfShard".to_string(),
+			description: "description".to_string(),
+			id: num2,
+		};
+
+		let proto_fourth = ProtoFragment {
+			references: Vec::new(),
+			category: Categories::Trait(shard2),
+			tags: Vec::new(),
+			linked_asset: None,
+			include_cost: Some(2),
+			data: "0x1840923".as_bytes().to_vec(),
+		};
+
+		let num3: [u8; 16] = [4u8; 16];
+		let shard3 = ShardsTraitInfo {
+			name: "NameOfShard".to_string(),
+			description: "description2".to_string(),
+			id: num3,
+		};
+
+		let proto_fifth = ProtoFragment {
+			references: Vec::new(),
+			category: Categories::Trait(shard3),
+			tags: Vec::new(),
+			linked_asset: None,
+			include_cost: Some(2),
+			data: "0x1845923".as_bytes().to_vec(),
 		};
 
 		let patch = Patch {
@@ -181,6 +232,9 @@ impl DummyData {
 		Self {
 			proto_fragment: proto,
 			proto_fragment_second: proto_second,
+			proto_fragment_third: proto_third,
+			proto_fragment_fourth: proto_fourth,
+			proto_fragment_fifth: proto_fifth,
 			patch,
 			metadata,
 			stake,
