@@ -30,12 +30,15 @@ pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-use sp_io::{hashing::blake2_256, transaction_index};
+use sp_io::{
+	hashing::{blake2_128, blake2_256},
+	transaction_index,
+};
 use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 pub use weights::WeightInfo;
 
-use sp_clamor::{get_locked_frag_account, Hash256};
+use sp_clamor::{get_locked_frag_account, Hash128, Hash256};
 
 use scale_info::prelude::{
 	format,
@@ -175,6 +178,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MetaKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
+	/// **StorageMap** that maps a **Trait ID** to the name of the Trait itself
+	#[pallet::storage]
+	pub type Traits<T: Config> = StorageMap<_, Identity, Hash128, Vec<u8>, ValueQuery>;
+
 	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the aforementioned Proto-Fragment)**
 	#[pallet::storage]
 	pub type Protos<T: Config> =
@@ -307,7 +314,17 @@ pub mod pallet {
 			// Check FRAG staking
 			Self::check_staking_req(&references, &who)?;
 
-			// ! Write STATE from now, ensure no errors from now...
+			// Store Trait if trait
+			match category {
+				Categories::Trait(ref info) => {
+					let trait_id = blake2_128(&data);
+					ensure!(trait_id == info.id, Error::<T>::SystematicFailure);
+					ensure!(!<Traits<T>>::contains_key(&trait_id), Error::<T>::ProtoExists);
+					// Write STATE from now, ensure no errors from now...
+					<Traits<T>>::insert(trait_id, info.name.encode());
+				},
+				_ => {},
+			}
 
 			let owner = if let Some(link) = linked_asset {
 				ProtoOwner::ExternalAsset(link)
@@ -781,7 +798,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue;
+							continue;;
 						}
 					}
 
@@ -790,7 +807,7 @@ pub mod pallet {
 						let cost: u64 = cost.into();
 						if cost == 0 {
 							// free
-							continue;
+							continue;;
 						}
 						let cost: T::Balance = cost.saturated_into();
 						let stake = <ProtoStakes<T>>::get(reference, who.clone());
@@ -798,15 +815,15 @@ pub mod pallet {
 							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
 						} else {
 							// Stake not found
-							return Err(Error::<T>::StakeNotFound.into());
+							return Err(Error::<T>::StakeNotFound.into());;
 						}
 					// OK to include, just continue
 					} else {
-						return Err(Error::<T>::Unauthorized.into());
+						return Err(Error::<T>::Unauthorized.into());;
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into());
+					return Err(Error::<T>::ReferenceNotFound.into());;
 				}
 			}
 			Ok(())
@@ -821,9 +838,9 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.include_cost.is_none() {
-						return false;
+						return false;;
 					} else if !avail && struct_proto.include_cost.is_some() {
-						return false;
+						return false;;
 					}
 				}
 
@@ -842,71 +859,33 @@ pub mod pallet {
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
 			categories: &[Categories],
 		) -> bool {
-			let found: Vec<_> = categories
-				.into_iter()
-				.filter(|cat| match cat {
-					Categories::Trait(proto_shard_trait) => {
-						if let Categories::Trait(struct_proto_shard_trait) = &struct_proto.category
-						{
-							// search by trait name (the ID must be all zeros)
-							if (proto_shard_trait.name == struct_proto_shard_trait.name) || 
+			let category = categories.into_iter().next();
+			match category {
+				Some(Categories::Trait(proto_shard_trait)) => {
+					if let Categories::Trait(struct_proto_shard_trait) = &struct_proto.category {
+						// search by trait name (the ID must be all zeros)
+						if (proto_shard_trait.id == [0u8; 16] && proto_shard_trait.name == struct_proto_shard_trait.name) ||
 								// search by trait id (the name must be empty)
-								(proto_shard_trait.id == struct_proto_shard_trait.id) || 
+								(proto_shard_trait.name.is_empty() && proto_shard_trait.id == struct_proto_shard_trait.id) ||
 								// search by full match of trait info
 								(proto_shard_trait == struct_proto_shard_trait)
-							{
-								return Self::filter_tags(tags, struct_proto);
-							} else {
-								return false;
-							}
-						} else {
-							// it should never go here
-							return false;
-						}
-					},
-					Categories::Shards(param_script_info) => {
-						if let Categories::Shards(stored_script_info) = &struct_proto.category {
-							let implementing_diffs: Vec<_> = param_script_info
-								.implementing
-								.clone()
-								.into_iter()
-								.filter(|item| stored_script_info.implementing.contains(item))
-								.collect();
-							let requiring_diffs: Vec<_> = param_script_info
-								.requiring
-								.clone()
-								.into_iter()
-								.filter(|item| stored_script_info.requiring.contains(item))
-								.collect();
-
-							if !implementing_diffs.is_empty()
-								|| !requiring_diffs.is_empty() || (param_script_info.format
-								== stored_script_info.format) || (param_script_info
-								== stored_script_info)
-							{
-								return Self::filter_tags(tags, struct_proto);
-							} else {
-								return false;
-							}
-						} else {
-							// it should never go here
-							return false;
-						}
-					},
-					_ => {
-						if *cat == &struct_proto.category {
+						{
 							return Self::filter_tags(tags, struct_proto);
 						} else {
 							return false;
 						}
-					},
-				})
-				.collect();
-
-			if found.is_empty() {
-				return false;
-			} else {
-				return true;
+					} else {
+						// it should never go here
+						return false;
+					}
+				},
+				_ => {
+					if categories.into_iter().any(|cat| *cat == struct_proto.category) {
+						return Self::filter_tags(tags, struct_proto);
+					} else {
+						return false;
+					}
+				},
 			}
 		}
 
@@ -940,14 +919,16 @@ pub mod pallet {
 					// If Category == Trait, check if the search is by name or ID
 					Categories::Trait(param_shard_trait) => {
 						if let Categories::Trait(stored_shard_trait) = &category {
+
 							// search by trait name (the ID must be all zeros)
-							if (param_shard_trait.name == stored_shard_trait.name)
-								|| (param_shard_trait.id == stored_shard_trait.id)
+							if (param_shard_trait.name == stored_shard_trait.name) ||
+									(param_shard_trait.id == stored_shard_trait.id)
 							{
 								// OK. Found the category matching name OR id.
 								return true;
-							} else if !(&cat == &category) {
-								return false;
+							}
+							else if !(&cat == &category) {
+										return false;
 							} else {
 								return false;
 							}
@@ -957,18 +938,9 @@ pub mod pallet {
 					},
 					Categories::Shards(param_script_info) => {
 						if let Categories::Shards(stored_script_info) = &category {
-							let implementing_diffs: Vec<_> = param_script_info
-								.implementing
-								.clone()
-								.into_iter()
-								.filter(|item| stored_script_info.implementing.contains(item))
-								.collect();
-							let requiring_diffs: Vec<_> = param_script_info
-								.requiring
-								.clone()
-								.into_iter()
-								.filter(|item| stored_script_info.requiring.contains(item))
-								.collect();
+
+							let implementing_diffs: Vec<_> = param_script_info.implementing.clone().into_iter().filter(|item| stored_script_info.implementing.contains(item)).collect();
+							let requiring_diffs: Vec<_> = param_script_info.requiring.clone().into_iter().filter(|item| stored_script_info.requiring.contains(item)).collect();
 
 							if !implementing_diffs.is_empty()
 								|| !requiring_diffs.is_empty() || (param_script_info.format
@@ -977,7 +949,8 @@ pub mod pallet {
 							{
 								// OK. Found the category matching a shard script info.
 								return true;
-							} else if !(&cat == &category) {
+							}
+							else if !(&cat == &category) {
 								return false;
 							} else {
 								return false;
@@ -1053,7 +1026,7 @@ pub mod pallet {
 					}
 				} else {
 					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into());
+					return Err("Owner not found".into());;
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -1065,15 +1038,36 @@ pub mod pallet {
 
 				for category in cats {
 					if params.categories.len() != 0 {
-						let found: Vec<Categories> =
-							Self::get_list_of_matching_categories(&params, &category);
-						// if the current stored category does not match with any of the categories in input, it can be discarded from this search.
-						if found.is_empty() {
-							continue;
+						let param_category = &params.categories.clone().into_iter().next();
+						match param_category {
+							// If Category == Trait, check if the search is by name or ID
+							Some(Categories::Trait(param_shard_trait)) => {
+								if let Categories::Trait(stored_shard_trait) = &category {
+									// search by trait name (the ID must be all zeros)
+									if (param_shard_trait.id == [0u8; 16]
+										&& param_shard_trait.name == stored_shard_trait.name)
+										|| (param_shard_trait.name.is_empty()
+											&& param_shard_trait.id == stored_shard_trait.id)
+									{
+										// OK. Found the category matching name OR id. Do nothing here.
+									} else {
+										// Search by all info contained in Trait category
+										if !&params.categories.contains(&category) {
+											continue;
+										}
+									}
+								}
+							},
+							// for all other types of Categories
+							_ => {
+								if !&params.categories.contains(&category) {
+									continue;
+								}
+							},
 						}
 					}
-					// Found a stored category matching with the ones in input.
-					// Now get its info and store it into the final list to return.
+					// Found the category.
+					// Now collect all the protos linked to the category type in input
 					let protos = <ProtosByCategory<T>>::get(category);
 					if let Some(protos) = protos {
 						let collection: Vec<Hash256> = if params.desc {
@@ -1125,17 +1119,17 @@ pub mod pallet {
 						if let Ok(array_proto_id) = array_proto_id.try_into() {
 							array_proto_id
 						} else {
-							return Err("Failed to convert proto_id to Hash256".into());
+							return Err("Failed to convert proto_id to Hash256".into());;
 						}
 					} else {
-						return Err("Failed to decode proto_id".into());
+						return Err("Failed to decode proto_id".into());;
 					};
 
 					let (owner, map_metadata, include_cost) =
 						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
 							(proto.owner, proto.metadata, proto.include_cost)
 						} else {
-							return Err("Failed to get proto".into());
+							return Err("Failed to get proto".into());;
 						};
 
 					let map_proto = match map_proto {
@@ -1213,3 +1207,4 @@ pub mod pallet {
 		}
 	}
 }
+
