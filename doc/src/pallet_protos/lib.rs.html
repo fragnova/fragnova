@@ -1118,6 +1118,15 @@
 <span id="1118">1118</span>
 <span id="1119">1119</span>
 <span id="1120">1120</span>
+<span id="1121">1121</span>
+<span id="1122">1122</span>
+<span id="1123">1123</span>
+<span id="1124">1124</span>
+<span id="1125">1125</span>
+<span id="1126">1126</span>
+<span id="1127">1127</span>
+<span id="1128">1128</span>
+<span id="1129">1129</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Proto-Fragments.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! IMPORTANT STUFF TO KNOW:</span>
@@ -2079,7 +2088,7 @@
 									<span class="kw">if</span> (<span class="ident">param_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> [<span class="number">0u8</span>; <span class="number">16</span>] <span class="op">&amp;&amp;</span> <span class="ident">param_shard_trait</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">name</span>) <span class="op">|</span><span class="op">|</span> 
 											(<span class="ident">param_shard_trait</span>.<span class="ident">name</span>.<span class="ident">is_empty</span>() <span class="op">&amp;&amp;</span> <span class="ident">param_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">id</span>)
 									{
-										<span class="comment">// OK. Found the category matching name OR id. Do nothing here.</span>
+										<span class="comment">// OK. Found the category matching name OR id. Keep this structure and do nothing here.</span>
 									} 
 									<span class="kw">else</span> {
 										<span class="comment">// Search by all info contained in Trait category</span>
@@ -2087,6 +2096,15 @@
 												<span class="kw">continue</span>
 										}
 									}
+								}
+							},
+							<span class="prelude-val">Some</span>(<span class="ident">Categories::Shards</span>(<span class="ident">param_script_info</span>)) =&gt; {
+								<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Shards</span>(<span class="ident">stored_script_info</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">category</span> {
+									<span class="kw">if</span> (<span class="ident">param_script_info</span>.<span class="ident">implementing</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">implementing</span>) <span class="op">|</span><span class="op">|</span> 
+											(<span class="ident">param_script_info</span>.<span class="ident">requiring</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">requiring</span>) <span class="op">|</span><span class="op">|</span> 
+												(<span class="ident">param_script_info</span>.<span class="ident">format</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">format</span>) {
+													<span class="comment">// OK. Found the category matching a shard script info. Keep this structure and do nothing here.</span>
+												}
 								}
 							},
 							<span class="comment">// for all other types of Categories</span>
@@ -2238,4 +2256,4 @@
 		}
 	}
 }</code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (f9cba6374 2022-07-31)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (fe3342816 2022-08-01)" ></div></body></html>
