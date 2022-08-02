@@ -108,7 +108,7 @@ impl DummyData {
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(867),
-			data: "0x0155a0e40220".as_bytes().to_vec(),
+			data: "0x111".as_bytes().to_vec(),
 		};
 
 		let proto_second = ProtoFragment {
@@ -133,7 +133,7 @@ impl DummyData {
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
-			data: "0x224".as_bytes().to_vec(),
+			data: "ThisIsATest".as_bytes().to_vec(),
 		};
 
 		let num2: [u8; 16] = [13u8; 16];
@@ -149,7 +149,7 @@ impl DummyData {
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
-			data: "0x1840923".as_bytes().to_vec(),
+			data: "0x555".as_bytes().to_vec(),
 		};
 
 		let num3: [u8; 16] = [4u8; 16];
@@ -165,7 +165,7 @@ impl DummyData {
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
-			data: "0x1845923".as_bytes().to_vec(),
+			data: "0x666".as_bytes().to_vec(),
 		};
 
 		let patch = Patch {

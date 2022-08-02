@@ -959,7 +959,7 @@ pub mod pallet {
 									if (param_shard_trait.id == [0u8; 16] && param_shard_trait.name == stored_shard_trait.name) || 
 											(param_shard_trait.name.is_empty() && param_shard_trait.id == stored_shard_trait.id)
 									{
-										// OK. Found the category matching name OR id. Do nothing here.
+										// OK. Found the category matching name OR id. Keep this structure and do nothing here.
 									} 
 									else {
 										// Search by all info contained in Trait category
@@ -967,6 +967,15 @@ pub mod pallet {
 												continue
 										}
 									}
+								}
+							},
+							Some(Categories::Shards(param_script_info)) => {
+								if let Categories::Shards(stored_script_info) = &category {
+									if (param_script_info.implementing == stored_script_info.implementing) || 
+											(param_script_info.requiring == stored_script_info.requiring) || 
+												(param_script_info.format == stored_script_info.format) {
+													// OK. Found the category matching a shard script info. Keep this structure and do nothing here.
+												}
 								}
 							},
 							// for all other types of Categories

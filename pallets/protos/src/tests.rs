@@ -3,6 +3,7 @@ use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Compact;
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::Get};
 use std::collections::BTreeMap;
+use sp_io::hashing::blake2_256;
 
 use stake_tests::stake_;
 use upload_tests::upload;
@@ -277,18 +278,17 @@ mod get_protos_tests {
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
 			
-			// proto_id (taken from the test output)
-			let json_expected_start = concat!("{\"1e8a88bae82e70417a366e597bc307960c860ab3f53353e348fb0594cffb773b\":{", 
-				"\"include_cost\":867,",
-				"\"owner\":{",
-					"\"type\":\"internal\",",
-					"\"value\":\"").to_owned();
-
-			let account_id_hex = hex::encode(dd.account_id).to_owned();
-			let json_expected_end = "\"}}}".to_owned();
-
-			let partial = format!("{}{}", json_expected_start, account_id_hex);
-			let json_expected = format!("{}{}", partial, json_expected_end);
+			let proto_hash = proto.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+			
+			let json_expected = json!({
+				encoded: {
+				"include_cost": Some(proto.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": "0101010101010101010101010101010101010101010101010101010101010101"
+				},
+			}}).to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -325,18 +325,17 @@ mod get_protos_tests {
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
 			
-			// proto_id (taken from the test output)
-			let json_expected_start = concat!("{\"c1e9b40c2b6fddd4685fa881c64a461715be25ebee8a1cbf609f38f253ee1b05\":{", 
-				"\"include_cost\":2,",
-				"\"owner\":{",
-					"\"type\":\"internal\",",
-					"\"value\":\"").to_owned();
-
-			let account_id_hex = hex::encode(dd.account_id).to_owned();
-			let json_expected_end = "\"}}}".to_owned();
-
-			let partial = format!("{}{}", json_expected_start, account_id_hex);
-			let json_expected = format!("{}{}", partial, json_expected_end);
+			let proto_hash = proto.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+			
+			let json_expected = json!({
+				encoded: {
+				"include_cost": Some(proto.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": "0101010101010101010101010101010101010101010101010101010101010101"
+				},
+			}}).to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -375,18 +374,17 @@ mod get_protos_tests {
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
 			
-			// proto_id (taken from the test output)
-			let json_expected_start = concat!("{\"c1e9b40c2b6fddd4685fa881c64a461715be25ebee8a1cbf609f38f253ee1b05\":{", 
-				"\"include_cost\":2,",
-				"\"owner\":{",
-					"\"type\":\"internal\",",
-					"\"value\":\"").to_owned();
-
-			let account_id_hex = hex::encode(dd.account_id).to_owned();
-			let json_expected_end = "\"}}}".to_owned();
-
-			let partial = format!("{}{}", json_expected_start, account_id_hex);
-			let json_expected = format!("{}{}", partial, json_expected_end);
+			let proto_hash = proto.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+			
+			let json_expected = json!({
+				encoded: {
+				"include_cost": Some(proto.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": "0101010101010101010101010101010101010101010101010101010101010101"
+				},
+			}}).to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -425,20 +423,19 @@ mod get_protos_tests {
 
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto2.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
 			
-			// proto_id (taken from the test output)
-			let json_expected_start = concat!("{\"57b3c115913e6bcc8cf6e2d8834a6d9e8f942606789ed25f1d969641a8db3b2f\":{", 
-				"\"include_cost\":2,",
-				"\"owner\":{",
-					"\"type\":\"internal\",",
-					"\"value\":\"").to_owned();
-
-			let account_id_hex = hex::encode(dd.account_id).to_owned();
-			let json_expected_end = "\"}}}".to_owned();
-
-			let partial = format!("{}{}", json_expected_start, account_id_hex);
-			let json_expected = format!("{}{}", partial, json_expected_end);
-
+			let json_expected = json!({
+				encoded: {
+				"include_cost": Some(proto2.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": "0101010101010101010101010101010101010101010101010101010101010101"
+				},
+			}}).to_string();
+			
 			assert_eq!(result_string, json_expected);
 		});
 	}
@@ -475,19 +472,25 @@ mod get_protos_tests {
 
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+			let proto2_hash = proto2.get_proto_hash();
+			let encoded2 = hex::encode(&proto2_hash);
 			
-			// proto_id (taken from the test output)
-			let json_expected = concat!(
-				"{\"1c5993df79040a6015905dad4a0d787d65d6c84b2ff58c733bc7c8e93fe1c10c\":{",
-				"\"include_cost\":2,",
-				"\"owner\":{",
-				"\"type\":\"internal\",",
-				"\"value\":\"0101010101010101010101010101010101010101010101010101010101010101\"}},",
-				"\"57b3c115913e6bcc8cf6e2d8834a6d9e8f942606789ed25f1d969641a8db3b2f\":{",
-				"\"include_cost\":2,",
-				"\"owner\":{",
-				"\"type\":\"internal\",",
-				"\"value\":\"0101010101010101010101010101010101010101010101010101010101010101\"}}}");
+			let json_expected = json!({
+				encoded: {
+				"include_cost": Some(proto.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": "0101010101010101010101010101010101010101010101010101010101010101"
+				}}, encoded2: {
+					"include_cost": Some(proto2.include_cost),
+					"owner": {
+						"type": "internal",
+						"value": "0101010101010101010101010101010101010101010101010101010101010101"
+					},
+			}}).to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
