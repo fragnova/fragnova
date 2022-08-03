@@ -859,6 +859,24 @@ pub mod pallet {
 							return false
 						}
 					},
+					Some(Categories::Shards(param_script_info)) => {
+						if let Categories::Shards(stored_script_info) = &struct_proto.category {
+							
+							let implementing_diffs: Vec<_> = param_script_info.implementing.clone().into_iter().filter(|item| stored_script_info.implementing.contains(item)).collect();
+							let requiring_diffs: Vec<_> = param_script_info.requiring.clone().into_iter().filter(|item| stored_script_info.requiring.contains(item)).collect();
+
+							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() || (param_script_info.format == stored_script_info.format) || (param_script_info == stored_script_info)
+							{
+								return Self::filter_tags(tags, struct_proto)
+							}
+							else {
+								return false
+							}
+						} else {
+							// it should never go here
+							return false
+						}
+					},
 					_ => {
 						if categories.into_iter().any(|cat| *cat == struct_proto.category) {
 							return Self::filter_tags(tags, struct_proto)
@@ -971,11 +989,14 @@ pub mod pallet {
 							},
 							Some(Categories::Shards(param_script_info)) => {
 								if let Categories::Shards(stored_script_info) = &category {
-									if (param_script_info.implementing == stored_script_info.implementing) || 
-											(param_script_info.requiring == stored_script_info.requiring) || 
-												(param_script_info.format == stored_script_info.format) {
-													// OK. Found the category matching a shard script info. Keep this structure and do nothing here.
-												}
+									
+									let implementing_diffs: Vec<_> = param_script_info.implementing.clone().into_iter().filter(|item| stored_script_info.implementing.contains(item)).collect();
+									let requiring_diffs: Vec<_> = param_script_info.requiring.clone().into_iter().filter(|item| stored_script_info.requiring.contains(item)).collect();
+
+									if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() || (param_script_info.format == stored_script_info.format) || (param_script_info == stored_script_info)
+									{
+										// OK. Found the category matching a shard script info. Keep this structure and do nothing here.
+									}
 								}
 							},
 							// for all other types of Categories

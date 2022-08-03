@@ -13,7 +13,7 @@ use sp_core::{
 
 use sp_clamor::{Hash256, CID_PREFIX};
 
-use protos::categories::{Categories, ShardsTraitInfo, TextCategories};
+use protos::categories::{Categories, ShardsTraitInfo, TextCategories, ShardsFormat, ShardsScriptInfo};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
@@ -92,6 +92,8 @@ pub struct DummyData {
 	pub proto_fragment_third: ProtoFragment,
 	pub proto_fragment_fourth: ProtoFragment,
 	pub proto_fragment_fifth: ProtoFragment,
+	pub proto_shard_script: ProtoFragment,
+	pub proto_shard_script_2: ProtoFragment,
 	pub patch: Patch,
 	pub metadata: Metadata,
 	pub stake: Stake,
@@ -168,6 +170,39 @@ impl DummyData {
 			data: "0x666".as_bytes().to_vec(),
 		};
 
+		let shard_script_num_1: [u8; 16] = [4u8; 16];
+		let shard_script_num_2: [u8; 16] = [5u8; 16];
+		let shard_script = ShardsScriptInfo {
+			format: ShardsFormat::Edn,
+			requiring: vec![shard_script_num_1],
+			implementing: vec![shard_script_num_2],
+		};
+
+		let proto_shard_script = ProtoFragment {
+			references: Vec::new(),
+			category: Categories::Shards(shard_script),
+			tags: Vec::new(),
+			linked_asset: None,
+			include_cost: Some(2),
+			data: "0x661".as_bytes().to_vec(),
+		};
+
+		let shard_script_num_3: [u8; 16] = [9u8; 16];
+		let shard_script = ShardsScriptInfo {
+			format: ShardsFormat::Edn,
+			requiring: vec![shard_script_num_1],
+			implementing: vec![shard_script_num_2, shard_script_num_3],
+		};
+
+		let proto_shard_script_2 = ProtoFragment {
+			references: Vec::new(),
+			category: Categories::Shards(shard_script),
+			tags: Vec::new(),
+			linked_asset: None,
+			include_cost: Some(2),
+			data: "0x667".as_bytes().to_vec(),
+		};
+
 		let patch = Patch {
 			proto_fragment: ProtoFragment {
 				references: Vec::new(),
@@ -235,6 +270,8 @@ impl DummyData {
 			proto_fragment_third: proto_third,
 			proto_fragment_fourth: proto_fourth,
 			proto_fragment_fifth: proto_fifth,
+			proto_shard_script: proto_shard_script,
+			proto_shard_script_2: proto_shard_script_2,
 			patch,
 			metadata,
 			stake,
