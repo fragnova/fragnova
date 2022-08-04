@@ -843,9 +843,9 @@ pub mod pallet {
 					Categories::Trait(proto_shard_trait) => {
 						if let Categories::Trait(struct_proto_shard_trait) = &struct_proto.category {
 							// search by trait name (the ID must be all zeros)
-							if (proto_shard_trait.id == [0u8; 16] && proto_shard_trait.name == struct_proto_shard_trait.name) || 
+							if (proto_shard_trait.name == struct_proto_shard_trait.name) || 
 								// search by trait id (the name must be empty)
-								(proto_shard_trait.name.is_empty() && proto_shard_trait.id == struct_proto_shard_trait.id) || 
+								(proto_shard_trait.id == struct_proto_shard_trait.id) || 
 								// search by full match of trait info
 								(proto_shard_trait == struct_proto_shard_trait)
 							{
@@ -916,8 +916,8 @@ pub mod pallet {
 						if let Categories::Trait(stored_shard_trait) = &category { 
 						
 							// search by trait name (the ID must be all zeros)
-							if (param_shard_trait.id == [0u8; 16] && param_shard_trait.name == stored_shard_trait.name) || 
-									(param_shard_trait.name.is_empty() && param_shard_trait.id == stored_shard_trait.id)
+							if (param_shard_trait.name == stored_shard_trait.name) || 
+									(param_shard_trait.id == stored_shard_trait.id)
 							{
 								// OK. Found the category matching name OR id.
 								return true;

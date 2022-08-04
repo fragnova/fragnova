@@ -61,6 +61,22 @@ describe('Protos RPCs', () => {
 
         });
 
+        it('should return no protos when filtering for not existing Category Trait', async () => {
+
+            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", { desc: true, from: 0, limit: 10, categories: [{ "trait": {name: "ciao", description: "this is good", id: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]} }] }))
+
+            assert(result.toHuman() === "{}")
+
+        });
+
+        it('should return no protos when filtering for not existing Category Shards', async () => {
+
+            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", { desc: true, from: 0, limit: 10, categories: [{ "shards": {format: "edn", requiring: [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], implementing: [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]} }] }))
+
+            assert(result.toHuman() === "{}")
+
+        });
+
         it('should return correct owner', async () => {
 
             const params = api.createType("GetProtosParams", {
