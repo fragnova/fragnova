@@ -13,7 +13,9 @@ use sp_core::{
 
 use sp_clamor::{Hash256, CID_PREFIX};
 
-use protos::categories::{Categories, ShardsTraitInfo, TextCategories, ShardsFormat, ShardsScriptInfo};
+use protos::categories::{
+	Categories, ShardsFormat, ShardsScriptInfo, ShardsTraitInfo, TextCategories,
+};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
@@ -270,8 +272,8 @@ impl DummyData {
 			proto_fragment_third: proto_third,
 			proto_fragment_fourth: proto_fourth,
 			proto_fragment_fifth: proto_fifth,
-			proto_shard_script: proto_shard_script,
-			proto_shard_script_2: proto_shard_script_2,
+			proto_shard_script,
+			proto_shard_script_2,
 			patch,
 			metadata,
 			stake,

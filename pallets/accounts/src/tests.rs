@@ -204,8 +204,10 @@ mod unlink_tests {
 mod sync_frag_locks_tests {
 	use super::*;
 
-	fn hardcode_expected_request_and_response(state: &mut testing::OffchainState, lock: Lock) -> u64 {
-
+	fn hardcode_expected_request_and_response(
+		state: &mut testing::OffchainState,
+		lock: Lock,
+	) -> u64 {
 		let geth_url = Some(String::from("https://www.dummywebsite.com/"));
 
 		sp_clamor::init(geth_url);
@@ -307,7 +309,6 @@ mod sync_frag_locks_tests {
 		});
 
 		to_block
-
 	}
 
 	#[test]
@@ -317,7 +318,8 @@ mod sync_frag_locks_tests {
 		let dd = DummyData::new();
 		let lock = dd.lock;
 
-		let to_block = hardcode_expected_request_and_response(&mut offchain_state.write(), lock.clone());
+		let to_block =
+			hardcode_expected_request_and_response(&mut offchain_state.write(), lock.clone());
 
 		let expected_data = EthLockUpdate {
 			public: <Test as SigningTypes>::Public::from(ed25519_public_key),
@@ -325,16 +327,13 @@ mod sync_frag_locks_tests {
 		};
 
 		t.execute_with(|| {
-			
-			Accounts::sync_partner_contracts(1); 
-			
+			Accounts::sync_partner_contracts(1);
+
 			let tx = pool_state.write().transactions.pop().unwrap();
 			let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
 			assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
 
-			if let Call::Accounts(crate::Call::internal_lock_update { data, signature }) =
-				tx.call
-			{
+			if let Call::Accounts(crate::Call::internal_lock_update { data, signature }) = tx.call {
 				assert_eq!(data, expected_data);
 
 				let signature_valid =
@@ -425,36 +424,29 @@ mod internal_lock_update_tests {
 
 	#[test]
 	fn lock_should_not_work_if_locked_amount_is_zero() {
-
 		new_test_ext().execute_with(|| {
-
 			let dd = DummyData::new();
 
 			let mut lock = dd.lock;
 			lock.data.amount = U256::from(0u32);
-			lock.data.signature = create_lock_signature(
-				lock.ethereum_account_pair.clone(), 
-				lock.data.amount.clone()
-			);
-	
+			lock.data.signature =
+				create_lock_signature(lock.ethereum_account_pair.clone(), lock.data.amount.clone());
+
 			assert_noop!(lock_(&lock), Error::<Test>::SystematicFailure);
 		});
 	}
 
 	#[test]
 	fn lock_should_not_work_if_the_sender_is_not_recovered_from_the_signature() {
-
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
 			let mut lock = dd.lock;
 			lock.data.signature = dd.lock_signature;
-	
+
 			assert_noop!(lock_(&lock), Error::<Test>::VerificationFailed);
 		});
 	}
-
-	
 
 	// TODO
 	#[test]
@@ -576,21 +568,18 @@ mod internal_lock_update_tests {
 
 	#[test]
 	fn unlock_should_not_work_if_unlocked_amount_is_greater_than_zero() {
-
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 			let mut unlock = dd.unlock;
 			unlock.data.amount = U256::from(69u32); // greater than zero
 			unlock.data.signature = create_unlock_signature(
-				unlock.lock.ethereum_account_pair.clone(), 
-				U256::from(69u32)
+				unlock.lock.ethereum_account_pair.clone(),
+				U256::from(69u32),
 			);
-	
+
 			assert_ok!(lock_(&unlock.lock));
-	
+
 			assert_noop!(unlock_(&unlock), Error::<Test>::SystematicFailure);
 		});
-
 	}
-
 }

@@ -2,8 +2,8 @@ use crate as pallet_protos;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Compact;
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::Get};
-use std::collections::BTreeMap;
 use stake_tests::stake_;
+use std::collections::BTreeMap;
 use upload_tests::upload;
 
 use copied_from_pallet_accounts::{link_, lock_};
@@ -212,8 +212,8 @@ mod upload_tests {
 
 mod get_protos_tests {
 	use super::*;
-	use protos::categories::{ShardsScriptInfo, ShardsFormat};
-use upload_tests::upload;
+	use protos::categories::{ShardsFormat, ShardsScriptInfo};
+	use upload_tests::upload;
 
 	#[test]
 	fn get_protos_should_not_work_if_owner_not_exists() {
@@ -245,7 +245,7 @@ use upload_tests::upload;
 				available: Some(true),
 			};
 
-			let result: Result<Vec<u8>,Vec<u8>>  = ProtosPallet::get_protos(params);
+			let result: Result<Vec<u8>, Vec<u8>> = ProtosPallet::get_protos(params);
 			assert_eq!(result.err(), Some("Owner not found".as_bytes().to_vec()));
 		});
 	}
@@ -276,10 +276,10 @@ use upload_tests::upload;
 
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
-			
+
 			let proto_hash = proto.get_proto_hash();
 			let encoded = hex::encode(&proto_hash);
-			
+
 			let json_expected = json!({
 				encoded: {
 				"include_cost": Some(proto.include_cost),
@@ -287,7 +287,8 @@ use upload_tests::upload;
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
-			}}).to_string();
+			}})
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -323,10 +324,10 @@ use upload_tests::upload;
 
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
-			
+
 			let proto_hash = proto.get_proto_hash();
 			let encoded = hex::encode(&proto_hash);
-			
+
 			let json_expected = json!({
 				encoded: {
 				"include_cost": Some(proto.include_cost),
@@ -334,7 +335,8 @@ use upload_tests::upload;
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
-			}}).to_string();
+			}})
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -372,10 +374,10 @@ use upload_tests::upload;
 
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
-			
+
 			let proto_hash = proto.get_proto_hash();
 			let encoded = hex::encode(&proto_hash);
-			
+
 			let json_expected = json!({
 				encoded: {
 				"include_cost": Some(proto.include_cost),
@@ -383,7 +385,8 @@ use upload_tests::upload;
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
-			}}).to_string();
+			}})
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -404,7 +407,7 @@ use upload_tests::upload;
 			// SEARCH
 			let num: [u8; 16] = [0u8; 16];
 			let shard = ShardsTraitInfo {
-				name: "NameOfShard".to_string(), // proto_fragment_fourth
+				name: "NameOfShard".to_string(),   // proto_fragment_fourth
 				description: "test 2".to_string(), // this description is different from the proto stored (i.e. test 1)
 				id: num,
 			};
@@ -425,7 +428,7 @@ use upload_tests::upload;
 
 			let proto_hash = proto2.get_proto_hash();
 			let encoded = hex::encode(&proto_hash);
-			
+
 			let json_expected = json!({
 				encoded: {
 				"include_cost": Some(proto2.include_cost),
@@ -433,8 +436,9 @@ use upload_tests::upload;
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
-			}}).to_string();
-			
+			}})
+			.to_string();
+
 			assert_eq!(result_string, json_expected);
 		});
 	}
@@ -456,7 +460,7 @@ use upload_tests::upload;
 			// SEARCH
 			let num: [u8; 16] = [0u8; 16];
 			let shard = ShardsTraitInfo {
-				name: "Shards1".to_string(), // proto_fragment_fourth
+				name: "Shards1".to_string(),       // proto_fragment_fourth
 				description: "test 1".to_string(), // this description is different from the proto stored (i.e. test 1)
 				id: num,
 			};
@@ -474,7 +478,11 @@ use upload_tests::upload;
 				metadata_keys: Vec::new(),
 				owner: None,
 				return_owners: true,
-				categories: vec![Categories::Trait(shard), Categories::Shards(shard_script), Categories::Text(TextCategories::Plain)],
+				categories: vec![
+					Categories::Trait(shard),
+					Categories::Shards(shard_script),
+					Categories::Text(TextCategories::Plain),
+				],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -490,7 +498,7 @@ use upload_tests::upload;
 
 			let proto_hash_text = proto_text.get_proto_hash();
 			let encoded3 = hex::encode(&proto_hash_text);
-			
+
 			let json_expected = json!({
 				encoded: {
 				"include_cost": Some(proto1.include_cost),
@@ -510,8 +518,9 @@ use upload_tests::upload;
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
-			}}).to_string();
-			
+			}})
+			.to_string();
+
 			assert_eq!(result_string, json_expected);
 		});
 	}
@@ -533,7 +542,7 @@ use upload_tests::upload;
 			// SEARCH
 			let num: [u8; 16] = [0u8; 16];
 			let shard = ShardsTraitInfo {
-				name: "Shards1".to_string(), // proto_fragment_fourth
+				name: "Shards1".to_string(),       // proto_fragment_fourth
 				description: "test 1".to_string(), // this description is different from the proto stored (i.e. test 1)
 				id: num,
 			};
@@ -551,7 +560,11 @@ use upload_tests::upload;
 				metadata_keys: Vec::new(),
 				owner: None,
 				return_owners: true,
-				categories: vec![Categories::Trait(shard), Categories::Shards(shard_script), Categories::Text(TextCategories::Plain)],
+				categories: vec![
+					Categories::Trait(shard),
+					Categories::Shards(shard_script),
+					Categories::Text(TextCategories::Plain),
+				],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -567,7 +580,7 @@ use upload_tests::upload;
 
 			let proto_hash_text = proto_text.get_proto_hash();
 			let encoded3 = hex::encode(&proto_hash_text);
-			
+
 			let json_expected = json!({
 				encoded: {
 				"include_cost": Some(proto1.include_cost),
@@ -587,8 +600,9 @@ use upload_tests::upload;
 					"type": "internal",
 					"value": hex::encode(dd.account_id_second)
 				},
-			}}).to_string();
-			
+			}})
+			.to_string();
+
 			assert_eq!(result_string, json_expected);
 		});
 	}
@@ -607,7 +621,7 @@ use upload_tests::upload;
 			// SEARCH
 			let num: [u8; 16] = [0u8; 16];
 			let shard = ShardsTraitInfo {
-				name: "NameOfShard".to_string(), // proto_fragment_fourth
+				name: "NameOfShard".to_string(),   // proto_fragment_fourth
 				description: "test 2".to_string(), // this description is different from the other protos stored
 				id: num,
 			};
@@ -630,7 +644,7 @@ use upload_tests::upload;
 			let encoded = hex::encode(&proto_hash);
 			let proto2_hash = proto2.get_proto_hash();
 			let encoded2 = hex::encode(&proto2_hash);
-			
+
 			let json_expected = json!({
 				encoded: {
 				"include_cost": Some(proto.include_cost),
@@ -643,7 +657,8 @@ use upload_tests::upload;
 						"type": "internal",
 						"value": hex::encode(dd.account_id)
 					},
-			}}).to_string();
+			}})
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -686,7 +701,7 @@ use upload_tests::upload;
 
 			let proto_hash = proto_shard_script.get_proto_hash();
 			let encoded = hex::encode(&proto_hash);
-			
+
 			let json_expected = json!({
 				encoded: {
 				"include_cost": Some(proto_shard_script.include_cost),
@@ -694,8 +709,9 @@ use upload_tests::upload;
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
-			}}).to_string();
-			
+			}})
+			.to_string();
+
 			assert_eq!(result_string, json_expected);
 		});
 	}
@@ -734,9 +750,9 @@ use upload_tests::upload;
 
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
-			
+
 			let json_expected = json!({}).to_string();
-			
+
 			assert_eq!(result_string, json_expected);
 		});
 	}
@@ -774,10 +790,10 @@ use upload_tests::upload;
 
 			let result = ProtosPallet::get_protos(params).ok().unwrap();
 			let result_string = std::str::from_utf8(&result).unwrap();
-			
+
 			let proto_hash = proto_shard_script.get_proto_hash();
 			let encoded = hex::encode(&proto_hash);
-			
+
 			let json_expected = json!({
 				encoded: {
 				"include_cost": Some(proto_shard_script.include_cost),
@@ -785,12 +801,12 @@ use upload_tests::upload;
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
-			}}).to_string();
-			
+			}})
+			.to_string();
+
 			assert_eq!(result_string, json_expected);
 		});
 	}
-
 }
 mod patch_tests {
 	use super::*;
@@ -1046,8 +1062,8 @@ mod transfer_tests {
 			assert!(
 				<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
 					.unwrap()
-					.contains(&proto.get_proto_hash()) ==
-					false
+					.contains(&proto.get_proto_hash())
+					== false
 			);
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second))
 				.unwrap()
@@ -1380,8 +1396,8 @@ mod unstake_tests {
 			assert!(
 				<AccountStakes<Test>>::get(stake.lock.link.clamor_account_id)
 					.unwrap()
-					.contains(&stake.proto_fragment.get_proto_hash()) ==
-					false
+					.contains(&stake.proto_fragment.get_proto_hash())
+					== false
 			);
 
 			let event = <frame_system::Pallet<Test>>::events()

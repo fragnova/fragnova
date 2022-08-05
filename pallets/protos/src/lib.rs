@@ -781,7 +781,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue
+							continue;
 						}
 					}
 
@@ -790,7 +790,7 @@ pub mod pallet {
 						let cost: u64 = cost.into();
 						if cost == 0 {
 							// free
-							continue
+							continue;
 						}
 						let cost: T::Balance = cost.saturated_into();
 						let stake = <ProtoStakes<T>>::get(reference, who.clone());
@@ -798,15 +798,15 @@ pub mod pallet {
 							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
 						} else {
 							// Stake not found
-							return Err(Error::<T>::StakeNotFound.into())
+							return Err(Error::<T>::StakeNotFound.into());
 						}
 					// OK to include, just continue
 					} else {
-						return Err(Error::<T>::Unauthorized.into())
+						return Err(Error::<T>::Unauthorized.into());
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into())
+					return Err(Error::<T>::ReferenceNotFound.into());
 				}
 			}
 			Ok(())
@@ -821,27 +821,33 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.include_cost.is_none() {
-						return false
+						return false;
 					} else if !avail && struct_proto.include_cost.is_some() {
-						return false
+						return false;
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto)
-				} else {					
-					return Self::filter_category(tags, &struct_proto, categories)
+					return Self::filter_tags(tags, &struct_proto);
+				} else {
+					return Self::filter_category(tags, &struct_proto, categories);
 				}
 			} else {
 				false
 			}
 		}
 
-		fn filter_category(tags: &[Vec<u8>], struct_proto: &Proto<T::AccountId, T::BlockNumber>, categories: &[Categories]) -> bool {
-			let found: Vec<_> = categories.into_iter().filter(|cat|
-				match cat {
+		fn filter_category(
+			tags: &[Vec<u8>],
+			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
+			categories: &[Categories],
+		) -> bool {
+			let found: Vec<_> = categories
+				.into_iter()
+				.filter(|cat| match cat {
 					Categories::Trait(proto_shard_trait) => {
-						if let Categories::Trait(struct_proto_shard_trait) = &struct_proto.category {
+						if let Categories::Trait(struct_proto_shard_trait) = &struct_proto.category
+						{
 							// search by trait name (the ID must be all zeros)
 							if (proto_shard_trait.name == struct_proto_shard_trait.name) || 
 								// search by trait id (the name must be empty)
@@ -849,51 +855,65 @@ pub mod pallet {
 								// search by full match of trait info
 								(proto_shard_trait == struct_proto_shard_trait)
 							{
-								return Self::filter_tags(tags, struct_proto)
-							}
-							else {
-								return false
+								return Self::filter_tags(tags, struct_proto);
+							} else {
+								return false;
 							}
 						} else {
 							// it should never go here
-							return false
+							return false;
 						}
 					},
 					Categories::Shards(param_script_info) => {
 						if let Categories::Shards(stored_script_info) = &struct_proto.category {
-							
-							let implementing_diffs: Vec<_> = param_script_info.implementing.clone().into_iter().filter(|item| stored_script_info.implementing.contains(item)).collect();
-							let requiring_diffs: Vec<_> = param_script_info.requiring.clone().into_iter().filter(|item| stored_script_info.requiring.contains(item)).collect();
+							let implementing_diffs: Vec<_> = param_script_info
+								.implementing
+								.clone()
+								.into_iter()
+								.filter(|item| stored_script_info.implementing.contains(item))
+								.collect();
+							let requiring_diffs: Vec<_> = param_script_info
+								.requiring
+								.clone()
+								.into_iter()
+								.filter(|item| stored_script_info.requiring.contains(item))
+								.collect();
 
-							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() || (param_script_info.format == stored_script_info.format) || (param_script_info == stored_script_info)
+							if !implementing_diffs.is_empty()
+								|| !requiring_diffs.is_empty() || (param_script_info.format
+								== stored_script_info.format) || (param_script_info
+								== stored_script_info)
 							{
-								return Self::filter_tags(tags, struct_proto)
-							}
-							else {
-								return false
+								return Self::filter_tags(tags, struct_proto);
+							} else {
+								return false;
 							}
 						} else {
 							// it should never go here
-							return false
+							return false;
 						}
 					},
 					_ => {
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto)
+							return Self::filter_tags(tags, struct_proto);
 						} else {
-							return false
+							return false;
 						}
 					},
-				}).collect();
-				
-				if found.is_empty() {
-					return false;
-				} else {
-					return true;
-				}
+				})
+				.collect();
+
+			if found.is_empty() {
+				return false;
+			} else {
+				return true;
+			}
 		}
 
-		fn filter_tags (tags: &[Vec<u8>], struct_proto: &Proto<T::AccountId, T::BlockNumber>) -> bool {
+		fn filter_tags(
+			tags: &[Vec<u8>],
+			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
+		) -> bool {
 			if tags.len() == 0 {
 				true
 			} else {
@@ -908,22 +928,26 @@ pub mod pallet {
 			}
 		}
 
-		fn get_list_of_matching_categories(params: &GetProtosParams<T::AccountId, Vec<u8>>, category: &Categories) -> Vec<Categories> {
-			let found: Vec<Categories> = params.categories.clone().into_iter().filter(|cat|
-				match cat {
+		fn get_list_of_matching_categories(
+			params: &GetProtosParams<T::AccountId, Vec<u8>>,
+			category: &Categories,
+		) -> Vec<Categories> {
+			let found: Vec<Categories> = params
+				.categories
+				.clone()
+				.into_iter()
+				.filter(|cat| match cat {
 					// If Category == Trait, check if the search is by name or ID
 					Categories::Trait(param_shard_trait) => {
-						if let Categories::Trait(stored_shard_trait) = &category { 
-						
+						if let Categories::Trait(stored_shard_trait) = &category {
 							// search by trait name (the ID must be all zeros)
-							if (param_shard_trait.name == stored_shard_trait.name) || 
-									(param_shard_trait.id == stored_shard_trait.id)
+							if (param_shard_trait.name == stored_shard_trait.name)
+								|| (param_shard_trait.id == stored_shard_trait.id)
 							{
 								// OK. Found the category matching name OR id.
 								return true;
-							} 
-							else if !(&cat == &category) {
-										return false;
+							} else if !(&cat == &category) {
+								return false;
 							} else {
 								return false;
 							}
@@ -933,16 +957,27 @@ pub mod pallet {
 					},
 					Categories::Shards(param_script_info) => {
 						if let Categories::Shards(stored_script_info) = &category {
-							
-							let implementing_diffs: Vec<_> = param_script_info.implementing.clone().into_iter().filter(|item| stored_script_info.implementing.contains(item)).collect();
-							let requiring_diffs: Vec<_> = param_script_info.requiring.clone().into_iter().filter(|item| stored_script_info.requiring.contains(item)).collect();
+							let implementing_diffs: Vec<_> = param_script_info
+								.implementing
+								.clone()
+								.into_iter()
+								.filter(|item| stored_script_info.implementing.contains(item))
+								.collect();
+							let requiring_diffs: Vec<_> = param_script_info
+								.requiring
+								.clone()
+								.into_iter()
+								.filter(|item| stored_script_info.requiring.contains(item))
+								.collect();
 
-							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() || (param_script_info.format == stored_script_info.format) || (param_script_info == stored_script_info)
+							if !implementing_diffs.is_empty()
+								|| !requiring_diffs.is_empty() || (param_script_info.format
+								== stored_script_info.format) || (param_script_info
+								== stored_script_info)
 							{
-								// OK. Found the category matching a shard script info. 
+								// OK. Found the category matching a shard script info.
 								return true;
-							} 
-							else if !(&cat == &category) {
+							} else if !(&cat == &category) {
 								return false;
 							} else {
 								return false;
@@ -959,8 +994,8 @@ pub mod pallet {
 							return true;
 						}
 					},
-				}
-			).collect();
+				})
+				.collect();
 
 			return found;
 		}
@@ -1018,7 +1053,7 @@ pub mod pallet {
 					}
 				} else {
 					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into())
+					return Err("Owner not found".into());
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -1029,16 +1064,16 @@ pub mod pallet {
 					if params.desc { cats.iter().rev().map(|x| x.clone()).collect() } else { cats };
 
 				for category in cats {
-					if params.categories.len() != 0 {  
-						let found: Vec<Categories> = Self::get_list_of_matching_categories(&params, &category);
+					if params.categories.len() != 0 {
+						let found: Vec<Categories> =
+							Self::get_list_of_matching_categories(&params, &category);
 						// if the current stored category does not match with any of the categories in input, it can be discarded from this search.
 						if found.is_empty() {
 							continue;
 						}
-
 					}
 					// Found a stored category matching with the ones in input.
-					// Now get its info and store it into the final list to return. 
+					// Now get its info and store it into the final list to return.
 					let protos = <ProtosByCategory<T>>::get(category);
 					if let Some(protos) = protos {
 						let collection: Vec<Hash256> = if params.desc {
@@ -1090,17 +1125,17 @@ pub mod pallet {
 						if let Ok(array_proto_id) = array_proto_id.try_into() {
 							array_proto_id
 						} else {
-							return Err("Failed to convert proto_id to Hash256".into())
+							return Err("Failed to convert proto_id to Hash256".into());
 						}
 					} else {
-						return Err("Failed to decode proto_id".into())
+						return Err("Failed to decode proto_id".into());
 					};
 
 					let (owner, map_metadata, include_cost) =
 						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
 							(proto.owner, proto.metadata, proto.include_cost)
 						} else {
-							return Err("Failed to get proto".into())
+							return Err("Failed to get proto".into());
 						};
 
 					let map_proto = match map_proto {
