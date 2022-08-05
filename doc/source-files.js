@@ -1,11 +1,12 @@
-var sourcesIndex = {};
-sourcesIndex["clamor"] = {"name":"","files":["chain_spec.rs","clamor.rs","lib.rs","rpc.rs","service.rs"]};
-sourcesIndex["clamor_runtime"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["pallet_accounts"] = {"name":"","files":["dummy_data.rs","lib.rs","weights.rs"]};
-sourcesIndex["pallet_detach"] = {"name":"","files":["lib.rs","weights.rs"]};
-sourcesIndex["pallet_fragments"] = {"name":"","files":["lib.rs","weights.rs"]};
-sourcesIndex["pallet_protos"] = {"name":"","files":["lib.rs","weights.rs"]};
-sourcesIndex["pallet_protos_rpc"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["pallet_protos_rpc_runtime_api"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["sp_clamor"] = {"name":"","files":["lib.rs"]};
+var sourcesIndex = JSON.parse('{\
+"clamor":["",[],["chain_spec.rs","clamor.rs","lib.rs","rpc.rs","service.rs"]],\
+"clamor_runtime":["",[],["lib.rs"]],\
+"pallet_accounts":["",[],["dummy_data.rs","lib.rs","weights.rs"]],\
+"pallet_detach":["",[],["lib.rs","weights.rs"]],\
+"pallet_fragments":["",[],["lib.rs","weights.rs"]],\
+"pallet_protos":["",[],["lib.rs","weights.rs"]],\
+"pallet_protos_rpc":["",[],["lib.rs"]],\
+"pallet_protos_rpc_runtime_api":["",[],["lib.rs"]],\
+"sp_clamor":["",[],["lib.rs"]]\
+}');
 createSourceSidebar();

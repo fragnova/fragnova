@@ -1178,6 +1178,41 @@
 <span id="1178">1178</span>
 <span id="1179">1179</span>
 <span id="1180">1180</span>
+<span id="1181">1181</span>
+<span id="1182">1182</span>
+<span id="1183">1183</span>
+<span id="1184">1184</span>
+<span id="1185">1185</span>
+<span id="1186">1186</span>
+<span id="1187">1187</span>
+<span id="1188">1188</span>
+<span id="1189">1189</span>
+<span id="1190">1190</span>
+<span id="1191">1191</span>
+<span id="1192">1192</span>
+<span id="1193">1193</span>
+<span id="1194">1194</span>
+<span id="1195">1195</span>
+<span id="1196">1196</span>
+<span id="1197">1197</span>
+<span id="1198">1198</span>
+<span id="1199">1199</span>
+<span id="1200">1200</span>
+<span id="1201">1201</span>
+<span id="1202">1202</span>
+<span id="1203">1203</span>
+<span id="1204">1204</span>
+<span id="1205">1205</span>
+<span id="1206">1206</span>
+<span id="1207">1207</span>
+<span id="1208">1208</span>
+<span id="1209">1209</span>
+<span id="1210">1210</span>
+<span id="1211">1211</span>
+<span id="1212">1212</span>
+<span id="1213">1213</span>
+<span id="1214">1214</span>
+<span id="1215">1215</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Proto-Fragments.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! IMPORTANT STUFF TO KNOW:</span>
@@ -1961,7 +1996,7 @@
 					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">owner</span>) <span class="op">=</span> <span class="ident">owner</span> {
 						<span class="kw">if</span> <span class="ident">owner</span> <span class="op">==</span> <span class="kw-2">*</span><span class="ident">who</span> {
 							<span class="comment">// owner can include freely</span>
-							<span class="kw">continue</span>
+							<span class="kw">continue</span>;
 						}
 					}
 
@@ -1970,7 +2005,7 @@
 						<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">cost</span>.<span class="ident">into</span>();
 						<span class="kw">if</span> <span class="ident">cost</span> <span class="op">==</span> <span class="number">0</span> {
 							<span class="comment">// free</span>
-							<span class="kw">continue</span>
+							<span class="kw">continue</span>;
 						}
 						<span class="kw">let</span> <span class="ident">cost</span>: <span class="ident">T::Balance</span> <span class="op">=</span> <span class="ident">cost</span>.<span class="ident">saturated_into</span>();
 						<span class="kw">let</span> <span class="ident">stake</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ProtoStakes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">reference</span>, <span class="ident">who</span>.<span class="ident">clone</span>());
@@ -1978,15 +2013,15 @@
 							<span class="macro">ensure!</span>(<span class="ident">stake</span>.<span class="number">0</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">cost</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::NotEnoughStaked</span>);
 						} <span class="kw">else</span> {
 							<span class="comment">// Stake not found</span>
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::StakeNotFound</span>.<span class="ident">into</span>())
+							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::StakeNotFound</span>.<span class="ident">into</span>());
 						}
 					<span class="comment">// OK to include, just continue</span>
 					} <span class="kw">else</span> {
-						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Unauthorized</span>.<span class="ident">into</span>())
+						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::Unauthorized</span>.<span class="ident">into</span>());
 					}
 				} <span class="kw">else</span> {
 					<span class="comment">// Proto not found</span>
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ReferenceNotFound</span>.<span class="ident">into</span>())
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::ReferenceNotFound</span>.<span class="ident">into</span>());
 				}
 			}
 			<span class="prelude-val">Ok</span>(())
@@ -2001,27 +2036,33 @@
 			<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">struct_proto</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">proto_id</span>) {
 				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">avail</span>) <span class="op">=</span> <span class="ident">avail</span> {
 					<span class="kw">if</span> <span class="ident">avail</span> <span class="op">&amp;&amp;</span> <span class="ident">struct_proto</span>.<span class="ident">include_cost</span>.<span class="ident">is_none</span>() {
-						<span class="kw">return</span> <span class="bool-val">false</span>
+						<span class="kw">return</span> <span class="bool-val">false</span>;
 					} <span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span><span class="ident">avail</span> <span class="op">&amp;&amp;</span> <span class="ident">struct_proto</span>.<span class="ident">include_cost</span>.<span class="ident">is_some</span>() {
-						<span class="kw">return</span> <span class="bool-val">false</span>
+						<span class="kw">return</span> <span class="bool-val">false</span>;
 					}
 				}
 
 				<span class="kw">if</span> <span class="ident">categories</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">0</span> {
-					<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>)
-				} <span class="kw">else</span> {					
-					<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_category</span>(<span class="ident">tags</span>, <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>, <span class="ident">categories</span>)
+					<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>);
+				} <span class="kw">else</span> {
+					<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_category</span>(<span class="ident">tags</span>, <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>, <span class="ident">categories</span>);
 				}
 			} <span class="kw">else</span> {
 				<span class="bool-val">false</span>
 			}
 		}
 
-		<span class="kw">fn</span> <span class="ident">filter_category</span>(<span class="ident">tags</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>], <span class="ident">struct_proto</span>: <span class="kw-2">&amp;</span><span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span>, <span class="ident">categories</span>: <span class="kw-2">&amp;</span>[<span class="ident">Categories</span>]) -&gt; <span class="ident">bool</span> {
-			<span class="kw">let</span> <span class="ident">found</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">categories</span>.<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">cat</span><span class="op">|</span>
-				<span class="kw">match</span> <span class="ident">cat</span> {
+		<span class="kw">fn</span> <span class="ident">filter_category</span>(
+			<span class="ident">tags</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>],
+			<span class="ident">struct_proto</span>: <span class="kw-2">&amp;</span><span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span>,
+			<span class="ident">categories</span>: <span class="kw-2">&amp;</span>[<span class="ident">Categories</span>],
+		) -&gt; <span class="ident">bool</span> {
+			<span class="kw">let</span> <span class="ident">found</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">categories</span>
+				.<span class="ident">into_iter</span>()
+				.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">cat</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">cat</span> {
 					<span class="ident">Categories::Trait</span>(<span class="ident">proto_shard_trait</span>) =&gt; {
-						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Trait</span>(<span class="ident">struct_proto_shard_trait</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>.<span class="ident">category</span> {
+						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Trait</span>(<span class="ident">struct_proto_shard_trait</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>.<span class="ident">category</span>
+						{
 							<span class="comment">// search by trait name (the ID must be all zeros)</span>
 							<span class="kw">if</span> (<span class="ident">proto_shard_trait</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">struct_proto_shard_trait</span>.<span class="ident">name</span>) <span class="op">|</span><span class="op">|</span> 
 								<span class="comment">// search by trait id (the name must be empty)</span>
@@ -2029,51 +2070,65 @@
 								<span class="comment">// search by full match of trait info</span>
 								(<span class="ident">proto_shard_trait</span> <span class="op">==</span> <span class="ident">struct_proto_shard_trait</span>)
 							{
-								<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="ident">struct_proto</span>)
-							}
-							<span class="kw">else</span> {
-								<span class="kw">return</span> <span class="bool-val">false</span>
+								<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="ident">struct_proto</span>);
+							} <span class="kw">else</span> {
+								<span class="kw">return</span> <span class="bool-val">false</span>;
 							}
 						} <span class="kw">else</span> {
 							<span class="comment">// it should never go here</span>
-							<span class="kw">return</span> <span class="bool-val">false</span>
+							<span class="kw">return</span> <span class="bool-val">false</span>;
 						}
 					},
 					<span class="ident">Categories::Shards</span>(<span class="ident">param_script_info</span>) =&gt; {
 						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Shards</span>(<span class="ident">stored_script_info</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>.<span class="ident">category</span> {
-							
-							<span class="kw">let</span> <span class="ident">implementing_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>.<span class="ident">implementing</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">implementing</span>.<span class="ident">contains</span>(<span class="ident">item</span>)).<span class="ident">collect</span>();
-							<span class="kw">let</span> <span class="ident">requiring_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>.<span class="ident">requiring</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">requiring</span>.<span class="ident">contains</span>(<span class="ident">item</span>)).<span class="ident">collect</span>();
+							<span class="kw">let</span> <span class="ident">implementing_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>
+								.<span class="ident">implementing</span>
+								.<span class="ident">clone</span>()
+								.<span class="ident">into_iter</span>()
+								.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">implementing</span>.<span class="ident">contains</span>(<span class="ident">item</span>))
+								.<span class="ident">collect</span>();
+							<span class="kw">let</span> <span class="ident">requiring_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>
+								.<span class="ident">requiring</span>
+								.<span class="ident">clone</span>()
+								.<span class="ident">into_iter</span>()
+								.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">requiring</span>.<span class="ident">contains</span>(<span class="ident">item</span>))
+								.<span class="ident">collect</span>();
 
-							<span class="kw">if</span> <span class="op">!</span><span class="ident">implementing_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">requiring_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span>.<span class="ident">format</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">format</span>) <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span> <span class="op">==</span> <span class="ident">stored_script_info</span>)
+							<span class="kw">if</span> <span class="op">!</span><span class="ident">implementing_diffs</span>.<span class="ident">is_empty</span>()
+								<span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">requiring_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span>.<span class="ident">format</span>
+								<span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">format</span>) <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span>
+								<span class="op">==</span> <span class="ident">stored_script_info</span>)
 							{
-								<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="ident">struct_proto</span>)
-							}
-							<span class="kw">else</span> {
-								<span class="kw">return</span> <span class="bool-val">false</span>
+								<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="ident">struct_proto</span>);
+							} <span class="kw">else</span> {
+								<span class="kw">return</span> <span class="bool-val">false</span>;
 							}
 						} <span class="kw">else</span> {
 							<span class="comment">// it should never go here</span>
-							<span class="kw">return</span> <span class="bool-val">false</span>
+							<span class="kw">return</span> <span class="bool-val">false</span>;
 						}
 					},
 					<span class="kw">_</span> =&gt; {
 						<span class="kw">if</span> <span class="kw-2">*</span><span class="ident">cat</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>.<span class="ident">category</span> {
-							<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="ident">struct_proto</span>)
+							<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="ident">struct_proto</span>);
 						} <span class="kw">else</span> {
-							<span class="kw">return</span> <span class="bool-val">false</span>
+							<span class="kw">return</span> <span class="bool-val">false</span>;
 						}
 					},
-				}).<span class="ident">collect</span>();
-				
-				<span class="kw">if</span> <span class="ident">found</span>.<span class="ident">is_empty</span>() {
-					<span class="kw">return</span> <span class="bool-val">false</span>;
-				} <span class="kw">else</span> {
-					<span class="kw">return</span> <span class="bool-val">true</span>;
-				}
+				})
+				.<span class="ident">collect</span>();
+
+			<span class="kw">if</span> <span class="ident">found</span>.<span class="ident">is_empty</span>() {
+				<span class="kw">return</span> <span class="bool-val">false</span>;
+			} <span class="kw">else</span> {
+				<span class="kw">return</span> <span class="bool-val">true</span>;
+			}
 		}
 
-		<span class="kw">fn</span> <span class="ident">filter_tags</span> (<span class="ident">tags</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>], <span class="ident">struct_proto</span>: <span class="kw-2">&amp;</span><span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span>) -&gt; <span class="ident">bool</span> {
+		<span class="kw">fn</span> <span class="ident">filter_tags</span>(
+			<span class="ident">tags</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>],
+			<span class="ident">struct_proto</span>: <span class="kw-2">&amp;</span><span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span>,
+		) -&gt; <span class="ident">bool</span> {
 			<span class="kw">if</span> <span class="ident">tags</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">0</span> {
 				<span class="bool-val">true</span>
 			} <span class="kw">else</span> {
@@ -2088,22 +2143,26 @@
 			}
 		}
 
-		<span class="kw">fn</span> <span class="ident">get_list_of_matching_categories</span>(<span class="ident">params</span>: <span class="kw-2">&amp;</span><span class="ident">GetProtosParams</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">category</span>: <span class="kw-2">&amp;</span><span class="ident">Categories</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Categories</span><span class="op">&gt;</span> {
-			<span class="kw">let</span> <span class="ident">found</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Categories</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">cat</span><span class="op">|</span>
-				<span class="kw">match</span> <span class="ident">cat</span> {
+		<span class="kw">fn</span> <span class="ident">get_list_of_matching_categories</span>(
+			<span class="ident">params</span>: <span class="kw-2">&amp;</span><span class="ident">GetProtosParams</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+			<span class="ident">category</span>: <span class="kw-2">&amp;</span><span class="ident">Categories</span>,
+		) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Categories</span><span class="op">&gt;</span> {
+			<span class="kw">let</span> <span class="ident">found</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Categories</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">params</span>
+				.<span class="ident">categories</span>
+				.<span class="ident">clone</span>()
+				.<span class="ident">into_iter</span>()
+				.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">cat</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">cat</span> {
 					<span class="comment">// If Category == Trait, check if the search is by name or ID</span>
 					<span class="ident">Categories::Trait</span>(<span class="ident">param_shard_trait</span>) =&gt; {
-						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Trait</span>(<span class="ident">stored_shard_trait</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">category</span> { 
-						
+						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Trait</span>(<span class="ident">stored_shard_trait</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">category</span> {
 							<span class="comment">// search by trait name (the ID must be all zeros)</span>
-							<span class="kw">if</span> (<span class="ident">param_shard_trait</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">name</span>) <span class="op">|</span><span class="op">|</span> 
-									(<span class="ident">param_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">id</span>)
+							<span class="kw">if</span> (<span class="ident">param_shard_trait</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">name</span>)
+								<span class="op">|</span><span class="op">|</span> (<span class="ident">param_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">id</span>)
 							{
 								<span class="comment">// OK. Found the category matching name OR id.</span>
 								<span class="kw">return</span> <span class="bool-val">true</span>;
-							} 
-							<span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span>(<span class="kw-2">&amp;</span><span class="ident">cat</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">category</span>) {
-										<span class="kw">return</span> <span class="bool-val">false</span>;
+							} <span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span>(<span class="kw-2">&amp;</span><span class="ident">cat</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">category</span>) {
+								<span class="kw">return</span> <span class="bool-val">false</span>;
 							} <span class="kw">else</span> {
 								<span class="kw">return</span> <span class="bool-val">false</span>;
 							}
@@ -2113,16 +2172,27 @@
 					},
 					<span class="ident">Categories::Shards</span>(<span class="ident">param_script_info</span>) =&gt; {
 						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Shards</span>(<span class="ident">stored_script_info</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">category</span> {
-							
-							<span class="kw">let</span> <span class="ident">implementing_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>.<span class="ident">implementing</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">implementing</span>.<span class="ident">contains</span>(<span class="ident">item</span>)).<span class="ident">collect</span>();
-							<span class="kw">let</span> <span class="ident">requiring_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>.<span class="ident">requiring</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">requiring</span>.<span class="ident">contains</span>(<span class="ident">item</span>)).<span class="ident">collect</span>();
+							<span class="kw">let</span> <span class="ident">implementing_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>
+								.<span class="ident">implementing</span>
+								.<span class="ident">clone</span>()
+								.<span class="ident">into_iter</span>()
+								.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">implementing</span>.<span class="ident">contains</span>(<span class="ident">item</span>))
+								.<span class="ident">collect</span>();
+							<span class="kw">let</span> <span class="ident">requiring_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>
+								.<span class="ident">requiring</span>
+								.<span class="ident">clone</span>()
+								.<span class="ident">into_iter</span>()
+								.<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">requiring</span>.<span class="ident">contains</span>(<span class="ident">item</span>))
+								.<span class="ident">collect</span>();
 
-							<span class="kw">if</span> <span class="op">!</span><span class="ident">implementing_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">requiring_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span>.<span class="ident">format</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">format</span>) <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span> <span class="op">==</span> <span class="ident">stored_script_info</span>)
+							<span class="kw">if</span> <span class="op">!</span><span class="ident">implementing_diffs</span>.<span class="ident">is_empty</span>()
+								<span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">requiring_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span>.<span class="ident">format</span>
+								<span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">format</span>) <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span>
+								<span class="op">==</span> <span class="ident">stored_script_info</span>)
 							{
-								<span class="comment">// OK. Found the category matching a shard script info. </span>
+								<span class="comment">// OK. Found the category matching a shard script info.</span>
 								<span class="kw">return</span> <span class="bool-val">true</span>;
-							} 
-							<span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span>(<span class="kw-2">&amp;</span><span class="ident">cat</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">category</span>) {
+							} <span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span>(<span class="kw-2">&amp;</span><span class="ident">cat</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">category</span>) {
 								<span class="kw">return</span> <span class="bool-val">false</span>;
 							} <span class="kw">else</span> {
 								<span class="kw">return</span> <span class="bool-val">false</span>;
@@ -2139,8 +2209,8 @@
 							<span class="kw">return</span> <span class="bool-val">true</span>;
 						}
 					},
-				}
-			).<span class="ident">collect</span>();
+				})
+				.<span class="ident">collect</span>();
 
 			<span class="kw">return</span> <span class="ident">found</span>;
 		}
@@ -2198,7 +2268,7 @@
 					}
 				} <span class="kw">else</span> {
 					<span class="comment">// `owner` doesn&#39;t exist in `ProtosByOwner`</span>
-					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Owner not found&quot;</span>.<span class="ident">into</span>())
+					<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Owner not found&quot;</span>.<span class="ident">into</span>());
 				}
 			} <span class="kw">else</span> {
 				<span class="comment">// Notice this wastes time and memory and needs a better implementation</span>
@@ -2209,16 +2279,16 @@
 					<span class="kw">if</span> <span class="ident">params</span>.<span class="ident">desc</span> { <span class="ident">cats</span>.<span class="ident">iter</span>().<span class="ident">rev</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">clone</span>()).<span class="ident">collect</span>() } <span class="kw">else</span> { <span class="ident">cats</span> };
 
 				<span class="kw">for</span> <span class="ident">category</span> <span class="kw">in</span> <span class="ident">cats</span> {
-					<span class="kw">if</span> <span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {  
-						<span class="kw">let</span> <span class="ident">found</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Categories</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_list_of_matching_categories</span>(<span class="kw-2">&amp;</span><span class="ident">params</span>, <span class="kw-2">&amp;</span><span class="ident">category</span>);
+					<span class="kw">if</span> <span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
+						<span class="kw">let</span> <span class="ident">found</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Categories</span><span class="op">&gt;</span> <span class="op">=</span>
+							<span class="ident"><span class="self">Self</span>::get_list_of_matching_categories</span>(<span class="kw-2">&amp;</span><span class="ident">params</span>, <span class="kw-2">&amp;</span><span class="ident">category</span>);
 						<span class="comment">// if the current stored category does not match with any of the categories in input, it can be discarded from this search.</span>
 						<span class="kw">if</span> <span class="ident">found</span>.<span class="ident">is_empty</span>() {
 							<span class="kw">continue</span>;
 						}
-
 					}
 					<span class="comment">// Found a stored category matching with the ones in input.</span>
-					<span class="comment">// Now get its info and store it into the final list to return. </span>
+					<span class="comment">// Now get its info and store it into the final list to return.</span>
 					<span class="kw">let</span> <span class="ident">protos</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ProtosByCategory</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">category</span>);
 					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">protos</span>) <span class="op">=</span> <span class="ident">protos</span> {
 						<span class="kw">let</span> <span class="ident">collection</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Hash256</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">params</span>.<span class="ident">desc</span> {
@@ -2270,17 +2340,17 @@
 						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">array_proto_id</span>) <span class="op">=</span> <span class="ident">array_proto_id</span>.<span class="ident">try_into</span>() {
 							<span class="ident">array_proto_id</span>
 						} <span class="kw">else</span> {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to convert proto_id to Hash256&quot;</span>.<span class="ident">into</span>())
+							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to convert proto_id to Hash256&quot;</span>.<span class="ident">into</span>());
 						}
 					} <span class="kw">else</span> {
-						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to decode proto_id&quot;</span>.<span class="ident">into</span>())
+						<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to decode proto_id&quot;</span>.<span class="ident">into</span>());
 					};
 
 					<span class="kw">let</span> (<span class="ident">owner</span>, <span class="ident">map_metadata</span>, <span class="ident">include_cost</span>) <span class="op">=</span>
 						<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">proto</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Protos</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">array_proto_id</span>) {
 							(<span class="ident">proto</span>.<span class="ident">owner</span>, <span class="ident">proto</span>.<span class="ident">metadata</span>, <span class="ident">proto</span>.<span class="ident">include_cost</span>)
 						} <span class="kw">else</span> {
-							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get proto&quot;</span>.<span class="ident">into</span>())
+							<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get proto&quot;</span>.<span class="ident">into</span>());
 						};
 
 					<span class="kw">let</span> <span class="ident">map_proto</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">map_proto</span> {
@@ -2357,5 +2427,6 @@
 			<span class="prelude-val">Ok</span>(<span class="ident">result</span>.<span class="ident">into_bytes</span>())
 		}
 	}
-}</code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (1b57946a4 2022-08-03)" ></div></body></html>
+}
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (f6f9d5e73 2022-08-04)" ></div></body></html>
