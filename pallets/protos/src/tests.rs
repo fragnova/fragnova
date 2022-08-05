@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use upload_tests::upload;
 
 use copied_from_pallet_accounts::{link_, lock_};
-use protos::categories::{TextCategories};
+use protos::categories::TextCategories;
 
 mod copied_from_pallet_accounts {
 	use super::*;
@@ -232,7 +232,8 @@ mod get_protos_tests {
 				from: 10u64,
 				limit: 20u64,
 				metadata_keys: Vec::new(),
-				owner: Some(sp_core::ed25519::Public::from_raw([13u8; 32])), // different from account_id
+				owner: Some(sp_core::ed25519::Public::from_raw([13u8; 32])), /* different from
+				                                                              * account_id */
 				return_owners: false,
 				categories: vec![Categories::Trait(Some(blake2_128(&proto.data)))],
 				tags: Vec::new(),
@@ -590,7 +591,10 @@ mod get_protos_tests {
 				metadata_keys: Vec::new(),
 				owner: None,
 				return_owners: true,
-				categories: vec![Categories::Trait(Some(blake2_128(&proto.data))), Categories::Trait(Some(blake2_128(&proto2.data)))],
+				categories: vec![
+					Categories::Trait(Some(blake2_128(&proto.data))),
+					Categories::Trait(Some(blake2_128(&proto2.data))),
+				],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -1020,8 +1024,8 @@ mod transfer_tests {
 			assert!(
 				<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
 					.unwrap()
-					.contains(&proto.get_proto_hash())
-					== false
+					.contains(&proto.get_proto_hash()) ==
+					false
 			);
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second))
 				.unwrap()
@@ -1354,8 +1358,8 @@ mod unstake_tests {
 			assert!(
 				<AccountStakes<Test>>::get(stake.lock.link.clamor_account_id)
 					.unwrap()
-					.contains(&stake.proto_fragment.get_proto_hash())
-					== false
+					.contains(&stake.proto_fragment.get_proto_hash()) ==
+					false
 			);
 
 			let event = <frame_system::Pallet<Test>>::events()
