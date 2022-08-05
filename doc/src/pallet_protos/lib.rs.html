@@ -1127,6 +1127,57 @@
 <span id="1127">1127</span>
 <span id="1128">1128</span>
 <span id="1129">1129</span>
+<span id="1130">1130</span>
+<span id="1131">1131</span>
+<span id="1132">1132</span>
+<span id="1133">1133</span>
+<span id="1134">1134</span>
+<span id="1135">1135</span>
+<span id="1136">1136</span>
+<span id="1137">1137</span>
+<span id="1138">1138</span>
+<span id="1139">1139</span>
+<span id="1140">1140</span>
+<span id="1141">1141</span>
+<span id="1142">1142</span>
+<span id="1143">1143</span>
+<span id="1144">1144</span>
+<span id="1145">1145</span>
+<span id="1146">1146</span>
+<span id="1147">1147</span>
+<span id="1148">1148</span>
+<span id="1149">1149</span>
+<span id="1150">1150</span>
+<span id="1151">1151</span>
+<span id="1152">1152</span>
+<span id="1153">1153</span>
+<span id="1154">1154</span>
+<span id="1155">1155</span>
+<span id="1156">1156</span>
+<span id="1157">1157</span>
+<span id="1158">1158</span>
+<span id="1159">1159</span>
+<span id="1160">1160</span>
+<span id="1161">1161</span>
+<span id="1162">1162</span>
+<span id="1163">1163</span>
+<span id="1164">1164</span>
+<span id="1165">1165</span>
+<span id="1166">1166</span>
+<span id="1167">1167</span>
+<span id="1168">1168</span>
+<span id="1169">1169</span>
+<span id="1170">1170</span>
+<span id="1171">1171</span>
+<span id="1172">1172</span>
+<span id="1173">1173</span>
+<span id="1174">1174</span>
+<span id="1175">1175</span>
+<span id="1176">1176</span>
+<span id="1177">1177</span>
+<span id="1178">1178</span>
+<span id="1179">1179</span>
+<span id="1180">1180</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Proto-Fragments.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! IMPORTANT STUFF TO KNOW:</span>
@@ -1967,14 +2018,14 @@
 		}
 
 		<span class="kw">fn</span> <span class="ident">filter_category</span>(<span class="ident">tags</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>], <span class="ident">struct_proto</span>: <span class="kw-2">&amp;</span><span class="ident">Proto</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span>, <span class="ident">categories</span>: <span class="kw-2">&amp;</span>[<span class="ident">Categories</span>]) -&gt; <span class="ident">bool</span> {
-			<span class="kw">let</span> <span class="ident">category</span> <span class="op">=</span> <span class="ident">categories</span>.<span class="ident">into_iter</span>().<span class="ident">next</span>();
-				<span class="kw">match</span> <span class="ident">category</span> {
-					<span class="prelude-val">Some</span>(<span class="ident">Categories::Trait</span>(<span class="ident">proto_shard_trait</span>)) =&gt; {
+			<span class="kw">let</span> <span class="ident">found</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">categories</span>.<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">cat</span><span class="op">|</span>
+				<span class="kw">match</span> <span class="ident">cat</span> {
+					<span class="ident">Categories::Trait</span>(<span class="ident">proto_shard_trait</span>) =&gt; {
 						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Trait</span>(<span class="ident">struct_proto_shard_trait</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>.<span class="ident">category</span> {
 							<span class="comment">// search by trait name (the ID must be all zeros)</span>
-							<span class="kw">if</span> (<span class="ident">proto_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> [<span class="number">0u8</span>; <span class="number">16</span>] <span class="op">&amp;&amp;</span> <span class="ident">proto_shard_trait</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">struct_proto_shard_trait</span>.<span class="ident">name</span>) <span class="op">|</span><span class="op">|</span> 
+							<span class="kw">if</span> (<span class="ident">proto_shard_trait</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">struct_proto_shard_trait</span>.<span class="ident">name</span>) <span class="op">|</span><span class="op">|</span> 
 								<span class="comment">// search by trait id (the name must be empty)</span>
-								(<span class="ident">proto_shard_trait</span>.<span class="ident">name</span>.<span class="ident">is_empty</span>() <span class="op">&amp;&amp;</span> <span class="ident">proto_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> <span class="ident">struct_proto_shard_trait</span>.<span class="ident">id</span>) <span class="op">|</span><span class="op">|</span> 
+								(<span class="ident">proto_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> <span class="ident">struct_proto_shard_trait</span>.<span class="ident">id</span>) <span class="op">|</span><span class="op">|</span> 
 								<span class="comment">// search by full match of trait info</span>
 								(<span class="ident">proto_shard_trait</span> <span class="op">==</span> <span class="ident">struct_proto_shard_trait</span>)
 							{
@@ -1988,13 +2039,37 @@
 							<span class="kw">return</span> <span class="bool-val">false</span>
 						}
 					},
+					<span class="ident">Categories::Shards</span>(<span class="ident">param_script_info</span>) =&gt; {
+						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Shards</span>(<span class="ident">stored_script_info</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>.<span class="ident">category</span> {
+							
+							<span class="kw">let</span> <span class="ident">implementing_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>.<span class="ident">implementing</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">implementing</span>.<span class="ident">contains</span>(<span class="ident">item</span>)).<span class="ident">collect</span>();
+							<span class="kw">let</span> <span class="ident">requiring_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>.<span class="ident">requiring</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">requiring</span>.<span class="ident">contains</span>(<span class="ident">item</span>)).<span class="ident">collect</span>();
+
+							<span class="kw">if</span> <span class="op">!</span><span class="ident">implementing_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">requiring_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span>.<span class="ident">format</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">format</span>) <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span> <span class="op">==</span> <span class="ident">stored_script_info</span>)
+							{
+								<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="ident">struct_proto</span>)
+							}
+							<span class="kw">else</span> {
+								<span class="kw">return</span> <span class="bool-val">false</span>
+							}
+						} <span class="kw">else</span> {
+							<span class="comment">// it should never go here</span>
+							<span class="kw">return</span> <span class="bool-val">false</span>
+						}
+					},
 					<span class="kw">_</span> =&gt; {
-						<span class="kw">if</span> <span class="ident">categories</span>.<span class="ident">into_iter</span>().<span class="ident">any</span>(<span class="op">|</span><span class="ident">cat</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">cat</span> <span class="op">==</span> <span class="ident">struct_proto</span>.<span class="ident">category</span>) {
+						<span class="kw">if</span> <span class="kw-2">*</span><span class="ident">cat</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">struct_proto</span>.<span class="ident">category</span> {
 							<span class="kw">return</span> <span class="ident"><span class="self">Self</span>::filter_tags</span>(<span class="ident">tags</span>, <span class="ident">struct_proto</span>)
 						} <span class="kw">else</span> {
 							<span class="kw">return</span> <span class="bool-val">false</span>
 						}
 					},
+				}).<span class="ident">collect</span>();
+				
+				<span class="kw">if</span> <span class="ident">found</span>.<span class="ident">is_empty</span>() {
+					<span class="kw">return</span> <span class="bool-val">false</span>;
+				} <span class="kw">else</span> {
+					<span class="kw">return</span> <span class="bool-val">true</span>;
 				}
 		}
 
@@ -2011,6 +2086,63 @@
 					}
 				})
 			}
+		}
+
+		<span class="kw">fn</span> <span class="ident">get_list_of_matching_categories</span>(<span class="ident">params</span>: <span class="kw-2">&amp;</span><span class="ident">GetProtosParams</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">category</span>: <span class="kw-2">&amp;</span><span class="ident">Categories</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Categories</span><span class="op">&gt;</span> {
+			<span class="kw">let</span> <span class="ident">found</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Categories</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">cat</span><span class="op">|</span>
+				<span class="kw">match</span> <span class="ident">cat</span> {
+					<span class="comment">// If Category == Trait, check if the search is by name or ID</span>
+					<span class="ident">Categories::Trait</span>(<span class="ident">param_shard_trait</span>) =&gt; {
+						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Trait</span>(<span class="ident">stored_shard_trait</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">category</span> { 
+						
+							<span class="comment">// search by trait name (the ID must be all zeros)</span>
+							<span class="kw">if</span> (<span class="ident">param_shard_trait</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">name</span>) <span class="op">|</span><span class="op">|</span> 
+									(<span class="ident">param_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">id</span>)
+							{
+								<span class="comment">// OK. Found the category matching name OR id.</span>
+								<span class="kw">return</span> <span class="bool-val">true</span>;
+							} 
+							<span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span>(<span class="kw-2">&amp;</span><span class="ident">cat</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">category</span>) {
+										<span class="kw">return</span> <span class="bool-val">false</span>;
+							} <span class="kw">else</span> {
+								<span class="kw">return</span> <span class="bool-val">false</span>;
+							}
+						} <span class="kw">else</span> {
+							<span class="kw">return</span> <span class="bool-val">false</span>;
+						}
+					},
+					<span class="ident">Categories::Shards</span>(<span class="ident">param_script_info</span>) =&gt; {
+						<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Shards</span>(<span class="ident">stored_script_info</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">category</span> {
+							
+							<span class="kw">let</span> <span class="ident">implementing_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>.<span class="ident">implementing</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">implementing</span>.<span class="ident">contains</span>(<span class="ident">item</span>)).<span class="ident">collect</span>();
+							<span class="kw">let</span> <span class="ident">requiring_diffs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">param_script_info</span>.<span class="ident">requiring</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">item</span><span class="op">|</span> <span class="ident">stored_script_info</span>.<span class="ident">requiring</span>.<span class="ident">contains</span>(<span class="ident">item</span>)).<span class="ident">collect</span>();
+
+							<span class="kw">if</span> <span class="op">!</span><span class="ident">implementing_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">requiring_diffs</span>.<span class="ident">is_empty</span>() <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span>.<span class="ident">format</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">format</span>) <span class="op">|</span><span class="op">|</span> (<span class="ident">param_script_info</span> <span class="op">==</span> <span class="ident">stored_script_info</span>)
+							{
+								<span class="comment">// OK. Found the category matching a shard script info. </span>
+								<span class="kw">return</span> <span class="bool-val">true</span>;
+							} 
+							<span class="kw">else</span> <span class="kw">if</span> <span class="op">!</span>(<span class="kw-2">&amp;</span><span class="ident">cat</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">category</span>) {
+								<span class="kw">return</span> <span class="bool-val">false</span>;
+							} <span class="kw">else</span> {
+								<span class="kw">return</span> <span class="bool-val">false</span>;
+							}
+						} <span class="kw">else</span> {
+							<span class="kw">return</span> <span class="bool-val">false</span>;
+						}
+					},
+					<span class="comment">// for all other types of Categories</span>
+					<span class="kw">_</span> =&gt; {
+						<span class="kw">if</span> <span class="op">!</span>(<span class="kw-2">&amp;</span><span class="ident">cat</span> <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">category</span>) {
+							<span class="kw">return</span> <span class="bool-val">false</span>;
+						} <span class="kw">else</span> {
+							<span class="kw">return</span> <span class="bool-val">true</span>;
+						}
+					},
+				}
+			).<span class="ident">collect</span>();
+
+			<span class="kw">return</span> <span class="ident">found</span>;
 		}
 
 		<span class="doccomment">/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return</span>
@@ -2077,46 +2209,16 @@
 					<span class="kw">if</span> <span class="ident">params</span>.<span class="ident">desc</span> { <span class="ident">cats</span>.<span class="ident">iter</span>().<span class="ident">rev</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">clone</span>()).<span class="ident">collect</span>() } <span class="kw">else</span> { <span class="ident">cats</span> };
 
 				<span class="kw">for</span> <span class="ident">category</span> <span class="kw">in</span> <span class="ident">cats</span> {
-					<span class="kw">if</span> <span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> { 
-						<span class="kw">let</span> <span class="ident">param_category</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">clone</span>().<span class="ident">into_iter</span>().<span class="ident">next</span>();
-						<span class="kw">match</span> <span class="ident">param_category</span> {
-							<span class="comment">// If Category == Trait, check if the search is by name or ID</span>
-							<span class="prelude-val">Some</span>(<span class="ident">Categories::Trait</span>(<span class="ident">param_shard_trait</span>)) =&gt; {
-								<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Trait</span>(<span class="ident">stored_shard_trait</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">category</span> { 
-								
-									<span class="comment">// search by trait name (the ID must be all zeros)</span>
-									<span class="kw">if</span> (<span class="ident">param_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> [<span class="number">0u8</span>; <span class="number">16</span>] <span class="op">&amp;&amp;</span> <span class="ident">param_shard_trait</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">name</span>) <span class="op">|</span><span class="op">|</span> 
-											(<span class="ident">param_shard_trait</span>.<span class="ident">name</span>.<span class="ident">is_empty</span>() <span class="op">&amp;&amp;</span> <span class="ident">param_shard_trait</span>.<span class="ident">id</span> <span class="op">==</span> <span class="ident">stored_shard_trait</span>.<span class="ident">id</span>)
-									{
-										<span class="comment">// OK. Found the category matching name OR id. Keep this structure and do nothing here.</span>
-									} 
-									<span class="kw">else</span> {
-										<span class="comment">// Search by all info contained in Trait category</span>
-										<span class="kw">if</span> <span class="op">!</span><span class="kw-2">&amp;</span><span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">category</span>) {
-												<span class="kw">continue</span>
-										}
-									}
-								}
-							},
-							<span class="prelude-val">Some</span>(<span class="ident">Categories::Shards</span>(<span class="ident">param_script_info</span>)) =&gt; {
-								<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Categories::Shards</span>(<span class="ident">stored_script_info</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">category</span> {
-									<span class="kw">if</span> (<span class="ident">param_script_info</span>.<span class="ident">implementing</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">implementing</span>) <span class="op">|</span><span class="op">|</span> 
-											(<span class="ident">param_script_info</span>.<span class="ident">requiring</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">requiring</span>) <span class="op">|</span><span class="op">|</span> 
-												(<span class="ident">param_script_info</span>.<span class="ident">format</span> <span class="op">==</span> <span class="ident">stored_script_info</span>.<span class="ident">format</span>) {
-													<span class="comment">// OK. Found the category matching a shard script info. Keep this structure and do nothing here.</span>
-												}
-								}
-							},
-							<span class="comment">// for all other types of Categories</span>
-							<span class="kw">_</span> =&gt; {
-								<span class="kw">if</span> <span class="op">!</span><span class="kw-2">&amp;</span><span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">category</span>) {
-									<span class="kw">continue</span>
-								}
-							},
+					<span class="kw">if</span> <span class="ident">params</span>.<span class="ident">categories</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {  
+						<span class="kw">let</span> <span class="ident">found</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Categories</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_list_of_matching_categories</span>(<span class="kw-2">&amp;</span><span class="ident">params</span>, <span class="kw-2">&amp;</span><span class="ident">category</span>);
+						<span class="comment">// if the current stored category does not match with any of the categories in input, it can be discarded from this search.</span>
+						<span class="kw">if</span> <span class="ident">found</span>.<span class="ident">is_empty</span>() {
+							<span class="kw">continue</span>;
 						}
+
 					}
-					<span class="comment">// Found the category. </span>
-					<span class="comment">// Now collect all the protos linked to the category type in input</span>
+					<span class="comment">// Found a stored category matching with the ones in input.</span>
+					<span class="comment">// Now get its info and store it into the final list to return. </span>
 					<span class="kw">let</span> <span class="ident">protos</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ProtosByCategory</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">category</span>);
 					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">protos</span>) <span class="op">=</span> <span class="ident">protos</span> {
 						<span class="kw">let</span> <span class="ident">collection</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Hash256</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">params</span>.<span class="ident">desc</span> {
@@ -2256,4 +2358,4 @@
 		}
 	}
 }</code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (fe3342816 2022-08-01)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (1b57946a4 2022-08-03)" ></div></body></html>
