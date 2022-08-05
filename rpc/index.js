@@ -84,7 +84,7 @@ const connectToLocalNode = async () => {
                 implementing: 'Vec<ShardsTrait>'
             },
 
-            ShardsTrait: "Vec<u32>",
+            ShardsTrait: "Vec<u16>",
 
             ShardsFormat: {
                 _enum: [
