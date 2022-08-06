@@ -61,7 +61,7 @@ docker run --rm --user root --network host -v `pwd`:/data chainblocks/shards sha
 
 Once you have installed [Shards](https://docs.fragcolor.xyz/shards/) locally, just go to the /shards folder and run:
 ```
->:~/clamor/shards$ shards shards/add-test-assets.edn
+>:~/clamor/shards$ shards add-test-assets.edn
 ```
 ### Connecting to Polkadot's App Explorer
 
