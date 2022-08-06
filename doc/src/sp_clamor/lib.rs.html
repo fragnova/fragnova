@@ -189,6 +189,7 @@
 <span id="189">189</span>
 <span id="190">190</span>
 <span id="191">191</span>
+<span id="192">192</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
 <span class="comment">// #[cfg(feature = &quot;std&quot;)]</span>
@@ -201,6 +202,7 @@
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Hash256</span> <span class="op">=</span> [<span class="ident">u8</span>; <span class="number">32</span>];
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Hash128</span> <span class="op">=</span> [<span class="ident">u8</span>; <span class="number">16</span>];
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Hash64</span> <span class="op">=</span> [<span class="ident">u8</span>; <span class="number">8</span>];
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">CID_PREFIX</span>: [<span class="ident">u8</span>; <span class="number">6</span>] <span class="op">=</span> <span class="macro">hex_literal::hex!</span>(<span class="string">&quot;0155a0e40220&quot;</span>);
 
@@ -369,7 +371,7 @@
 	}
 }
 
-<span class="doccomment">/// Returns an account ID that can stake FRAG tokens.  </span>
+<span class="doccomment">/// Returns an account ID that can stake FRAG tokens.</span>
 <span class="doccomment">/// This returned account ID is determinstically computed from the given account ID (`who`).</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_locked_frag_account</span><span class="op">&lt;</span><span class="ident">TAccountId</span>: <span class="ident">Encode</span> <span class="op">+</span> <span class="ident">Decode</span><span class="op">&gt;</span>(
 	<span class="ident">who</span>: <span class="kw-2">&amp;</span><span class="ident">TAccountId</span>,
@@ -381,4 +383,4 @@
 	<span class="ident">TAccountId::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">who</span>[..])
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sp_clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (f6f9d5e73 2022-08-04)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sp_clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (affe0d3a0 2022-08-05)" ></div></body></html>
