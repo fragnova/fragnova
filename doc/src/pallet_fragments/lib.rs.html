@@ -1178,7 +1178,6 @@
 <span id="1178">1178</span>
 <span id="1179">1179</span>
 <span id="1180">1180</span>
-<span id="1181">1181</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! IMPORTANT STUFF TO KNOW:</span>
@@ -1236,7 +1235,6 @@
 
 <span class="kw">use</span> <span class="ident">frame_support::traits</span>::{
 	<span class="ident">tokens::fungibles::Inspect</span>, <span class="ident">tokens::fungibles::Transfer</span>, <span class="ident">Currency</span>, <span class="ident">ExistenceRequirement</span>,
-	<span class="ident">ReservableCurrency</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_runtime::SaturatedConversion</span>;
 
@@ -1288,7 +1286,7 @@
 <span class="doccomment">/// Footnotes:</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// #### Remarks</span>
-<span class="doccomment">///  </span>
+<span class="doccomment">///</span>
 <span class="doccomment">/// * On purpose not storing owner because:</span>
 <span class="doccomment">///   * Big, 32 bytes</span>
 <span class="doccomment">///   * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.</span>
@@ -1778,7 +1776,7 @@
 		<span class="doccomment">/// * `origin` - **Origin** of the **extrinsic function**</span>
 		<span class="doccomment">/// * `fragment_hash` - **ID* of the **Fragment Definition**</span>
 		<span class="doccomment">/// * `options` - **Enum** indicating whether to</span>
-		<span class="doccomment">/// **create one Fragment Instance with custom data attached to it** or whether to  </span>
+		<span class="doccomment">/// **create one Fragment Instance with custom data attached to it** or whether to</span>
 		<span class="doccomment">/// **create multiple Fragment Instances (with no custom data attached)**</span>
 		<span class="doccomment">/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**</span>
 		<span class="doccomment">/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),</span>
@@ -2113,7 +2111,7 @@
 		}
 
 		<span class="doccomment">/// Create the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class`,</span>
-		<span class="doccomment">/// whose Edition ID is `edition`** and whose Copy ID is `copy`**  </span>
+		<span class="doccomment">/// whose Edition ID is `edition`** and whose Copy ID is `copy`**</span>
 		<span class="doccomment">///</span>
 		<span class="doccomment">/// # Arguments</span>
 		<span class="doccomment">///</span>
