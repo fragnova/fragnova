@@ -63,7 +63,7 @@ describe('Protos RPCs', () => {
 
         it('should return no protos when filtering for not existing Category Trait', async () => {
 
-            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", { desc: true, from: 0, limit: 10, categories: [{ "trait": {name: "ciao", description: "this is good", id: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]} }] }))
+            let result = await api.rpc.protos.getProtos(api.createType("GetProtosParams", { desc: true, from: 0, limit: 10, categories: [{ "trait": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1] }] }))
 
             assert(result.toHuman() === "{}")
 

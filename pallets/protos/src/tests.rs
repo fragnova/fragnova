@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 use upload_tests::upload;
 
 use copied_from_pallet_accounts::{link_, lock_};
-use protos::categories::{ShardsTraitInfo, TextCategories};
+use protos::categories::TextCategories;
 
 mod copied_from_pallet_accounts {
 	use super::*;
@@ -48,7 +48,7 @@ mod upload_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
-			let block_number = System::block_number(); //@sinkingsugar
+			let block_number = System::block_number();
 
 			let proto = dd.proto_fragment;
 
@@ -227,20 +227,15 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id_second, &proto_text));
 
 			// SEARCH
-			let num: [u8; 16] = [1; 16];
-			let shard = ShardsTraitInfo {
-				name: "Shards1".to_string(),
-				description: "test 1".to_string(),
-				id: num,
-			};
 			let params = GetProtosParams {
 				desc: true,
 				from: 10u64,
 				limit: 20u64,
 				metadata_keys: Vec::new(),
-				owner: Some(sp_core::ed25519::Public::from_raw([13u8; 32])), // different from account_id
+				owner: Some(sp_core::ed25519::Public::from_raw([13u8; 32])), /* different from
+				                                                              * account_id */
 				return_owners: false,
-				categories: vec![Categories::Trait(shard)],
+				categories: vec![Categories::Trait(Some(blake2_128(&proto.data)))],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -304,12 +299,6 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto));
 
 			// SEARCH
-			let num: [u8; 16] = [1u8; 16];
-			let shard = ShardsTraitInfo {
-				name: "Shards1".to_string(),
-				description: "test 1".to_string(),
-				id: num,
-			};
 			let params = GetProtosParams {
 				desc: true,
 				from: 0,
@@ -317,7 +306,7 @@ mod get_protos_tests {
 				metadata_keys: Vec::new(),
 				owner: Some(dd.account_id),
 				return_owners: true,
-				categories: vec![Categories::Trait(shard)],
+				categories: vec![Categories::Trait(Some(blake2_128(&proto.data)))],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -343,7 +332,7 @@ mod get_protos_tests {
 	}
 
 	#[test]
-	fn get_protos_by_trait_name_should_work() {
+	fn get_protos_by_trait_should_work() {
 		new_test_ext().execute_with(|| {
 			// UPLOAD
 			let dd = DummyData::new();
@@ -354,12 +343,6 @@ mod get_protos_tests {
 			// SEARCH
 			// This is searching a Proto using the same Trait name.
 			// Note that Trait description is different from the trait uploaded.
-			let num: [u8; 16] = [0u8; 16]; // trait ID is set to all zeroes for the search by name
-			let shard = ShardsTraitInfo {
-				name: "Shards1".to_string(),
-				description: "test 2".to_string(), // this description is different from the proto stored (i.e. test 1)
-				id: num,
-			};
 			let params = GetProtosParams {
 				desc: true,
 				from: 0,
@@ -367,7 +350,7 @@ mod get_protos_tests {
 				metadata_keys: Vec::new(),
 				owner: Some(dd.account_id),
 				return_owners: true,
-				categories: vec![Categories::Trait(shard)],
+				categories: vec![Categories::Trait(Some(blake2_128(&proto.data)))],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -405,12 +388,6 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto2));
 
 			// SEARCH
-			let num: [u8; 16] = [0u8; 16];
-			let shard = ShardsTraitInfo {
-				name: "NameOfShard".to_string(),   // proto_fragment_fourth
-				description: "test 2".to_string(), // this description is different from the proto stored (i.e. test 1)
-				id: num,
-			};
 			let params = GetProtosParams {
 				desc: true,
 				from: 0,
@@ -418,7 +395,7 @@ mod get_protos_tests {
 				metadata_keys: Vec::new(),
 				owner: None,
 				return_owners: true,
-				categories: vec![Categories::Trait(shard)],
+				categories: vec![Categories::Trait(Some(blake2_128(&proto2.data)))],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -458,12 +435,6 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 
 			// SEARCH
-			let num: [u8; 16] = [0u8; 16];
-			let shard = ShardsTraitInfo {
-				name: "Shards1".to_string(),       // proto_fragment_fourth
-				description: "test 1".to_string(), // this description is different from the proto stored (i.e. test 1)
-				id: num,
-			};
 			let shard_script_num_1: [u8; 16] = [4u8; 16];
 			let shard_script_num_2: [u8; 16] = [5u8; 16];
 			let shard_script = ShardsScriptInfo {
@@ -479,7 +450,7 @@ mod get_protos_tests {
 				owner: None,
 				return_owners: true,
 				categories: vec![
-					Categories::Trait(shard),
+					Categories::Trait(Some(blake2_128(&proto1.data))),
 					Categories::Shards(shard_script),
 					Categories::Text(TextCategories::Plain),
 				],
@@ -540,12 +511,6 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 
 			// SEARCH
-			let num: [u8; 16] = [0u8; 16];
-			let shard = ShardsTraitInfo {
-				name: "Shards1".to_string(),       // proto_fragment_fourth
-				description: "test 1".to_string(), // this description is different from the proto stored (i.e. test 1)
-				id: num,
-			};
 			let shard_script_num_1: [u8; 16] = [4u8; 16];
 			let shard_script_num_2: [u8; 16] = [5u8; 16];
 			let shard_script = ShardsScriptInfo {
@@ -561,7 +526,7 @@ mod get_protos_tests {
 				owner: None,
 				return_owners: true,
 				categories: vec![
-					Categories::Trait(shard),
+					Categories::Trait(Some(blake2_128(&proto1.data))),
 					Categories::Shards(shard_script),
 					Categories::Text(TextCategories::Plain),
 				],
@@ -608,7 +573,7 @@ mod get_protos_tests {
 	}
 
 	#[test]
-	fn get_protos_by_trait_name_should_return_two_protos() {
+	fn get_protos_by_trait_should_return_two_protos() {
 		new_test_ext().execute_with(|| {
 			// UPLOAD
 			let dd = DummyData::new();
@@ -619,12 +584,6 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto2));
 
 			// SEARCH
-			let num: [u8; 16] = [0u8; 16];
-			let shard = ShardsTraitInfo {
-				name: "NameOfShard".to_string(),   // proto_fragment_fourth
-				description: "test 2".to_string(), // this description is different from the other protos stored
-				id: num,
-			};
 			let params = GetProtosParams {
 				desc: true,
 				from: 0,
@@ -632,7 +591,10 @@ mod get_protos_tests {
 				metadata_keys: Vec::new(),
 				owner: None,
 				return_owners: true,
-				categories: vec![Categories::Trait(shard)],
+				categories: vec![
+					Categories::Trait(Some(blake2_128(&proto.data))),
+					Categories::Trait(Some(blake2_128(&proto2.data))),
+				],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -1062,8 +1024,8 @@ mod transfer_tests {
 			assert!(
 				<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
 					.unwrap()
-					.contains(&proto.get_proto_hash())
-					== false
+					.contains(&proto.get_proto_hash()) ==
+					false
 			);
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second))
 				.unwrap()
@@ -1396,8 +1358,8 @@ mod unstake_tests {
 			assert!(
 				<AccountStakes<Test>>::get(stake.lock.link.clamor_account_id)
 					.unwrap()
-					.contains(&stake.proto_fragment.get_proto_hash())
-					== false
+					.contains(&stake.proto_fragment.get_proto_hash()) ==
+					false
 			);
 
 			let event = <frame_system::Pallet<Test>>::events()

@@ -78,19 +78,13 @@ const connectToLocalNode = async () => {
                 ]
             },
 
-            ShardsTraitInfo: {
-                name: 'String',
-                description: 'String',
-                id: 'ShardsTrait'
-            },
-
             ShardsScriptInfo: {
                 format: 'ShardsFormat',
                 requiring: 'Vec<ShardsTrait>',
                 implementing: 'Vec<ShardsTrait>'
             },
 
-            ShardsTrait: "Vec<u32>",
+            ShardsTrait: "Vec<u16>",
 
             ShardsFormat: {
                 _enum: [
@@ -102,7 +96,7 @@ const connectToLocalNode = async () => {
             Categories: {
                 _enum: {
                     "text": "TextCategories",
-                    "trait": "ShardsTraitInfo",
+                    "trait": "Option<ShardsTrait>",
                     "shards": "ShardsScriptInfo",
                     "audio": "AudioCategories",
                     "texture": "TextureCategories",

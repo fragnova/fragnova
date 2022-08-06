@@ -20,7 +20,7 @@ mod tests;
 
 mod weights;
 
-use protos::categories::Categories;
+use protos::{categories::Categories, traits::Trait};
 
 use sp_core::{ecdsa, H160, U256};
 
@@ -30,12 +30,15 @@ pub use pallet::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-use sp_io::{hashing::blake2_256, transaction_index};
+use sp_io::{
+	hashing::{blake2_128, blake2_256},
+	transaction_index,
+};
 use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 pub use weights::WeightInfo;
 
-use sp_clamor::{get_locked_frag_account, Hash256};
+use sp_clamor::{get_locked_frag_account, Hash128, Hash256};
 
 use scale_info::prelude::{
 	format,
@@ -175,6 +178,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MetaKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
+	/// **StorageMap** that maps a **Trait ID** to the name of the Trait itself
+	#[pallet::storage]
+	pub type Traits<T: Config> = StorageMap<_, Identity, Hash128, Vec<u8>, ValueQuery>;
+
 	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the aforementioned Proto-Fragment)**
 	#[pallet::storage]
 	pub type Protos<T: Config> =
@@ -307,7 +314,22 @@ pub mod pallet {
 			// Check FRAG staking
 			Self::check_staking_req(&references, &who)?;
 
-			// ! Write STATE from now, ensure no errors from now...
+			// Store Trait if trait, also hash properly the data and decode name
+			let category = match category {
+				Categories::Trait(_) => {
+					let trait_id = blake2_128(&data);
+					ensure!(!<Traits<T>>::contains_key(&trait_id), Error::<T>::ProtoExists);
+
+					let info =
+						Trait::decode(&mut &data[..]).map_err(|_| Error::<T>::SystematicFailure)?;
+
+					// Write STATE from now, ensure no errors from now...
+					<Traits<T>>::insert(trait_id, info.name.encode());
+
+					Categories::Trait(Some(trait_id))
+				},
+				_ => category,
+			};
 
 			let owner = if let Some(link) = linked_asset {
 				ProtoOwner::ExternalAsset(link)
@@ -845,25 +867,6 @@ pub mod pallet {
 			let found: Vec<_> = categories
 				.into_iter()
 				.filter(|cat| match cat {
-					Categories::Trait(proto_shard_trait) => {
-						if let Categories::Trait(struct_proto_shard_trait) = &struct_proto.category
-						{
-							// search by trait name (the ID must be all zeros)
-							if (proto_shard_trait.name == struct_proto_shard_trait.name) || 
-								// search by trait id (the name must be empty)
-								(proto_shard_trait.id == struct_proto_shard_trait.id) || 
-								// search by full match of trait info
-								(proto_shard_trait == struct_proto_shard_trait)
-							{
-								return Self::filter_tags(tags, struct_proto);
-							} else {
-								return false;
-							}
-						} else {
-							// it should never go here
-							return false;
-						}
-					},
 					Categories::Shards(param_script_info) => {
 						if let Categories::Shards(stored_script_info) = &struct_proto.category {
 							let implementing_diffs: Vec<_> = param_script_info
@@ -937,24 +940,6 @@ pub mod pallet {
 				.clone()
 				.into_iter()
 				.filter(|cat| match cat {
-					// If Category == Trait, check if the search is by name or ID
-					Categories::Trait(param_shard_trait) => {
-						if let Categories::Trait(stored_shard_trait) = &category {
-							// search by trait name (the ID must be all zeros)
-							if (param_shard_trait.name == stored_shard_trait.name)
-								|| (param_shard_trait.id == stored_shard_trait.id)
-							{
-								// OK. Found the category matching name OR id.
-								return true;
-							} else if !(&cat == &category) {
-								return false;
-							} else {
-								return false;
-							}
-						} else {
-							return false;
-						}
-					},
 					Categories::Shards(param_script_info) => {
 						if let Categories::Shards(stored_script_info) = &category {
 							let implementing_diffs: Vec<_> = param_script_info

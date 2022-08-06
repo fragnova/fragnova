@@ -13,9 +13,9 @@ use sp_core::{
 
 use sp_clamor::{Hash256, CID_PREFIX};
 
-use protos::categories::{
-	Categories, ShardsFormat, ShardsScriptInfo, ShardsTraitInfo, TextCategories,
-};
+use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
+
+use protos::traits::{RecordInfo, Trait, VariableType};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
@@ -124,52 +124,47 @@ impl DummyData {
 			data: "0x222".as_bytes().to_vec(),
 		};
 
-		let num: [u8; 16] = [1u8; 16];
-		let shard = ShardsTraitInfo {
-			name: "Shards1".to_string(),
-			description: "test 1".to_string(),
-			id: num,
-		};
+		let records1 = vec![("int1".to_string(), RecordInfo::SingleType(VariableType::Int))];
+		let trait1 = Trait { name: "Trait1".to_string(), records: records1 };
+
+		let data_trait = blake2_128(&trait1.encode());
 
 		let proto_third = ProtoFragment {
 			references: Vec::new(),
-			category: Categories::Trait(shard),
+			category: Categories::Trait(Some(data_trait)),
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
-			data: "ThisIsATest".as_bytes().to_vec(),
+			data: trait1.encode(),
 		};
 
-		let num2: [u8; 16] = [13u8; 16];
-		let shard2 = ShardsTraitInfo {
-			name: "NameOfShard".to_string(),
-			description: "description".to_string(),
-			id: num2,
-		};
+		let records2 = vec![("int2".to_string(), RecordInfo::SingleType(VariableType::Int))];
+
+		let trait2 = Trait { name: "Trait2".to_string(), records: records2 };
+
+		let data_trait_2 = blake2_128(&trait2.encode());
 
 		let proto_fourth = ProtoFragment {
 			references: Vec::new(),
-			category: Categories::Trait(shard2),
+			category: Categories::Trait(Some(data_trait_2)),
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
-			data: "0x555".as_bytes().to_vec(),
+			data: trait2.encode(),
 		};
 
-		let num3: [u8; 16] = [4u8; 16];
-		let shard3 = ShardsTraitInfo {
-			name: "NameOfShard".to_string(),
-			description: "description2".to_string(),
-			id: num3,
-		};
+		let records3 = vec![("int3".to_string(), RecordInfo::SingleType(VariableType::Int))];
+
+		let trait3 = Trait { name: "Trait3".to_string(), records: records3 };
+		let data_trait_3 = blake2_128(&trait3.encode());
 
 		let proto_fifth = ProtoFragment {
 			references: Vec::new(),
-			category: Categories::Trait(shard3),
+			category: Categories::Trait(Some(data_trait_3)),
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
-			data: "0x666".as_bytes().to_vec(),
+			data: trait3.encode(),
 		};
 
 		let shard_script_num_1: [u8; 16] = [4u8; 16];
