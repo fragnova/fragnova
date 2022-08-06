@@ -235,7 +235,7 @@ mod get_protos_tests {
 				owner: Some(sp_core::ed25519::Public::from_raw([13u8; 32])), /* different from
 				                                                              * account_id */
 				return_owners: false,
-				categories: vec![Categories::Trait(Some(blake2_128(&proto.data)))],
+				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -306,7 +306,7 @@ mod get_protos_tests {
 				metadata_keys: Vec::new(),
 				owner: Some(dd.account_id),
 				return_owners: true,
-				categories: vec![Categories::Trait(Some(blake2_128(&proto.data)))],
+				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -350,7 +350,7 @@ mod get_protos_tests {
 				metadata_keys: Vec::new(),
 				owner: Some(dd.account_id),
 				return_owners: true,
-				categories: vec![Categories::Trait(Some(blake2_128(&proto.data)))],
+				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -395,7 +395,7 @@ mod get_protos_tests {
 				metadata_keys: Vec::new(),
 				owner: None,
 				return_owners: true,
-				categories: vec![Categories::Trait(Some(blake2_128(&proto2.data)))],
+				categories: vec![Categories::Trait(Some(twox_64(&proto2.data)))],
 				tags: Vec::new(),
 				available: Some(true),
 			};
@@ -435,8 +435,8 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 
 			// SEARCH
-			let shard_script_num_1: [u8; 16] = [4u8; 16];
-			let shard_script_num_2: [u8; 16] = [5u8; 16];
+			let shard_script_num_1: [u8; 8] = [4u8; 8];
+			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
 				format: ShardsFormat::Binary,
 				requiring: vec![shard_script_num_1],
@@ -450,7 +450,7 @@ mod get_protos_tests {
 				owner: None,
 				return_owners: true,
 				categories: vec![
-					Categories::Trait(Some(blake2_128(&proto1.data))),
+					Categories::Trait(Some(twox_64(&proto1.data))),
 					Categories::Shards(shard_script),
 					Categories::Text(TextCategories::Plain),
 				],
@@ -511,8 +511,8 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 
 			// SEARCH
-			let shard_script_num_1: [u8; 16] = [4u8; 16];
-			let shard_script_num_2: [u8; 16] = [5u8; 16];
+			let shard_script_num_1: [u8; 8] = [4u8; 8];
+			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
 				format: ShardsFormat::Binary,
 				requiring: vec![shard_script_num_1],
@@ -526,7 +526,7 @@ mod get_protos_tests {
 				owner: None,
 				return_owners: true,
 				categories: vec![
-					Categories::Trait(Some(blake2_128(&proto1.data))),
+					Categories::Trait(Some(twox_64(&proto1.data))),
 					Categories::Shards(shard_script),
 					Categories::Text(TextCategories::Plain),
 				],
@@ -592,8 +592,8 @@ mod get_protos_tests {
 				owner: None,
 				return_owners: true,
 				categories: vec![
-					Categories::Trait(Some(blake2_128(&proto.data))),
-					Categories::Trait(Some(blake2_128(&proto2.data))),
+					Categories::Trait(Some(twox_64(&proto.data))),
+					Categories::Trait(Some(twox_64(&proto2.data))),
 				],
 				tags: Vec::new(),
 				available: Some(true),
@@ -639,8 +639,8 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 
 			// SEARCH
-			let shard_script_num_1: [u8; 16] = [4u8; 16];
-			let shard_script_num_2: [u8; 16] = [5u8; 16];
+			let shard_script_num_1: [u8; 8] = [4u8; 8];
+			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
 				format: ShardsFormat::Binary,
 				requiring: vec![shard_script_num_1],
@@ -691,8 +691,8 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 
 			// SEARCH
-			let shard_script_num_1: [u8; 16] = [0u8; 16];
-			let shard_script_num_2: [u8; 16] = [1u8; 16];
+			let shard_script_num_1: [u8; 8] = [0u8; 8];
+			let shard_script_num_2: [u8; 8] = [1u8; 8];
 			let shard_script = ShardsScriptInfo {
 				format: ShardsFormat::Binary,
 				requiring: vec![shard_script_num_1],
@@ -731,8 +731,8 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 
 			// SEARCH
-			let shard_script_num_1: [u8; 16] = [0u8; 16];
-			let shard_script_num_2: [u8; 16] = [5u8; 16];
+			let shard_script_num_1: [u8; 8] = [0u8; 8];
+			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
 				format: ShardsFormat::Binary,
 				requiring: vec![shard_script_num_1],

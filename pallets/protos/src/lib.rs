@@ -31,14 +31,14 @@ pub use pallet::*;
 use serde::{Deserialize, Serialize};
 
 use sp_io::{
-	hashing::{blake2_128, blake2_256},
+	hashing::{twox_64, blake2_256},
 	transaction_index,
 };
 use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 pub use weights::WeightInfo;
 
-use sp_clamor::{get_locked_frag_account, Hash128, Hash256};
+use sp_clamor::{get_locked_frag_account, Hash64, Hash256};
 
 use scale_info::prelude::{
 	format,
@@ -180,7 +180,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Trait ID** to the name of the Trait itself
 	#[pallet::storage]
-	pub type Traits<T: Config> = StorageMap<_, Identity, Hash128, Vec<u8>, ValueQuery>;
+	pub type Traits<T: Config> = StorageMap<_, Identity, Hash64, Vec<u8>, ValueQuery>;
 
 	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the aforementioned Proto-Fragment)**
 	#[pallet::storage]
@@ -317,7 +317,7 @@ pub mod pallet {
 			// Store Trait if trait, also hash properly the data and decode name
 			let category = match category {
 				Categories::Trait(_) => {
-					let trait_id = blake2_128(&data);
+					let trait_id = twox_64(&data);
 					ensure!(!<Traits<T>>::contains_key(&trait_id), Error::<T>::ProtoExists);
 
 					let info =
