@@ -127,7 +127,7 @@ impl DummyData {
 		let records1 = vec![("int1".to_string(), RecordInfo::SingleType(VariableType::Int))];
 		let trait1 = Trait { name: "Trait1".to_string(), records: records1 };
 
-		let data_trait = blake2_128(&trait1.encode());
+		let data_trait = twox_64(&trait1.encode());
 
 		let proto_third = ProtoFragment {
 			references: Vec::new(),
@@ -142,7 +142,7 @@ impl DummyData {
 
 		let trait2 = Trait { name: "Trait2".to_string(), records: records2 };
 
-		let data_trait_2 = blake2_128(&trait2.encode());
+		let data_trait_2 = twox_64(&trait2.encode());
 
 		let proto_fourth = ProtoFragment {
 			references: Vec::new(),
@@ -156,7 +156,7 @@ impl DummyData {
 		let records3 = vec![("int3".to_string(), RecordInfo::SingleType(VariableType::Int))];
 
 		let trait3 = Trait { name: "Trait3".to_string(), records: records3 };
-		let data_trait_3 = blake2_128(&trait3.encode());
+		let data_trait_3 = twox_64(&trait3.encode());
 
 		let proto_fifth = ProtoFragment {
 			references: Vec::new(),
@@ -167,8 +167,8 @@ impl DummyData {
 			data: trait3.encode(),
 		};
 
-		let shard_script_num_1: [u8; 16] = [4u8; 16];
-		let shard_script_num_2: [u8; 16] = [5u8; 16];
+		let shard_script_num_1: [u8; 8] = [4u8; 8];
+		let shard_script_num_2: [u8; 8] = [5u8; 8];
 		let shard_script = ShardsScriptInfo {
 			format: ShardsFormat::Edn,
 			requiring: vec![shard_script_num_1],
@@ -184,7 +184,7 @@ impl DummyData {
 			data: "0x661".as_bytes().to_vec(),
 		};
 
-		let shard_script_num_3: [u8; 16] = [9u8; 16];
+		let shard_script_num_3: [u8; 8] = [9u8; 8];
 		let shard_script = ShardsScriptInfo {
 			format: ShardsFormat::Edn,
 			requiring: vec![shard_script_num_1],
