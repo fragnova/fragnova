@@ -38,11 +38,17 @@ jobs:
         with:
           node-version: '14'  # The node-version input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
 
-      - name: Test RPCs
+      - uses: fountainhead/action-wait-for-check@v1.0.0
+
+      - name: Build Clamor and run node
+        id: build-and-run-clamor
         run: |
           cargo build
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
-          sleep 10
+      
+      - name: Run RPC Tests
+        if: steps.build-and-run-clamor.output.conclusion == 'success'
+        run: | 
           docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards shards /data/shards/test-protos-rpc.edn
           echo "before changing directory"
           cd rpc
