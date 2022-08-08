@@ -962,7 +962,8 @@ pub mod pallet {
 							{
 								// OK. Found the category matching a shard script info.
 								return true;
-							} else if !(&cat == &category) {
+							}
+							else if !(&cat == &category) {
 								return false;
 							} else {
 								return false;
@@ -1057,8 +1058,8 @@ pub mod pallet {
 							continue;
 						}
 					}
-					// Found a stored category matching with the ones in input.
-					// Now get its info and store it into the final list to return.
+					// Found the category.
+					// Now collect all the protos linked to the category type in input
 					let protos = <ProtosByCategory<T>>::get(category);
 					if let Some(protos) = protos {
 						let collection: Vec<Hash256> = if params.desc {
@@ -1198,3 +1199,4 @@ pub mod pallet {
 		}
 	}
 }
+
