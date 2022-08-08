@@ -746,7 +746,7 @@ pub mod pallet {
 					&who,
 					&vault,
 					price.saturated_into(),
-					true, // investigate ???
+					true, // The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			} else {
@@ -755,7 +755,7 @@ pub mod pallet {
 					&who,
 					&vault,
 					price.saturated_into(),
-					ExistenceRequirement::KeepAlive, // investigate ???
+					ExistenceRequirement::KeepAlive, 
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}

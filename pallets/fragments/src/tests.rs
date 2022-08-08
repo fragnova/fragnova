@@ -155,6 +155,7 @@ mod create_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn create_should_not_work_if_proto_is_detached() {
 		todo!()
 	}
@@ -322,6 +323,7 @@ mod publish_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn publish_should_not_work_if_proto_is_detached() {
 		todo!()
 	}
@@ -417,6 +419,7 @@ mod unpublish_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn unpublish_should_not_work_if_proto_is_detached() {
 		todo!()
 	}
@@ -729,6 +732,7 @@ mod mint_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn mint_should_not_work_if_proto_is_detached() {
 		todo!()
 	}
@@ -1049,14 +1053,31 @@ mod buy_tests {
 
 			let mut buy = dd.buy_non_unique;
 
-			buy.publish.definition.metadata.currency = Some(69);
+			buy.publish.definition.metadata.currency = Some(0);
 
 			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &buy.publish.definition));
 			assert_ok!(publish_(dd.account_id, &buy.publish));
 
 			// Deposit `quantity` to buyer's account
-			todo!();
+			let quantity = match buy.buy_options {
+				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
+				_ => 1u64,
+			};
+			let minimum_balance = 69;
+			Assets::force_create(
+				Origin::root(), 
+				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
+				true, // Whether this asset needs users to have an existential deposit to hold this asset
+				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+			);
+			Assets::mint(
+				Origin::signed(dd.account_id), 
+				buy.publish.definition.metadata.currency.unwrap(),
+				dd.account_id_second, 
+				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
+			);
 
 			assert_ok!(buy_(dd.account_id_second, &buy));
 		});
@@ -1069,14 +1090,31 @@ mod buy_tests {
 
 			let mut buy = dd.buy_non_unique;
 
-			buy.publish.definition.metadata.currency = Some(69);
+			buy.publish.definition.metadata.currency = Some(0);
 
 			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &buy.publish.definition));
 			assert_ok!(publish_(dd.account_id, &buy.publish));
 
 			// Deposit `quantity` to buyer's account
-			todo!();
+			let quantity = match buy.buy_options {
+				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
+				_ => 1u64,
+			};
+			let minimum_balance = 69;
+			Assets::force_create(
+				Origin::root(), 
+				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
+				true, // Whether this asset needs users to have an existential deposit to hold this asset
+				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+			);
+			Assets::mint(
+				Origin::signed(dd.account_id), 
+				buy.publish.definition.metadata.currency.unwrap(),
+				dd.account_id_second, 
+				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1
+			);
 
 			assert_noop!(buy_(dd.account_id_second, &buy), Error::<Test>::InsufficientBalance);
 		});
@@ -1326,6 +1364,7 @@ mod buy_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn buy_should_not_work_if_proto_is_detached() {
 		todo!()
 	}
@@ -1876,7 +1915,6 @@ mod create_account_tests {
 
 			assert_ok!(create_account_(dd.account_id, &create_account));
 
-			todo!();
 		});
 	}
 
@@ -1893,7 +1931,7 @@ mod create_account_tests {
 
 			assert_noop!(
 				create_account_(dd.account_id_second, &create_account),
-				Error::<Test>::NotFound // should this be the error that is thrown @sinkingsugar. It doesn't sound appropriate
+				Error::<Test>::NotFound 
 			);
 		});
 	}
