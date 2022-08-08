@@ -376,6 +376,8 @@ pub mod pallet {
 		SystematicFailure,
 		/// Fragment Instance already uploaded with the same unique data
 		UniqueDataExists,
+		/// Currency not found
+		CurrencyNotFound,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -433,6 +435,10 @@ pub mod pallet {
 			);
 
 			ensure!(!<Definitions<T>>::contains_key(&hash), Error::<T>::AlreadyExist); // If fragment already exists, throw error
+
+			if let Some(currency) = metadata.currency {
+				ensure!(pallet_assets::Pallet::<T>::maybe_total_supply(currency).is_some(), Error::<T>::CurrencyNotFound); // If it is `None`, this means the asset ID `currency` doesn't exist
+			}
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
