@@ -10,6 +10,7 @@ use sp_std::vec::Vec;
 
 pub type Hash256 = [u8; 32];
 pub type Hash128 = [u8; 16];
+pub type Hash64 = [u8; 8];
 
 pub const CID_PREFIX: [u8; 6] = hex_literal::hex!("0155a0e40220");
 
@@ -178,7 +179,7 @@ pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
 	}
 }
 
-/// Returns an account ID that can stake FRAG tokens.  
+/// Returns an account ID that can stake FRAG tokens.
 /// This returned account ID is determinstically computed from the given account ID (`who`).
 pub fn get_locked_frag_account<TAccountId: Encode + Decode>(
 	who: &TAccountId,

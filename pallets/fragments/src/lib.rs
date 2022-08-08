@@ -58,7 +58,6 @@ use sp_runtime::traits::StaticLookup;
 
 use frame_support::traits::{
 	tokens::fungibles::Inspect, tokens::fungibles::Transfer, Currency, ExistenceRequirement,
-	ReservableCurrency,
 };
 use sp_runtime::SaturatedConversion;
 
@@ -110,7 +109,7 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 /// Footnotes:
 ///
 /// #### Remarks
-///  
+///
 /// * On purpose not storing owner because:
 ///   * Big, 32 bytes
 ///   * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.
@@ -600,7 +599,7 @@ pub mod pallet {
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `fragment_hash` - **ID* of the **Fragment Definition**
 		/// * `options` - **Enum** indicating whether to
-		/// **create one Fragment Instance with custom data attached to it** or whether to  
+		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
 		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
 		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
@@ -935,7 +934,7 @@ pub mod pallet {
 		}
 
 		/// Create the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class`,
-		/// whose Edition ID is `edition`** and whose Copy ID is `copy`**  
+		/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
 		///
 		/// # Arguments
 		///

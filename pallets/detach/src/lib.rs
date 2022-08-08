@@ -137,7 +137,7 @@ pub struct ExportData {
 
 #[frame_support::pallet]
 pub mod pallet {
-use super::*;
+	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use sp_core::ed25519::Public;
@@ -372,7 +372,7 @@ use super::*;
 					TransactionSource::InBlock | TransactionSource::Local => {},
 					_ => {
 						log::debug!("Not a local transaction");
-						return InvalidTransaction::Call.into()
+						return InvalidTransaction::Call.into();
 					},
 				}
 
@@ -388,18 +388,18 @@ use super::*;
 					{
 						pub_key
 					} else {
-						return InvalidTransaction::BadSigner.into()
+						return InvalidTransaction::BadSigner.into();
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
-					return InvalidTransaction::BadSigner.into() // 问Gio
+					return InvalidTransaction::BadSigner.into(); // 问Gio
 				}
 				// most expensive bit last
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into()
+					return InvalidTransaction::BadProof.into();
 				}
 				log::debug!("Sending detach finalization extrinsic");
 				ValidTransaction::with_tag_prefix("Detach") // The tag prefix prevents other nodes to do the same transaction that have the same tag prefixes
@@ -466,14 +466,16 @@ use super::*;
 						log::debug!("Got {} detach requests", requests.len());
 						for request in requests {
 							let values = match request.target_chain {
-								SupportedChains::EthereumMainnet |
-								SupportedChains::EthereumRinkeby |
-								SupportedChains::EthereumGoerli => {
+								SupportedChains::EthereumMainnet
+								| SupportedChains::EthereumRinkeby
+								| SupportedChains::EthereumGoerli => {
 									// Get ECDSA public keys from Local Storage.
 									// If no key exist, return an empty BTreeSet<ed25519::Public> to be filled with keys
 									// This storage_ref key does not exist when the blockchain is first launched
-									let storage_ref = StorageValueRef::persistent(b"fragments-frag-ecdsa-keys");
-									let mut ecdsa_keys = Self::get_keys_set_from_local_storage(&storage_ref);
+									let storage_ref =
+										StorageValueRef::persistent(b"fragments-frag-ecdsa-keys");
+									let mut ecdsa_keys =
+										Self::get_keys_set_from_local_storage(&storage_ref);
 									// doing this cos mutate was insane...
 
 									// Returns all existing ed25519 public keys for the given key type.
@@ -482,12 +484,14 @@ use super::*;
 
 									for ed_key in &ed_keys {
 										if !ecdsa_keys.contains(ed_key) {
-											let key_hex = Self::generate_seed_from_ed_key(&ed_key).unwrap();
+											let key_hex =
+												Self::generate_seed_from_ed_key(&ed_key).unwrap();
 											log::debug!("Adding new key from seed: {:?}", key_hex);
 											// Generate an ECSDSA key for the given key type using the seed `seed` (WHICH WAS
 											// DETERMINISTICALLY COMPUTED FROM THE ED25519 KEY `ed_key`) and store it in the
 											// keystore.
-											let _public = Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
+											let _public =
+												Crypto::ecdsa_generate(KEY_TYPE, Some(key_hex));
 											ecdsa_keys.insert(*ed_key);
 											edited = true;
 										}
@@ -520,11 +524,12 @@ use super::*;
 										Self::add_chainid_to_payload(&request, &mut payload);
 
 										if request.target_account.len() != 20 {
-											return Err(FAILED)
+											return Err(FAILED);
 										}
 										Self::add_target_account_to_payload(&request, &mut payload);
 
-										let nonce = Self::add_nonce_to_payload(&request, &mut payload);
+										let nonce =
+											Self::add_nonce_to_payload(&request, &mut payload);
 
 										log::debug!(
 											"payload: {:x?}, len: {}",
@@ -616,11 +621,7 @@ use super::*;
 		fn sign_payload(key: &ecdsa::Public, payload: &mut Vec<u8>) -> Option<ecdsa::Signature> {
 			let payload = keccak_256(&payload);
 			// Hash the payload!!
-			log::debug!(
-				"payload hash: {:x?}, len: {}",
-				payload,
-				payload.len()
-			);
+			log::debug!("payload hash: {:x?}, len: {}", payload, payload.len());
 			let msg = [b"\x19Ethereum Signed Message:\n32", &payload[..]].concat();
 			let msg = keccak_256(&msg); // Hash the msg!!
 
@@ -632,10 +633,7 @@ use super::*;
 		}
 
 		fn add_nonce_to_payload(request: &DetachRequest, payload: &mut Vec<u8>) -> u64 {
-			let nonce = <DetachNonces<T>>::get(
-				&request.target_account,
-				request.target_chain,
-			);
+			let nonce = <DetachNonces<T>>::get(&request.target_account, request.target_chain);
 			let nonce = if let Some(nonce) = nonce {
 				// add 1, remote will add 1
 				let nonce = nonce.checked_add(1).unwrap();

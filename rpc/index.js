@@ -78,13 +78,26 @@ const connectToLocalNode = async () => {
                 ]
             },
 
-            ShardsTrait: "Compact<u32>",
+            ShardsScriptInfo: {
+                format: 'ShardsFormat',
+                requiring: 'Vec<ShardsTrait>',
+                implementing: 'Vec<ShardsTrait>'
+            },
+
+            ShardsTrait: "Vec<u16>",
+
+            ShardsFormat: {
+                _enum: [
+                    "edn",
+                    "binary",
+                ]
+            },
 
             Categories: {
                 _enum: {
                     "text": "TextCategories",
-                    "trait": "(Vec<u32>, Vec<u32>, ShardsTrait)",
-                    "shards": "(ShardsFormat, Vec<ShardsTrait>)",
+                    "trait": "Option<ShardsTrait>",
+                    "shards": "ShardsScriptInfo",
                     "audio": "AudioCategories",
                     "texture": "TextureCategories",
                     "vector": "VectorCategories",

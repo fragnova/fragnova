@@ -144,6 +144,9 @@ pub fn run() -> sc_cli::Result<()> {
 					BenchmarkCmd::Machine(cmd) => {
 						cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())
 					},
+					BenchmarkCmd::Extrinsic(_cmd) => {
+						unimplemented!()
+					},
 				}
 			})
 		},
