@@ -29,11 +29,9 @@ echo "<meta http-equiv=refresh content=0;url=${DOC_FOLDER_TARGET_BRANCH}/${DOC_I
 git add "${DOC_FOLDER_TARGET_BRANCH}"
 git add "index.html"
 
-git commit -m "Updated GitHub Pages"
-if [ $? -ne 0 ]; then
-    echo "nothing to commit"
-    exit 0
-fi
-
 git remote set-url "$REMOTE_NAME" "$REPO_URL" 
-git push --force-with-lease "$REMOTE_NAME" "$TARGET_BRANCH"
+
+if ! git diff-index --quiet HEAD; then
+  git commit -m "Updated GitHub Pages"
+  git push --force-with-lease "$REMOTE_NAME" "$TARGET_BRANCH"
+fi
