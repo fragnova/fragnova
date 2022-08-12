@@ -1,4 +1,4 @@
-(function() {var implementors = {};
-implementors["pallet_accounts"] = [{"text":"impl RuntimeAppPublic for <a class=\"struct\" href=\"pallet_accounts/crypto/struct.Public.html\" title=\"struct pallet_accounts::crypto::Public\">Public</a> <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Public: RuntimePublic&lt;Signature = Signature&gt;,&nbsp;</span>","synthetic":false,"types":["pallet_accounts::crypto::Public"]}];
-implementors["pallet_detach"] = [{"text":"impl RuntimeAppPublic for <a class=\"struct\" href=\"pallet_detach/crypto/struct.Public.html\" title=\"struct pallet_detach::crypto::Public\">Public</a> <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Public: RuntimePublic&lt;Signature = Signature&gt;,&nbsp;</span>","synthetic":false,"types":["pallet_detach::crypto::Public"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"pallet_accounts":[["impl RuntimeAppPublic for <a class=\"struct\" href=\"pallet_accounts/crypto/struct.Public.html\" title=\"struct pallet_accounts::crypto::Public\">Public</a> <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Public: RuntimePublic&lt;Signature = Signature&gt;,&nbsp;</span>"]],
+"pallet_detach":[["impl RuntimeAppPublic for <a class=\"struct\" href=\"pallet_detach/crypto/struct.Public.html\" title=\"struct pallet_detach::crypto::Public\">Public</a> <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;Public: RuntimePublic&lt;Signature = Signature&gt;,&nbsp;</span>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

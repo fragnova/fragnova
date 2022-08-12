@@ -1,4 +1,4 @@
-(function() {var implementors = {};
-implementors["pallet_accounts"] = [{"text":"impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_accounts/struct.EthLockUpdate.html\" title=\"struct pallet_accounts::EthLockUpdate\">EthLockUpdate</a>&lt;T::Public&gt;","synthetic":false,"types":["pallet_accounts::EthLockUpdate"]}];
-implementors["pallet_detach"] = [{"text":"impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_detach/struct.DetachInternalData.html\" title=\"struct pallet_detach::DetachInternalData\">DetachInternalData</a>&lt;T::Public&gt;","synthetic":false,"types":["pallet_detach::DetachInternalData"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"pallet_accounts":[["impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_accounts/struct.EthLockUpdate.html\" title=\"struct pallet_accounts::EthLockUpdate\">EthLockUpdate</a>&lt;T::Public&gt;"]],
+"pallet_detach":[["impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_detach/struct.DetachInternalData.html\" title=\"struct pallet_detach::DetachInternalData\">DetachInternalData</a>&lt;T::Public&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

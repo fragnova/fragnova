@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["clamor_runtime"] = [{"text":"impl OriginTrait for <a class=\"struct\" href=\"clamor_runtime/struct.Origin.html\" title=\"struct clamor_runtime::Origin\">Origin</a>","synthetic":false,"types":["clamor_runtime::Origin"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"clamor_runtime":[["impl OriginTrait for <a class=\"struct\" href=\"clamor_runtime/struct.Origin.html\" title=\"struct clamor_runtime::Origin\">Origin</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
