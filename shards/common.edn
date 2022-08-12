@@ -1,5 +1,5 @@
 (def rpc-server "http://127.0.0.1:9933")
-(def runtime-spec-version 1)
+(def runtime-spec-version 2)
 (def transaction-version 1)
 (def sudo-index 7)
 (def sudo-call 0)
