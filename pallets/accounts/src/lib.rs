@@ -263,9 +263,14 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
+	/// The map between external accounts and the local accounts that are linked to them. (Discord, Telegram, etc)
 	#[pallet::storage]
 	pub type ExternalID2Account<T: Config> =
 		StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
+
+	/// The authorities able to sponsor accounts and link them to external accounts.
+	#[pallet::storage]
+	pub type ExternalAuthorities<T: Config> = StorageValue<_, BTreeSet<T::AccountId>, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -314,7 +319,7 @@ pub mod pallet {
 	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(25_000)] // TODO - weight
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -330,7 +335,7 @@ pub mod pallet {
 		/// Remove a Clamor Account ID from `FragKeys`
 
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(25_000)] // TODO - weight
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -354,7 +359,7 @@ pub mod pallet {
 		/// `signature`).
 		///
 		/// After linking, also emit an event indicating that the two accounts were linked.
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(25_000)] // TODO - weight
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -387,7 +392,7 @@ pub mod pallet {
 
 		// TODO
 		/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(25_000)] // TODO - weight
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			Self::unlink_account(sender, account)
@@ -396,7 +401,7 @@ pub mod pallet {
 		/// Update 'data'
 		///
 		/// TODO
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(25_000)] // TODO - weight
 		pub fn internal_lock_update(
 			origin: OriginFor<T>,
 			data: EthLockUpdate<T::Public>,
@@ -522,12 +527,12 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Update 'data'
-		///
 		/// TODO
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(25_000)] // TODO - weight
 		pub fn sponsor_account(origin: OriginFor<T>, external_id: ExternalID) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(<ExternalAuthorities<T>>::get().contains(&who), Error::<T>::SystematicFailure);
 
 			// generate a unique, deterministic hash that we decode into our account
 			let hash = blake2_256(
@@ -569,6 +574,34 @@ pub mod pallet {
 				sponsor: who,
 				sponsored: account,
 				external_id,
+			});
+
+			Ok(())
+		}
+
+		/// Add a sponsor account to the list of sponsors able to sponsor external accounts.
+		#[pallet::weight(25_000)] // TODO - weight
+		pub fn add_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("New key: {:?}", account);
+
+			<ExternalAuthorities<T>>::mutate(|authorities| {
+				authorities.insert(account);
+			});
+
+			Ok(())
+		}
+
+		/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.
+		#[pallet::weight(25_000)] // TODO - weight
+		pub fn remove_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("Removed key: {:?}", account);
+
+			<ExternalAuthorities<T>>::mutate(|authorities| {
+				authorities.remove(&account);
 			});
 
 			Ok(())

@@ -469,11 +469,11 @@ mod internal_lock_update_tests {
 
             todo!("I have no idea what to do here - because pallet-frag's Cargo.toml file doesn't use pallet-protos as a dependency!");
 
-            // TODO - Lock more FRAG token
+            // // TODO - Lock more FRAG token
 
-            assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);
-            assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
-            
+            // assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);
+            // assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
+
         });
 	}
 

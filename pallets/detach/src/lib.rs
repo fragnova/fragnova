@@ -287,7 +287,7 @@ pub mod pallet {
 
 		// Detached a Proto-Fragment from this blockchain (Clamor) by emitting an event that includes a signature (note: the event is placed to the System pallet's runtime storage for the block this transaction runs it).
 		// The owner of the Proto-Fragment can then attach the Proto-Fragment to the remote target blockchain by using the aforementioned signature .
-		#[pallet::weight(25_000)] // TODO #1 - weight
+		#[pallet::weight(25_000)] // TODO - weight
 		pub fn internal_finalize_detach(
 			origin: OriginFor<T>,
 			data: DetachInternalData<T::Public>,
