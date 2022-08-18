@@ -323,6 +323,8 @@ pub mod pallet {
 					let info =
 						Trait::decode(&mut &data[..]).map_err(|_| Error::<T>::SystematicFailure)?;
 
+					ensure!(info.name.len() > 0, Error::<T>::SystematicFailure);
+
 					// Write STATE from now, ensure no errors from now...
 					<Traits<T>>::insert(trait_id, info.name.encode());
 
