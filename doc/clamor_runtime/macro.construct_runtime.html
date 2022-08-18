@@ -5,29 +5,29 @@ and the pallets that are used by the runtime.
 that is used in the node. For instance they can differ in the extrinsics type.</p>
 <h2 id="example"><a href="#example">Example:</a></h2>
 <div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore"><code><span class="macro">construct_runtime!</span>(
-    <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Runtime</span> <span class="kw">where</span>
-        <span class="ident">Block</span> <span class="op">=</span> <span class="ident">Block</span>,
-        <span class="ident">NodeBlock</span> <span class="op">=</span> <span class="ident">node::Block</span>,
-        <span class="ident">UncheckedExtrinsic</span> <span class="op">=</span> <span class="ident">UncheckedExtrinsic</span>
+    <span class="kw">pub enum </span>Runtime <span class="kw">where
+        </span>Block = Block,
+        NodeBlock = node::Block,
+        UncheckedExtrinsic = UncheckedExtrinsic
     {
-        <span class="ident">System</span>: <span class="ident">frame_system</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">0</span>,
-        <span class="ident">Test</span>: <span class="ident">path::to::test</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>} <span class="op">=</span> <span class="number">1</span>,
+        System: frame_system::{Pallet, Call, Event&lt;T&gt;, Config&lt;T&gt;} = <span class="number">0</span>,
+        Test: path::to::test::{Pallet, Call} = <span class="number">1</span>,
 
-        <span class="comment">// Pallets with instances</span>
-        <span class="ident">Test2_Instance1</span>: <span class="ident">test2</span>::<span class="op">&lt;</span><span class="ident">Instance1</span><span class="op">&gt;</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>, <span class="ident">Origin</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">I</span><span class="op">&gt;</span>},
-        <span class="ident">Test2_DefaultInstance</span>: <span class="ident">test2</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Origin</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">4</span>,
+        <span class="comment">// Pallets with instances
+        </span>Test2_Instance1: test2::&lt;Instance1&gt;::{Pallet, Call, Storage, Event&lt;T, I&gt;, Config&lt;T, I&gt;, Origin&lt;T, I&gt;},
+        Test2_DefaultInstance: test2::{Pallet, Call, Storage, Event&lt;T&gt;, Config&lt;T&gt;, Origin&lt;T&gt;} = <span class="number">4</span>,
 
-        <span class="comment">// Pallets declared with `pallet` attribute macro: no need to define the parts</span>
-        <span class="ident">Test3_Instance1</span>: <span class="ident">test3</span>::<span class="op">&lt;</span><span class="ident">Instance1</span><span class="op">&gt;</span>,
-        <span class="ident">Test3_DefaultInstance</span>: <span class="ident">test3</span>,
+        <span class="comment">// Pallets declared with `pallet` attribute macro: no need to define the parts
+        </span>Test3_Instance1: test3::&lt;Instance1&gt;,
+        Test3_DefaultInstance: test3,
 
-        <span class="comment">// with `exclude_parts` keyword some part can be excluded.</span>
-        <span class="ident">Test4_Instance1</span>: <span class="ident">test4</span>::<span class="op">&lt;</span><span class="ident">Instance1</span><span class="op">&gt;</span> <span class="ident">exclude_parts</span> { <span class="ident">Call</span>, <span class="ident">Origin</span> },
-        <span class="ident">Test4_DefaultInstance</span>: <span class="ident">test4</span> <span class="ident">exclude_parts</span> { <span class="ident">Storage</span> },
+        <span class="comment">// with `exclude_parts` keyword some part can be excluded.
+        </span>Test4_Instance1: test4::&lt;Instance1&gt; exclude_parts { Call, Origin },
+        Test4_DefaultInstance: test4 exclude_parts { Storage },
 
-        <span class="comment">// with `use_parts` keyword, a subset of the pallet parts can be specified.</span>
-        <span class="ident">Test4_Instance1</span>: <span class="ident">test4</span>::<span class="op">&lt;</span><span class="ident">Instance1</span><span class="op">&gt;</span> <span class="ident">use_parts</span> { <span class="ident">Pallet</span>, <span class="ident">Call</span>},
-        <span class="ident">Test4_DefaultInstance</span>: <span class="ident">test4</span> <span class="ident">use_parts</span> { <span class="ident">Pallet</span> },
+        <span class="comment">// with `use_parts` keyword, a subset of the pallet parts can be specified.
+        </span>Test4_Instance1: test4::&lt;Instance1&gt; use_parts { Pallet, Call},
+        Test4_DefaultInstance: test4 use_parts { Pallet },
     }
 )</code></pre></div>
 <p>Each pallet is declared as such:</p>
@@ -99,4 +99,4 @@ the pallet depending on it.</p>
 <ul>
 <li>The macro generates a type alias for each pallet to their <code>Pallet</code>. E.g. <code>type System = frame_system::Pallet&lt;Runtime&gt;</code></li>
 </ul>
-</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (20ffea693 2022-08-11)" ></div></body></html>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>

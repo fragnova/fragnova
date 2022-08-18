@@ -239,246 +239,246 @@
 <span id="239">239</span>
 <span id="240">240</span>
 <span id="241">241</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::<span class="kw-2">*</span>;
+</pre><pre class="rust"><code><span class="kw">use crate</span>::<span class="kw-2">*</span>;
 
-<span class="kw">use</span> <span class="ident">codec::Encode</span>;
+<span class="kw">use </span>codec::Encode;
 
-<span class="kw">use</span> <span class="ident">sp_core</span>::{
-	<span class="ident">ecdsa</span>,
-	<span class="ident">keccak_256</span>,
-	<span class="ident">Pair</span>,
-	<span class="ident">H160</span>, <span class="comment">// size of an Ethereum Account Address</span>
-	<span class="ident">U256</span>,
+<span class="kw">use </span>sp_core::{
+	ecdsa,
+	keccak_256,
+	Pair,
+	H160, <span class="comment">// size of an Ethereum Account Address
+	</span>U256,
 };
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">fn</span> <span class="ident">get_ethereum_chain_id</span>() -&gt; <span class="ident">u64</span> {
-	<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::mock::Test</span>;
-	<span class="kw">use</span> <span class="ident">frame_support::traits::TypedGet</span>;
-	<span class="op">&lt;</span><span class="ident">Test</span> <span class="kw">as</span> <span class="ident"><span class="kw">crate</span>::Config</span><span class="op">&gt;</span><span class="ident">::EthChainId::get</span>()
+<span class="attribute">#[cfg(test)]</span>
+<span class="kw">fn </span>get_ethereum_chain_id() -&gt; u64 {
+	<span class="kw">use </span><span class="kw">crate</span>::mock::Test;
+	<span class="kw">use </span>frame_support::traits::TypedGet;
+	&lt;Test <span class="kw">as </span><span class="kw">crate</span>::Config&gt;::EthChainId::get()
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
-<span class="kw">fn</span> <span class="ident">get_ethereum_chain_id</span>() -&gt; <span class="ident">u64</span> {
-	<span class="number">5</span>
+<span class="attribute">#[cfg(not(test))]</span>
+<span class="kw">fn </span>get_ethereum_chain_id() -&gt; u64 {
+	<span class="number">5
+</span>}
+
+<span class="kw">pub fn </span>create_link_signature(
+	clamor_account_id: sp_core::ed25519::Public,
+	ethereum_account_pair: sp_core::ecdsa::Pair,
+) -&gt; sp_core::ecdsa::Signature {
+	<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;EVM2Fragnova&quot;</span>.to_vec();
+	message.extend_from_slice(<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes());
+	message.extend_from_slice(<span class="kw-2">&amp;</span>clamor_account_id.encode());
+
+	<span class="kw">let </span>hashed_message = keccak_256(<span class="kw-2">&amp;</span>message);
+
+	ethereum_account_pair.sign_prehashed(<span class="kw-2">&amp;</span>hashed_message)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_link_signature</span>(
-	<span class="ident">clamor_account_id</span>: <span class="ident">sp_core::ed25519::Public</span>,
-	<span class="ident">ethereum_account_pair</span>: <span class="ident">sp_core::ecdsa::Pair</span>,
-) -&gt; <span class="ident">sp_core::ecdsa::Signature</span> {
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="string">b&quot;EVM2Fragnova&quot;</span>.<span class="ident">to_vec</span>();
-	<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">get_ethereum_chain_id</span>().<span class="ident">to_be_bytes</span>());
-	<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">clamor_account_id</span>.<span class="ident">encode</span>());
+<span class="kw">pub fn </span>create_lock_signature(
+	ethereum_account_pair: sp_core::ecdsa::Pair,
+	lock_amount: U256,
+) -&gt; sp_core::ecdsa::Signature {
+	<span class="kw">let </span>ethereum_account_id =
+		get_ethereum_account_id_from_ecdsa_public_struct(<span class="kw-2">&amp;</span>ethereum_account_pair.public());
 
-	<span class="kw">let</span> <span class="ident">hashed_message</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>);
+	<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;FragLock&quot;</span>.to_vec();
+	message.extend_from_slice(<span class="kw-2">&amp;</span>ethereum_account_id.<span class="number">0</span>[..]);
+	message.extend_from_slice(<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes());
+	message.extend_from_slice(<span class="kw-2">&amp;</span>Into::&lt;[u8; <span class="number">32</span>]&gt;::into(lock_amount.clone()));
 
-	<span class="ident">ethereum_account_pair</span>.<span class="ident">sign_prehashed</span>(<span class="kw-2">&amp;</span><span class="ident">hashed_message</span>)
+	<span class="kw">let </span>hashed_message = keccak_256(<span class="kw-2">&amp;</span>message);
+
+	<span class="comment">// Ethereum Signature is produced by signing a keccak256 hash with the following format:
+	// &quot;\x19Ethereum Signed Message\n&quot; + len(msg) + msg
+	// Note: `msg` is the hashed message
+	</span><span class="kw">let </span>hashed_message =
+		keccak_256(<span class="kw-2">&amp;</span>[<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span>hashed_message[..]].concat());
+
+	ethereum_account_pair.sign_prehashed(<span class="kw-2">&amp;</span>hashed_message)
+}
+<span class="kw">pub fn </span>create_unlock_signature(
+	ethereum_account_pair: sp_core::ecdsa::Pair,
+	unlock_amount: U256,
+) -&gt; sp_core::ecdsa::Signature {
+	<span class="kw">let </span>ethereum_account_id =
+		get_ethereum_account_id_from_ecdsa_public_struct(<span class="kw-2">&amp;</span>ethereum_account_pair.public());
+
+	<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;FragUnlock&quot;</span>.to_vec();
+	message.extend_from_slice(<span class="kw-2">&amp;</span>ethereum_account_id.<span class="number">0</span>[..]);
+	message.extend_from_slice(<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes());
+	message.extend_from_slice(<span class="kw-2">&amp;</span>Into::&lt;[u8; <span class="number">32</span>]&gt;::into(unlock_amount.clone()));
+
+	<span class="kw">let </span>hashed_message = keccak_256(<span class="kw-2">&amp;</span>message);
+
+	<span class="comment">// Ethereum Signature is produced by signing a keccak256 hash with the following format:
+	// &quot;\x19Ethereum Signed Message\n&quot; + len(msg) + msg
+	// Note: `msg` is the hashed message
+	</span><span class="kw">let </span>hashed_message =
+		keccak_256(<span class="kw-2">&amp;</span>[<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span>hashed_message[..]].concat());
+
+	ethereum_account_pair.sign_prehashed(<span class="kw-2">&amp;</span>hashed_message)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_lock_signature</span>(
-	<span class="ident">ethereum_account_pair</span>: <span class="ident">sp_core::ecdsa::Pair</span>,
-	<span class="ident">lock_amount</span>: <span class="ident">U256</span>,
-) -&gt; <span class="ident">sp_core::ecdsa::Signature</span> {
-	<span class="kw">let</span> <span class="ident">ethereum_account_id</span> <span class="op">=</span>
-		<span class="ident">get_ethereum_account_id_from_ecdsa_public_struct</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_account_pair</span>.<span class="ident">public</span>());
+<span class="kw">pub fn </span>get_ethereum_account_id_from_ecdsa_public_struct(
+	ecdsa_public_struct: <span class="kw-2">&amp;</span>ecdsa::Public,
+) -&gt; H160 {
+	<span class="kw">let </span>compressed_public_key = ecdsa_public_struct.<span class="number">0</span>;
 
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="string">b&quot;FragLock&quot;</span>.<span class="ident">to_vec</span>();
-	<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_account_id</span>.<span class="number">0</span>[..]);
-	<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">get_ethereum_chain_id</span>().<span class="ident">to_be_bytes</span>());
-	<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">Into</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span><span class="ident">::into</span>(<span class="ident">lock_amount</span>.<span class="ident">clone</span>()));
+	<span class="kw">let </span>uncompressed_public_key =
+		<span class="kw-2">&amp;</span>libsecp256k1::PublicKey::parse_compressed(<span class="kw-2">&amp;</span>compressed_public_key)
+			.unwrap()
+			.serialize();
+	<span class="kw">let </span>uncompressed_public_key_without_prefix = <span class="kw-2">&amp;</span>uncompressed_public_key[<span class="number">1</span>..];
+	<span class="kw">let </span>ethereum_account_id = <span class="kw-2">&amp;</span>keccak_256(uncompressed_public_key_without_prefix)[<span class="number">12</span>..];
 
-	<span class="kw">let</span> <span class="ident">hashed_message</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>);
-
-	<span class="comment">// Ethereum Signature is produced by signing a keccak256 hash with the following format:</span>
-	<span class="comment">// &quot;\x19Ethereum Signed Message\n&quot; + len(msg) + msg</span>
-	<span class="comment">// Note: `msg` is the hashed message</span>
-	<span class="kw">let</span> <span class="ident">hashed_message</span> <span class="op">=</span>
-		<span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span>[<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">hashed_message</span>[..]].<span class="ident">concat</span>());
-
-	<span class="ident">ethereum_account_pair</span>.<span class="ident">sign_prehashed</span>(<span class="kw-2">&amp;</span><span class="ident">hashed_message</span>)
-}
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_unlock_signature</span>(
-	<span class="ident">ethereum_account_pair</span>: <span class="ident">sp_core::ecdsa::Pair</span>,
-	<span class="ident">unlock_amount</span>: <span class="ident">U256</span>,
-) -&gt; <span class="ident">sp_core::ecdsa::Signature</span> {
-	<span class="kw">let</span> <span class="ident">ethereum_account_id</span> <span class="op">=</span>
-		<span class="ident">get_ethereum_account_id_from_ecdsa_public_struct</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_account_pair</span>.<span class="ident">public</span>());
-
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="string">b&quot;FragUnlock&quot;</span>.<span class="ident">to_vec</span>();
-	<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_account_id</span>.<span class="number">0</span>[..]);
-	<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">get_ethereum_chain_id</span>().<span class="ident">to_be_bytes</span>());
-	<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">Into</span>::<span class="op">&lt;</span>[<span class="ident">u8</span>; <span class="number">32</span>]<span class="op">&gt;</span><span class="ident">::into</span>(<span class="ident">unlock_amount</span>.<span class="ident">clone</span>()));
-
-	<span class="kw">let</span> <span class="ident">hashed_message</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>);
-
-	<span class="comment">// Ethereum Signature is produced by signing a keccak256 hash with the following format:</span>
-	<span class="comment">// &quot;\x19Ethereum Signed Message\n&quot; + len(msg) + msg</span>
-	<span class="comment">// Note: `msg` is the hashed message</span>
-	<span class="kw">let</span> <span class="ident">hashed_message</span> <span class="op">=</span>
-		<span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span>[<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">hashed_message</span>[..]].<span class="ident">concat</span>());
-
-	<span class="ident">ethereum_account_pair</span>.<span class="ident">sign_prehashed</span>(<span class="kw-2">&amp;</span><span class="ident">hashed_message</span>)
+	H160::from_slice(<span class="kw-2">&amp;</span>ethereum_account_id)
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_ethereum_account_id_from_ecdsa_public_struct</span>(
-	<span class="ident">ecdsa_public_struct</span>: <span class="kw-2">&amp;</span><span class="ident">ecdsa::Public</span>,
-) -&gt; <span class="ident">H160</span> {
-	<span class="kw">let</span> <span class="ident">compressed_public_key</span> <span class="op">=</span> <span class="ident">ecdsa_public_struct</span>.<span class="number">0</span>;
-
-	<span class="kw">let</span> <span class="ident">uncompressed_public_key</span> <span class="op">=</span>
-		<span class="kw-2">&amp;</span><span class="ident">libsecp256k1::PublicKey::parse_compressed</span>(<span class="kw-2">&amp;</span><span class="ident">compressed_public_key</span>)
-			.<span class="ident">unwrap</span>()
-			.<span class="ident">serialize</span>();
-	<span class="kw">let</span> <span class="ident">uncompressed_public_key_without_prefix</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">uncompressed_public_key</span>[<span class="number">1</span>..];
-	<span class="kw">let</span> <span class="ident">ethereum_account_id</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">keccak_256</span>(<span class="ident">uncompressed_public_key_without_prefix</span>)[<span class="number">12</span>..];
-
-	<span class="ident">H160::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">ethereum_account_id</span>)
+<span class="attribute">#[derive(Clone)]</span>
+<span class="kw">pub struct </span>Link {
+	<span class="kw">pub </span>clamor_account_id: sp_core::ed25519::Public,
+	<span class="kw">pub </span>link_signature: ecdsa::Signature,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Link</span> {
-	<span class="kw">pub</span> <span class="ident">clamor_account_id</span>: <span class="ident">sp_core::ed25519::Public</span>,
-	<span class="kw">pub</span> <span class="ident">link_signature</span>: <span class="ident">ecdsa::Signature</span>,
-}
+<span class="kw">impl </span>Link {
+	<span class="kw">pub fn </span>get_recovered_ethereum_account_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; H160 {
+		<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;EVM2Fragnova&quot;</span>.to_vec();
+		message.extend_from_slice(<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes());
+		message.extend_from_slice(<span class="kw-2">&amp;</span><span class="self">self</span>.clamor_account_id.encode());
 
-<span class="kw">impl</span> <span class="ident">Link</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_recovered_ethereum_account_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">H160</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="string">b&quot;EVM2Fragnova&quot;</span>.<span class="ident">to_vec</span>();
-		<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">get_ethereum_chain_id</span>().<span class="ident">to_be_bytes</span>());
-		<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">clamor_account_id</span>.<span class="ident">encode</span>());
+		<span class="kw">let </span>hashed_message = keccak_256(<span class="kw-2">&amp;</span>message);
 
-		<span class="kw">let</span> <span class="ident">hashed_message</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>);
+		<span class="kw">let </span>uncompressed_public_key_without_prefix =
+			Crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span><span class="self">self</span>.link_signature.<span class="number">0</span>, <span class="kw-2">&amp;</span>hashed_message)
+				.map_err(|<span class="kw">_</span>| <span class="macro">format!</span>(<span class="string">&quot;Mayday!&quot;</span>))
+				.unwrap();
 
-		<span class="kw">let</span> <span class="ident">uncompressed_public_key_without_prefix</span> <span class="op">=</span>
-			<span class="ident">Crypto::secp256k1_ecdsa_recover</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">link_signature</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">hashed_message</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Mayday!&quot;</span>))
-				.<span class="ident">unwrap</span>();
+		<span class="kw">let </span>ethererum_account_id = keccak_256(<span class="kw-2">&amp;</span>uncompressed_public_key_without_prefix[..]);
+		<span class="kw">let </span>ethererum_account_id = <span class="kw-2">&amp;</span>ethererum_account_id[<span class="number">12</span>..];
+		<span class="kw">let </span>ethererum_account_id = H160::from_slice(<span class="kw-2">&amp;</span>ethererum_account_id[..]);
 
-		<span class="kw">let</span> <span class="ident">ethererum_account_id</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">uncompressed_public_key_without_prefix</span>[..]);
-		<span class="kw">let</span> <span class="ident">ethererum_account_id</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">ethererum_account_id</span>[<span class="number">12</span>..];
-		<span class="kw">let</span> <span class="ident">ethererum_account_id</span> <span class="op">=</span> <span class="ident">H160::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">ethererum_account_id</span>[..]);
-
-		<span class="ident">ethererum_account_id</span>
+		ethererum_account_id
 	}
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Lock</span> {
-	<span class="kw">pub</span> <span class="ident">data</span>: <span class="ident">EthLockUpdate</span><span class="op">&lt;</span><span class="ident">sp_core::ed25519::Public</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">link</span>: <span class="ident">Link</span>,
+<span class="attribute">#[derive(Clone)]</span>
+<span class="kw">pub struct </span>Lock {
+	<span class="kw">pub </span>data: EthLockUpdate&lt;sp_core::ed25519::Public&gt;,
+	<span class="kw">pub </span>link: Link,
 
-	<span class="kw">pub</span> <span class="ident">ethereum_account_pair</span>: <span class="ident">sp_core::ecdsa::Pair</span>,
+	<span class="kw">pub </span>ethereum_account_pair: sp_core::ecdsa::Pair,
 }
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Unlock</span> {
-	<span class="kw">pub</span> <span class="ident">lock</span>: <span class="ident">Lock</span>,
-	<span class="kw">pub</span> <span class="ident">data</span>: <span class="ident">EthLockUpdate</span><span class="op">&lt;</span><span class="ident">sp_core::ed25519::Public</span><span class="op">&gt;</span>,
+<span class="kw">pub struct </span>Unlock {
+	<span class="kw">pub </span>lock: Lock,
+	<span class="kw">pub </span>data: EthLockUpdate&lt;sp_core::ed25519::Public&gt;,
 }
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DummyData</span> {
-	<span class="kw">pub</span> <span class="ident">link</span>: <span class="ident">Link</span>,
-	<span class="kw">pub</span> <span class="ident">link_second</span>: <span class="ident">Link</span>,
-	<span class="kw">pub</span> <span class="ident">lock</span>: <span class="ident">Lock</span>,
-	<span class="kw">pub</span> <span class="ident">unlock</span>: <span class="ident">Unlock</span>,
-	<span class="kw">pub</span> <span class="ident">account_id</span>: <span class="ident">sp_core::ed25519::Public</span>,
-	<span class="kw">pub</span> <span class="ident">account_id_second</span>: <span class="ident">sp_core::ed25519::Public</span>,
-	<span class="kw">pub</span> <span class="ident">ethereum_account_pair</span>: <span class="ident">sp_core::ecdsa::Pair</span>,
-	<span class="kw">pub</span> <span class="ident">link_signature</span>: <span class="ident">sp_core::ecdsa::Signature</span>,
-	<span class="kw">pub</span> <span class="ident">lock_signature</span>: <span class="ident">sp_core::ecdsa::Signature</span>,
+<span class="kw">pub struct </span>DummyData {
+	<span class="kw">pub </span>link: Link,
+	<span class="kw">pub </span>link_second: Link,
+	<span class="kw">pub </span>lock: Lock,
+	<span class="kw">pub </span>unlock: Unlock,
+	<span class="kw">pub </span>account_id: sp_core::ed25519::Public,
+	<span class="kw">pub </span>account_id_second: sp_core::ed25519::Public,
+	<span class="kw">pub </span>ethereum_account_pair: sp_core::ecdsa::Pair,
+	<span class="kw">pub </span>link_signature: sp_core::ecdsa::Signature,
+	<span class="kw">pub </span>lock_signature: sp_core::ecdsa::Signature,
 }
 
-<span class="kw">impl</span> <span class="ident">DummyData</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
-		<span class="kw">let</span> <span class="ident">link</span> <span class="op">=</span> <span class="ident">Link</span> {
-			<span class="ident">clamor_account_id</span>: <span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">1u8</span>; <span class="number">32</span>]),
-			<span class="ident">link_signature</span>: <span class="ident">create_link_signature</span>(
-				<span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">1u8</span>; <span class="number">32</span>]),
-				<span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">1u8</span>; <span class="number">32</span>]),
+<span class="kw">impl </span>DummyData {
+	<span class="kw">pub fn </span>new() -&gt; <span class="self">Self </span>{
+		<span class="kw">let </span>link = Link {
+			clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">1u8</span>; <span class="number">32</span>]),
+			link_signature: create_link_signature(
+				sp_core::ed25519::Public::from_raw([<span class="number">1u8</span>; <span class="number">32</span>]),
+				sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">1u8</span>; <span class="number">32</span>]),
 			),
 		};
 
-		<span class="kw">let</span> <span class="ident">link_second</span> <span class="op">=</span> <span class="ident">Link</span> {
-			<span class="ident">clamor_account_id</span>: <span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">2u8</span>; <span class="number">32</span>]),
-			<span class="ident">link_signature</span>: <span class="ident">create_link_signature</span>(
-				<span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">2u8</span>; <span class="number">32</span>]),
-				<span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">2u8</span>; <span class="number">32</span>]),
+		<span class="kw">let </span>link_second = Link {
+			clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">2u8</span>; <span class="number">32</span>]),
+			link_signature: create_link_signature(
+				sp_core::ed25519::Public::from_raw([<span class="number">2u8</span>; <span class="number">32</span>]),
+				sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">2u8</span>; <span class="number">32</span>]),
 			),
 		};
 
-		<span class="kw">let</span> <span class="ident">lock</span> <span class="op">=</span> <span class="ident">Lock</span> {
-			<span class="ident">data</span>: <span class="ident">EthLockUpdate</span> {
-				<span class="ident">public</span>: <span class="ident">sp_core::ed25519::Public</span>([<span class="number">69u8</span>; <span class="number">32</span>]),
-				<span class="ident">amount</span>: <span class="ident">U256::from</span>(<span class="number">69u32</span>),
-				<span class="ident">sender</span>: <span class="ident">get_ethereum_account_id_from_ecdsa_public_struct</span>(
-					<span class="kw-2">&amp;</span><span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]).<span class="ident">public</span>(),
+		<span class="kw">let </span>lock = Lock {
+			data: EthLockUpdate {
+				public: sp_core::ed25519::Public([<span class="number">69u8</span>; <span class="number">32</span>]),
+				amount: U256::from(<span class="number">69u32</span>),
+				sender: get_ethereum_account_id_from_ecdsa_public_struct(
+					<span class="kw-2">&amp;</span>sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]).public(),
 				),
-				<span class="ident">signature</span>: <span class="ident">create_lock_signature</span>(
-					<span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
-					<span class="ident">U256::from</span>(<span class="number">69u32</span>),
+				signature: create_lock_signature(
+					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
+					U256::from(<span class="number">69u32</span>),
 				),
-				<span class="ident">lock</span>: <span class="bool-val">true</span>, <span class="comment">// yes, please lock it!</span>
-				<span class="ident">block_number</span>: <span class="number">69</span>,
+				lock: <span class="bool-val">true</span>, <span class="comment">// yes, please lock it!
+				</span>block_number: <span class="number">69</span>,
 			},
-			<span class="ident">link</span>: <span class="ident">Link</span> {
-				<span class="ident">clamor_account_id</span>: <span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">3u8</span>; <span class="number">32</span>]),
-				<span class="ident">link_signature</span>: <span class="ident">create_link_signature</span>(
-					<span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">3u8</span>; <span class="number">32</span>]),
-					<span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
+			link: Link {
+				clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
+				link_signature: create_link_signature(
+					sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
+					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
 				),
 			},
-			<span class="ident">ethereum_account_pair</span>: <span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
+			ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
 		};
 
-		<span class="kw">let</span> <span class="ident">unlock</span> <span class="op">=</span> <span class="ident">Unlock</span> {
-			<span class="ident">lock</span>: <span class="ident">Lock</span> {
-				<span class="ident">data</span>: <span class="ident">EthLockUpdate</span> {
-					<span class="ident">public</span>: <span class="ident">sp_core::ed25519::Public</span>([<span class="number">69u8</span>; <span class="number">32</span>]),
-					<span class="ident">amount</span>: <span class="ident">U256::from</span>(<span class="number">69u32</span>),
-					<span class="ident">sender</span>: <span class="ident">get_ethereum_account_id_from_ecdsa_public_struct</span>(
-						<span class="kw-2">&amp;</span><span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]).<span class="ident">public</span>(),
+		<span class="kw">let </span>unlock = Unlock {
+			lock: Lock {
+				data: EthLockUpdate {
+					public: sp_core::ed25519::Public([<span class="number">69u8</span>; <span class="number">32</span>]),
+					amount: U256::from(<span class="number">69u32</span>),
+					sender: get_ethereum_account_id_from_ecdsa_public_struct(
+						<span class="kw-2">&amp;</span>sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]).public(),
 					),
-					<span class="ident">signature</span>: <span class="ident">create_lock_signature</span>(
-						<span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
-						<span class="ident">U256::from</span>(<span class="number">69u32</span>),
+					signature: create_lock_signature(
+						sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
+						U256::from(<span class="number">69u32</span>),
 					),
-					<span class="ident">lock</span>: <span class="bool-val">true</span>, <span class="comment">// yes, please lock it!</span>
-					<span class="ident">block_number</span>: <span class="number">69</span>,
+					lock: <span class="bool-val">true</span>, <span class="comment">// yes, please lock it!
+					</span>block_number: <span class="number">69</span>,
 				},
-				<span class="ident">link</span>: <span class="ident">Link</span> {
-					<span class="ident">clamor_account_id</span>: <span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">4u8</span>; <span class="number">32</span>]),
-					<span class="ident">link_signature</span>: <span class="ident">create_link_signature</span>(
-						<span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">4u8</span>; <span class="number">32</span>]),
-						<span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
+				link: Link {
+					clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">4u8</span>; <span class="number">32</span>]),
+					link_signature: create_link_signature(
+						sp_core::ed25519::Public::from_raw([<span class="number">4u8</span>; <span class="number">32</span>]),
+						sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
 					),
 				},
-				<span class="ident">ethereum_account_pair</span>: <span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
+				ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
 			},
-			<span class="ident">data</span>: <span class="ident">EthLockUpdate</span> {
-				<span class="ident">public</span>: <span class="ident">sp_core::ed25519::Public</span>([<span class="number">69u8</span>; <span class="number">32</span>]),
-				<span class="ident">amount</span>: <span class="ident">U256::from</span>(<span class="number">0u32</span>), <span class="comment">// when unlocking, amount must be 0u32</span>
-				<span class="ident">sender</span>: <span class="ident">get_ethereum_account_id_from_ecdsa_public_struct</span>(
-					<span class="kw-2">&amp;</span><span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]).<span class="ident">public</span>(),
+			data: EthLockUpdate {
+				public: sp_core::ed25519::Public([<span class="number">69u8</span>; <span class="number">32</span>]),
+				amount: U256::from(<span class="number">0u32</span>), <span class="comment">// when unlocking, amount must be 0u32
+				</span>sender: get_ethereum_account_id_from_ecdsa_public_struct(
+					<span class="kw-2">&amp;</span>sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]).public(),
 				),
-				<span class="ident">signature</span>: <span class="ident">create_unlock_signature</span>(
-					<span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
-					<span class="ident">U256::from</span>(<span class="number">0u32</span>), <span class="comment">// when unlocking, amount must be 0u32</span>
-				),
-				<span class="ident">lock</span>: <span class="bool-val">false</span>, <span class="comment">// yes, please unlock it!</span>
-				<span class="ident">block_number</span>: <span class="number">69</span> <span class="op">+</span> <span class="number">69</span>,
+				signature: create_unlock_signature(
+					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
+					U256::from(<span class="number">0u32</span>), <span class="comment">// when unlocking, amount must be 0u32
+				</span>),
+				lock: <span class="bool-val">false</span>, <span class="comment">// yes, please unlock it!
+				</span>block_number: <span class="number">69 </span>+ <span class="number">69</span>,
 			},
 		};
 
-		<span class="self">Self</span> {
-			<span class="ident">link</span>,
-			<span class="ident">link_second</span>,
-			<span class="ident">lock</span>,
-			<span class="ident">unlock</span>,
-			<span class="ident">account_id</span>: <span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">111u8</span>; <span class="number">32</span>]),
-			<span class="ident">account_id_second</span>: <span class="ident">sp_core::ed25519::Public::from_raw</span>([<span class="number">222u8</span>; <span class="number">32</span>]),
-			<span class="ident">ethereum_account_pair</span>: <span class="ident">sp_core::ecdsa::Pair::from_seed</span>(<span class="kw-2">&amp;</span>[<span class="number">111u8</span>; <span class="number">32</span>]),
-			<span class="ident">link_signature</span>: <span class="ident">sp_core::ecdsa::Signature::from_raw</span>([<span class="number">111u8</span>; <span class="number">65</span>]),
-			<span class="ident">lock_signature</span>: <span class="ident">sp_core::ecdsa::Signature::from_raw</span>([<span class="number">111u8</span>; <span class="number">65</span>]),
+		<span class="self">Self </span>{
+			link,
+			link_second,
+			lock,
+			unlock,
+			account_id: sp_core::ed25519::Public::from_raw([<span class="number">111u8</span>; <span class="number">32</span>]),
+			account_id_second: sp_core::ed25519::Public::from_raw([<span class="number">222u8</span>; <span class="number">32</span>]),
+			ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">111u8</span>; <span class="number">32</span>]),
+			link_signature: sp_core::ecdsa::Signature::from_raw([<span class="number">111u8</span>; <span class="number">65</span>]),
+			lock_signature: sp_core::ecdsa::Signature::from_raw([<span class="number">111u8</span>; <span class="number">65</span>]),
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (20ffea693 2022-08-11)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>

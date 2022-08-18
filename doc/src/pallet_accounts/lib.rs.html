@@ -930,937 +930,937 @@
 <span id="930">930</span>
 <span id="931">931</span>
 <span id="932">932</span>
-</pre><pre class="rust"><code><span class="doccomment">//! This pallet `frag` performs logic related to FRAG Token</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The term &quot;unlock&quot; refers to the *&quot;effective transfer&quot;* of all the previously locked ERC-20 FRAG tokens from the Clamor Blockchain to the aforementioned Fragnova-owned FRAG Ethereum Smart Contract.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The term &quot;staking&quot; refers to the staking of the FRAG Token that is done in the Clamor Blockchain itself. It is different to the term &quot;locking&quot; which is defined above.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! IMPORTANT: locking != staking</span>
+</pre><pre class="rust"><code><span class="doccomment">//! This pallet `frag` performs logic related to FRAG Token
+//!
+//! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
+//!
+//! The term &quot;unlock&quot; refers to the *&quot;effective transfer&quot;* of all the previously locked ERC-20 FRAG tokens from the Clamor Blockchain to the aforementioned Fragnova-owned FRAG Ethereum Smart Contract.
+//!
+//! The term &quot;staking&quot; refers to the staking of the FRAG Token that is done in the Clamor Blockchain itself. It is different to the term &quot;locking&quot; which is defined above.
+//!
+//! IMPORTANT: locking != staking
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]</span>
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">test</span>, <span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;compile-dummy-data&quot;</span>))]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">dummy_data</span>;
+<span class="attribute">#[cfg(any(test, feature = <span class="string">&quot;compile-dummy-data&quot;</span>))]</span>
+<span class="kw">pub mod </span>dummy_data;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">mock</span>;
+<span class="attribute">#[cfg(test)]</span>
+<span class="kw">pub mod </span>mock;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">tests</span>;
+<span class="attribute">#[cfg(test)]</span>
+<span class="kw">pub mod </span>tests;
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-<span class="kw">mod</span> <span class="ident">benchmarking</span>;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
+<span class="kw">mod </span>benchmarking;
 
-<span class="kw">mod</span> <span class="ident">weights</span>;
+<span class="kw">mod </span>weights;
 
-<span class="doccomment">/// keccak256(Lock(address,bytes,uint256)). Try it here: https://emn178.github.io/online-tools/keccak_256.html</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol</span>
-<span class="kw">const</span> <span class="ident">LOCK_EVENT</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f&quot;</span>;
-<span class="doccomment">/// keccak256(Lock(address,bytes,uint256))</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol</span>
-<span class="kw">const</span> <span class="ident">UNLOCK_EVENT</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe&quot;</span>;
+<span class="doccomment">/// keccak256(Lock(address,bytes,uint256)). Try it here: https://emn178.github.io/online-tools/keccak_256.html
+///
+/// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
+</span><span class="kw">const </span>LOCK_EVENT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f&quot;</span>;
+<span class="doccomment">/// keccak256(Lock(address,bytes,uint256))
+///
+/// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
+</span><span class="kw">const </span>UNLOCK_EVENT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe&quot;</span>;
 
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">crypto::KeyTypeId</span>, <span class="ident">ecdsa</span>, <span class="ident">ed25519</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
+<span class="kw">use </span>sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
 
-<span class="doccomment">/// Defines application identifier for crypto keys of this module.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Every module that deals with signatures needs to declare its unique identifier for</span>
-<span class="doccomment">/// its crypto keys.</span>
-<span class="doccomment">/// When offchain worker is signing transactions it&#39;s going to request keys of type</span>
-<span class="doccomment">/// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.</span>
-<span class="doccomment">/// The keys can be inserted manually via RPC (see `author_insertKey`).</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">KEY_TYPE</span>: <span class="ident">KeyTypeId</span> <span class="op">=</span> <span class="ident">KeyTypeId</span>(<span class="kw-2">*</span><span class="string">b&quot;frag&quot;</span>);
+<span class="doccomment">/// Defines application identifier for crypto keys of this module.
+///
+/// Every module that deals with signatures needs to declare its unique identifier for
+/// its crypto keys.
+/// When offchain worker is signing transactions it&#39;s going to request keys of type
+/// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
+/// The keys can be inserted manually via RPC (see `author_insertKey`).
+</span><span class="kw">pub const </span>KEY_TYPE: KeyTypeId = KeyTypeId(<span class="kw-2">*</span><span class="string">b&quot;frag&quot;</span>);
 
-<span class="doccomment">/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.</span>
-<span class="doccomment">/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment</span>
-<span class="doccomment">/// the types with this pallet-specific identifier.</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">crypto</span> {
-	<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::KEY_TYPE</span>;
-	<span class="kw">use</span> <span class="ident">sp_core::ed25519::Signature</span> <span class="kw">as</span> <span class="ident">Ed25519Signature</span>;
-	<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-		<span class="ident">app_crypto</span>::{<span class="ident">app_crypto</span>, <span class="ident">ed25519</span>},
-		<span class="ident">traits::Verify</span>,
-		<span class="ident">MultiSignature</span>, <span class="ident">MultiSigner</span>,
+<span class="doccomment">/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
+/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
+/// the types with this pallet-specific identifier.
+</span><span class="kw">pub mod </span>crypto {
+	<span class="kw">use </span><span class="kw">super</span>::KEY_TYPE;
+	<span class="kw">use </span>sp_core::ed25519::Signature <span class="kw">as </span>Ed25519Signature;
+	<span class="kw">use </span>sp_runtime::{
+		app_crypto::{app_crypto, ed25519},
+		traits::Verify,
+		MultiSignature, MultiSigner,
 	};
 
-	<span class="comment">// The app_crypto macro declares an account with an ed25519 signature that is identified by KEY_TYPE.</span>
-	<span class="comment">// Note that this doesn&#39;t create a new account. The macro simply declares that a crypto account</span>
-	<span class="comment">// is available for this pallet. You will need to initialize this account in the next step.</span>
-	<span class="comment">//</span>
-	<span class="comment">// https://docs.substrate.io/how-to-guides/v3/ocw/transactions/</span>
-	<span class="macro">app_crypto!</span>(<span class="ident">ed25519</span>, <span class="ident">KEY_TYPE</span>);
+	<span class="comment">// The app_crypto macro declares an account with an ed25519 signature that is identified by KEY_TYPE.
+	// Note that this doesn&#39;t create a new account. The macro simply declares that a crypto account
+	// is available for this pallet. You will need to initialize this account in the next step.
+	//
+	// https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
+	</span><span class="macro">app_crypto!</span>(ed25519, KEY_TYPE);
 
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FragAuthId</span>;
+	<span class="kw">pub struct </span>FragAuthId;
 
-	<span class="kw">impl</span> <span class="ident">frame_system::offchain::AppCrypto</span><span class="op">&lt;</span><span class="ident">MultiSigner</span>, <span class="ident">MultiSignature</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">FragAuthId</span> {
-		<span class="kw">type</span> <span class="ident">RuntimeAppPublic</span> <span class="op">=</span> <span class="ident">Public</span>;
-		<span class="kw">type</span> <span class="ident">GenericSignature</span> <span class="op">=</span> <span class="ident">sp_core::ed25519::Signature</span>;
-		<span class="kw">type</span> <span class="ident">GenericPublic</span> <span class="op">=</span> <span class="ident">sp_core::ed25519::Public</span>;
+	<span class="kw">impl </span>frame_system::offchain::AppCrypto&lt;MultiSigner, MultiSignature&gt; <span class="kw">for </span>FragAuthId {
+		<span class="kw">type </span>RuntimeAppPublic = Public;
+		<span class="kw">type </span>GenericSignature = sp_core::ed25519::Signature;
+		<span class="kw">type </span>GenericPublic = sp_core::ed25519::Public;
 	}
 
-	<span class="comment">// implemented for mock runtime in test</span>
-	<span class="kw">impl</span> <span class="ident">frame_system::offchain::AppCrypto</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Ed25519Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span><span class="ident">::Signer</span>, <span class="ident">Ed25519Signature</span><span class="op">&gt;</span>
-		<span class="kw">for</span> <span class="ident">FragAuthId</span>
+	<span class="comment">// implemented for mock runtime in test
+	</span><span class="kw">impl </span>frame_system::offchain::AppCrypto&lt;&lt;Ed25519Signature <span class="kw">as </span>Verify&gt;::Signer, Ed25519Signature&gt;
+		<span class="kw">for </span>FragAuthId
 	{
-		<span class="kw">type</span> <span class="ident">RuntimeAppPublic</span> <span class="op">=</span> <span class="ident">Public</span>;
-		<span class="kw">type</span> <span class="ident">GenericSignature</span> <span class="op">=</span> <span class="ident">sp_core::ed25519::Signature</span>;
-		<span class="kw">type</span> <span class="ident">GenericPublic</span> <span class="op">=</span> <span class="ident">sp_core::ed25519::Public</span>;
+		<span class="kw">type </span>RuntimeAppPublic = Public;
+		<span class="kw">type </span>GenericSignature = sp_core::ed25519::Signature;
+		<span class="kw">type </span>GenericPublic = sp_core::ed25519::Public;
 	}
 }
 
-<span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span>codec::{Decode, Encode};
+<span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 
-<span class="kw">use</span> <span class="ident">sp_io</span>::{<span class="ident">crypto</span> <span class="kw">as</span> <span class="ident">Crypto</span>, <span class="ident">hashing::blake2_256</span>, <span class="ident">hashing::keccak_256</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime::offchain::storage::StorageValueRef</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime::MultiSigner</span>;
-<span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">collections::btree_set::BTreeSet</span>, <span class="ident">vec</span>, <span class="ident">vec::Vec</span>};
+<span class="kw">use </span>sp_io::{crypto <span class="kw">as </span>Crypto, hashing::blake2_256, hashing::keccak_256};
+<span class="kw">use </span>sp_runtime::offchain::storage::StorageValueRef;
+<span class="kw">use </span>sp_runtime::MultiSigner;
+<span class="kw">use </span>sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
-<span class="kw">use</span> <span class="ident">frame_system::offchain</span>::{
-	<span class="ident">AppCrypto</span>, <span class="ident">CreateSignedTransaction</span>, <span class="ident">SendUnsignedTransaction</span>, <span class="ident">SignedPayload</span>, <span class="ident">Signer</span>,
-	<span class="ident">SigningTypes</span>,
+<span class="kw">use </span>frame_system::offchain::{
+	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
+	SigningTypes,
 };
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">weights::WeightInfo</span>;
+<span class="kw">pub use </span>weights::WeightInfo;
 
-<span class="kw">use</span> <span class="ident">sp_clamor::http_json_post</span>;
+<span class="kw">use </span>sp_clamor::http_json_post;
 
-<span class="kw">use</span> <span class="ident">scale_info::prelude</span>::{<span class="ident">format</span>, <span class="ident">string::String</span>};
+<span class="kw">use </span>scale_info::prelude::{format, string::String};
 
-<span class="kw">use</span> <span class="ident">serde_json</span>::{<span class="ident">json</span>, <span class="ident">Value</span>};
+<span class="kw">use </span>serde_json::{json, Value};
 
-<span class="kw">use</span> <span class="ident">ethabi::ParamType</span>;
+<span class="kw">use </span>ethabi::ParamType;
 
-<span class="kw">use</span> <span class="ident">frame_support::traits::ReservableCurrency</span>;
+<span class="kw">use </span>frame_support::traits::ReservableCurrency;
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">DiscordID</span> <span class="op">=</span> <span class="ident">u64</span>;
+<span class="kw">pub type </span>DiscordID = u64;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ExternalID</span> {
-	<span class="ident">Discord</span>(<span class="ident">DiscordID</span>),
+<span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
+<span class="kw">pub enum </span>ExternalID {
+	Discord(DiscordID),
 }
 
-<span class="doccomment">/// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">EthFragContract</span> {
-	<span class="doccomment">/// **Return** the **contract address** of the **FRAG Token Smart Contract**</span>
-	<span class="kw">fn</span> <span class="ident">get_partner_contracts</span>() -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-		<span class="macro">vec!</span>[<span class="ident">String::from</span>(<span class="string">&quot;0xBADF00D&quot;</span>)]
+<span class="doccomment">/// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
+</span><span class="kw">pub trait </span>EthFragContract {
+	<span class="doccomment">/// **Return** the **contract address** of the **FRAG Token Smart Contract**
+	</span><span class="kw">fn </span>get_partner_contracts() -&gt; Vec&lt;String&gt; {
+		<span class="macro">vec!</span>[String::from(<span class="string">&quot;0xBADF00D&quot;</span>)]
 	}
 }
 
-<span class="kw">impl</span> <span class="ident">EthFragContract</span> <span class="kw">for</span> () {}
+<span class="kw">impl </span>EthFragContract <span class="kw">for </span>() {}
 
-<span class="doccomment">/// **Struct** representing a **recent confirmed (i.e with sufficient blockchain confirmations) log** for the **event `Lock` or `Unlock`** of the **FRAG token Smart Contract**</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthLockUpdate</span><span class="op">&lt;</span><span class="ident">TPublic</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Public Account Address of What? (问Gio)</span>
-	<span class="kw">pub</span> <span class="ident">public</span>: <span class="ident">TPublic</span>,
-	<span class="doccomment">/// If the event was `Lock`, it represents the **total amount of FRAG token** that is **currently locked** (not just the newly locked FRAG token) on the **FRAG Token Smart Contract**</span>
-	<span class="doccomment">/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**</span>
-	<span class="kw">pub</span> <span class="ident">amount</span>: <span class="ident">U256</span>,
-	<span class="doccomment">/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively</span>
-	<span class="kw">pub</span> <span class="ident">sender</span>: <span class="ident">H160</span>,
-	<span class="kw">pub</span> <span class="ident">signature</span>: <span class="ident">ecdsa::Signature</span>,
-	<span class="doccomment">/// Whether the event was `Lock` or `Unlock`</span>
-	<span class="kw">pub</span> <span class="ident">lock</span>: <span class="ident">bool</span>,
-	<span class="doccomment">/// Block number in which the event was emitted</span>
-	<span class="kw">pub</span> <span class="ident">block_number</span>: <span class="ident">u64</span>,
+<span class="doccomment">/// **Struct** representing a **recent confirmed (i.e with sufficient blockchain confirmations) log** for the **event `Lock` or `Unlock`** of the **FRAG token Smart Contract**
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
+<span class="kw">pub struct </span>EthLockUpdate&lt;TPublic&gt; {
+	<span class="doccomment">/// Public Account Address of What? (问Gio)
+	</span><span class="kw">pub </span>public: TPublic,
+	<span class="doccomment">/// If the event was `Lock`, it represents the **total amount of FRAG token** that is **currently locked** (not just the newly locked FRAG token) on the **FRAG Token Smart Contract**
+	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
+	</span><span class="kw">pub </span>amount: U256,
+	<span class="doccomment">/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
+	</span><span class="kw">pub </span>sender: H160,
+	<span class="kw">pub </span>signature: ecdsa::Signature,
+	<span class="doccomment">/// Whether the event was `Lock` or `Unlock`
+	</span><span class="kw">pub </span>lock: bool,
+	<span class="doccomment">/// Block number in which the event was emitted
+	</span><span class="kw">pub </span>block_number: u64,
 }
 
-<span class="doccomment">/// **Struct** representing the details about the **total amount of locked FRAG Token of a particular Ethereum Account** in the **Fragnova-owned Ethereum Smart Contract** .</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthLock</span><span class="op">&lt;</span><span class="ident">TBalance</span>, <span class="ident">TBlockNum</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Total amount of FRAG token locked (not just the newly locked FRAG token) by a particular Ethereum Account</span>
-	<span class="kw">pub</span> <span class="ident">amount</span>: <span class="ident">TBalance</span>,
-	<span class="doccomment">/// Clamor Block Number in which the locked FRAG tokens was &quot;effectively transfered&quot; to the Clamor Blockchain</span>
-	<span class="kw">pub</span> <span class="ident">block_number</span>: <span class="ident">TBlockNum</span>,
+<span class="doccomment">/// **Struct** representing the details about the **total amount of locked FRAG Token of a particular Ethereum Account** in the **Fragnova-owned Ethereum Smart Contract** .
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
+<span class="kw">pub struct </span>EthLock&lt;TBalance, TBlockNum&gt; {
+	<span class="doccomment">/// Total amount of FRAG token locked (not just the newly locked FRAG token) by a particular Ethereum Account
+	</span><span class="kw">pub </span>amount: TBalance,
+	<span class="doccomment">/// Clamor Block Number in which the locked FRAG tokens was &quot;effectively transfered&quot; to the Clamor Blockchain
+	</span><span class="kw">pub </span>block_number: TBlockNum,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">SigningTypes</span><span class="op">&gt;</span> <span class="ident">SignedPayload</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EthLockUpdate</span><span class="op">&lt;</span><span class="ident">T::Public</span><span class="op">&gt;</span> {
-	<span class="kw">fn</span> <span class="ident">public</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">T::Public</span> {
-		<span class="self">self</span>.<span class="ident">public</span>.<span class="ident">clone</span>()
+<span class="kw">impl</span>&lt;T: SigningTypes&gt; SignedPayload&lt;T&gt; <span class="kw">for </span>EthLockUpdate&lt;T::Public&gt; {
+	<span class="kw">fn </span>public(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; T::Public {
+		<span class="self">self</span>.public.clone()
 	}
 }
 
-<span class="doccomment">/// **Struct** representing the details about accounts created off-chain by various parties and integrations.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">scale_info::TypeInfo</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AccountInfo</span><span class="op">&lt;</span><span class="ident">TAccountID</span>, <span class="ident">TMoment</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// The actual account ID</span>
-	<span class="kw">pub</span> <span class="ident">account_id</span>: <span class="ident">TAccountID</span>,
-	<span class="doccomment">/// The timestamp when this account was created</span>
-	<span class="kw">pub</span> <span class="ident">created_at</span>: <span class="ident">TMoment</span>,
+<span class="doccomment">/// **Struct** representing the details about accounts created off-chain by various parties and integrations.
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
+<span class="kw">pub struct </span>AccountInfo&lt;TAccountID, TMoment&gt; {
+	<span class="doccomment">/// The actual account ID
+	</span><span class="kw">pub </span>account_id: TAccountID,
+	<span class="doccomment">/// The timestamp when this account was created
+	</span><span class="kw">pub </span>created_at: TMoment,
 }
 
-<span class="attribute">#[<span class="ident">frame_support::pallet</span>]</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pallet</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">dispatch::DispatchResult</span>, <span class="ident">pallet_prelude</span>::<span class="kw-2">*</span>, <span class="ident">Twox64Concat</span>};
-	<span class="kw">use</span> <span class="ident">frame_system::pallet_prelude</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">sp_runtime::SaturatedConversion</span>;
+<span class="attribute">#[frame_support::pallet]</span>
+<span class="kw">pub mod </span>pallet {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
+	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
+	<span class="kw">use </span>sp_runtime::SaturatedConversion;
 
-	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.</span>
-	<span class="attribute">#[<span class="ident">pallet::config</span>]</span>
-	<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>:
-		<span class="ident">frame_system::Config</span>
-		<span class="op">+</span> <span class="ident">CreateSignedTransaction</span><span class="op">&lt;</span><span class="ident">Call</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span>
-		<span class="op">+</span> <span class="ident">pallet_balances::Config</span>
-		<span class="op">+</span> <span class="ident">pallet_proxy::Config</span>
-		<span class="op">+</span> <span class="ident">pallet_timestamp::Config</span>
+	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
+	</span><span class="attribute">#[pallet::config]</span>
+	<span class="kw">pub trait </span>Config:
+		frame_system::Config
+		+ CreateSignedTransaction&lt;Call&lt;<span class="self">Self</span>&gt;&gt;
+		+ pallet_balances::Config
+		+ pallet_proxy::Config
+		+ pallet_timestamp::Config
 	{
-		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.</span>
-		<span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">IsType</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::Event</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
+		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
 
-		<span class="kw">type</span> <span class="ident">WeightInfo</span>: <span class="ident">WeightInfo</span>;
+		<span class="kw">type </span>WeightInfo: WeightInfo;
 
-		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
-		<span class="kw">type</span> <span class="ident">EthChainId</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
+		<span class="attribute">#[pallet::constant]</span>
+		<span class="kw">type </span>EthChainId: Get&lt;u64&gt;;
 
-		<span class="doccomment">/// The **number of confirmations required** to consider a **transaction** on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)</span>
-		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
-		<span class="kw">type</span> <span class="ident">EthConfirmations</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// The **number of confirmations required** to consider a **transaction** on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
+		</span><span class="attribute">#[pallet::constant]</span>
+		<span class="kw">type </span>EthConfirmations: Get&lt;u64&gt;;
 
-		<span class="kw">type</span> <span class="ident">EthFragContract</span>: <span class="ident">EthFragContract</span>;
+		<span class="kw">type </span>EthFragContract: EthFragContract;
 
-		<span class="doccomment">/// Number of votes needed to do something (问Gio)</span>
-		<span class="attribute">#[<span class="ident">pallet::constant</span>]</span>
-		<span class="kw">type</span> <span class="ident">Threshold</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// Number of votes needed to do something (问Gio)
+		</span><span class="attribute">#[pallet::constant]</span>
+		<span class="kw">type </span>Threshold: Get&lt;u64&gt;;
 
-		<span class="doccomment">/// The identifier type for an offchain worker.</span>
-		<span class="kw">type</span> <span class="ident">AuthorityId</span>: <span class="ident">AppCrypto</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Public</span>, <span class="ident"><span class="self">Self</span>::Signature</span><span class="op">&gt;</span>;
+		<span class="doccomment">/// The identifier type for an offchain worker.
+		</span><span class="kw">type </span>AuthorityId: AppCrypto&lt;<span class="self">Self</span>::Public, <span class="self">Self</span>::Signature&gt;;
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::genesis_config</span>]</span>
-	<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">pub</span> <span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ed25519::Public</span><span class="op">&gt;</span>,
+	<span class="attribute">#[pallet::genesis_config]</span>
+	<span class="attribute">#[derive(Default)]</span>
+	<span class="kw">pub struct </span>GenesisConfig {
+		<span class="kw">pub </span>keys: Vec&lt;ed25519::Public&gt;,
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::genesis_build</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">GenesisBuild</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GenesisConfig</span> {
-		<span class="kw">fn</span> <span class="ident">build</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-			<span class="ident">Pallet</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::initialize_keys</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">keys</span>);
+	<span class="attribute">#[pallet::genesis_build]</span>
+	<span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig {
+		<span class="kw">fn </span>build(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+			Pallet::&lt;T&gt;::initialize_keys(<span class="kw-2">&amp;</span><span class="self">self</span>.keys);
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::pallet</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::generate_store</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait</span> <span class="ident">Store</span>)]</span>
-	<span class="attribute">#[<span class="ident">pallet::without_storage_info</span>]</span>
-	<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw">_</span>);
+	<span class="attribute">#[pallet::pallet]</span>
+	<span class="attribute">#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]</span>
+	<span class="attribute">#[pallet::without_storage_info]</span>
+	<span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
 
-	<span class="doccomment">/// **StorageMap** that maps an **Ethereum Account ID** to a to an ***Ethlock* struct of the aforementioned Ethereum Account Id (the struct contains the amount of FRAG token locked, amongst other things)**</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">EthLockedFrag</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
-		<span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, <span class="ident">H160</span>, <span class="ident">EthLock</span><span class="op">&lt;</span><span class="ident">T::Balance</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// **StorageMap** that maps an **Ethereum Account ID** to a to an ***Ethlock* struct of the aforementioned Ethereum Account Id (the struct contains the amount of FRAG token locked, amongst other things)**
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>EthLockedFrag&lt;T: Config&gt; =
+		StorageMap&lt;<span class="kw">_</span>, Identity, H160, EthLock&lt;T::Balance, T::BlockNumber&gt;&gt;;
 
-	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,</span>
-	<span class="doccomment">/// where **both accounts** are **owned by the same owner**.</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// NOTE: The **Ethereum Account ID** had to be **manually mapped to the Clamor Account ID** by the owner itself to show up in this `StorageMap`.</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Twox64Concat</span>, <span class="ident">T::AccountId</span>, <span class="ident">H160</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
+	/// where **both accounts** are **owned by the same owner**.
+	///
+	/// NOTE: The **Ethereum Account ID** had to be **manually mapped to the Clamor Account ID** by the owner itself to show up in this `StorageMap`.
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>EVMLinks&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, H160&gt;;
 
-	<span class="doccomment">/// This **StorageMap** is the reverse mapping of `EVMLinks`.</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, <span class="ident">H160</span>, <span class="ident">T::AccountId</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// This **StorageMap** is the reverse mapping of `EVMLinks`.
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>EVMLinksReverse&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H160, T::AccountId&gt;;
 
-	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to the **Amount of FRAG token staked by the aforementioned Clamor Account ID**</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FragUsage</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Twox64Concat</span>, <span class="ident">T::AccountId</span>, <span class="ident">T::Balance</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to the **Amount of FRAG token staked by the aforementioned Clamor Account ID**
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>FragUsage&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, T::Balance&gt;;
 
-	<span class="doccomment">/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**.</span>
-	<span class="doccomment">/// The key for this map is:</span>
-	<span class="doccomment">/// `blake2_256(encoded(&lt;Amount of FRAG token that was locked/unlocked, Signature written by the owner of the FRAG token on a determinstic message,</span>
-	<span class="doccomment">/// 					Whether it was locked or unlocked, Ethereum Block Number where it was locked/unlocked&gt;))`</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">EVMLinkVoting</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, <span class="ident">H256</span>, <span class="ident">u64</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**.
+	/// The key for this map is:
+	/// `blake2_256(encoded(&lt;Amount of FRAG token that was locked/unlocked, Signature written by the owner of the FRAG token on a determinstic message,
+	/// 					Whether it was locked or unlocked, Ethereum Block Number where it was locked/unlocked&gt;))`
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>EVMLinkVoting&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H256, u64&gt;;
 
-	<span class="doccomment">/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a boolean indicating whether voting on the aforementioned event has ended**.</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">EVMLinkVotingClosed</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Identity</span>, <span class="ident">H256</span>, <span class="ident">T::BlockNumber</span><span class="op">&gt;</span>;
-	<span class="comment">// consumed by Protos pallet</span>
-	<span class="doccomment">/// **List of Clamor Accounts** whose **(FRAG staking)-related Storage Items** are **yet to be cleared**</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">PendingUnlinks</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T::AccountId</span><span class="op">&gt;</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a boolean indicating whether voting on the aforementioned event has ended**.
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>EVMLinkVotingClosed&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H256, T::BlockNumber&gt;;
+	<span class="comment">// consumed by Protos pallet
+	</span><span class="doccomment">/// **List of Clamor Accounts** whose **(FRAG staking)-related Storage Items** are **yet to be cleared**
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>PendingUnlinks&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;T::AccountId&gt;, ValueQuery&gt;;
 
-	<span class="comment">// These are the public keys representing the actual keys that can Sign messages</span>
-	<span class="comment">// to present to external chains to detach onto</span>
-	<span class="doccomment">/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit `this list</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FragKeys</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">ed25519::Public</span><span class="op">&gt;</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
+	<span class="comment">// These are the public keys representing the actual keys that can Sign messages
+	// to present to external chains to detach onto
+	</span><span class="doccomment">/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
+	///
+	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit `this list
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>FragKeys&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ed25519::Public&gt;, ValueQuery&gt;;
 
-	<span class="doccomment">/// The map between external accounts and the local accounts that are linked to them. (Discord, Telegram, etc)</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ExternalID2Account</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span>
-		<span class="ident">StorageMap</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">Twox64Concat</span>, <span class="ident">ExternalID</span>, <span class="ident">AccountInfo</span><span class="op">&lt;</span><span class="ident">T::AccountId</span>, <span class="ident">T::Moment</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// The map between external accounts and the local accounts that are linked to them. (Discord, Telegram, etc)
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>ExternalID2Account&lt;T: Config&gt; =
+		StorageMap&lt;<span class="kw">_</span>, Twox64Concat, ExternalID, AccountInfo&lt;T::AccountId, T::Moment&gt;&gt;;
 
-	<span class="doccomment">/// The authorities able to sponsor accounts and link them to external accounts.</span>
-	<span class="attribute">#[<span class="ident">pallet::storage</span>]</span>
-	<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ExternalAuthorities</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">StorageValue</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">BTreeSet</span><span class="op">&lt;</span><span class="ident">T::AccountId</span><span class="op">&gt;</span>, <span class="ident">ValueQuery</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// The authorities able to sponsor accounts and link them to external accounts.
+	</span><span class="attribute">#[pallet::storage]</span>
+	<span class="kw">pub type </span>ExternalAuthorities&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;T::AccountId&gt;, ValueQuery&gt;;
 
-	<span class="attribute">#[<span class="ident">pallet::event</span>]</span>
-	<span class="attribute">#[<span class="ident">pallet::generate_deposit</span>(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">deposit_event</span>)]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// A link happened between native and ethereum account.</span>
-		<span class="ident">Linked</span> { <span class="ident">sender</span>: <span class="ident">T::AccountId</span>, <span class="ident">eth_key</span>: <span class="ident">H160</span> },
-		<span class="doccomment">/// A link was removed between native and ethereum account.</span>
-		<span class="ident">Unlinked</span> { <span class="ident">sender</span>: <span class="ident">T::AccountId</span>, <span class="ident">eth_key</span>: <span class="ident">H160</span> },
-		<span class="doccomment">/// ETH side lock was updated</span>
-		<span class="ident">Locked</span> { <span class="ident">eth_key</span>: <span class="ident">H160</span>, <span class="ident">balance</span>: <span class="ident">T::Balance</span> },
-		<span class="doccomment">/// ETH side lock was unlocked</span>
-		<span class="ident">Unlocked</span> { <span class="ident">eth_key</span>: <span class="ident">H160</span>, <span class="ident">balance</span>: <span class="ident">T::Balance</span> },
-		<span class="doccomment">/// A new sponsored account was added</span>
-		<span class="ident">SponsoredAccount</span> { <span class="ident">sponsor</span>: <span class="ident">T::AccountId</span>, <span class="ident">sponsored</span>: <span class="ident">T::AccountId</span>, <span class="ident">external_id</span>: <span class="ident">ExternalID</span> },
+	<span class="attribute">#[pallet::event]</span>
+	<span class="attribute">#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]</span>
+	<span class="kw">pub enum </span>Event&lt;T: Config&gt; {
+		<span class="doccomment">/// A link happened between native and ethereum account.
+		</span>Linked { sender: T::AccountId, eth_key: H160 },
+		<span class="doccomment">/// A link was removed between native and ethereum account.
+		</span>Unlinked { sender: T::AccountId, eth_key: H160 },
+		<span class="doccomment">/// ETH side lock was updated
+		</span>Locked { eth_key: H160, balance: T::Balance },
+		<span class="doccomment">/// ETH side lock was unlocked
+		</span>Unlocked { eth_key: H160, balance: T::Balance },
+		<span class="doccomment">/// A new sponsored account was added
+		</span>SponsoredAccount { sponsor: T::AccountId, sponsored: T::AccountId, external_id: ExternalID },
 	}
 
-	<span class="comment">// Errors inform users that something went wrong.</span>
-	<span class="attribute">#[<span class="ident">pallet::error</span>]</span>
-	<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// Systematic failure - those errors should not happen.</span>
-		<span class="ident">SystematicFailure</span>,
-		<span class="doccomment">/// Signature verification failed</span>
-		<span class="ident">VerificationFailed</span>,
-		<span class="doccomment">/// Link already processed</span>
-		<span class="ident">LinkAlreadyProcessed</span>,
-		<span class="doccomment">/// Reference not found</span>
-		<span class="ident">LinkNotFound</span>,
-		<span class="doccomment">/// Account already linked</span>
-		<span class="ident">AccountAlreadyLinked</span>,
-		<span class="doccomment">/// Account not linked</span>
-		<span class="ident">AccountNotLinked</span>,
-		<span class="comment">// Account linked to different account</span>
-		<span class="ident">DifferentAccountLinked</span>,
-		<span class="doccomment">/// Account already exists</span>
-		<span class="ident">AccountAlreadyExists</span>,
-		<span class="doccomment">/// Too many proxies</span>
-		<span class="ident">TooManyProxies</span>,
+	<span class="comment">// Errors inform users that something went wrong.
+	</span><span class="attribute">#[pallet::error]</span>
+	<span class="kw">pub enum </span>Error&lt;T&gt; {
+		<span class="doccomment">/// Systematic failure - those errors should not happen.
+		</span>SystematicFailure,
+		<span class="doccomment">/// Signature verification failed
+		</span>VerificationFailed,
+		<span class="doccomment">/// Link already processed
+		</span>LinkAlreadyProcessed,
+		<span class="doccomment">/// Reference not found
+		</span>LinkNotFound,
+		<span class="doccomment">/// Account already linked
+		</span>AccountAlreadyLinked,
+		<span class="doccomment">/// Account not linked
+		</span>AccountNotLinked,
+		<span class="comment">// Account linked to different account
+		</span>DifferentAccountLinked,
+		<span class="doccomment">/// Account already exists
+		</span>AccountAlreadyExists,
+		<span class="doccomment">/// Too many proxies
+		</span>TooManyProxies,
 	}
 
-	<span class="comment">// Dispatchable functions allows users to interact with the pallet and invoke state changes.</span>
-	<span class="comment">// These functions materialize as &quot;extrinsics&quot;, which are often compared to transactions.</span>
-	<span class="comment">// Dispatchable functions must be annotated with a weight and must return a DispatchResult.</span>
+	<span class="comment">// Dispatchable functions allows users to interact with the pallet and invoke state changes.
+	// These functions materialize as &quot;extrinsics&quot;, which are often compared to transactions.
+	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 
-	<span class="doccomment">/// Add a Clamor Account ID to `FragKeys`.</span>
-	<span class="doccomment">///</span>
-	<span class="doccomment">/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function</span>
-	<span class="attribute">#[<span class="ident">pallet::call</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_key</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">public</span>: <span class="ident">ed25519::Public</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+	</span><span class="doccomment">/// Add a Clamor Account ID to `FragKeys`.
+	///
+	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
+	</span><span class="attribute">#[pallet::call]</span>
+	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+		<span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
+			ensure_root(origin)<span class="question-mark">?</span>;
 
-			<span class="macro">log::debug!</span>(<span class="string">&quot;New key: {:?}&quot;</span>, <span class="ident">public</span>);
+			<span class="macro">log::debug!</span>(<span class="string">&quot;New key: {:?}&quot;</span>, public);
 
-			<span class="op">&lt;</span><span class="ident">FragKeys</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="op">|</span><span class="ident">validators</span><span class="op">|</span> {
-				<span class="ident">validators</span>.<span class="ident">insert</span>(<span class="ident">public</span>);
+			&lt;FragKeys&lt;T&gt;&gt;::mutate(|validators| {
+				validators.insert(public);
 			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Remove a Clamor Account ID from `FragKeys`</span>
+		<span class="doccomment">/// Remove a Clamor Account ID from `FragKeys`
 
-		<span class="doccomment">/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">del_key</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">public</span>: <span class="ident">ed25519::Public</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="kw">pub fn </span>del_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
+			ensure_root(origin)<span class="question-mark">?</span>;
 
-			<span class="macro">log::debug!</span>(<span class="string">&quot;Removed key: {:?}&quot;</span>, <span class="ident">public</span>);
+			<span class="macro">log::debug!</span>(<span class="string">&quot;Removed key: {:?}&quot;</span>, public);
 
-			<span class="op">&lt;</span><span class="ident">FragKeys</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="op">|</span><span class="ident">validators</span><span class="op">|</span> {
-				<span class="ident">validators</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">public</span>);
+			&lt;FragKeys&lt;T&gt;&gt;::mutate(|validators| {
+				validators.remove(<span class="kw-2">&amp;</span>public);
 			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="comment">// Firstly: Verify the `signature` for the message keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)</span>
-		<span class="comment">// Secondly: After verification, recover the public key used to sign the aforementioned `signature` for the aforementioned message</span>
-		<span class="comment">// Third: Add</span>
-		<span class="comment">// TODO</span>
-		<span class="doccomment">/// **Link** the **Clamor public account address that calls this extrinsic** with the</span>
-		<span class="doccomment">/// **public account address that is returned from verifying the signature `signature` for</span>
-		<span class="doccomment">/// the message `keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)`** (NOTE: The</span>
-		<span class="doccomment">/// returned public account address is of the account that signed the signature</span>
-		<span class="doccomment">/// `signature`).</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// After linking, also emit an event indicating that the two accounts were linked.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">link</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">signature</span>: <span class="ident">ecdsa::Signature</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+		<span class="comment">// Firstly: Verify the `signature` for the message keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)
+		// Secondly: After verification, recover the public key used to sign the aforementioned `signature` for the aforementioned message
+		// Third: Add
+		// TODO
+		</span><span class="doccomment">/// **Link** the **Clamor public account address that calls this extrinsic** with the
+		/// **public account address that is returned from verifying the signature `signature` for
+		/// the message `keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)`** (NOTE: The
+		/// returned public account address is of the account that signed the signature
+		/// `signature`).
+		///
+		/// After linking, also emit an event indicating that the two accounts were linked.
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="kw">pub fn </span>link(origin: OriginFor&lt;T&gt;, signature: ecdsa::Signature) -&gt; DispatchResult {
+			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 
-			<span class="comment">// the idea is to prove to this chain that the sender knows the private key of the external address</span>
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="string">b&quot;EVM2Fragnova&quot;</span>.<span class="ident">to_vec</span>();
-			<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">T::EthChainId::get</span>().<span class="ident">to_be_bytes</span>());
-			<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>.<span class="ident">encode</span>());
-			<span class="kw">let</span> <span class="ident">message_hash</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>);
+			<span class="comment">// the idea is to prove to this chain that the sender knows the private key of the external address
+			</span><span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;EVM2Fragnova&quot;</span>.to_vec();
+			message.extend_from_slice(<span class="kw-2">&amp;</span>T::EthChainId::get().to_be_bytes());
+			message.extend_from_slice(<span class="kw-2">&amp;</span>sender.encode());
+			<span class="kw">let </span>message_hash = keccak_256(<span class="kw-2">&amp;</span>message);
 
-			<span class="kw">let</span> <span class="ident">recovered</span> <span class="op">=</span> <span class="ident">Crypto::secp256k1_ecdsa_recover</span>(<span class="kw-2">&amp;</span><span class="ident">signature</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">message_hash</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::VerificationFailed</span>)<span class="question-mark">?</span>; <span class="comment">// Verify the `signature` for the message keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)</span>
+			<span class="kw">let </span>recovered = Crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>signature.<span class="number">0</span>, <span class="kw-2">&amp;</span>message_hash)
+				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::VerificationFailed)<span class="question-mark">?</span>; <span class="comment">// Verify the `signature` for the message keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)
 
-			<span class="kw">let</span> <span class="ident">eth_key</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">recovered</span>[..]);
-			<span class="kw">let</span> <span class="ident">eth_key</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">eth_key</span>[<span class="number">12</span>..];
-			<span class="kw">let</span> <span class="ident">eth_key</span> <span class="op">=</span> <span class="ident">H160::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">eth_key</span>[..]);
+			</span><span class="kw">let </span>eth_key = keccak_256(<span class="kw-2">&amp;</span>recovered[..]);
+			<span class="kw">let </span>eth_key = <span class="kw-2">&amp;</span>eth_key[<span class="number">12</span>..];
+			<span class="kw">let </span>eth_key = H160::from_slice(<span class="kw-2">&amp;</span>eth_key[..]);
 
-			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountAlreadyLinked</span>);
-			<span class="macro">ensure!</span>(<span class="op">!</span><span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="ident">eth_key</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountAlreadyLinked</span>);
+			<span class="macro">ensure!</span>(!&lt;EVMLinks&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>sender), Error::&lt;T&gt;::AccountAlreadyLinked);
+			<span class="macro">ensure!</span>(!&lt;EVMLinksReverse&lt;T&gt;&gt;::contains_key(eth_key), Error::&lt;T&gt;::AccountAlreadyLinked);
 
-			<span class="op">&lt;</span><span class="ident">EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">sender</span>.<span class="ident">clone</span>(), <span class="ident">eth_key</span>);
-			<span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">eth_key</span>, <span class="ident">sender</span>.<span class="ident">clone</span>());
-			<span class="kw">let</span> <span class="ident">zero</span>: <span class="ident">T::Balance</span> <span class="op">=</span> <span class="number">0u32</span>.<span class="ident">saturated_into</span>();
-			<span class="op">&lt;</span><span class="ident">FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">sender</span>.<span class="ident">clone</span>(), <span class="ident">zero</span>);
+			&lt;EVMLinks&lt;T&gt;&gt;::insert(sender.clone(), eth_key);
+			&lt;EVMLinksReverse&lt;T&gt;&gt;::insert(eth_key, sender.clone());
+			<span class="kw">let </span>zero: T::Balance = <span class="number">0u32</span>.saturated_into();
+			&lt;FragUsage&lt;T&gt;&gt;::insert(sender.clone(), zero);
 
-			<span class="comment">// also emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Linked</span> { <span class="ident">sender</span>, <span class="ident">eth_key</span> });
-
-			<span class="prelude-val">Ok</span>(())
-		}
-
-		<span class="comment">// TODO</span>
-		<span class="doccomment">/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">unlink</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">account</span>: <span class="ident">H160</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
-			<span class="ident"><span class="self">Self</span>::unlink_account</span>(<span class="ident">sender</span>, <span class="ident">account</span>)
-		}
-
-		<span class="doccomment">/// Update &#39;data&#39;</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// TODO</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">internal_lock_update</span>(
-			<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-			<span class="ident">data</span>: <span class="ident">EthLockUpdate</span><span class="op">&lt;</span><span class="ident">T::Public</span><span class="op">&gt;</span>,
-			<span class="ident">_signature</span>: <span class="ident">T::Signature</span>,
-		) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
-
-			<span class="macro">log::debug!</span>(<span class="string">&quot;Lock update: {:?}&quot;</span>, <span class="ident">data</span>);
-
-			<span class="kw">let</span> <span class="ident">data_tuple</span> <span class="op">=</span>
-				(<span class="ident">data</span>.<span class="ident">amount</span>, <span class="ident">data</span>.<span class="ident">sender</span>, <span class="ident">data</span>.<span class="ident">signature</span>.<span class="ident">clone</span>(), <span class="ident">data</span>.<span class="ident">lock</span>, <span class="ident">data</span>.<span class="ident">block_number</span>);
-			<span class="kw">let</span> <span class="ident">data_hash</span>: <span class="ident">H256</span> <span class="op">=</span> <span class="ident">data_tuple</span>.<span class="ident">using_encoded</span>(<span class="ident">blake2_256</span>).<span class="ident">into</span>();
-
-			<span class="macro">ensure!</span>(
-				<span class="op">!</span><span class="op">&lt;</span><span class="ident">EVMLinkVotingClosed</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="ident">data_hash</span>), <span class="comment">// Make sure `data_hash` isn&#39;t in `EVMLinkVotingClosed`</span>
-				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::LinkAlreadyProcessed</span>
-			);
-
-			<span class="comment">// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)</span>
-			<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">message</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">data</span>.<span class="ident">lock</span> { <span class="string">b&quot;FragLock&quot;</span>.<span class="ident">to_vec</span>() } <span class="kw">else</span> { <span class="string">b&quot;FragUnlock&quot;</span>.<span class="ident">to_vec</span>() }; <span class="comment">// Add b&quot;FragLock&quot; or b&quot;FragUnlock&quot; to message</span>
-			<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>.<span class="ident">sender</span>.<span class="number">0</span>[..]); <span class="comment">// Add data.sender.0 (&quot;msg.sender&quot; in Solidity) to message</span>
-			<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">T::EthChainId::get</span>().<span class="ident">to_be_bytes</span>()); <span class="comment">// Add EthChainId (&quot;block.chainid&quot; in Solidity) to message</span>
-			<span class="kw">let</span> <span class="ident">amount</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span> <span class="ident">data</span>.<span class="ident">amount</span>.<span class="ident">into</span>();
-			<span class="ident">message</span>.<span class="ident">extend_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">amount</span>[..]); <span class="comment">// Add amount to message</span>
-			<span class="kw">let</span> <span class="ident">message_hash</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>); <span class="comment">// This should be</span>
-
-			<span class="kw">let</span> <span class="ident">message</span> <span class="op">=</span> [<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">message_hash</span>[..]].<span class="ident">concat</span>();
-			<span class="kw">let</span> <span class="ident">message_hash</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">message</span>);
-
-			<span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">signature</span>;
-			<span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">sender</span>;
-
-			<span class="comment">// We check if the `message_hash` and **the signature in the emitted event `Lock` or `Unlock`**</span>
-			<span class="comment">// **allow us** to **recover the Ethereum sender account address** that was in the **same aforementioned emitted event `Lock` or `Unlock`**</span>
-			<span class="kw">let</span> <span class="ident">pub_key</span> <span class="op">=</span> <span class="ident">Crypto::secp256k1_ecdsa_recover</span>(<span class="kw-2">&amp;</span><span class="ident">signature</span>.<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">message_hash</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::VerificationFailed</span>)<span class="question-mark">?</span>;
-			<span class="kw">let</span> <span class="ident">pub_key</span> <span class="op">=</span> <span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">pub_key</span>[..]);
-			<span class="kw">let</span> <span class="ident">pub_key</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">pub_key</span>[<span class="number">12</span>..];
-			<span class="macro">ensure!</span>(<span class="ident">pub_key</span> <span class="op">==</span> <span class="ident">sender</span>.<span class="number">0</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::VerificationFailed</span>);
-
-			<span class="kw">let</span> <span class="ident">amount</span>: <span class="ident">u128</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">amount</span>.<span class="ident">try_into</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SystematicFailure</span>)<span class="question-mark">?</span>;
-
-			<span class="kw">if</span> <span class="op">!</span><span class="ident">data</span>.<span class="ident">lock</span> {
-				<span class="macro">ensure!</span>(<span class="ident">amount</span> <span class="op">==</span> <span class="number">0</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SystematicFailure</span>);
-			} <span class="kw">else</span> {
-				<span class="macro">ensure!</span>(<span class="ident">amount</span> <span class="op">&gt;</span> <span class="number">0</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SystematicFailure</span>);
-			}
-
-			<span class="comment">// verifications ended, let&#39;s proceed with voting count and writing</span>
-
-			<span class="kw">let</span> <span class="ident">threshold</span> <span class="op">=</span> <span class="ident">T::Threshold::get</span>();
-			<span class="kw">if</span> <span class="ident">threshold</span> <span class="op">&gt;</span> <span class="number">1</span> {
-				<span class="comment">// 问Gio</span>
-				<span class="kw">let</span> <span class="ident">current_votes</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">EVMLinkVoting</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">data_hash</span>);
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">current_votes</span>) <span class="op">=</span> <span class="ident">current_votes</span> {
-					<span class="comment">// Number of votes for the key `data_hash` in EVMLinkVoting</span>
-					<span class="kw">if</span> <span class="ident">current_votes</span> <span class="op">+</span> <span class="number">1u64</span> <span class="op">&lt;</span> <span class="ident">threshold</span> {
-						<span class="comment">// Current Votes has not passed the threshold</span>
-						<span class="op">&lt;</span><span class="ident">EVMLinkVoting</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="kw-2">&amp;</span><span class="ident">data_hash</span>, <span class="ident">current_votes</span> <span class="op">+</span> <span class="number">1</span>);
-						<span class="kw">return</span> <span class="prelude-val">Ok</span>(());
-					} <span class="kw">else</span> {
-						<span class="comment">// Current votes passes the threshold, let&#39;s remove EVMLinkVoting perque perque non! (问Gio)</span>
-						<span class="comment">// we are good to go, but let&#39;s remove the record</span>
-						<span class="op">&lt;</span><span class="ident">EVMLinkVoting</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="kw-2">&amp;</span><span class="ident">data_hash</span>);
-					}
-				} <span class="kw">else</span> {
-					<span class="comment">// If key `data_hash` doesn&#39;t exist in EVMLinkVoting</span>
-					<span class="op">&lt;</span><span class="ident">EVMLinkVoting</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="kw-2">&amp;</span><span class="ident">data_hash</span>, <span class="number">1</span>);
-					<span class="kw">return</span> <span class="prelude-val">Ok</span>(());
-				}
-			}
-
-			<span class="comment">// writing here at end (THE lines below only execute if the number of votes receieved by `data_hash` passes the `threshold`)</span>
-
-			<span class="kw">let</span> <span class="ident">amount</span>: <span class="ident">T::Balance</span> <span class="op">=</span> <span class="ident">amount</span>.<span class="ident">saturated_into</span>();
-			<span class="kw">let</span> <span class="ident">current_block_number</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::block_number</span>();
-
-			<span class="kw">if</span> <span class="ident">data</span>.<span class="ident">lock</span> {
-				<span class="comment">// If FRAG tokens were locked on Ethereum</span>
-				<span class="comment">// ! TODO TEST</span>
-				<span class="kw">let</span> <span class="ident">linked</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">sender</span>.<span class="ident">clone</span>()); <span class="comment">// Get the Clamor Account linked with the Ethereum Account `sender`</span>
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">linked</span>) <span class="op">=</span> <span class="ident">linked</span> {
-					<span class="comment">// If there is no linked account, shouldn&#39;t we throw an error? - 问Gio</span>
-					<span class="kw">let</span> <span class="ident">used</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">linked</span>.<span class="ident">clone</span>());
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">used</span>) <span class="op">=</span> <span class="ident">used</span> {
-						<span class="kw">if</span> <span class="ident">used</span> <span class="op">&gt;</span> <span class="ident">amount</span> {
-							<span class="comment">// Amount is the total amount of FRAG token locked on the Fragnova-owned Ethereum Smart Contract. So that means that if `amount` is smaller than `used`, there&#39;s a systemic/catastropic failure somewhere!</span>
-							<span class="comment">// this is bad, the user just reduced his balance so we just &quot;slash&quot; all the stakes</span>
-							<span class="comment">// reset usage counter</span>
-							<span class="op">&lt;</span><span class="ident">FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">linked</span>.<span class="ident">clone</span>()); <span class="comment">// Remove the Clamor Account `linked` from FragUsage</span>
-										<span class="comment">// force dereferencing of protos and more</span>
-							<span class="op">&lt;</span><span class="ident">PendingUnlinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::append</span>(<span class="ident">linked</span>.<span class="ident">clone</span>()); <span class="comment">// Unlink `linked` from `sender`</span>
-						}
-					}
-				}
-
-				<span class="comment">// also emit event</span>
-				<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Locked</span> { <span class="ident">eth_key</span>: <span class="ident">sender</span>, <span class="ident">balance</span>: <span class="ident">amount</span> }); <span class="comment">// 问Gio for clarification</span>
-			} <span class="kw">else</span> {
-				<span class="comment">// If we want to unlock all the FRAG tokens that were</span>
-				<span class="comment">// ! TODO TEST</span>
-
-				<span class="comment">// if we have any link to this account, then force unlinking</span>
-				<span class="kw">let</span> <span class="ident">linked</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">sender</span>.<span class="ident">clone</span>());
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">linked</span>) <span class="op">=</span> <span class="ident">linked</span> {
-					<span class="ident"><span class="self">Self</span>::unlink_account</span>(<span class="ident">linked</span>, <span class="ident">sender</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>; <span class="comment">// Unlink Ethereum Account `sender` and Clamor Account `linked`</span>
-				}
-
-				<span class="comment">// also emit event</span>
-				<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Unlocked</span> { <span class="ident">eth_key</span>: <span class="ident">sender</span>, <span class="ident">balance</span>: <span class="ident">amount</span> }); <span class="comment">// 问Gio for clarification</span>
-			}
-
-			<span class="comment">// write this later as unlink_account can fail</span>
-			<span class="op">&lt;</span><span class="ident">EthLockedFrag</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(
-				<span class="comment">// VERY IMPORTANT TO NOTE</span>
-				<span class="ident">sender</span>.<span class="ident">clone</span>(),
-				<span class="ident">EthLock</span> { <span class="ident">amount</span>, <span class="ident">block_number</span>: <span class="ident">current_block_number</span> },
-			);
-
-			<span class="comment">// also record link hash</span>
-			<span class="op">&lt;</span><span class="ident">EVMLinkVotingClosed</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">data_hash</span>, <span class="ident">current_block_number</span>); <span class="comment">// Declare that the `data_hash`&#39;s voting has ended</span>
+			<span class="comment">// also emit event
+			</span><span class="self">Self</span>::deposit_event(Event::Linked { sender, eth_key });
 
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// TODO</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sponsor_account</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">external_id</span>: <span class="ident">ExternalID</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="kw">let</span> <span class="ident">who</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+		<span class="comment">// TODO
+		</span><span class="doccomment">/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="kw">pub fn </span>unlink(origin: OriginFor&lt;T&gt;, account: H160) -&gt; DispatchResult {
+			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
+			<span class="self">Self</span>::unlink_account(sender, account)
+		}
 
-			<span class="macro">ensure!</span>(<span class="op">&lt;</span><span class="ident">ExternalAuthorities</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SystematicFailure</span>);
+		<span class="doccomment">/// Update &#39;data&#39;
+		///
+		/// TODO
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="kw">pub fn </span>internal_lock_update(
+			origin: OriginFor&lt;T&gt;,
+			data: EthLockUpdate&lt;T::Public&gt;,
+			_signature: T::Signature,
+		) -&gt; DispatchResult {
+			ensure_none(origin)<span class="question-mark">?</span>;
 
-			<span class="comment">// generate a unique, deterministic hash that we decode into our account</span>
-			<span class="kw">let</span> <span class="ident">hash</span> <span class="op">=</span> <span class="ident">blake2_256</span>(
-				<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragnova-sponsor-account&quot;</span>[..], <span class="kw-2">&amp;</span><span class="ident">who</span>.<span class="ident">encode</span>(), <span class="kw-2">&amp;</span><span class="ident">external_id</span>.<span class="ident">encode</span>()].<span class="ident">concat</span>(),
-			);
-			<span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span>
-				<span class="ident">T::AccountId::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">hash</span>[..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::SystematicFailure</span>)<span class="question-mark">?</span>;
+			<span class="macro">log::debug!</span>(<span class="string">&quot;Lock update: {:?}&quot;</span>, data);
+
+			<span class="kw">let </span>data_tuple =
+				(data.amount, data.sender, data.signature.clone(), data.lock, data.block_number);
+			<span class="kw">let </span>data_hash: H256 = data_tuple.using_encoded(blake2_256).into();
 
 			<span class="macro">ensure!</span>(
-				<span class="op">!</span><span class="ident">pallet_proxy::Proxies</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>),
-				<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountAlreadyExists</span>
+				!&lt;EVMLinkVotingClosed&lt;T&gt;&gt;::contains_key(data_hash), <span class="comment">// Make sure `data_hash` isn&#39;t in `EVMLinkVotingClosed`
+				</span>Error::&lt;T&gt;::LinkAlreadyProcessed
 			);
 
-			<span class="comment">// use the same logic of proxy anonymous</span>
-			<span class="kw">let</span> <span class="ident">proxy_def</span> <span class="op">=</span> <span class="ident">pallet_proxy::ProxyDefinition</span> {
-				<span class="ident">delegate</span>: <span class="ident">who</span>.<span class="ident">clone</span>(),
-				<span class="ident">proxy_type</span>: <span class="ident">T::ProxyType::default</span>(),
-				<span class="ident">delay</span>: <span class="ident">T::BlockNumber::default</span>(),
+			<span class="comment">// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+			</span><span class="kw">let </span><span class="kw-2">mut </span>message = <span class="kw">if </span>data.lock { <span class="string">b&quot;FragLock&quot;</span>.to_vec() } <span class="kw">else </span>{ <span class="string">b&quot;FragUnlock&quot;</span>.to_vec() }; <span class="comment">// Add b&quot;FragLock&quot; or b&quot;FragUnlock&quot; to message
+			</span>message.extend_from_slice(<span class="kw-2">&amp;</span>data.sender.<span class="number">0</span>[..]); <span class="comment">// Add data.sender.0 (&quot;msg.sender&quot; in Solidity) to message
+			</span>message.extend_from_slice(<span class="kw-2">&amp;</span>T::EthChainId::get().to_be_bytes()); <span class="comment">// Add EthChainId (&quot;block.chainid&quot; in Solidity) to message
+			</span><span class="kw">let </span>amount: [u8; <span class="number">32</span>] = data.amount.into();
+			message.extend_from_slice(<span class="kw-2">&amp;</span>amount[..]); <span class="comment">// Add amount to message
+			</span><span class="kw">let </span>message_hash = keccak_256(<span class="kw-2">&amp;</span>message); <span class="comment">// This should be
+
+			</span><span class="kw">let </span>message = [<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span>message_hash[..]].concat();
+			<span class="kw">let </span>message_hash = keccak_256(<span class="kw-2">&amp;</span>message);
+
+			<span class="kw">let </span>signature = data.signature;
+			<span class="kw">let </span>sender = data.sender;
+
+			<span class="comment">// We check if the `message_hash` and **the signature in the emitted event `Lock` or `Unlock`**
+			// **allow us** to **recover the Ethereum sender account address** that was in the **same aforementioned emitted event `Lock` or `Unlock`**
+			</span><span class="kw">let </span>pub_key = Crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>signature.<span class="number">0</span>, <span class="kw-2">&amp;</span>message_hash)
+				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::VerificationFailed)<span class="question-mark">?</span>;
+			<span class="kw">let </span>pub_key = keccak_256(<span class="kw-2">&amp;</span>pub_key[..]);
+			<span class="kw">let </span>pub_key = <span class="kw-2">&amp;</span>pub_key[<span class="number">12</span>..];
+			<span class="macro">ensure!</span>(pub_key == sender.<span class="number">0</span>, Error::&lt;T&gt;::VerificationFailed);
+
+			<span class="kw">let </span>amount: u128 = data.amount.try_into().map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
+
+			<span class="kw">if </span>!data.lock {
+				<span class="macro">ensure!</span>(amount == <span class="number">0</span>, Error::&lt;T&gt;::SystematicFailure);
+			} <span class="kw">else </span>{
+				<span class="macro">ensure!</span>(amount &gt; <span class="number">0</span>, Error::&lt;T&gt;::SystematicFailure);
+			}
+
+			<span class="comment">// verifications ended, let&#39;s proceed with voting count and writing
+
+			</span><span class="kw">let </span>threshold = T::Threshold::get();
+			<span class="kw">if </span>threshold &gt; <span class="number">1 </span>{
+				<span class="comment">// 问Gio
+				</span><span class="kw">let </span>current_votes = &lt;EVMLinkVoting&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>data_hash);
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(current_votes) = current_votes {
+					<span class="comment">// Number of votes for the key `data_hash` in EVMLinkVoting
+					</span><span class="kw">if </span>current_votes + <span class="number">1u64 </span>&lt; threshold {
+						<span class="comment">// Current Votes has not passed the threshold
+						</span>&lt;EVMLinkVoting&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>data_hash, current_votes + <span class="number">1</span>);
+						<span class="kw">return </span><span class="prelude-val">Ok</span>(());
+					} <span class="kw">else </span>{
+						<span class="comment">// Current votes passes the threshold, let&#39;s remove EVMLinkVoting perque perque non! (问Gio)
+						// we are good to go, but let&#39;s remove the record
+						</span>&lt;EVMLinkVoting&lt;T&gt;&gt;::remove(<span class="kw-2">&amp;</span>data_hash);
+					}
+				} <span class="kw">else </span>{
+					<span class="comment">// If key `data_hash` doesn&#39;t exist in EVMLinkVoting
+					</span>&lt;EVMLinkVoting&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>data_hash, <span class="number">1</span>);
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(());
+				}
+			}
+
+			<span class="comment">// writing here at end (THE lines below only execute if the number of votes receieved by `data_hash` passes the `threshold`)
+
+			</span><span class="kw">let </span>amount: T::Balance = amount.saturated_into();
+			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
+
+			<span class="kw">if </span>data.lock {
+				<span class="comment">// If FRAG tokens were locked on Ethereum
+				// ! TODO TEST
+				</span><span class="kw">let </span>linked = &lt;EVMLinksReverse&lt;T&gt;&gt;::get(sender.clone()); <span class="comment">// Get the Clamor Account linked with the Ethereum Account `sender`
+				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(linked) = linked {
+					<span class="comment">// If there is no linked account, shouldn&#39;t we throw an error? - 问Gio
+					</span><span class="kw">let </span>used = &lt;FragUsage&lt;T&gt;&gt;::get(linked.clone());
+					<span class="kw">if let </span><span class="prelude-val">Some</span>(used) = used {
+						<span class="kw">if </span>used &gt; amount {
+							<span class="comment">// Amount is the total amount of FRAG token locked on the Fragnova-owned Ethereum Smart Contract. So that means that if `amount` is smaller than `used`, there&#39;s a systemic/catastropic failure somewhere!
+							// this is bad, the user just reduced his balance so we just &quot;slash&quot; all the stakes
+							// reset usage counter
+							</span>&lt;FragUsage&lt;T&gt;&gt;::remove(linked.clone()); <span class="comment">// Remove the Clamor Account `linked` from FragUsage
+										// force dereferencing of protos and more
+							</span>&lt;PendingUnlinks&lt;T&gt;&gt;::append(linked.clone()); <span class="comment">// Unlink `linked` from `sender`
+						</span>}
+					}
+				}
+
+				<span class="comment">// also emit event
+				</span><span class="self">Self</span>::deposit_event(Event::Locked { eth_key: sender, balance: amount }); <span class="comment">// 问Gio for clarification
+			</span>} <span class="kw">else </span>{
+				<span class="comment">// If we want to unlock all the FRAG tokens that were
+				// ! TODO TEST
+
+				// if we have any link to this account, then force unlinking
+				</span><span class="kw">let </span>linked = &lt;EVMLinksReverse&lt;T&gt;&gt;::get(sender.clone());
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(linked) = linked {
+					<span class="self">Self</span>::unlink_account(linked, sender.clone())<span class="question-mark">?</span>; <span class="comment">// Unlink Ethereum Account `sender` and Clamor Account `linked`
+				</span>}
+
+				<span class="comment">// also emit event
+				</span><span class="self">Self</span>::deposit_event(Event::Unlocked { eth_key: sender, balance: amount }); <span class="comment">// 问Gio for clarification
+			</span>}
+
+			<span class="comment">// write this later as unlink_account can fail
+			</span>&lt;EthLockedFrag&lt;T&gt;&gt;::insert(
+				<span class="comment">// VERY IMPORTANT TO NOTE
+				</span>sender.clone(),
+				EthLock { amount, block_number: current_block_number },
+			);
+
+			<span class="comment">// also record link hash
+			</span>&lt;EVMLinkVotingClosed&lt;T&gt;&gt;::insert(data_hash, current_block_number); <span class="comment">// Declare that the `data_hash`&#39;s voting has ended
+
+			</span><span class="prelude-val">Ok</span>(())
+		}
+
+		<span class="doccomment">/// TODO
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="kw">pub fn </span>sponsor_account(origin: OriginFor&lt;T&gt;, external_id: ExternalID) -&gt; DispatchResult {
+			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
+
+			<span class="macro">ensure!</span>(&lt;ExternalAuthorities&lt;T&gt;&gt;::get().contains(<span class="kw-2">&amp;</span>who), Error::&lt;T&gt;::SystematicFailure);
+
+			<span class="comment">// generate a unique, deterministic hash that we decode into our account
+			</span><span class="kw">let </span>hash = blake2_256(
+				<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragnova-sponsor-account&quot;</span>[..], <span class="kw-2">&amp;</span>who.encode(), <span class="kw-2">&amp;</span>external_id.encode()].concat(),
+			);
+			<span class="kw">let </span>account =
+				T::AccountId::decode(<span class="kw-2">&amp;mut &amp;</span>hash[..]).map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
+
+			<span class="macro">ensure!</span>(
+				!pallet_proxy::Proxies::&lt;T&gt;::contains_key(<span class="kw-2">&amp;</span>account),
+				Error::&lt;T&gt;::AccountAlreadyExists
+			);
+
+			<span class="comment">// use the same logic of proxy anonymous
+			</span><span class="kw">let </span>proxy_def = pallet_proxy::ProxyDefinition {
+				delegate: who.clone(),
+				proxy_type: T::ProxyType::default(),
+				delay: T::BlockNumber::default(),
 			};
-			<span class="kw">let</span> <span class="ident">bounded_proxies</span>: <span class="ident">BoundedVec</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="ident">T::MaxProxies</span><span class="op">&gt;</span> <span class="op">=</span>
-				<span class="macro">vec!</span>[<span class="ident">proxy_def</span>].<span class="ident">try_into</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::TooManyProxies</span>)<span class="question-mark">?</span>;
+			<span class="kw">let </span>bounded_proxies: BoundedVec&lt;<span class="kw">_</span>, T::MaxProxies&gt; =
+				<span class="macro">vec!</span>[proxy_def].try_into().map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::TooManyProxies)<span class="question-mark">?</span>;
 
-			<span class="comment">// ! Writing state</span>
+			<span class="comment">// ! Writing state
 
-			<span class="kw">let</span> <span class="ident">deposit</span> <span class="op">=</span> <span class="ident">T::ProxyDepositBase::get</span>() <span class="op">+</span> <span class="ident">T::ProxyDepositFactor::get</span>();
-			<span class="ident">T::Currency::reserve</span>(<span class="kw-2">&amp;</span><span class="ident">who</span>, <span class="ident">deposit</span>)<span class="question-mark">?</span>;
+			</span><span class="kw">let </span>deposit = T::ProxyDepositBase::get() + T::ProxyDepositFactor::get();
+			T::Currency::reserve(<span class="kw-2">&amp;</span>who, deposit)<span class="question-mark">?</span>;
 
-			<span class="ident">pallet_proxy::Proxies</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>, (<span class="ident">bounded_proxies</span>, <span class="ident">deposit</span>));
+			pallet_proxy::Proxies::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>account, (bounded_proxies, deposit));
 
-			<span class="op">&lt;</span><span class="ident">ExternalID2Account</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::insert</span>(
-				<span class="ident">external_id</span>.<span class="ident">clone</span>(),
-				<span class="ident">AccountInfo</span> {
-					<span class="ident">account_id</span>: <span class="ident">account</span>.<span class="ident">clone</span>(),
-					<span class="ident">created_at</span>: <span class="op">&lt;</span><span class="ident">pallet_timestamp::Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(),
+			&lt;ExternalID2Account&lt;T&gt;&gt;::insert(
+				external_id.clone(),
+				AccountInfo {
+					account_id: account.clone(),
+					created_at: &lt;pallet_timestamp::Pallet&lt;T&gt;&gt;::get(),
 				},
 			);
 
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::SponsoredAccount</span> {
-				<span class="ident">sponsor</span>: <span class="ident">who</span>,
-				<span class="ident">sponsored</span>: <span class="ident">account</span>,
-				<span class="ident">external_id</span>,
+			<span class="self">Self</span>::deposit_event(Event::SponsoredAccount {
+				sponsor: who,
+				sponsored: account,
+				external_id,
 			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Add a sponsor account to the list of sponsors able to sponsor external accounts.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">add_sponsor</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">account</span>: <span class="ident">T::AccountId</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+		<span class="doccomment">/// Add a sponsor account to the list of sponsors able to sponsor external accounts.
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="kw">pub fn </span>add_sponsor(origin: OriginFor&lt;T&gt;, account: T::AccountId) -&gt; DispatchResult {
+			ensure_root(origin)<span class="question-mark">?</span>;
 
-			<span class="macro">log::debug!</span>(<span class="string">&quot;New key: {:?}&quot;</span>, <span class="ident">account</span>);
+			<span class="macro">log::debug!</span>(<span class="string">&quot;New key: {:?}&quot;</span>, account);
 
-			<span class="op">&lt;</span><span class="ident">ExternalAuthorities</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="op">|</span><span class="ident">authorities</span><span class="op">|</span> {
-				<span class="ident">authorities</span>.<span class="ident">insert</span>(<span class="ident">account</span>);
+			&lt;ExternalAuthorities&lt;T&gt;&gt;::mutate(|authorities| {
+				authorities.insert(account);
 			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.</span>
-		<span class="attribute">#[<span class="ident">pallet::weight</span>(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">remove_sponsor</span>(<span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">account</span>: <span class="ident">T::AccountId</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+		<span class="doccomment">/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="kw">pub fn </span>remove_sponsor(origin: OriginFor&lt;T&gt;, account: T::AccountId) -&gt; DispatchResult {
+			ensure_root(origin)<span class="question-mark">?</span>;
 
-			<span class="macro">log::debug!</span>(<span class="string">&quot;Removed key: {:?}&quot;</span>, <span class="ident">account</span>);
+			<span class="macro">log::debug!</span>(<span class="string">&quot;Removed key: {:?}&quot;</span>, account);
 
-			<span class="op">&lt;</span><span class="ident">ExternalAuthorities</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="op">|</span><span class="ident">authorities</span><span class="op">|</span> {
-				<span class="ident">authorities</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>);
+			&lt;ExternalAuthorities&lt;T&gt;&gt;::mutate(|authorities| {
+				authorities.remove(<span class="kw-2">&amp;</span>account);
 			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
 	}
 
-	<span class="attribute">#[<span class="ident">pallet::hooks</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Hooks</span><span class="op">&lt;</span><span class="ident">BlockNumberFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="doccomment">/// This function is being called after every block import (when fully synced).</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// Implementing this function on a module allows you to perform long-running tasks</span>
-		<span class="doccomment">/// that make (by default) validators generate transactions that feed results</span>
-		<span class="doccomment">/// of those long-running computations back on chain.</span>
-		<span class="kw">fn</span> <span class="ident">offchain_worker</span>(<span class="ident">n</span>: <span class="ident">T::BlockNumber</span>) {
-			<span class="ident"><span class="self">Self</span>::sync_partner_contracts</span>(<span class="ident">n</span>);
+	<span class="attribute">#[pallet::hooks]</span>
+	<span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+		<span class="doccomment">/// This function is being called after every block import (when fully synced).
+		///
+		/// Implementing this function on a module allows you to perform long-running tasks
+		/// that make (by default) validators generate transactions that feed results
+		/// of those long-running computations back on chain.
+		</span><span class="kw">fn </span>offchain_worker(n: T::BlockNumber) {
+			<span class="self">Self</span>::sync_partner_contracts(n);
 		}
 	}
 
-	<span class="doccomment">/// By default, all unsigned transactions are rejected in Substrate.</span>
-	<span class="doccomment">/// To enable Substrate to accept certain unsigned transactions, you must implement the ValidateUnsigned trait for the pallet.</span>
-	<span class="attribute">#[<span class="ident">pallet::validate_unsigned</span>]</span>
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">ValidateUnsigned</span> <span class="kw">for</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+	<span class="doccomment">/// By default, all unsigned transactions are rejected in Substrate.
+	/// To enable Substrate to accept certain unsigned transactions, you must implement the ValidateUnsigned trait for the pallet.
+	</span><span class="attribute">#[pallet::validate_unsigned]</span>
+	<span class="kw">impl</span>&lt;T: Config&gt; ValidateUnsigned <span class="kw">for </span>Pallet&lt;T&gt; {
+		<span class="kw">type </span>Call = Call&lt;T&gt;;
 
-		<span class="doccomment">/// For the call `Call:internal_lock_update` which is an unsigned transaction with a signed payload (see: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/),</span>
-		<span class="doccomment">/// verify that when we put the signature parameter (written as `signature`) and the payload parameter (written as `data`) of the aforementioned call into an &quot;Ethereum Verify function&quot;,</span>
-		<span class="doccomment">/// it returns the public key that is in the payload parameter.</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// Furthermore, also verify that `data.public` is in `FragKeys` - 问Gio</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// If both the aforementioned, allow the call to execute. Otherwise, do not allow it to.</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// ## Footnote:</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// Validate unsigned call to this module.</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// By default unsigned transactions are disallowed, but implementing the validator</span>
-		<span class="doccomment">/// here we make sure that some particular calls (the ones produced by offchain worker)</span>
-		<span class="doccomment">/// are being whitelisted and marked as valid.</span>
-		<span class="kw">fn</span> <span class="ident">validate_unsigned</span>(<span class="ident">source</span>: <span class="ident">TransactionSource</span>, <span class="ident">call</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::Call</span>) -&gt; <span class="ident">TransactionValidity</span> {
-			<span class="comment">// Firstly let&#39;s check that we call the right function.</span>
-			<span class="kw">if</span> <span class="kw">let</span> <span class="ident">Call::internal_lock_update</span> { <span class="kw-2">ref</span> <span class="ident">data</span>, <span class="kw-2">ref</span> <span class="ident">signature</span> } <span class="op">=</span> <span class="ident">call</span> {
-				<span class="comment">// ensure it&#39;s a local transaction sent by an offchain worker</span>
-				<span class="kw">match</span> <span class="ident">source</span> {
-					<span class="ident">TransactionSource::InBlock</span> <span class="op">|</span> <span class="ident">TransactionSource::Local</span> =&gt; {},
-					<span class="kw">_</span> =&gt; {
+		<span class="doccomment">/// For the call `Call:internal_lock_update` which is an unsigned transaction with a signed payload (see: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/),
+		/// verify that when we put the signature parameter (written as `signature`) and the payload parameter (written as `data`) of the aforementioned call into an &quot;Ethereum Verify function&quot;,
+		/// it returns the public key that is in the payload parameter.
+		///
+		/// Furthermore, also verify that `data.public` is in `FragKeys` - 问Gio
+		///
+		/// If both the aforementioned, allow the call to execute. Otherwise, do not allow it to.
+		///
+		/// ## Footnote:
+		///
+		/// Validate unsigned call to this module.
+		///
+		/// By default unsigned transactions are disallowed, but implementing the validator
+		/// here we make sure that some particular calls (the ones produced by offchain worker)
+		/// are being whitelisted and marked as valid.
+		</span><span class="kw">fn </span>validate_unsigned(source: TransactionSource, call: <span class="kw-2">&amp;</span><span class="self">Self</span>::Call) -&gt; TransactionValidity {
+			<span class="comment">// Firstly let&#39;s check that we call the right function.
+			</span><span class="kw">if let </span>Call::internal_lock_update { <span class="kw-2">ref </span>data, <span class="kw-2">ref </span>signature } = call {
+				<span class="comment">// ensure it&#39;s a local transaction sent by an offchain worker
+				</span><span class="kw">match </span>source {
+					TransactionSource::InBlock | TransactionSource::Local =&gt; {},
+					<span class="kw">_ </span>=&gt; {
 						<span class="macro">log::debug!</span>(<span class="string">&quot;Not a local transaction&quot;</span>);
-						<span class="comment">// Return TransactionValidityError˘ if the call is not allowed.</span>
-						<span class="kw">return</span> <span class="ident">InvalidTransaction::Call</span>.<span class="ident">into</span>();
+						<span class="comment">// Return TransactionValidityError˘ if the call is not allowed.
+						</span><span class="kw">return </span>InvalidTransaction::Call.into();
 					},
 				}
 
-				<span class="comment">// check public is valid</span>
-				<span class="kw">let</span> <span class="ident">valid_keys</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">FragKeys</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>();
-				<span class="macro">log::debug!</span>(<span class="string">&quot;Valid keys: {:?}&quot;</span>, <span class="ident">valid_keys</span>);
-				<span class="comment">// I&#39;m sure there is a way to do this without serialization but I can&#39;t spend so</span>
-				<span class="comment">// much time fighting with rust</span>
-				<span class="kw">let</span> <span class="ident">pub_key</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">public</span>.<span class="ident">encode</span>();
-				<span class="kw">let</span> <span class="ident">pub_key</span>: <span class="ident">ed25519::Public</span> <span class="op">=</span> {
-					<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">MultiSigner::Ed25519</span>(<span class="ident">pub_key</span>)) <span class="op">=</span>
-						<span class="op">&lt;</span><span class="ident">MultiSigner</span><span class="op">&gt;</span><span class="ident">::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">pub_key</span>[..])
+				<span class="comment">// check public is valid
+				</span><span class="kw">let </span>valid_keys = &lt;FragKeys&lt;T&gt;&gt;::get();
+				<span class="macro">log::debug!</span>(<span class="string">&quot;Valid keys: {:?}&quot;</span>, valid_keys);
+				<span class="comment">// I&#39;m sure there is a way to do this without serialization but I can&#39;t spend so
+				// much time fighting with rust
+				</span><span class="kw">let </span>pub_key = data.public.encode();
+				<span class="kw">let </span>pub_key: ed25519::Public = {
+					<span class="kw">if let </span><span class="prelude-val">Ok</span>(MultiSigner::Ed25519(pub_key)) =
+						&lt;MultiSigner&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>pub_key[..])
 					{
-						<span class="ident">pub_key</span>
-					} <span class="kw">else</span> {
-						<span class="comment">// Return TransactionValidityError if the call is not allowed.</span>
-						<span class="kw">return</span> <span class="ident">InvalidTransaction::BadSigner</span>.<span class="ident">into</span>(); <span class="comment">// // 问Gio</span>
-					}
+						pub_key
+					} <span class="kw">else </span>{
+						<span class="comment">// Return TransactionValidityError if the call is not allowed.
+						</span><span class="kw">return </span>InvalidTransaction::BadSigner.into(); <span class="comment">// // 问Gio
+					</span>}
 				};
-				<span class="macro">log::debug!</span>(<span class="string">&quot;Public key: {:?}&quot;</span>, <span class="ident">pub_key</span>);
-				<span class="kw">if</span> <span class="op">!</span><span class="ident">valid_keys</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">pub_key</span>) {
-					<span class="comment">// return TransactionValidityError if the call is not allowed.</span>
-					<span class="kw">return</span> <span class="ident">InvalidTransaction::BadSigner</span>.<span class="ident">into</span>();
+				<span class="macro">log::debug!</span>(<span class="string">&quot;Public key: {:?}&quot;</span>, pub_key);
+				<span class="kw">if </span>!valid_keys.contains(<span class="kw-2">&amp;</span>pub_key) {
+					<span class="comment">// return TransactionValidityError if the call is not allowed.
+					</span><span class="kw">return </span>InvalidTransaction::BadSigner.into();
 				}
 
-				<span class="comment">// most expensive bit last</span>
-				<span class="comment">// Check whether a provided signature matches the public key used to sign the payload</span>
-				<span class="kw">let</span> <span class="ident">signature_valid</span> <span class="op">=</span>
-					<span class="ident">SignedPayload</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::verify</span>::<span class="op">&lt;</span><span class="ident">T::AuthorityId</span><span class="op">&gt;</span>(<span class="ident">data</span>, <span class="ident">signature</span>.<span class="ident">clone</span>()); <span class="comment">// Verifying a Data with a Signature Returns a Public Key (if valid)</span>
-																	   <span class="comment">// The provided signature does not match the public key used to sign the payload</span>
-				<span class="kw">if</span> <span class="op">!</span><span class="ident">signature_valid</span> {
-					<span class="comment">// Return TransactionValidityError if the call is not allowed.</span>
-					<span class="kw">return</span> <span class="ident">InvalidTransaction::BadProof</span>.<span class="ident">into</span>();
+				<span class="comment">// most expensive bit last
+				// Check whether a provided signature matches the public key used to sign the payload
+				</span><span class="kw">let </span>signature_valid =
+					SignedPayload::&lt;T&gt;::verify::&lt;T::AuthorityId&gt;(data, signature.clone()); <span class="comment">// Verifying a Data with a Signature Returns a Public Key (if valid)
+																	   // The provided signature does not match the public key used to sign the payload
+				</span><span class="kw">if </span>!signature_valid {
+					<span class="comment">// Return TransactionValidityError if the call is not allowed.
+					</span><span class="kw">return </span>InvalidTransaction::BadProof.into();
 				}
 
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Sending frag lock update extrinsic&quot;</span>);
-				<span class="comment">// Return ValidTransaction if the call is allowed</span>
-				<span class="ident">ValidTransaction::with_tag_prefix</span>(<span class="string">&quot;FragLockUpdate&quot;</span>) <span class="comment">// The tag prefix prevents other nodes to do the same transaction that have the same tag prefixes</span>
-					.<span class="ident">and_provides</span>((
-						<span class="ident">data</span>.<span class="ident">public</span>.<span class="ident">clone</span>(),
-						<span class="ident">data</span>.<span class="ident">amount</span>,
-						<span class="ident">data</span>.<span class="ident">sender</span>,
-						<span class="ident">data</span>.<span class="ident">signature</span>.<span class="ident">clone</span>(),
-						<span class="ident">data</span>.<span class="ident">lock</span>,
-						<span class="ident">data</span>.<span class="ident">block_number</span>,
-						<span class="ident">pub_key</span>,
+				<span class="comment">// Return ValidTransaction if the call is allowed
+				</span>ValidTransaction::with_tag_prefix(<span class="string">&quot;FragLockUpdate&quot;</span>) <span class="comment">// The tag prefix prevents other nodes to do the same transaction that have the same tag prefixes
+					</span>.and_provides((
+						data.public.clone(),
+						data.amount,
+						data.sender,
+						data.signature.clone(),
+						data.lock,
+						data.block_number,
+						pub_key,
 					))
-					.<span class="ident">propagate</span>(<span class="bool-val">false</span>)
-					.<span class="ident">build</span>()
-			} <span class="kw">else</span> {
-				<span class="comment">// Return TransactionValidityError if the call is not allowed.</span>
-				<span class="ident">InvalidTransaction::Call</span>.<span class="ident">into</span>()
+					.propagate(<span class="bool-val">false</span>)
+					.build()
+			} <span class="kw">else </span>{
+				<span class="comment">// Return TransactionValidityError if the call is not allowed.
+				</span>InvalidTransaction::Call.into()
 			}
 		}
 	}
 
-	<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-		<span class="kw">fn</span> <span class="ident">initialize_keys</span>(<span class="ident">keys</span>: <span class="kw-2">&amp;</span>[<span class="ident">ed25519::Public</span>]) {
-			<span class="kw">if</span> <span class="op">!</span><span class="ident">keys</span>.<span class="ident">is_empty</span>() {
-				<span class="macro">assert!</span>(<span class="op">&lt;</span><span class="ident">FragKeys</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">is_empty</span>(), <span class="string">&quot;FragKeys are already initialized!&quot;</span>);
-				<span class="kw">for</span> <span class="ident">key</span> <span class="kw">in</span> <span class="ident">keys</span> {
-					<span class="op">&lt;</span><span class="ident">FragKeys</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::mutate</span>(<span class="op">|</span><span class="ident">keys</span><span class="op">|</span> {
-						<span class="ident">keys</span>.<span class="ident">insert</span>(<span class="kw-2">*</span><span class="ident">key</span>);
+	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+		<span class="kw">fn </span>initialize_keys(keys: <span class="kw-2">&amp;</span>[ed25519::Public]) {
+			<span class="kw">if </span>!keys.is_empty() {
+				<span class="macro">assert!</span>(&lt;FragKeys&lt;T&gt;&gt;::get().is_empty(), <span class="string">&quot;FragKeys are already initialized!&quot;</span>);
+				<span class="kw">for </span>key <span class="kw">in </span>keys {
+					&lt;FragKeys&lt;T&gt;&gt;::mutate(|keys| {
+						keys.insert(<span class="kw-2">*</span>key);
 					});
 				}
 			}
 		}
 
-		<span class="doccomment">/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.</span>
-		<span class="doccomment">/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain</span>
-		<span class="doccomment">/// (NOTE: the signed payload consists of a payload and a signature.</span>
-		<span class="doccomment">/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct</span>
-		<span class="doccomment">/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::&lt;T, T::AuthorityId&gt;::any_account()`) (问Gio)</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// NOTE: `Signer::&lt;T, T::AuthorityId&gt;::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)</span>
-		<span class="kw">fn</span> <span class="ident">sync_partner_contract</span>(
-			<span class="ident">_block_number</span>: <span class="ident">T::BlockNumber</span>,
-			<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
-			<span class="ident">geth_uri</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
-		) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-			<span class="kw">let</span> <span class="ident">req</span> <span class="op">=</span> <span class="macro">json!</span>({
+		<span class="doccomment">/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
+		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
+		///
+		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
+		/// (NOTE: the signed payload consists of a payload and a signature.
+		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
+		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::&lt;T, T::AuthorityId&gt;::any_account()`) (问Gio)
+		///
+		/// NOTE: `Signer::&lt;T, T::AuthorityId&gt;::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
+		</span><span class="kw">fn </span>sync_partner_contract(
+			_block_number: T::BlockNumber,
+			contract: <span class="kw-2">&amp;</span>str,
+			geth_uri: <span class="kw-2">&amp;</span>str,
+		) -&gt; <span class="prelude-ty">Result</span>&lt;(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
+			<span class="kw">let </span>req = <span class="macro">json!</span>({
 				<span class="string">&quot;jsonrpc&quot;</span>: <span class="string">&quot;2.0&quot;</span>,
 				<span class="string">&quot;method&quot;</span>: <span class="string">&quot;eth_blockNumber&quot;</span>,
-				<span class="string">&quot;id&quot;</span>: <span class="number">1u64</span>
-			});
+				<span class="string">&quot;id&quot;</span>: <span class="number">1u64
+			</span>});
 
-			<span class="kw">let</span> <span class="ident">req</span> <span class="op">=</span> <span class="ident">serde_json::to_string</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid request&quot;</span>)<span class="question-mark">?</span>;
-			<span class="macro">log::trace!</span>(<span class="string">&quot;Request: {}&quot;</span>, <span class="ident">req</span>);
+			<span class="kw">let </span>req = serde_json::to_string(<span class="kw-2">&amp;</span>req).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid request&quot;</span>)<span class="question-mark">?</span>;
+			<span class="macro">log::trace!</span>(<span class="string">&quot;Request: {}&quot;</span>, req);
 
-			<span class="kw">let</span> <span class="ident">response_body</span> <span class="op">=</span> <span class="ident">http_json_post</span>(<span class="ident">geth_uri</span>, <span class="ident">req</span>.<span class="ident">as_bytes</span>()); <span class="comment">// Get the latest block number of the Ethereum Blockchain</span>
-			<span class="kw">let</span> <span class="ident">response_body</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">response</span>) <span class="op">=</span> <span class="ident">response_body</span> {
-				<span class="ident">response</span>
-			} <span class="kw">else</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
+			<span class="kw">let </span>response_body = http_json_post(geth_uri, req.as_bytes()); <span class="comment">// Get the latest block number of the Ethereum Blockchain
+			</span><span class="kw">let </span>response_body = <span class="kw">if let </span><span class="prelude-val">Ok</span>(response) = response_body {
+				response
+			} <span class="kw">else </span>{
+				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
 			};
 
-			<span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">String::from_utf8</span>(<span class="ident">response_body</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
-			<span class="macro">log::trace!</span>(<span class="string">&quot;Response: {}&quot;</span>, <span class="ident">response</span>);
+			<span class="kw">let </span>response = String::from_utf8(response_body).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
+			<span class="macro">log::trace!</span>(<span class="string">&quot;Response: {}&quot;</span>, response);
 
-			<span class="kw">let</span> <span class="ident">v</span>: <span class="ident">Value</span> <span class="op">=</span>
-				<span class="ident">serde_json::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">response</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response - json parse&quot;</span>)<span class="question-mark">?</span>;
+			<span class="kw">let </span>v: Value =
+				serde_json::from_str(<span class="kw-2">&amp;</span>response).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - json parse&quot;</span>)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="ident">v</span>[<span class="string">&quot;result&quot;</span>].<span class="ident">as_str</span>().<span class="ident">ok_or</span>(<span class="string">&quot;Invalid response - no result&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// Get the latest block number of the Ethereum Blockchain</span>
-			<span class="kw">let</span> <span class="ident">current_block</span> <span class="op">=</span> <span class="ident">u64::from_str_radix</span>(<span class="kw-2">&amp;</span><span class="ident">current_block</span>[<span class="number">2</span>..], <span class="number">16</span>)
-				.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response - invalid block number&quot;</span>)<span class="question-mark">?</span>;
-			<span class="macro">log::trace!</span>(<span class="string">&quot;Current block: {}&quot;</span>, <span class="ident">current_block</span>);
+			<span class="kw">let </span>current_block = v[<span class="string">&quot;result&quot;</span>].as_str().ok_or(<span class="string">&quot;Invalid response - no result&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// Get the latest block number of the Ethereum Blockchain
+			</span><span class="kw">let </span>current_block = u64::from_str_radix(<span class="kw-2">&amp;</span>current_block[<span class="number">2</span>..], <span class="number">16</span>)
+				.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid block number&quot;</span>)<span class="question-mark">?</span>;
+			<span class="macro">log::trace!</span>(<span class="string">&quot;Current block: {}&quot;</span>, current_block);
 
-			<span class="kw">let</span> <span class="ident">last_block_ref</span> <span class="op">=</span> <span class="ident">StorageValueRef::persistent</span>(<span class="string">b&quot;frag_sync_last_block&quot;</span>); <span class="comment">// This key does not exist when the blockchain is first launched</span>
-			<span class="kw">let</span> <span class="ident">last_block</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">last_block_ref</span>.<span class="ident">get</span>().<span class="ident">unwrap_or_default</span>(); <span class="comment">// If `last_block` doesn&#39;t exist, set it to `Vec&lt;u8&gt;`</span>
-			<span class="kw">let</span> <span class="ident">last_block</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">last_block</span>) <span class="op">=</span> <span class="ident">last_block</span> {
-				<span class="comment">// Convert `last_block` from `Vec&lt;u8&gt;` to `String`</span>
-				<span class="ident">String::from_utf8</span>(<span class="ident">last_block</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid last block&quot;</span>)<span class="question-mark">?</span>
-			} <span class="kw">else</span> {
-				<span class="ident">String::from</span>(<span class="string">&quot;0x0&quot;</span>) <span class="comment">// If `last_block` is None, set it to `String::from(&quot;0x0&quot;)`</span>
-			};
+			<span class="kw">let </span>last_block_ref = StorageValueRef::persistent(<span class="string">b&quot;frag_sync_last_block&quot;</span>); <span class="comment">// This key does not exist when the blockchain is first launched
+			</span><span class="kw">let </span>last_block: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; = last_block_ref.get().unwrap_or_default(); <span class="comment">// If `last_block` doesn&#39;t exist, set it to `Vec&lt;u8&gt;`
+			</span><span class="kw">let </span>last_block = <span class="kw">if let </span><span class="prelude-val">Some</span>(last_block) = last_block {
+				<span class="comment">// Convert `last_block` from `Vec&lt;u8&gt;` to `String`
+				</span>String::from_utf8(last_block).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid last block&quot;</span>)<span class="question-mark">?
+			</span>} <span class="kw">else </span>{
+				String::from(<span class="string">&quot;0x0&quot;</span>) <span class="comment">// If `last_block` is None, set it to `String::from(&quot;0x0&quot;)`
+			</span>};
 
-			<span class="kw">let</span> <span class="ident">to_block</span> <span class="op">=</span> <span class="ident">current_block</span>.<span class="ident">saturating_sub</span>(<span class="ident">T::EthConfirmations::get</span>()); <span class="comment">// The `to_block` is the latest block that is considered final</span>
-			<span class="kw">let</span> <span class="ident">to_block</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, <span class="ident">to_block</span>);
+			<span class="kw">let </span>to_block = current_block.saturating_sub(T::EthConfirmations::get()); <span class="comment">// The `to_block` is the latest block that is considered final
+			</span><span class="kw">let </span>to_block = <span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, to_block);
 
-			<span class="comment">// This is basically a RPC query asking how much FRAG token was locked/unlocked by who all from block number `fromBlock` to block number `toBlock`</span>
-			<span class="kw">let</span> <span class="ident">req</span> <span class="op">=</span> <span class="macro">json!</span>({
+			<span class="comment">// This is basically a RPC query asking how much FRAG token was locked/unlocked by who all from block number `fromBlock` to block number `toBlock`
+			</span><span class="kw">let </span>req = <span class="macro">json!</span>({
 				<span class="string">&quot;jsonrpc&quot;</span>: <span class="string">&quot;2.0&quot;</span>,
-				<span class="string">&quot;method&quot;</span>: <span class="string">&quot;eth_getLogs&quot;</span>, <span class="comment">// i.e get the event logs of the smart contract (more info: https://docs.alchemy.com/alchemy/guides/eth_getlogs#what-are-logs)</span>
-				<span class="string">&quot;id&quot;</span>: <span class="string">&quot;0&quot;</span>,
+				<span class="string">&quot;method&quot;</span>: <span class="string">&quot;eth_getLogs&quot;</span>, <span class="comment">// i.e get the event logs of the smart contract (more info: https://docs.alchemy.com/alchemy/guides/eth_getlogs#what-are-logs)
+				</span><span class="string">&quot;id&quot;</span>: <span class="string">&quot;0&quot;</span>,
 				<span class="string">&quot;params&quot;</span>: [{
-					<span class="string">&quot;fromBlock&quot;</span>: <span class="ident">last_block</span>,
-					<span class="string">&quot;toBlock&quot;</span>: <span class="ident">to_block</span>, <span class="comment">// Give us the event logs that were emitted (if any) from the block number `last_block` to the block number `to_block`, inclusive</span>
-					<span class="string">&quot;address&quot;</span>: <span class="ident">contract</span>,
+					<span class="string">&quot;fromBlock&quot;</span>: last_block,
+					<span class="string">&quot;toBlock&quot;</span>: to_block, <span class="comment">// Give us the event logs that were emitted (if any) from the block number `last_block` to the block number `to_block`, inclusive
+					</span><span class="string">&quot;address&quot;</span>: contract,
 					<span class="string">&quot;topics&quot;</span>: [
-						<span class="comment">// [] to OR</span>
-						[<span class="ident">LOCK_EVENT</span>, <span class="ident">UNLOCK_EVENT</span>]
+						<span class="comment">// [] to OR
+						</span>[LOCK_EVENT, UNLOCK_EVENT]
 					],
 				}]
 			});
 
-			<span class="kw">let</span> <span class="ident">req</span> <span class="op">=</span> <span class="ident">serde_json::to_string</span>(<span class="kw-2">&amp;</span><span class="ident">req</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid request&quot;</span>)<span class="question-mark">?</span>;
-			<span class="macro">log::trace!</span>(<span class="string">&quot;Request: {}&quot;</span>, <span class="ident">req</span>);
+			<span class="kw">let </span>req = serde_json::to_string(<span class="kw-2">&amp;</span>req).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid request&quot;</span>)<span class="question-mark">?</span>;
+			<span class="macro">log::trace!</span>(<span class="string">&quot;Request: {}&quot;</span>, req);
 
-			<span class="kw">let</span> <span class="ident">response_body</span> <span class="op">=</span> <span class="ident">http_json_post</span>(<span class="ident">geth_uri</span>, <span class="ident">req</span>.<span class="ident">as_bytes</span>()); <span class="comment">// Make HTTP POST request with `req` to URL `get_uri`</span>
-			<span class="kw">let</span> <span class="ident">response_body</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">response</span>) <span class="op">=</span> <span class="ident">response_body</span> {
-				<span class="ident">response</span>
-			} <span class="kw">else</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
+			<span class="kw">let </span>response_body = http_json_post(geth_uri, req.as_bytes()); <span class="comment">// Make HTTP POST request with `req` to URL `get_uri`
+			</span><span class="kw">let </span>response_body = <span class="kw">if let </span><span class="prelude-val">Ok</span>(response) = response_body {
+				response
+			} <span class="kw">else </span>{
+				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
 			};
 
-			<span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">String::from_utf8</span>(<span class="ident">response_body</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
-			<span class="macro">log::trace!</span>(<span class="string">&quot;Response: {}&quot;</span>, <span class="ident">response</span>);
+			<span class="kw">let </span>response = String::from_utf8(response_body).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
+			<span class="macro">log::trace!</span>(<span class="string">&quot;Response: {}&quot;</span>, response);
 
-			<span class="kw">let</span> <span class="ident">v</span>: <span class="ident">Value</span> <span class="op">=</span>
-				<span class="ident">serde_json::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">response</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response - json parse&quot;</span>)<span class="question-mark">?</span>;
+			<span class="kw">let </span>v: Value =
+				serde_json::from_str(<span class="kw-2">&amp;</span>response).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - json parse&quot;</span>)<span class="question-mark">?</span>;
 
-			<span class="kw">let</span> <span class="ident">logs</span> <span class="op">=</span> <span class="ident">v</span>[<span class="string">&quot;result&quot;</span>].<span class="ident">as_array</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid response - no result&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `logs` is a list of event logs</span>
-			<span class="kw">for</span> <span class="ident">log</span> <span class="kw">in</span> <span class="ident">logs</span> {
-				<span class="comment">// `logs` is a list of event logs</span>
-				<span class="kw">let</span> <span class="ident">block_number</span> <span class="op">=</span>
-					<span class="ident">log</span>[<span class="string">&quot;blockNumber&quot;</span>].<span class="ident">as_str</span>().<span class="ident">ok_or</span>(<span class="string">&quot;Invalid response - no block number&quot;</span>)<span class="question-mark">?</span>;
-				<span class="kw">let</span> <span class="ident">block_number</span> <span class="op">=</span> <span class="ident">u64::from_str_radix</span>(<span class="kw-2">&amp;</span><span class="ident">block_number</span>[<span class="number">2</span>..], <span class="number">16</span>)
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response - invalid block number&quot;</span>)<span class="question-mark">?</span>;
-				<span class="kw">let</span> <span class="ident">topics</span> <span class="op">=</span>
-					<span class="ident">log</span>[<span class="string">&quot;topics&quot;</span>].<span class="ident">as_array</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid response - no topics&quot;</span>)<span class="question-mark">?</span>;
-				<span class="kw">let</span> <span class="ident">topic</span> <span class="op">=</span> <span class="ident">topics</span>[<span class="number">0</span>].<span class="ident">as_str</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid response - no topic&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// The topic can either be `LOCK_EVENT` or `UNLOCK_EVENT`</span>
-				<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">log</span>[<span class="string">&quot;data&quot;</span>].<span class="ident">as_str</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid response - no data&quot;</span>)<span class="question-mark">?</span>;
-				<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span>
-					<span class="ident">hex::decode</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>[<span class="number">2</span>..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response - invalid data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// Convert the hexadecimal `data` from hexadecimal to binary (i.e raw bits)</span>
-				<span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">ethabi::decode</span>(<span class="kw-2">&amp;</span>[<span class="ident">ParamType::Bytes</span>, <span class="ident">ParamType::Uint</span>(<span class="number">256</span>)], <span class="kw-2">&amp;</span><span class="ident">data</span>) <span class="comment">// First parameter is a signature and the second paramteter is the amount of FRAG token that was locked/unlocked (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)</span>
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response - invalid eth data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `data` is the decoded list of the params of the event log `topic`</span>
-				<span class="kw">let</span> <span class="ident">locked</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">topic</span> {
-					<span class="comment">// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`</span>
-					<span class="ident">LOCK_EVENT</span> =&gt; <span class="bool-val">true</span>,
-					<span class="ident">UNLOCK_EVENT</span> =&gt; <span class="bool-val">false</span>,
-					<span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Invalid topic&quot;</span>),
+			<span class="kw">let </span>logs = v[<span class="string">&quot;result&quot;</span>].as_array().ok_or_else(|| <span class="string">&quot;Invalid response - no result&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `logs` is a list of event logs
+			</span><span class="kw">for </span>log <span class="kw">in </span>logs {
+				<span class="comment">// `logs` is a list of event logs
+				</span><span class="kw">let </span>block_number =
+					log[<span class="string">&quot;blockNumber&quot;</span>].as_str().ok_or(<span class="string">&quot;Invalid response - no block number&quot;</span>)<span class="question-mark">?</span>;
+				<span class="kw">let </span>block_number = u64::from_str_radix(<span class="kw-2">&amp;</span>block_number[<span class="number">2</span>..], <span class="number">16</span>)
+					.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid block number&quot;</span>)<span class="question-mark">?</span>;
+				<span class="kw">let </span>topics =
+					log[<span class="string">&quot;topics&quot;</span>].as_array().ok_or_else(|| <span class="string">&quot;Invalid response - no topics&quot;</span>)<span class="question-mark">?</span>;
+				<span class="kw">let </span>topic = topics[<span class="number">0</span>].as_str().ok_or_else(|| <span class="string">&quot;Invalid response - no topic&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// The topic can either be `LOCK_EVENT` or `UNLOCK_EVENT`
+				</span><span class="kw">let </span>data = log[<span class="string">&quot;data&quot;</span>].as_str().ok_or_else(|| <span class="string">&quot;Invalid response - no data&quot;</span>)<span class="question-mark">?</span>;
+				<span class="kw">let </span>data =
+					hex::decode(<span class="kw-2">&amp;</span>data[<span class="number">2</span>..]).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// Convert the hexadecimal `data` from hexadecimal to binary (i.e raw bits)
+				</span><span class="kw">let </span>data = ethabi::decode(<span class="kw-2">&amp;</span>[ParamType::Bytes, ParamType::Uint(<span class="number">256</span>)], <span class="kw-2">&amp;</span>data) <span class="comment">// First parameter is a signature and the second paramteter is the amount of FRAG token that was locked/unlocked (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+					</span>.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid eth data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `data` is the decoded list of the params of the event log `topic`
+				</span><span class="kw">let </span>locked = <span class="kw">match </span>topic {
+					<span class="comment">// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
+					</span>LOCK_EVENT =&gt; <span class="bool-val">true</span>,
+					UNLOCK_EVENT =&gt; <span class="bool-val">false</span>,
+					<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Invalid topic&quot;</span>),
 				};
 
-				<span class="comment">// Since the first parameter of the Lock or Unlock event is declared as indexed, they are treated like additional topics (https://medium.com/mycrypto/understanding-event-logs-on-the-ethereum-blockchain-f4ae7ba50378)</span>
-				<span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="ident">topics</span>[<span class="number">1</span>].<span class="ident">as_str</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid response - no sender&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `sender` is the account that locked/unlocked FRAG (i.e the first parameter of the event `Lock` or `Unlock`)</span>
-				<span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span>
-					<span class="ident">hex::decode</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>[<span class="number">2</span>..]).<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid response - invalid sender&quot;</span>)<span class="question-mark">?</span>;
-				<span class="kw">let</span> <span class="ident">sender</span> <span class="op">=</span> <span class="ident">H160::from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>[<span class="number">12</span>..]); <span class="comment">// Hash the array slice `&amp;sender[12..]`</span>
+				<span class="comment">// Since the first parameter of the Lock or Unlock event is declared as indexed, they are treated like additional topics (https://medium.com/mycrypto/understanding-event-logs-on-the-ethereum-blockchain-f4ae7ba50378)
+				</span><span class="kw">let </span>sender = topics[<span class="number">1</span>].as_str().ok_or_else(|| <span class="string">&quot;Invalid response - no sender&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `sender` is the account that locked/unlocked FRAG (i.e the first parameter of the event `Lock` or `Unlock`)
+				</span><span class="kw">let </span>sender =
+					hex::decode(<span class="kw-2">&amp;</span>sender[<span class="number">2</span>..]).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid sender&quot;</span>)<span class="question-mark">?</span>;
+				<span class="kw">let </span>sender = H160::from_slice(<span class="kw-2">&amp;</span>sender[<span class="number">12</span>..]); <span class="comment">// Hash the array slice `&amp;sender[12..]`
 
-				<span class="kw">let</span> <span class="ident">eth_signature</span> <span class="op">=</span> <span class="ident">data</span>[<span class="number">0</span>].<span class="ident">clone</span>().<span class="ident">into_bytes</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// (`data[0]` is actually a signature - https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol btw )</span>
-				<span class="kw">let</span> <span class="ident">eth_signature</span>: <span class="ident">ecdsa::Signature</span> <span class="op">=</span>
-					(<span class="kw-2">&amp;</span><span class="ident">eth_signature</span>[..]).<span class="ident">try_into</span>().<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Invalid data&quot;</span>)<span class="question-mark">?</span>;
+				</span><span class="kw">let </span>eth_signature = data[<span class="number">0</span>].clone().into_bytes().ok_or_else(|| <span class="string">&quot;Invalid data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// (`data[0]` is actually a signature - https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol btw )
+				</span><span class="kw">let </span>eth_signature: ecdsa::Signature =
+					(<span class="kw-2">&amp;</span>eth_signature[..]).try_into().map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid data&quot;</span>)<span class="question-mark">?</span>;
 
-				<span class="kw">let</span> <span class="ident">amount</span> <span class="op">=</span> <span class="ident">data</span>[<span class="number">1</span>].<span class="ident">clone</span>().<span class="ident">into_uint</span>().<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Invalid data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// Amount of FRAG token locked/unlocked (`data[1]`)</span>
+				<span class="kw">let </span>amount = data[<span class="number">1</span>].clone().into_uint().ok_or_else(|| <span class="string">&quot;Invalid data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// Amount of FRAG token locked/unlocked (`data[1]`)
 
-				<span class="macro">log::trace!</span>(
+				</span><span class="macro">log::trace!</span>(
 					<span class="string">&quot;Block: {}, sender: {}, locked: {}, amount: {}, signature: {:?}&quot;</span>,
-					<span class="ident">block_number</span>,
-					<span class="ident">sender</span>,
-					<span class="ident">locked</span>,
-					<span class="ident">amount</span>,
-					<span class="ident">eth_signature</span>.<span class="ident">clone</span>(),
+					block_number,
+					sender,
+					locked,
+					amount,
+					eth_signature.clone(),
 				);
 
-				<span class="comment">// `send_unsigned_transaction` is returning a type of `Option&lt;(Account&lt;T&gt;, Result&lt;(), ()&gt;)&gt;`.</span>
-				<span class="comment">//   The returned result means:</span>
-				<span class="comment">//   - `None`: no account is available for sending transaction</span>
-				<span class="comment">//   - `Some((account, Ok(())))`: transaction is successfully sent</span>
-				<span class="comment">//   - `Some((account, Err(())))`: error occurred when sending the transaction</span>
-				<span class="ident">Signer</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">T::AuthorityId</span><span class="op">&gt;</span><span class="ident">::any_account</span>() <span class="comment">// `Signer::&lt;T, T::AuthorityId&gt;::any_account()` is the signer that signs the payload</span>
-					.<span class="ident">send_unsigned_transaction</span>(
-						<span class="comment">// this line is to prepare and return payload to be used</span>
-						<span class="op">|</span><span class="ident">account</span><span class="op">|</span> <span class="ident">EthLockUpdate</span> {
-							<span class="comment">// `account` is an account `Signer::&lt;T, T::AuthorityId&gt;::any_account()`</span>
-							<span class="ident">public</span>: <span class="ident">account</span>.<span class="ident">public</span>.<span class="ident">clone</span>(), <span class="comment">// 问Gio what is account.public and why is it supposed to be in FragKey</span>
-							<span class="ident">amount</span>,
-							<span class="ident">sender</span>,
-							<span class="ident">signature</span>: <span class="ident">eth_signature</span>.<span class="ident">clone</span>(),
-							<span class="ident">lock</span>: <span class="ident">locked</span>,
-							<span class="ident">block_number</span>,
+				<span class="comment">// `send_unsigned_transaction` is returning a type of `Option&lt;(Account&lt;T&gt;, Result&lt;(), ()&gt;)&gt;`.
+				//   The returned result means:
+				//   - `None`: no account is available for sending transaction
+				//   - `Some((account, Ok(())))`: transaction is successfully sent
+				//   - `Some((account, Err(())))`: error occurred when sending the transaction
+				</span>Signer::&lt;T, T::AuthorityId&gt;::any_account() <span class="comment">// `Signer::&lt;T, T::AuthorityId&gt;::any_account()` is the signer that signs the payload
+					</span>.send_unsigned_transaction(
+						<span class="comment">// this line is to prepare and return payload to be used
+						</span>|account| EthLockUpdate {
+							<span class="comment">// `account` is an account `Signer::&lt;T, T::AuthorityId&gt;::any_account()`
+							</span>public: account.public.clone(), <span class="comment">// 问Gio what is account.public and why is it supposed to be in FragKey
+							</span>amount,
+							sender,
+							signature: eth_signature.clone(),
+							lock: locked,
+							block_number,
 						},
-						<span class="comment">// The second function closure returns the on-chain call with payload and signature passed in</span>
-						<span class="op">|</span><span class="ident">payload</span>, <span class="ident">signature</span><span class="op">|</span> <span class="ident">Call::internal_lock_update</span> {
-							<span class="ident">data</span>: <span class="ident">payload</span>,
-							<span class="ident">signature</span>,
+						<span class="comment">// The second function closure returns the on-chain call with payload and signature passed in
+						</span>|payload, signature| Call::internal_lock_update {
+							data: payload,
+							signature,
 						},
 					)
-					.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Failed to sign transaction&quot;</span>)<span class="question-mark">?</span>
-					.<span class="number">1</span>
-					.<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Failed to send transaction&quot;</span>)<span class="question-mark">?</span>;
+					.ok_or_else(|| <span class="string">&quot;Failed to sign transaction&quot;</span>)<span class="question-mark">?
+					</span>.<span class="number">1
+					</span>.map_err(|<span class="kw">_</span>| <span class="string">&quot;Failed to send transaction&quot;</span>)<span class="question-mark">?</span>;
 			}
 
-			<span class="ident">last_block_ref</span>.<span class="ident">set</span>(<span class="kw-2">&amp;</span><span class="ident">to_block</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>()); <span class="comment">// Recall that the `to_block` is the latest block that is considered final （问Gio）</span>
+			last_block_ref.set(<span class="kw-2">&amp;</span>to_block.as_bytes().to_vec()); <span class="comment">// Recall that the `to_block` is the latest block that is considered final （问Gio）
 
-			<span class="prelude-val">Ok</span>(())
+			</span><span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.</span>
-		<span class="doccomment">/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain</span>
-		<span class="doccomment">/// (NOTE: the signed payload consists of a payload and a signature.</span>
-		<span class="doccomment">/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct</span>
-		<span class="doccomment">/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::&lt;T, T::AuthorityId&gt;::any_account()`) (问Gio)</span>
-		<span class="doccomment">///</span>
-		<span class="doccomment">/// NOTE: `Signer::&lt;T, T::AuthorityId&gt;::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)</span>
-		<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sync_partner_contracts</span>(<span class="ident">block_number</span>: <span class="ident">T::BlockNumber</span>) {
-			<span class="kw">let</span> <span class="ident">geth_uri</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">geth</span>) <span class="op">=</span> <span class="ident">sp_clamor::clamor::get_geth_url</span>() {
-				<span class="ident">String::from_utf8</span>(<span class="ident">geth</span>).<span class="ident">unwrap</span>()
-			} <span class="kw">else</span> {
+		<span class="doccomment">/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
+		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
+		///
+		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
+		/// (NOTE: the signed payload consists of a payload and a signature.
+		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
+		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::&lt;T, T::AuthorityId&gt;::any_account()`) (问Gio)
+		///
+		/// NOTE: `Signer::&lt;T, T::AuthorityId&gt;::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
+		</span><span class="kw">pub fn </span>sync_partner_contracts(block_number: T::BlockNumber) {
+			<span class="kw">let </span>geth_uri = <span class="kw">if let </span><span class="prelude-val">Some</span>(geth) = sp_clamor::clamor::get_geth_url() {
+				String::from_utf8(geth).unwrap()
+			} <span class="kw">else </span>{
 				<span class="macro">log::debug!</span>(<span class="string">&quot;No geth url found, skipping sync&quot;</span>);
-				<span class="kw">return</span>; <span class="comment">// It is fine to have a node not syncing with eth</span>
-			};
+				<span class="kw">return</span>; <span class="comment">// It is fine to have a node not syncing with eth
+			</span>};
 
-			<span class="kw">let</span> <span class="ident">contracts</span> <span class="op">=</span> <span class="ident">T::EthFragContract::get_partner_contracts</span>();
+			<span class="kw">let </span>contracts = T::EthFragContract::get_partner_contracts();
 
-			<span class="kw">for</span> <span class="ident">contract</span> <span class="kw">in</span> <span class="ident">contracts</span> {
-				<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">e</span>) <span class="op">=</span> <span class="ident"><span class="self">Self</span>::sync_partner_contract</span>(<span class="ident">block_number</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="kw-2">&amp;</span><span class="ident">geth_uri</span>) {
-					<span class="macro">log::error!</span>(<span class="string">&quot;Failed to sync partner contract with error: {}&quot;</span>, <span class="ident">e</span>);
+			<span class="kw">for </span>contract <span class="kw">in </span>contracts {
+				<span class="kw">if let </span><span class="prelude-val">Err</span>(e) = <span class="self">Self</span>::sync_partner_contract(block_number, <span class="kw-2">&amp;</span>contract, <span class="kw-2">&amp;</span>geth_uri) {
+					<span class="macro">log::error!</span>(<span class="string">&quot;Failed to sync partner contract with error: {}&quot;</span>, e);
 				}
 			}
 		}
 
-		<span class="doccomment">/// Unlink the **Clamor public account address `sender`** from **its linked EVM public</span>
-		<span class="doccomment">/// account address `account`**</span>
-		<span class="kw">fn</span> <span class="ident">unlink_account</span>(<span class="ident">sender</span>: <span class="ident">T::AccountId</span>, <span class="ident">account</span>: <span class="ident">H160</span>) -&gt; <span class="ident">DispatchResult</span> {
-			<span class="kw">if</span> <span class="op">&lt;</span><span class="ident">EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">sender</span>.<span class="ident">clone</span>()).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountNotLinked</span>)<span class="question-mark">?</span> <span class="op">!</span><span class="op">=</span> <span class="ident">account</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DifferentAccountLinked</span>.<span class="ident">into</span>());
+		<span class="doccomment">/// Unlink the **Clamor public account address `sender`** from **its linked EVM public
+		/// account address `account`**
+		</span><span class="kw">fn </span>unlink_account(sender: T::AccountId, account: H160) -&gt; DispatchResult {
+			<span class="kw">if </span>&lt;EVMLinks&lt;T&gt;&gt;::get(sender.clone()).ok_or(Error::&lt;T&gt;::AccountNotLinked)<span class="question-mark">? </span>!= account {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into());
 			}
-			<span class="kw">if</span> <span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="ident">account</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::AccountNotLinked</span>)<span class="question-mark">?</span> <span class="op">!</span><span class="op">=</span> <span class="ident">sender</span> {
-				<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="ident">::DifferentAccountLinked</span>.<span class="ident">into</span>());
+			<span class="kw">if </span>&lt;EVMLinksReverse&lt;T&gt;&gt;::get(account).ok_or(Error::&lt;T&gt;::AccountNotLinked)<span class="question-mark">? </span>!= sender {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into());
 			}
 
-			<span class="op">&lt;</span><span class="ident">EVMLinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">sender</span>.<span class="ident">clone</span>());
-			<span class="op">&lt;</span><span class="ident">EVMLinksReverse</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">account</span>);
-			<span class="comment">// reset usage counter</span>
-			<span class="op">&lt;</span><span class="ident">FragUsage</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">sender</span>.<span class="ident">clone</span>());
-			<span class="comment">// force dereferencing of protos and more</span>
-			<span class="op">&lt;</span><span class="ident">PendingUnlinks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::append</span>(<span class="ident">sender</span>.<span class="ident">clone</span>());
+			&lt;EVMLinks&lt;T&gt;&gt;::remove(sender.clone());
+			&lt;EVMLinksReverse&lt;T&gt;&gt;::remove(account);
+			<span class="comment">// reset usage counter
+			</span>&lt;FragUsage&lt;T&gt;&gt;::remove(sender.clone());
+			<span class="comment">// force dereferencing of protos and more
+			</span>&lt;PendingUnlinks&lt;T&gt;&gt;::append(sender.clone());
 
-			<span class="comment">// also emit event</span>
-			<span class="ident"><span class="self">Self</span>::deposit_event</span>(<span class="ident">Event::Unlinked</span> { <span class="ident">sender</span>, <span class="ident">eth_key</span>: <span class="ident">account</span> });
+			<span class="comment">// also emit event
+			</span><span class="self">Self</span>::deposit_event(Event::Unlinked { sender, eth_key: account });
 
 			<span class="prelude-val">Ok</span>(())
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (20ffea693 2022-08-11)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>

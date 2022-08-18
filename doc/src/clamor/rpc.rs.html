@@ -93,100 +93,100 @@
 <span id="93">93</span>
 <span id="94">94</span>
 <span id="95">95</span>
-</pre><pre class="rust"><code><span class="comment">// This file is part of Substrate.</span>
+</pre><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
-<span class="comment">// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.</span>
-<span class="comment">// SPDX-License-Identifier: Apache-2.0</span>
+// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
 
-<span class="comment">// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
-<span class="comment">// you may not use this file except in compliance with the License.</span>
-<span class="comment">// You may obtain a copy of the License at</span>
-<span class="comment">//</span>
-<span class="comment">// 	http://www.apache.org/licenses/LICENSE-2.0</span>
-<span class="comment">//</span>
-<span class="comment">// Unless required by applicable law or agreed to in writing, software</span>
-<span class="comment">// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
-<span class="comment">// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
-<span class="comment">// See the License for the specific language governing permissions and</span>
-<span class="comment">// limitations under the License.</span>
+// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-<span class="doccomment">//! A collection of node-specific RPC methods.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Since `substrate` core functionality makes no assumptions</span>
-<span class="doccomment">//! about the modules used inside the runtime, so do</span>
-<span class="doccomment">//! RPC methods defined in `sc-rpc` crate.</span>
-<span class="doccomment">//! It means that `client/rpc` can&#39;t have any methods that</span>
-<span class="doccomment">//! need some strong assumptions about the particular runtime.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The RPCs available in this crate however can make some assumptions</span>
-<span class="doccomment">//! about how the runtime is constructed and what FRAME pallets</span>
-<span class="doccomment">//! are part of it. Therefore all node-runtime-specific RPCs can</span>
-<span class="doccomment">//! be placed here or imported from corresponding FRAME RPC definitions.</span>
+</span><span class="doccomment">//! A collection of node-specific RPC methods.
+//!
+//! Since `substrate` core functionality makes no assumptions
+//! about the modules used inside the runtime, so do
+//! RPC methods defined in `sc-rpc` crate.
+//! It means that `client/rpc` can&#39;t have any methods that
+//! need some strong assumptions about the particular runtime.
+//!
+//! The RPCs available in this crate however can make some assumptions
+//! about how the runtime is constructed and what FRAME pallets
+//! are part of it. Therefore all node-runtime-specific RPCs can
+//! be placed here or imported from corresponding FRAME RPC definitions.
 
-<span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
+</span><span class="attribute">#![warn(missing_docs)]</span>
 
-<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
+<span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">use</span> <span class="ident">clamor_runtime</span>::{<span class="ident">opaque::Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">BlockNumber</span>, <span class="ident">Hash</span>, <span class="ident">Index</span>};
-<span class="kw">use</span> <span class="ident">jsonrpsee::RpcModule</span>;
-<span class="kw">use</span> <span class="ident">sc_client_api::AuxStore</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sc_rpc_api::DenyUnsafe</span>;
-<span class="kw">use</span> <span class="ident">sc_transaction_pool_api::TransactionPool</span>;
-<span class="kw">use</span> <span class="ident">sp_api::ProvideRuntimeApi</span>;
-<span class="kw">use</span> <span class="ident">sp_block_builder::BlockBuilder</span>;
-<span class="kw">use</span> <span class="ident">sp_blockchain</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">BlockChainError</span>, <span class="ident">HeaderBackend</span>, <span class="ident">HeaderMetadata</span>};
+<span class="kw">use </span>clamor_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
+<span class="kw">use </span>jsonrpsee::RpcModule;
+<span class="kw">use </span>sc_client_api::AuxStore;
+<span class="kw">pub use </span>sc_rpc_api::DenyUnsafe;
+<span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
+<span class="kw">use </span>sp_api::ProvideRuntimeApi;
+<span class="kw">use </span>sp_block_builder::BlockBuilder;
+<span class="kw">use </span>sp_blockchain::{Error <span class="kw">as </span>BlockChainError, HeaderBackend, HeaderMetadata};
 
-<span class="doccomment">/// Full client dependencies.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// The client instance to use.</span>
-	<span class="kw">pub</span> <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Transaction pool instance.</span>
-	<span class="kw">pub</span> <span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Whether to deny unsafe calls</span>
-	<span class="kw">pub</span> <span class="ident">deny_unsafe</span>: <span class="ident">DenyUnsafe</span>,
+<span class="doccomment">/// Full client dependencies.
+</span><span class="kw">pub struct </span>FullDeps&lt;C, P&gt; {
+	<span class="doccomment">/// The client instance to use.
+	</span><span class="kw">pub </span>client: Arc&lt;C&gt;,
+	<span class="doccomment">/// Transaction pool instance.
+	</span><span class="kw">pub </span>pool: Arc&lt;P&gt;,
+	<span class="doccomment">/// Whether to deny unsafe calls
+	</span><span class="kw">pub </span>deny_unsafe: DenyUnsafe,
 }
 
-<span class="doccomment">/// Instantiate all Full RPC extensions.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span><span class="op">&gt;</span>(
-	<span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span><span class="op">&gt;</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RpcModule</span><span class="op">&lt;</span>()<span class="op">&gt;</span>, <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">std::error::Error</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>
-		<span class="op">+</span> <span class="ident">sc_client_api::BlockBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>
-		<span class="op">+</span> <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>
-		<span class="op">+</span> <span class="ident">AuxStore</span>
-		<span class="op">+</span> <span class="ident">HeaderMetadata</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">BlockChainError</span><span class="op">&gt;</span>
-		<span class="op">+</span> <span class="ident">Sync</span>
-		<span class="op">+</span> <span class="ident">Send</span>
-		<span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C::Api</span>: <span class="ident">substrate_frame_rpc_system::AccountNonceApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span>,
-	<span class="ident">C::Api</span>: <span class="ident">pallet_contracts_rpc::ContractsRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">BlockNumber</span>, <span class="ident">Hash</span><span class="op">&gt;</span>,
-	<span class="ident">C::Api</span>: <span class="ident">pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Balance</span><span class="op">&gt;</span>,
-	<span class="ident">C::Api</span>: <span class="ident">pallet_protos_rpc::ProtosRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span><span class="op">&gt;</span>,
-	<span class="ident">C::Api</span>: <span class="ident">BlockBuilder</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-	<span class="ident">P</span>: <span class="ident">TransactionPool</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+<span class="doccomment">/// Instantiate all Full RPC extensions.
+</span><span class="kw">pub fn </span>create_full&lt;C, P&gt;(
+	deps: FullDeps&lt;C, P&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
+<span class="kw">where
+	</span>C: ProvideRuntimeApi&lt;Block&gt;
+		+ sc_client_api::BlockBackend&lt;Block&gt;
+		+ HeaderBackend&lt;Block&gt;
+		+ AuxStore
+		+ HeaderMetadata&lt;Block, Error = BlockChainError&gt;
+		+ Sync
+		+ Send
+		+ <span class="lifetime">&#39;static</span>,
+	C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Index&gt;,
+	C::Api: pallet_contracts_rpc::ContractsRuntimeApi&lt;Block, AccountId, Balance, BlockNumber, Hash&gt;,
+	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;,
+	C::Api: pallet_protos_rpc::ProtosRuntimeApi&lt;Block, AccountId&gt;,
+	C::Api: BlockBuilder&lt;Block&gt;,
+	P: TransactionPool + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">use</span> <span class="ident">pallet_contracts_rpc</span>::{<span class="ident">Contracts</span>, <span class="ident">ContractsApiServer</span>};
-	<span class="kw">use</span> <span class="ident">pallet_protos_rpc</span>::{<span class="ident">Protos</span>, <span class="ident">ProtosApiServer</span>};
-	<span class="kw">use</span> <span class="ident">pallet_transaction_payment_rpc</span>::{<span class="ident">TransactionPayment</span>, <span class="ident">TransactionPaymentApiServer</span>};
-	<span class="kw">use</span> <span class="ident">sc_rpc::dev</span>::{<span class="ident">Dev</span>, <span class="ident">DevApiServer</span>};
-	<span class="kw">use</span> <span class="ident">substrate_frame_rpc_system</span>::{<span class="ident">System</span>, <span class="ident">SystemApiServer</span>};
+	<span class="kw">use </span>pallet_contracts_rpc::{Contracts, ContractsApiServer};
+	<span class="kw">use </span>pallet_protos_rpc::{Protos, ProtosApiServer};
+	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
+	<span class="kw">use </span>sc_rpc::dev::{Dev, DevApiServer};
+	<span class="kw">use </span>substrate_frame_rpc_system::{System, SystemApiServer};
 
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident">RpcModule::new</span>(());
-	<span class="kw">let</span> <span class="ident">FullDeps</span> { <span class="ident">client</span>, <span class="ident">pool</span>, <span class="ident">deny_unsafe</span> } <span class="op">=</span> <span class="ident">deps</span>;
+	<span class="kw">let </span><span class="kw-2">mut </span>io = RpcModule::new(());
+	<span class="kw">let </span>FullDeps { client, pool, deny_unsafe } = deps;
 
-	<span class="ident">io</span>.<span class="ident">merge</span>(<span class="ident">System::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">pool</span>, <span class="ident">deny_unsafe</span>).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
-	<span class="comment">// Making synchronous calls in light client freezes the browser currently,</span>
-	<span class="comment">// more context: https://github.com/paritytech/substrate/pull/3480</span>
-	<span class="comment">// These RPCs should use an asynchronous caller instead.</span>
-	<span class="ident">io</span>.<span class="ident">merge</span>(<span class="ident">Contracts::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
-	<span class="ident">io</span>.<span class="ident">merge</span>(<span class="ident">TransactionPayment::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
+	io.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())<span class="question-mark">?</span>;
+	<span class="comment">// Making synchronous calls in light client freezes the browser currently,
+	// more context: https://github.com/paritytech/substrate/pull/3480
+	// These RPCs should use an asynchronous caller instead.
+	</span>io.merge(Contracts::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+	io.merge(TransactionPayment::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
 
-	<span class="ident">io</span>.<span class="ident">merge</span>(<span class="ident">Dev::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">deny_unsafe</span>).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
+	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())<span class="question-mark">?</span>;
 
-	<span class="ident">io</span>.<span class="ident">merge</span>(<span class="ident">Protos::new</span>(<span class="ident">client</span>).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
+	io.merge(Protos::new(client).into_rpc())<span class="question-mark">?</span>;
 
-	<span class="prelude-val">Ok</span>(<span class="ident">io</span>)
+	<span class="prelude-val">Ok</span>(io)
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (20ffea693 2022-08-11)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>
