@@ -235,7 +235,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was staked on by the aforementioned Clamor Account ID**
 	#[pallet::storage]
-	pub type AccountStakes<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
+	pub type AccountCurations<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -744,7 +744,7 @@ pub mod pallet {
 
 			// take record of the stake
 			<ProtoCurations<T>>::insert(proto_hash, &who, (amount, current_block_number));
-			<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
+			<AccountCurations<T>>::append(who.clone(), proto_hash.clone());
 
 			// also emit event
 			Self::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); // 问Gio
