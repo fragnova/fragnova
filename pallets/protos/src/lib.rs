@@ -1,4 +1,4 @@
-//! This pallet `fragments` performs logic related to Proto-Fragments.
+//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
 //!
@@ -38,7 +38,7 @@ use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 pub use weights::WeightInfo;
 
-use sp_clamor::{get_locked_frag_account, Hash256, Hash64};
+use sp_clamor::{Hash256, Hash64};
 
 use scale_info::prelude::{
 	format,
@@ -49,7 +49,7 @@ use serde_json::{json, Map, Value};
 use base58::ToBase58;
 
 use frame_support::traits::{
-	tokens::fungibles::Inspect, tokens::fungibles::Transfer, Currency, ExistenceRequirement,
+	tokens::fungibles::{Inspect, Mutate},
 };
 
 /// ¿
@@ -152,12 +152,15 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	use sp_clamor::CID_PREFIX;
-	use sp_runtime::{traits::Saturating, SaturatedConversion};
+	use sp_runtime::SaturatedConversion;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + pallet_detach::Config + pallet_accounts::Config + pallet_assets::Config
+		frame_system::Config
+		+ pallet_detach::Config
+		+ pallet_accounts::Config
+		+ pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -217,11 +220,11 @@ pub mod pallet {
 	pub type ProtosByOwner<T: Config> =
 		StorageMap<_, Twox64Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
-	/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple that contains the Staked Amount (that was staked by the aforementioned Clamor Account ID) and the Block Number**
-	// Staking management
-	// (Amount staked, Last stake time)
+	/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple that contains the Curated Amount (tickets burned by the aforementioned Clamor Account ID) and the Block Number**
+	// Curation management
+	// (Amount burned, Last burn time)
 	#[pallet::storage]
-	pub type ProtoStakes<T: Config> = StorageDoubleMap<
+	pub type ProtoCurations<T: Config> = StorageDoubleMap<
 		_,
 		Identity,
 		Hash256,
@@ -248,9 +251,17 @@ pub mod pallet {
 		/// A Proto-Fragment was transferred
 		Transferred { proto_hash: Hash256, owner_id: T::AccountId },
 		/// Stake was created
-		Staked { proto_hash: Hash256, account_id: T::AccountId, balance: <T as pallet_assets::Config>::Balance },
+		Staked {
+			proto_hash: Hash256,
+			account_id: T::AccountId,
+			balance: <T as pallet_assets::Config>::Balance,
+		},
 		/// Stake was unlocked
-		Unstaked { proto_hash: Hash256, account_id: T::AccountId, balance: <T as pallet_assets::Config>::Balance },
+		Unstaked {
+			proto_hash: Hash256,
+			account_id: T::AccountId,
+			balance: <T as pallet_assets::Config>::Balance,
+		},
 	}
 
 	// Errors inform users that something went wrong.
@@ -266,16 +277,14 @@ pub mod pallet {
 		Detached,
 		/// Not the owner of the proto
 		Unauthorized,
-		/// Not enough FRAG staked
-		NotEnoughStaked,
-		/// Stake not found
-		StakeNotFound,
+		/// Not enough tickets burned on the proto
+		NotEnoughTickets,
+		/// Curation not found
+		CurationNotFound,
 		/// Reference not found
 		ReferenceNotFound,
 		/// Not enough tokens to stake
 		InsufficientBalance,
-		/// Cannot unstake yet
-		StakeLocked,
 		/// Cannot find FRAG link to use as stake funds
 		NoFragLink,
 	}
@@ -460,10 +469,10 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
+			// Write STATE from now, ensure no errors from now...
+
 			// Check license requirements
 			Self::check_license(&new_references, &who)?;
-
-			// Write STATE from now, ensure no errors from now...
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
@@ -697,115 +706,50 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// /// Stake FRAG tokens on a Proto-Fragment
-		// ///
-		// /// # Arguments
-		// ///
-		// /// * `origin` - The origin of the extrinsic function
-		// /// * `proto_hash` - **Hash of the Proto-Fragment** to **stake on**
-		// /// * `amount` - **Amount of FRAG tokens** to **stake**
-		// #[pallet::weight(50_000)]
-		// pub fn stake(
-		// 	origin: OriginFor<T>,
-		// 	proto_hash: Hash256,
-		// 	amount: <T as pallet_assets::Config>::Balance,
-		// ) -> DispatchResult {
-		// 	let who = ensure_signed(origin.clone())?;
-		// 	let who = get_locked_frag_account(&who).map_err(|_| Error::<T>::SystematicFailure)?;
+		/// Curate, burning tickets on a Proto-Fragment
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrinsic function
+		/// * `proto_hash` - **Hash of the Proto-Fragment** to **stake on**
+		/// * `amount` - **Amount of tickets** to **burn**
+		#[pallet::weight(50_000)]
+		pub fn curate(
+			origin: OriginFor<T>,
+			proto_hash: Hash256,
+			amount: <T as pallet_assets::Config>::Balance,
+		) -> DispatchResult {
+			let who = ensure_signed(origin.clone())?;
 
-		// 	// make sure the proto exists
-		// 	ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
+			// make sure the proto exists
+			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
-		// 	// make sure user has enough FRAG
-		// 	let account = <pallet_accounts::EVMLinks<T>>::get(&who.clone())
-		// 		.ok_or_else(|| Error::<T>::NoFragLink)?;
-		// 	let eth_lock = <pallet_accounts::EthLockedFrag<T>>::get(&account)
-		// 		.ok_or_else(|| Error::<T>::NoFragLink)?; // Amount of FRAG locked by Ethereum Account `account`
-		// 	let balance = eth_lock.amount
-		// 		- <pallet_accounts::FragUsage<T>>::get(&who.clone())
-		// 			.ok_or_else(|| Error::<T>::NoFragLink)?; // Balance = Amount of FRAG locked - Amount of FRAG already staked
-		// 	ensure!(balance >= amount, Error::<T>::InsufficientBalance);
+			// make sure the user has enough tickets
+			let balance = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(
+				T::TicketsAssetId::get(),
+				&who,
+			);
+			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
-		// 	let current_block_number = <frame_system::Pallet<T>>::block_number();
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-		// 	// ! from now we write...
+			// ! from now we write...
 
-		// 	<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
-		// 		// Add `amount` to the FragUsage of `who`
-		// 		usage.as_mut().unwrap().saturating_add(amount);
-		// 	});
+			// Burn tickets from account and record the stake locally
+			let _ = <pallet_assets::Pallet<T> as Mutate<T::AccountId>>::burn_from(
+				T::TicketsAssetId::get(),
+				&who,
+				amount.saturated_into(),
+			)?;
 
-		// 	// take record of the stake
-		// 	<ProtoStakes<T>>::insert(proto_hash, &who, (amount, current_block_number));
-		// 	<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
+			// take record of the stake
+			<ProtoCurations<T>>::insert(proto_hash, &who, (amount, current_block_number));
+			<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
 
-		// 	// also emit event
-		// 	Self::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); // 问Gio
+			// also emit event
+			Self::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); // 问Gio
 
-		// 	Ok(())
-		// }
-
-		// /// Unstake the FRAG tokens that were staked on a Proto-Fragment by `origin`
-		// ///
-		// /// # Arguments
-		// ///
-		// /// * `origin` - The origin of the extrinsic function
-		// /// * `proto_hash` - **Hash of the Proto-Fragment** on which the FRAG tokens were staked on
-		// #[pallet::weight(50_000)]
-		// pub fn unstake(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
-		// 	let who = ensure_signed(origin.clone())?;
-
-		// 	// make sure the proto exists
-		// 	ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
-
-		// 	// make sure user has enough FRAG
-		// 	let stake =
-		// 		<ProtoStakes<T>>::get(&proto_hash, &who).ok_or(Error::<T>::StakeNotFound)?;
-
-		// 	let current_block_number = <frame_system::Pallet<T>>::block_number();
-		// 	ensure!(
-		// 		current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()),
-		// 		Error::<T>::StakeLocked
-		// 	);
-
-		// 	// ! from now we write...
-
-		// 	<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
-		// 		usage.as_mut().unwrap().saturating_sub(stake.0); // Reduce the Frag usage of `who` by `stake.0`
-		// 	});
-
-		// 	// take record of the unstake
-		// 	<ProtoStakes<T>>::remove(proto_hash, &who);
-		// 	<AccountStakes<T>>::mutate(who.clone(), |stakes| {
-		// 		if let Some(stakes) = stakes {
-		// 			stakes.retain(|h| h != &proto_hash); // Retain all Proto-Fragments except `proto_hash`
-		// 		}
-		// 	});
-
-		// 	// also emit event
-		// 	Self::deposit_event(Event::Unstaked { proto_hash, account_id: who, balance: stake.0 });
-
-		// 	Ok(())
-		// }
-	}
-
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		/// During the block finalization phase,
-		/// clear all the staking-related (of FRAG Token) Storage Items of any information regarding
-		/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.
-		fn on_finalize(_n: T::BlockNumber) {
-			// drain unlinks
-			let unlinks = <pallet_accounts::PendingUnlinks<T>>::take();
-			for unlink in unlinks {
-				// take emptying the storage
-				let stakes = <AccountStakes<T>>::take(unlink.clone());
-				if let Some(stakes) = stakes {
-					for stake in stakes {
-						<ProtoStakes<T>>::remove(stake, &unlink);
-					}
-				}
-			}
+			Ok(())
 		}
 	}
 
@@ -836,41 +780,30 @@ pub mod pallet {
 						UsageLicense::NotAvailable => {
 							return Err(Error::<T>::Unauthorized.into());
 						},
-						UsageLicense::Available => { continue },
+						UsageLicense::Available => continue,
 						UsageLicense::Tickets(amount) => {
-							let balance = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(T::TicketsAssetId::get(), &who);
+							let balance =
+								<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(
+									T::TicketsAssetId::get(),
+									&who,
+								);
 							let amount: u64 = amount.into();
-							ensure!(balance >= amount.saturated_into(), Error::<T>::InsufficientBalance);
-							// TODO transfer tickets
-							todo!();
+							let amount = amount.saturated_into();
+							ensure!(balance >= amount, Error::<T>::InsufficientBalance);
+
+							let curation = <ProtoCurations<T>>::get(reference, who.clone());
+							if let Some(curation) = curation {
+								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
+							} else {
+								// Curation not found
+								return Err(Error::<T>::CurationNotFound.into());
+							}
 						},
 						UsageLicense::Contract(_contract_address) => {
-							// TODO execute contract
-							todo!();
-						}
+							// TODO execute contract - let's forbid this for now
+							return Err(Error::<T>::Unauthorized.into());
+						},
 					}
-
-
-					// if let Some(cost) = cost {
-					// 	let cost: u64 = cost.into();
-					// 	if cost == 0 {
-					// 		// free
-					// 		continue;
-					// 	}
-					// 	let cost: T::Balance = cost.saturated_into();
-					// 	let stake = <ProtoStakes<T>>::get(reference, who.clone());
-					// 	if let Some(stake) = stake {
-					// 		ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
-					// 	} else {
-					// 		// Stake not found
-					// 		return Err(Error::<T>::StakeNotFound.into());
-					// 	}
-					// // OK to include, just continue
-					// } else {
-					// 	return Err(Error::<T>::Unauthorized.into());
-					// }
-
-
 				} else {
 					// Proto not found
 					return Err(Error::<T>::ReferenceNotFound.into());
@@ -1176,11 +1109,11 @@ pub mod pallet {
 					match license {
 						UsageLicense::Tickets(amount) => {
 							let n: u64 = amount.into();
-						(*map_proto).insert(String::from("tickets"), Value::Number(n.into()));
+							(*map_proto).insert(String::from("tickets"), Value::Number(n.into()));
 						},
 						_ => {
 							(*map_proto).insert(String::from("tickets"), Value::Null);
-						}
+						},
 					}
 
 					if params.return_owners {

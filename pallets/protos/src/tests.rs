@@ -1024,8 +1024,8 @@ mod transfer_tests {
 			assert!(
 				<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
 					.unwrap()
-					.contains(&proto.get_proto_hash()) ==
-					false
+					.contains(&proto.get_proto_hash())
+					== false
 			);
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second))
 				.unwrap()
@@ -1358,8 +1358,8 @@ mod unstake_tests {
 			assert!(
 				<AccountStakes<Test>>::get(stake.lock.link.clamor_account_id)
 					.unwrap()
-					.contains(&stake.proto_fragment.get_proto_hash()) ==
-					false
+					.contains(&stake.proto_fragment.get_proto_hash())
+					== false
 			);
 
 			let event = <frame_system::Pallet<Test>>::events()

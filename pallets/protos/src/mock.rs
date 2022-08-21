@@ -143,11 +143,16 @@ impl pallet_accounts::Config for Test {
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
+parameter_types! {
+	pub const TicketsAssetId: u64 = 1337;
+}
+
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
 	type StakeLockupPeriod = ConstU64<5>; // one week
+	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_detach::Config for Test {
