@@ -4301,6 +4301,7 @@ dependencies = [
  "hex",
  "log",
  "pallet-accounts",
+ "pallet-assets",
  "pallet-balances",
  "pallet-detach",
  "pallet-proxy",

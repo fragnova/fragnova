@@ -31,14 +31,14 @@ pub use pallet::*;
 use serde::{Deserialize, Serialize};
 
 use sp_io::{
-	hashing::{twox_64, blake2_256},
+	hashing::{blake2_256, twox_64},
 	transaction_index,
 };
 use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 pub use weights::WeightInfo;
 
-use sp_clamor::{get_locked_frag_account, Hash64, Hash256};
+use sp_clamor::{get_locked_frag_account, Hash256, Hash64};
 
 use scale_info::prelude::{
 	format,
@@ -47,6 +47,10 @@ use scale_info::prelude::{
 use serde_json::{json, Map, Value};
 
 use base58::ToBase58;
+
+use frame_support::traits::{
+	tokens::fungibles::Inspect, tokens::fungibles::Transfer, Currency, ExistenceRequirement,
+};
 
 /// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -104,6 +108,18 @@ pub struct AccountsInfo {
 	pub lifetime_accounts: u128,
 }
 
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub enum UsageLicense<TContractAddress> {
+	/// Proto-Fragment is not available for use (owners can always use it)
+	NotAvailable,
+	/// Proto-Fragment is available for use freely
+	Available,
+	/// Proto-Fragment is available for use if an amount of tickets is paid
+	Tickets(Compact<u64>),
+	/// Proto-Fragment is available for use if a custom contract returns true
+	Contract(TContractAddress),
+}
+
 /// **Struct** of a **Proto-Fragment**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct Proto<TAccountId, TBlockNumber> {
@@ -111,9 +127,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub block: TBlockNumber,
 	/// **List of *ProtoPatch* structs** of the **Proto-Fragment**
 	pub patches: Vec<ProtoPatch<TBlockNumber>>,
-	/// **Amount of FRAG tokens** that **need to be staked on the Proto-Fragment** to **use the Proto-Fragment in other Proto-Fragments** (*optional*)
-	/// NOTE: If None, the **Proto-Fragment** *<u>can't be used</u>* in **other Proto-Fragments**
-	pub include_cost: Option<Compact<u64>>,
+	/// **License** details of the **Proto-Fragment**
+	pub license: UsageLicense<TAccountId>,
 	/// **Original Creator** of the **Proto-Fragment**
 	pub creator: TAccountId,
 	/// *Current Owner** of the **Proto-Fragment**
@@ -142,19 +157,24 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config + pallet_detach::Config + pallet_accounts::Config
+		frame_system::Config + pallet_detach::Config + pallet_accounts::Config + pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		type WeightInfo: WeightInfo;
 
+		/// Const per byte multiplier
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
 
 		/// The **Lock-Up Period" for **Staking FRAG Tokens**
 		#[pallet::constant]
 		type StakeLockupPeriod: Get<u64>;
+
+		/// The tickets asset id
+		#[pallet::constant]
+		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
 	}
 
 	#[pallet::pallet]
@@ -207,7 +227,7 @@ pub mod pallet {
 		Hash256,
 		Twox64Concat,
 		T::AccountId,
-		(T::Balance, T::BlockNumber),
+		(<T as pallet_assets::Config>::Balance, T::BlockNumber),
 	>;
 
 	/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was staked on by the aforementioned Clamor Account ID**
@@ -228,9 +248,9 @@ pub mod pallet {
 		/// A Proto-Fragment was transferred
 		Transferred { proto_hash: Hash256, owner_id: T::AccountId },
 		/// Stake was created
-		Staked { proto_hash: Hash256, account_id: T::AccountId, balance: T::Balance },
+		Staked { proto_hash: Hash256, account_id: T::AccountId, balance: <T as pallet_assets::Config>::Balance },
 		/// Stake was unlocked
-		Unstaked { proto_hash: Hash256, account_id: T::AccountId, balance: T::Balance },
+		Unstaked { proto_hash: Hash256, account_id: T::AccountId, balance: <T as pallet_assets::Config>::Balance },
 	}
 
 	// Errors inform users that something went wrong.
@@ -288,7 +308,7 @@ pub mod pallet {
 			category: Categories,
 			tags: Vec<Vec<u8>>,
 			linked_asset: Option<LinkedAsset>,
-			include_cost: Option<Compact<u64>>,
+			license: UsageLicense<T::AccountId>,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -311,8 +331,8 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
-			// Check FRAG staking
-			Self::check_staking_req(&references, &who)?;
+			// Check license requirements
+			Self::check_license(&references, &who)?;
 
 			// Store Trait if trait, also hash properly the data and decode name
 			let category = match category {
@@ -361,7 +381,7 @@ pub mod pallet {
 			let proto = Proto {
 				block: current_block_number,
 				patches: vec![],
-				include_cost,
+				license,
 				creator: who.clone(),
 				owner: owner.clone(),
 				references,
@@ -410,7 +430,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			// proto hash we want to patch
 			proto_hash: Hash256,
-			include_cost: Option<Compact<u64>>,
+			license: Option<UsageLicense<T::AccountId>>,
 			new_references: Vec<Hash256>,
 			new_tags: Option<Vec<Vec<u8>>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
@@ -440,8 +460,8 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
-			// Check FRAG staking
-			Self::check_staking_req(&new_references, &who)?;
+			// Check license requirements
+			Self::check_license(&new_references, &who)?;
 
 			// Write STATE from now, ensure no errors from now...
 
@@ -460,8 +480,10 @@ pub mod pallet {
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 				}
 
-				// Overwrite include cost
-				proto.include_cost = include_cost;
+				// Overwrite license if not None
+				if let Some(license) = license {
+					proto.license = license;
+				}
 
 				// Replace previous tags if not None
 				if let Some(new_tags) = new_tags {
@@ -675,96 +697,96 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Stake FRAG tokens on a Proto-Fragment
-		///
-		/// # Arguments
-		///
-		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - **Hash of the Proto-Fragment** to **stake on**
-		/// * `amount` - **Amount of FRAG tokens** to **stake**
-		#[pallet::weight(50_000)]
-		pub fn stake(
-			origin: OriginFor<T>,
-			proto_hash: Hash256,
-			amount: T::Balance,
-		) -> DispatchResult {
-			let who = ensure_signed(origin.clone())?;
-			let who = get_locked_frag_account(&who).map_err(|_| Error::<T>::SystematicFailure)?;
+		// /// Stake FRAG tokens on a Proto-Fragment
+		// ///
+		// /// # Arguments
+		// ///
+		// /// * `origin` - The origin of the extrinsic function
+		// /// * `proto_hash` - **Hash of the Proto-Fragment** to **stake on**
+		// /// * `amount` - **Amount of FRAG tokens** to **stake**
+		// #[pallet::weight(50_000)]
+		// pub fn stake(
+		// 	origin: OriginFor<T>,
+		// 	proto_hash: Hash256,
+		// 	amount: <T as pallet_assets::Config>::Balance,
+		// ) -> DispatchResult {
+		// 	let who = ensure_signed(origin.clone())?;
+		// 	let who = get_locked_frag_account(&who).map_err(|_| Error::<T>::SystematicFailure)?;
 
-			// make sure the proto exists
-			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
+		// 	// make sure the proto exists
+		// 	ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
-			// make sure user has enough FRAG
-			let account = <pallet_accounts::EVMLinks<T>>::get(&who.clone())
-				.ok_or_else(|| Error::<T>::NoFragLink)?;
-			let eth_lock = <pallet_accounts::EthLockedFrag<T>>::get(&account)
-				.ok_or_else(|| Error::<T>::NoFragLink)?; // Amount of FRAG locked by Ethereum Account `account`
-			let balance = eth_lock.amount
-				- <pallet_accounts::FragUsage<T>>::get(&who.clone())
-					.ok_or_else(|| Error::<T>::NoFragLink)?; // Balance = Amount of FRAG locked - Amount of FRAG already staked
-			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
+		// 	// make sure user has enough FRAG
+		// 	let account = <pallet_accounts::EVMLinks<T>>::get(&who.clone())
+		// 		.ok_or_else(|| Error::<T>::NoFragLink)?;
+		// 	let eth_lock = <pallet_accounts::EthLockedFrag<T>>::get(&account)
+		// 		.ok_or_else(|| Error::<T>::NoFragLink)?; // Amount of FRAG locked by Ethereum Account `account`
+		// 	let balance = eth_lock.amount
+		// 		- <pallet_accounts::FragUsage<T>>::get(&who.clone())
+		// 			.ok_or_else(|| Error::<T>::NoFragLink)?; // Balance = Amount of FRAG locked - Amount of FRAG already staked
+		// 	ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
+		// 	let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-			// ! from now we write...
+		// 	// ! from now we write...
 
-			<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
-				// Add `amount` to the FragUsage of `who`
-				usage.as_mut().unwrap().saturating_add(amount);
-			});
+		// 	<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
+		// 		// Add `amount` to the FragUsage of `who`
+		// 		usage.as_mut().unwrap().saturating_add(amount);
+		// 	});
 
-			// take record of the stake
-			<ProtoStakes<T>>::insert(proto_hash, &who, (amount, current_block_number));
-			<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
+		// 	// take record of the stake
+		// 	<ProtoStakes<T>>::insert(proto_hash, &who, (amount, current_block_number));
+		// 	<AccountStakes<T>>::append(who.clone(), proto_hash.clone());
 
-			// also emit event
-			Self::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); // 问Gio
+		// 	// also emit event
+		// 	Self::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); // 问Gio
 
-			Ok(())
-		}
+		// 	Ok(())
+		// }
 
-		/// Unstake the FRAG tokens that were staked on a Proto-Fragment by `origin`
-		///
-		/// # Arguments
-		///
-		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - **Hash of the Proto-Fragment** on which the FRAG tokens were staked on
-		#[pallet::weight(50_000)]
-		pub fn unstake(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
-			let who = ensure_signed(origin.clone())?;
+		// /// Unstake the FRAG tokens that were staked on a Proto-Fragment by `origin`
+		// ///
+		// /// # Arguments
+		// ///
+		// /// * `origin` - The origin of the extrinsic function
+		// /// * `proto_hash` - **Hash of the Proto-Fragment** on which the FRAG tokens were staked on
+		// #[pallet::weight(50_000)]
+		// pub fn unstake(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
+		// 	let who = ensure_signed(origin.clone())?;
 
-			// make sure the proto exists
-			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
+		// 	// make sure the proto exists
+		// 	ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
 
-			// make sure user has enough FRAG
-			let stake =
-				<ProtoStakes<T>>::get(&proto_hash, &who).ok_or(Error::<T>::StakeNotFound)?;
+		// 	// make sure user has enough FRAG
+		// 	let stake =
+		// 		<ProtoStakes<T>>::get(&proto_hash, &who).ok_or(Error::<T>::StakeNotFound)?;
 
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
-			ensure!(
-				current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()),
-				Error::<T>::StakeLocked
-			);
+		// 	let current_block_number = <frame_system::Pallet<T>>::block_number();
+		// 	ensure!(
+		// 		current_block_number > (stake.1 + T::StakeLockupPeriod::get().saturated_into()),
+		// 		Error::<T>::StakeLocked
+		// 	);
 
-			// ! from now we write...
+		// 	// ! from now we write...
 
-			<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
-				usage.as_mut().unwrap().saturating_sub(stake.0); // Reduce the Frag usage of `who` by `stake.0`
-			});
+		// 	<pallet_accounts::FragUsage<T>>::mutate(&who, |usage| {
+		// 		usage.as_mut().unwrap().saturating_sub(stake.0); // Reduce the Frag usage of `who` by `stake.0`
+		// 	});
 
-			// take record of the unstake
-			<ProtoStakes<T>>::remove(proto_hash, &who);
-			<AccountStakes<T>>::mutate(who.clone(), |stakes| {
-				if let Some(stakes) = stakes {
-					stakes.retain(|h| h != &proto_hash); // Retain all Proto-Fragments except `proto_hash`
-				}
-			});
+		// 	// take record of the unstake
+		// 	<ProtoStakes<T>>::remove(proto_hash, &who);
+		// 	<AccountStakes<T>>::mutate(who.clone(), |stakes| {
+		// 		if let Some(stakes) = stakes {
+		// 			stakes.retain(|h| h != &proto_hash); // Retain all Proto-Fragments except `proto_hash`
+		// 		}
+		// 	});
 
-			// also emit event
-			Self::deposit_event(Event::Unstaked { proto_hash, account_id: who, balance: stake.0 });
+		// 	// also emit event
+		// 	Self::deposit_event(Event::Unstaked { proto_hash, account_id: who, balance: stake.0 });
 
-			Ok(())
-		}
+		// 	Ok(())
+		// }
 	}
 
 	#[pallet::hooks]
@@ -791,7 +813,7 @@ pub mod pallet {
 	where
 		T::AccountId: AsRef<[u8]>,
 	{
-		fn check_staking_req(references: &[Hash256], who: &T::AccountId) -> DispatchResult {
+		fn check_license(references: &[Hash256], who: &T::AccountId) -> DispatchResult {
 			// Check FRAG staking
 			// TODO this is not tested properly
 			for reference in references.iter() {
@@ -809,25 +831,46 @@ pub mod pallet {
 						}
 					}
 
-					let cost = proto.include_cost;
-					if let Some(cost) = cost {
-						let cost: u64 = cost.into();
-						if cost == 0 {
-							// free
-							continue;
+					let license = proto.license;
+					match license {
+						UsageLicense::NotAvailable => {
+							return Err(Error::<T>::Unauthorized.into());
+						},
+						UsageLicense::Available => { continue },
+						UsageLicense::Tickets(amount) => {
+							let balance = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(T::TicketsAssetId::get(), &who);
+							let amount: u64 = amount.into();
+							ensure!(balance >= amount.saturated_into(), Error::<T>::InsufficientBalance);
+							// TODO transfer tickets
+							todo!();
+						},
+						UsageLicense::Contract(_contract_address) => {
+							// TODO execute contract
+							todo!();
 						}
-						let cost: T::Balance = cost.saturated_into();
-						let stake = <ProtoStakes<T>>::get(reference, who.clone());
-						if let Some(stake) = stake {
-							ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
-						} else {
-							// Stake not found
-							return Err(Error::<T>::StakeNotFound.into());
-						}
-					// OK to include, just continue
-					} else {
-						return Err(Error::<T>::Unauthorized.into());
 					}
+
+
+					// if let Some(cost) = cost {
+					// 	let cost: u64 = cost.into();
+					// 	if cost == 0 {
+					// 		// free
+					// 		continue;
+					// 	}
+					// 	let cost: T::Balance = cost.saturated_into();
+					// 	let stake = <ProtoStakes<T>>::get(reference, who.clone());
+					// 	if let Some(stake) = stake {
+					// 		ensure!(stake.0 >= cost, Error::<T>::NotEnoughStaked);
+					// 	} else {
+					// 		// Stake not found
+					// 		return Err(Error::<T>::StakeNotFound.into());
+					// 	}
+					// // OK to include, just continue
+					// } else {
+					// 	return Err(Error::<T>::Unauthorized.into());
+					// }
+
+
 				} else {
 					// Proto not found
 					return Err(Error::<T>::ReferenceNotFound.into());
@@ -844,9 +887,9 @@ pub mod pallet {
 		) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
-					if avail && struct_proto.include_cost.is_none() {
+					if avail && struct_proto.license == UsageLicense::NotAvailable {
 						return false;
-					} else if !avail && struct_proto.include_cost.is_some() {
+					} else if !avail && struct_proto.license != UsageLicense::NotAvailable {
 						return false;
 					}
 				}
@@ -964,8 +1007,7 @@ pub mod pallet {
 							{
 								// OK. Found the category matching a shard script info.
 								return true;
-							}
-							else if !(&cat == &category) {
+							} else if !(&cat == &category) {
 								return false;
 							} else {
 								return false;
@@ -1119,9 +1161,9 @@ pub mod pallet {
 						return Err("Failed to decode proto_id".into());
 					};
 
-					let (owner, map_metadata, include_cost) =
+					let (owner, map_metadata, license) =
 						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
-							(proto.owner, proto.metadata, proto.include_cost)
+							(proto.owner, proto.metadata, proto.license)
 						} else {
 							return Err("Failed to get proto".into());
 						};
@@ -1131,11 +1173,14 @@ pub mod pallet {
 						_ => return Err("Failed to get map_proto".into()),
 					};
 
-					if let Some(include_cost) = include_cost {
-						let n: u64 = include_cost.into();
-						(*map_proto).insert(String::from("include_cost"), Value::Number(n.into()));
-					} else {
-						(*map_proto).insert(String::from("include_cost"), Value::Null);
+					match license {
+						UsageLicense::Tickets(amount) => {
+							let n: u64 = amount.into();
+						(*map_proto).insert(String::from("tickets"), Value::Number(n.into()));
+						},
+						_ => {
+							(*map_proto).insert(String::from("tickets"), Value::Null);
+						}
 					}
 
 					if params.return_owners {
@@ -1201,4 +1246,3 @@ pub mod pallet {
 		}
 	}
 }
-
