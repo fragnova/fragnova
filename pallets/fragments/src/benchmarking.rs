@@ -9,6 +9,7 @@ use protos::{
 	categories::{Categories, TextCategories},
 	permissions::FragmentPerms,
 };
+use pallet_protos::UsageLicense;
 use sp_io::hashing::blake2_128;
 
 const PROTO_HASH: Hash256 = [
@@ -30,7 +31,7 @@ benchmarks! {
 		let immutable_data = vec![0u8; 1 as usize];
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![PROTO_HASH];
-		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, None, immutable_data.clone())?;
+		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, UsageLicense::Closed, immutable_data.clone())?;
 		let fragment_data = FragmentMetadata {
 			name: "name".as_bytes().to_vec(),
 			currency: None,

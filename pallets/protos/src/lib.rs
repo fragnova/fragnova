@@ -48,9 +48,7 @@ use serde_json::{json, Map, Value};
 
 use base58::ToBase58;
 
-use frame_support::traits::{
-	tokens::fungibles::{Inspect, Mutate},
-};
+use frame_support::traits::tokens::fungibles::{Inspect, Mutate};
 
 /// ¿
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -111,10 +109,10 @@ pub struct AccountsInfo {
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum UsageLicense<TContractAddress> {
 	/// Proto-Fragment is not available for use (owners can always use it)
-	NotAvailable,
+	Closed,
 	/// Proto-Fragment is available for use freely
-	Available,
-	/// Proto-Fragment is available for use if an amount of tickets is paid
+	Open,
+	/// Proto-Fragment is available for use if an amount of tickets is under curation
 	Tickets(Compact<u64>),
 	/// Proto-Fragment is available for use if a custom contract returns true
 	Contract(TContractAddress),
@@ -777,10 +775,10 @@ pub mod pallet {
 
 					let license = proto.license;
 					match license {
-						UsageLicense::NotAvailable => {
+						UsageLicense::Closed => {
 							return Err(Error::<T>::Unauthorized.into());
 						},
-						UsageLicense::Available => continue,
+						UsageLicense::Open => continue,
 						UsageLicense::Tickets(amount) => {
 							let balance =
 								<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(
@@ -820,9 +818,9 @@ pub mod pallet {
 		) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
-					if avail && struct_proto.license == UsageLicense::NotAvailable {
+					if avail && struct_proto.license == UsageLicense::Closed {
 						return false;
-					} else if !avail && struct_proto.license != UsageLicense::NotAvailable {
+					} else if !avail && struct_proto.license != UsageLicense::Closed {
 						return false;
 					}
 				}
