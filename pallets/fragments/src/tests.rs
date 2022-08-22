@@ -1,10 +1,12 @@
 use crate::{mock::*, Definitions, Error, FragmentMetadata, Proto2Fragments};
 use codec::Encode;
 use frame_support::{assert_noop, assert_ok};
-use protos::categories::{Categories, TextCategories};
-use protos::permissions::FragmentPerms;
-use sp_io::hashing::blake2_128;
 use pallet_protos::UsageLicense;
+use protos::{
+	categories::{Categories, TextCategories},
+	permissions::FragmentPerms,
+};
+use sp_io::hashing::blake2_128;
 
 fn initial_upload() {
 	let data = DATA.as_bytes().to_vec();

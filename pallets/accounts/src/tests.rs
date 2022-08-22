@@ -1,17 +1,12 @@
 use crate as pallet_accounts;
-use crate::dummy_data::*;
-use crate::mock;
-use crate::mock::*;
-use crate::*;
+use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Encode;
 use ethabi::Token;
-use frame_support::dispatch::DispatchResult;
-use frame_support::{assert_noop, assert_ok, traits::TypedGet};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::TypedGet};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 use serde_json::json;
 use sp_core::{offchain::testing, H256};
-use sp_runtime::offchain::storage::StorageValueRef;
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{offchain::storage::StorageValueRef, SaturatedConversion};
 
 pub use internal_lock_update_tests::lock_;
 pub use link_tests::link_;
@@ -34,12 +29,12 @@ mod link_tests {
 			assert_ok!(link_(&link));
 
 			assert!(
-				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap()
-					== link.get_recovered_ethereum_account_id()
+				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap() ==
+					link.get_recovered_ethereum_account_id()
 			);
 			assert!(
-				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap()
-					== link.clamor_account_id
+				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap() ==
+					link.clamor_account_id
 			);
 
 			assert!(<FragUsage<Test>>::get(&link.clamor_account_id).unwrap() == 0);
@@ -139,8 +134,8 @@ mod unlink_tests {
 
 			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
 			assert!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id())
-					== false
+				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()) ==
+					false
 			);
 
 			assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);
@@ -543,8 +538,8 @@ mod internal_lock_update_tests {
 
 			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
 			assert!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id())
-					== false
+				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()) ==
+					false
 			);
 
 			assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);

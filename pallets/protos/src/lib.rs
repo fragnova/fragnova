@@ -137,7 +137,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub category: Categories,
 	/// **List of Tags** associated with the **Proto-Fragment**
 	pub tags: Vec<Compact<u64>>,
-	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to the **Hash of the aforementioned Metadata Object**
+	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to the **Hash of the
+	/// aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
 	/// Accounts information for this proto.
 	pub accounts_info: AccountsInfo,
@@ -195,7 +196,8 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MetaKeys<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, u64>;
 
-	/// **StorageValue** that **equals** the **total number of unique Metadata Keys in the blockchain**
+	/// **StorageValue** that **equals** the **total number of unique Metadata Keys in the
+	/// blockchain**
 	#[pallet::storage]
 	pub type MetaKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
@@ -203,22 +205,27 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type Traits<T: Config> = StorageMap<_, Identity, Hash64, Vec<u8>, ValueQuery>;
 
-	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the aforementioned Proto-Fragment)**
+	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the
+	/// aforementioned Proto-Fragment)**
 	#[pallet::storage]
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
-	/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**
+	/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment
+	/// hashes (that have the aforementioned variant)**
 	// Not ideal but to have it iterable...
 	#[pallet::storage]
 	pub type ProtosByCategory<T: Config> = StorageMap<_, Twox64Concat, Categories, Vec<Hash256>>;
 
-	/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**
+	/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of
+	/// Proto-Fragment hashes (that have the aforementioned variant)**
 	#[pallet::storage]
 	pub type ProtosByOwner<T: Config> =
 		StorageMap<_, Twox64Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
-	/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple that contains the Curated Amount (tickets burned by the aforementioned Clamor Account ID) and the Block Number**
+	/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple
+	/// that contains the Curated Amount (tickets burned by the aforementioned Clamor Account ID)
+	/// and the Block Number**
 	// Curation management
 	// (Amount burned, Last burn time)
 	#[pallet::storage]
@@ -231,9 +238,16 @@ pub mod pallet {
 		(<T as pallet_assets::Config>::Balance, T::BlockNumber),
 	>;
 
-	/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was staked on by the aforementioned Clamor Account ID**
+	/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was
+	/// staked on by the aforementioned Clamor Account ID**
 	#[pallet::storage]
 	pub type AccountCurations<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
+
+	/// **StorageMap** that maps a **Block number** to a list of accounts that have curations
+	/// expiring on that block number
+	#[pallet::storage]
+	pub type ExpiringCurations<T: Config> =
+		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::AccountId>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -296,7 +310,8 @@ pub mod pallet {
 		T::AccountId: AsRef<[u8]>,
 	{
 		/// **Upload** a **Proto-Fragment** onto the **Blockchain**.
-		/// Furthermore, this function also indexes `data` in the Blockchain's Database and makes it available via bitswap (IPFS) directly from every chain node permanently.
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and makes it
+		/// available via bitswap (IPFS) directly from every chain node permanently.
 		///
 		/// # Arguments
 		///
@@ -304,8 +319,10 @@ pub mod pallet {
 		/// * `references` - **List of other Proto-Fragments** used to create the **Proto-Fragment**
 		/// * `categories` - **Category type** of the **Proto-Fragment**
 		/// * `tags` - **List of tags** to **tag** the **Proto-Fragment** **with**
-		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g an ERC-721 Contract)
-		/// * `include_cost` (*optional*) - **Price** of the **Proto-Fragment**. NOTE: If None, the **Proto-Fragment** *<u>can't be included</u>* into **other protos**
+		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g
+		///   an ERC-721 Contract)
+		/// * `include_cost` (*optional*) - **Price** of the **Proto-Fragment**. NOTE: If None, the
+		///   **Proto-Fragment** *<u>can't be included</u>* into **other protos**
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn upload(
@@ -421,15 +438,17 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// **Patch** an **existing Proto-Fragment** (*by appending the hash of `data` to the Vector field `patches` of the existing Proto-Fragment's Struct Instance*)
-		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		/// **Patch** an **existing Proto-Fragment** (*by appending the hash of `data` to the Vector
+		/// field `patches` of the existing Proto-Fragment's Struct Instance*) Furthermore, this
+		/// function also indexes `data` in the Blockchain's Database and stores it in the IPFS
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
 		/// * `proto_hash` - Existing Proto-Fragment's hash
 		/// * `include_cost` (optional) -
-		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the **patch**
+		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the
+		///   **patch**
 		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get())]
@@ -528,7 +547,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// **Transfer** the **ownership** of a **Proto-Fragment** from **`origin`** to **`new_owner`**
+		/// **Transfer** the **ownership** of a **Proto-Fragment** from **`origin`** to
+		/// **`new_owner`**
 		///
 		/// # Arguments
 		///
@@ -587,16 +607,22 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// **Alters** the **metadata** of a **Proto-Fragment** (whose hash is `proto_hash`) by **adding or modifying a key-value pair** (`metadata_key.clone`,`blake2_256(&data.encode())`) to the **BTreeMap field `metadata`** of the **existing Proto-Fragment's Struct Instance**.
-		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
-		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned (问Gio - what happened to auth?)
+		/// **Alters** the **metadata** of a **Proto-Fragment** (whose hash is `proto_hash`) by
+		/// **adding or modifying a key-value pair**
+		/// (`metadata_key.clone`,`blake2_256(&data.encode())`) to the **BTreeMap field `metadata`**
+		/// of the **existing Proto-Fragment's Struct Instance**. Furthermore, this function also
+		/// indexes `data` in the Blockchain's Database and stores it in the IPFS To successfully
+		/// patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is
+		/// returned (问Gio - what happened to auth?)
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic / dispatchable function
 		/// * `proto_hash` - The **hash of the Proto-Fragment**
-		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
-		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
+		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field
+		///   `metadata` of the existing Proto-Fragment's Struct Instance
+		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
+		///   in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
@@ -663,16 +689,20 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// **Detach** a **Proto-Fragment** from **this blockchain** to an **external blockchain** by ***initiating*** an **event** that **includes a signature**. (NC)
-		/// The **owner of this Proto-Fragment** can then **attach this Proto-Fragment** to the **external blockchain** by **using the aforementioned signature**.
+		/// **Detach** a **Proto-Fragment** from **this blockchain** to an **external blockchain**
+		/// by ***initiating*** an **event** that **includes a signature**. (NC) The **owner of this
+		/// Proto-Fragment** can then **attach this Proto-Fragment** to the **external blockchain**
+		/// by **using the aforementioned signature**.
 		///
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
 		/// * `proto_hash` - **Hash of the Proto-Fragment** to **detach**
-		/// * `target_chain` - **External Blockchain** that we **want to attach the **Proto-Fragment into**
-		/// * `target_account` - **Public account address** of the **blockchain `target_chain`** that we **want to detach the Proto-Fragment into**
+		/// * `target_chain` - **External Blockchain** that we **want to attach the **Proto-Fragment
+		///   into**
+		/// * `target_account` - **Public account address** of the **blockchain `target_chain`**
+		///   that we **want to detach the Proto-Fragment into**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
 		pub fn detach(
 			origin: OriginFor<T>,
@@ -751,6 +781,35 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		/// During the block finalization phase
+		fn on_finalize(n: T::BlockNumber) {
+			// drain expired curations
+			let expiring = <ExpiringCurations<T>>::take(n);
+			if let Some(expiring) = expiring {
+				for account in &expiring {
+					let curations = <AccountCurations<T>>::get(account);
+					if let Some(curations) = curations {
+						for proto in curations {
+							let curation = <ProtoCurations<T>>::get(proto, account);
+							if let Some(curation) = curation {
+								if curation.1 + T::CurationExpiration::get().saturated_into() >= n {
+									<ProtoCurations<T>>::remove(proto, account);
+									<AccountCurations<T>>::mutate(account, |curations| {
+										if let Some(curations) = curations {
+											curations.retain(|p| p != &proto);
+										}
+									});
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	impl<T: Config> Pallet<T>
 	where
 		T::AccountId: AsRef<[u8]>,
@@ -769,15 +828,13 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue;
+							continue
 						}
 					}
 
 					let license = proto.license;
 					match license {
-						UsageLicense::Closed => {
-							return Err(Error::<T>::Unauthorized.into());
-						},
+						UsageLicense::Closed => return Err(Error::<T>::Unauthorized.into()),
 						UsageLicense::Open => continue,
 						UsageLicense::Tickets(amount) => {
 							let amount: u64 = amount.into();
@@ -785,20 +842,21 @@ pub mod pallet {
 
 							let curation = <ProtoCurations<T>>::get(reference, who.clone());
 							if let Some(curation) = curation {
+								// Check if the user curated enough tickets
 								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
 							} else {
 								// Curation not found
-								return Err(Error::<T>::CurationNotFound.into());
+								return Err(Error::<T>::CurationNotFound.into())
 							}
 						},
 						UsageLicense::Contract(_contract_address) => {
 							// TODO execute contract - let's forbid this for now
-							return Err(Error::<T>::Unauthorized.into());
+							return Err(Error::<T>::Unauthorized.into())
 						},
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into());
+					return Err(Error::<T>::ReferenceNotFound.into())
 				}
 			}
 			Ok(())
@@ -813,16 +871,16 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.license == UsageLicense::Closed {
-						return false;
+						return false
 					} else if !avail && struct_proto.license != UsageLicense::Closed {
-						return false;
+						return false
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto);
+					return Self::filter_tags(tags, &struct_proto)
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories);
+					return Self::filter_category(tags, &struct_proto, categories)
 				}
 			} else {
 				false
@@ -852,34 +910,33 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-							if !implementing_diffs.is_empty()
-								|| !requiring_diffs.is_empty() || (param_script_info.format
-								== stored_script_info.format) || (param_script_info
-								== stored_script_info)
+							if !implementing_diffs.is_empty() ||
+								!requiring_diffs.is_empty() || (param_script_info.format ==
+								stored_script_info.format) || (param_script_info ==
+								stored_script_info)
 							{
-								return Self::filter_tags(tags, struct_proto);
+								return Self::filter_tags(tags, struct_proto)
 							} else {
-								return false;
+								return false
 							}
 						} else {
 							// it should never go here
-							return false;
+							return false
 						}
 					},
-					_ => {
+					_ =>
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto);
+							return Self::filter_tags(tags, struct_proto)
 						} else {
-							return false;
-						}
-					},
+							return false
+						},
 				})
 				.collect();
 
 			if found.is_empty() {
-				return false;
+				return false
 			} else {
-				return true;
+				return true
 			}
 		}
 
@@ -925,34 +982,33 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-							if !implementing_diffs.is_empty()
-								|| !requiring_diffs.is_empty() || (param_script_info.format
-								== stored_script_info.format) || (param_script_info
-								== stored_script_info)
+							if !implementing_diffs.is_empty() ||
+								!requiring_diffs.is_empty() || (param_script_info.format ==
+								stored_script_info.format) || (param_script_info ==
+								stored_script_info)
 							{
 								// OK. Found the category matching a shard script info.
-								return true;
+								return true
 							} else if !(&cat == &category) {
-								return false;
+								return false
 							} else {
-								return false;
+								return false
 							}
 						} else {
-							return false;
+							return false
 						}
 					},
 					// for all other types of Categories
-					_ => {
+					_ =>
 						if !(&cat == &category) {
-							return false;
+							return false
 						} else {
-							return true;
-						}
-					},
+							return true
+						},
 				})
 				.collect();
 
-			return found;
+			return found
 		}
 
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
@@ -1008,7 +1064,7 @@ pub mod pallet {
 					}
 				} else {
 					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into());
+					return Err("Owner not found".into())
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -1022,9 +1078,10 @@ pub mod pallet {
 					if params.categories.len() != 0 {
 						let found: Vec<Categories> =
 							Self::get_list_of_matching_categories(&params, &category);
-						// if the current stored category does not match with any of the categories in input, it can be discarded from this search.
+						// if the current stored category does not match with any of the categories
+						// in input, it can be discarded from this search.
 						if found.is_empty() {
-							continue;
+							continue
 						}
 					}
 					// Found the category.
@@ -1080,17 +1137,17 @@ pub mod pallet {
 						if let Ok(array_proto_id) = array_proto_id.try_into() {
 							array_proto_id
 						} else {
-							return Err("Failed to convert proto_id to Hash256".into());
+							return Err("Failed to convert proto_id to Hash256".into())
 						}
 					} else {
-						return Err("Failed to decode proto_id".into());
+						return Err("Failed to decode proto_id".into())
 					};
 
 					let (owner, map_metadata, license) =
 						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
 							(proto.owner, proto.metadata, proto.license)
 						} else {
-							return Err("Failed to get proto".into());
+							return Err("Failed to get proto".into())
 						};
 
 					let map_proto = match map_proto {

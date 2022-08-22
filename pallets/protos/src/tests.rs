@@ -38,7 +38,10 @@ mod upload_tests {
 			proto.category.clone(),
 			proto.tags.clone(),
 			proto.linked_asset.clone(),
-			proto.include_cost.map(|cost| UsageLicense::Tickets(Compact::from(cost))).unwrap_or(UsageLicense::Closed),
+			proto
+				.include_cost
+				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
+				.unwrap_or(UsageLicense::Closed),
 			proto.data.clone(),
 		)
 	}
@@ -77,7 +80,10 @@ mod upload_tests {
 			let correct_proto_struct = Proto {
 				block: block_number,
 				patches: Vec::new(),
-				license: proto.include_cost.map(|cost| UsageLicense::Tickets(Compact::from(cost))).unwrap_or(UsageLicense::Closed),
+				license: proto
+					.include_cost
+					.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
+					.unwrap_or(UsageLicense::Closed),
 				creator: dd.account_id,
 				owner: ProtoOwner::User(dd.account_id),
 				references: proto.references.clone(),
@@ -799,7 +805,10 @@ mod patch_tests {
 			let proto_struct = <Protos<Test>>::get(patch.proto_fragment.get_proto_hash()).unwrap();
 			assert_eq!(
 				proto_struct.license,
-				patch.include_cost.map(|cost| UsageLicense::Tickets(Compact::from(cost))).unwrap_or(UsageLicense::Closed)
+				patch
+					.include_cost
+					.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
+					.unwrap_or(UsageLicense::Closed)
 			);
 			assert!(proto_struct.patches.contains(&ProtoPatch {
 				block: block_number,
@@ -1024,8 +1033,8 @@ mod transfer_tests {
 			assert!(
 				<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
 					.unwrap()
-					.contains(&proto.get_proto_hash())
-					== false
+					.contains(&proto.get_proto_hash()) ==
+					false
 			);
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second))
 				.unwrap()

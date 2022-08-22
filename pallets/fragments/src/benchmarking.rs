@@ -5,11 +5,11 @@ use super::*;
 use crate::Pallet as Fragments;
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
+use pallet_protos::UsageLicense;
 use protos::{
 	categories::{Categories, TextCategories},
 	permissions::FragmentPerms,
 };
-use pallet_protos::UsageLicense;
 use sp_io::hashing::blake2_128;
 
 const PROTO_HASH: Hash256 = [
