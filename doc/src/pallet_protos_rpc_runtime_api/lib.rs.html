@@ -12,13 +12,13 @@
 <span id="12">12</span>
 <span id="13">13</span>
 <span id="14">14</span>
-</pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]</span>
-<span class="kw">use </span>codec::Codec;
+</pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="kw">use </span>codec::Codec;
 
 <span class="kw">use </span>pallet_protos::GetProtosParams;
 <span class="kw">use </span>sp_std::vec::Vec;
 
-<span class="macro">sp_api::decl_runtime_apis!</span> {
+<span class="macro">sp_api::decl_runtime_apis! </span>{
 	<span class="kw">pub trait </span>ProtosApi&lt;AccountId&gt;
 	<span class="kw">where
 		</span>AccountId: Codec
@@ -27,4 +27,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc_runtime_api" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc_runtime_api" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (c0941dfb5 2022-08-21)" ></div></body></html>

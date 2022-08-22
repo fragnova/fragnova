@@ -940,19 +940,19 @@
 //!
 //! IMPORTANT: locking != staking
 
-</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="attribute">#[cfg(any(test, feature = <span class="string">&quot;compile-dummy-data&quot;</span>))]</span>
-<span class="kw">pub mod </span>dummy_data;
+#[cfg(any(test, feature = <span class="string">&quot;compile-dummy-data&quot;</span>))]
+</span><span class="kw">pub mod </span>dummy_data;
 
-<span class="attribute">#[cfg(test)]</span>
-<span class="kw">pub mod </span>mock;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">pub mod </span>mock;
 
-<span class="attribute">#[cfg(test)]</span>
-<span class="kw">pub mod </span>tests;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">pub mod </span>tests;
 
-<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-<span class="kw">mod </span>benchmarking;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">mod </span>benchmarking;
 
 <span class="kw">mod </span>weights;
 
@@ -1040,8 +1040,8 @@
 
 <span class="kw">pub type </span>DiscordID = u64;
 
-<span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
-<span class="kw">pub enum </span>ExternalID {
+<span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+</span><span class="kw">pub enum </span>ExternalID {
 	Discord(DiscordID),
 }
 
@@ -1056,8 +1056,8 @@
 <span class="kw">impl </span>EthFragContract <span class="kw">for </span>() {}
 
 <span class="doccomment">/// **Struct** representing a **recent confirmed (i.e with sufficient blockchain confirmations) log** for the **event `Lock` or `Unlock`** of the **FRAG token Smart Contract**
-</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
-<span class="kw">pub struct </span>EthLockUpdate&lt;TPublic&gt; {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>EthLockUpdate&lt;TPublic&gt; {
 	<span class="doccomment">/// Public Account Address of What? (问Gio)
 	</span><span class="kw">pub </span>public: TPublic,
 	<span class="doccomment">/// If the event was `Lock`, it represents the **total amount of FRAG token** that is **currently locked** (not just the newly locked FRAG token) on the **FRAG Token Smart Contract**
@@ -1073,8 +1073,8 @@
 }
 
 <span class="doccomment">/// **Struct** representing the details about the **total amount of locked FRAG Token of a particular Ethereum Account** in the **Fragnova-owned Ethereum Smart Contract** .
-</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
-<span class="kw">pub struct </span>EthLock&lt;TBalance, TBlockNum&gt; {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>EthLock&lt;TBalance, TBlockNum&gt; {
 	<span class="doccomment">/// Total amount of FRAG token locked (not just the newly locked FRAG token) by a particular Ethereum Account
 	</span><span class="kw">pub </span>amount: TBalance,
 	<span class="doccomment">/// Clamor Block Number in which the locked FRAG tokens was &quot;effectively transfered&quot; to the Clamor Blockchain
@@ -1088,24 +1088,24 @@
 }
 
 <span class="doccomment">/// **Struct** representing the details about accounts created off-chain by various parties and integrations.
-</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
-<span class="kw">pub struct </span>AccountInfo&lt;TAccountID, TMoment&gt; {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>AccountInfo&lt;TAccountID, TMoment&gt; {
 	<span class="doccomment">/// The actual account ID
 	</span><span class="kw">pub </span>account_id: TAccountID,
 	<span class="doccomment">/// The timestamp when this account was created
 	</span><span class="kw">pub </span>created_at: TMoment,
 }
 
-<span class="attribute">#[frame_support::pallet]</span>
-<span class="kw">pub mod </span>pallet {
+<span class="attribute">#[frame_support::pallet]
+</span><span class="kw">pub mod </span>pallet {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sp_runtime::SaturatedConversion;
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
-	</span><span class="attribute">#[pallet::config]</span>
-	<span class="kw">pub trait </span>Config:
+	</span><span class="attribute">#[pallet::config]
+	</span><span class="kw">pub trait </span>Config:
 		frame_system::Config
 		+ CreateSignedTransaction&lt;Call&lt;<span class="self">Self</span>&gt;&gt;
 		+ pallet_balances::Config
@@ -1117,96 +1117,96 @@
 
 		<span class="kw">type </span>WeightInfo: WeightInfo;
 
-		<span class="attribute">#[pallet::constant]</span>
-		<span class="kw">type </span>EthChainId: Get&lt;u64&gt;;
+		<span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>EthChainId: Get&lt;u64&gt;;
 
 		<span class="doccomment">/// The **number of confirmations required** to consider a **transaction** on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
-		</span><span class="attribute">#[pallet::constant]</span>
-		<span class="kw">type </span>EthConfirmations: Get&lt;u64&gt;;
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>EthConfirmations: Get&lt;u64&gt;;
 
 		<span class="kw">type </span>EthFragContract: EthFragContract;
 
 		<span class="doccomment">/// Number of votes needed to do something (问Gio)
-		</span><span class="attribute">#[pallet::constant]</span>
-		<span class="kw">type </span>Threshold: Get&lt;u64&gt;;
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>Threshold: Get&lt;u64&gt;;
 
 		<span class="doccomment">/// The identifier type for an offchain worker.
 		</span><span class="kw">type </span>AuthorityId: AppCrypto&lt;<span class="self">Self</span>::Public, <span class="self">Self</span>::Signature&gt;;
 	}
 
-	<span class="attribute">#[pallet::genesis_config]</span>
-	<span class="attribute">#[derive(Default)]</span>
-	<span class="kw">pub struct </span>GenesisConfig {
+	<span class="attribute">#[pallet::genesis_config]
+	#[derive(Default)]
+	</span><span class="kw">pub struct </span>GenesisConfig {
 		<span class="kw">pub </span>keys: Vec&lt;ed25519::Public&gt;,
 	}
 
-	<span class="attribute">#[pallet::genesis_build]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig {
+	<span class="attribute">#[pallet::genesis_build]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig {
 		<span class="kw">fn </span>build(<span class="kw-2">&amp;</span><span class="self">self</span>) {
 			Pallet::&lt;T&gt;::initialize_keys(<span class="kw-2">&amp;</span><span class="self">self</span>.keys);
 		}
 	}
 
-	<span class="attribute">#[pallet::pallet]</span>
-	<span class="attribute">#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]</span>
-	<span class="attribute">#[pallet::without_storage_info]</span>
-	<span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
+	<span class="attribute">#[pallet::pallet]
+	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
+	#[pallet::without_storage_info]
+	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
 
 	<span class="doccomment">/// **StorageMap** that maps an **Ethereum Account ID** to a to an ***Ethlock* struct of the aforementioned Ethereum Account Id (the struct contains the amount of FRAG token locked, amongst other things)**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>EthLockedFrag&lt;T: Config&gt; =
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>EthLockedFrag&lt;T: Config&gt; =
 		StorageMap&lt;<span class="kw">_</span>, Identity, H160, EthLock&lt;T::Balance, T::BlockNumber&gt;&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
 	///
 	/// NOTE: The **Ethereum Account ID** had to be **manually mapped to the Clamor Account ID** by the owner itself to show up in this `StorageMap`.
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>EVMLinks&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, H160&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>EVMLinks&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, H160&gt;;
 
 	<span class="doccomment">/// This **StorageMap** is the reverse mapping of `EVMLinks`.
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>EVMLinksReverse&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H160, T::AccountId&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>EVMLinksReverse&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H160, T::AccountId&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to the **Amount of FRAG token staked by the aforementioned Clamor Account ID**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>FragUsage&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, T::Balance&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>FragUsage&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, T::Balance&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**.
 	/// The key for this map is:
 	/// `blake2_256(encoded(&lt;Amount of FRAG token that was locked/unlocked, Signature written by the owner of the FRAG token on a determinstic message,
 	/// 					Whether it was locked or unlocked, Ethereum Block Number where it was locked/unlocked&gt;))`
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>EVMLinkVoting&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H256, u64&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>EVMLinkVoting&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H256, u64&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a boolean indicating whether voting on the aforementioned event has ended**.
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>EVMLinkVotingClosed&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H256, T::BlockNumber&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>EVMLinkVotingClosed&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H256, T::BlockNumber&gt;;
 	<span class="comment">// consumed by Protos pallet
 	</span><span class="doccomment">/// **List of Clamor Accounts** whose **(FRAG staking)-related Storage Items** are **yet to be cleared**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>PendingUnlinks&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;T::AccountId&gt;, ValueQuery&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>PendingUnlinks&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;T::AccountId&gt;, ValueQuery&gt;;
 
 	<span class="comment">// These are the public keys representing the actual keys that can Sign messages
 	// to present to external chains to detach onto
 	</span><span class="doccomment">/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
 	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit `this list
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>FragKeys&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ed25519::Public&gt;, ValueQuery&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>FragKeys&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ed25519::Public&gt;, ValueQuery&gt;;
 
 	<span class="doccomment">/// The map between external accounts and the local accounts that are linked to them. (Discord, Telegram, etc)
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>ExternalID2Account&lt;T: Config&gt; =
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>ExternalID2Account&lt;T: Config&gt; =
 		StorageMap&lt;<span class="kw">_</span>, Twox64Concat, ExternalID, AccountInfo&lt;T::AccountId, T::Moment&gt;&gt;;
 
 	<span class="doccomment">/// The authorities able to sponsor accounts and link them to external accounts.
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>ExternalAuthorities&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;T::AccountId&gt;, ValueQuery&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>ExternalAuthorities&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;T::AccountId&gt;, ValueQuery&gt;;
 
-	<span class="attribute">#[pallet::event]</span>
-	<span class="attribute">#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]</span>
-	<span class="kw">pub enum </span>Event&lt;T: Config&gt; {
+	<span class="attribute">#[pallet::event]
+	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
+	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		<span class="doccomment">/// A link happened between native and ethereum account.
 		</span>Linked { sender: T::AccountId, eth_key: H160 },
 		<span class="doccomment">/// A link was removed between native and ethereum account.
@@ -1220,8 +1220,8 @@
 	}
 
 	<span class="comment">// Errors inform users that something went wrong.
-	</span><span class="attribute">#[pallet::error]</span>
-	<span class="kw">pub enum </span>Error&lt;T&gt; {
+	</span><span class="attribute">#[pallet::error]
+	</span><span class="kw">pub enum </span>Error&lt;T&gt; {
 		<span class="doccomment">/// Systematic failure - those errors should not happen.
 		</span>SystematicFailure,
 		<span class="doccomment">/// Signature verification failed
@@ -1249,9 +1249,9 @@
 	</span><span class="doccomment">/// Add a Clamor Account ID to `FragKeys`.
 	///
 	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
-	</span><span class="attribute">#[pallet::call]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-		<span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+	</span><span class="attribute">#[pallet::call]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+		<span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1267,7 +1267,7 @@
 		<span class="doccomment">/// Remove a Clamor Account ID from `FragKeys`
 
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>del_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1291,7 +1291,7 @@
 		/// `signature`).
 		///
 		/// After linking, also emit an event indicating that the two accounts were linked.
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>link(origin: OriginFor&lt;T&gt;, signature: ecdsa::Signature) -&gt; DispatchResult {
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -1324,7 +1324,7 @@
 
 		<span class="comment">// TODO
 		</span><span class="doccomment">/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>unlink(origin: OriginFor&lt;T&gt;, account: H160) -&gt; DispatchResult {
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 			<span class="self">Self</span>::unlink_account(sender, account)
@@ -1333,7 +1333,7 @@
 		<span class="doccomment">/// Update &#39;data&#39;
 		///
 		/// TODO
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>internal_lock_update(
 			origin: OriginFor&lt;T&gt;,
 			data: EthLockUpdate&lt;T::Public&gt;,
@@ -1460,7 +1460,7 @@
 		}
 
 		<span class="doccomment">/// TODO
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>sponsor_account(origin: OriginFor&lt;T&gt;, external_id: ExternalID) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -1512,7 +1512,7 @@
 		}
 
 		<span class="doccomment">/// Add a sponsor account to the list of sponsors able to sponsor external accounts.
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>add_sponsor(origin: OriginFor&lt;T&gt;, account: T::AccountId) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1526,7 +1526,7 @@
 		}
 
 		<span class="doccomment">/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>remove_sponsor(origin: OriginFor&lt;T&gt;, account: T::AccountId) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1540,8 +1540,8 @@
 		}
 	}
 
-	<span class="attribute">#[pallet::hooks]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+	<span class="attribute">#[pallet::hooks]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
 		<span class="doccomment">/// This function is being called after every block import (when fully synced).
 		///
 		/// Implementing this function on a module allows you to perform long-running tasks
@@ -1554,8 +1554,8 @@
 
 	<span class="doccomment">/// By default, all unsigned transactions are rejected in Substrate.
 	/// To enable Substrate to accept certain unsigned transactions, you must implement the ValidateUnsigned trait for the pallet.
-	</span><span class="attribute">#[pallet::validate_unsigned]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; ValidateUnsigned <span class="kw">for </span>Pallet&lt;T&gt; {
+	</span><span class="attribute">#[pallet::validate_unsigned]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; ValidateUnsigned <span class="kw">for </span>Pallet&lt;T&gt; {
 		<span class="kw">type </span>Call = Call&lt;T&gt;;
 
 		<span class="doccomment">/// For the call `Call:internal_lock_update` which is an unsigned transaction with a signed payload (see: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/),
@@ -1863,4 +1863,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (c0941dfb5 2022-08-21)" ></div></body></html>

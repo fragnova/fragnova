@@ -251,15 +251,15 @@
 	</span>U256,
 };
 
-<span class="attribute">#[cfg(test)]</span>
-<span class="kw">fn </span>get_ethereum_chain_id() -&gt; u64 {
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">fn </span>get_ethereum_chain_id() -&gt; u64 {
 	<span class="kw">use </span><span class="kw">crate</span>::mock::Test;
 	<span class="kw">use </span>frame_support::traits::TypedGet;
 	&lt;Test <span class="kw">as </span><span class="kw">crate</span>::Config&gt;::EthChainId::get()
 }
 
-<span class="attribute">#[cfg(not(test))]</span>
-<span class="kw">fn </span>get_ethereum_chain_id() -&gt; u64 {
+<span class="attribute">#[cfg(not(test))]
+</span><span class="kw">fn </span>get_ethereum_chain_id() -&gt; u64 {
 	<span class="number">5
 </span>}
 
@@ -336,8 +336,8 @@
 	H160::from_slice(<span class="kw-2">&amp;</span>ethereum_account_id)
 }
 
-<span class="attribute">#[derive(Clone)]</span>
-<span class="kw">pub struct </span>Link {
+<span class="attribute">#[derive(Clone)]
+</span><span class="kw">pub struct </span>Link {
 	<span class="kw">pub </span>clamor_account_id: sp_core::ed25519::Public,
 	<span class="kw">pub </span>link_signature: ecdsa::Signature,
 }
@@ -363,8 +363,8 @@
 	}
 }
 
-<span class="attribute">#[derive(Clone)]</span>
-<span class="kw">pub struct </span>Lock {
+<span class="attribute">#[derive(Clone)]
+</span><span class="kw">pub struct </span>Lock {
 	<span class="kw">pub </span>data: EthLockUpdate&lt;sp_core::ed25519::Public&gt;,
 	<span class="kw">pub </span>link: Link,
 
@@ -481,4 +481,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (c0941dfb5 2022-08-21)" ></div></body></html>

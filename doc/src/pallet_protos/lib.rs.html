@@ -1208,19 +1208,19 @@
 //!
 //! A Proto-Fragment is a digital asset that can be used to build a game or application
 
-</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="attribute">#[cfg(test)]</span>
-<span class="kw">mod </span>dummy_data;
+#[cfg(test)]
+</span><span class="kw">mod </span>dummy_data;
 
-<span class="attribute">#[cfg(test)]</span>
-<span class="kw">mod </span>mock;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>mock;
 
-<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-<span class="kw">mod </span>benchmarking;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">mod </span>benchmarking;
 
-<span class="attribute">#[cfg(test)]</span>
-<span class="kw">mod </span>tests;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests;
 
 <span class="kw">mod </span>weights;
 
@@ -1231,8 +1231,8 @@
 <span class="kw">use </span>codec::{Compact, Decode, Encode};
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 
-<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>serde::{Deserialize, Serialize};
 
 <span class="kw">use </span>sp_io::{
 	hashing::{twox_64, blake2_256},
@@ -1253,23 +1253,23 @@
 <span class="kw">use </span>base58::ToBase58;
 
 <span class="doccomment">/// ¿
-</span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]</span>
-<span class="kw">pub enum </span>LinkSource {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+</span><span class="kw">pub enum </span>LinkSource {
 	<span class="comment">// Generally we just store this data, we don&#39;t verify it as we assume auth service did it.
 	// (Link signature, Linked block number, EIP155 Chain ID)
 	</span>Evm(ecdsa::Signature, u64, U256),
 }
 
 <span class="doccomment">/// **Types** of **Assets that are linked to a Proto-Fragment** (e.g an ERC-721 Contract etc.)
-</span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]</span>
-<span class="kw">pub enum </span>LinkedAsset {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+</span><span class="kw">pub enum </span>LinkedAsset {
 	<span class="comment">// Ethereum (ERC721 Contract address, Token ID, Link source)
 	</span>Erc721(H160, U256, LinkSource),
 }
 
 <span class="doccomment">/// **Types** of **Proto-Fragment Owners**
-</span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]</span>
-<span class="kw">pub enum </span>ProtoOwner&lt;TAccountId&gt; {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+</span><span class="kw">pub enum </span>ProtoOwner&lt;TAccountId&gt; {
 	<span class="comment">// A **regular account** on **this chain**
 	</span>User(TAccountId),
 	<span class="comment">// An **external asset** not on this chain
@@ -1277,9 +1277,9 @@
 }
 
 <span class="doccomment">/// **Data Type** used to **Query and Filter for Proto-Fragments**
-</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]</span>
-<span class="attribute">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]</span>
-<span class="kw">pub struct </span>GetProtosParams&lt;TAccountId, TString&gt; {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+</span><span class="kw">pub struct </span>GetProtosParams&lt;TAccountId, TString&gt; {
 	<span class="kw">pub </span>desc: bool,
 	<span class="kw">pub </span>from: u64,
 	<span class="kw">pub </span>limit: u64,
@@ -1292,8 +1292,8 @@
 }
 
 <span class="doccomment">/// **Struct** of a **Proto-Fragment Patch**
-</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
-<span class="kw">pub struct </span>ProtoPatch&lt;TBlockNumber&gt; {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>ProtoPatch&lt;TBlockNumber&gt; {
 	<span class="doccomment">/// **Block Number** in which the **patch was created**
 	</span><span class="kw">pub </span>block: TBlockNumber,
 	<span class="doccomment">/// **Hash** of patch data
@@ -1302,15 +1302,15 @@
 	</span><span class="kw">pub </span>references: Vec&lt;Hash256&gt;,
 }
 
-<span class="attribute">#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
-<span class="kw">pub struct </span>AccountsInfo {
+<span class="attribute">#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>AccountsInfo {
 	<span class="kw">pub </span>active_accounts: u128,
 	<span class="kw">pub </span>lifetime_accounts: u128,
 }
 
 <span class="doccomment">/// **Struct** of a **Proto-Fragment**
-</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]</span>
-<span class="kw">pub struct </span>Proto&lt;TAccountId, TBlockNumber&gt; {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>Proto&lt;TAccountId, TBlockNumber&gt; {
 	<span class="doccomment">/// **Block Number** in which the **Proto-Fragment was minted in**
 	</span><span class="kw">pub </span>block: TBlockNumber,
 	<span class="doccomment">/// **List of *ProtoPatch* structs** of the **Proto-Fragment**
@@ -1334,8 +1334,8 @@
 	</span><span class="kw">pub </span>accounts_info: AccountsInfo,
 }
 
-<span class="attribute">#[frame_support::pallet]</span>
-<span class="kw">pub mod </span>pallet {
+<span class="attribute">#[frame_support::pallet]
+</span><span class="kw">pub mod </span>pallet {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
@@ -1344,8 +1344,8 @@
 	<span class="kw">use </span>sp_runtime::{traits::Saturating, SaturatedConversion};
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
-	</span><span class="attribute">#[pallet::config]</span>
-	<span class="kw">pub trait </span>Config:
+	</span><span class="attribute">#[pallet::config]
+	</span><span class="kw">pub trait </span>Config:
 		frame_system::Config + pallet_detach::Config + pallet_accounts::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
@@ -1353,59 +1353,59 @@
 
 		<span class="kw">type </span>WeightInfo: WeightInfo;
 
-		<span class="attribute">#[pallet::constant]</span>
-		<span class="kw">type </span>StorageBytesMultiplier: Get&lt;u64&gt;;
+		<span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>StorageBytesMultiplier: Get&lt;u64&gt;;
 
 		<span class="doccomment">/// The **Lock-Up Period&quot; for **Staking FRAG Tokens**
-		</span><span class="attribute">#[pallet::constant]</span>
-		<span class="kw">type </span>StakeLockupPeriod: Get&lt;u64&gt;;
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>StakeLockupPeriod: Get&lt;u64&gt;;
 	}
 
-	<span class="attribute">#[pallet::pallet]</span>
-	<span class="attribute">#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]</span>
-	<span class="attribute">#[pallet::without_storage_info]</span>
-	<span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
+	<span class="attribute">#[pallet::pallet]
+	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
+	#[pallet::without_storage_info]
+	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
 
 	<span class="doccomment">/// **StorageMap** that maps a **Tag (of type `Vec&lt;u8&gt;`)** to an **index number**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>Tags&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, Vec&lt;u8&gt;, u64&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>Tags&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, Vec&lt;u8&gt;, u64&gt;;
 
 	<span class="doccomment">/// **StorageValue** that **equals** the **total number of unique tags in the blockchain**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>TagsIndex&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, u64, ValueQuery&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>TagsIndex&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, u64, ValueQuery&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **Metadata Key (of type `Vec&lt;u8&gt;`)** to an **index number**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>MetaKeys&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, Vec&lt;u8&gt;, u64&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>MetaKeys&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, Vec&lt;u8&gt;, u64&gt;;
 
 	<span class="doccomment">/// **StorageValue** that **equals** the **total number of unique Metadata Keys in the blockchain**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>MetaKeysIndex&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, u64, ValueQuery&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>MetaKeysIndex&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, u64, ValueQuery&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **Trait ID** to the name of the Trait itself
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>Traits&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash64, Vec&lt;u8&gt;, ValueQuery&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>Traits&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash64, Vec&lt;u8&gt;, ValueQuery&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **Proto-Fragment&#39;s data&#39;s hash** to a ***Proto* struct (of the aforementioned Proto-Fragment)**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>Protos&lt;T: Config&gt; =
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>Protos&lt;T: Config&gt; =
 		StorageMap&lt;<span class="kw">_</span>, Identity, Hash256, Proto&lt;T::AccountId, T::BlockNumber&gt;&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**
 	</span><span class="comment">// Not ideal but to have it iterable...
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>ProtosByCategory&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, Categories, Vec&lt;Hash256&gt;&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>ProtosByCategory&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, Categories, Vec&lt;Hash256&gt;&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>ProtosByOwner&lt;T: Config&gt; =
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>ProtosByOwner&lt;T: Config&gt; =
 		StorageMap&lt;<span class="kw">_</span>, Twox64Concat, ProtoOwner&lt;T::AccountId&gt;, Vec&lt;Hash256&gt;&gt;;
 
 	<span class="doccomment">/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple that contains the Staked Amount (that was staked by the aforementioned Clamor Account ID) and the Block Number**
 	</span><span class="comment">// Staking management
 	// (Amount staked, Last stake time)
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>ProtoStakes&lt;T: Config&gt; = StorageDoubleMap&lt;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>ProtoStakes&lt;T: Config&gt; = StorageDoubleMap&lt;
 		<span class="kw">_</span>,
 		Identity,
 		Hash256,
@@ -1415,12 +1415,12 @@
 	&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was staked on by the aforementioned Clamor Account ID**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>AccountStakes&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, Vec&lt;Hash256&gt;&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>AccountStakes&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, Vec&lt;Hash256&gt;&gt;;
 
-	<span class="attribute">#[pallet::event]</span>
-	<span class="attribute">#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]</span>
-	<span class="kw">pub enum </span>Event&lt;T: Config&gt; {
+	<span class="attribute">#[pallet::event]
+	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
+	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		<span class="doccomment">/// A Proto-Fragment was uploaded
 		</span>Uploaded { proto_hash: Hash256, cid: Vec&lt;u8&gt; },
 		<span class="doccomment">/// A Proto-Fragment was patched
@@ -1438,8 +1438,8 @@
 	}
 
 	<span class="comment">// Errors inform users that something went wrong.
-	</span><span class="attribute">#[pallet::error]</span>
-	<span class="kw">pub enum </span>Error&lt;T&gt; {
+	</span><span class="attribute">#[pallet::error]
+	</span><span class="kw">pub enum </span>Error&lt;T&gt; {
 		<span class="doccomment">/// Systematic failure - those errors should not happen.
 		</span>SystematicFailure,
 		<span class="doccomment">/// Proto not found
@@ -1467,8 +1467,8 @@
 	<span class="comment">// Dispatchable functions allows users to interact with the pallet and invoke state changes.
 	// These functions materialize as &quot;extrinsics&quot;, which are often compared to transactions.
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
-	</span><span class="attribute">#[pallet::call]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt;
+	</span><span class="attribute">#[pallet::call]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt;
 	<span class="kw">where
 		</span>T::AccountId: AsRef&lt;[u8]&gt;,
 	{
@@ -1484,8 +1484,8 @@
 		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g an ERC-721 Contract)
 		/// * `include_cost` (*optional*) - **Price** of the **Proto-Fragment**. NOTE: If None, the **Proto-Fragment** *&lt;u&gt;can&#39;t be included&lt;/u&gt;* into **other protos**
 		/// * `data` - **Data** of the **Proto-Fragment**
-		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::upload() + (data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]</span>
-		<span class="kw">pub fn </span>upload(
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::upload() + (data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
+		</span><span class="kw">pub fn </span>upload(
 			origin: OriginFor&lt;T&gt;,
 			<span class="comment">// we store this in the state as well
 			</span>references: Vec&lt;Hash256&gt;,
@@ -1609,8 +1609,8 @@
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the **patch**
 		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
 		/// * `data` - **Data** of the **Proto-Fragment**
-		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get())]</span>
-		<span class="kw">pub fn </span>patch(
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get())]
+		</span><span class="kw">pub fn </span>patch(
 			origin: OriginFor&lt;T&gt;,
 			<span class="comment">// proto hash we want to patch
 			</span>proto_hash: Hash256,
@@ -1710,8 +1710,8 @@
 		/// * `origin` - The origin of the extrinsic function
 		/// * `proto_hash` - The **hash of the data of the Proto-Fragment** to **transfer**
 		/// * `new_owner` - The **Account ID** to **transfer the Proto-Fragment to**
-		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::transfer())]</span>
-		<span class="kw">pub fn </span>transfer(
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::transfer())]
+		</span><span class="kw">pub fn </span>transfer(
 			origin: OriginFor&lt;T&gt;,
 			proto_hash: Hash256,
 			new_owner: T::AccountId,
@@ -1772,8 +1772,8 @@
 		/// * `proto_hash` - The **hash of the Proto-Fragment**
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment&#39;s Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment&#39;s Struct Instance
-		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + (data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]</span>
-		<span class="kw">pub fn </span>set_metadata(
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + (data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
+		</span><span class="kw">pub fn </span>set_metadata(
 			origin: OriginFor&lt;T&gt;,
 			<span class="comment">// proto hash we want to update
 			</span>proto_hash: Hash256,
@@ -1848,8 +1848,8 @@
 		/// * `proto_hash` - **Hash of the Proto-Fragment** to **detach**
 		/// * `target_chain` - **External Blockchain** that we **want to attach the **Proto-Fragment into**
 		/// * `target_account` - **Public account address** of the **blockchain `target_chain`** that we **want to detach the Proto-Fragment into**
-		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::detach())]</span>
-		<span class="kw">pub fn </span>detach(
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::detach())]
+		</span><span class="kw">pub fn </span>detach(
 			origin: OriginFor&lt;T&gt;,
 			proto_hash: Hash256,
 			target_chain: SupportedChains,
@@ -1886,8 +1886,8 @@
 		/// * `origin` - The origin of the extrinsic function
 		/// * `proto_hash` - **Hash of the Proto-Fragment** to **stake on**
 		/// * `amount` - **Amount of FRAG tokens** to **stake**
-		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]</span>
-		<span class="kw">pub fn </span>stake(
+		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
+		</span><span class="kw">pub fn </span>stake(
 			origin: OriginFor&lt;T&gt;,
 			proto_hash: Hash256,
 			amount: T::Balance,
@@ -1933,8 +1933,8 @@
 		///
 		/// * `origin` - The origin of the extrinsic function
 		/// * `proto_hash` - **Hash of the Proto-Fragment** on which the FRAG tokens were staked on
-		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]</span>
-		<span class="kw">pub fn </span>unstake(origin: OriginFor&lt;T&gt;, proto_hash: Hash256) -&gt; DispatchResult {
+		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
+		</span><span class="kw">pub fn </span>unstake(origin: OriginFor&lt;T&gt;, proto_hash: Hash256) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin.clone())<span class="question-mark">?</span>;
 
 			<span class="comment">// make sure the proto exists
@@ -1971,8 +1971,8 @@
 		}
 	}
 
-	<span class="attribute">#[pallet::hooks]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+	<span class="attribute">#[pallet::hooks]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
 		<span class="doccomment">/// During the block finalization phase,
 		/// clear all the staking-related (of FRAG Token) Storage Items of any information regarding
 		/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.
@@ -2407,4 +2407,4 @@
 }
 
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (c0941dfb5 2022-08-21)" ></div></body></html>

@@ -676,16 +676,16 @@
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Clamor
 //! Blockchain to an External Blockchain
 
-</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]</span>
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="attribute">#[cfg(test)]</span>
-<span class="kw">mod </span>mock;
+#[cfg(test)]
+</span><span class="kw">mod </span>mock;
 
-<span class="attribute">#[cfg(test)]</span>
-<span class="kw">mod </span>tests;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests;
 
-<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-<span class="kw">mod </span>benchmarking;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">mod </span>benchmarking;
 
 <span class="kw">mod </span>weights;
 
@@ -754,16 +754,16 @@
 };
 
 <span class="doccomment">/// **Possible Blockchains into which a **Proto-Fragment** can be **detached**
-</span><span class="attribute">#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]</span>
-<span class="kw">pub enum </span>SupportedChains {
+</span><span class="attribute">#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+</span><span class="kw">pub enum </span>SupportedChains {
 	EthereumMainnet,
 	EthereumRinkeby,
 	EthereumGoerli,
 }
 
 <span class="doccomment">/// **Struct** that **represents** a **request to detach a Proto-Fragment**
-</span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]</span>
-<span class="kw">pub struct </span>DetachRequest {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+</span><span class="kw">pub struct </span>DetachRequest {
 	<span class="doccomment">/// **Hash** of the **data** of the **Proto-Fragment**
 	</span><span class="kw">pub </span>hash: Hash256,
 	<span class="doccomment">/// **External Blockchain** to **send** the **Proto-Fragment** to
@@ -773,8 +773,8 @@
 </span>}
 
 <span class="doccomment">/// **Struct** that **represents** a ***signed* request** (signed by the Clamor Account Address `public`) to detach a **Proto-Fragment**
-</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]</span>
-<span class="kw">pub struct </span>DetachInternalData&lt;TPublic&gt; {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+</span><span class="kw">pub struct </span>DetachInternalData&lt;TPublic&gt; {
 	<span class="doccomment">/// Clamor Public Account Address (the account address should be in FragKey, otherwise it fails)  (问Gio)
 	</span><span class="kw">pub </span>public: TPublic,
 	<span class="doccomment">/// Proto-Fragment&#39;s Data&#39;s Hash
@@ -798,8 +798,8 @@
 }
 
 <span class="doccomment">/// **Struct** that **contains information** about a **detached Proto-Fragment**
-</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]</span>
-<span class="kw">pub struct </span>ExportData {
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+</span><span class="kw">pub struct </span>ExportData {
 	<span class="doccomment">/// The **Blockchain** the **Proto-Fragment** was **detached onto**
 	</span>chain: SupportedChains,
 	<span class="doccomment">/// The account address (on the blockchain `SupportedChain`) that the Proto-Fragment was transfered into
@@ -810,16 +810,16 @@
 	</span>nonce: u64,
 }
 
-<span class="attribute">#[frame_support::pallet]</span>
-<span class="kw">pub mod </span>pallet {
+<span class="attribute">#[frame_support::pallet]
+</span><span class="kw">pub mod </span>pallet {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sp_core::ed25519::Public;
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
-	</span><span class="attribute">#[pallet::config]</span>
-	<span class="kw">pub trait </span>Config:
+	</span><span class="attribute">#[pallet::config]
+	</span><span class="kw">pub trait </span>Config:
 		CreateSignedTransaction&lt;Call&lt;<span class="self">Self</span>&gt;&gt;
 		+ pallet_randomness_collective_flip::Config
 		+ frame_system::Config
@@ -831,54 +831,54 @@
 		</span><span class="kw">type </span>AuthorityId: AppCrypto&lt;<span class="self">Self</span>::Public, <span class="self">Self</span>::Signature&gt;;
 	}
 
-	<span class="attribute">#[pallet::genesis_config]</span>
-	<span class="attribute">#[derive(Default)]</span>
-	<span class="kw">pub struct </span>GenesisConfig {
+	<span class="attribute">#[pallet::genesis_config]
+	#[derive(Default)]
+	</span><span class="kw">pub struct </span>GenesisConfig {
 		<span class="doccomment">///
 		</span><span class="kw">pub </span>eth_authorities: Vec&lt;ecdsa::Public&gt;,
 		<span class="kw">pub </span>keys: Vec&lt;ed25519::Public&gt;,
 	}
 
-	<span class="attribute">#[pallet::genesis_build]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig {
+	<span class="attribute">#[pallet::genesis_build]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig {
 		<span class="kw">fn </span>build(<span class="kw-2">&amp;</span><span class="self">self</span>) {
 			Pallet::&lt;T&gt;::initialize_eth_authorities(<span class="kw-2">&amp;</span><span class="self">self</span>.eth_authorities);
 			Pallet::&lt;T&gt;::initialize_keys(<span class="kw-2">&amp;</span><span class="self">self</span>.keys);
 		}
 	}
 
-	<span class="attribute">#[pallet::pallet]</span>
-	<span class="attribute">#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]</span>
-	<span class="attribute">#[pallet::without_storage_info]</span>
-	<span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
+	<span class="attribute">#[pallet::pallet]
+	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
+	#[pallet::without_storage_info]
+	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(<span class="kw">_</span>);
 
 	<span class="doccomment">/// **StorageValue** that equals a **list of detach requests**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>DetachRequests&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;DetachRequest&gt;, ValueQuery&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>DetachRequests&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;DetachRequest&gt;, ValueQuery&gt;;
 
 	<span class="doccomment">/// **StorageDoubleMap** that maps an **account address on an external blockchain and the external blockchain itself** to a **nonce**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>DetachNonces&lt;T: Config&gt; =
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>DetachNonces&lt;T: Config&gt; =
 		StorageDoubleMap&lt;<span class="kw">_</span>, Twox64Concat, Vec&lt;u8&gt;, Twox64Concat, SupportedChains, u64&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **detached Proto-Fragment&#39;s hash** to an ***ExportData* enum (this enum contains information about the Proto-Fragment&#39; detachment)**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>DetachedHashes&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash256, ExportData&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>DetachedHashes&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash256, ExportData&gt;;
 
 	<span class="doccomment">/// **StorageValue** that equals the **set of ECDSA public keys of the Ethereum accounts** that are **authorized to detach a Proto-Fragment** onto **Fragnova&#39;s Ethereum Smart Contract**
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>EthereumAuthorities&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ecdsa::Public&gt;, ValueQuery&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>EthereumAuthorities&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ecdsa::Public&gt;, ValueQuery&gt;;
 
 	<span class="comment">// These are the public keys representing the actual keys that can Sign messages
 	// to present to external chains to detach onto
 	</span><span class="doccomment">/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit `FragKeys`
-	</span><span class="attribute">#[pallet::storage]</span>
-	<span class="kw">pub type </span>FragKeys&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ed25519::Public&gt;, ValueQuery&gt;;
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>FragKeys&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ed25519::Public&gt;, ValueQuery&gt;;
 
-	<span class="attribute">#[pallet::event]</span>
-	<span class="attribute">#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]</span>
-	<span class="kw">pub enum </span>Event&lt;T: Config&gt; {
+	<span class="attribute">#[pallet::event]
+	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
+	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		Uploaded { fragment_data_hash: Hash256 },
 		Patched { fragment_data_hash: Hash256 },
 		MetadataChanged { fragment_data_hash: Hash256, remote_signature: Vec&lt;u8&gt; },
@@ -887,8 +887,8 @@
 	}
 
 	<span class="comment">// Errors inform users that something went wrong.
-	</span><span class="attribute">#[pallet::error]</span>
-	<span class="kw">pub enum </span>Error&lt;T&gt; {
+	</span><span class="attribute">#[pallet::error]
+	</span><span class="kw">pub enum </span>Error&lt;T&gt; {
 		<span class="doccomment">/// Already detached
 		</span>Detached,
 		<span class="doccomment">/// No Validators are present
@@ -901,12 +901,12 @@
 	// These functions materialize as &quot;extrinsics&quot;, which are often compared to transactions.
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	</span><span class="doccomment">/// Functions that are callable from outside the runtime.
-	</span><span class="attribute">#[pallet::call]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
+	</span><span class="attribute">#[pallet::call]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
 		<span class="doccomment">/// **Add** an **ECDSA public key** to the **set of Ethereum accounts that are authorized to
 		/// detach a Proto-Fragment onto Fragnova&#39;s Ethereum Smart Contract**
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_eth_auth())]</span>
-		<span class="kw">pub fn </span>add_eth_auth(origin: OriginFor&lt;T&gt;, public: ecdsa::Public) -&gt; DispatchResult {
+		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_eth_auth())]
+		</span><span class="kw">pub fn </span>add_eth_auth(origin: OriginFor&lt;T&gt;, public: ecdsa::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">log::debug!</span>(<span class="string">&quot;New eth auth: {:?}&quot;</span>, public);
@@ -919,8 +919,8 @@
 		}
 
 		<span class="doccomment">/// **Remove** an **ECDSA public key** from the **set of Ethereum accounts that are authorized to detach a Proto-Fragment onto Fragnova&#39;s Ethereum Smart Contract**
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::del_eth_auth())]</span>
-		<span class="kw">pub fn </span>del_eth_auth(origin: OriginFor&lt;T&gt;, public: ecdsa::Public) -&gt; DispatchResult {
+		</span><span class="attribute">#[pallet::weight(T::WeightInfo::del_eth_auth())]
+		</span><span class="kw">pub fn </span>del_eth_auth(origin: OriginFor&lt;T&gt;, public: ecdsa::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">log::debug!</span>(<span class="string">&quot;Removed eth auth: {:?}&quot;</span>, public);
@@ -933,8 +933,8 @@
 		}
 
 		<span class="doccomment">/// Add an **Ed25519 public key** to the **set of Clamor accounts that are authorized to sign a message**, where the **message** is a **request to detach a Proto-Fragment from Clamor**
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_eth_auth())]</span>
-		<span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
+		</span><span class="attribute">#[pallet::weight(T::WeightInfo::add_eth_auth())]
+		</span><span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">log::debug!</span>(<span class="string">&quot;New key: {:?}&quot;</span>, public);
@@ -947,8 +947,8 @@
 		}
 
 		<span class="doccomment">/// Remove an **Ed25519 public key** from the **set of Clamor accounts that are authorized to sign a message**, where the **message** is a **request to detach a Proto-Fragment from Clamor**
-		</span><span class="attribute">#[pallet::weight(T::WeightInfo::del_eth_auth())]</span>
-		<span class="kw">pub fn </span>del_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
+		</span><span class="attribute">#[pallet::weight(T::WeightInfo::del_eth_auth())]
+		</span><span class="kw">pub fn </span>del_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">log::debug!</span>(<span class="string">&quot;Removed key: {:?}&quot;</span>, public);
@@ -962,7 +962,7 @@
 
 		<span class="comment">// Detached a Proto-Fragment from this blockchain (Clamor) by emitting an event that includes a signature (note: the event is placed to the System pallet&#39;s runtime storage for the block this transaction runs it).
 		// The owner of the Proto-Fragment can then attach the Proto-Fragment to the remote target blockchain by using the aforementioned signature .
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)]</span> <span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>internal_finalize_detach(
 			origin: OriginFor&lt;T&gt;,
 			data: DetachInternalData&lt;T::Public&gt;,
@@ -996,8 +996,8 @@
 	}
 
 	<span class="doccomment">/// Define some logic that should be executed regularly in some context, for e.g. `on_initialize`.
-	</span><span class="attribute">#[pallet::hooks]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
+	</span><span class="attribute">#[pallet::hooks]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
 		<span class="doccomment">/// During the block finalization phase, the **list** in **DetachRequests** is **stored in the Offchain DB** under the **index &quot;fragments-detach-requests&quot;**. After which, **DetachRequests** is **cleared**
 		</span><span class="kw">fn </span>on_finalize(_n: T::BlockNumber) {
 			<span class="comment">// drain and process requests
@@ -1020,8 +1020,8 @@
 
 	<span class="doccomment">/// By default, all unsigned transactions are rejected in Substrate.
 	/// To enable Substrate to accept certain unsigned transactions, you must implement the ValidateUnsigned trait for the pallet.
-	</span><span class="attribute">#[pallet::validate_unsigned]</span>
-	<span class="kw">impl</span>&lt;T: Config&gt; ValidateUnsigned <span class="kw">for </span>Pallet&lt;T&gt; {
+	</span><span class="attribute">#[pallet::validate_unsigned]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; ValidateUnsigned <span class="kw">for </span>Pallet&lt;T&gt; {
 		<span class="kw">type </span>Call = Call&lt;T&gt;;
 
 		<span class="doccomment">/// For the call `Call:internal_finalize_detach` which is an unsigned transaction with a signed payload (see: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/),
@@ -1349,4 +1349,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_detach" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_detach" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (c0941dfb5 2022-08-21)" ></div></body></html>

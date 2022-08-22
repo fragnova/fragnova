@@ -191,9 +191,9 @@
 <span id="191">191</span>
 <span id="192">192</span>
 <span id="193">193</span>
-</pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]</span>
+</pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-<span class="comment">// #[cfg(feature = &quot;std&quot;)]
+</span><span class="comment">// #[cfg(feature = &quot;std&quot;)]
 // extern crate chainblocks;
 
 </span><span class="kw">use </span>codec::{Decode, Encode, Error <span class="kw">as </span>CodecError};
@@ -208,12 +208,12 @@
 
 <span class="kw">pub const </span>CID_PREFIX: [u8; <span class="number">6</span>] = <span class="macro">hex_literal::hex!</span>(<span class="string">&quot;0155a0e40220&quot;</span>);
 
-<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">mod </span>details {
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">mod </span>details {
 	<span class="kw">use </span>lazy_static::lazy_static;
 	<span class="kw">use </span>std::sync::Mutex;
 
-	<span class="macro">lazy_static!</span> {
+	<span class="macro">lazy_static! </span>{
 		<span class="kw">pub static </span><span class="kw-2">ref </span>GETH_URL: Mutex&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;&gt; = Mutex::new(<span class="prelude-val">None</span>);
 	}
 
@@ -258,8 +258,8 @@
 	}
 }
 
-<span class="attribute">#[cfg(not(feature = <span class="string">&quot;std&quot;</span>))]</span>
-<span class="kw">mod </span>details {
+<span class="attribute">#[cfg(not(feature = <span class="string">&quot;std&quot;</span>))]
+</span><span class="kw">mod </span>details {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 	<span class="kw">pub fn </span>_say_hello_world(data: <span class="kw-2">&amp;</span>str) {}
@@ -284,8 +284,8 @@
 /// The macro expects the runtime interface declaration as trait declaration.
 ///
 /// Source: https://paritytech.github.io/substrate/latest/sp_runtime_interface/attr.runtime_interface.html
-</span><span class="attribute">#[sp_runtime_interface::runtime_interface]</span>
-<span class="kw">pub trait </span>Clamor {
+</span><span class="attribute">#[sp_runtime_interface::runtime_interface]
+</span><span class="kw">pub trait </span>Clamor {
 	<span class="comment">// these are called NATIVE from even WASM
 	// that&#39;s the deal
 
@@ -306,8 +306,8 @@
 	}
 }
 
-<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">pub fn </span>init(geth_url: <span class="prelude-ty">Option</span>&lt;String&gt;) {
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">pub fn </span>init(geth_url: <span class="prelude-ty">Option</span>&lt;String&gt;) {
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(geth_url) = geth_url {
 		<span class="kw-2">*</span>details::GETH_URL.lock().unwrap() = <span class="prelude-val">Some</span>(geth_url.into_bytes());
 	}
@@ -385,4 +385,4 @@
 	TAccountId::decode(<span class="kw-2">&amp;mut &amp;</span>who[..])
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sp_clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sp_clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (c0941dfb5 2022-08-21)" ></div></body></html>

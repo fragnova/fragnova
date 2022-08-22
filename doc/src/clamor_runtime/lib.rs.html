@@ -938,13 +938,13 @@
 <span id="938">938</span>
 <span id="939">939</span>
 <span id="940">940</span>
-</pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]</span>
-<span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-</span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]</span>
+</pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
+</span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
 
-<span class="comment">// Make the WASM binary available.
-</span><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]</span>
-<span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
+</span><span class="comment">// Make the WASM binary available.
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
 
 <span class="kw">use </span>frame_support::{
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
@@ -969,8 +969,8 @@
 	ApplyExtrinsicResult, MultiSignature,
 };
 <span class="kw">use </span>sp_std::prelude::<span class="kw-2">*</span>;
-<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">use </span>sp_version::NativeVersion;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>sp_version::NativeVersion;
 <span class="kw">use </span>sp_version::RuntimeVersion;
 
 <span class="comment">// A few exports that help ease life for downstream crates.
@@ -987,8 +987,8 @@
 <span class="kw">pub use </span>pallet_protos::Call <span class="kw">as </span>ProtosCall;
 <span class="kw">pub use </span>pallet_timestamp::Call <span class="kw">as </span>TimestampCall;
 <span class="kw">use </span>pallet_transaction_payment::CurrencyAdapter;
-<span class="attribute">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, test))]</span>
-<span class="kw">pub use </span>sp_runtime::BuildStorage;
+<span class="attribute">#[cfg(any(feature = <span class="string">&quot;std&quot;</span>, test))]
+</span><span class="kw">pub use </span>sp_runtime::BuildStorage;
 <span class="kw">pub use </span>sp_runtime::{Perbill, Permill};
 
 <span class="kw">use </span>scale_info::prelude::string::String;
@@ -1050,7 +1050,7 @@
 	<span class="doccomment">/// Opaque block identifier type.
 	</span><span class="kw">pub type </span>BlockId = generic::BlockId&lt;Block&gt;;
 
-	<span class="macro">impl_opaque_keys!</span> {
+	<span class="macro">impl_opaque_keys! </span>{
 		<span class="kw">pub struct </span>SessionKeys {
 			<span class="kw">pub </span>aura: Aura,
 			<span class="kw">pub </span>grandpa: Grandpa,
@@ -1060,8 +1060,8 @@
 
 <span class="comment">// To learn more about runtime versioning and what each of the following value means:
 //   https://docs.substrate.io/v3/runtime/upgrades#runtime-versioning
-</span><span class="attribute">#[sp_version::runtime_version]</span>
-<span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
+</span><span class="attribute">#[sp_version::runtime_version]
+</span><span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;fragnova-testnet&quot;</span>),
 	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;fragnova-color&quot;</span>),
 	authoring_version: <span class="number">1</span>,
@@ -1102,8 +1102,8 @@
 <span class="kw">pub const </span>DAYS: BlockNumber = HOURS * <span class="number">24</span>;
 
 <span class="doccomment">/// The version information used to identify this runtime when compiled natively.
-</span><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]</span>
-<span class="kw">pub fn </span>native_version() -&gt; NativeVersion {
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">pub fn </span>native_version() -&gt; NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
@@ -1126,7 +1126,7 @@
 // Each parameter struct type also implements the frame_support::traits::Get&lt;I&gt; trait to convert the type to its specified value.
 //
 // Source: https://docs.substrate.io/v3/runtime/macros/
-</span><span class="macro">parameter_types!</span> {
+</span><span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>Version: RuntimeVersion = VERSION;
 	<span class="kw">pub const </span>BlockHashCount: BlockNumber = <span class="number">2400</span>;
 	<span class="kw">pub const </span>SS58Prefix: u8 = <span class="number">93</span>;
@@ -1211,7 +1211,7 @@
 
 <span class="kw">impl </span>pallet_randomness_collective_flip::Config <span class="kw">for </span>Runtime {}
 
-<span class="macro">parameter_types!</span> {
+<span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>MaxAuthorities: u32 = <span class="number">32</span>;
 }
 
@@ -1241,7 +1241,7 @@
 	<span class="kw">type </span>MaxAuthorities = MaxAuthorities;
 }
 
-<span class="macro">parameter_types!</span> {
+<span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>MinimumPeriod: u64 = SLOT_DURATION / <span class="number">2</span>;
 }
 
@@ -1253,7 +1253,7 @@
 	<span class="kw">type </span>WeightInfo = ();
 }
 
-<span class="macro">parameter_types!</span> {
+<span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>ExistentialDeposit: u128 = <span class="number">500</span>;
 	<span class="kw">pub const </span>MaxLocks: u32 = <span class="number">50</span>;
 }
@@ -1272,7 +1272,7 @@
 	<span class="kw">type </span>WeightInfo = pallet_balances::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="macro">parameter_types!</span> {
+<span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>DepositPerItem: Balance = deposit(<span class="number">1</span>, <span class="number">0</span>);
 	<span class="kw">pub const </span>DepositPerByte: Balance = deposit(<span class="number">0</span>, <span class="number">1</span>);
 	<span class="kw">pub const </span>MaxValueSize: u32 = <span class="number">16_384</span>;
@@ -1358,7 +1358,7 @@
 	<span class="kw">type </span>AnnouncementDepositFactor = ConstU128&lt;<span class="number">1</span>&gt;;
 }
 
-<span class="macro">parameter_types!</span> {
+<span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>MaxAdditionalFields: u32 = <span class="number">2</span>;
 	<span class="kw">pub const </span>MaxRegistrars: u32 = <span class="number">20</span>;
 }
@@ -1486,7 +1486,7 @@
 	<span class="kw">type </span>MaxStorageKeyLen = ConstU32&lt;<span class="number">128</span>&gt;;
 }
 
-<span class="macro">parameter_types!</span> {
+<span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>IndexDeposit: Balance = <span class="number">500</span>;
 }
 
@@ -1498,7 +1498,7 @@
 	<span class="kw">type </span>WeightInfo = pallet_indices::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="macro">parameter_types!</span> {
+<span class="macro">parameter_types! </span>{
 	<span class="kw">pub const </span>AssetDeposit: Balance = <span class="number">100 </span>* DOLLARS;
 	<span class="kw">pub const </span>ApprovalDeposit: Balance = <span class="number">1 </span>* DOLLARS;
 	<span class="kw">pub const </span>StringLimit: u32 = <span class="number">50</span>;
@@ -1604,7 +1604,7 @@
 	AllPalletsWithSystem,
 &gt;;
 
-<span class="macro">impl_runtime_apis!</span> {
+<span class="macro">impl_runtime_apis! </span>{
 	<span class="kw">impl </span>sp_api::Core&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>version() -&gt; RuntimeVersion {
 			VERSION
@@ -1801,8 +1801,8 @@
 		}
 	}
 
-	<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-	<span class="kw">impl </span>frame_benchmarking::Benchmark&lt;Block&gt; <span class="kw">for </span>Runtime {
+	<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+	</span><span class="kw">impl </span>frame_benchmarking::Benchmark&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>benchmark_metadata(extra: bool) -&gt; (
 			Vec&lt;frame_benchmarking::BenchmarkList&gt;,
 			Vec&lt;frame_support::traits::StorageInfo&gt;,
@@ -1879,4 +1879,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9c20b2a8c 2022-08-17)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (c0941dfb5 2022-08-21)" ></div></body></html>
