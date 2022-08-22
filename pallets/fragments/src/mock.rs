@@ -137,11 +137,16 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
+parameter_types! {
+	pub const TicketsAssetId: u32 = 1337;
+}
+
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type StakeLockupPeriod = ConstU64<100800>; // one week
+	type CurationExpiration = ConstU64<5>;
+	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_accounts::Config for Test {

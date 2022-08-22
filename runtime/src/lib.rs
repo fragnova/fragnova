@@ -387,8 +387,7 @@ impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	// type StakeLockupPeriod = ConstU64<100800>; // one week
-	type StakeLockupPeriod = ConstU64<5>; // one week
+	type CurationExpiration = ConstU64<100800>; // one week
 	type TicketsAssetId = TicketsAssetId;
 }
 

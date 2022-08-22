@@ -4,6 +4,7 @@ use frame_support::{assert_noop, assert_ok};
 use protos::categories::{Categories, TextCategories};
 use protos::permissions::FragmentPerms;
 use sp_io::hashing::blake2_128;
+use pallet_protos::UsageLicense;
 
 fn initial_upload() {
 	let data = DATA.as_bytes().to_vec();
@@ -15,7 +16,7 @@ fn initial_upload() {
 		Categories::Text(TextCategories::Plain),
 		Vec::new(),
 		None,
-		None,
+		UsageLicense::Closed,
 		data,
 	));
 }

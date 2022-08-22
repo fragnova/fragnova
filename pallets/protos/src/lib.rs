@@ -169,9 +169,9 @@ pub mod pallet {
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
 
-		/// The **Lock-Up Period" for **Staking FRAG Tokens**
+		/// The number of blocks after which a curation period is over
 		#[pallet::constant]
-		type StakeLockupPeriod: Get<u64>;
+		type CurationExpiration: Get<u64>;
 
 		/// The tickets asset id
 		#[pallet::constant]
@@ -780,14 +780,8 @@ pub mod pallet {
 						},
 						UsageLicense::Open => continue,
 						UsageLicense::Tickets(amount) => {
-							let balance =
-								<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(
-									T::TicketsAssetId::get(),
-									&who,
-								);
 							let amount: u64 = amount.into();
 							let amount = amount.saturated_into();
-							ensure!(balance >= amount, Error::<T>::InsufficientBalance);
 
 							let curation = <ProtoCurations<T>>::get(reference, who.clone());
 							if let Some(curation) = curation {
