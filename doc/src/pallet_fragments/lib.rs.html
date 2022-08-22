@@ -1184,6 +1184,9 @@
 <span id="1184">1184</span>
 <span id="1185">1185</span>
 <span id="1186">1186</span>
+<span id="1187">1187</span>
+<span id="1188">1188</span>
+<span id="1189">1189</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1214,6 +1217,9 @@
 </span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 #[cfg(test)]
+</span><span class="kw">mod </span>dummy_data;
+
+<span class="attribute">#[cfg(test)]
 </span><span class="kw">mod </span>mock;
 
 <span class="attribute">#[cfg(test)]
@@ -1934,7 +1940,7 @@
 					<span class="kw-2">&amp;</span>who,
 					<span class="kw-2">&amp;</span>vault,
 					price.saturated_into(),
-					<span class="bool-val">true</span>, <span class="comment">// investigate ???
+					<span class="bool-val">true</span>, <span class="comment">// The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
 				</span>)
 				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
 			} <span class="kw">else </span>{
@@ -1943,8 +1949,8 @@
 					</span><span class="kw-2">&amp;</span>who,
 					<span class="kw-2">&amp;</span>vault,
 					price.saturated_into(),
-					ExistenceRequirement::KeepAlive, <span class="comment">// investigate ???
-				</span>)
+					ExistenceRequirement::KeepAlive, 
+				)
 				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
 			}
 
