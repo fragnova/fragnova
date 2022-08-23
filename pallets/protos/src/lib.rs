@@ -22,7 +22,7 @@ mod weights;
 
 use protos::{categories::Categories, traits::Trait};
 
-use sp_core::{ecdsa, H160, U256};
+use sp_core::{crypto::UncheckedFrom, ecdsa, H160, U256};
 
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
@@ -160,6 +160,7 @@ pub mod pallet {
 		+ pallet_detach::Config
 		+ pallet_accounts::Config
 		+ pallet_assets::Config
+		+ pallet_contracts::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -297,8 +298,6 @@ pub mod pallet {
 		ReferenceNotFound,
 		/// Not enough tokens to stake
 		InsufficientBalance,
-		/// Cannot find FRAG link to use as stake funds
-		NoFragLink,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -307,7 +306,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
-		T::AccountId: AsRef<[u8]>,
+		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 	{
 		/// **Upload** a **Proto-Fragment** onto the **Blockchain**.
 		/// Furthermore, this function also indexes `data` in the Blockchain's Database and makes it
@@ -812,10 +811,9 @@ pub mod pallet {
 
 	impl<T: Config> Pallet<T>
 	where
-		T::AccountId: AsRef<[u8]>,
+		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 	{
 		fn check_license(references: &[Hash256], who: &T::AccountId) -> DispatchResult {
-			// Check FRAG staking
 			// TODO this is not tested properly
 			for reference in references.iter() {
 				let proto = <Protos<T>>::get(reference);
@@ -849,9 +847,35 @@ pub mod pallet {
 								return Err(Error::<T>::CurationNotFound.into())
 							}
 						},
-						UsageLicense::Contract(_contract_address) => {
-							// TODO execute contract - let's forbid this for now
-							return Err(Error::<T>::Unauthorized.into())
+						UsageLicense::Contract(contract_address) => {
+							let res: Result<pallet_contracts_primitives::ExecReturnValue, _> =
+								<pallet_contracts::Pallet<T>>::bare_call(
+									who.clone(),
+									contract_address,
+									0u32.saturated_into(),
+									1_000_000, // TODO determine this limit better should not be too high indeed
+									None,
+									vec![],
+									false,
+								)
+								.result
+								.map_err(|e| {
+									log::debug!("UsageLicense::Contract error: {:?}", e);
+									e
+								});
+
+							if let Ok(res) = res {
+								let allowed = bool::decode(&mut &res.data.0[..]);
+								if let Ok(allowed) = allowed {
+									if !allowed {
+										return Err(Error::<T>::Unauthorized.into())
+									}
+								} else {
+									return Err(Error::<T>::Unauthorized.into())
+								}
+							} else {
+								return Err(Error::<T>::Unauthorized.into())
+							}
 						},
 					}
 				} else {

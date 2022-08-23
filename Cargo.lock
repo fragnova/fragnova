@@ -4303,6 +4303,8 @@ dependencies = [
  "pallet-accounts",
  "pallet-assets",
  "pallet-balances",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
  "pallet-detach",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
