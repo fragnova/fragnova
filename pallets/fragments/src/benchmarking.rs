@@ -11,6 +11,7 @@ use protos::{
 	permissions::FragmentPerms,
 };
 use sp_io::hashing::blake2_128;
+use sp_core::crypto::UncheckedFrom;
 
 const PROTO_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
@@ -23,7 +24,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 
 benchmarks! {
 	where_clause { where
-		T::AccountId: AsRef<[u8]>
+		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>
 	}
 
 	create {

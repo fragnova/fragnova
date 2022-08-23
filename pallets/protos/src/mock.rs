@@ -4,6 +4,7 @@ use crate::*;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, ConstU64},
+	weights::constants::WEIGHT_PER_SECOND,
 };
 use frame_system;
 
@@ -39,6 +40,7 @@ frame_support::construct_runtime!(
 		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -200,6 +202,43 @@ impl pallet_proxy::Config for Test {
 	type CallHasher = BlakeTwo256;
 	type AnnouncementDepositBase = ConstU32<1>;
 	type AnnouncementDepositFactor = ConstU32<1>;
+}
+
+parameter_types! {
+	pub MySchedule: pallet_contracts::Schedule<Test> = {
+		let mut schedule = <pallet_contracts::Schedule<Test>>::default();
+		// We want stack height to be always enabled for tests so that this
+		// instrumentation path is always tested implicitly.
+		schedule.limits.stack_height = Some(512);
+		schedule
+	};
+	pub static DepositPerByte: u64 = 1;
+	pub const DepositPerItem: u64 = 2;
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(2 * WEIGHT_PER_SECOND);
+}
+
+impl pallet_contracts::Config for Test {
+	type Time = Timestamp;
+	type Randomness = CollectiveFlip;
+	type Currency = Balances;
+	type Event = Event;
+	type Call = Call;
+	type CallFilter = frame_support::traits::Nothing;
+	type DepositPerItem = DepositPerItem;
+	type DepositPerByte = DepositPerByte;
+	type CallStack = [pallet_contracts::Frame<Self>; 31];
+	type WeightPrice = ();
+	type WeightInfo = ();
+	type ChainExtension = ();
+	type DeletionQueueDepth = ConstU32<1024>;
+	type DeletionWeightLimit = ConstU64<500_000_000_000>;
+	type Schedule = MySchedule;
+	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<BlockWeights>;
+	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
+	type MaxStorageKeyLen = ConstU32<128>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

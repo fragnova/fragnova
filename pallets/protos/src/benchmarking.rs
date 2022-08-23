@@ -19,7 +19,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 benchmarks! {
 
 	where_clause { where
-		T::AccountId: AsRef<[u8]>
+		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>
 	}
 
 	upload {
