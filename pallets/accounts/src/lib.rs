@@ -420,7 +420,7 @@ pub mod pallet {
 				Error::<T>::LinkAlreadyProcessed
 			);
 
-			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature, period)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
 			let mut message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
 			message.extend_from_slice(&data.sender.0[..]); // Add data.sender.0 ("msg.sender" in Solidity) to message
 			message.extend_from_slice(&T::EthChainId::get().to_be_bytes()); // Add EthChainId ("block.chainid" in Solidity) to message
@@ -817,7 +817,7 @@ pub mod pallet {
 				let data = log["data"].as_str().ok_or_else(|| "Invalid response - no data")?;
 				let data =
 					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?; // Convert the hexadecimal `data` from hexadecimal to binary (i.e raw bits)
-				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256)], &data) // First parameter is a signature and the second paramteter is the amount of FRAG token that was locked/unlocked (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(256)], &data) // First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
 					.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
 				let locked = match topic {
 					// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
@@ -837,13 +837,15 @@ pub mod pallet {
 					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
 
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
+				let locktime = data[2].clone().into_uint().ok_or_else(|| "Invalid data")?; // Lock period (`data[2]`)
 
 				log::trace!(
-					"Block: {}, sender: {}, locked: {}, amount: {}, signature: {:?}",
+					"Block: {}, sender: {}, locked: {}, amount: {}, locktime: {}, signature: {:?}",
 					block_number,
 					sender,
 					locked,
 					amount,
+					locktime,
 					eth_signature.clone(),
 				);
 
