@@ -216,7 +216,8 @@ mod sync_frag_locks_tests {
 			.data
 			.block_number // ensure that `lock.block_number` exists by making `latest_block_number` greater than or equal to it
 			.saturating_add(<Test as pallet_accounts::Config>::EthConfirmations::get())
-			.saturating_add(69);
+			.saturating_add(69)
+			.saturating_add(1234567890);
 
 		state.expect_request(testing::PendingRequest {
 			method: String::from("POST"),
@@ -285,7 +286,8 @@ mod sync_frag_locks_tests {
 								ethabi::encode(
 									&[
 										Token::Bytes(lock.data.signature.0.to_vec()),
-										Token::Uint(lock.data.amount)
+										Token::Uint(lock.data.amount),
+										Token::Uint(lock.data.locktime)
 									]
 								),
 							)),
@@ -396,6 +398,7 @@ mod internal_lock_update_tests {
 
 			let data_tuple = (
 				lock.data.amount,
+				lock.data.locktime,
 				lock.data.sender,
 				lock.data.signature,
 				true,
@@ -416,7 +419,10 @@ mod internal_lock_update_tests {
 					eth_key: lock.data.sender,
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
-					>(lock.data.amount)
+					>(lock.data.amount),
+					locktime: SaturatedConversion::saturated_into::<
+						<Test as pallet_timestamp::Config>::Moment,
+					>(lock.data.locktime)
 				})
 			);
 		});
@@ -429,8 +435,9 @@ mod internal_lock_update_tests {
 
 			let mut lock = dd.lock;
 			lock.data.amount = U256::from(0u32);
+			lock.data.locktime = U256::from(1234567890);
 			lock.data.signature =
-				create_lock_signature(lock.ethereum_account_pair.clone(), lock.data.amount.clone());
+				create_lock_signature(lock.ethereum_account_pair.clone(), lock.data.amount.clone(), lock.data.locktime.clone());
 
 			assert_noop!(lock_(&lock), Error::<Test>::SystematicFailure);
 		});
@@ -501,6 +508,7 @@ mod internal_lock_update_tests {
 
 			let data_tuple = (
 				unlock.data.amount,
+				unlock.data.locktime,
 				unlock.data.sender,
 				unlock.data.signature,
 				false,
@@ -575,6 +583,7 @@ mod internal_lock_update_tests {
 			unlock.data.signature = create_unlock_signature(
 				unlock.lock.ethereum_account_pair.clone(),
 				U256::from(69u32),
+				U256::from(1234567890)
 			);
 
 			assert_ok!(lock_(&unlock.lock));

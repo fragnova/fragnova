@@ -131,6 +131,8 @@ pub struct EthLockUpdate<TPublic> {
 	/// If the event was `Lock`, it represents the **total amount of FRAG token** that is **currently locked** (not just the newly locked FRAG token) on the **FRAG Token Smart Contract**
 	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
 	pub amount: U256,
+	/// The lock period of the FRAG token
+	pub locktime: U256,
 	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
 	pub signature: ecdsa::Signature,
@@ -280,7 +282,7 @@ pub mod pallet {
 		/// A link was removed between native and ethereum account.
 		Unlinked { sender: T::AccountId, eth_key: H160 },
 		/// ETH side lock was updated
-		Locked { eth_key: H160, balance: T::Balance },
+		Locked { eth_key: H160, balance: T::Balance, locktime: T::Moment },
 		/// ETH side lock was unlocked
 		Unlocked { eth_key: H160, balance: T::Balance },
 		/// A new sponsored account was added
@@ -412,7 +414,7 @@ pub mod pallet {
 			log::debug!("Lock update: {:?}", data);
 
 			let data_tuple =
-				(data.amount, data.sender, data.signature.clone(), data.lock, data.block_number);
+				(data.amount, data.locktime, data.sender, data.signature.clone(), data.lock, data.block_number);
 			let data_hash: H256 = data_tuple.using_encoded(blake2_256).into();
 
 			ensure!(
@@ -426,6 +428,8 @@ pub mod pallet {
 			message.extend_from_slice(&T::EthChainId::get().to_be_bytes()); // Add EthChainId ("block.chainid" in Solidity) to message
 			let amount: [u8; 32] = data.amount.into();
 			message.extend_from_slice(&amount[..]); // Add amount to message
+			let locktime: [u8; 32] = data.locktime.into();
+			message.extend_from_slice(&locktime[..]); // Add amount to message
 			let message_hash = keccak_256(&message); // This should be
 
 			let message = [b"\x19Ethereum Signed Message:\n32", &message_hash[..]].concat();
@@ -443,6 +447,7 @@ pub mod pallet {
 			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
 			let amount: u128 = data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+			let locktime: u128 = data.locktime.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
 			if !data.lock {
 				ensure!(amount == 0, Error::<T>::SystematicFailure);
@@ -477,6 +482,7 @@ pub mod pallet {
 			// writing here at end (THE lines below only execute if the number of votes receieved by `data_hash` passes the `threshold`)
 
 			let amount: T::Balance = amount.saturated_into();
+			let locktime: T::Moment = locktime.saturated_into();
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			if data.lock {
@@ -499,7 +505,7 @@ pub mod pallet {
 				}
 
 				// also emit event
-				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount }); // 问Gio for clarification
+				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount, locktime: locktime }); // 问Gio for clarification
 			} else {
 				// If we want to unlock all the FRAG tokens that were
 				// ! TODO TEST
@@ -692,6 +698,7 @@ pub mod pallet {
 					.and_provides((
 						data.public.clone(),
 						data.amount,
+						data.locktime,
 						data.sender,
 						data.signature.clone(),
 						data.lock,
@@ -861,6 +868,7 @@ pub mod pallet {
 							// `account` is an account `Signer::<T, T::AuthorityId>::any_account()`
 							public: account.public.clone(), // 问Gio what is account.public and why is it supposed to be in FragKey
 							amount,
+							locktime,
 							sender,
 							signature: eth_signature.clone(),
 							lock: locked,

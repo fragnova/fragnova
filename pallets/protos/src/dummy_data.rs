@@ -240,12 +240,14 @@ impl DummyData {
 				data: pallet_accounts::EthLockUpdate {
 					public: sp_core::ed25519::Public([69u8; 32]),
 					amount: U256::from(69u32),
+					locktime: U256::from(1234567890),
 					sender: get_ethereum_account_id_from_ecdsa_public_struct(
 						&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]).public(),
 					),
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 						U256::from(69u32),
+						U256::from(1234567890)
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
