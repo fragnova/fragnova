@@ -848,6 +848,7 @@ pub mod pallet {
 							}
 						},
 						UsageLicense::Contract(contract_address) => {
+							let data = (reference, who.clone()).encode();
 							let res: Result<pallet_contracts_primitives::ExecReturnValue, _> =
 								<pallet_contracts::Pallet<T>>::bare_call(
 									who.clone(),
@@ -855,7 +856,7 @@ pub mod pallet {
 									0u32.saturated_into(),
 									1_000_000, // TODO determine this limit better should not be too high indeed
 									None,
-									vec![],
+									data,
 									false,
 								)
 								.result
