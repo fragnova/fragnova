@@ -131,7 +131,8 @@ pub struct EthLockUpdate<TPublic> {
 	/// If the event was `Lock`, it represents the **total amount of FRAG token** that is **currently locked** (not just the newly locked FRAG token) on the **FRAG Token Smart Contract**
 	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
 	pub amount: U256,
-	/// The lock period of the FRAG token
+	/// If the event was `Lock`, it represents the lock period of the FRAG token.
+	/// Owtherwise, if the event was `Unlock`, it is zero.
 	pub locktime: U256,
 	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
@@ -428,8 +429,11 @@ pub mod pallet {
 			message.extend_from_slice(&T::EthChainId::get().to_be_bytes()); // Add EthChainId ("block.chainid" in Solidity) to message
 			let amount: [u8; 32] = data.amount.into();
 			message.extend_from_slice(&amount[..]); // Add amount to message
-			let locktime: [u8; 32] = data.locktime.into();
-			message.extend_from_slice(&locktime[..]); // Add amount to message
+			if data.lock {
+				let locktime: [u8; 32] = data.locktime.into();
+				message.extend_from_slice(&locktime[..]); // Add amount to message
+			}
+			
 			let message_hash = keccak_256(&message); // This should be
 
 			let message = [b"\x19Ethereum Signed Message:\n32", &message_hash[..]].concat();
@@ -447,7 +451,6 @@ pub mod pallet {
 			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
 			let amount: u128 = data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
-			let locktime: u128 = data.locktime.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
 			if !data.lock {
 				ensure!(amount == 0, Error::<T>::SystematicFailure);
@@ -482,12 +485,13 @@ pub mod pallet {
 			// writing here at end (THE lines below only execute if the number of votes receieved by `data_hash` passes the `threshold`)
 
 			let amount: T::Balance = amount.saturated_into();
-			let locktime: T::Moment = locktime.saturated_into();
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
 				// ! TODO TEST
+				let locktime: u128 = data.locktime.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+				let locktime: T::Moment = locktime.saturated_into();
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
 					// If there is no linked account, shouldn't we throw an error? - 问Gio
@@ -844,17 +848,32 @@ pub mod pallet {
 					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
 
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
-				let locktime = data[2].clone().into_uint().ok_or_else(|| "Invalid data")?; // Lock period (`data[2]`)
+				
+				// Lock period (`data[2]`). In case of Unlock event, it is zero. 
+				let locktime = data[2].clone().into_uint().unwrap_or(U256::from(0));
 
-				log::trace!(
-					"Block: {}, sender: {}, locked: {}, amount: {}, locktime: {}, signature: {:?}",
-					block_number,
-					sender,
-					locked,
-					amount,
-					locktime,
-					eth_signature.clone(),
-				);
+				if locked {
+					log::trace!(
+						"Block: {}, sender: {}, locked: {}, amount: {}, locktime: {}, signature: {:?}",
+						block_number,
+						sender,
+						locked,
+						amount,
+						locktime,
+						eth_signature.clone(),
+					);
+				} else {
+					// Unlock event
+					log::trace!(
+						"Block: {}, sender: {}, locked: {}, amount: {}, signature: {:?}",
+						block_number,
+						sender,
+						locked,
+						amount,
+						eth_signature.clone(),
+					);
+				}
+				
 
 				// `send_unsigned_transaction` is returning a type of `Option<(Account<T>, Result<(), ()>)>`.
 				//   The returned result means:

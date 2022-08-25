@@ -582,8 +582,7 @@ mod internal_lock_update_tests {
 			unlock.data.amount = U256::from(69u32); // greater than zero
 			unlock.data.signature = create_unlock_signature(
 				unlock.lock.ethereum_account_pair.clone(),
-				U256::from(69u32),
-				U256::from(1234567890)
+				U256::from(69u32)
 			);
 
 			assert_ok!(lock_(&unlock.lock));
