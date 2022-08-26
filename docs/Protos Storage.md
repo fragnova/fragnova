@@ -81,6 +81,19 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub accounts_info: AccountsInfo,
 }
 ```
+### Metadata keys
+Supported metadata keys are 'image', 'title', 'json_attributes', 'description’. 
+
+Example:
+```
+  const params = api.createType("GetProtosParams", {
+      metadata_keys: ['image', 'title', 'json_attributes', 'description'],
+      categories: categories, 
+      available: availability,
+      tags: tags,
+      return_owners: true,
+    });
+```
 ### LinkSource
 ### LinkedAsset
 ### ProtoOwner
