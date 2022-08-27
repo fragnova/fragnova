@@ -131,6 +131,9 @@ pub struct EthLockUpdate<TPublic> {
 	/// If the event was `Lock`, it represents the **total amount of FRAG token** that is **currently locked** (not just the newly locked FRAG token) on the **FRAG Token Smart Contract**
 	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
 	pub amount: U256,
+	/// If the event was `Lock`, it represents the lock period of the FRAG token.
+	/// Owtherwise, if the event was `Unlock`, it is zero.
+	pub locktime: U256,
 	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
 	pub signature: ecdsa::Signature,
@@ -280,7 +283,7 @@ pub mod pallet {
 		/// A link was removed between native and ethereum account.
 		Unlinked { sender: T::AccountId, eth_key: H160 },
 		/// ETH side lock was updated
-		Locked { eth_key: H160, balance: T::Balance },
+		Locked { eth_key: H160, balance: T::Balance, locktime: T::Moment },
 		/// ETH side lock was unlocked
 		Unlocked { eth_key: H160, balance: T::Balance },
 		/// A new sponsored account was added
@@ -412,7 +415,7 @@ pub mod pallet {
 			log::debug!("Lock update: {:?}", data);
 
 			let data_tuple =
-				(data.amount, data.sender, data.signature.clone(), data.lock, data.block_number);
+				(data.amount, data.locktime, data.sender, data.signature.clone(), data.lock, data.block_number);
 			let data_hash: H256 = data_tuple.using_encoded(blake2_256).into();
 
 			ensure!(
@@ -420,12 +423,17 @@ pub mod pallet {
 				Error::<T>::LinkAlreadyProcessed
 			);
 
-			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature, period)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
 			let mut message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
 			message.extend_from_slice(&data.sender.0[..]); // Add data.sender.0 ("msg.sender" in Solidity) to message
 			message.extend_from_slice(&T::EthChainId::get().to_be_bytes()); // Add EthChainId ("block.chainid" in Solidity) to message
 			let amount: [u8; 32] = data.amount.into();
 			message.extend_from_slice(&amount[..]); // Add amount to message
+			if data.lock {
+				let locktime: [u8; 32] = data.locktime.into();
+				message.extend_from_slice(&locktime[..]); // Add amount to message
+			}
+			
 			let message_hash = keccak_256(&message); // This should be
 
 			let message = [b"\x19Ethereum Signed Message:\n32", &message_hash[..]].concat();
@@ -482,6 +490,8 @@ pub mod pallet {
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
 				// ! TODO TEST
+				let locktime: u128 = data.locktime.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+				let locktime: T::Moment = locktime.saturated_into();
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
 					// If there is no linked account, shouldn't we throw an error? - 问Gio
@@ -499,7 +509,7 @@ pub mod pallet {
 				}
 
 				// also emit event
-				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount }); // 问Gio for clarification
+				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount, locktime: locktime }); // 问Gio for clarification
 			} else {
 				// If we want to unlock all the FRAG tokens that were
 				// ! TODO TEST
@@ -692,6 +702,7 @@ pub mod pallet {
 					.and_provides((
 						data.public.clone(),
 						data.amount,
+						data.locktime,
 						data.sender,
 						data.signature.clone(),
 						data.lock,
@@ -817,7 +828,7 @@ pub mod pallet {
 				let data = log["data"].as_str().ok_or_else(|| "Invalid response - no data")?;
 				let data =
 					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?; // Convert the hexadecimal `data` from hexadecimal to binary (i.e raw bits)
-				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256)], &data) // First parameter is a signature and the second paramteter is the amount of FRAG token that was locked/unlocked (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(256)], &data) // First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
 					.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
 				let locked = match topic {
 					// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
@@ -837,15 +848,32 @@ pub mod pallet {
 					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
 
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
+				
+				// Lock period (`data[2]`). In case of Unlock event, it is zero. 
+				let locktime = data[2].clone().into_uint().unwrap_or(U256::from(0));
 
-				log::trace!(
-					"Block: {}, sender: {}, locked: {}, amount: {}, signature: {:?}",
-					block_number,
-					sender,
-					locked,
-					amount,
-					eth_signature.clone(),
-				);
+				if locked {
+					log::trace!(
+						"Block: {}, sender: {}, locked: {}, amount: {}, locktime: {}, signature: {:?}",
+						block_number,
+						sender,
+						locked,
+						amount,
+						locktime,
+						eth_signature.clone(),
+					);
+				} else {
+					// Unlock event
+					log::trace!(
+						"Block: {}, sender: {}, locked: {}, amount: {}, signature: {:?}",
+						block_number,
+						sender,
+						locked,
+						amount,
+						eth_signature.clone(),
+					);
+				}
+				
 
 				// `send_unsigned_transaction` is returning a type of `Option<(Account<T>, Result<(), ()>)>`.
 				//   The returned result means:
@@ -859,6 +887,7 @@ pub mod pallet {
 							// `account` is an account `Signer::<T, T::AuthorityId>::any_account()`
 							public: account.public.clone(), // 问Gio what is account.public and why is it supposed to be in FragKey
 							amount,
+							locktime,
 							sender,
 							signature: eth_signature.clone(),
 							lock: locked,
