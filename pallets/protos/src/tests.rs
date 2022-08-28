@@ -1,7 +1,7 @@
 use crate as pallet_protos;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Compact;
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::Get};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
 use stake_tests::stake_;
 use std::collections::BTreeMap;
 use upload_tests::upload;
