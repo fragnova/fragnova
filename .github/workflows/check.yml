@@ -59,7 +59,7 @@ jobs:
 
       - name: Check Build
         run: |
-          cargo check
+          RUSTFLAGS="-D warnings" cargo check
 
       - name: Check Build for Benchmarking
         run: |
