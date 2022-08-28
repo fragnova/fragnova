@@ -826,7 +826,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue
+							continue;
 						}
 					}
 
@@ -844,7 +844,7 @@ pub mod pallet {
 								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
 							} else {
 								// Curation not found
-								return Err(Error::<T>::CurationNotFound.into())
+								return Err(Error::<T>::CurationNotFound.into());
 							}
 						},
 						UsageLicense::Contract(contract_address) => {
@@ -869,19 +869,19 @@ pub mod pallet {
 								let allowed = bool::decode(&mut &res.data.0[..]);
 								if let Ok(allowed) = allowed {
 									if !allowed {
-										return Err(Error::<T>::Unauthorized.into())
+										return Err(Error::<T>::Unauthorized.into());
 									}
 								} else {
-									return Err(Error::<T>::Unauthorized.into())
+									return Err(Error::<T>::Unauthorized.into());
 								}
 							} else {
-								return Err(Error::<T>::Unauthorized.into())
+								return Err(Error::<T>::Unauthorized.into());
 							}
 						},
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into())
+					return Err(Error::<T>::ReferenceNotFound.into());
 				}
 			}
 			Ok(())
@@ -896,16 +896,16 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.license == UsageLicense::Closed {
-						return false
+						return false;
 					} else if !avail && struct_proto.license != UsageLicense::Closed {
-						return false
+						return false;
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto)
+					return Self::filter_tags(tags, &struct_proto);
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories)
+					return Self::filter_category(tags, &struct_proto, categories);
 				}
 			} else {
 				false
@@ -935,33 +935,34 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-							if !implementing_diffs.is_empty() ||
-								!requiring_diffs.is_empty() || (param_script_info.format ==
-								stored_script_info.format) || (param_script_info ==
-								stored_script_info)
+							if !implementing_diffs.is_empty()
+								|| !requiring_diffs.is_empty() || (param_script_info.format
+								== stored_script_info.format) || (param_script_info
+								== stored_script_info)
 							{
-								return Self::filter_tags(tags, struct_proto)
+								return Self::filter_tags(tags, struct_proto);
 							} else {
-								return false
+								return false;
 							}
 						} else {
 							// it should never go here
-							return false
+							return false;
 						}
 					},
-					_ =>
+					_ => {
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto)
+							return Self::filter_tags(tags, struct_proto);
 						} else {
-							return false
-						},
+							return false;
+						}
+					},
 				})
 				.collect();
 
 			if found.is_empty() {
-				return false
+				return false;
 			} else {
-				return true
+				return true;
 			}
 		}
 
@@ -1007,33 +1008,34 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-							if !implementing_diffs.is_empty() ||
-								!requiring_diffs.is_empty() || (param_script_info.format ==
-								stored_script_info.format) || (param_script_info ==
-								stored_script_info)
+							if !implementing_diffs.is_empty()
+								|| !requiring_diffs.is_empty() || (param_script_info.format
+								== stored_script_info.format) || (param_script_info
+								== stored_script_info)
 							{
 								// OK. Found the category matching a shard script info.
-								return true
+								return true;
 							} else if !(&cat == &category) {
-								return false
+								return false;
 							} else {
-								return false
+								return false;
 							}
 						} else {
-							return false
+							return false;
 						}
 					},
 					// for all other types of Categories
-					_ =>
+					_ => {
 						if !(&cat == &category) {
-							return false
+							return false;
 						} else {
-							return true
-						},
+							return true;
+						}
+					},
 				})
 				.collect();
 
-			return found
+			return found;
 		}
 
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
@@ -1089,7 +1091,7 @@ pub mod pallet {
 					}
 				} else {
 					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into())
+					return Err("Owner not found".into());
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -1106,7 +1108,7 @@ pub mod pallet {
 						// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						if found.is_empty() {
-							continue
+							continue;
 						}
 					}
 					// Found the category.
@@ -1162,17 +1164,17 @@ pub mod pallet {
 						if let Ok(array_proto_id) = array_proto_id.try_into() {
 							array_proto_id
 						} else {
-							return Err("Failed to convert proto_id to Hash256".into())
+							return Err("Failed to convert proto_id to Hash256".into());
 						}
 					} else {
-						return Err("Failed to decode proto_id".into())
+						return Err("Failed to decode proto_id".into());
 					};
 
 					let (owner, map_metadata, license) =
 						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
 							(proto.owner, proto.metadata, proto.license)
 						} else {
-							return Err("Failed to get proto".into())
+							return Err("Failed to get proto".into());
 						};
 
 					let map_proto = match map_proto {

@@ -118,6 +118,9 @@ git = 'https://github.com/fragcolor-xyz/substrate.git'
 tag = 'clamor-01-08-2022'
 version = '4.0.0-dev'
 
+[dev-dependencies]
+itertools = "0.10.3"
+
 [features]
 default = ["std"]
 std = [

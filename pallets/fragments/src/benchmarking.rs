@@ -10,8 +10,8 @@ use protos::{
 	categories::{Categories, TextCategories},
 	permissions::FragmentPerms,
 };
-use sp_io::hashing::blake2_128;
 use sp_core::crypto::UncheckedFrom;
+use sp_io::hashing::blake2_128;
 
 const PROTO_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
