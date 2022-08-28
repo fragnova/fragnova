@@ -67,7 +67,7 @@ jobs:
 
       - name: Check Test
         run: |
-          cargo test --no-fail-fast
+          RUSTFLAGS="-D warnings" cargo test --no-fail-fast
 
 
       - name: Check if Rustdocs Builds
