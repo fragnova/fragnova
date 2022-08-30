@@ -106,6 +106,7 @@ pub struct AccountsInfo {
 	pub lifetime_accounts: u128,
 }
 
+/// **Enum** that indicates **how a Proto-Fragment can be used**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum UsageLicense<TContractAddress> {
 	/// Proto-Fragment is not available for use (owners can always use it)
@@ -175,7 +176,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type CurationExpiration: Get<u64>;
 
-		/// The tickets asset id
+		// Asset ID of the fungible asset "TICKET"
 		#[pallet::constant]
 		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
 	}
@@ -320,7 +321,7 @@ pub mod pallet {
 		/// * `tags` - **List of tags** to **tag** the **Proto-Fragment** **with**
 		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g
 		///   an ERC-721 Contract)
-		/// * `include_cost` (*optional*) - **Price** of the **Proto-Fragment**. NOTE: If None, the
+		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
 		///   **Proto-Fragment** *<u>can't be included</u>* into **other protos**
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
@@ -445,7 +446,7 @@ pub mod pallet {
 		///
 		/// * `origin` - The origin of the extrinsic function
 		/// * `proto_hash` - Existing Proto-Fragment's hash
-		/// * `include_cost` (optional) -
+		/// * `license` (optional) - If **this value** is **not None**, the **existing Proto-Fragment's current license** is overwritten to **this value**
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the
 		///   **patch**
 		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
