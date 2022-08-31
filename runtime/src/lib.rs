@@ -145,7 +145,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 /// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
 
-pub const MILLICENTS: Balance = 1_000_000_000;
+pub const MILLICENTS: Balance = 1_000_000_000; // this is $10,000 since 1_000_000_000 millicents = 1_000_000 cents = 1000 dollars
 pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
 pub const DOLLARS: Balance = 100 * CENTS;
 pub const fn deposit(items: u32, bytes: u32) -> Balance {

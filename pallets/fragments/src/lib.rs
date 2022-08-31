@@ -48,7 +48,7 @@ use sp_io::{
 	hashing::{blake2_128, blake2_256},
 	transaction_index,
 };
-use sp_std::vec::Vec;
+use sp_std::{vec::Vec, collections::btree_map::BTreeMap};
 pub use weights::WeightInfo;
 
 use protos::permissions::FragmentPerms;
@@ -102,6 +102,8 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 	pub creator: TAccountId,
 	/// The block number when the item was created
 	pub created_at: TBlockNum,
+	/// **Map** that maps the **Key of a Proto-Fragment's Custom Metadata Object** to the **Hash of the aforementioned Custom Metadata Object**
+	pub custom_metadata: BTreeMap<Compact<u64>, Hash256>,
 }
 
 /// **Struct** of a **Fragment Instance**
@@ -175,7 +177,7 @@ pub mod pallet {
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::DetachedHashes;
-	use pallet_protos::{Proto, ProtoOwner, Protos};
+	use pallet_protos::{Proto, ProtoOwner, Protos, MetaKeys, MetaKeysIndex};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -320,6 +322,8 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// New definition created by account, definition hash
 		DefinitionCreated { fragment_hash: Hash128 },
+		/// A Proto-Fragment metadata has changed
+		DefinitionMetadataChanged { fragment_hash: Hash128, metadata_key: Vec<u8> },
 		/// Fragment sale has been opened
 		Publishing { fragment_hash: Hash128 },
 		/// Fragment sale has been closed
@@ -465,12 +469,89 @@ pub mod pallet {
 				max_supply: max_supply.map(|x| Compact(x)),
 				creator: who.clone(),
 				created_at: current_block_number,
+				custom_metadata: BTreeMap::new(),
 			};
 			<Definitions<T>>::insert(&hash, fragment_data);
 
 			Proto2Fragments::<T>::append(&proto_hash, hash);
 
 			Self::deposit_event(Event::DefinitionCreated { fragment_hash: hash });
+			Ok(())
+		}
+
+		/// **Alters** the **custom metadata** of a **Fragment Definition** (whose ID is `fragment_hash`) by **adding or modifying a key-value pair** (`metadata_key.clone`,`blake2_256(&data.encode())`)
+		/// to the **BTreeMap field `custom_metadata`** of the **existing Fragment Definition's Struct Instance**.
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrinsic / dispatchable function
+		/// * `fragment_hash` - **ID of the Fragment Definition**
+		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
+		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
+		#[pallet::weight(50_000)]
+		pub fn set_custom_metadata(
+			origin: OriginFor<T>,
+			// fragment hash we want to update
+			fragment_hash: Hash128,
+			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
+			metadata_key: Vec<u8>,
+			// data we want to update last because of the way we store blocks (storage chain)
+			data: Vec<u8>,
+		) -> DispatchResult {
+
+			let who = ensure_signed(origin)?;
+
+			let proto_hash =
+				<Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `fragment_hash`
+			let proto: Proto<T::AccountId, T::BlockNumber> =
+				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+			let proto_owner: T::AccountId = match proto.owner { // Get `proto_owner` from `proto`
+				ProtoOwner::User(owner) => Ok(owner),
+				_ => Err(Error::<T>::ProtoOwnerNotFound),
+			}?;
+			ensure!(who == proto_owner, Error::<T>::NoPermission); // Ensure `who` is `proto_owner`
+
+			// TO REVIEW
+			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
+
+			let data_hash = blake2_256(&data);
+
+			// we need this to index transactions
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
+
+			let metadata_key_index = {
+				let index = <MetaKeys<T>>::get(metadata_key.clone());
+				if let Some(index) = index {
+					<Compact<u64>>::from(index)
+				} else {
+					let next_index = <MetaKeysIndex<T>>::try_get().unwrap_or_default() + 1;
+					<MetaKeys<T>>::insert(metadata_key.clone(), next_index);
+					// storing is dangerous inside a closure
+					// but after this call we start storing..
+					// so it's fine here
+					<MetaKeysIndex<T>>::put(next_index);
+					<Compact<u64>>::from(next_index)
+				}
+			};
+
+			// Write STATE from now, ensure no errors from now...
+
+			<Definitions<T>>::mutate(&fragment_hash, |definition| {
+				let definition = definition.as_mut().unwrap();
+				// update custom metadata
+				definition.custom_metadata.insert(metadata_key_index, data_hash);
+			});
+
+			// index data
+			transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
+
+			// also emit event
+			Self::deposit_event(Event::DefinitionMetadataChanged { fragment_hash, metadata_key: metadata_key.clone() });
+
+			log::debug!("Added metadata to fragment definition: {:x?} with key: {:x?}", fragment_hash, metadata_key);
+
 			Ok(())
 		}
 
@@ -760,7 +841,7 @@ pub mod pallet {
 					&who,
 					&vault,
 					price.saturated_into(),
-					ExistenceRequirement::KeepAlive, 
+					ExistenceRequirement::KeepAlive,
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
