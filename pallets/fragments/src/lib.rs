@@ -319,31 +319,31 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// New definition created by account, definition hash
-		DefinitionCreated { fragment_hash: Hash128 },
+		DefinitionCreated { definition_hash: Hash128 },
 		/// Fragment sale has been opened
-		Publishing { fragment_hash: Hash128 },
+		Publishing { definition_hash: Hash128 },
 		/// Fragment sale has been closed
-		Unpublishing { fragment_hash: Hash128 },
+		Unpublishing { definition_hash: Hash128 },
 		/// Inventory item has been added to account
 		InventoryAdded {
 			account_id: T::AccountId,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			fragment_id: (Unit, Unit),
 		},
 		/// Inventory item has removed added from account
 		InventoryRemoved {
 			account_id: T::AccountId,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			fragment_id: (Unit, Unit),
 		},
 		/// Inventory has been updated
 		InventoryUpdated {
 			account_id: T::AccountId,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			fragment_id: (Unit, Unit),
 		},
 		/// Fragment Expiration event
-		Expired { account_id: T::AccountId, fragment_hash: Hash128, fragment_id: (Unit, Unit) },
+		Expired { account_id: T::AccountId, definition_hash: Hash128, fragment_id: (Unit, Unit) },
 	}
 
 	// Errors inform users that something went wrong.
@@ -470,18 +470,18 @@ pub mod pallet {
 
 			Proto2Fragments::<T>::append(&proto_hash, hash);
 
-			Self::deposit_event(Event::DefinitionCreated { fragment_hash: hash });
+			Self::deposit_event(Event::DefinitionCreated { definition_hash: hash });
 			Ok(())
 		}
 
-		/// Put the **Fragment Definition `fragment_hash`** on sale. When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
+		/// Put the **Fragment Definition `definition_hash`** on sale. When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
 		///
 		/// Note: **Only** the **Fragment's Proto-Fragment's owner** is **allowed** to put the **Fragment** on sale
 		///
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `fragment_hash` - ID of the **Fragment Definition** to put on sale
+		/// * `definition_hash` - ID of the **Fragment Definition** to put on sale
 		/// * `price` -  **Price** to **buy** a **single Fragment Instance** that is created from the **Fragment Definition*
 		/// * `quantity` (*optional*) - **Maximum amount of Fragment Instances** that **can be bought**
 		/// * `expires` (*optional*) - **Block number** that the sale ends at (*optional*)
@@ -490,7 +490,7 @@ pub mod pallet {
 		#[pallet::weight(50_000)]
 		pub fn publish(
 			origin: OriginFor<T>,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			price: u128,
 			quantity: Option<Unit>,
 			expires: Option<T::BlockNumber>,
@@ -499,7 +499,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			let proto_hash =
-				<Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `fragment_hash`
+				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `definition_hash`
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?; // Get `proto` from `proto_hash`
 
@@ -514,14 +514,14 @@ pub mod pallet {
 			// TO REVIEW
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
 
-			ensure!(!<Publishing<T>>::contains_key(&fragment_hash), Error::<T>::SaleAlreadyOpen); // Ensure `fragment_hash` isn't already published
+			ensure!(!<Publishing<T>>::contains_key(&definition_hash), Error::<T>::SaleAlreadyOpen); // Ensure `definition_hash` isn't already published
 
-			let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?; // Get `FragmentDefinition` struct from `fragment_hash`
+			let fragment_data = <Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?; // Get `FragmentDefinition` struct from `definition_hash`
 
 			if let Some(max_supply) = fragment_data.max_supply {
 				let max: Unit = max_supply.into();
 				let existing: Unit =
-					<EditionsCount<T>>::get(&fragment_hash).unwrap_or(Compact(0)).into();
+					<EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 				if let Some(quantity) = quantity {
 					let quantity: Unit = quantity.into();
@@ -538,7 +538,7 @@ pub mod pallet {
 			// ! Writing
 
 			<Publishing<T>>::insert(
-				fragment_hash,
+				definition_hash,
 				PublishingData {
 					price: Compact(price),
 					units_left: quantity.map(|x| Compact(x)),
@@ -547,12 +547,12 @@ pub mod pallet {
 				},
 			);
 
-			Self::deposit_event(Event::Publishing { fragment_hash });
+			Self::deposit_event(Event::Publishing { definition_hash: definition_hash });
 
 			Ok(())
 		}
 
-		/// Take the **Fragment Definition `fragment_hash`** off sale.
+		/// Take the **Fragment Definition `definition_hash`** off sale.
 		/// When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
 		///
 		/// Note: **Only** the **Fragment's Proto-Fragment's owner** is **allowed** to take the Fragment off sale
@@ -560,13 +560,13 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `fragment_hash` - **ID** of the **Fragment Definition** to take off sale
+		/// * `definition_hash` - **ID** of the **Fragment Definition** to take off sale
 		#[pallet::weight(50_000)]
-		pub fn unpublish(origin: OriginFor<T>, fragment_hash: Hash128) -> DispatchResult {
+		pub fn unpublish(origin: OriginFor<T>, definition_hash: Hash128) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			let proto_hash =
-				<Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `fragment_hash`
+				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `definition_hash`
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 
@@ -581,18 +581,18 @@ pub mod pallet {
 			// TO REVIEW
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
 
-			ensure!(<Publishing<T>>::contains_key(&fragment_hash), Error::<T>::NotFound); // Ensure `fragment_hash` is currently published
+			ensure!(<Publishing<T>>::contains_key(&definition_hash), Error::<T>::NotFound); // Ensure `definition_hash` is currently published
 
 			// ! Writing
 
-			<Publishing<T>>::remove(&fragment_hash); // Remove Fragment Definition `fragment_hash` from `Publishing`
+			<Publishing<T>>::remove(&definition_hash); // Remove Fragment Definition `definition_hash` from `Publishing`
 
-			Self::deposit_event(Event::Unpublishing { fragment_hash });
+			Self::deposit_event(Event::Unpublishing { definition_hash: definition_hash });
 
 			Ok(())
 		}
 
-		/// Create **Fragment instance(s)** from the **Fragment Definition `fragment_hash`** and
+		/// Create **Fragment instance(s)** from the **Fragment Definition `definition_hash`** and
 		/// **assign their ownership** to **`origin`**
 		///
 		/// Note: **Each created Fragment instance** will have a **different Edition ID** and a **Copy ID of "1"**.
@@ -603,7 +603,7 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `fragment_hash` - **ID* of the **Fragment Definition**
+		/// * `definition_hash` - **ID* of the **Fragment Definition**
 		/// * `options` - **Enum** indicating whether to
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
@@ -613,7 +613,7 @@ pub mod pallet {
 		#[pallet::weight(50_000)]
 		pub fn mint(
 			origin: OriginFor<T>,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			options: FragmentBuyOptions,
 			amount: Option<Unit>,
 		) -> DispatchResult {
@@ -622,7 +622,7 @@ pub mod pallet {
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			let proto_hash =
-				<Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `fragment_hash`
+				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `definition_hash`
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?; // Get `proto` from `proto_hash`
 
@@ -647,7 +647,7 @@ pub mod pallet {
 
 			Self::mint_fragments(
 				&who,
-				&fragment_hash,
+				&definition_hash,
 				None, // PublishingData (optional)
 				&options,
 				quantity,
@@ -657,7 +657,7 @@ pub mod pallet {
 			)
 		}
 
-		/// Allows the Caller Account ID `origin` to create Fragment instance(s) of the Fragment Definition `fragment_hash`,
+		/// Allows the Caller Account ID `origin` to create Fragment instance(s) of the Fragment Definition `definition_hash`,
 		/// for a fee. The ownership of the created Fragment instance(s) is assigned to the Caller Account ID.
 		///
 		/// Note: Each created Fragment instance will have a different Edition ID and a Copy ID of "1".
@@ -671,21 +671,21 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `fragment_hash` - **ID** of the **Fragment Definition**
+		/// * `definition_hash` - **ID** of the **Fragment Definition**
 		/// * `options` - **Enum** indicating whether to
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
 		#[pallet::weight(50_000)]
 		pub fn buy(
 			origin: OriginFor<T>,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			options: FragmentBuyOptions,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-			let sale = <Publishing<T>>::get(&fragment_hash).ok_or(Error::<T>::NotFound)?; // if Fragment Definition `fragment_hash` is not published (i.e on sale), you cannot buy it
+			let sale = <Publishing<T>>::get(&definition_hash).ok_or(Error::<T>::NotFound)?; // if Fragment Definition `definition_hash` is not published (i.e on sale), you cannot buy it
 			if let Some(expiration) = sale.expiration {
 				ensure!(current_block_number < expiration, Error::<T>::Expired);
 			}
@@ -696,9 +696,9 @@ pub mod pallet {
 
 			let price: u128 = sale.price.into();
 
-			let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
+			let fragment_data = <Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
 
-			let vault = &Self::get_vault_id(fragment_hash); // Get the Vault Account ID of `fragment_hash`
+			let vault = &Self::get_vault_id(definition_hash); // Get the Vault Account ID of `definition_hash`
 
 			let quantity = match options {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
@@ -735,7 +735,7 @@ pub mod pallet {
 
 			Self::mint_fragments(
 				&who,
-				&fragment_hash,
+				&definition_hash,
 				Some(&sale), // PublishingData (optional)
 				&options,
 				quantity,
@@ -760,7 +760,7 @@ pub mod pallet {
 					&who,
 					&vault,
 					price.saturated_into(),
-					ExistenceRequirement::KeepAlive, 
+					ExistenceRequirement::KeepAlive,
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
@@ -779,7 +779,7 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `class` - Fragment Definition ID of the Fragment Instance to give
+		/// * `definition_hash` - Fragment Definition ID of the Fragment Instance to give
 		/// * `edition` - Edition ID of the Fragment Insance to give
 		/// * `copy` - Copy ID of the Fragment instance to give
 		/// * `to` - **Account ID** to give the Fragment instance to
@@ -796,7 +796,7 @@ pub mod pallet {
 		#[pallet::weight(50_000)]
 		pub fn give(
 			origin: OriginFor<T>,
-			class: Hash128,
+			definition_hash: Hash128,
 			edition: Unit,
 			copy: Unit,
 			to: <T::Lookup as StaticLookup>::Source,
@@ -808,7 +808,7 @@ pub mod pallet {
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			let mut item_data =
-				<Fragments<T>>::get((class, edition, copy)).ok_or(Error::<T>::NotFound)?;
+				<Fragments<T>>::get((definition_hash, edition, copy)).ok_or(Error::<T>::NotFound)?;
 
 			// no go if will expire this block
 			if let Some(item_expiration) = item_data.expiring_at {
@@ -820,7 +820,7 @@ pub mod pallet {
 			}
 
 			// Only the owner of this fragment can transfer it
-			let ids = <Inventory<T>>::get(who.clone(), class).ok_or(Error::<T>::NotFound)?;
+			let ids = <Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
 
 			ensure!(ids.contains(&(Compact(edition), Compact(copy))), Error::<T>::NoPermission);
 
@@ -863,15 +863,15 @@ pub mod pallet {
 				item_data.permissions = perms;
 
 				let copy: u64 =
-					<CopiesCount<T>>::get((class, edition)).ok_or(Error::<T>::NotFound)?.into();
+					<CopiesCount<T>>::get((definition_hash, edition)).ok_or(Error::<T>::NotFound)?.into();
 
 				let copy = copy + 1;
 
-				<CopiesCount<T>>::insert((class, edition), Compact(copy));
+				<CopiesCount<T>>::insert((definition_hash, edition), Compact(copy));
 
-				<Owners<T>>::append(class, to.clone(), (Compact(edition), Compact(copy)));
+				<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition), Compact(copy)));
 
-				<Inventory<T>>::append(to.clone(), class, (Compact(edition), Compact(copy)));
+				<Inventory<T>>::append(to.clone(), definition_hash, (Compact(edition), Compact(copy)));
 
 				// handle expiration
 				if let Some(expiring_at) = item_data.expiring_at {
@@ -885,28 +885,28 @@ pub mod pallet {
 					} else {
 						expiring_at
 					};
-					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
+					<Expirations<T>>::append(expiration, (definition_hash, Compact(edition), Compact(copy)));
 				} else if let Some(expiration) = expiration {
 					item_data.expiring_at = Some(expiration);
-					<Expirations<T>>::append(expiration, (class, Compact(edition), Compact(copy)));
+					<Expirations<T>>::append(expiration, (definition_hash, Compact(edition), Compact(copy)));
 				}
 
-				<Fragments<T>>::insert((class, edition, copy), item_data);
+				<Fragments<T>>::insert((definition_hash, edition, copy), item_data);
 
 				Self::deposit_event(Event::InventoryAdded {
 					account_id: to,
-					fragment_hash: class,
+					definition_hash: definition_hash,
 					fragment_id: (edition, copy),
 				});
 			} else {
 				// we will remove from this account to give to new account
-				<Owners<T>>::mutate(class, who.clone(), |ids| {
+				<Owners<T>>::mutate(definition_hash, who.clone(), |ids| {
 					if let Some(ids) = ids {
 						ids.retain(|cid| *cid != (Compact(edition), Compact(copy)))
 					}
 				});
 
-				<Inventory<T>>::mutate(who.clone(), class, |ids| {
+				<Inventory<T>>::mutate(who.clone(), definition_hash, |ids| {
 					if let Some(ids) = ids {
 						ids.retain(|cid| *cid != (Compact(edition), Compact(copy)))
 					}
@@ -914,22 +914,22 @@ pub mod pallet {
 
 				Self::deposit_event(Event::InventoryRemoved {
 					account_id: who.clone(),
-					fragment_hash: class,
+					definition_hash: definition_hash,
 					fragment_id: (edition, copy),
 				});
 
-				<Owners<T>>::append(class, to.clone(), (Compact(edition), Compact(copy)));
+				<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition), Compact(copy)));
 
-				<Inventory<T>>::append(to.clone(), class, (Compact(edition), Compact(copy)));
+				<Inventory<T>>::append(to.clone(), definition_hash, (Compact(edition), Compact(copy)));
 
 				Self::deposit_event(Event::InventoryAdded {
 					account_id: to,
-					fragment_hash: class,
+					definition_hash: definition_hash,
 					fragment_id: (edition, copy),
 				});
 
 				// finally fix permissions that might have changed
-				<Fragments<T>>::mutate((class, edition, copy), |item_data| {
+				<Fragments<T>>::mutate((definition_hash, edition, copy), |item_data| {
 					if let Some(item_data) = item_data {
 						item_data.permissions = perms;
 					}
@@ -945,26 +945,26 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `class` - **Fragment Definition 	ID** of the **Fragment Instance**
+		/// * `definition_hash` - **Fragment Definition 	ID** of the **Fragment Instance**
 		/// * `edition` - **Edition ID** of the **Fragment Instance**
 		/// * `copy` - **Copy ID** of the **Fragment Instance**
 		#[pallet::weight(50_000)]
 		pub fn create_account(
 			origin: OriginFor<T>,
-			class: Hash128,
+			definition_hash: Hash128,
 			edition: Unit,
 			copy: Unit,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			// Only the owner of this fragment can transfer it
-			let ids = <Inventory<T>>::get(who.clone(), class).ok_or(Error::<T>::NotFound)?;
+			let ids = <Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
 
 			ensure!(ids.contains(&(Compact(edition), Compact(copy))), Error::<T>::NoPermission);
 
 			// create an account for a specific fragment
 			// we need an existential amount deposit to be able to create the vault account
-			let frag_account = Self::get_fragment_account_id(class, edition, copy);
+			let frag_account = Self::get_fragment_account_id(definition_hash, edition, copy);
 			let min_balance =
 				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
 			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
@@ -1013,7 +1013,7 @@ pub mod pallet {
 							// trigger an Event
 							Self::deposit_event(Event::Expired {
 								account_id: owner,
-								fragment_hash: item.0,
+								definition_hash: item.0,
 								fragment_id: (item.1.into(), item.2.into()),
 							});
 
@@ -1028,31 +1028,31 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// **Get** the **Account ID** of the Fragment Definition `class_hash`**
+	/// **Get** the **Account ID** of the Fragment Definition `definition_hash`**
 	///
 	/// This Account ID is determinstically computed using the Fragment Definition `class_hash`
-	pub fn get_vault_id(class_hash: Hash128) -> T::AccountId {
-		let hash = blake2_256(&[&b"fragments-vault"[..], &class_hash].concat());
+	pub fn get_vault_id(definition_hash: Hash128) -> T::AccountId {
+		let hash = blake2_256(&[&b"fragments-vault"[..], &definition_hash].concat());
 		T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 	}
 
-	/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class_hash`,
+	/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `definition_hash`,
 	/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
 	///
 	/// This Account ID is determinstically computed using the Fragment Definition ID `class_hash`, the Edition ID `edition` and the Copy ID `copy`
-	pub fn get_fragment_account_id(class_hash: Hash128, edition: Unit, copy: Unit) -> T::AccountId {
+	pub fn get_fragment_account_id(definition_hash: Hash128, edition: Unit, copy: Unit) -> T::AccountId {
 		let hash = blake2_256(
-			&[&b"fragments-account"[..], &class_hash, &edition.encode(), &copy.encode()].concat(),
+			&[&b"fragments-account"[..], &definition_hash, &edition.encode(), &copy.encode()].concat(),
 		);
 		T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 	}
 
-	/// Create `quantity` number of Fragment Instances from the Fragment Definition `fragment_hash` and assigns their ownership to `to`
+	/// Create `quantity` number of Fragment Instances from the Fragment Definition `definition_hash` and assigns their ownership to `to`
 	///
 	/// # Arguments
 	///
 	/// * `to` - **Account ID** to assign ownernship of the created Fragment instances to
-	/// * `fragment_hash` - ID of the Fragment Definition
+	/// * `definition_hash` - ID of the Fragment Definition
 	/// * `sale` - Struct **representing** a **sale of the Fragment Definition**, if the **Fragment Definition** is **currently on sale**
 	/// * `options` - **Enum** indicating whether to
 	/// **create one Fragment Instance with custom data attached to it** or whether to
@@ -1065,7 +1065,7 @@ impl<T: Config> Pallet<T> {
 	/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
 	pub fn mint_fragments(
 		to: &T::AccountId,
-		fragment_hash: &Hash128,
+		definition_hash: &Hash128,
 		sale: Option<&PublishingData<T::BlockNumber>>,
 		options: &FragmentBuyOptions,
 		quantity: u64,
@@ -1079,7 +1079,7 @@ impl<T: Config> Pallet<T> {
 			ensure!(expiring_at > current_block_number, Error::<T>::ParamsNotValid); // Ensure `expiring_at` > `current_block_number`
 		}
 
-		let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
+		let fragment_data = <Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
 
 		// we need this to index transactions
 		let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index() // `<frame_system::Pallet<T>>::extrinsic_index()` is defined as: "Gets the index of extrinsic that is currently executing." (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)
@@ -1094,7 +1094,7 @@ impl<T: Config> Pallet<T> {
 				let data_hash = blake2_256(&data);
 
 				ensure!(
-					!<UniqueData2Edition<T>>::contains_key(fragment_hash, data_hash),
+					!<UniqueData2Edition<T>>::contains_key(definition_hash, data_hash),
 					Error::<T>::UniqueDataExists
 				);
 
@@ -1109,7 +1109,7 @@ impl<T: Config> Pallet<T> {
 			},
 		};
 
-		let existing: Unit = <EditionsCount<T>>::get(&fragment_hash).unwrap_or(Compact(0)).into();
+		let existing: Unit = <EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 
 		if let Some(sale) = sale {
 			// if limited amount let's reduce the amount of units left
@@ -1117,7 +1117,7 @@ impl<T: Config> Pallet<T> {
 				if quantity > units_left.into() {
 					return Err(Error::<T>::PublishedQuantityReached.into());
 				} else {
-					<Publishing<T>>::mutate(&*fragment_hash, |sale| {
+					<Publishing<T>>::mutate(&*definition_hash, |sale| {
 						if let Some(sale) = sale {
 							let left: Unit = units_left.into();
 							sale.units_left = Some(Compact(left - quantity));
@@ -1139,15 +1139,15 @@ impl<T: Config> Pallet<T> {
 
 		// ! Writing if successful
 
-		<Definitions<T>>::mutate(fragment_hash, |fragment| {
-			// Get the `FragmentDefinition` struct from `fragment_hash`
+		<Definitions<T>>::mutate(definition_hash, |fragment| {
+			// Get the `FragmentDefinition` struct from `definition_hash`
 			if let Some(fragment) = fragment {
 				for id in existing..(existing + quantity) {
 					let id = id + 1u64;
 					let cid = Compact(id); // `cid` stands for "compact id"
 
 					<Fragments<T>>::insert(
-						(fragment_hash, id, 1),
+						(definition_hash, id, 1),
 						FragmentInstance {
 							permissions: fragment.permissions,
 							created_at: current_block_number,
@@ -1157,30 +1157,30 @@ impl<T: Config> Pallet<T> {
 						},
 					);
 
-					<CopiesCount<T>>::insert((fragment_hash, id), Compact(1));
+					<CopiesCount<T>>::insert((definition_hash, id), Compact(1));
 
-					<Inventory<T>>::append(to.clone(), fragment_hash, (cid, Compact(1))); // **Add** the **Fragment Intstance whose Fragment Definition is `fragment_hash`, Edition ID is `cid` and Copy ID is 1**  to the **inventory of `to`**
+					<Inventory<T>>::append(to.clone(), definition_hash, (cid, Compact(1))); // **Add** the **Fragment Intstance whose Fragment Definition is `definition_hash`, Edition ID is `cid` and Copy ID is 1**  to the **inventory of `to`**
 
-					<Owners<T>>::append(fragment_hash, to.clone(), (cid, Compact(1)));
+					<Owners<T>>::append(definition_hash, to.clone(), (cid, Compact(1)));
 
 					if let Some(expiring_at) = expiring_at {
-						<Expirations<T>>::append(expiring_at, (*fragment_hash, cid, Compact(1)));
+						<Expirations<T>>::append(expiring_at, (*definition_hash, cid, Compact(1)));
 					}
 					Self::deposit_event(Event::InventoryAdded {
 						account_id: to.clone(),
-						fragment_hash: *fragment_hash,
+						definition_hash: *definition_hash,
 						fragment_id: (id, 1),
 					});
 				}
 
 				if let (Some(data_hash), Some(data_len)) = (data_hash, data_len) {
-					<UniqueData2Edition<T>>::insert(fragment_hash, data_hash, existing); // if `data` exists, `quantity` is ensured to be 1
+					<UniqueData2Edition<T>>::insert(definition_hash, data_hash, existing); // if `data` exists, `quantity` is ensured to be 1
 
 					// index immutable data for IPFS discovery
 					transaction_index::index(extrinsic_index, data_len as u32, data_hash);
 				}
 
-				<EditionsCount<T>>::insert(fragment_hash, Compact(existing + quantity));
+				<EditionsCount<T>>::insert(definition_hash, Compact(existing + quantity));
 			}
 		});
 

@@ -109,7 +109,7 @@ mod create_tests {
 			assert_eq!(
 				System::events()[System::events().len() - 1].event,
 				mock::Event::from(pallet_fragments::Event::DefinitionCreated {
-					fragment_hash: definition.get_definition_id()
+					definition_hash: definition.get_definition_id()
 				})
 			);
 		});
@@ -183,7 +183,7 @@ mod create_tests {
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 
 			Assets::force_create(
-				Origin::root(), 
+				Origin::root(),
 				definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true, // Whether this asset needs users to have an existential deposit to hold this asset
@@ -250,7 +250,7 @@ mod publish_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_fragments::Event::Publishing {
-					fragment_hash: publish.definition.get_definition_id()
+					definition_hash: publish.definition.get_definition_id()
 				})
 			);
 		});
@@ -405,7 +405,7 @@ mod unpublish_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_fragments::Event::Unpublishing {
-					fragment_hash: publish.definition.get_definition_id()
+					definition_hash: publish.definition.get_definition_id()
 				})
 			);
 		});
@@ -544,7 +544,7 @@ mod mint_tests {
 					event,
 					mock::Event::from(pallet_fragments::Event::InventoryAdded {
 						account_id: dd.account_id,
-						fragment_hash: mint_non_unique.definition.get_definition_id(),
+						definition_hash: mint_non_unique.definition.get_definition_id(),
 						fragment_id: (edition_id, 1)
 					})
 				);
@@ -609,7 +609,7 @@ mod mint_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: dd.account_id,
-					fragment_hash: mint_unique.definition.get_definition_id(),
+					definition_hash: mint_unique.definition.get_definition_id(),
 					fragment_id: (1, 1)
 				})
 			);
@@ -864,7 +864,7 @@ mod buy_tests {
 					System::events()[9 + (edition_id - 1) as usize].event.clone(), // we do `9 +` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
 					mock::Event::from(pallet_fragments::Event::InventoryAdded {
 						account_id: dd.account_id_second,
-						fragment_hash: buy_non_unique.publish.definition.get_definition_id(),
+						definition_hash: buy_non_unique.publish.definition.get_definition_id(),
 						fragment_id: (edition_id, 1)
 					})
 				);
@@ -975,7 +975,7 @@ mod buy_tests {
 				System::events()[9 as usize].event.clone(), // we write `9` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: dd.account_id_second,
-					fragment_hash: buy_unique.publish.definition.get_definition_id(),
+					definition_hash: buy_unique.publish.definition.get_definition_id(),
 					fragment_id: (1, 1)
 				})
 			);
@@ -1097,7 +1097,7 @@ mod buy_tests {
 
 			let minimum_balance = 69;
 			Assets::force_create(
-				Origin::root(), 
+				Origin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true, // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1114,9 +1114,9 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			Assets::mint(
-				Origin::signed(dd.account_id), 
+				Origin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
-				dd.account_id_second, 
+				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
 
@@ -1135,7 +1135,7 @@ mod buy_tests {
 
 			let minimum_balance = 69;
 			Assets::force_create(
-				Origin::root(), 
+				Origin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true, // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1152,9 +1152,9 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			Assets::mint(
-				Origin::signed(dd.account_id), 
+				Origin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
-				dd.account_id_second, 
+				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1
 			);
 
@@ -1490,7 +1490,7 @@ mod give_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryRemoved {
 					account_id: dd.account_id,
-					fragment_hash: give.mint.definition.get_definition_id(),
+					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id)
 				})
 			);
@@ -1503,7 +1503,7 @@ mod give_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: give.to,
-					fragment_hash: give.mint.definition.get_definition_id(),
+					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id)
 				})
 			);
@@ -1583,7 +1583,7 @@ mod give_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: give.to,
-					fragment_hash: give.mint.definition.get_definition_id(),
+					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id + 1)
 				})
 			);
@@ -1973,7 +1973,7 @@ mod create_account_tests {
 
 			assert_noop!(
 				create_account_(dd.account_id_second, &create_account),
-				Error::<Test>::NotFound 
+				Error::<Test>::NotFound
 			);
 		});
 	}
