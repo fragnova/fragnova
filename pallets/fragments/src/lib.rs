@@ -1354,8 +1354,8 @@ impl<T : Config> Pallet<T>
 
 		for (proto_id, value_map_proto) in map_protos_that_have_defs.into_iter() {
 
-			let mut map_proto = match map_proto {
-				Value::Object(map_proto) => map_proto,
+			let mut map_proto = match value_map_proto {
+				Value::Object(mp) => mp,
 				_ => return Err("Failed to get map_proto".into()),
 			};
 
