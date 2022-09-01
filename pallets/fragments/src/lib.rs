@@ -51,7 +51,10 @@ use sp_io::{
 use sp_std::{vec::Vec, collections::btree_map::BTreeMap};
 pub use weights::WeightInfo;
 
-use protos::permissions::FragmentPerms;
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
+use protos::{permissions::FragmentPerms, categories::Categories};
 
 use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::StaticLookup;
@@ -61,7 +64,38 @@ use frame_support::traits::{
 };
 use sp_runtime::SaturatedConversion;
 
+use pallet_protos::GetProtosParams;
+use scale_info::prelude::{
+	format,
+	string::{String, ToString},
+};
+use serde_json::{json, Map, Value};
+
 type Unit = u64;
+
+/// **Data Type** used to **Query and Filter for Fragment Definitions**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GetDefinitionsParams<TAccountId, TString> {
+	pub desc: bool,
+	pub from: u64,
+	pub limit: u64,
+	pub metadata_keys: Vec<TString>,
+	pub owner: Option<TAccountId>,
+	pub return_owners: bool,
+	pub categories: Vec<Categories>,
+	pub tags: Vec<TString>,
+}
+
+/// **Data Type** used to **Query and Filter for Fragment Instances**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GetInstancessParams {
+	pub desc: bool,
+	pub from: u64,
+	pub limit: u64,
+	pub definition_hash: Hash128,
+}
 
 /// **Struct** of a **Fragment Definition's Metadata**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -1266,5 +1300,138 @@ impl<T: Config> Pallet<T> {
 		});
 
 		Ok(())
+	}
+
+}
+
+impl<T : Config> Pallet<T>
+	where
+		T::AccountId: AsRef<[u8]>
+{
+
+
+	pub fn get_definitions(params: GetDefinitionsParams<T::AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+
+		let get_protos_params = GetProtosParams {
+			desc: params.desc,
+			from: params.from,
+			limit: params.limit,
+			metadata_keys: Vec::new(),
+			owner: params.owner,
+			return_owners: params.return_owners,
+			categories: params.categories,
+			tags: params.tags,
+			available: None,
+		};
+
+		let map_protos: Map<String, Value> = pallet_protos::Pallet::<T>::get_protos_map(get_protos_params)?;
+		let map_protos_that_have_defs = map_protos
+			.into_iter()
+			.filter(|(proto_id, map_proto)| {
+				let array_proto_id: Hash256 = hex::decode(&proto_id).unwrap().try_into().unwrap(); // using `unwrao()` can lead to panicking
+				<Proto2Fragments<T>>::contains_key(&array_proto_id)
+			})
+			// .filter_map(|(proto_id, map_proto)| -> Option<_> {
+			// 	if let Ok(array_proto_id) = hex::decode(&proto_id) {
+			// 		if Ok(array_proto_id) = array_proto_id.try_into() {
+			// 			if <Proto2Fragments<T>>::contains_key(&array_proto_id) {
+			// 				Some((proto_id, map_proto))
+			// 			} else {
+			// 				None
+			// 			}
+			// 		} else {
+			// 			Some(Err("Failed to convert `proto_id` to Hash256".into()))
+			// 		}
+			// 	} else {
+			// 		Some(Err("`Failed to decode `proto_id``".into()))
+			// 	}
+			// })
+			.skip(params.from as usize)
+			.take(params.limit as usize)
+			.collect::<Map<_, _>>();
+
+		let mut map_definitions = Map::new();
+
+		for (proto_id, value_map_proto) in map_protos_that_have_defs.into_iter() {
+
+			let mut map_proto = match map_proto {
+				Value::Object(map_proto) => map_proto,
+				_ => return Err("Failed to get map_proto".into()),
+			};
+
+			let array_proto_id = hex::decode(&proto_id).or(Err("`Failed to decode `proto_id``"))?;
+			let array_proto_id: Hash256 = array_proto_id.try_into().or(Err("Failed to convert `proto_id` to Hash256"))?;
+
+			map_proto.insert(String::from("proto"), Value::String(proto_id));
+
+			let list_definitions = <Proto2Fragments<T>>::get(&array_proto_id).ok_or("`proto_id` not found in `Proto2Fragments`")?;
+
+			for definition in list_definitions.iter() {
+				map_definitions.insert(hex::encode(definition), Value::Object(map_proto));
+			}
+		}
+
+		if !params.metadata_keys.is_empty() {
+			for (definition_id, map_definition) in map_definitions.iter_mut() {
+
+				let map_definition = match map_definition {
+					Value::Object(map_definition) => map_definition,
+					_ => return Err("Failed to get map_definition".into()),
+				};
+
+				let array_definition_id: Hash128 = if let Ok(array_definition_id) = hex::decode(definition_id) {
+					if let Ok(array_definition_id) = array_definition_id.try_into() {
+						array_definition_id
+					} else {
+						return Err("Failed to convert definition to Hash128".into());
+					}
+				} else {
+					return Err("Failed to decode definition_id".into());
+				};
+				let definition_metadata = if let Some(definition) = <Definitions<T>>::get(array_definition_id) {
+					definition.custom_metadata
+				} else {
+					return Err("Failed to get definition".into());
+				};
+				let mut map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &definition_metadata);
+				(*map_definition).append(&mut map_of_matching_metadata_keys);
+			}
+		}
+
+		let result = json!(map_definitions).to_string();
+
+		Ok(result.into_bytes())
+
+
+
+
+
+
+
+	}
+
+
+	pub fn get_instances(
+		params: GetInstancessParams
+	) -> Result<Vec<u8>, Vec<u8>> {
+
+		let map = Map::new();
+
+		let definition_hash = params.definition_hash;
+
+		let editions: u64 = <EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
+
+		for edition_id in 0..editions {
+			let copies: u64 = <CopiesCount<T>>::get((definition_hash, edition_id)).ok_or("No Copies Found!")?.into();
+
+			for copy_id in 0..copies {
+				// Add to the `map`
+			}
+		}
+
+		let result = json!(map).to_string();
+
+		Ok(result.into_bytes())
+
 	}
 }

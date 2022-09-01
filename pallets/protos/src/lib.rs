@@ -988,10 +988,39 @@ pub mod pallet {
 			return found;
 		}
 
+		pub fn get_map_of_matching_metadata_keys(
+			metadata_keys: &Vec<Vec<u8>>,
+			metadata: &BTreeMap<Compact<u64>, Hash256>,
+		) -> Map<String, Value> {
+
+			let mut map = Map::new();
+
+			for metadata_key in metadata_keys.clone().iter() {
+				let metadata_key_index = <MetaKeys<T>>::get(metadata_key.clone());
+				let metadata_value = if let Some(metadata_key_index) =
+					metadata_key_index
+				{
+					let metadata_key_index = <Compact<u64>>::from(metadata_key_index);
+
+					if let Some(data_hash) = metadata.get(&metadata_key_index) {
+						Value::String(hex::encode(data_hash))
+					} else {
+						Value::Null
+					}
+				} else {
+					Value::Null
+				};
+
+				if let Ok(key) = String::from_utf8(metadata_key.clone()) {
+					map.insert(key, metadata_value);
+				}
+			}
+
+			map
+		}
+
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
-		/// type** is a **JSON string** Furthermore, this function also indexes `data` in the
-		/// Blockchain's Database and makes it available via bitswap (IPFS) directly from every
-		/// chain node permanently.
+		/// type** is a **JSON string**
 		///
 		/// # Arguments
 		///
@@ -999,49 +1028,62 @@ pub mod pallet {
 		pub fn get_protos(
 			params: GetProtosParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
+
+			let protos_map: Map<String, Value> = Self::get_protos_map(params)?;
+
+			let result = json!(protos_map).to_string();
+
+			Ok(result.into_bytes())
+
+		}
+
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
+		/// type** is a **JSON string**
+		///
+		/// # Arguments
+		///
+		/// * `params` - A ***GetProtosParams* struct**
+		pub fn get_protos_map(
+			params: GetProtosParams<T::AccountId, Vec<u8>>,
+		) -> Result<Map<String, Value>, Vec<u8>> {
+
 			let mut map = Map::new();
 
 			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
 				// `owner` exists
-				if let Some(list_protos_owner) =
-					<ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner))
-				{
+				let list_protos_owner = <ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner)).ok_or("Owner not found")?;
 					// `owner` exists in `ProtosByOwner`
-					if params.desc {
-						// Sort in descending order
-						list_protos_owner
-							.into_iter()
-							.rev()
-							.filter(|proto_id| {
-								Self::filter_proto(
-									proto_id,
-									&params.tags,
-									&params.categories,
-									params.available,
-								)
-							})
-							.skip(params.from as usize)
-							.take(params.limit as usize)
-							.collect::<Vec<Hash256>>()
-					} else {
-						// Sort in ascending order
-						list_protos_owner
-							.into_iter()
-							.filter(|proto_id| {
-								Self::filter_proto(
-									proto_id,
-									&params.tags,
-									&params.categories,
-									params.available,
-								)
-							})
-							.skip(params.from as usize)
-							.take(params.limit as usize)
-							.collect::<Vec<Hash256>>()
-					}
+				if params.desc {
+					// Sort in descending order
+					list_protos_owner
+						.into_iter()
+						.rev()
+						.filter(|proto_id| {
+							Self::filter_proto(
+								proto_id,
+								&params.tags,
+								&params.categories,
+								params.available,
+							)
+						})
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect::<Vec<Hash256>>()
 				} else {
-					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into());
+					// Sort in ascending order
+					list_protos_owner
+						.into_iter()
+						.filter(|proto_id| {
+							Self::filter_proto(
+								proto_id,
+								&params.tags,
+								&params.categories,
+								params.available,
+							)
+						})
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect::<Vec<Hash256>>()
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -1108,28 +1150,17 @@ pub mod pallet {
 
 			if params.return_owners || !params.metadata_keys.is_empty() {
 				for (proto_id, map_proto) in map.iter_mut() {
-					let array_proto_id: Hash256 = if let Ok(array_proto_id) = hex::decode(proto_id)
-					{
-						if let Ok(array_proto_id) = array_proto_id.try_into() {
-							array_proto_id
-						} else {
-							return Err("Failed to convert proto_id to Hash256".into());
-						}
-					} else {
-						return Err("Failed to decode proto_id".into());
-					};
-
-					let (owner, map_metadata, include_cost) =
-						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
-							(proto.owner, proto.metadata, proto.include_cost)
-						} else {
-							return Err("Failed to get proto".into());
-						};
 
 					let map_proto = match map_proto {
 						Value::Object(map_proto) => map_proto,
 						_ => return Err("Failed to get map_proto".into()),
 					};
+
+					let array_proto_id = hex::decode(proto_id).or(Err("`Failed to decode `proto_id``"))?;
+					let array_proto_id: Hash256 = array_proto_id.try_into().or(Err("Failed to convert `proto_id` to Hash256"))?;
+
+					let proto = <Protos<T>>::get(array_proto_id).ok_or("Failed to get proto")?;
+					let (owner, proto_metadata, include_cost) = (proto.owner, proto.metadata, proto.include_cost);
 
 					if let Some(include_cost) = include_cost {
 						let n: u64 = include_cost.into();
@@ -1171,34 +1202,18 @@ pub mod pallet {
 					}
 
 					if !params.metadata_keys.is_empty() {
-						for metadata_key in params.metadata_keys.iter() {
-							let metadata_key_index = <MetaKeys<T>>::get(metadata_key.clone());
-							let metadata_value = if let Some(metadata_key_index) =
-								metadata_key_index
-							{
-								let metadata_key_index = <Compact<u64>>::from(metadata_key_index);
-
-								if let Some(data_hash) = map_metadata.get(&metadata_key_index) {
-									Value::String(hex::encode(data_hash))
-								} else {
-									Value::Null
-								}
-							} else {
-								Value::Null
-							};
-
-							if let Ok(key) = String::from_utf8(metadata_key.clone()) {
-								(*map_proto).insert(key, metadata_value);
-							}
-						}
+						let mut map_of_matching_metadata_keys = Self::get_map_of_matching_metadata_keys(&params.metadata_keys, &proto_metadata);
+						(*map_proto).append(&mut map_of_matching_metadata_keys);
 					}
+
 				}
 			}
 
-			let result = json!(map).to_string();
-
-			Ok(result.into_bytes())
+			Ok(map)
 		}
+
 	}
+
+
 }
 
