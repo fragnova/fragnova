@@ -1367,7 +1367,7 @@ impl<T : Config> Pallet<T>
 			let list_definitions = <Proto2Fragments<T>>::get(&array_proto_id).ok_or("`proto_id` not found in `Proto2Fragments`")?;
 
 			for definition in list_definitions.iter() {
-				map_definitions.insert(hex::encode(definition), Value::Object(map_proto));
+				map_definitions.insert(hex::encode(definition), Value::Object(map_proto.clone())); // TODO: currently using `map_proto.clone()` as a temp fix
 			}
 		}
 
