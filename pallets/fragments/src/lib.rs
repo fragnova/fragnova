@@ -39,6 +39,7 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+#[allow(missing_docs)]
 mod weights;
 
 use codec::{Compact, Decode, Encode};
@@ -73,8 +74,11 @@ pub struct FragmentMetadata<TFungibleAsset> {
 	pub currency: Option<TFungibleAsset>,
 }
 
+/// TODO
+/// **Enum** that represents the **settings** for a **Fragment Definition whose Fragment instance(s) must contain unique data when created**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct UniqueOptions {
+	/// Whether the unique data of the Fragment instance(s) are mutable
 	pub mutable: bool,
 }
 
@@ -182,6 +186,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config + pallet_protos::Config + pallet_assets::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		/// Weight functions needed for pallet_fragments.
 		type WeightInfo: WeightInfo;
 	}
 
@@ -254,6 +259,8 @@ pub mod pallet {
 		FragmentInstance<T::BlockNumber>,
 	>;
 
+	/// StorageMap that maps a **Fragment Definition and a ***Unique Data*** Hash**
+	/// to **an Existing Edition of the aforementioned Fragment Definition**
 	#[pallet::storage]
 	pub type UniqueData2Edition<T: Config> = StorageDoubleMap<
 		_,
@@ -315,6 +322,7 @@ pub mod pallet {
 	pub type Expirations<T: Config> =
 		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(Hash128, Compact<Unit>, Compact<Unit>)>>;
 
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -760,7 +768,7 @@ pub mod pallet {
 					&who,
 					&vault,
 					price.saturated_into(),
-					ExistenceRequirement::KeepAlive, 
+					ExistenceRequirement::KeepAlive,
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}

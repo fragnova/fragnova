@@ -18,6 +18,7 @@ mod benchmarking;
 #[cfg(test)]
 mod tests;
 
+#[allow(missing_docs)]
 mod weights;
 
 use protos::{categories::Categories, traits::Trait};
@@ -48,27 +49,28 @@ use serde_json::{json, Map, Value};
 
 use base58::ToBase58;
 
-/// ¿
+/// TODO: Documentation
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkSource {
 	// Generally we just store this data, we don't verify it as we assume auth service did it.
 	// (Link signature, Linked block number, EIP155 Chain ID)
+	/// TODO: Documentation
 	Evm(ecdsa::Signature, u64, U256),
 }
 
 /// **Types** of **Assets that are linked to a Proto-Fragment** (e.g an ERC-721 Contract etc.)
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkedAsset {
-	// Ethereum (ERC721 Contract address, Token ID, Link source)
+	/// Ethereum (ERC721 Contract address, Token ID, Link source)
 	Erc721(H160, U256, LinkSource),
 }
 
 /// **Types** of **Proto-Fragment Owners**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum ProtoOwner<TAccountId> {
-	// A **regular account** on **this chain**
+	/// A **regular account** on **this chain**
 	User(TAccountId),
-	// An **external asset** not on this chain
+	/// An **external asset** not on this chain
 	ExternalAsset(LinkedAsset),
 }
 
@@ -76,14 +78,23 @@ pub enum ProtoOwner<TAccountId> {
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GetProtosParams<TAccountId, TString> {
+	/// Whether to order the results in descending or ascending order
 	pub desc: bool,
+	/// Number of Proto-Fragment Results to skip
 	pub from: u64,
+	/// Number of Proto-Fragments to retrieve
 	pub limit: u64,
+	/// List of Metadata Keys of the Proto-Fragment that should also be returned
 	pub metadata_keys: Vec<TString>,
+	/// Owner of the Proto-Fragment
 	pub owner: Option<TAccountId>,
+	/// Whether to return the owner(s) of all the returned Proto-Fragments
 	pub return_owners: bool,
+	/// List of categories to filter by
 	pub categories: Vec<Categories>,
+	/// List of tags to filter by
 	pub tags: Vec<TString>,
+	/// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
 }
 
@@ -98,9 +109,12 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub references: Vec<Hash256>,
 }
 
+/// Struct that represents the account information of a Proto-Fragment
 #[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct AccountsInfo {
+	/// TODO: Documentation
 	pub active_accounts: u128,
+	/// TODO: Documentation
 	pub lifetime_accounts: u128,
 }
 
@@ -146,9 +160,10 @@ pub mod pallet {
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-
+		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
 
+		/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
 
@@ -214,6 +229,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type AccountStakes<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
 
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -989,9 +1005,7 @@ pub mod pallet {
 		}
 
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
-		/// type** is a **JSON string** Furthermore, this function also indexes `data` in the
-		/// Blockchain's Database and makes it available via bitswap (IPFS) directly from every
-		/// chain node permanently.
+		/// type** is a **JSON string**
 		///
 		/// # Arguments
 		///
