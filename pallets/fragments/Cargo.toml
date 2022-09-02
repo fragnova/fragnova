@@ -103,7 +103,7 @@ version = '4.0.0-dev'
 [dependencies.pallet-contracts]
 default-features = false
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'clamor-01-08-2022'
+tag = 'fragnova-v0.0.1'
 version = '4.0.0-dev'
 
 [dependencies]
