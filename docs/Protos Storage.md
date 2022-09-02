@@ -81,6 +81,38 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub accounts_info: AccountsInfo,
 }
 ```
+### Metadata keys
+Supported metadata keys are 'image', 'title', 'json_attributes', 'description’. 
+
+'image':
+This is the preview image of the item. Formats supported are PNG, JPEG or GIF. We recommend using a 350 x 350 image.
+
+'title':
+Title of the item. e.g. "Panda Museum"
+
+'description':
+A human readable description of the item. e.g. "A unique 3D rendering of Panda Museum."
+
+'json_attributes':
+These are the attributes for the item, which will show up on the proto details page / fragment details page for the item. 
+e.g. 
+``` 
+{ 
+	"color": "black and white",
+	"animal": "panda"
+}
+```
+
+Example of retrieving protos with all metadata keys:
+```
+const params = api.createType("GetProtosParams", {
+    metadata_keys: ['image', 'title', 'json_attributes', 'description'],
+    categories: categories, 
+    available: availability,
+    tags: tags,
+    return_owners: true,
+});
+```
 ### LinkSource
 ### LinkedAsset
 ### ProtoOwner
