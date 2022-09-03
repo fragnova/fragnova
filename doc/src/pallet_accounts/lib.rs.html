@@ -959,6 +959,18 @@
 <span id="959">959</span>
 <span id="960">960</span>
 <span id="961">961</span>
+<span id="962">962</span>
+<span id="963">963</span>
+<span id="964">964</span>
+<span id="965">965</span>
+<span id="966">966</span>
+<span id="967">967</span>
+<span id="968">968</span>
+<span id="969">969</span>
+<span id="970">970</span>
+<span id="971">971</span>
+<span id="972">972</span>
+<span id="973">973</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `frag` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
@@ -1045,9 +1057,11 @@
 <span class="kw">use </span>codec::{Decode, Encode};
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 
-<span class="kw">use </span>sp_io::{crypto <span class="kw">as </span>Crypto, hashing::blake2_256, hashing::keccak_256};
-<span class="kw">use </span>sp_runtime::offchain::storage::StorageValueRef;
-<span class="kw">use </span>sp_runtime::MultiSigner;
+<span class="kw">use </span>sp_io::{
+	crypto <span class="kw">as </span>Crypto,
+	hashing::{blake2_256, keccak_256},
+};
+<span class="kw">use </span>sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
 <span class="kw">use </span>sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 <span class="kw">use </span>frame_system::offchain::{
@@ -1375,8 +1389,14 @@
 
 			<span class="macro">log::debug!</span>(<span class="string">&quot;Lock update: {:?}&quot;</span>, data);
 
-			<span class="kw">let </span>data_tuple =
-				(data.amount, data.locktime, data.sender, data.signature.clone(), data.lock, data.block_number);
+			<span class="kw">let </span>data_tuple = (
+				data.amount,
+				data.locktime,
+				data.sender,
+				data.signature.clone(),
+				data.lock,
+				data.block_number,
+			);
 			<span class="kw">let </span>data_hash: H256 = data_tuple.using_encoded(blake2_256).into();
 
 			<span class="macro">ensure!</span>(
@@ -1394,7 +1414,7 @@
 				<span class="kw">let </span>locktime: [u8; <span class="number">32</span>] = data.locktime.into();
 				message.extend_from_slice(<span class="kw-2">&amp;</span>locktime[..]); <span class="comment">// Add amount to message
 			</span>}
-			
+
 			<span class="kw">let </span>message_hash = keccak_256(<span class="kw-2">&amp;</span>message); <span class="comment">// This should be
 
 			</span><span class="kw">let </span>message = [<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span>message_hash[..]].concat();
@@ -1451,7 +1471,8 @@
 			<span class="kw">if </span>data.lock {
 				<span class="comment">// If FRAG tokens were locked on Ethereum
 				// ! TODO TEST
-				</span><span class="kw">let </span>locktime: u128 = data.locktime.try_into().map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
+				</span><span class="kw">let </span>locktime: u128 =
+					data.locktime.try_into().map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
 				<span class="kw">let </span>locktime: T::Moment = locktime.saturated_into();
 				<span class="kw">let </span>linked = &lt;EVMLinksReverse&lt;T&gt;&gt;::get(sender.clone()); <span class="comment">// Get the Clamor Account linked with the Ethereum Account `sender`
 				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(linked) = linked {
@@ -1470,7 +1491,8 @@
 				}
 
 				<span class="comment">// also emit event
-				</span><span class="self">Self</span>::deposit_event(Event::Locked { eth_key: sender, balance: amount, locktime: locktime }); <span class="comment">// 问Gio for clarification
+				</span><span class="self">Self</span>::deposit_event(Event::Locked { eth_key: sender, balance: amount, locktime });
+			<span class="comment">// 问Gio for clarification
 			</span>} <span class="kw">else </span>{
 				<span class="comment">// If we want to unlock all the FRAG tokens that were
 				// ! TODO TEST
@@ -1789,8 +1811,11 @@
 				</span><span class="kw">let </span>data = log[<span class="string">&quot;data&quot;</span>].as_str().ok_or_else(|| <span class="string">&quot;Invalid response - no data&quot;</span>)<span class="question-mark">?</span>;
 				<span class="kw">let </span>data =
 					hex::decode(<span class="kw-2">&amp;</span>data[<span class="number">2</span>..]).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// Convert the hexadecimal `data` from hexadecimal to binary (i.e raw bits)
-				</span><span class="kw">let </span>data = ethabi::decode(<span class="kw-2">&amp;</span>[ParamType::Bytes, ParamType::Uint(<span class="number">256</span>), ParamType::Uint(<span class="number">256</span>)], <span class="kw-2">&amp;</span>data) <span class="comment">// First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
-					</span>.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid eth data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `data` is the decoded list of the params of the event log `topic`
+				</span><span class="kw">let </span>data = ethabi::decode(
+					<span class="kw-2">&amp;</span>[ParamType::Bytes, ParamType::Uint(<span class="number">256</span>), ParamType::Uint(<span class="number">256</span>)],
+					<span class="kw-2">&amp;</span>data,
+				) <span class="comment">// First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+				</span>.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid eth data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `data` is the decoded list of the params of the event log `topic`
 				</span><span class="kw">let </span>locked = <span class="kw">match </span>topic {
 					<span class="comment">// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
 					</span>LOCK_EVENT =&gt; <span class="bool-val">true</span>,
@@ -1809,8 +1834,8 @@
 					(<span class="kw-2">&amp;</span>eth_signature[..]).try_into().map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid data&quot;</span>)<span class="question-mark">?</span>;
 
 				<span class="kw">let </span>amount = data[<span class="number">1</span>].clone().into_uint().ok_or_else(|| <span class="string">&quot;Invalid data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// Amount of FRAG token locked/unlocked (`data[1]`)
-				
-				// Lock period (`data[2]`). In case of Unlock event, it is zero. 
+
+				// Lock period (`data[2]`). In case of Unlock event, it is zero.
 				</span><span class="kw">let </span>locktime = data[<span class="number">2</span>].clone().into_uint().unwrap_or(U256::from(<span class="number">0</span>));
 
 				<span class="kw">if </span>locked {
@@ -1834,7 +1859,6 @@
 						eth_signature.clone(),
 					);
 				}
-				
 
 				<span class="comment">// `send_unsigned_transaction` is returning a type of `Option&lt;(Account&lt;T&gt;, Result&lt;(), ()&gt;)&gt;`.
 				//   The returned result means:
@@ -1921,4 +1945,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9243168fa 2022-08-31)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (8c6ce6b91 2022-09-02)" ></div></body></html>

@@ -286,7 +286,7 @@
 <span class="kw">pub fn </span>create_lock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 	lock_amount: U256,
-	locktime: U256
+	locktime: U256,
 ) -&gt; sp_core::ecdsa::Signature {
 	<span class="kw">let </span>ethereum_account_id =
 		get_ethereum_account_id_from_ecdsa_public_struct(<span class="kw-2">&amp;</span>ethereum_account_pair.public());
@@ -309,7 +309,7 @@
 }
 <span class="kw">pub fn </span>create_unlock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
-	unlock_amount: U256
+	unlock_amount: U256,
 ) -&gt; sp_core::ecdsa::Signature {
 	<span class="kw">let </span>ethereum_account_id =
 		get_ethereum_account_id_from_ecdsa_public_struct(<span class="kw-2">&amp;</span>ethereum_account_pair.public());
@@ -424,7 +424,7 @@
 				signature: create_lock_signature(
 					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
 					U256::from(<span class="number">69u32</span>),
-					U256::from(<span class="number">1234567890</span>)
+					U256::from(<span class="number">1234567890</span>),
 				),
 				lock: <span class="bool-val">true</span>, <span class="comment">// yes, please lock it!
 				</span>block_number: <span class="number">69</span>,
@@ -451,7 +451,7 @@
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
 						U256::from(<span class="number">69u32</span>),
-						U256::from(<span class="number">1234567890</span>)
+						U256::from(<span class="number">1234567890</span>),
 					),
 					lock: <span class="bool-val">true</span>, <span class="comment">// yes, please lock it!
 					</span>block_number: <span class="number">69</span>,
@@ -468,13 +468,13 @@
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([<span class="number">69u8</span>; <span class="number">32</span>]),
 				amount: U256::from(<span class="number">0u32</span>), <span class="comment">// when unlocking, amount must be 0u32
-				</span>locktime: U256::from(<span class="number">0</span>), <span class="comment">// can be whatever. It is not considered in case of unlock.
+				</span>locktime: U256::from(<span class="number">0</span>),  <span class="comment">// can be whatever. It is not considered in case of unlock.
 				</span>sender: get_ethereum_account_id_from_ecdsa_public_struct(
 					<span class="kw-2">&amp;</span>sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]).public(),
 				),
 				signature: create_unlock_signature(
 					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
-					U256::from(<span class="number">0u32</span>) <span class="comment">// when unlocking, amount must be 0u32
+					U256::from(<span class="number">0u32</span>), <span class="comment">// when unlocking, amount must be 0u32
 				</span>),
 				lock: <span class="bool-val">false</span>, <span class="comment">// yes, please unlock it!
 				</span>block_number: <span class="number">69 </span>+ <span class="number">69</span>,
@@ -495,4 +495,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9243168fa 2022-08-31)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (8c6ce6b91 2022-09-02)" ></div></body></html>

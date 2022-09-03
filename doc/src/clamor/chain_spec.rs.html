@@ -235,6 +235,10 @@
 <span id="235">235</span>
 <span id="236">236</span>
 <span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A chain specification, or &quot;chain spec&quot;, is a collection of configuration information that dictates which network a blockchain node will connect to,
 //! which entities it will initially communicate with, and what consensus-critical state it must have at genesis.
 //!
@@ -466,11 +470,15 @@
 			eth_authorities: initial_authorities.iter().map(|x| (x.<span class="number">3</span>.clone())).collect(),
 			keys: initial_authorities.iter().map(|x| (x.<span class="number">4</span>.clone())).collect(),
 		},
-		assets: AssetsConfig { assets: <span class="macro">vec!</span>[], metadata: <span class="macro">vec!</span>[], accounts: <span class="macro">vec!</span>[] },
+		assets: AssetsConfig {
+			assets: <span class="macro">vec!</span>[(<span class="number">1337</span>, root_key.clone(), <span class="bool-val">true</span>, <span class="number">1</span>)], <span class="comment">// Genesis assets: id, owner, is_sufficient, min_balance
+			</span>metadata: <span class="macro">vec!</span>[(<span class="number">1337</span>, <span class="string">&quot;Fragnova Network Tickets&quot;</span>.into(), <span class="string">&quot;TICKET&quot;</span>.into(), <span class="number">0</span>)], <span class="comment">// Genesis metadata: id, name, symbol, decimals
+			</span>accounts: <span class="macro">vec!</span>[], <span class="comment">// Genesis accounts: id, account_id, balance
+		</span>},
 		accounts: AccountsConfig {
 			keys: initial_authorities.iter().map(|x| (x.<span class="number">4</span>.clone())).collect(),
 		},
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9243168fa 2022-08-31)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (8c6ce6b91 2022-09-02)" ></div></body></html>

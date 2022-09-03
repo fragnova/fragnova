@@ -1202,7 +1202,61 @@
 <span id="1202">1202</span>
 <span id="1203">1203</span>
 <span id="1204">1204</span>
-</pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Proto-Fragments.
+<span id="1205">1205</span>
+<span id="1206">1206</span>
+<span id="1207">1207</span>
+<span id="1208">1208</span>
+<span id="1209">1209</span>
+<span id="1210">1210</span>
+<span id="1211">1211</span>
+<span id="1212">1212</span>
+<span id="1213">1213</span>
+<span id="1214">1214</span>
+<span id="1215">1215</span>
+<span id="1216">1216</span>
+<span id="1217">1217</span>
+<span id="1218">1218</span>
+<span id="1219">1219</span>
+<span id="1220">1220</span>
+<span id="1221">1221</span>
+<span id="1222">1222</span>
+<span id="1223">1223</span>
+<span id="1224">1224</span>
+<span id="1225">1225</span>
+<span id="1226">1226</span>
+<span id="1227">1227</span>
+<span id="1228">1228</span>
+<span id="1229">1229</span>
+<span id="1230">1230</span>
+<span id="1231">1231</span>
+<span id="1232">1232</span>
+<span id="1233">1233</span>
+<span id="1234">1234</span>
+<span id="1235">1235</span>
+<span id="1236">1236</span>
+<span id="1237">1237</span>
+<span id="1238">1238</span>
+<span id="1239">1239</span>
+<span id="1240">1240</span>
+<span id="1241">1241</span>
+<span id="1242">1242</span>
+<span id="1243">1243</span>
+<span id="1244">1244</span>
+<span id="1245">1245</span>
+<span id="1246">1246</span>
+<span id="1247">1247</span>
+<span id="1248">1248</span>
+<span id="1249">1249</span>
+<span id="1250">1250</span>
+<span id="1251">1251</span>
+<span id="1252">1252</span>
+<span id="1253">1253</span>
+<span id="1254">1254</span>
+<span id="1255">1255</span>
+<span id="1256">1256</span>
+<span id="1257">1257</span>
+<span id="1258">1258</span>
+</pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
 //!
@@ -1226,7 +1280,7 @@
 
 <span class="kw">use </span>protos::{categories::Categories, traits::Trait};
 
-<span class="kw">use </span>sp_core::{ecdsa, H160, U256};
+<span class="kw">use </span>sp_core::{crypto::UncheckedFrom, ecdsa, H160, U256};
 
 <span class="kw">use </span>codec::{Compact, Decode, Encode};
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
@@ -1235,14 +1289,14 @@
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
 
 <span class="kw">use </span>sp_io::{
-	hashing::{twox_64, blake2_256},
+	hashing::{blake2_256, twox_64},
 	transaction_index,
 };
 <span class="kw">use </span>sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 <span class="kw">pub use </span>weights::WeightInfo;
 
-<span class="kw">use </span>sp_clamor::{get_locked_frag_account, Hash64, Hash256};
+<span class="kw">use </span>sp_clamor::{Hash256, Hash64};
 
 <span class="kw">use </span>scale_info::prelude::{
 	format,
@@ -1251,6 +1305,8 @@
 <span class="kw">use </span>serde_json::{json, Map, Value};
 
 <span class="kw">use </span>base58::ToBase58;
+
+<span class="kw">use </span>frame_support::traits::tokens::fungibles::{Inspect, Mutate};
 
 <span class="doccomment">/// ¿
 </span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -1308,6 +1364,19 @@
 	<span class="kw">pub </span>lifetime_accounts: u128,
 }
 
+<span class="doccomment">/// **Enum** that indicates **how a Proto-Fragment can be used**
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+</span><span class="kw">pub enum </span>UsageLicense&lt;TContractAddress&gt; {
+	<span class="doccomment">/// Proto-Fragment is not available for use (owners can always use it)
+	</span>Closed,
+	<span class="doccomment">/// Proto-Fragment is available for use freely
+	</span>Open,
+	<span class="doccomment">/// Proto-Fragment is available for use if an amount of tickets is under curation
+	</span>Tickets(Compact&lt;u64&gt;),
+	<span class="doccomment">/// Proto-Fragment is available for use if a custom contract returns true
+	</span>Contract(TContractAddress),
+}
+
 <span class="doccomment">/// **Struct** of a **Proto-Fragment**
 </span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>Proto&lt;TAccountId, TBlockNumber&gt; {
@@ -1315,9 +1384,8 @@
 	</span><span class="kw">pub </span>block: TBlockNumber,
 	<span class="doccomment">/// **List of *ProtoPatch* structs** of the **Proto-Fragment**
 	</span><span class="kw">pub </span>patches: Vec&lt;ProtoPatch&lt;TBlockNumber&gt;&gt;,
-	<span class="doccomment">/// **Amount of FRAG tokens** that **need to be staked on the Proto-Fragment** to **use the Proto-Fragment in other Proto-Fragments** (*optional*)
-	/// NOTE: If None, the **Proto-Fragment** *&lt;u&gt;can&#39;t be used&lt;/u&gt;* in **other Proto-Fragments**
-	</span><span class="kw">pub </span>include_cost: <span class="prelude-ty">Option</span>&lt;Compact&lt;u64&gt;&gt;,
+	<span class="doccomment">/// **License** details of the **Proto-Fragment**
+	</span><span class="kw">pub </span>license: UsageLicense&lt;TAccountId&gt;,
 	<span class="doccomment">/// **Original Creator** of the **Proto-Fragment**
 	</span><span class="kw">pub </span>creator: TAccountId,
 	<span class="doccomment">/// *Current Owner** of the **Proto-Fragment**
@@ -1328,7 +1396,8 @@
 	</span><span class="kw">pub </span>category: Categories,
 	<span class="doccomment">/// **List of Tags** associated with the **Proto-Fragment**
 	</span><span class="kw">pub </span>tags: Vec&lt;Compact&lt;u64&gt;&gt;,
-	<span class="doccomment">/// **Map** that maps the **Key of a Proto-Fragment&#39;s Metadata Object** to the **Hash of the aforementioned Metadata Object**
+	<span class="doccomment">/// **Map** that maps the **Key of a Proto-Fragment&#39;s Metadata Object** to the **Hash of the
+	/// aforementioned Metadata Object**
 	</span><span class="kw">pub </span>metadata: BTreeMap&lt;Compact&lt;u64&gt;, Hash256&gt;,
 	<span class="doccomment">/// Accounts information for this proto.
 	</span><span class="kw">pub </span>accounts_info: AccountsInfo,
@@ -1341,24 +1410,33 @@
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	<span class="kw">use </span>sp_clamor::CID_PREFIX;
-	<span class="kw">use </span>sp_runtime::{traits::Saturating, SaturatedConversion};
+	<span class="kw">use </span>sp_runtime::SaturatedConversion;
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
 	</span><span class="attribute">#[pallet::config]
 	</span><span class="kw">pub trait </span>Config:
-		frame_system::Config + pallet_detach::Config + pallet_accounts::Config
+		frame_system::Config
+		+ pallet_detach::Config
+		+ pallet_accounts::Config
+		+ pallet_assets::Config
+		+ pallet_contracts::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
 		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
 
 		<span class="kw">type </span>WeightInfo: WeightInfo;
 
-		<span class="attribute">#[pallet::constant]
+		<span class="doccomment">/// Const per byte multiplier
+		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>StorageBytesMultiplier: Get&lt;u64&gt;;
 
-		<span class="doccomment">/// The **Lock-Up Period&quot; for **Staking FRAG Tokens**
+		<span class="doccomment">/// The number of blocks after which a curation period is over
 		</span><span class="attribute">#[pallet::constant]
-		</span><span class="kw">type </span>StakeLockupPeriod: Get&lt;u64&gt;;
+		</span><span class="kw">type </span>CurationExpiration: Get&lt;u64&gt;;
+
+		<span class="comment">// Asset ID of the fungible asset &quot;TICKET&quot;
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>TicketsAssetId: Get&lt;&lt;<span class="self">Self </span><span class="kw">as </span>pallet_assets::Config&gt;::AssetId&gt;;
 	}
 
 	<span class="attribute">#[pallet::pallet]
@@ -1378,7 +1456,8 @@
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>MetaKeys&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, Vec&lt;u8&gt;, u64&gt;;
 
-	<span class="doccomment">/// **StorageValue** that **equals** the **total number of unique Metadata Keys in the blockchain**
+	<span class="doccomment">/// **StorageValue** that **equals** the **total number of unique Metadata Keys in the
+	/// blockchain**
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>MetaKeysIndex&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, u64, ValueQuery&gt;;
 
@@ -1386,37 +1465,49 @@
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>Traits&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash64, Vec&lt;u8&gt;, ValueQuery&gt;;
 
-	<span class="doccomment">/// **StorageMap** that maps a **Proto-Fragment&#39;s data&#39;s hash** to a ***Proto* struct (of the aforementioned Proto-Fragment)**
+	<span class="doccomment">/// **StorageMap** that maps a **Proto-Fragment&#39;s data&#39;s hash** to a ***Proto* struct (of the
+	/// aforementioned Proto-Fragment)**
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>Protos&lt;T: Config&gt; =
 		StorageMap&lt;<span class="kw">_</span>, Identity, Hash256, Proto&lt;T::AccountId, T::BlockNumber&gt;&gt;;
 
-	<span class="doccomment">/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**
+	<span class="doccomment">/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment
+	/// hashes (that have the aforementioned variant)**
 	</span><span class="comment">// Not ideal but to have it iterable...
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>ProtosByCategory&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, Categories, Vec&lt;Hash256&gt;&gt;;
 
-	<span class="doccomment">/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of Proto-Fragment hashes (that have the aforementioned variant)**
+	<span class="doccomment">/// **StorageMap** that maps a **variant of the *ProtoOwner* enum** to a **list of
+	/// Proto-Fragment hashes (that have the aforementioned variant)**
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>ProtosByOwner&lt;T: Config&gt; =
 		StorageMap&lt;<span class="kw">_</span>, Twox64Concat, ProtoOwner&lt;T::AccountId&gt;, Vec&lt;Hash256&gt;&gt;;
 
-	<span class="doccomment">/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple that contains the Staked Amount (that was staked by the aforementioned Clamor Account ID) and the Block Number**
-	</span><span class="comment">// Staking management
-	// (Amount staked, Last stake time)
+	<span class="doccomment">/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple
+	/// that contains the Curated Amount (tickets burned by the aforementioned Clamor Account ID)
+	/// and the Block Number**
+	</span><span class="comment">// Curation management
+	// (Amount burned, Last burn time)
 	</span><span class="attribute">#[pallet::storage]
-	</span><span class="kw">pub type </span>ProtoStakes&lt;T: Config&gt; = StorageDoubleMap&lt;
+	</span><span class="kw">pub type </span>ProtoCurations&lt;T: Config&gt; = StorageDoubleMap&lt;
 		<span class="kw">_</span>,
 		Identity,
 		Hash256,
 		Twox64Concat,
 		T::AccountId,
-		(T::Balance, T::BlockNumber),
+		(&lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance, T::BlockNumber),
 	&gt;;
 
-	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was staked on by the aforementioned Clamor Account ID**
+	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was
+	/// staked on by the aforementioned Clamor Account ID**
 	</span><span class="attribute">#[pallet::storage]
-	</span><span class="kw">pub type </span>AccountStakes&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, Vec&lt;Hash256&gt;&gt;;
+	</span><span class="kw">pub type </span>AccountCurations&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::AccountId, Vec&lt;Hash256&gt;&gt;;
+
+	<span class="doccomment">/// **StorageMap** that maps a **Block number** to a list of accounts that have curations
+	/// expiring on that block number
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>ExpiringCurations&lt;T: Config&gt; =
+		StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::BlockNumber, Vec&lt;T::AccountId&gt;&gt;;
 
 	<span class="attribute">#[pallet::event]
 	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
@@ -1432,9 +1523,17 @@
 		<span class="doccomment">/// A Proto-Fragment was transferred
 		</span>Transferred { proto_hash: Hash256, owner_id: T::AccountId },
 		<span class="doccomment">/// Stake was created
-		</span>Staked { proto_hash: Hash256, account_id: T::AccountId, balance: T::Balance },
+		</span>Staked {
+			proto_hash: Hash256,
+			account_id: T::AccountId,
+			balance: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance,
+		},
 		<span class="doccomment">/// Stake was unlocked
-		</span>Unstaked { proto_hash: Hash256, account_id: T::AccountId, balance: T::Balance },
+		</span>Unstaked {
+			proto_hash: Hash256,
+			account_id: T::AccountId,
+			balance: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance,
+		},
 	}
 
 	<span class="comment">// Errors inform users that something went wrong.
@@ -1450,18 +1549,14 @@
 		</span>Detached,
 		<span class="doccomment">/// Not the owner of the proto
 		</span>Unauthorized,
-		<span class="doccomment">/// Not enough FRAG staked
-		</span>NotEnoughStaked,
-		<span class="doccomment">/// Stake not found
-		</span>StakeNotFound,
+		<span class="doccomment">/// Not enough tickets burned on the proto
+		</span>NotEnoughTickets,
+		<span class="doccomment">/// Curation not found
+		</span>CurationNotFound,
 		<span class="doccomment">/// Reference not found
 		</span>ReferenceNotFound,
 		<span class="doccomment">/// Not enough tokens to stake
 		</span>InsufficientBalance,
-		<span class="doccomment">/// Cannot unstake yet
-		</span>StakeLocked,
-		<span class="doccomment">/// Cannot find FRAG link to use as stake funds
-		</span>NoFragLink,
 	}
 
 	<span class="comment">// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -1470,10 +1565,11 @@
 	</span><span class="attribute">#[pallet::call]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt;
 	<span class="kw">where
-		</span>T::AccountId: AsRef&lt;[u8]&gt;,
+		</span>T::AccountId: UncheckedFrom&lt;T::Hash&gt; + AsRef&lt;[u8]&gt;,
 	{
 		<span class="doccomment">/// **Upload** a **Proto-Fragment** onto the **Blockchain**.
-		/// Furthermore, this function also indexes `data` in the Blockchain&#39;s Database and makes it available via bitswap (IPFS) directly from every chain node permanently.
+		/// Furthermore, this function also indexes `data` in the Blockchain&#39;s Database and makes it
+		/// available via bitswap (IPFS) directly from every chain node permanently.
 		///
 		/// # Arguments
 		///
@@ -1481,8 +1577,10 @@
 		/// * `references` - **List of other Proto-Fragments** used to create the **Proto-Fragment**
 		/// * `categories` - **Category type** of the **Proto-Fragment**
 		/// * `tags` - **List of tags** to **tag** the **Proto-Fragment** **with**
-		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g an ERC-721 Contract)
-		/// * `include_cost` (*optional*) - **Price** of the **Proto-Fragment**. NOTE: If None, the **Proto-Fragment** *&lt;u&gt;can&#39;t be included&lt;/u&gt;* into **other protos**
+		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g
+		///   an ERC-721 Contract)
+		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
+		///   **Proto-Fragment** *&lt;u&gt;can&#39;t be included&lt;/u&gt;* into **other protos**
 		/// * `data` - **Data** of the **Proto-Fragment**
 		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::upload() + (data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
 		</span><span class="kw">pub fn </span>upload(
@@ -1492,7 +1590,7 @@
 			category: Categories,
 			tags: Vec&lt;Vec&lt;u8&gt;&gt;,
 			linked_asset: <span class="prelude-ty">Option</span>&lt;LinkedAsset&gt;,
-			include_cost: <span class="prelude-ty">Option</span>&lt;Compact&lt;u64&gt;&gt;,
+			license: UsageLicense&lt;T::AccountId&gt;,
 			<span class="comment">// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -1515,8 +1613,8 @@
 			</span><span class="kw">let </span>extrinsic_index = &lt;frame_system::Pallet&lt;T&gt;&gt;::extrinsic_index()
 				.ok_or(Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
 
-			<span class="comment">// Check FRAG staking
-			</span><span class="self">Self</span>::check_staking_req(<span class="kw-2">&amp;</span>references, <span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
+			<span class="comment">// Check license requirements
+			</span><span class="self">Self</span>::check_license(<span class="kw-2">&amp;</span>references, <span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
 
 			<span class="comment">// Store Trait if trait, also hash properly the data and decode name
 			</span><span class="kw">let </span>category = <span class="kw">match </span>category {
@@ -1565,7 +1663,7 @@
 			</span><span class="kw">let </span>proto = Proto {
 				block: current_block_number,
 				patches: <span class="macro">vec!</span>[],
-				include_cost,
+				license,
 				creator: who.clone(),
 				owner: owner.clone(),
 				references,
@@ -1598,15 +1696,17 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// **Patch** an **existing Proto-Fragment** (*by appending the hash of `data` to the Vector field `patches` of the existing Proto-Fragment&#39;s Struct Instance*)
-		/// Furthermore, this function also indexes `data` in the Blockchain&#39;s Database and stores it in the IPFS
+		<span class="doccomment">/// **Patch** an **existing Proto-Fragment** (*by appending the hash of `data` to the Vector
+		/// field `patches` of the existing Proto-Fragment&#39;s Struct Instance*) Furthermore, this
+		/// function also indexes `data` in the Blockchain&#39;s Database and stores it in the IPFS
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
 		/// * `proto_hash` - Existing Proto-Fragment&#39;s hash
-		/// * `include_cost` (optional) -
-		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the **patch**
+		/// * `license` (optional) - If **this value** is **not None**, the **existing Proto-Fragment&#39;s current license** is overwritten to **this value**
+		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the
+		///   **patch**
 		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
 		/// * `data` - **Data** of the **Proto-Fragment**
 		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get())]
@@ -1614,7 +1714,7 @@
 			origin: OriginFor&lt;T&gt;,
 			<span class="comment">// proto hash we want to patch
 			</span>proto_hash: Hash256,
-			include_cost: <span class="prelude-ty">Option</span>&lt;Compact&lt;u64&gt;&gt;,
+			license: <span class="prelude-ty">Option</span>&lt;UsageLicense&lt;T::AccountId&gt;&gt;,
 			new_references: Vec&lt;Hash256&gt;,
 			new_tags: <span class="prelude-ty">Option</span>&lt;Vec&lt;Vec&lt;u8&gt;&gt;&gt;,
 			<span class="comment">// data we want to patch last because of the way we store blocks (storage chain)
@@ -1644,12 +1744,12 @@
 			</span><span class="kw">let </span>extrinsic_index = &lt;frame_system::Pallet&lt;T&gt;&gt;::extrinsic_index()
 				.ok_or(Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
 
-			<span class="comment">// Check FRAG staking
-			</span><span class="self">Self</span>::check_staking_req(<span class="kw-2">&amp;</span>new_references, <span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
-
 			<span class="comment">// Write STATE from now, ensure no errors from now...
 
-			</span>&lt;Protos&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>proto_hash, |proto| {
+			// Check license requirements
+			</span><span class="self">Self</span>::check_license(<span class="kw-2">&amp;</span>new_references, <span class="kw-2">&amp;</span>who)<span class="question-mark">?</span>;
+
+			&lt;Protos&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>proto_hash, |proto| {
 				<span class="kw">let </span>proto = proto.as_mut().unwrap();
 
 				<span class="comment">// Add a data patch if not empty
@@ -1664,8 +1764,10 @@
 					</span>transaction_index::index(extrinsic_index, data.len() <span class="kw">as </span>u32, data_hash);
 				}
 
-				<span class="comment">// Overwrite include cost
-				</span>proto.include_cost = include_cost;
+				<span class="comment">// Overwrite license if not None
+				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(license) = license {
+					proto.license = license;
+				}
 
 				<span class="comment">// Replace previous tags if not None
 				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(new_tags) = new_tags {
@@ -1703,7 +1805,8 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// **Transfer** the **ownership** of a **Proto-Fragment** from **`origin`** to **`new_owner`**
+		<span class="doccomment">/// **Transfer** the **ownership** of a **Proto-Fragment** from **`origin`** to
+		/// **`new_owner`**
 		///
 		/// # Arguments
 		///
@@ -1762,16 +1865,22 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// **Alters** the **metadata** of a **Proto-Fragment** (whose hash is `proto_hash`) by **adding or modifying a key-value pair** (`metadata_key.clone`,`blake2_256(&amp;data.encode())`) to the **BTreeMap field `metadata`** of the **existing Proto-Fragment&#39;s Struct Instance**.
-		/// Furthermore, this function also indexes `data` in the Blockchain&#39;s Database and stores it in the IPFS
-		/// To successfully patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is returned (问Gio - what happened to auth?)
+		<span class="doccomment">/// **Alters** the **metadata** of a **Proto-Fragment** (whose hash is `proto_hash`) by
+		/// **adding or modifying a key-value pair**
+		/// (`metadata_key.clone`,`blake2_256(&amp;data.encode())`) to the **BTreeMap field `metadata`**
+		/// of the **existing Proto-Fragment&#39;s Struct Instance**. Furthermore, this function also
+		/// indexes `data` in the Blockchain&#39;s Database and stores it in the IPFS To successfully
+		/// patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is
+		/// returned (问Gio - what happened to auth?)
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic / dispatchable function
 		/// * `proto_hash` - The **hash of the Proto-Fragment**
-		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment&#39;s Struct Instance
-		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Proto-Fragment&#39;s Struct Instance
+		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field
+		///   `metadata` of the existing Proto-Fragment&#39;s Struct Instance
+		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
+		///   in the BTreeMap field `metadata` of the existing Proto-Fragment&#39;s Struct Instance
 		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + (data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
 		</span><span class="kw">pub fn </span>set_metadata(
 			origin: OriginFor&lt;T&gt;,
@@ -1838,16 +1947,20 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// **Detach** a **Proto-Fragment** from **this blockchain** to an **external blockchain** by ***initiating*** an **event** that **includes a signature**. (NC)
-		/// The **owner of this Proto-Fragment** can then **attach this Proto-Fragment** to the **external blockchain** by **using the aforementioned signature**.
+		<span class="doccomment">/// **Detach** a **Proto-Fragment** from **this blockchain** to an **external blockchain**
+		/// by ***initiating*** an **event** that **includes a signature**. (NC) The **owner of this
+		/// Proto-Fragment** can then **attach this Proto-Fragment** to the **external blockchain**
+		/// by **using the aforementioned signature**.
 		///
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
 		/// * `proto_hash` - **Hash of the Proto-Fragment** to **detach**
-		/// * `target_chain` - **External Blockchain** that we **want to attach the **Proto-Fragment into**
-		/// * `target_account` - **Public account address** of the **blockchain `target_chain`** that we **want to detach the Proto-Fragment into**
+		/// * `target_chain` - **External Blockchain** that we **want to attach the **Proto-Fragment
+		///   into**
+		/// * `target_account` - **Public account address** of the **blockchain `target_chain`**
+		///   that we **want to detach the Proto-Fragment into**
 		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::detach())]
 		</span><span class="kw">pub fn </span>detach(
 			origin: OriginFor&lt;T&gt;,
@@ -1879,112 +1992,76 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Stake FRAG tokens on a Proto-Fragment
+		<span class="doccomment">/// Curate, burning tickets on a Proto-Fragment
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
 		/// * `proto_hash` - **Hash of the Proto-Fragment** to **stake on**
-		/// * `amount` - **Amount of FRAG tokens** to **stake**
+		/// * `amount` - **Amount of tickets** to **burn**
 		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
-		</span><span class="kw">pub fn </span>stake(
+		</span><span class="kw">pub fn </span>curate(
 			origin: OriginFor&lt;T&gt;,
 			proto_hash: Hash256,
-			amount: T::Balance,
+			amount: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin.clone())<span class="question-mark">?</span>;
-			<span class="kw">let </span>who = get_locked_frag_account(<span class="kw-2">&amp;</span>who).map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
 
 			<span class="comment">// make sure the proto exists
 			</span><span class="macro">ensure!</span>(&lt;Protos&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::ProtoNotFound);
 
-			<span class="comment">// make sure user has enough FRAG
-			</span><span class="kw">let </span>account = &lt;pallet_accounts::EVMLinks&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>who.clone())
-				.ok_or_else(|| Error::&lt;T&gt;::NoFragLink)<span class="question-mark">?</span>;
-			<span class="kw">let </span>eth_lock = &lt;pallet_accounts::EthLockedFrag&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>account)
-				.ok_or_else(|| Error::&lt;T&gt;::NoFragLink)<span class="question-mark">?</span>; <span class="comment">// Amount of FRAG locked by Ethereum Account `account`
-			</span><span class="kw">let </span>balance = eth_lock.amount
-				- &lt;pallet_accounts::FragUsage&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>who.clone())
-					.ok_or_else(|| Error::&lt;T&gt;::NoFragLink)<span class="question-mark">?</span>; <span class="comment">// Balance = Amount of FRAG locked - Amount of FRAG already staked
-			</span><span class="macro">ensure!</span>(balance &gt;= amount, Error::&lt;T&gt;::InsufficientBalance);
+			<span class="comment">// make sure the user has enough tickets
+			</span><span class="kw">let </span>balance = &lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>Inspect&lt;T::AccountId&gt;&gt;::balance(
+				T::TicketsAssetId::get(),
+				<span class="kw-2">&amp;</span>who,
+			);
+			<span class="macro">ensure!</span>(balance &gt;= amount, Error::&lt;T&gt;::InsufficientBalance);
 
 			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
 
 			<span class="comment">// ! from now we write...
 
-			</span>&lt;pallet_accounts::FragUsage&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>who, |usage| {
-				<span class="comment">// Add `amount` to the FragUsage of `who`
-				</span>usage.as_mut().unwrap().saturating_add(amount);
-			});
+			// Burn tickets from account and record the stake locally
+			</span><span class="kw">let _ </span>= &lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>Mutate&lt;T::AccountId&gt;&gt;::burn_from(
+				T::TicketsAssetId::get(),
+				<span class="kw-2">&amp;</span>who,
+				amount.saturated_into(),
+			)<span class="question-mark">?</span>;
 
 			<span class="comment">// take record of the stake
-			</span>&lt;ProtoStakes&lt;T&gt;&gt;::insert(proto_hash, <span class="kw-2">&amp;</span>who, (amount, current_block_number));
-			&lt;AccountStakes&lt;T&gt;&gt;::append(who.clone(), proto_hash.clone());
+			</span>&lt;ProtoCurations&lt;T&gt;&gt;::insert(proto_hash, <span class="kw-2">&amp;</span>who, (amount, current_block_number));
+			&lt;AccountCurations&lt;T&gt;&gt;::append(who.clone(), proto_hash.clone());
 
 			<span class="comment">// also emit event
 			</span><span class="self">Self</span>::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); <span class="comment">// 问Gio
 
 			</span><span class="prelude-val">Ok</span>(())
 		}
-
-		<span class="doccomment">/// Unstake the FRAG tokens that were staked on a Proto-Fragment by `origin`
-		///
-		/// # Arguments
-		///
-		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - **Hash of the Proto-Fragment** on which the FRAG tokens were staked on
-		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
-		</span><span class="kw">pub fn </span>unstake(origin: OriginFor&lt;T&gt;, proto_hash: Hash256) -&gt; DispatchResult {
-			<span class="kw">let </span>who = ensure_signed(origin.clone())<span class="question-mark">?</span>;
-
-			<span class="comment">// make sure the proto exists
-			</span><span class="macro">ensure!</span>(&lt;Protos&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::ProtoNotFound);
-
-			<span class="comment">// make sure user has enough FRAG
-			</span><span class="kw">let </span>stake =
-				&lt;ProtoStakes&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>proto_hash, <span class="kw-2">&amp;</span>who).ok_or(Error::&lt;T&gt;::StakeNotFound)<span class="question-mark">?</span>;
-
-			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
-			<span class="macro">ensure!</span>(
-				current_block_number &gt; (stake.<span class="number">1 </span>+ T::StakeLockupPeriod::get().saturated_into()),
-				Error::&lt;T&gt;::StakeLocked
-			);
-
-			<span class="comment">// ! from now we write...
-
-			</span>&lt;pallet_accounts::FragUsage&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>who, |usage| {
-				usage.as_mut().unwrap().saturating_sub(stake.<span class="number">0</span>); <span class="comment">// Reduce the Frag usage of `who` by `stake.0`
-			</span>});
-
-			<span class="comment">// take record of the unstake
-			</span>&lt;ProtoStakes&lt;T&gt;&gt;::remove(proto_hash, <span class="kw-2">&amp;</span>who);
-			&lt;AccountStakes&lt;T&gt;&gt;::mutate(who.clone(), |stakes| {
-				<span class="kw">if let </span><span class="prelude-val">Some</span>(stakes) = stakes {
-					stakes.retain(|h| h != <span class="kw-2">&amp;</span>proto_hash); <span class="comment">// Retain all Proto-Fragments except `proto_hash`
-				</span>}
-			});
-
-			<span class="comment">// also emit event
-			</span><span class="self">Self</span>::deposit_event(Event::Unstaked { proto_hash, account_id: who, balance: stake.<span class="number">0 </span>});
-
-			<span class="prelude-val">Ok</span>(())
-		}
 	}
 
 	<span class="attribute">#[pallet::hooks]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
-		<span class="doccomment">/// During the block finalization phase,
-		/// clear all the staking-related (of FRAG Token) Storage Items of any information regarding
-		/// the list of Clamor Account IDs in `PendingUnlocks`. And then subsequently, clear `PendingUnlocks`.
-		</span><span class="kw">fn </span>on_finalize(_n: T::BlockNumber) {
-			<span class="comment">// drain unlinks
-			</span><span class="kw">let </span>unlinks = &lt;pallet_accounts::PendingUnlinks&lt;T&gt;&gt;::take();
-			<span class="kw">for </span>unlink <span class="kw">in </span>unlinks {
-				<span class="comment">// take emptying the storage
-				</span><span class="kw">let </span>stakes = &lt;AccountStakes&lt;T&gt;&gt;::take(unlink.clone());
-				<span class="kw">if let </span><span class="prelude-val">Some</span>(stakes) = stakes {
-					<span class="kw">for </span>stake <span class="kw">in </span>stakes {
-						&lt;ProtoStakes&lt;T&gt;&gt;::remove(stake, <span class="kw-2">&amp;</span>unlink);
+		<span class="doccomment">/// During the block finalization phase
+		</span><span class="kw">fn </span>on_finalize(n: T::BlockNumber) {
+			<span class="comment">// drain expired curations
+			</span><span class="kw">let </span>expiring = &lt;ExpiringCurations&lt;T&gt;&gt;::take(n);
+			<span class="kw">if let </span><span class="prelude-val">Some</span>(expiring) = expiring {
+				<span class="kw">for </span>account <span class="kw">in </span><span class="kw-2">&amp;</span>expiring {
+					<span class="kw">let </span>curations = &lt;AccountCurations&lt;T&gt;&gt;::get(account);
+					<span class="kw">if let </span><span class="prelude-val">Some</span>(curations) = curations {
+						<span class="kw">for </span>proto <span class="kw">in </span>curations {
+							<span class="kw">let </span>curation = &lt;ProtoCurations&lt;T&gt;&gt;::get(proto, account);
+							<span class="kw">if let </span><span class="prelude-val">Some</span>(curation) = curation {
+								<span class="kw">if </span>curation.<span class="number">1 </span>+ T::CurationExpiration::get().saturated_into() &gt;= n {
+									&lt;ProtoCurations&lt;T&gt;&gt;::remove(proto, account);
+									&lt;AccountCurations&lt;T&gt;&gt;::mutate(account, |curations| {
+										<span class="kw">if let </span><span class="prelude-val">Some</span>(curations) = curations {
+											curations.retain(|p| p != <span class="kw-2">&amp;</span>proto);
+										}
+									});
+								}
+							}
+						}
 					}
 				}
 			}
@@ -1993,11 +2070,10 @@
 
 	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt;
 	<span class="kw">where
-		</span>T::AccountId: AsRef&lt;[u8]&gt;,
+		</span>T::AccountId: UncheckedFrom&lt;T::Hash&gt; + AsRef&lt;[u8]&gt;,
 	{
-		<span class="kw">fn </span>check_staking_req(references: <span class="kw-2">&amp;</span>[Hash256], who: <span class="kw-2">&amp;</span>T::AccountId) -&gt; DispatchResult {
-			<span class="comment">// Check FRAG staking
-			// TODO this is not tested properly
+		<span class="kw">fn </span>check_license(references: <span class="kw-2">&amp;</span>[Hash256], who: <span class="kw-2">&amp;</span>T::AccountId) -&gt; DispatchResult {
+			<span class="comment">// TODO this is not tested properly
 			</span><span class="kw">for </span>reference <span class="kw">in </span>references.iter() {
 				<span class="kw">let </span>proto = &lt;Protos&lt;T&gt;&gt;::get(reference);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(proto) = proto {
@@ -2013,24 +2089,54 @@
 						}
 					}
 
-					<span class="kw">let </span>cost = proto.include_cost;
-					<span class="kw">if let </span><span class="prelude-val">Some</span>(cost) = cost {
-						<span class="kw">let </span>cost: u64 = cost.into();
-						<span class="kw">if </span>cost == <span class="number">0 </span>{
-							<span class="comment">// free
-							</span><span class="kw">continue</span>;
-						}
-						<span class="kw">let </span>cost: T::Balance = cost.saturated_into();
-						<span class="kw">let </span>stake = &lt;ProtoStakes&lt;T&gt;&gt;::get(reference, who.clone());
-						<span class="kw">if let </span><span class="prelude-val">Some</span>(stake) = stake {
-							<span class="macro">ensure!</span>(stake.<span class="number">0 </span>&gt;= cost, Error::&lt;T&gt;::NotEnoughStaked);
-						} <span class="kw">else </span>{
-							<span class="comment">// Stake not found
-							</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::StakeNotFound.into());
-						}
-					<span class="comment">// OK to include, just continue
-					</span>} <span class="kw">else </span>{
-						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
+					<span class="kw">let </span>license = proto.license;
+					<span class="kw">match </span>license {
+						UsageLicense::Closed =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into()),
+						UsageLicense::Open =&gt; <span class="kw">continue</span>,
+						UsageLicense::Tickets(amount) =&gt; {
+							<span class="kw">let </span>amount: u64 = amount.into();
+							<span class="kw">let </span>amount = amount.saturated_into();
+
+							<span class="kw">let </span>curation = &lt;ProtoCurations&lt;T&gt;&gt;::get(reference, who.clone());
+							<span class="kw">if let </span><span class="prelude-val">Some</span>(curation) = curation {
+								<span class="comment">// Check if the user curated enough tickets
+								</span><span class="macro">ensure!</span>(curation.<span class="number">0 </span>&gt;= amount, Error::&lt;T&gt;::NotEnoughTickets);
+							} <span class="kw">else </span>{
+								<span class="comment">// Curation not found
+								</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::CurationNotFound.into());
+							}
+						},
+						UsageLicense::Contract(contract_address) =&gt; {
+							<span class="kw">let </span>data = (reference, who.clone()).encode();
+							<span class="kw">let </span>res: <span class="prelude-ty">Result</span>&lt;pallet_contracts_primitives::ExecReturnValue, <span class="kw">_</span>&gt; =
+								&lt;pallet_contracts::Pallet&lt;T&gt;&gt;::bare_call(
+									who.clone(),
+									contract_address,
+									<span class="number">0u32</span>.saturated_into(),
+									<span class="number">1_000_000</span>, <span class="comment">// TODO determine this limit better should not be too high indeed
+									</span><span class="prelude-val">None</span>,
+									data,
+									<span class="bool-val">false</span>,
+								)
+								.result
+								.map_err(|e| {
+									<span class="macro">log::debug!</span>(<span class="string">&quot;UsageLicense::Contract error: {:?}&quot;</span>, e);
+									e
+								});
+
+							<span class="kw">if let </span><span class="prelude-val">Ok</span>(res) = res {
+								<span class="kw">let </span>allowed = bool::decode(<span class="kw-2">&amp;mut &amp;</span>res.data.<span class="number">0</span>[..]);
+								<span class="kw">if let </span><span class="prelude-val">Ok</span>(allowed) = allowed {
+									<span class="kw">if </span>!allowed {
+										<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
+									}
+								} <span class="kw">else </span>{
+									<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
+								}
+							} <span class="kw">else </span>{
+								<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
+							}
+						},
 					}
 				} <span class="kw">else </span>{
 					<span class="comment">// Proto not found
@@ -2048,9 +2154,9 @@
 		) -&gt; bool {
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(struct_proto) = &lt;Protos&lt;T&gt;&gt;::get(proto_id) {
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(avail) = avail {
-					<span class="kw">if </span>avail &amp;&amp; struct_proto.include_cost.is_none() {
+					<span class="kw">if </span>avail &amp;&amp; struct_proto.license == UsageLicense::Closed {
 						<span class="kw">return </span><span class="bool-val">false</span>;
-					} <span class="kw">else if </span>!avail &amp;&amp; struct_proto.include_cost.is_some() {
+					} <span class="kw">else if </span>!avail &amp;&amp; struct_proto.license != UsageLicense::Closed {
 						<span class="kw">return </span><span class="bool-val">false</span>;
 					}
 				}
@@ -2168,8 +2274,7 @@
 							{
 								<span class="comment">// OK. Found the category matching a shard script info.
 								</span><span class="kw">return </span><span class="bool-val">true</span>;
-							}
-							<span class="kw">else if </span>!(<span class="kw-2">&amp;</span>cat == <span class="kw-2">&amp;</span>category) {
+							} <span class="kw">else if </span>!(<span class="kw-2">&amp;</span>cat == <span class="kw-2">&amp;</span>category) {
 								<span class="kw">return </span><span class="bool-val">false</span>;
 							} <span class="kw">else </span>{
 								<span class="kw">return </span><span class="bool-val">false</span>;
@@ -2259,7 +2364,8 @@
 					<span class="kw">if </span>params.categories.len() != <span class="number">0 </span>{
 						<span class="kw">let </span>found: Vec&lt;Categories&gt; =
 							<span class="self">Self</span>::get_list_of_matching_categories(<span class="kw-2">&amp;</span>params, <span class="kw-2">&amp;</span>category);
-						<span class="comment">// if the current stored category does not match with any of the categories in input, it can be discarded from this search.
+						<span class="comment">// if the current stored category does not match with any of the categories
+						// in input, it can be discarded from this search.
 						</span><span class="kw">if </span>found.is_empty() {
 							<span class="kw">continue</span>;
 						}
@@ -2323,9 +2429,9 @@
 						<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to decode proto_id&quot;</span>.into());
 					};
 
-					<span class="kw">let </span>(owner, map_metadata, include_cost) =
+					<span class="kw">let </span>(owner, map_metadata, license) =
 						<span class="kw">if let </span><span class="prelude-val">Some</span>(proto) = &lt;Protos&lt;T&gt;&gt;::get(array_proto_id) {
-							(proto.owner, proto.metadata, proto.include_cost)
+							(proto.owner, proto.metadata, proto.license)
 						} <span class="kw">else </span>{
 							<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get proto&quot;</span>.into());
 						};
@@ -2335,11 +2441,14 @@
 						<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get map_proto&quot;</span>.into()),
 					};
 
-					<span class="kw">if let </span><span class="prelude-val">Some</span>(include_cost) = include_cost {
-						<span class="kw">let </span>n: u64 = include_cost.into();
-						(<span class="kw-2">*</span>map_proto).insert(String::from(<span class="string">&quot;include_cost&quot;</span>), Value::Number(n.into()));
-					} <span class="kw">else </span>{
-						(<span class="kw-2">*</span>map_proto).insert(String::from(<span class="string">&quot;include_cost&quot;</span>), Value::Null);
+					<span class="kw">match </span>license {
+						UsageLicense::Tickets(amount) =&gt; {
+							<span class="kw">let </span>n: u64 = amount.into();
+							(<span class="kw-2">*</span>map_proto).insert(String::from(<span class="string">&quot;tickets&quot;</span>), Value::Number(n.into()));
+						},
+						<span class="kw">_ </span>=&gt; {
+							(<span class="kw-2">*</span>map_proto).insert(String::from(<span class="string">&quot;tickets&quot;</span>), Value::Null);
+						},
 					}
 
 					<span class="kw">if </span>params.return_owners {
@@ -2405,6 +2514,5 @@
 		}
 	}
 }
-
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9243168fa 2022-08-31)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (8c6ce6b91 2022-09-02)" ></div></body></html>

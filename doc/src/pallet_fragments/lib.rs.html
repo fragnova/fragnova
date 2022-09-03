@@ -1187,6 +1187,10 @@
 <span id="1187">1187</span>
 <span id="1188">1188</span>
 <span id="1189">1189</span>
+<span id="1190">1190</span>
+<span id="1191">1191</span>
+<span id="1192">1192</span>
+<span id="1193">1193</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1246,7 +1250,8 @@
 <span class="kw">use </span>sp_runtime::traits::StaticLookup;
 
 <span class="kw">use </span>frame_support::traits::{
-	tokens::fungibles::Inspect, tokens::fungibles::Transfer, Currency, ExistenceRequirement,
+	tokens::fungibles::{Inspect, Transfer},
+	Currency, ExistenceRequirement,
 };
 <span class="kw">use </span>sp_runtime::SaturatedConversion;
 
@@ -1368,7 +1373,7 @@
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
 	</span><span class="attribute">#[pallet::config]
-	</span><span class="kw">pub trait </span>Config: frame_system::Config + pallet_protos::Config + pallet_assets::Config {
+	</span><span class="kw">pub trait </span>Config: frame_system::Config + pallet_protos::Config {
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
 		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
 		<span class="kw">type </span>WeightInfo: WeightInfo;
@@ -1629,7 +1634,10 @@
 			<span class="macro">ensure!</span>(!&lt;Definitions&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>hash), Error::&lt;T&gt;::AlreadyExist); <span class="comment">// If fragment already exists, throw error
 
 			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(currency) = metadata.currency {
-				<span class="macro">ensure!</span>(pallet_assets::Pallet::&lt;T&gt;::maybe_total_supply(currency).is_some(), Error::&lt;T&gt;::CurrencyNotFound); <span class="comment">// If it is `None`, this means the asset ID `currency` doesn&#39;t exist
+				<span class="macro">ensure!</span>(
+					pallet_assets::Pallet::&lt;T&gt;::maybe_total_supply(currency).is_some(),
+					Error::&lt;T&gt;::CurrencyNotFound
+				); <span class="comment">// If it is `None`, this means the asset ID `currency` doesn&#39;t exist
 			</span>}
 
 			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
@@ -1949,7 +1957,7 @@
 					</span><span class="kw-2">&amp;</span>who,
 					<span class="kw-2">&amp;</span>vault,
 					price.saturated_into(),
-					ExistenceRequirement::KeepAlive, 
+					ExistenceRequirement::KeepAlive,
 				)
 				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
 			}
@@ -2377,4 +2385,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (9243168fa 2022-08-31)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (8c6ce6b91 2022-09-02)" ></div></body></html>
