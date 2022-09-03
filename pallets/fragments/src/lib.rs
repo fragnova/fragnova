@@ -167,6 +167,9 @@ pub struct FragmentInstance<TBlockNum> {
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** that are **left** in the **stack of stackable items**
 	pub amount: Option<Compact<Unit>>,
+	/// TODO: Documentation
+	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to an **Index of the Hash of the aforementioned Metadata Object**
+	pub metadata: BTreeMap<Compact<u64>, Compact<u64>>,
 }
 
 /// Struct **representing** a sale of the **Fragment Definition** .
@@ -351,13 +354,19 @@ pub mod pallet {
 	pub type Expirations<T: Config> =
 		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(Hash128, Compact<Unit>, Compact<Unit>)>>;
 
+	/// **StorageMap** that maps a **Fragment Definition ID** to a **BTreeMap that maps a number to a Data Hash**
+	#[pallet::storage]
+	pub type Definition2Map<T: Config> = StorageMap<_, Identity, Hash128, BTreeMap<Compact<u64>, Hash256>>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// New definition created by account, definition hash
 		DefinitionCreated { fragment_hash: Hash128 },
-		/// A Proto-Fragment metadata has changed
+		/// A Fragment Definition metadata has changed
 		DefinitionMetadataChanged { fragment_hash: Hash128, metadata_key: Vec<u8> },
+		/// A Fragment Instance metadata has changed
+		InstanceMetadataChanged { fragment_hash: Hash128, edition_id: Unit, copy_id: Unit, metadata_key: Vec<u8> },
 		/// Fragment sale has been opened
 		Publishing { fragment_hash: Hash128 },
 		/// Fragment sale has been closed
@@ -524,7 +533,7 @@ pub mod pallet {
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
 		#[pallet::weight(50_000)]
-		pub fn set_custom_metadata(
+		pub fn set_definition_metadata(
 			origin: OriginFor<T>,
 			// fragment hash we want to update
 			fragment_hash: Hash128,
@@ -587,6 +596,84 @@ pub mod pallet {
 			log::debug!("Added metadata to fragment definition: {:x?} with key: {:x?}", fragment_hash, metadata_key);
 
 			Ok(())
+		}
+
+
+
+		#[pallet::weight(50_000)]
+		pub fn set_instance_metadata(
+			origin: OriginFor<T>,
+			definition_hash: Hash128,
+			edition_id: Unit,
+			copy_id: Unit,
+			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
+			metadata_key: Vec<u8>,
+			// data we want to update last because of the way we store blocks (storage chain)
+			data: Vec<u8>
+		) -> DispatchResult {
+
+			let who = ensure_signed(origin)?;
+
+			ensure!(<Fragments<T>>::contains_key((definition_hash, edition_id, copy_id)), Error::<T>::NotFound);
+
+			let ids = <Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
+			ensure!(ids.contains(&(Compact(edition_id), Compact(copy_id))), Error::<T>::NoPermission);
+
+			let data_hash = blake2_256(&data);
+
+			// we need this to index transactions
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::SystematicFailure)?;
+
+			let metadata_key_index = {
+				let index = <MetaKeys<T>>::get(metadata_key.clone());
+				if let Some(index) = index {
+					<Compact<u64>>::from(index)
+				} else {
+					let next_index = <MetaKeysIndex<T>>::try_get().unwrap_or_default() + 1;
+					<MetaKeys<T>>::insert(metadata_key.clone(), next_index);
+					// storing is dangerous inside a closure
+					// but after this call we start storing..
+					// so it's fine here
+					<MetaKeysIndex<T>>::put(next_index);
+					<Compact<u64>>::from(next_index)
+				}
+			};
+
+			// Write STATE from now, ensure no errors from now...
+
+			let index = if let Some(map) = <Definition2Map<T>>::get(definition_hash) {
+				let index = <Compact<u64>>::from(map.len() as u64);
+				<Definition2Map<T>>::mutate(&definition_hash, |map| {
+					let map = map.as_mut().unwrap();
+					// let index = <Compact<u64>>::from(map.len() as u64);
+					map.insert(index, data_hash);
+				});
+				index
+			} else {
+				let mut map = BTreeMap::new();
+				let index = <Compact<u64>>::from(0);
+				map.insert(index, data_hash);
+				<Definition2Map<T>>::insert(definition_hash, map);
+				index
+			};
+
+			<Fragments<T>>::mutate(&(definition_hash, edition_id, copy_id), |instance| {
+				let instance = instance.as_mut().unwrap();
+				// update custom metadata
+				instance.metadata.insert(metadata_key_index, index);
+			});
+
+			// index data
+			transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
+
+			// also emit event
+			Self::deposit_event(Event::InstanceMetadataChanged { fragment_hash: definition_hash, edition_id, copy_id, metadata_key: metadata_key.clone() });
+
+			log::debug!("Added metadata to fragment definition: {:x?} with key: {:x?}", definition_hash, metadata_key);
+
+			Ok(())
+
 		}
 
 		/// Put the **Fragment Definition `fragment_hash`** on sale. When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
@@ -1269,6 +1356,7 @@ impl<T: Config> Pallet<T> {
 							custom_data: data_hash,
 							expiring_at,
 							amount,
+							metadata: BTreeMap::new(),
 						},
 					);
 
