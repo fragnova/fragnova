@@ -1,3 +1,11 @@
+/// Run the command using from information from `sc_cli`
+///
+/// # What's a "command" though?
+///
+/// You probably already know that you can compile a Substrate node by running the `cargo build --release` command in the root directory for a Substrate node project.
+/// This command builds both the platform-specific executable and WebAssembly binaries for the project and produces an optimized executable artifact.
+/// Producing the optimized executable artifact includes some post-compilation processing.
+
 use crate::{
 	chain_spec,
 	cli::{Cli, Subcommand},

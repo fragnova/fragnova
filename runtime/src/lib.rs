@@ -9,7 +9,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
+/// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
@@ -69,8 +69,8 @@ pub use pallet_protos;
 pub use pallet_contracts::Schedule;
 use pallet_protos::GetProtosParams;
 
-// Prints debug output of the `contracts` pallet to stdout if the node is
-// started with `-lruntime::contracts=debug`.
+/// Prints debug output of the `contracts` pallet to stdout if the node is
+/// started with `-lruntime::contracts=debug`.
 pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
 
 /// An index to a block.
@@ -120,6 +120,7 @@ pub mod opaque {
 	/// Implement OpaqueKeys for a described struct.
 	/// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
 	impl_opaque_keys! {
+		/// TODO: Documentation
 		pub struct SessionKeys {
 			/// TODO: Documentation
 			pub aura: Aura,
@@ -129,8 +130,8 @@ pub mod opaque {
 	}
 }
 
-// To learn more about runtime versioning and what each of the following value means:
-//   https://docs.substrate.io/v3/runtime/upgrades#runtime-versioning
+/// To learn more about runtime versioning and what each of the following value means:
+///   https://docs.substrate.io/v3/runtime/upgrades#runtime-versioning
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("fragnova-testnet"),
@@ -155,9 +156,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 ///
 /// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
-
+/// TODO: Documentation
 pub const MILLICENTS: Balance = 1_000_000_000;
+/// TODO: Documentation
 pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
+/// TODO: Documentation
 pub const DOLLARS: Balance = 100 * CENTS;
 /// The amount of balance a caller has to pay for calling an extrinsic with `bytes` bytes and .
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
@@ -204,8 +207,11 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 //
 // Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
+	/// TODO: Documentation
 	pub const Version: RuntimeVersion = VERSION;
+	/// TODO: Documentation
 	pub const BlockHashCount: BlockNumber = 2400;
+	/// TODO: Documentation
 	pub const SS58Prefix: u8 = 93;
 
 	/// We allow for 2 seconds of compute with a 6 second average block time.
@@ -320,6 +326,7 @@ impl pallet_grandpa::Config for Runtime {
 }
 
 parameter_types! {
+	/// TODO: Documentation
 	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
 }
 
@@ -603,6 +610,7 @@ impl pallet_contracts::Config for Runtime {
 }
 
 parameter_types! {
+	/// TODO: Documentation
 	pub const IndexDeposit: Balance = 500;
 }
 
@@ -666,9 +674,9 @@ impl pallet_assets::Config for Runtime {
 /// - `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
 ///
 ///
-/// NOTE 1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
+/// NOTE #1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
 ///
-/// NOTE 2: The population of the genesis storage depends on the order of pallets.
+/// NOTE #2: The population of the genesis storage depends on the order of pallets.
 /// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
 construct_runtime!(
 	pub enum Runtime where
