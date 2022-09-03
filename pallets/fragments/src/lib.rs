@@ -57,7 +57,8 @@ use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::StaticLookup;
 
 use frame_support::traits::{
-	tokens::fungibles::Inspect, tokens::fungibles::Transfer, Currency, ExistenceRequirement,
+	tokens::fungibles::{Inspect, Transfer},
+	Currency, ExistenceRequirement,
 };
 use sp_runtime::SaturatedConversion;
 
@@ -179,7 +180,7 @@ pub mod pallet {
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_protos::Config + pallet_assets::Config {
+	pub trait Config: frame_system::Config + pallet_protos::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		type WeightInfo: WeightInfo;
@@ -440,7 +441,10 @@ pub mod pallet {
 			ensure!(!<Definitions<T>>::contains_key(&hash), Error::<T>::AlreadyExist); // If fragment already exists, throw error
 
 			if let Some(currency) = metadata.currency {
-				ensure!(pallet_assets::Pallet::<T>::maybe_total_supply(currency).is_some(), Error::<T>::CurrencyNotFound); // If it is `None`, this means the asset ID `currency` doesn't exist
+				ensure!(
+					pallet_assets::Pallet::<T>::maybe_total_supply(currency).is_some(),
+					Error::<T>::CurrencyNotFound
+				); // If it is `None`, this means the asset ID `currency` doesn't exist
 			}
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
@@ -760,7 +764,7 @@ pub mod pallet {
 					&who,
 					&vault,
 					price.saturated_into(),
-					ExistenceRequirement::KeepAlive, 
+					ExistenceRequirement::KeepAlive,
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}

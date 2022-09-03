@@ -247,7 +247,7 @@ impl DummyData {
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 						U256::from(69u32),
-						U256::from(1234567890)
+						U256::from(1234567890),
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,

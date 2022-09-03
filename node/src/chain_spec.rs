@@ -229,7 +229,11 @@ fn testnet_genesis(
 			eth_authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
-		assets: AssetsConfig { assets: vec![], metadata: vec![], accounts: vec![] },
+		assets: AssetsConfig {
+			assets: vec![(1337, root_key.clone(), true, 1)], // Genesis assets: id, owner, is_sufficient, min_balance
+			metadata: vec![(1337, "Fragnova Network Tickets".into(), "TICKET".into(), 0)], // Genesis metadata: id, name, symbol, decimals
+			accounts: vec![], // Genesis accounts: id, account_id, balance
+		},
 		accounts: AccountsConfig {
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},

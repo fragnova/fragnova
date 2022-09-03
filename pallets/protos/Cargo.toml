@@ -103,6 +103,24 @@ git = 'https://github.com/fragcolor-xyz/substrate.git'
 tag = 'fragnova-v0.0.1'
 version = '4.0.0-dev'
 
+[dependencies.pallet-assets]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.1'
+version = '4.0.0-dev'
+
+[dependencies.pallet-contracts]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.1'
+version = '4.0.0-dev'
+
+[dependencies.pallet-contracts-primitives]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.1'
+version = '6.0.0'
+
 [dependencies]
 log = { version = "0.4.14", default-features = false }
 sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
@@ -134,6 +152,8 @@ std = [
     'sp-runtime/std',
     'pallet-randomness-collective-flip/std',
     'pallet-balances/std',
+    'pallet-assets/std',
+    'pallet-contracts/std',
     'log/std',
     'sp-keystore',
     'sp-core/std',

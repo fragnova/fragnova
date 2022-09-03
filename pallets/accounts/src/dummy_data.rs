@@ -38,7 +38,7 @@ pub fn create_link_signature(
 pub fn create_lock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 	lock_amount: U256,
-	locktime: U256
+	locktime: U256,
 ) -> sp_core::ecdsa::Signature {
 	let ethereum_account_id =
 		get_ethereum_account_id_from_ecdsa_public_struct(&ethereum_account_pair.public());
@@ -61,7 +61,7 @@ pub fn create_lock_signature(
 }
 pub fn create_unlock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
-	unlock_amount: U256
+	unlock_amount: U256,
 ) -> sp_core::ecdsa::Signature {
 	let ethereum_account_id =
 		get_ethereum_account_id_from_ecdsa_public_struct(&ethereum_account_pair.public());
@@ -176,7 +176,7 @@ impl DummyData {
 				signature: create_lock_signature(
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 					U256::from(69u32),
-					U256::from(1234567890)
+					U256::from(1234567890),
 				),
 				lock: true, // yes, please lock it!
 				block_number: 69,
@@ -203,7 +203,7 @@ impl DummyData {
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[4u8; 32]),
 						U256::from(69u32),
-						U256::from(1234567890)
+						U256::from(1234567890),
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
@@ -220,13 +220,13 @@ impl DummyData {
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([69u8; 32]),
 				amount: U256::from(0u32), // when unlocking, amount must be 0u32
-				locktime: U256::from(0), // can be whatever. It is not considered in case of unlock.
+				locktime: U256::from(0),  // can be whatever. It is not considered in case of unlock.
 				sender: get_ethereum_account_id_from_ecdsa_public_struct(
 					&sp_core::ecdsa::Pair::from_seed(&[4u8; 32]).public(),
 				),
 				signature: create_unlock_signature(
 					sp_core::ecdsa::Pair::from_seed(&[4u8; 32]),
-					U256::from(0u32) // when unlocking, amount must be 0u32
+					U256::from(0u32), // when unlocking, amount must be 0u32
 				),
 				lock: false, // yes, please unlock it!
 				block_number: 69 + 69,
