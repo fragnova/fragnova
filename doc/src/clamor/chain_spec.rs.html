@@ -471,7 +471,7 @@
 			keys: initial_authorities.iter().map(|x| (x.<span class="number">4</span>.clone())).collect(),
 		},
 		assets: AssetsConfig {
-			assets: <span class="macro">vec!</span>[(<span class="number">1337</span>, root_key.clone(), <span class="bool-val">true</span>, <span class="number">1</span>)], <span class="comment">// Genesis assets: id, owner, is_sufficient, min_balance
+			assets: <span class="macro">vec!</span>[(<span class="number">1337</span>, root_key.clone(), <span class="bool-val">true</span>, <span class="number">1</span>, <span class="bool-val">false</span>)], <span class="comment">// Genesis assets: id, owner, is_sufficient, min_balance, is_tradeable
 			</span>metadata: <span class="macro">vec!</span>[(<span class="number">1337</span>, <span class="string">&quot;Fragnova Network Tickets&quot;</span>.into(), <span class="string">&quot;TICKET&quot;</span>.into(), <span class="number">0</span>)], <span class="comment">// Genesis metadata: id, name, symbol, decimals
 			</span>accounts: <span class="macro">vec!</span>[], <span class="comment">// Genesis accounts: id, account_id, balance
 		</span>},
