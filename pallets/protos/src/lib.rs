@@ -600,6 +600,8 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
+			// Write STATE from now, ensure no errors from now...
+
 			let metadata_key_index = {
 				let index = <MetaKeys<T>>::get(metadata_key.clone());
 				if let Some(index) = index {
@@ -614,8 +616,6 @@ pub mod pallet {
 					<Compact<u64>>::from(next_index)
 				}
 			};
-
-			// Write STATE from now, ensure no errors from now...
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();

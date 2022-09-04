@@ -354,9 +354,20 @@ pub mod pallet {
 	pub type Expirations<T: Config> =
 		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(Hash128, Compact<Unit>, Compact<Unit>)>>;
 
-	/// **StorageMap** that maps a **Fragment Definition ID** to a **BTreeMap that maps a number to a Data Hash**
+	/// **StorageMap** that maps a **Fragment Definition ID and a Number** to a **Data Hash**
 	#[pallet::storage]
-	pub type Definition2Map<T: Config> = StorageMap<_, Identity, Hash128, BTreeMap<Compact<u64>, Hash256>>;
+	pub type DataHashMap<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		Hash128,
+		Identity,
+		Compact<u64>,
+		Hash256
+	>;
+
+	/// TODO: Documentation
+	#[pallet::storage]
+	pub type DataHashMapIndex<T: Config> = StorageMap<_, Identity, Hash128, u64>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -564,6 +575,8 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
+			// Write STATE from now, ensure no errors from now...
+
 			let metadata_key_index = {
 				let index = <MetaKeys<T>>::get(metadata_key.clone());
 				if let Some(index) = index {
@@ -578,8 +591,6 @@ pub mod pallet {
 					<Compact<u64>>::from(next_index)
 				}
 			};
-
-			// Write STATE from now, ensure no errors from now...
 
 			<Definitions<T>>::mutate(&fragment_hash, |definition| {
 				let definition = definition.as_mut().unwrap();
@@ -614,16 +625,19 @@ pub mod pallet {
 
 			let who = ensure_signed(origin)?;
 
-			ensure!(<Fragments<T>>::contains_key((definition_hash, edition_id, copy_id)), Error::<T>::NotFound);
+			let instance_struct =
+				<Fragments<T>>::get((definition_hash, edition_id, copy_id)).ok_or(Error::<T>::NotFound)?;
 
-			let ids = <Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
-			ensure!(ids.contains(&(Compact(edition_id), Compact(copy_id))), Error::<T>::NoPermission);
+			let owned_instances = <Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
+			ensure!(owned_instances.contains(&(Compact(edition_id), Compact(copy_id))), Error::<T>::NoPermission);
 
 			let data_hash = blake2_256(&data);
 
 			// we need this to index transactions
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
+
+			// Write STATE from now, ensure no errors from now...
 
 			let metadata_key_index = {
 				let index = <MetaKeys<T>>::get(metadata_key.clone());
@@ -640,29 +654,25 @@ pub mod pallet {
 				}
 			};
 
-			// Write STATE from now, ensure no errors from now...
-
-			let index = if let Some(map) = <Definition2Map<T>>::get(definition_hash) {
-				let index = <Compact<u64>>::from(map.len() as u64);
-				<Definition2Map<T>>::mutate(&definition_hash, |map| {
-					let map = map.as_mut().unwrap();
-					// let index = <Compact<u64>>::from(map.len() as u64);
-					map.insert(index, data_hash);
-				});
-				index
-			} else {
-				let mut map = BTreeMap::new();
-				let index = <Compact<u64>>::from(0);
-				map.insert(index, data_hash);
-				<Definition2Map<T>>::insert(definition_hash, map);
-				index
+			let (index, should_update_metadata_field) = {
+				if let Some(existing_index) = instance_struct.metadata.get(&metadata_key_index) {
+					(existing_index.clone(), false)
+				} else {
+					let next_index = <DataHashMapIndex<T>>::try_get(definition_hash).unwrap_or_default() + 1;
+					<DataHashMapIndex<T>>::insert(definition_hash, next_index);
+					(Compact(next_index), true)
+				}
 			};
 
-			<Fragments<T>>::mutate(&(definition_hash, edition_id, copy_id), |instance| {
-				let instance = instance.as_mut().unwrap();
-				// update custom metadata
-				instance.metadata.insert(metadata_key_index, index);
-			});
+			<DataHashMap<T>>::insert(definition_hash, index, data_hash);
+
+			if should_update_metadata_field {
+				<Fragments<T>>::mutate(&(definition_hash, edition_id, copy_id), |instance| {
+					let instance = instance.as_mut().unwrap();
+					// update custom metadata
+					instance.metadata.insert(metadata_key_index, index);
+				});
+			}
 
 			// index data
 			transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
@@ -670,7 +680,7 @@ pub mod pallet {
 			// also emit event
 			Self::deposit_event(Event::InstanceMetadataChanged { fragment_hash: definition_hash, edition_id, copy_id, metadata_key: metadata_key.clone() });
 
-			log::debug!("Added metadata to fragment definition: {:x?} with key: {:x?}", definition_hash, metadata_key);
+			log::debug!("Added metadata to fragment instance: {:x?}, {}, {} with key: {:x?}", definition_hash, edition_id, copy_id, metadata_key);
 
 			Ok(())
 
