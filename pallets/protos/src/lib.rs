@@ -988,6 +988,39 @@ pub mod pallet {
 			return found;
 		}
 
+		pub fn get_json_owner(owner: ProtoOwner<T::AccountId>) -> Value {
+
+			let json_owner = match owner {
+				ProtoOwner::User(account_id) => json!({
+					"type": "internal",
+					"value": hex::encode(account_id)
+				}),
+				ProtoOwner::ExternalAsset(linked_asset) => {
+					let value = match linked_asset {
+						LinkedAsset::Erc721(contract, token_id, source) => {
+							let chain_id = match source {
+								LinkSource::Evm(_sig, _block, chain_id) => chain_id,
+							};
+							json!({
+								"type": "erc721",
+								"value": {
+									"contract": format!("0x{:x}", contract),
+									"token_id": format!("0x{:x}", token_id),
+									"chain_id": format!("0x{:x}", chain_id)
+								}
+							})
+						},
+					};
+					json!({
+						"type": "external",
+						"value": value,
+					})
+				},
+			};
+
+			json_owner
+		}
+
 		pub fn get_map_of_matching_metadata_keys(
 			metadata_keys: &Vec<Vec<u8>>,
 			metadata: &BTreeMap<Compact<u64>, Hash256>,
@@ -996,23 +1029,19 @@ pub mod pallet {
 			let mut map = Map::new();
 
 			for metadata_key in metadata_keys.clone().iter() {
-				let metadata_key_index = <MetaKeys<T>>::get(metadata_key.clone());
-				let metadata_value = if let Some(metadata_key_index) =
-					metadata_key_index
-				{
-					let metadata_key_index = <Compact<u64>>::from(metadata_key_index);
-
-					if let Some(data_hash) = metadata.get(&metadata_key_index) {
-						Value::String(hex::encode(data_hash))
+				let metadata_value =
+					if let Some(metadata_key_index) = <MetaKeys<T>>::get(metadata_key) {
+						if let Some(data_hash) = metadata.get(&Compact(metadata_key_index)) {
+							Value::String(hex::encode(data_hash))
+						} else {
+							Value::Null
+						}
 					} else {
 						Value::Null
-					}
-				} else {
-					Value::Null
-				};
+					};
 
-				if let Ok(key) = String::from_utf8(metadata_key.clone()) {
-					map.insert(key, metadata_value);
+				if let Ok(string_metadata_key) = String::from_utf8(metadata_key.clone()) {
+					map.insert(string_metadata_key, metadata_value);
 				}
 			}
 
@@ -1049,12 +1078,9 @@ pub mod pallet {
 
 			let mut map = Map::new();
 
-			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
-				// `owner` exists
-				let list_protos_owner = <ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner)).ok_or("Owner not found")?;
-					// `owner` exists in `ProtosByOwner`
-				if params.desc {
-					// Sort in descending order
+			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner { // `owner` exists
+				let list_protos_owner = <ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner)).ok_or("Owner not found")?; // `owner` exists in `ProtosByOwner`
+				if params.desc { // Sort in descending order
 					list_protos_owner
 						.into_iter()
 						.rev()
@@ -1068,9 +1094,8 @@ pub mod pallet {
 						})
 						.skip(params.from as usize)
 						.take(params.limit as usize)
-						.collect::<Vec<Hash256>>()
-				} else {
-					// Sort in ascending order
+						.collect()
+				} else { // Sort in ascending order
 					list_protos_owner
 						.into_iter()
 						.filter(|proto_id| {
@@ -1083,7 +1108,7 @@ pub mod pallet {
 						})
 						.skip(params.from as usize)
 						.take(params.limit as usize)
-						.collect::<Vec<Hash256>>()
+						.collect()
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -1156,52 +1181,25 @@ pub mod pallet {
 						_ => return Err("Failed to get map_proto".into()),
 					};
 
-					let array_proto_id = hex::decode(proto_id).or(Err("`Failed to decode `proto_id``"))?;
-					let array_proto_id: Hash256 = array_proto_id.try_into().or(Err("Failed to convert `proto_id` to Hash256"))?;
+					let array_proto_id: Hash256 = hex::decode(proto_id).or(Err("`Failed to decode `proto_id``"))?.try_into().or(Err("Failed to convert `proto_id` to Hash256"))?;
 
-					let proto = <Protos<T>>::get(array_proto_id).ok_or("Failed to get proto")?;
-					let (owner, proto_metadata, include_cost) = (proto.owner, proto.metadata, proto.include_cost);
+					let proto_struct = <Protos<T>>::get(array_proto_id).ok_or("Failed to get proto")?;
 
-					if let Some(include_cost) = include_cost {
+					if let Some(include_cost) = proto_struct.include_cost {
 						let n: u64 = include_cost.into();
-						(*map_proto).insert(String::from("include_cost"), Value::Number(n.into()));
+						(*map_proto).insert("include_cost".into(), Value::Number(n.into()));
 					} else {
-						(*map_proto).insert(String::from("include_cost"), Value::Null);
+						(*map_proto).insert("include_cost".into(), Value::Null);
 					}
 
 					if params.return_owners {
-						let owner = match owner {
-							ProtoOwner::User(account_id) => json!({
-								"type": "internal",
-								"value": hex::encode(account_id)
-							}),
-							ProtoOwner::ExternalAsset(linked_asset) => {
-								let value = match linked_asset {
-									LinkedAsset::Erc721(contract, token_id, source) => {
-										let chain_id = match source {
-											LinkSource::Evm(_sig, _block, chain_id) => chain_id,
-										};
-										json!({
-											"type": "erc721",
-											"value": {
-												"contract": format!("0x{:x}", contract),
-												"token_id": format!("0x{:x}", token_id),
-												"chain_id": format!("0x{:x}", chain_id)
-											}
-										})
-									},
-								};
-								json!({
-									"type": "external",
-									"value": value,
-								})
-							},
-						};
-
-						(*map_proto).insert(String::from("owner"), owner);
+						let owner = proto_struct.owner;
+						let json_owner = Self::get_json_owner(owner);
+						(*map_proto).insert("owner".into(), json_owner);
 					}
 
 					if !params.metadata_keys.is_empty() {
+						let proto_metadata = proto_struct.metadata;
 						let mut map_of_matching_metadata_keys = Self::get_map_of_matching_metadata_keys(&params.metadata_keys, &proto_metadata);
 						(*map_proto).append(&mut map_of_matching_metadata_keys);
 					}

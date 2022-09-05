@@ -51,8 +51,8 @@ use sp_io::{
 use sp_std::{vec::Vec, collections::btree_map::BTreeMap};
 pub use weights::WeightInfo;
 
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+// #[cfg(feature = "std")]
+use serde::{Deserialize, Serialize, Serializer};
 
 use protos::{permissions::FragmentPerms, categories::Categories};
 
@@ -83,18 +83,21 @@ pub struct GetDefinitionsParams<TAccountId, TString> {
 	pub metadata_keys: Vec<TString>,
 	pub owner: Option<TAccountId>,
 	pub return_owners: bool,
-	pub categories: Vec<Categories>,
-	pub tags: Vec<TString>,
+	// pub categories: Vec<Categories>,
+	// pub tags: Vec<TString>,
 }
 
 /// **Data Type** used to **Query and Filter for Fragment Instances**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct GetInstancessParams {
+pub struct GetInstancesParams<TAccountId, TString> {
 	pub desc: bool,
 	pub from: u64,
 	pub limit: u64,
 	pub definition_hash: Hash128,
+	pub metadata_keys: Vec<TString>,
+	pub owner: Option<TAccountId>,
+	pub return_owners: bool,
 }
 
 /// **Struct** of a **Fragment Definition's Metadata**
@@ -140,6 +143,18 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 	pub custom_metadata: BTreeMap<Compact<u64>, Hash256>,
 }
 
+
+fn option_compact_u64_serialize<S>(x: &Option<Compact<u64>>, s: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer,
+{
+	if let Some(x) = x {
+		s.serialize_u64(x.0)
+	} else {
+		s.serialize_none()
+	}
+}
+
 /// **Struct** of a **Fragment Instance**
 ///
 /// Footnotes:
@@ -149,14 +164,15 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 /// * On purpose not storing owner because:
 ///   * Big, 32 bytes
 ///   * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Serialize)]
 pub struct FragmentInstance<TBlockNum> {
-	/// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
+	// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
 	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) **allowed to be done**
 	/// to the **Fragment Instance** (e.g edit, transfer etc.)
 	///
 	/// These **allowed set of actions of the Fragment Instance** ***may change***
 	/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
+	#[serde(skip_serializing)]
 	pub permissions: FragmentPerms,
 	/// Block number in which the Fragment Instance was created
 	pub created_at: TBlockNum,
@@ -166,9 +182,11 @@ pub struct FragmentInstance<TBlockNum> {
 	pub expiring_at: Option<TBlockNum>,
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** that are **left** in the **stack of stackable items**
+	#[serde(serialize_with = "option_compact_u64_serialize")]
 	pub amount: Option<Compact<Unit>>,
 	/// TODO: Documentation
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to an **Index of the Hash of the aforementioned Metadata Object**
+	#[serde(skip_serializing)]
 	pub metadata: BTreeMap<Compact<u64>, Compact<u64>>,
 }
 
@@ -214,7 +232,7 @@ pub mod pallet {
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::DetachedHashes;
-	use pallet_protos::{Proto, ProtoOwner, Protos, MetaKeys, MetaKeysIndex};
+	use pallet_protos::{LinkSource, LinkedAsset, Proto, ProtoOwner, Protos, ProtosByOwner, MetaKeys, MetaKeysIndex};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -364,8 +382,7 @@ pub mod pallet {
 		Compact<u64>,
 		Hash256
 	>;
-
-	/// TODO: Documentation
+	/// **StorageMap** that maps a **Fragment Definition ID** to the **total number of "Numbers" (see `DataHashMap` to understand what "Numbers" means) that fall under it**
 	#[pallet::storage]
 	pub type DataHashMapIndex<T: Config> = StorageMap<_, Identity, Hash128, u64>;
 
@@ -1237,299 +1254,393 @@ pub mod pallet {
 			}
 		}
 	}
-}
 
-impl<T: Config> Pallet<T> {
-	/// **Get** the **Account ID** of the Fragment Definition `class_hash`**
-	///
-	/// This Account ID is determinstically computed using the Fragment Definition `class_hash`
-	pub fn get_vault_id(class_hash: Hash128) -> T::AccountId {
-		let hash = blake2_256(&[&b"fragments-vault"[..], &class_hash].concat());
-		T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
-	}
-
-	/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class_hash`,
-	/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
-	///
-	/// This Account ID is determinstically computed using the Fragment Definition ID `class_hash`, the Edition ID `edition` and the Copy ID `copy`
-	pub fn get_fragment_account_id(class_hash: Hash128, edition: Unit, copy: Unit) -> T::AccountId {
-		let hash = blake2_256(
-			&[&b"fragments-account"[..], &class_hash, &edition.encode(), &copy.encode()].concat(),
-		);
-		T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
-	}
-
-	/// Create `quantity` number of Fragment Instances from the Fragment Definition `fragment_hash` and assigns their ownership to `to`
-	///
-	/// # Arguments
-	///
-	/// * `to` - **Account ID** to assign ownernship of the created Fragment instances to
-	/// * `fragment_hash` - ID of the Fragment Definition
-	/// * `sale` - Struct **representing** a **sale of the Fragment Definition**, if the **Fragment Definition** is **currently on sale**
-	/// * `options` - **Enum** indicating whether to
-	/// **create one Fragment Instance with custom data attached to it** or whether to
-	/// **create multiple Fragment Instances (with no custom data attached)**
-	/// * `quantity` - **Number of Fragment Instances** to **create**
-	/// * `current_block_number` - **Current block number** of the **Clamor Blockchain**
-	/// * `expiring_at` (*optional*) - **Block Number** that the **Fragment Instance** will **expire at**
-	/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
-	/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
-	/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
-	pub fn mint_fragments(
-		to: &T::AccountId,
-		fragment_hash: &Hash128,
-		sale: Option<&PublishingData<T::BlockNumber>>,
-		options: &FragmentBuyOptions,
-		quantity: u64,
-		current_block_number: T::BlockNumber,
-		expiring_at: Option<T::BlockNumber>,
-		amount: Option<Compact<Unit>>,
-	) -> DispatchResult {
-		use frame_support::ensure;
-
-		if let Some(expiring_at) = expiring_at {
-			ensure!(expiring_at > current_block_number, Error::<T>::ParamsNotValid); // Ensure `expiring_at` > `current_block_number`
+	impl<T: Config> Pallet<T> {
+		/// **Get** the **Account ID** of the Fragment Definition `class_hash`**
+		///
+		/// This Account ID is determinstically computed using the Fragment Definition `class_hash`
+		pub fn get_vault_id(class_hash: Hash128) -> T::AccountId {
+			let hash = blake2_256(&[&b"fragments-vault"[..], &class_hash].concat());
+			T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 		}
 
-		let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
+		/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class_hash`,
+		/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
+		///
+		/// This Account ID is determinstically computed using the Fragment Definition ID `class_hash`, the Edition ID `edition` and the Copy ID `copy`
+		pub fn get_fragment_account_id(class_hash: Hash128, edition: Unit, copy: Unit) -> T::AccountId {
+			let hash = blake2_256(
+				&[&b"fragments-account"[..], &class_hash, &edition.encode(), &copy.encode()].concat(),
+			);
+			T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
+		}
 
-		// we need this to index transactions
-		let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index() // `<frame_system::Pallet<T>>::extrinsic_index()` is defined as: "Gets the index of extrinsic that is currently executing." (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)
-			.ok_or(Error::<T>::SystematicFailure)?;
+		/// Create `quantity` number of Fragment Instances from the Fragment Definition `fragment_hash` and assigns their ownership to `to`
+		///
+		/// # Arguments
+		///
+		/// * `to` - **Account ID** to assign ownernship of the created Fragment instances to
+		/// * `fragment_hash` - ID of the Fragment Definition
+		/// * `sale` - Struct **representing** a **sale of the Fragment Definition**, if the **Fragment Definition** is **currently on sale**
+		/// * `options` - **Enum** indicating whether to
+		/// **create one Fragment Instance with custom data attached to it** or whether to
+		/// **create multiple Fragment Instances (with no custom data attached)**
+		/// * `quantity` - **Number of Fragment Instances** to **create**
+		/// * `current_block_number` - **Current block number** of the **Clamor Blockchain**
+		/// * `expiring_at` (*optional*) - **Block Number** that the **Fragment Instance** will **expire at**
+		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
+		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
+		/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
+		pub fn mint_fragments(
+			to: &T::AccountId,
+			fragment_hash: &Hash128,
+			sale: Option<&PublishingData<T::BlockNumber>>,
+			options: &FragmentBuyOptions,
+			quantity: u64,
+			current_block_number: T::BlockNumber,
+			expiring_at: Option<T::BlockNumber>,
+			amount: Option<Compact<Unit>>,
+		) -> DispatchResult {
+			use frame_support::ensure;
 
-		let (data_hash, data_len) = match options {
-			FragmentBuyOptions::UniqueData(data) => {
-				if fragment_data.unique.is_none() || quantity != 1 {
-					return Err(Error::<T>::ParamsNotValid.into());
-				}
+			if let Some(expiring_at) = expiring_at {
+				ensure!(expiring_at > current_block_number, Error::<T>::ParamsNotValid); // Ensure `expiring_at` > `current_block_number`
+			}
 
-				let data_hash = blake2_256(&data);
+			let fragment_data = <Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?;
 
-				ensure!(
+			// we need this to index transactions
+			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index() // `<frame_system::Pallet<T>>::extrinsic_index()` is defined as: "Gets the index of extrinsic that is currently executing." (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)
+				.ok_or(Error::<T>::SystematicFailure)?;
+
+			let (data_hash, data_len) = match options {
+				FragmentBuyOptions::UniqueData(data) => {
+					if fragment_data.unique.is_none() || quantity != 1 {
+						return Err(Error::<T>::ParamsNotValid.into());
+					}
+
+					let data_hash = blake2_256(&data);
+
+					ensure!(
 					!<UniqueData2Edition<T>>::contains_key(fragment_hash, data_hash),
 					Error::<T>::UniqueDataExists
 				);
 
-				(Some(data_hash), Some(data.len()))
-			},
-			FragmentBuyOptions::Quantity(_) => {
-				if fragment_data.unique.is_some() {
-					return Err(Error::<T>::ParamsNotValid.into());
-				}
-
-				(None, None)
-			},
-		};
-
-		let existing: Unit = <EditionsCount<T>>::get(&fragment_hash).unwrap_or(Compact(0)).into();
-
-		if let Some(sale) = sale {
-			// if limited amount let's reduce the amount of units left
-			if let Some(units_left) = sale.units_left {
-				if quantity > units_left.into() {
-					return Err(Error::<T>::PublishedQuantityReached.into());
-				} else {
-					<Publishing<T>>::mutate(&*fragment_hash, |sale| {
-						if let Some(sale) = sale {
-							let left: Unit = units_left.into();
-							sale.units_left = Some(Compact(left - quantity));
-						}
-					});
-				}
-			}
-		} else {
-			// We still don't wanna go over supply limit
-			if let Some(max_supply) = fragment_data.max_supply {
-				let max: Unit = max_supply.into();
-				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
-				if quantity > left {
-					// Ensure the function parameter `quantity` is smaller than or equal to `left`
-					return Err(Error::<T>::MaxSupplyReached.into());
-				}
-			}
-		}
-
-		// ! Writing if successful
-
-		<Definitions<T>>::mutate(fragment_hash, |fragment| {
-			// Get the `FragmentDefinition` struct from `fragment_hash`
-			if let Some(fragment) = fragment {
-				for id in existing..(existing + quantity) {
-					let id = id + 1u64;
-					let cid = Compact(id); // `cid` stands for "compact id"
-
-					<Fragments<T>>::insert(
-						(fragment_hash, id, 1),
-						FragmentInstance {
-							permissions: fragment.permissions,
-							created_at: current_block_number,
-							custom_data: data_hash,
-							expiring_at,
-							amount,
-							metadata: BTreeMap::new(),
-						},
-					);
-
-					<CopiesCount<T>>::insert((fragment_hash, id), Compact(1));
-
-					<Inventory<T>>::append(to.clone(), fragment_hash, (cid, Compact(1))); // **Add** the **Fragment Intstance whose Fragment Definition is `fragment_hash`, Edition ID is `cid` and Copy ID is 1**  to the **inventory of `to`**
-
-					<Owners<T>>::append(fragment_hash, to.clone(), (cid, Compact(1)));
-
-					if let Some(expiring_at) = expiring_at {
-						<Expirations<T>>::append(expiring_at, (*fragment_hash, cid, Compact(1)));
+					(Some(data_hash), Some(data.len()))
+				},
+				FragmentBuyOptions::Quantity(_) => {
+					if fragment_data.unique.is_some() {
+						return Err(Error::<T>::ParamsNotValid.into());
 					}
-					Self::deposit_event(Event::InventoryAdded {
-						account_id: to.clone(),
-						fragment_hash: *fragment_hash,
-						fragment_id: (id, 1),
-					});
-				}
 
-				if let (Some(data_hash), Some(data_len)) = (data_hash, data_len) {
-					<UniqueData2Edition<T>>::insert(fragment_hash, data_hash, existing); // if `data` exists, `quantity` is ensured to be 1
-
-					// index immutable data for IPFS discovery
-					transaction_index::index(extrinsic_index, data_len as u32, data_hash);
-				}
-
-				<EditionsCount<T>>::insert(fragment_hash, Compact(existing + quantity));
-			}
-		});
-
-		Ok(())
-	}
-
-}
-
-impl<T : Config> Pallet<T>
-	where
-		T::AccountId: AsRef<[u8]>
-{
-
-
-	pub fn get_definitions(params: GetDefinitionsParams<T::AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-
-		let get_protos_params = GetProtosParams {
-			desc: params.desc,
-			from: params.from,
-			limit: params.limit,
-			metadata_keys: Vec::new(),
-			owner: params.owner,
-			return_owners: params.return_owners,
-			categories: params.categories,
-			tags: params.tags,
-			available: None,
-		};
-
-		let map_protos: Map<String, Value> = pallet_protos::Pallet::<T>::get_protos_map(get_protos_params)?;
-		let map_protos_that_have_defs = map_protos
-			.into_iter()
-			.filter(|(proto_id, map_proto)| {
-				let array_proto_id: Hash256 = hex::decode(&proto_id).unwrap().try_into().unwrap(); // using `unwrao()` can lead to panicking
-				<Proto2Fragments<T>>::contains_key(&array_proto_id)
-			})
-			// .filter_map(|(proto_id, map_proto)| -> Option<_> {
-			// 	if let Ok(array_proto_id) = hex::decode(&proto_id) {
-			// 		if Ok(array_proto_id) = array_proto_id.try_into() {
-			// 			if <Proto2Fragments<T>>::contains_key(&array_proto_id) {
-			// 				Some((proto_id, map_proto))
-			// 			} else {
-			// 				None
-			// 			}
-			// 		} else {
-			// 			Some(Err("Failed to convert `proto_id` to Hash256".into()))
-			// 		}
-			// 	} else {
-			// 		Some(Err("`Failed to decode `proto_id``".into()))
-			// 	}
-			// })
-			.skip(params.from as usize)
-			.take(params.limit as usize)
-			.collect::<Map<_, _>>();
-
-		let mut map_definitions = Map::new();
-
-		for (proto_id, value_map_proto) in map_protos_that_have_defs.into_iter() {
-
-			let mut map_proto = match value_map_proto {
-				Value::Object(mp) => mp,
-				_ => return Err("Failed to get map_proto".into()),
+					(None, None)
+				},
 			};
 
-			let array_proto_id = hex::decode(&proto_id).or(Err("`Failed to decode `proto_id``"))?;
-			let array_proto_id: Hash256 = array_proto_id.try_into().or(Err("Failed to convert `proto_id` to Hash256"))?;
+			let existing: Unit = <EditionsCount<T>>::get(&fragment_hash).unwrap_or(Compact(0)).into();
 
-			map_proto.insert(String::from("proto"), Value::String(proto_id));
-
-			let list_definitions = <Proto2Fragments<T>>::get(&array_proto_id).ok_or("`proto_id` not found in `Proto2Fragments`")?;
-
-			for definition in list_definitions.iter() {
-				map_definitions.insert(hex::encode(definition), Value::Object(map_proto.clone())); // TODO: currently using `map_proto.clone()` as a temp fix
-			}
-		}
-
-		if !params.metadata_keys.is_empty() {
-			for (definition_id, map_definition) in map_definitions.iter_mut() {
-
-				let map_definition = match map_definition {
-					Value::Object(map_definition) => map_definition,
-					_ => return Err("Failed to get map_definition".into()),
-				};
-
-				let array_definition_id: Hash128 = if let Ok(array_definition_id) = hex::decode(definition_id) {
-					if let Ok(array_definition_id) = array_definition_id.try_into() {
-						array_definition_id
+			if let Some(sale) = sale {
+				// if limited amount let's reduce the amount of units left
+				if let Some(units_left) = sale.units_left {
+					if quantity > units_left.into() {
+						return Err(Error::<T>::PublishedQuantityReached.into());
 					} else {
-						return Err("Failed to convert definition to Hash128".into());
+						<Publishing<T>>::mutate(&*fragment_hash, |sale| {
+							if let Some(sale) = sale {
+								let left: Unit = units_left.into();
+								sale.units_left = Some(Compact(left - quantity));
+							}
+						});
 					}
-				} else {
-					return Err("Failed to decode definition_id".into());
-				};
-				let definition_metadata = if let Some(definition) = <Definitions<T>>::get(array_definition_id) {
-					definition.custom_metadata
-				} else {
-					return Err("Failed to get definition".into());
-				};
-				let mut map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &definition_metadata);
-				(*map_definition).append(&mut map_of_matching_metadata_keys);
+				}
+			} else {
+				// We still don't wanna go over supply limit
+				if let Some(max_supply) = fragment_data.max_supply {
+					let max: Unit = max_supply.into();
+					let left = max.saturating_sub(existing); // `left` = `max` - `existing`
+					if quantity > left {
+						// Ensure the function parameter `quantity` is smaller than or equal to `left`
+						return Err(Error::<T>::MaxSupplyReached.into());
+					}
+				}
 			}
+
+			// ! Writing if successful
+
+			<Definitions<T>>::mutate(fragment_hash, |fragment| {
+				// Get the `FragmentDefinition` struct from `fragment_hash`
+				if let Some(fragment) = fragment {
+					for id in existing..(existing + quantity) {
+						let id = id + 1u64;
+						let cid = Compact(id); // `cid` stands for "compact id"
+
+						<Fragments<T>>::insert(
+							(fragment_hash, id, 1),
+							FragmentInstance {
+								permissions: fragment.permissions,
+								created_at: current_block_number,
+								custom_data: data_hash,
+								expiring_at,
+								amount,
+								metadata: BTreeMap::new(),
+							},
+						);
+
+						<CopiesCount<T>>::insert((fragment_hash, id), Compact(1));
+
+						<Inventory<T>>::append(to.clone(), fragment_hash, (cid, Compact(1))); // **Add** the **Fragment Intstance whose Fragment Definition is `fragment_hash`, Edition ID is `cid` and Copy ID is 1**  to the **inventory of `to`**
+
+						<Owners<T>>::append(fragment_hash, to.clone(), (cid, Compact(1)));
+
+						if let Some(expiring_at) = expiring_at {
+							<Expirations<T>>::append(expiring_at, (*fragment_hash, cid, Compact(1)));
+						}
+						Self::deposit_event(Event::InventoryAdded {
+							account_id: to.clone(),
+							fragment_hash: *fragment_hash,
+							fragment_id: (id, 1),
+						});
+					}
+
+					if let (Some(data_hash), Some(data_len)) = (data_hash, data_len) {
+						<UniqueData2Edition<T>>::insert(fragment_hash, data_hash, existing); // if `data` exists, `quantity` is ensured to be 1
+
+						// index immutable data for IPFS discovery
+						transaction_index::index(extrinsic_index, data_len as u32, data_hash);
+					}
+
+					<EditionsCount<T>>::insert(fragment_hash, Compact(existing + quantity));
+				}
+			});
+
+			Ok(())
 		}
-
-		let result = json!(map_definitions).to_string();
-
-		Ok(result.into_bytes())
-
-
-
-
-
-
 
 	}
 
+	/// Implementation Block of `Pallet` specifically for RPC-related functions
+	impl<T : Config> Pallet<T>
+		where
+			T::AccountId: AsRef<[u8]>,
+			T::BlockNumber: Serialize
+	{
 
-	pub fn get_instances(
-		params: GetInstancessParams
-	) -> Result<Vec<u8>, Vec<u8>> {
 
-		let map = Map::new();
 
-		let definition_hash = params.definition_hash;
+		// pub fn get_definitions_old(params: GetDefinitionsParams<T::AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+		//
+		// 	let get_protos_params = GetProtosParams {
+		// 		desc: params.desc,
+		// 		from: params.from,
+		// 		limit: params.limit,
+		// 		metadata_keys: Vec::new(),
+		// 		owner: params.owner,
+		// 		return_owners: params.return_owners,
+		// 		categories: params.categories,
+		// 		tags: params.tags,
+		// 		available: None,
+		// 	};
+		//
+		// 	let map_protos: Map<String, Value> = pallet_protos::Pallet::<T>::get_protos_map(get_protos_params)?;
+		// 	let map_protos_that_have_defs = map_protos
+		// 		.into_iter()
+		// 		.filter(|(proto_id, map_proto)| {
+		// 			let array_proto_id: Hash256 = hex::decode(&proto_id).unwrap().try_into().unwrap(); // using `unwrao()` can lead to panicking
+		// 			<Proto2Fragments<T>>::contains_key(&array_proto_id)
+		// 		})
+		// 		// .filter_map(|(proto_id, map_proto)| -> Option<_> {
+		// 		// 	if let Ok(array_proto_id) = hex::decode(&proto_id) {
+		// 		// 		if Ok(array_proto_id) = array_proto_id.try_into() {
+		// 		// 			if <Proto2Fragments<T>>::contains_key(&array_proto_id) {
+		// 		// 				Some((proto_id, map_proto))
+		// 		// 			} else {
+		// 		// 				None
+		// 		// 			}
+		// 		// 		} else {
+		// 		// 			Some(Err("Failed to convert `proto_id` to Hash256".into()))
+		// 		// 		}
+		// 		// 	} else {
+		// 		// 		Some(Err("`Failed to decode `proto_id``".into()))
+		// 		// 	}
+		// 		// })
+		// 		.skip(params.from as usize)
+		// 		.take(params.limit as usize)
+		// 		.collect::<Map<_, _>>();
+		//
+		// 	let mut map_definitions = Map::new();
+		//
+		// 	for (proto_id, value_map_proto) in map_protos_that_have_defs.into_iter() {
+		// 		let mut map_proto = match value_map_proto {
+		// 			Value::Object(mp) => mp,
+		// 			_ => return Err("Failed to get map_proto".into()),
+		// 		};
+		//
+		// 		let array_proto_id = hex::decode(&proto_id).or(Err("`Failed to decode `proto_id``"))?;
+		// 		let array_proto_id: Hash256 = array_proto_id.try_into().or(Err("Failed to convert `proto_id` to Hash256"))?;
+		//
+		// 		map_proto.insert(String::from("proto"), Value::String(proto_id));
+		//
+		// 		let list_definitions = <Proto2Fragments<T>>::get(&array_proto_id).ok_or("`proto_id` not found in `Proto2Fragments`")?;
+		//
+		// 		for definition in list_definitions.iter() {
+		// 			map_definitions.insert(hex::encode(definition), Value::Object(map_proto.clone())); // TODO: currently using `map_proto.clone()` as a temp fix
+		// 		}
+		// 	}
+		//
+		// 	if !params.metadata_keys.is_empty() {
+		// 		for (definition_id, map_definition) in map_definitions.iter_mut() {
+		//
+		// 			let map_definition = match map_definition {
+		// 				Value::Object(map_definition) => map_definition,
+		// 				_ => return Err("Failed to get map_definition".into()),
+		// 			};
+		//
+		// 			let array_definition_id: Hash128 = if let Ok(array_definition_id) = hex::decode(definition_id) {
+		// 				if let Ok(array_definition_id) = array_definition_id.try_into() {
+		// 					array_definition_id
+		// 				} else {
+		// 					return Err("Failed to convert definition to Hash128".into());
+		// 				}
+		// 			} else {
+		// 				return Err("Failed to decode definition_id".into());
+		// 			};
+		// 			let definition_metadata = if let Some(definition) = <Definitions<T>>::get(array_definition_id) {
+		// 				definition.custom_metadata
+		// 			} else {
+		// 				return Err("Failed to get definition".into());
+		// 			};
+		// 			let mut map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &definition_metadata);
+		// 			(*map_definition).append(&mut map_of_matching_metadata_keys);
+		// 		}
+		// 	}
+		//
+		// 	let result = json!(map_definitions).to_string();
+		//
+		// 	Ok(result.into_bytes())
+		// }
 
-		let editions: u64 = <EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 
-		for edition_id in 0..editions {
-			let copies: u64 = <CopiesCount<T>>::get((definition_hash, edition_id)).ok_or("No Copies Found!")?.into();
+		pub fn get_definitions(params: GetDefinitionsParams<T::AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 
-			for copy_id in 0..copies {
-				// Add to the `map`
+
+			let mut map = Map::new();
+
+			let list_definitions_final: Vec<Hash128> = if let Some(owner) = params.owner {
+				let list_protos_owner = <ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner)).ok_or("Owner not found")?; // `owner` exists in `ProtosByOwner`
+				if params.desc { // Sort in descending order
+					list_protos_owner
+						.into_iter()
+						.rev()
+						.filter_map(|proto_id| <Proto2Fragments<T>>::get(&proto_id))
+						.flatten()
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect()
+				} else { // Sort in ascending order
+					list_protos_owner
+						.into_iter()
+						.filter_map(|proto_id| <Proto2Fragments<T>>::get(&proto_id))
+						.flatten()
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect()
+				}
+			} else {
+				<Definitions<T>>::iter_keys()
+					.skip(params.from as usize)
+					.take(params.limit as usize)
+					.collect()
+			};
+
+			for definition_id in list_definitions_final.into_iter() {
+				map.insert(hex::encode(definition_id), Value::Object(Map::new()));
 			}
+
+
+			if params.return_owners || !params.metadata_keys.is_empty() {
+				for (definition_id, map_definition) in map.iter_mut() {
+
+					let map_definition = match map_definition {
+						Value::Object(map_definition) => map_definition,
+						_ => return Err("Failed to get map_definition".into()),
+					};
+
+					let array_definition_id: Hash128 = hex::decode(definition_id).or(Err("`Failed to decode `definition_id``"))?.try_into().or(Err("Failed to convert `definition_id` to Hash128"))?;
+
+					let definition_struct = <Definitions<T>>::get(array_definition_id).ok_or("Failed to get definition struct")?;
+
+					if params.return_owners {
+						let owner = <Protos<T>>::get(definition_struct.proto_hash).ok_or("Failed to get proto struct")?.owner;
+						let json_owner = pallet_protos::Pallet::<T>::get_json_owner(owner);
+						(*map_definition).insert(String::from("owner"), json_owner);
+					}
+
+					if !params.metadata_keys.is_empty() {
+						let definition_metadata = definition_struct.custom_metadata;
+						let mut map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &definition_metadata);
+						(*map_definition).append(&mut map_of_matching_metadata_keys);
+					}
+
+				}
+			}
+
+
+			let result = json!(map).to_string();
+
+			Ok(result.into_bytes())
 		}
 
-		let result = json!(map).to_string();
 
-		Ok(result.into_bytes())
+		pub fn get_instances(
+			params: GetInstancesParams<T::AccountId, Vec<u8>>
+		) -> Result<Vec<u8>, Vec<u8>> {
+
+			let mut map = Map::new();
+
+			let definition_hash = params.definition_hash;
+			let editions: u64 = <EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
+
+			(0..editions)
+				.map(|edition_id| {
+					let copies = <CopiesCount<T>>::get((definition_hash, edition_id)).ok_or("No Copies Found!")?.into();
+					Ok((edition_id, copies))
+				})
+				.collect::<Result<Vec<(u64, u64)>, Vec<u8>>>()?
+				.into_iter()
+				.flat_map(|(edition_id, copies)| {
+					(0..copies).map(|copy_id| (edition_id, copy_id)).collect::<Vec<(u64, u64)>>()
+				})
+				.skip(params.from as usize)
+				.take(params.limit as usize)
+				.try_for_each(|(edition_id, copy_id)| -> Result<(), Vec<u8>> {
+					let instance_struct = <Fragments<T>>::get((definition_hash, edition_id, copy_id)).ok_or("Instance Not Found!")?;
+					let value_map_instance = serde_json::to_value(&instance_struct).map_err(|_|"Unable to serialize instance_struct")?;
+					let mut map_instance = match value_map_instance {
+						Value::Object(map_instance) => map_instance,
+						_ => return Err("Failed to get map_instance".into()),
+					};
+					if !params.metadata_keys.is_empty() {
+						let metadata = instance_struct.metadata
+							.iter()
+							.map(|(k, v)| {
+								let data_hash = <DataHashMap<T>>::get(definition_hash, v).ok_or::<Vec<u8>>("Data Hash Not Found!".into())?;
+								Ok((k.clone(), data_hash))
+							})
+							.collect::<Result<BTreeMap<Compact<u64>, Hash256>, Vec<u8>>>()?;
+						let map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &metadata);
+						map_instance.insert("metadata".into(), map_of_matching_metadata_keys.into());
+					} 
+					map.insert(format!("#{}.{}", edition_id, copy_id), map_instance.into());
+					Ok(())
+				})?;
+
+			let result = json!(map).to_string();
+
+			Ok(result.into_bytes())
+
+		}
 
 	}
+
 }
+
