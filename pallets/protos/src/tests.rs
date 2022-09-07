@@ -444,7 +444,7 @@ mod get_protos_tests {
 			let shard_script_num_1: [u8; 8] = [4u8; 8];
 			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};
@@ -503,6 +503,68 @@ mod get_protos_tests {
 	}
 
 	#[test]
+	fn get_protos_filter_shards_by_implementing_requiring() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			// Two protos with different trait names
+			let proto_shard_script = dd.proto_shard_script;
+			let proto_shard_script_3 = dd.proto_shard_script_3;			
+			let proto_shard_script_binary = dd.proto_shard_script_4;			
+
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+			assert_ok!(upload(dd.account_id, &proto_shard_script_3));
+			// This below has the same implementing and requiring of script_3, but different format (Binary)
+			assert_ok!(upload(dd.account_id, &proto_shard_script_binary));
+
+			// SEARCH
+			let shard_script_num_4: [u8; 8] = [1u8; 8];
+			let shard_script_num_5: [u8; 8] = [7u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_4],
+				implementing: vec![shard_script_num_5],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 10,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![
+					Categories::Shards(shard_script),
+				],
+				tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto_shard_script_3.get_proto_hash();
+			let encoded2 = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded2: {
+				"tickets": Some(proto_shard_script_3.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+			.to_string();
+
+			sp_std::if_std! {
+				// This code is only being compiled and executed when the `std` feature is enabled.
+				println!("result_string {}", result_string);
+			}
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
 	fn get_protos_searching_by_multiple_categories_different_owner_should_work() {
 		new_test_ext().execute_with(|| {
 			// UPLOAD
@@ -520,7 +582,7 @@ mod get_protos_tests {
 			let shard_script_num_1: [u8; 8] = [4u8; 8];
 			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};
@@ -648,7 +710,7 @@ mod get_protos_tests {
 			let shard_script_num_1: [u8; 8] = [4u8; 8];
 			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};
@@ -700,7 +762,7 @@ mod get_protos_tests {
 			let shard_script_num_1: [u8; 8] = [0u8; 8];
 			let shard_script_num_2: [u8; 8] = [1u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};
@@ -740,7 +802,7 @@ mod get_protos_tests {
 			let shard_script_num_1: [u8; 8] = [0u8; 8];
 			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};

@@ -96,6 +96,8 @@ pub struct DummyData {
 	pub proto_fragment_fifth: ProtoFragment,
 	pub proto_shard_script: ProtoFragment,
 	pub proto_shard_script_2: ProtoFragment,
+	pub proto_shard_script_3: ProtoFragment,
+	pub proto_shard_script_4: ProtoFragment,
 	pub patch: Patch,
 	pub metadata: Metadata,
 	pub stake: Stake,
@@ -169,7 +171,7 @@ impl DummyData {
 
 		let shard_script_num_1: [u8; 8] = [4u8; 8];
 		let shard_script_num_2: [u8; 8] = [5u8; 8];
-		let shard_script = ShardsScriptInfo {
+		let shard_script_1 = ShardsScriptInfo {
 			format: ShardsFormat::Edn,
 			requiring: vec![shard_script_num_1],
 			implementing: vec![shard_script_num_2],
@@ -177,7 +179,7 @@ impl DummyData {
 
 		let proto_shard_script = ProtoFragment {
 			references: Vec::new(),
-			category: Categories::Shards(shard_script),
+			category: Categories::Shards(shard_script_1),
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
@@ -185,7 +187,7 @@ impl DummyData {
 		};
 
 		let shard_script_num_3: [u8; 8] = [9u8; 8];
-		let shard_script = ShardsScriptInfo {
+		let shard_script_2 = ShardsScriptInfo {
 			format: ShardsFormat::Edn,
 			requiring: vec![shard_script_num_1],
 			implementing: vec![shard_script_num_2, shard_script_num_3],
@@ -193,11 +195,43 @@ impl DummyData {
 
 		let proto_shard_script_2 = ProtoFragment {
 			references: Vec::new(),
-			category: Categories::Shards(shard_script),
+			category: Categories::Shards(shard_script_2),
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
 			data: "0x667".as_bytes().to_vec(),
+		};
+
+		let shard_script_num_4: [u8; 8] = [1u8; 8];
+		let shard_script_num_5: [u8; 8] = [7u8; 8];
+		let shard_script_3 = ShardsScriptInfo {
+			format: ShardsFormat::Edn,
+			requiring: vec![shard_script_num_4],
+			implementing: vec![shard_script_num_5],
+		};
+
+		let proto_shard_script_3 = ProtoFragment {
+			references: Vec::new(),
+			category: Categories::Shards(shard_script_3),
+			tags: Vec::new(),
+			linked_asset: None,
+			include_cost: Some(2),
+			data: "0x669".as_bytes().to_vec(),
+		};
+
+		let shard_script_4 = ShardsScriptInfo {
+			format: ShardsFormat::Binary,
+			requiring: vec![shard_script_num_4],
+			implementing: vec![shard_script_num_5],
+		};
+
+		let proto_shard_script_4 = ProtoFragment {
+			references: Vec::new(),
+			category: Categories::Shards(shard_script_4),
+			tags: Vec::new(),
+			linked_asset: None,
+			include_cost: Some(2),
+			data: "0x670".as_bytes().to_vec(),
 		};
 
 		let patch = Patch {
@@ -271,6 +305,8 @@ impl DummyData {
 			proto_fragment_fifth: proto_fifth,
 			proto_shard_script,
 			proto_shard_script_2,
+			proto_shard_script_3,
+			proto_shard_script_4,
 			patch,
 			metadata,
 			stake,

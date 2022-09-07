@@ -936,8 +936,8 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-							if !implementing_diffs.is_empty()
-								|| !requiring_diffs.is_empty() || (param_script_info.format
+							if (!implementing_diffs.is_empty()
+								|| !requiring_diffs.is_empty()) && (param_script_info.format
 								== stored_script_info.format) || (param_script_info
 								== stored_script_info)
 							{
@@ -1009,8 +1009,8 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-							if !implementing_diffs.is_empty()
-								|| !requiring_diffs.is_empty() || (param_script_info.format
+							if (!implementing_diffs.is_empty()
+								|| !requiring_diffs.is_empty()) && (param_script_info.format
 								== stored_script_info.format) || (param_script_info
 								== stored_script_info)
 							{
