@@ -555,11 +555,6 @@ mod get_protos_tests {
 			}})
 			.to_string();
 
-			sp_std::if_std! {
-				// This code is only being compiled and executed when the `std` feature is enabled.
-				println!("result_string {}", result_string);
-			}
-
 			assert_eq!(result_string, json_expected);
 		});
 	}
@@ -747,7 +742,7 @@ mod get_protos_tests {
 	}
 
 	#[test]
-	fn get_protos_by_shards_script_should_not_work() {
+	fn get_protos_by_shards_finds_nothing() {
 		new_test_ext().execute_with(|| {
 			// UPLOAD
 			let dd = DummyData::new();
@@ -759,8 +754,8 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 
 			// SEARCH
-			let shard_script_num_1: [u8; 8] = [0u8; 8];
-			let shard_script_num_2: [u8; 8] = [1u8; 8];
+			let shard_script_num_1: [u8; 8] = [99u8; 8];
+			let shard_script_num_2: [u8; 8] = [99u8; 8];
 			let shard_script = ShardsScriptInfo {
 				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
@@ -837,6 +832,56 @@ mod get_protos_tests {
 			assert_eq!(result_string, json_expected);
 		});
 	}
+
+	#[test]
+	fn get_protos_by_generic_format() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			let proto_shard_script = dd.proto_shard_script_2;
+
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+
+			// SEARCH
+			let shard_script_num_1: [u8; 8] = [0u8; 8];
+			let shard_script_num_2: [u8; 8] = [0u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_1],
+				implementing: vec![shard_script_num_2],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![Categories::Shards(shard_script)],
+				tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto_shard_script.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto_shard_script.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+			.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
 }
 mod patch_tests {
 	use super::*;
