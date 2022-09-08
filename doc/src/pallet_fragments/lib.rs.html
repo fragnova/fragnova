@@ -1513,31 +1513,31 @@
 	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
 	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		<span class="doccomment">/// New definition created by account, definition hash
-		</span>DefinitionCreated { fragment_hash: Hash128 },
+		</span>DefinitionCreated { definition_hash: Hash128 },
 		<span class="doccomment">/// Fragment sale has been opened
-		</span>Publishing { fragment_hash: Hash128 },
+		</span>Publishing { definition_hash: Hash128 },
 		<span class="doccomment">/// Fragment sale has been closed
-		</span>Unpublishing { fragment_hash: Hash128 },
+		</span>Unpublishing { definition_hash: Hash128 },
 		<span class="doccomment">/// Inventory item has been added to account
 		</span>InventoryAdded {
 			account_id: T::AccountId,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			fragment_id: (Unit, Unit),
 		},
 		<span class="doccomment">/// Inventory item has removed added from account
 		</span>InventoryRemoved {
 			account_id: T::AccountId,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			fragment_id: (Unit, Unit),
 		},
 		<span class="doccomment">/// Inventory has been updated
 		</span>InventoryUpdated {
 			account_id: T::AccountId,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			fragment_id: (Unit, Unit),
 		},
 		<span class="doccomment">/// Fragment Expiration event
-		</span>Expired { account_id: T::AccountId, fragment_hash: Hash128, fragment_id: (Unit, Unit) },
+		</span>Expired { account_id: T::AccountId, definition_hash: Hash128, fragment_id: (Unit, Unit) },
 	}
 
 	<span class="comment">// Errors inform users that something went wrong.
@@ -1667,18 +1667,18 @@
 
 			Proto2Fragments::&lt;T&gt;::append(<span class="kw-2">&amp;</span>proto_hash, hash);
 
-			<span class="self">Self</span>::deposit_event(Event::DefinitionCreated { fragment_hash: hash });
+			<span class="self">Self</span>::deposit_event(Event::DefinitionCreated { definition_hash: hash });
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Put the **Fragment Definition `fragment_hash`** on sale. When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
+		<span class="doccomment">/// Put the **Fragment Definition `definition_hash`** on sale. When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
 		///
 		/// Note: **Only** the **Fragment&#39;s Proto-Fragment&#39;s owner** is **allowed** to put the **Fragment** on sale
 		///
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `fragment_hash` - ID of the **Fragment Definition** to put on sale
+		/// * `definition_hash` - ID of the **Fragment Definition** to put on sale
 		/// * `price` -  **Price** to **buy** a **single Fragment Instance** that is created from the **Fragment Definition*
 		/// * `quantity` (*optional*) - **Maximum amount of Fragment Instances** that **can be bought**
 		/// * `expires` (*optional*) - **Block number** that the sale ends at (*optional*)
@@ -1687,7 +1687,7 @@
 		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
 		</span><span class="kw">pub fn </span>publish(
 			origin: OriginFor&lt;T&gt;,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			price: u128,
 			quantity: <span class="prelude-ty">Option</span>&lt;Unit&gt;,
 			expires: <span class="prelude-ty">Option</span>&lt;T::BlockNumber&gt;,
@@ -1696,7 +1696,7 @@
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>proto_hash =
-				&lt;Definitions&lt;T&gt;&gt;::get(fragment_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>.proto_hash; <span class="comment">// Get `proto_hash` from `fragment_hash`
+				&lt;Definitions&lt;T&gt;&gt;::get(definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>.proto_hash; <span class="comment">// Get `proto_hash` from `definition_hash`
 			</span><span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
 				&lt;Protos&lt;T&gt;&gt;::get(proto_hash).ok_or(Error::&lt;T&gt;::ProtoNotFound)<span class="question-mark">?</span>; <span class="comment">// Get `proto` from `proto_hash`
 
@@ -1711,14 +1711,14 @@
 			// TO REVIEW
 			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::Detached); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
 
-			</span><span class="macro">ensure!</span>(!&lt;Publishing&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>fragment_hash), Error::&lt;T&gt;::SaleAlreadyOpen); <span class="comment">// Ensure `fragment_hash` isn&#39;t already published
+			</span><span class="macro">ensure!</span>(!&lt;Publishing&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>definition_hash), Error::&lt;T&gt;::SaleAlreadyOpen); <span class="comment">// Ensure `definition_hash` isn&#39;t already published
 
-			</span><span class="kw">let </span>fragment_data = &lt;Definitions&lt;T&gt;&gt;::get(fragment_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>; <span class="comment">// Get `FragmentDefinition` struct from `fragment_hash`
+			</span><span class="kw">let </span>fragment_data = &lt;Definitions&lt;T&gt;&gt;::get(definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>; <span class="comment">// Get `FragmentDefinition` struct from `definition_hash`
 
 			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(max_supply) = fragment_data.max_supply {
 				<span class="kw">let </span>max: Unit = max_supply.into();
 				<span class="kw">let </span>existing: Unit =
-					&lt;EditionsCount&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>fragment_hash).unwrap_or(Compact(<span class="number">0</span>)).into();
+					&lt;EditionsCount&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>definition_hash).unwrap_or(Compact(<span class="number">0</span>)).into();
 				<span class="kw">let </span>left = max.saturating_sub(existing); <span class="comment">// `left` = `max` - `existing`
 				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(quantity) = quantity {
 					<span class="kw">let </span>quantity: Unit = quantity.into();
@@ -1735,7 +1735,7 @@
 			<span class="comment">// ! Writing
 
 			</span>&lt;Publishing&lt;T&gt;&gt;::insert(
-				fragment_hash,
+				definition_hash,
 				PublishingData {
 					price: Compact(price),
 					units_left: quantity.map(|x| Compact(x)),
@@ -1744,12 +1744,12 @@
 				},
 			);
 
-			<span class="self">Self</span>::deposit_event(Event::Publishing { fragment_hash });
+			<span class="self">Self</span>::deposit_event(Event::Publishing { definition_hash: definition_hash });
 
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Take the **Fragment Definition `fragment_hash`** off sale.
+		<span class="doccomment">/// Take the **Fragment Definition `definition_hash`** off sale.
 		/// When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
 		///
 		/// Note: **Only** the **Fragment&#39;s Proto-Fragment&#39;s owner** is **allowed** to take the Fragment off sale
@@ -1757,13 +1757,13 @@
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `fragment_hash` - **ID** of the **Fragment Definition** to take off sale
+		/// * `definition_hash` - **ID** of the **Fragment Definition** to take off sale
 		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
-		</span><span class="kw">pub fn </span>unpublish(origin: OriginFor&lt;T&gt;, fragment_hash: Hash128) -&gt; DispatchResult {
+		</span><span class="kw">pub fn </span>unpublish(origin: OriginFor&lt;T&gt;, definition_hash: Hash128) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>proto_hash =
-				&lt;Definitions&lt;T&gt;&gt;::get(fragment_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>.proto_hash; <span class="comment">// Get `proto_hash` from `fragment_hash`
+				&lt;Definitions&lt;T&gt;&gt;::get(definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>.proto_hash; <span class="comment">// Get `proto_hash` from `definition_hash`
 			</span><span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
 				&lt;Protos&lt;T&gt;&gt;::get(proto_hash).ok_or(Error::&lt;T&gt;::ProtoNotFound)<span class="question-mark">?</span>;
 
@@ -1778,18 +1778,18 @@
 			// TO REVIEW
 			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::Detached); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
 
-			</span><span class="macro">ensure!</span>(&lt;Publishing&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>fragment_hash), Error::&lt;T&gt;::NotFound); <span class="comment">// Ensure `fragment_hash` is currently published
+			</span><span class="macro">ensure!</span>(&lt;Publishing&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>definition_hash), Error::&lt;T&gt;::NotFound); <span class="comment">// Ensure `definition_hash` is currently published
 
 			// ! Writing
 
-			</span>&lt;Publishing&lt;T&gt;&gt;::remove(<span class="kw-2">&amp;</span>fragment_hash); <span class="comment">// Remove Fragment Definition `fragment_hash` from `Publishing`
+			</span>&lt;Publishing&lt;T&gt;&gt;::remove(<span class="kw-2">&amp;</span>definition_hash); <span class="comment">// Remove Fragment Definition `definition_hash` from `Publishing`
 
-			</span><span class="self">Self</span>::deposit_event(Event::Unpublishing { fragment_hash });
+			</span><span class="self">Self</span>::deposit_event(Event::Unpublishing { definition_hash: definition_hash });
 
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Create **Fragment instance(s)** from the **Fragment Definition `fragment_hash`** and
+		<span class="doccomment">/// Create **Fragment instance(s)** from the **Fragment Definition `definition_hash`** and
 		/// **assign their ownership** to **`origin`**
 		///
 		/// Note: **Each created Fragment instance** will have a **different Edition ID** and a **Copy ID of &quot;1&quot;**.
@@ -1800,7 +1800,7 @@
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `fragment_hash` - **ID* of the **Fragment Definition**
+		/// * `definition_hash` - **ID* of the **Fragment Definition**
 		/// * `options` - **Enum** indicating whether to
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
@@ -1810,7 +1810,7 @@
 		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
 		</span><span class="kw">pub fn </span>mint(
 			origin: OriginFor&lt;T&gt;,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			options: FragmentBuyOptions,
 			amount: <span class="prelude-ty">Option</span>&lt;Unit&gt;,
 		) -&gt; DispatchResult {
@@ -1819,7 +1819,7 @@
 			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
 
 			<span class="kw">let </span>proto_hash =
-				&lt;Definitions&lt;T&gt;&gt;::get(fragment_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>.proto_hash; <span class="comment">// Get `proto_hash` from `fragment_hash`
+				&lt;Definitions&lt;T&gt;&gt;::get(definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>.proto_hash; <span class="comment">// Get `proto_hash` from `definition_hash`
 			</span><span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
 				&lt;Protos&lt;T&gt;&gt;::get(proto_hash).ok_or(Error::&lt;T&gt;::ProtoNotFound)<span class="question-mark">?</span>; <span class="comment">// Get `proto` from `proto_hash`
 
@@ -1844,7 +1844,7 @@
 
 			</span><span class="self">Self</span>::mint_fragments(
 				<span class="kw-2">&amp;</span>who,
-				<span class="kw-2">&amp;</span>fragment_hash,
+				<span class="kw-2">&amp;</span>definition_hash,
 				<span class="prelude-val">None</span>, <span class="comment">// PublishingData (optional)
 				</span><span class="kw-2">&amp;</span>options,
 				quantity,
@@ -1854,7 +1854,7 @@
 			)
 		}
 
-		<span class="doccomment">/// Allows the Caller Account ID `origin` to create Fragment instance(s) of the Fragment Definition `fragment_hash`,
+		<span class="doccomment">/// Allows the Caller Account ID `origin` to create Fragment instance(s) of the Fragment Definition `definition_hash`,
 		/// for a fee. The ownership of the created Fragment instance(s) is assigned to the Caller Account ID.
 		///
 		/// Note: Each created Fragment instance will have a different Edition ID and a Copy ID of &quot;1&quot;.
@@ -1868,21 +1868,21 @@
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `fragment_hash` - **ID** of the **Fragment Definition**
+		/// * `definition_hash` - **ID** of the **Fragment Definition**
 		/// * `options` - **Enum** indicating whether to
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
 		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
 		</span><span class="kw">pub fn </span>buy(
 			origin: OriginFor&lt;T&gt;,
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			options: FragmentBuyOptions,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
 
-			<span class="kw">let </span>sale = &lt;Publishing&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>fragment_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>; <span class="comment">// if Fragment Definition `fragment_hash` is not published (i.e on sale), you cannot buy it
+			<span class="kw">let </span>sale = &lt;Publishing&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>; <span class="comment">// if Fragment Definition `definition_hash` is not published (i.e on sale), you cannot buy it
 			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(expiration) = sale.expiration {
 				<span class="macro">ensure!</span>(current_block_number &lt; expiration, Error::&lt;T&gt;::Expired);
 			}
@@ -1893,9 +1893,9 @@
 
 			<span class="kw">let </span>price: u128 = sale.price.into();
 
-			<span class="kw">let </span>fragment_data = &lt;Definitions&lt;T&gt;&gt;::get(fragment_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
+			<span class="kw">let </span>fragment_data = &lt;Definitions&lt;T&gt;&gt;::get(definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
 
-			<span class="kw">let </span>vault = <span class="kw-2">&amp;</span><span class="self">Self</span>::get_vault_id(fragment_hash); <span class="comment">// Get the Vault Account ID of `fragment_hash`
+			<span class="kw">let </span>vault = <span class="kw-2">&amp;</span><span class="self">Self</span>::get_vault_id(definition_hash); <span class="comment">// Get the Vault Account ID of `definition_hash`
 
 			</span><span class="kw">let </span>quantity = <span class="kw">match </span>options {
 				FragmentBuyOptions::Quantity(amount) =&gt; u64::from(amount),
@@ -1932,7 +1932,7 @@
 
 			</span><span class="self">Self</span>::mint_fragments(
 				<span class="kw-2">&amp;</span>who,
-				<span class="kw-2">&amp;</span>fragment_hash,
+				<span class="kw-2">&amp;</span>definition_hash,
 				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>sale), <span class="comment">// PublishingData (optional)
 				</span><span class="kw-2">&amp;</span>options,
 				quantity,
@@ -1976,7 +1976,7 @@
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `class` - Fragment Definition ID of the Fragment Instance to give
+		/// * `definition_hash` - Fragment Definition ID of the Fragment Instance to give
 		/// * `edition` - Edition ID of the Fragment Insance to give
 		/// * `copy` - Copy ID of the Fragment instance to give
 		/// * `to` - **Account ID** to give the Fragment instance to
@@ -1993,7 +1993,7 @@
 		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
 		</span><span class="kw">pub fn </span>give(
 			origin: OriginFor&lt;T&gt;,
-			class: Hash128,
+			definition_hash: Hash128,
 			edition: Unit,
 			copy: Unit,
 			to: &lt;T::Lookup <span class="kw">as </span>StaticLookup&gt;::Source,
@@ -2005,7 +2005,7 @@
 			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
 
 			<span class="kw">let </span><span class="kw-2">mut </span>item_data =
-				&lt;Fragments&lt;T&gt;&gt;::get((class, edition, copy)).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
+				&lt;Fragments&lt;T&gt;&gt;::get((definition_hash, edition, copy)).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
 
 			<span class="comment">// no go if will expire this block
 			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(item_expiration) = item_data.expiring_at {
@@ -2017,7 +2017,7 @@
 			}
 
 			<span class="comment">// Only the owner of this fragment can transfer it
-			</span><span class="kw">let </span>ids = &lt;Inventory&lt;T&gt;&gt;::get(who.clone(), class).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
+			</span><span class="kw">let </span>ids = &lt;Inventory&lt;T&gt;&gt;::get(who.clone(), definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(ids.contains(<span class="kw-2">&amp;</span>(Compact(edition), Compact(copy))), Error::&lt;T&gt;::NoPermission);
 
@@ -2060,15 +2060,15 @@
 				</span>item_data.permissions = perms;
 
 				<span class="kw">let </span>copy: u64 =
-					&lt;CopiesCount&lt;T&gt;&gt;::get((class, edition)).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>.into();
+					&lt;CopiesCount&lt;T&gt;&gt;::get((definition_hash, edition)).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>.into();
 
 				<span class="kw">let </span>copy = copy + <span class="number">1</span>;
 
-				&lt;CopiesCount&lt;T&gt;&gt;::insert((class, edition), Compact(copy));
+				&lt;CopiesCount&lt;T&gt;&gt;::insert((definition_hash, edition), Compact(copy));
 
-				&lt;Owners&lt;T&gt;&gt;::append(class, to.clone(), (Compact(edition), Compact(copy)));
+				&lt;Owners&lt;T&gt;&gt;::append(definition_hash, to.clone(), (Compact(edition), Compact(copy)));
 
-				&lt;Inventory&lt;T&gt;&gt;::append(to.clone(), class, (Compact(edition), Compact(copy)));
+				&lt;Inventory&lt;T&gt;&gt;::append(to.clone(), definition_hash, (Compact(edition), Compact(copy)));
 
 				<span class="comment">// handle expiration
 				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(expiring_at) = item_data.expiring_at {
@@ -2082,28 +2082,28 @@
 					} <span class="kw">else </span>{
 						expiring_at
 					};
-					&lt;Expirations&lt;T&gt;&gt;::append(expiration, (class, Compact(edition), Compact(copy)));
+					&lt;Expirations&lt;T&gt;&gt;::append(expiration, (definition_hash, Compact(edition), Compact(copy)));
 				} <span class="kw">else if let </span><span class="prelude-val">Some</span>(expiration) = expiration {
 					item_data.expiring_at = <span class="prelude-val">Some</span>(expiration);
-					&lt;Expirations&lt;T&gt;&gt;::append(expiration, (class, Compact(edition), Compact(copy)));
+					&lt;Expirations&lt;T&gt;&gt;::append(expiration, (definition_hash, Compact(edition), Compact(copy)));
 				}
 
-				&lt;Fragments&lt;T&gt;&gt;::insert((class, edition, copy), item_data);
+				&lt;Fragments&lt;T&gt;&gt;::insert((definition_hash, edition, copy), item_data);
 
 				<span class="self">Self</span>::deposit_event(Event::InventoryAdded {
 					account_id: to,
-					fragment_hash: class,
+					definition_hash: definition_hash,
 					fragment_id: (edition, copy),
 				});
 			} <span class="kw">else </span>{
 				<span class="comment">// we will remove from this account to give to new account
-				</span>&lt;Owners&lt;T&gt;&gt;::mutate(class, who.clone(), |ids| {
+				</span>&lt;Owners&lt;T&gt;&gt;::mutate(definition_hash, who.clone(), |ids| {
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(ids) = ids {
 						ids.retain(|cid| <span class="kw-2">*</span>cid != (Compact(edition), Compact(copy)))
 					}
 				});
 
-				&lt;Inventory&lt;T&gt;&gt;::mutate(who.clone(), class, |ids| {
+				&lt;Inventory&lt;T&gt;&gt;::mutate(who.clone(), definition_hash, |ids| {
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(ids) = ids {
 						ids.retain(|cid| <span class="kw-2">*</span>cid != (Compact(edition), Compact(copy)))
 					}
@@ -2111,22 +2111,22 @@
 
 				<span class="self">Self</span>::deposit_event(Event::InventoryRemoved {
 					account_id: who.clone(),
-					fragment_hash: class,
+					definition_hash: definition_hash,
 					fragment_id: (edition, copy),
 				});
 
-				&lt;Owners&lt;T&gt;&gt;::append(class, to.clone(), (Compact(edition), Compact(copy)));
+				&lt;Owners&lt;T&gt;&gt;::append(definition_hash, to.clone(), (Compact(edition), Compact(copy)));
 
-				&lt;Inventory&lt;T&gt;&gt;::append(to.clone(), class, (Compact(edition), Compact(copy)));
+				&lt;Inventory&lt;T&gt;&gt;::append(to.clone(), definition_hash, (Compact(edition), Compact(copy)));
 
 				<span class="self">Self</span>::deposit_event(Event::InventoryAdded {
 					account_id: to,
-					fragment_hash: class,
+					definition_hash: definition_hash,
 					fragment_id: (edition, copy),
 				});
 
 				<span class="comment">// finally fix permissions that might have changed
-				</span>&lt;Fragments&lt;T&gt;&gt;::mutate((class, edition, copy), |item_data| {
+				</span>&lt;Fragments&lt;T&gt;&gt;::mutate((definition_hash, edition, copy), |item_data| {
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(item_data) = item_data {
 						item_data.permissions = perms;
 					}
@@ -2142,26 +2142,26 @@
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `class` - **Fragment Definition 	ID** of the **Fragment Instance**
+		/// * `definition_hash` - **Fragment Definition 	ID** of the **Fragment Instance**
 		/// * `edition` - **Edition ID** of the **Fragment Instance**
 		/// * `copy` - **Copy ID** of the **Fragment Instance**
 		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
 		</span><span class="kw">pub fn </span>create_account(
 			origin: OriginFor&lt;T&gt;,
-			class: Hash128,
+			definition_hash: Hash128,
 			edition: Unit,
 			copy: Unit,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="comment">// Only the owner of this fragment can transfer it
-			</span><span class="kw">let </span>ids = &lt;Inventory&lt;T&gt;&gt;::get(who.clone(), class).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
+			</span><span class="kw">let </span>ids = &lt;Inventory&lt;T&gt;&gt;::get(who.clone(), definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(ids.contains(<span class="kw-2">&amp;</span>(Compact(edition), Compact(copy))), Error::&lt;T&gt;::NoPermission);
 
 			<span class="comment">// create an account for a specific fragment
 			// we need an existential amount deposit to be able to create the vault account
-			</span><span class="kw">let </span>frag_account = <span class="self">Self</span>::get_fragment_account_id(class, edition, copy);
+			</span><span class="kw">let </span>frag_account = <span class="self">Self</span>::get_fragment_account_id(definition_hash, edition, copy);
 			<span class="kw">let </span>min_balance =
 				&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>Currency&lt;T::AccountId&gt;&gt;::minimum_balance();
 			<span class="kw">let _ </span>= &lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>Currency&lt;T::AccountId&gt;&gt;::deposit_creating(
@@ -2210,7 +2210,7 @@
 							<span class="comment">// trigger an Event
 							</span><span class="self">Self</span>::deposit_event(Event::Expired {
 								account_id: owner,
-								fragment_hash: item.<span class="number">0</span>,
+								definition_hash: item.<span class="number">0</span>,
 								fragment_id: (item.<span class="number">1</span>.into(), item.<span class="number">2</span>.into()),
 							});
 
@@ -2225,31 +2225,31 @@
 }
 
 <span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-	<span class="doccomment">/// **Get** the **Account ID** of the Fragment Definition `class_hash`**
+	<span class="doccomment">/// **Get** the **Account ID** of the Fragment Definition `definition_hash`**
 	///
 	/// This Account ID is determinstically computed using the Fragment Definition `class_hash`
-	</span><span class="kw">pub fn </span>get_vault_id(class_hash: Hash128) -&gt; T::AccountId {
-		<span class="kw">let </span>hash = blake2_256(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragments-vault&quot;</span>[..], <span class="kw-2">&amp;</span>class_hash].concat());
+	</span><span class="kw">pub fn </span>get_vault_id(definition_hash: Hash128) -&gt; T::AccountId {
+		<span class="kw">let </span>hash = blake2_256(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragments-vault&quot;</span>[..], <span class="kw-2">&amp;</span>definition_hash].concat());
 		T::AccountId::decode(<span class="kw-2">&amp;mut &amp;</span>hash[..]).expect(<span class="string">&quot;T::AccountId should decode&quot;</span>)
 	}
 
-	<span class="doccomment">/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `class_hash`,
+	<span class="doccomment">/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `definition_hash`,
 	/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
 	///
 	/// This Account ID is determinstically computed using the Fragment Definition ID `class_hash`, the Edition ID `edition` and the Copy ID `copy`
-	</span><span class="kw">pub fn </span>get_fragment_account_id(class_hash: Hash128, edition: Unit, copy: Unit) -&gt; T::AccountId {
+	</span><span class="kw">pub fn </span>get_fragment_account_id(definition_hash: Hash128, edition: Unit, copy: Unit) -&gt; T::AccountId {
 		<span class="kw">let </span>hash = blake2_256(
-			<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragments-account&quot;</span>[..], <span class="kw-2">&amp;</span>class_hash, <span class="kw-2">&amp;</span>edition.encode(), <span class="kw-2">&amp;</span>copy.encode()].concat(),
+			<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragments-account&quot;</span>[..], <span class="kw-2">&amp;</span>definition_hash, <span class="kw-2">&amp;</span>edition.encode(), <span class="kw-2">&amp;</span>copy.encode()].concat(),
 		);
 		T::AccountId::decode(<span class="kw-2">&amp;mut &amp;</span>hash[..]).expect(<span class="string">&quot;T::AccountId should decode&quot;</span>)
 	}
 
-	<span class="doccomment">/// Create `quantity` number of Fragment Instances from the Fragment Definition `fragment_hash` and assigns their ownership to `to`
+	<span class="doccomment">/// Create `quantity` number of Fragment Instances from the Fragment Definition `definition_hash` and assigns their ownership to `to`
 	///
 	/// # Arguments
 	///
 	/// * `to` - **Account ID** to assign ownernship of the created Fragment instances to
-	/// * `fragment_hash` - ID of the Fragment Definition
+	/// * `definition_hash` - ID of the Fragment Definition
 	/// * `sale` - Struct **representing** a **sale of the Fragment Definition**, if the **Fragment Definition** is **currently on sale**
 	/// * `options` - **Enum** indicating whether to
 	/// **create one Fragment Instance with custom data attached to it** or whether to
@@ -2262,7 +2262,7 @@
 	/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
 	</span><span class="kw">pub fn </span>mint_fragments(
 		to: <span class="kw-2">&amp;</span>T::AccountId,
-		fragment_hash: <span class="kw-2">&amp;</span>Hash128,
+		definition_hash: <span class="kw-2">&amp;</span>Hash128,
 		sale: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>PublishingData&lt;T::BlockNumber&gt;&gt;,
 		options: <span class="kw-2">&amp;</span>FragmentBuyOptions,
 		quantity: u64,
@@ -2276,7 +2276,7 @@
 			<span class="macro">ensure!</span>(expiring_at &gt; current_block_number, Error::&lt;T&gt;::ParamsNotValid); <span class="comment">// Ensure `expiring_at` &gt; `current_block_number`
 		</span>}
 
-		<span class="kw">let </span>fragment_data = &lt;Definitions&lt;T&gt;&gt;::get(fragment_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
+		<span class="kw">let </span>fragment_data = &lt;Definitions&lt;T&gt;&gt;::get(definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
 
 		<span class="comment">// we need this to index transactions
 		</span><span class="kw">let </span>extrinsic_index = &lt;frame_system::Pallet&lt;T&gt;&gt;::extrinsic_index() <span class="comment">// `&lt;frame_system::Pallet&lt;T&gt;&gt;::extrinsic_index()` is defined as: &quot;Gets the index of extrinsic that is currently executing.&quot; (https://paritytech.github.io/substrate/master/frame_system/pallet/struct.Pallet.html#method.extrinsic_index)
@@ -2291,7 +2291,7 @@
 				<span class="kw">let </span>data_hash = blake2_256(<span class="kw-2">&amp;</span>data);
 
 				<span class="macro">ensure!</span>(
-					!&lt;UniqueData2Edition&lt;T&gt;&gt;::contains_key(fragment_hash, data_hash),
+					!&lt;UniqueData2Edition&lt;T&gt;&gt;::contains_key(definition_hash, data_hash),
 					Error::&lt;T&gt;::UniqueDataExists
 				);
 
@@ -2306,7 +2306,7 @@
 			},
 		};
 
-		<span class="kw">let </span>existing: Unit = &lt;EditionsCount&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>fragment_hash).unwrap_or(Compact(<span class="number">0</span>)).into();
+		<span class="kw">let </span>existing: Unit = &lt;EditionsCount&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>definition_hash).unwrap_or(Compact(<span class="number">0</span>)).into();
 
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(sale) = sale {
 			<span class="comment">// if limited amount let&#39;s reduce the amount of units left
@@ -2314,7 +2314,7 @@
 				<span class="kw">if </span>quantity &gt; units_left.into() {
 					<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::PublishedQuantityReached.into());
 				} <span class="kw">else </span>{
-					&lt;Publishing&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;*</span>fragment_hash, |sale| {
+					&lt;Publishing&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;*</span>definition_hash, |sale| {
 						<span class="kw">if let </span><span class="prelude-val">Some</span>(sale) = sale {
 							<span class="kw">let </span>left: Unit = units_left.into();
 							sale.units_left = <span class="prelude-val">Some</span>(Compact(left - quantity));
@@ -2336,15 +2336,15 @@
 
 		<span class="comment">// ! Writing if successful
 
-		</span>&lt;Definitions&lt;T&gt;&gt;::mutate(fragment_hash, |fragment| {
-			<span class="comment">// Get the `FragmentDefinition` struct from `fragment_hash`
+		</span>&lt;Definitions&lt;T&gt;&gt;::mutate(definition_hash, |fragment| {
+			<span class="comment">// Get the `FragmentDefinition` struct from `definition_hash`
 			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(fragment) = fragment {
 				<span class="kw">for </span>id <span class="kw">in </span>existing..(existing + quantity) {
 					<span class="kw">let </span>id = id + <span class="number">1u64</span>;
 					<span class="kw">let </span>cid = Compact(id); <span class="comment">// `cid` stands for &quot;compact id&quot;
 
 					</span>&lt;Fragments&lt;T&gt;&gt;::insert(
-						(fragment_hash, id, <span class="number">1</span>),
+						(definition_hash, id, <span class="number">1</span>),
 						FragmentInstance {
 							permissions: fragment.permissions,
 							created_at: current_block_number,
@@ -2354,30 +2354,30 @@
 						},
 					);
 
-					&lt;CopiesCount&lt;T&gt;&gt;::insert((fragment_hash, id), Compact(<span class="number">1</span>));
+					&lt;CopiesCount&lt;T&gt;&gt;::insert((definition_hash, id), Compact(<span class="number">1</span>));
 
-					&lt;Inventory&lt;T&gt;&gt;::append(to.clone(), fragment_hash, (cid, Compact(<span class="number">1</span>))); <span class="comment">// **Add** the **Fragment Intstance whose Fragment Definition is `fragment_hash`, Edition ID is `cid` and Copy ID is 1**  to the **inventory of `to`**
+					&lt;Inventory&lt;T&gt;&gt;::append(to.clone(), definition_hash, (cid, Compact(<span class="number">1</span>))); <span class="comment">// **Add** the **Fragment Intstance whose Fragment Definition is `definition_hash`, Edition ID is `cid` and Copy ID is 1**  to the **inventory of `to`**
 
-					</span>&lt;Owners&lt;T&gt;&gt;::append(fragment_hash, to.clone(), (cid, Compact(<span class="number">1</span>)));
+					</span>&lt;Owners&lt;T&gt;&gt;::append(definition_hash, to.clone(), (cid, Compact(<span class="number">1</span>)));
 
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(expiring_at) = expiring_at {
-						&lt;Expirations&lt;T&gt;&gt;::append(expiring_at, (<span class="kw-2">*</span>fragment_hash, cid, Compact(<span class="number">1</span>)));
+						&lt;Expirations&lt;T&gt;&gt;::append(expiring_at, (<span class="kw-2">*</span>definition_hash, cid, Compact(<span class="number">1</span>)));
 					}
 					<span class="self">Self</span>::deposit_event(Event::InventoryAdded {
 						account_id: to.clone(),
-						fragment_hash: <span class="kw-2">*</span>fragment_hash,
+						definition_hash: <span class="kw-2">*</span>definition_hash,
 						fragment_id: (id, <span class="number">1</span>),
 					});
 				}
 
 				<span class="kw">if let </span>(<span class="prelude-val">Some</span>(data_hash), <span class="prelude-val">Some</span>(data_len)) = (data_hash, data_len) {
-					&lt;UniqueData2Edition&lt;T&gt;&gt;::insert(fragment_hash, data_hash, existing); <span class="comment">// if `data` exists, `quantity` is ensured to be 1
+					&lt;UniqueData2Edition&lt;T&gt;&gt;::insert(definition_hash, data_hash, existing); <span class="comment">// if `data` exists, `quantity` is ensured to be 1
 
 					// index immutable data for IPFS discovery
 					</span>transaction_index::index(extrinsic_index, data_len <span class="kw">as </span>u32, data_hash);
 				}
 
-				&lt;EditionsCount&lt;T&gt;&gt;::insert(fragment_hash, Compact(existing + quantity));
+				&lt;EditionsCount&lt;T&gt;&gt;::insert(definition_hash, Compact(existing + quantity));
 			}
 		});
 
