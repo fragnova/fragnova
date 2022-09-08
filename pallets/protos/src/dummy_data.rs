@@ -15,7 +15,7 @@ use sp_clamor::{Hash256, CID_PREFIX};
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
-use protos::traits::{RecordInfo, Trait, VariableType};
+use protos::traits::{RecordInfo, Trait, VariableType, VariableTypeInfo};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
@@ -126,7 +126,7 @@ impl DummyData {
 			data: "0x222".as_bytes().to_vec(),
 		};
 
-		let records1 = vec![("int1".to_string(), RecordInfo::SingleType(VariableType::Int))];
+		let records1 = vec![("int1".to_string(), RecordInfo::SingleType(VariableTypeInfo { type_: VariableType::Int, default: Some(Vec::new()) }))];
 		let trait1 = Trait { name: "Trait1".to_string(), records: records1 };
 
 		let data_trait = twox_64(&trait1.encode());
@@ -140,7 +140,7 @@ impl DummyData {
 			data: trait1.encode(),
 		};
 
-		let records2 = vec![("int2".to_string(), RecordInfo::SingleType(VariableType::Int))];
+		let records2 = vec![("int2".to_string(), RecordInfo::SingleType(VariableTypeInfo { type_: VariableType::Int, default: Some(Vec::new()) }))];
 
 		let trait2 = Trait { name: "Trait2".to_string(), records: records2 };
 
@@ -155,7 +155,7 @@ impl DummyData {
 			data: trait2.encode(),
 		};
 
-		let records3 = vec![("int3".to_string(), RecordInfo::SingleType(VariableType::Int))];
+		let records3 = vec![("int3".to_string(), RecordInfo::SingleType(VariableTypeInfo { type_: VariableType::Int, default: Some(Vec::new()) }))];
 
 		let trait3 = Trait { name: "Trait3".to_string(), records: records3 };
 		let data_trait_3 = twox_64(&trait3.encode());
