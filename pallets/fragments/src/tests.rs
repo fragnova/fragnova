@@ -114,7 +114,7 @@ mod create_tests {
 			assert_eq!(
 				System::events()[System::events().len() - 1].event,
 				mock::Event::from(pallet_fragments::Event::DefinitionCreated {
-					fragment_hash: definition.get_definition_id()
+					definition_hash: definition.get_definition_id()
 				})
 			);
 		});
@@ -253,7 +253,7 @@ mod publish_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_fragments::Event::Publishing {
-					fragment_hash: publish.definition.get_definition_id()
+					definition_hash: publish.definition.get_definition_id()
 				})
 			);
 		});
@@ -408,7 +408,7 @@ mod unpublish_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_fragments::Event::Unpublishing {
-					fragment_hash: publish.definition.get_definition_id()
+					definition_hash: publish.definition.get_definition_id()
 				})
 			);
 		});
@@ -547,7 +547,7 @@ mod mint_tests {
 					event,
 					mock::Event::from(pallet_fragments::Event::InventoryAdded {
 						account_id: dd.account_id,
-						fragment_hash: mint_non_unique.definition.get_definition_id(),
+						definition_hash: mint_non_unique.definition.get_definition_id(),
 						fragment_id: (edition_id, 1)
 					})
 				);
@@ -612,7 +612,7 @@ mod mint_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: dd.account_id,
-					fragment_hash: mint_unique.definition.get_definition_id(),
+					definition_hash: mint_unique.definition.get_definition_id(),
 					fragment_id: (1, 1)
 				})
 			);
@@ -867,7 +867,7 @@ mod buy_tests {
 					System::events()[9 + (edition_id - 1) as usize].event.clone(), // we do `9 +` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
 					mock::Event::from(pallet_fragments::Event::InventoryAdded {
 						account_id: dd.account_id_second,
-						fragment_hash: buy_non_unique.publish.definition.get_definition_id(),
+						definition_hash: buy_non_unique.publish.definition.get_definition_id(),
 						fragment_id: (edition_id, 1)
 					})
 				);
@@ -978,7 +978,7 @@ mod buy_tests {
 				System::events()[9 as usize].event.clone(), // we write `9` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: dd.account_id_second,
-					fragment_hash: buy_unique.publish.definition.get_definition_id(),
+					definition_hash: buy_unique.publish.definition.get_definition_id(),
 					fragment_id: (1, 1)
 				})
 			);
@@ -1495,7 +1495,7 @@ mod give_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryRemoved {
 					account_id: dd.account_id,
-					fragment_hash: give.mint.definition.get_definition_id(),
+					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id)
 				})
 			);
@@ -1508,7 +1508,7 @@ mod give_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: give.to,
-					fragment_hash: give.mint.definition.get_definition_id(),
+					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id)
 				})
 			);
@@ -1588,7 +1588,7 @@ mod give_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: give.to,
-					fragment_hash: give.mint.definition.get_definition_id(),
+					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id + 1)
 				})
 			);
