@@ -936,13 +936,23 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-							if !implementing_diffs.is_empty()
-								|| !requiring_diffs.is_empty() || (param_script_info.format
-								== stored_script_info.format) || (param_script_info
-								== stored_script_info)
-							{
-								return Self::filter_tags(tags, struct_proto);
-							} else {
+							let zero_vec = [0u8; 8];
+
+							// Specific query:
+							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
+							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
+								if param_script_info.format == stored_script_info.format {
+									return Self::filter_tags(tags, struct_proto);
+								} else { return false; }
+							}
+							// Generic query:
+							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
+							else if param_script_info.implementing.contains(&zero_vec) && 
+									param_script_info.requiring.contains(&zero_vec) && 
+									param_script_info.format == stored_script_info.format {
+									return Self::filter_tags(tags, struct_proto);
+							}
+							else {
 								return false;
 							}
 						} else {
@@ -1008,16 +1018,25 @@ pub mod pallet {
 								.into_iter()
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
+							
+								let zero_vec = [0u8; 8];
 
-							if !implementing_diffs.is_empty()
-								|| !requiring_diffs.is_empty() || (param_script_info.format
-								== stored_script_info.format) || (param_script_info
-								== stored_script_info)
-							{
-								// OK. Found the category matching a shard script info.
-								return true;
-							} else if !(&cat == &category) {
-								return false;
+								// Specific query:
+								// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
+								if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
+									if param_script_info.format == stored_script_info.format {
+										return true;
+									} else { return false; }
+								}
+								// Generic query:
+								// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
+								else if param_script_info.implementing.contains(&zero_vec) && 
+										param_script_info.requiring.contains(&zero_vec) && 
+										param_script_info.format == stored_script_info.format {
+										return true;
+								}
+								else if !(&cat == &category) {
+									return false;
 							} else {
 								return false;
 							}
