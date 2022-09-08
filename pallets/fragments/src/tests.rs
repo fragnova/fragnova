@@ -12,6 +12,8 @@ use protos::permissions::FragmentPerms;
 
 use copied_from_pallet_protos::upload;
 mod copied_from_pallet_protos {
+	use pallet_protos::UsageLicense;
+
 	use super::*;
 
 	pub fn upload(
@@ -24,7 +26,10 @@ mod copied_from_pallet_protos {
 			proto.category.clone(),
 			proto.tags.clone(),
 			proto.linked_asset.clone(),
-			proto.include_cost.map(|cost| Compact::from(cost)),
+			proto
+				.include_cost
+				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
+				.unwrap_or(UsageLicense::Closed),
 			proto.data.clone(),
 		)
 	}
@@ -164,10 +169,7 @@ mod create_tests {
 			definition.metadata.currency = Some(0);
 
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
-			assert_noop!(
-				create(dd.account_id, &definition),
-				Error::<Test>::CurrencyNotFound
-			);
+			assert_noop!(create(dd.account_id, &definition), Error::<Test>::CurrencyNotFound);
 		});
 	}
 
@@ -182,13 +184,14 @@ mod create_tests {
 
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 
-			Assets::force_create(
+			assert_ok!(Assets::force_create(
 				Origin::root(),
 				definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
-				true, // Whether this asset needs users to have an existential deposit to hold this asset
-				69, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
-			);
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
+				69, 
+				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+			));
 
 			assert_ok!(create(dd.account_id, &definition));
 		});
@@ -1096,13 +1099,14 @@ mod buy_tests {
 			buy.publish.definition.metadata.currency = Some(0);
 
 			let minimum_balance = 69;
-			Assets::force_create(
+			assert_ok!(Assets::force_create(
 				Origin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
-				true, // Whether this asset needs users to have an existential deposit to hold this asset
-				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
-			);
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
+				minimum_balance, 
+				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+			));
 
 			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &buy.publish.definition));
@@ -1113,12 +1117,12 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			Assets::mint(
+			assert_ok!(Assets::mint(
 				Origin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
-				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
-			);
+				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
+			));
 
 			assert_ok!(buy_(dd.account_id_second, &buy));
 		});
@@ -1134,13 +1138,14 @@ mod buy_tests {
 			buy.publish.definition.metadata.currency = Some(0);
 
 			let minimum_balance = 69;
-			Assets::force_create(
+			assert_ok!(Assets::force_create(
 				Origin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
-				true, // Whether this asset needs users to have an existential deposit to hold this asset
-				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
-			);
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
+				minimum_balance, 
+				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+			));
 
 			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &buy.publish.definition));
@@ -1151,12 +1156,12 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			Assets::mint(
+			assert_ok!(Assets::mint(
 				Origin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
-				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1
-			);
+				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1,
+			));
 
 			assert_noop!(buy_(dd.account_id_second, &buy), Error::<Test>::InsufficientBalance);
 		});
@@ -1956,7 +1961,6 @@ mod create_account_tests {
 			assert_ok!(mint_(dd.account_id, &create_account.mint));
 
 			assert_ok!(create_account_(dd.account_id, &create_account));
-
 		});
 	}
 

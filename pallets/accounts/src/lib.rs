@@ -84,9 +84,11 @@ pub mod crypto {
 use codec::{Decode, Encode};
 pub use pallet::*;
 
-use sp_io::{crypto as Crypto, hashing::blake2_256, hashing::keccak_256};
-use sp_runtime::offchain::storage::StorageValueRef;
-use sp_runtime::MultiSigner;
+use sp_io::{
+	crypto as Crypto,
+	hashing::{blake2_256, keccak_256},
+};
+use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use frame_system::offchain::{
@@ -414,8 +416,14 @@ pub mod pallet {
 
 			log::debug!("Lock update: {:?}", data);
 
-			let data_tuple =
-				(data.amount, data.locktime, data.sender, data.signature.clone(), data.lock, data.block_number);
+			let data_tuple = (
+				data.amount,
+				data.locktime,
+				data.sender,
+				data.signature.clone(),
+				data.lock,
+				data.block_number,
+			);
 			let data_hash: H256 = data_tuple.using_encoded(blake2_256).into();
 
 			ensure!(
@@ -433,7 +441,7 @@ pub mod pallet {
 				let locktime: [u8; 32] = data.locktime.into();
 				message.extend_from_slice(&locktime[..]); // Add amount to message
 			}
-			
+
 			let message_hash = keccak_256(&message); // This should be
 
 			let message = [b"\x19Ethereum Signed Message:\n32", &message_hash[..]].concat();
@@ -490,7 +498,8 @@ pub mod pallet {
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
 				// ! TODO TEST
-				let locktime: u128 = data.locktime.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+				let locktime: u128 =
+					data.locktime.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 				let locktime: T::Moment = locktime.saturated_into();
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
@@ -509,7 +518,8 @@ pub mod pallet {
 				}
 
 				// also emit event
-				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount, locktime: locktime }); // 问Gio for clarification
+				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount, locktime });
+			// 问Gio for clarification
 			} else {
 				// If we want to unlock all the FRAG tokens that were
 				// ! TODO TEST
@@ -828,8 +838,11 @@ pub mod pallet {
 				let data = log["data"].as_str().ok_or_else(|| "Invalid response - no data")?;
 				let data =
 					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?; // Convert the hexadecimal `data` from hexadecimal to binary (i.e raw bits)
-				let data = ethabi::decode(&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(256)], &data) // First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
-					.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
+				let data = ethabi::decode(
+					&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(256)],
+					&data,
+				) // First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+				.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
 				let locked = match topic {
 					// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
 					LOCK_EVENT => true,
@@ -848,8 +861,8 @@ pub mod pallet {
 					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
 
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
-				
-				// Lock period (`data[2]`). In case of Unlock event, it is zero. 
+
+				// Lock period (`data[2]`). In case of Unlock event, it is zero.
 				let locktime = data[2].clone().into_uint().unwrap_or(U256::from(0));
 
 				if locked {
@@ -873,7 +886,6 @@ pub mod pallet {
 						eth_signature.clone(),
 					);
 				}
-				
 
 				// `send_unsigned_transaction` is returning a type of `Option<(Account<T>, Result<(), ()>)>`.
 				//   The returned result means:
