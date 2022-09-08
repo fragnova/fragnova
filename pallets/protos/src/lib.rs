@@ -861,6 +861,7 @@ pub mod pallet {
 			}
 		}
 
+		/// Whether `struct_proto` has all the tags `tags` and categories `categories`
 		fn filter_category(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
@@ -915,6 +916,7 @@ pub mod pallet {
 			}
 		}
 
+		/// Whether `struct_proto` has all the tags `tags`
 		fn filter_tags(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
@@ -988,7 +990,7 @@ pub mod pallet {
 			return found;
 		}
 
-		pub fn get_json_owner(owner: ProtoOwner<T::AccountId>) -> Value {
+		pub fn get_owner_in_json_format(owner: ProtoOwner<T::AccountId>) -> Value {
 
 			let json_owner = match owner {
 				ProtoOwner::User(account_id) => json!({
@@ -1194,7 +1196,7 @@ pub mod pallet {
 
 					if params.return_owners {
 						let owner = proto_struct.owner;
-						let json_owner = Self::get_json_owner(owner);
+						let json_owner = Self::get_owner_in_json_format(owner);
 						(*map_proto).insert("owner".into(), json_owner);
 					}
 

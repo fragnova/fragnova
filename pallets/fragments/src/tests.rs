@@ -58,7 +58,6 @@ mod create_tests {
 			let definition = dd.definition;
 
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
-
 			assert_ok!(create(dd.account_id, &definition));
 
 			// TODO - what does `T::Currency::reserve()` do in the `create` extrinsic
@@ -71,6 +70,7 @@ mod create_tests {
 				max_supply: definition.max_supply.map(|max_supply| Compact::from(max_supply)),
 				creator: dd.account_id,
 				created_at: current_block_number,
+				custom_metadata: BTreeMap::new(),
 			};
 
 			assert_eq!(
@@ -183,7 +183,7 @@ mod create_tests {
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 
 			Assets::force_create(
-				Origin::root(), 
+				Origin::root(),
 				definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true, // Whether this asset needs users to have an existential deposit to hold this asset
@@ -498,6 +498,7 @@ mod mint_tests {
 				custom_data: None,
 				expiring_at: None,
 				amount: mint_non_unique.amount.map(|amount| Compact::from(amount)),
+				metadata: BTreeMap::new(),
 			};
 
 			let quantity = match mint_non_unique.buy_options {
@@ -581,6 +582,7 @@ mod mint_tests {
 				},
 				expiring_at: None,
 				amount: mint_unique.amount.map(|amount| Compact::from(amount)),
+				metadata: BTreeMap::new(),
 			};
 
 			assert_eq!(
@@ -824,6 +826,7 @@ mod buy_tests {
 				custom_data: None,
 				expiring_at: None, // newly created Fragment Instance doesn't have an expiration date - confirm with @sinkingsugar
 				amount: buy_non_unique.publish.amount.map(|amount| Compact::from(amount)),
+				metadata: BTreeMap::new(),
 			};
 
 			for edition_id in 1..=quantity {
@@ -943,6 +946,7 @@ mod buy_tests {
 				},
 				expiring_at: None,
 				amount: buy_unique.publish.amount.map(|amount| Compact::from(amount)),
+				metadata: BTreeMap::new(),
 			};
 
 			assert_eq!(
@@ -1097,7 +1101,7 @@ mod buy_tests {
 
 			let minimum_balance = 69;
 			Assets::force_create(
-				Origin::root(), 
+				Origin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true, // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1114,9 +1118,9 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			Assets::mint(
-				Origin::signed(dd.account_id), 
+				Origin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
-				dd.account_id_second, 
+				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
 			);
 
@@ -1135,7 +1139,7 @@ mod buy_tests {
 
 			let minimum_balance = 69;
 			Assets::force_create(
-				Origin::root(), 
+				Origin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true, // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1152,9 +1156,9 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			Assets::mint(
-				Origin::signed(dd.account_id), 
+				Origin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
-				dd.account_id_second, 
+				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1
 			);
 
@@ -1412,6 +1416,7 @@ mod buy_tests {
 	}
 }
 
+use give_tests::give_;
 mod give_tests {
 	use super::*;
 
@@ -1973,8 +1978,144 @@ mod create_account_tests {
 
 			assert_noop!(
 				create_account_(dd.account_id_second, &create_account),
-				Error::<Test>::NotFound 
+				Error::<Test>::NotFound
 			);
 		});
 	}
+}
+
+
+mod get_definitions_tests {
+	use super::*;
+
+	#[test]
+	fn get_definitions_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let definition = dd.definition;
+
+			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &definition));
+
+			assert_eq!(
+				String::from_utf8(FragmentsPallet::get_definitions(GetDefinitionsParams {
+					limit: u64::MAX,
+					return_owners: true,
+					..Default::default()
+				}).unwrap()).unwrap(),
+				json!({
+					hex::encode(definition.get_definition_id()): {
+						"num_instances": 0,
+						"owner": {
+							"type": "internal",
+							"value": hex::encode(dd.account_id)
+						}
+					}
+				}).to_string()
+			);
+
+		});
+	}
+
+	#[test]
+	fn get_definitions_should_work_for_particular_owner() {
+
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let definition = dd.definition;
+
+			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &definition));
+
+			let definition_second = dd.definition_second;
+
+			assert_eq!(
+				String::from_utf8(FragmentsPallet::get_definitions(GetDefinitionsParams {
+					limit: u64::MAX,
+					return_owners: true,
+					..Default::default()
+				}).unwrap()).unwrap(),
+				json!({
+					hex::encode(definition.get_definition_id()): {
+						"num_instances": 0,
+						"owner": {
+							"type": "internal",
+							"value": hex::encode(dd.account_id)
+						}
+					}
+				}).to_string()
+			);
+
+		});
+
+	}
+}
+
+mod get_instances_tests {
+	use serde_json::Map;
+	use super::*;
+
+	#[test]
+	fn get_instances_should_work() {
+
+		new_test_ext().execute_with(|| {
+
+			let dd = DummyData::new();
+
+			let mint = dd.mint_non_unique;
+
+			assert_ok!(upload(dd.account_id, &mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &mint.definition));
+			assert_ok!(mint_(dd.account_id, &mint));
+
+			let mut correct_map_instances = Map::new();
+			for edition_id in (1..=mint.get_quantity()) {
+				correct_map_instances.insert(format!("{}.1", edition_id), Map::new().into());
+			}
+
+			assert_eq!(
+				String::from_utf8(FragmentsPallet::get_instances(GetInstancesParams {
+					definition_hash: mint.definition.get_definition_id(),
+					limit: u64::MAX,
+					..Default::default()
+				}).unwrap()).unwrap(),
+				json!(correct_map_instances).to_string()
+			)
+
+		});
+
+	}
+
+	#[test]
+	fn get_instances_should_work_for_particular_owner() {
+		new_test_ext().execute_with(|| {
+
+			let dd = DummyData::new();
+
+			let give = dd.give_no_copy_perms;
+
+			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &give.mint.definition));
+			assert_ok!(mint_(dd.account_id, &give.mint));
+			assert_ok!(give_(dd.account_id, &give));
+
+			let mut correct_map_instances = Map::new();
+			correct_map_instances.insert(format!("{}.{}", give.edition_id, give.copy_id), Map::new().into());
+
+			assert_eq!(
+				String::from_utf8(FragmentsPallet::get_instances(GetInstancesParams {
+					definition_hash: give.mint.definition.get_definition_id(),
+					limit: u64::MAX,
+					owner: Some(give.to),
+					..Default::default()
+				}).unwrap()).unwrap(),
+				json!(correct_map_instances).to_string()
+			)
+
+
+		});
+	}
+
 }

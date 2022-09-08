@@ -51,10 +51,10 @@ use sp_io::{
 use sp_std::{vec::Vec, collections::btree_map::BTreeMap};
 pub use weights::WeightInfo;
 
-// #[cfg(feature = "std")]
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize, Serializer};
 
-use protos::{permissions::FragmentPerms, categories::Categories};
+use protos::{permissions::FragmentPerms};
 
 use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::StaticLookup;
@@ -64,7 +64,6 @@ use frame_support::traits::{
 };
 use sp_runtime::SaturatedConversion;
 
-use pallet_protos::GetProtosParams;
 use scale_info::prelude::{
 	format,
 	string::{String, ToString},
@@ -86,6 +85,19 @@ pub struct GetDefinitionsParams<TAccountId, TString> {
 	// pub categories: Vec<Categories>,
 	// pub tags: Vec<TString>,
 }
+#[cfg(test)]
+impl<TAccountId, TString> Default for GetDefinitionsParams<TAccountId, TString> {
+	fn default() -> Self {
+		Self {
+			desc: Default::default(),
+			from: Default::default(),
+			limit: Default::default(),
+			metadata_keys: Default::default(),
+			owner: None,
+			return_owners: false
+		}
+	}
+}
 
 /// **Data Type** used to **Query and Filter for Fragment Instances**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
@@ -97,8 +109,37 @@ pub struct GetInstancesParams<TAccountId, TString> {
 	pub definition_hash: Hash128,
 	pub metadata_keys: Vec<TString>,
 	pub owner: Option<TAccountId>,
+	pub only_return_first_copies: bool
+}
+#[cfg(test)]
+impl<TAccountId, TString> Default for GetInstancesParams<TAccountId, TString> {
+	fn default() -> Self {
+		Self {
+			desc: Default::default(),
+			from: Default::default(),
+			limit: Default::default(),
+			definition_hash: Default::default(),
+			metadata_keys: Default::default(),
+			owner: None,
+			only_return_first_copies: Default::default(),
+		}
+	}
+}
+
+/// **Data Type** used to **Query and Filter for Fragment Instances**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GetCopiesParams<TAccountId, TString> {
+	pub desc: bool,
+	pub from: u64,
+	pub limit: u64,
+	pub definition_hash: Hash128,
+	pub edition_id: Unit,
+	pub metadata_keys: Vec<TString>,
+	pub owner: Option<TAccountId>,
 	pub return_owners: bool,
 }
+
 
 /// **Struct** of a **Fragment Definition's Metadata**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -143,18 +184,6 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 	pub custom_metadata: BTreeMap<Compact<u64>, Hash256>,
 }
 
-
-fn option_compact_u64_serialize<S>(x: &Option<Compact<u64>>, s: S) -> Result<S::Ok, S::Error>
-	where
-		S: Serializer,
-{
-	if let Some(x) = x {
-		s.serialize_u64(x.0)
-	} else {
-		s.serialize_none()
-	}
-}
-
 /// **Struct** of a **Fragment Instance**
 ///
 /// Footnotes:
@@ -164,7 +193,7 @@ fn option_compact_u64_serialize<S>(x: &Option<Compact<u64>>, s: S) -> Result<S::
 /// * On purpose not storing owner because:
 ///   * Big, 32 bytes
 ///   * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Serialize)]
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct FragmentInstance<TBlockNum> {
 	// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
 	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) **allowed to be done**
@@ -172,7 +201,6 @@ pub struct FragmentInstance<TBlockNum> {
 	///
 	/// These **allowed set of actions of the Fragment Instance** ***may change***
 	/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
-	#[serde(skip_serializing)]
 	pub permissions: FragmentPerms,
 	/// Block number in which the Fragment Instance was created
 	pub created_at: TBlockNum,
@@ -182,11 +210,9 @@ pub struct FragmentInstance<TBlockNum> {
 	pub expiring_at: Option<TBlockNum>,
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** that are **left** in the **stack of stackable items**
-	#[serde(serialize_with = "option_compact_u64_serialize")]
 	pub amount: Option<Compact<Unit>>,
 	/// TODO: Documentation
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to an **Index of the Hash of the aforementioned Metadata Object**
-	#[serde(skip_serializing)]
 	pub metadata: BTreeMap<Compact<u64>, Compact<u64>>,
 }
 
@@ -232,7 +258,7 @@ pub mod pallet {
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::DetachedHashes;
-	use pallet_protos::{LinkSource, LinkedAsset, Proto, ProtoOwner, Protos, ProtosByOwner, MetaKeys, MetaKeysIndex};
+	use pallet_protos::{Proto, ProtoOwner, Protos, ProtosByOwner, MetaKeys, MetaKeysIndex};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -265,7 +291,7 @@ pub mod pallet {
 		FragmentDefinition<T::AssetId, T::AccountId, T::BlockNumber>,
 	>;
 
-	/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `FragmentMetadata`)**
+	/// **StorageMap** that maps a **Fragment Definition ID**
 	/// to a
 	/// ***PublishingData* struct (of the aforementioned Fragment Definition)**
 	#[pallet::storage]
@@ -321,10 +347,9 @@ pub mod pallet {
 		Unit,    // Edition ID
 	>;
 
-	/// StorageDoubleMap that maps a **Fragment Definition and the
-	/// Owner of a Fragment Instance that was created from the aforementioned Fragment Definition**
+	/// StorageDoubleMap that maps a **Fragment Definition and a Clamor Account ID**
 	/// to a
-	/// **tuple that contains the Fragment Instance's Edition ID and the Fragment Instance's Copy ID**
+	/// **list of Fragment Instances of the Fragment Definition that is owned by the Clamor Account ID**
 	///
 	/// This storage item stores the exact same thing as `Inventory`, except that the primary key and the secondary key are swapped
 	///
@@ -341,9 +366,9 @@ pub mod pallet {
 		Vec<(Compact<Unit>, Compact<Unit>)>,
 	>;
 
-	/// StorageDoubleMap that maps the **Owner of a Fragment Instance and the Fragment Instance's Fragment Definition**
+	/// StorageDoubleMap that maps a **Clamor Account ID and a Fragment Definition**
 	/// to a
-	/// **tuple that contains the Fragment Instance's Edition ID and the Fragment Instance's Copy ID**
+	/// **list of Fragment Instances of the Fragment Definition that is owned by the Clamor Account ID**
 	///
 	/// This storage item stores the exact same thing as `Owners`, except that the primary key and the secondary key are swapped
 	///
@@ -360,10 +385,11 @@ pub mod pallet {
 		Vec<(Compact<Unit>, Compact<Unit>)>,
 	>;
 
-	/// StorageMap that maps the **Block Number that a Fragment Instance expires at**
+	/// StorageMap that maps the **Block Number**
 	/// to a
-	/// **tuple that contains the Fragment Instance's Fragment Definition ID, the Fragment Instance's Edition ID and
-	/// the Fragment Instance's Copy ID**
+	/// **list of Fragment Instances that expire on that Block
+	/// (note: each FI in the list is represented as a tuple that contains the Fragment Instance's Fragment Definition ID, the Fragment Instance's Edition ID and
+	/// the Fragment Instance's Copy ID)**
 	///
 	/// Footnotes:
 	///
@@ -1422,7 +1448,6 @@ pub mod pallet {
 	impl<T : Config> Pallet<T>
 		where
 			T::AccountId: AsRef<[u8]>,
-			T::BlockNumber: Serialize
 	{
 
 
@@ -1557,21 +1582,34 @@ pub mod pallet {
 			}
 
 
-			if params.return_owners || !params.metadata_keys.is_empty() {
-				for (definition_id, map_definition) in map.iter_mut() {
+			for (definition_id, map_definition) in map.iter_mut() {
 
-					let map_definition = match map_definition {
-						Value::Object(map_definition) => map_definition,
-						_ => return Err("Failed to get map_definition".into()),
-					};
+				let map_definition = match map_definition {
+					Value::Object(map_definition) => map_definition,
+					_ => return Err("Failed to get map_definition".into()),
+				};
 
-					let array_definition_id: Hash128 = hex::decode(definition_id).or(Err("`Failed to decode `definition_id``"))?.try_into().or(Err("Failed to convert `definition_id` to Hash128"))?;
+				let array_definition_id: Hash128 = hex::decode(definition_id).or(Err("`Failed to decode `definition_id``"))?.try_into().or(Err("Failed to convert `definition_id` to Hash128"))?;
 
+				let num_instances: Unit = if let Some(editions) = <EditionsCount<T>>::get(array_definition_id) {
+					let editions: Unit = editions.into();
+					(1..editions)
+						.map(|edition_id| -> Result<Unit, _> {
+							<CopiesCount<T>>::get((array_definition_id, edition_id)).map(Into::<Unit>::into).ok_or("No. of Copies not found for an Existing Edition!")
+						})
+						.sum::<Result<Unit, _>>()?
+				} else {
+					0
+				};
+
+				(*map_definition).insert("num_instances".into(), num_instances.into());
+
+				if params.return_owners || !params.metadata_keys.is_empty() {
 					let definition_struct = <Definitions<T>>::get(array_definition_id).ok_or("Failed to get definition struct")?;
 
 					if params.return_owners {
 						let owner = <Protos<T>>::get(definition_struct.proto_hash).ok_or("Failed to get proto struct")?.owner;
-						let json_owner = pallet_protos::Pallet::<T>::get_json_owner(owner);
+						let json_owner = pallet_protos::Pallet::<T>::get_owner_in_json_format(owner);
 						(*map_definition).insert(String::from("owner"), json_owner);
 					}
 
@@ -1580,9 +1618,10 @@ pub mod pallet {
 						let mut map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &definition_metadata);
 						(*map_definition).append(&mut map_of_matching_metadata_keys);
 					}
-
 				}
+
 			}
+
 
 
 			let result = json!(map).to_string();
@@ -1600,39 +1639,56 @@ pub mod pallet {
 			let definition_hash = params.definition_hash;
 			let editions: u64 = <EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 
-			(0..editions)
-				.map(|edition_id| {
-					let copies = <CopiesCount<T>>::get((definition_hash, edition_id)).ok_or("No Copies Found!")?.into();
-					Ok((edition_id, copies))
-				})
-				.collect::<Result<Vec<(u64, u64)>, Vec<u8>>>()?
+			let list_tuple_edition_id_copy_id = if let Some(owner) = params.owner {
+				<Inventory<T>>::get(owner, definition_hash).unwrap_or_default()
+					.into_iter()
+					.map(|(c1, c2)| (c1.into(), c2.into()))
+					.collect::<Vec<(Unit, Unit)>>()
+			} else {
+				(1..=editions)
+					.map(|edition_id| -> Result<_, _> {
+						let copies = if params.only_return_first_copies {
+							1
+						} else {
+							<CopiesCount<T>>::get((definition_hash, edition_id)).ok_or("No Copies Found!")?.into()
+						};
+						Ok((edition_id, copies))
+					})
+					.collect::<Result<Vec<(u64, u64)>, Vec<u8>>>()?
+					.into_iter()
+					.flat_map(|(edition_id, copies)| {
+						(1..=copies).map(|copy_id| (edition_id, copy_id)).collect::<Vec<(u64, u64)>>()
+					})
+					.collect::<Vec<(Unit, Unit)>>()
+			};
+
+			list_tuple_edition_id_copy_id
 				.into_iter()
-				.flat_map(|(edition_id, copies)| {
-					(0..copies).map(|copy_id| (edition_id, copy_id)).collect::<Vec<(u64, u64)>>()
-				})
 				.skip(params.from as usize)
 				.take(params.limit as usize)
 				.try_for_each(|(edition_id, copy_id)| -> Result<(), Vec<u8>> {
+
+					let mut map_instance = Map::new();
+
 					let instance_struct = <Fragments<T>>::get((definition_hash, edition_id, copy_id)).ok_or("Instance Not Found!")?;
-					let value_map_instance = serde_json::to_value(&instance_struct).map_err(|_|"Unable to serialize instance_struct")?;
-					let mut map_instance = match value_map_instance {
-						Value::Object(map_instance) => map_instance,
-						_ => return Err("Failed to get map_instance".into()),
-					};
+
 					if !params.metadata_keys.is_empty() {
 						let metadata = instance_struct.metadata
 							.iter()
-							.map(|(k, v)| {
-								let data_hash = <DataHashMap<T>>::get(definition_hash, v).ok_or::<Vec<u8>>("Data Hash Not Found!".into())?;
-								Ok((k.clone(), data_hash))
+							.map(|(metadata_key_index, data_hash_index)| {
+								let data_hash = <DataHashMap<T>>::get(definition_hash, data_hash_index).ok_or::<Vec<u8>>("Data Hash Not Found!".into())?;
+								Ok((metadata_key_index.clone(), data_hash))
 							})
 							.collect::<Result<BTreeMap<Compact<u64>, Hash256>, Vec<u8>>>()?;
 						let map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &metadata);
 						map_instance.insert("metadata".into(), map_of_matching_metadata_keys.into());
-					} 
-					map.insert(format!("#{}.{}", edition_id, copy_id), map_instance.into());
+					}
+
+					map.insert(format!("{}.{}", edition_id, copy_id), map_instance.into());
+
 					Ok(())
 				})?;
+
 
 			let result = json!(map).to_string();
 
