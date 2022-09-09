@@ -73,3 +73,9 @@ jobs:
       - name: Check if Rustdocs Builds
         run: |
           cargo doc
+          
+      - name: Push to codecov.io
+        run: |
+          cargo install cargo-tarpaulin
+          cargo tarpaulin --out Xml
+          bash <(curl -s https://codecov.io/bash) -X gcov -t $CODECOV_TOKEN
