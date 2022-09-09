@@ -205,7 +205,7 @@ mod upload_tests {
 
 			let proto_with_refs = ProtoFragment {
 				references: vec![stake.proto_fragment.get_proto_hash()],
-				..dd.proto_fragment
+				..dd.proto_fragment_second
 			};
 
 			assert_noop!(
@@ -509,8 +509,8 @@ mod get_protos_tests {
 			let dd = DummyData::new();
 			// Two protos with different trait names
 			let proto_shard_script = dd.proto_shard_script;
-			let proto_shard_script_3 = dd.proto_shard_script_3;			
-			let proto_shard_script_binary = dd.proto_shard_script_4;			
+			let proto_shard_script_3 = dd.proto_shard_script_3;
+			let proto_shard_script_binary = dd.proto_shard_script_4;
 
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 			assert_ok!(upload(dd.account_id, &proto_shard_script_3));
@@ -1040,10 +1040,10 @@ mod patch_tests {
 			assert_ok!(lock_(&stake.lock));
 			assert_ok!(link_(&stake.lock.link));
 
-			assert_ok!(upload(stake.lock.link.clamor_account_id, &dd.proto_fragment));
+			assert_ok!(upload(stake.lock.link.clamor_account_id, &dd.proto_fragment_second));
 
 			let patch_with_refs = Patch {
-				proto_fragment: dd.proto_fragment,
+				proto_fragment: dd.proto_fragment_second,
 				include_cost: None,
 				new_references: vec![stake.proto_fragment.get_proto_hash()],
 				new_data: b"<insert anything here>".to_vec(),
