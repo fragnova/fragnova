@@ -212,6 +212,7 @@ impl pallet_accounts::Config for Test {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_proxy::Config for Test {

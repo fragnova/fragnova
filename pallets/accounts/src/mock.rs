@@ -146,6 +146,10 @@ impl pallet_accounts::EthFragContract for Test {
 	}
 }
 
+parameter_types! {
+	pub const TicketsAssetId: u32 = 1337;
+}
+
 impl pallet_accounts::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -154,6 +158,7 @@ impl pallet_accounts::Config for Test {
 	type EthFragContract = Test;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_proxy::Config for Test {

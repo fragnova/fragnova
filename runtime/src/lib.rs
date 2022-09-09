@@ -369,6 +369,10 @@ impl pallet_accounts::EthFragContract for Runtime {
 	}
 }
 
+parameter_types! {
+	pub const TicketsAssetId: u64 = 1337;
+}
+
 impl pallet_accounts::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
@@ -377,10 +381,7 @@ impl pallet_accounts::Config for Runtime {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-}
-
-parameter_types! {
-	pub const TicketsAssetId: u64 = 1337;
+	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_protos::Config for Runtime {

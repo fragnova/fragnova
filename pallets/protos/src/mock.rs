@@ -136,6 +136,10 @@ impl pallet_balances::Config for Test {
 	type ReserveIdentifier = [u8; 8];
 }
 
+parameter_types! {
+	pub const TicketsAssetId: u32 = 1337;
+}
+
 impl pallet_accounts::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -144,6 +148,7 @@ impl pallet_accounts::Config for Test {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_assets::Config for Test {
@@ -161,10 +166,6 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
-}
-
-parameter_types! {
-	pub const TicketsAssetId: u32 = 1337;
 }
 
 impl pallet_protos::Config for Test {

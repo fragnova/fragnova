@@ -106,7 +106,10 @@ use serde_json::{json, Value};
 
 use ethabi::ParamType;
 
-use frame_support::traits::ReservableCurrency;
+use frame_support::traits::{
+	ReservableCurrency,
+	tokens::fungibles::Mutate,
+};
 
 pub type DiscordID = u64;
 
@@ -184,6 +187,7 @@ pub mod pallet {
 		+ pallet_balances::Config
 		+ pallet_proxy::Config
 		+ pallet_timestamp::Config
+		+ pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -205,6 +209,10 @@ pub mod pallet {
 
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+
+		// Asset ID of the fungible asset "TICKET"
+		#[pallet::constant]
+		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
 	}
 
 	#[pallet::genesis_config]
@@ -228,7 +236,7 @@ pub mod pallet {
 	/// **StorageMap** that maps an **Ethereum Account ID** to a to an ***Ethlock* struct of the aforementioned Ethereum Account Id (the struct contains the amount of FRAG token locked, amongst other things)**
 	#[pallet::storage]
 	pub type EthLockedFrag<T: Config> =
-		StorageMap<_, Identity, H160, EthLock<T::Balance, T::BlockNumber>>;
+		StorageMap<_, Identity, H160, EthLock<<T as pallet_assets::Config>::Balance, T::BlockNumber>>;
 
 	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
@@ -243,7 +251,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Clamor Account ID** to the **Amount of FRAG token staked by the aforementioned Clamor Account ID**
 	#[pallet::storage]
-	pub type FragUsage<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, T::Balance>;
+	pub type FragUsage<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, <T as pallet_assets::Config>::Balance>;
 
 	/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**.
 	/// The key for this map is:
@@ -285,9 +293,9 @@ pub mod pallet {
 		/// A link was removed between native and ethereum account.
 		Unlinked { sender: T::AccountId, eth_key: H160 },
 		/// ETH side lock was updated
-		Locked { eth_key: H160, balance: T::Balance, locktime: T::Moment },
+		Locked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance, locktime: T::Moment },
 		/// ETH side lock was unlocked
-		Unlocked { eth_key: H160, balance: T::Balance },
+		Unlocked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance },
 		/// A new sponsored account was added
 		SponsoredAccount { sponsor: T::AccountId, sponsored: T::AccountId, external_id: ExternalID },
 	}
@@ -386,7 +394,7 @@ pub mod pallet {
 
 			<EVMLinks<T>>::insert(sender.clone(), eth_key);
 			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
-			let zero: T::Balance = 0u32.saturated_into();
+			let zero: <T as pallet_assets::Config>::Balance = 0u32.saturated_into();
 			<FragUsage<T>>::insert(sender.clone(), zero);
 
 			// also emit event
@@ -458,12 +466,12 @@ pub mod pallet {
 			let pub_key = &pub_key[12..];
 			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
-			let amount: u128 = data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+			let data_amount: u128 = data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
 			if !data.lock {
-				ensure!(amount == 0, Error::<T>::SystematicFailure);
+				ensure!(data_amount == 0, Error::<T>::SystematicFailure);
 			} else {
-				ensure!(amount > 0, Error::<T>::SystematicFailure);
+				ensure!(data_amount > 0, Error::<T>::SystematicFailure);
 			}
 
 			// verifications ended, let's proceed with voting count and writing
@@ -492,7 +500,7 @@ pub mod pallet {
 
 			// writing here at end (THE lines below only execute if the number of votes receieved by `data_hash` passes the `threshold`)
 
-			let amount: T::Balance = amount.saturated_into();
+			let amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			if data.lock {
@@ -503,7 +511,6 @@ pub mod pallet {
 				let locktime: T::Moment = locktime.saturated_into();
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
-					// If there is no linked account, shouldn't we throw an error? - 问Gio
 					let used = <FragUsage<T>>::get(linked.clone());
 					if let Some(used) = used {
 						if used > amount {
@@ -513,8 +520,19 @@ pub mod pallet {
 							<FragUsage<T>>::remove(linked.clone()); // Remove the Clamor Account `linked` from FragUsage
 										// force dereferencing of protos and more
 							<PendingUnlinks<T>>::append(linked.clone()); // Unlink `linked` from `sender`
+						} else {
+							//TODO - get FRAG price from oracle
+							
+							let tickets_amount = Self::calculate_tickets_percentage_to_mint(data_amount);
+
+							 let _ = <pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+							 	T::TicketsAssetId::get(),
+								&linked,
+								tickets_amount);
 						}
 					}
+				} else {
+					// TODO - link account in case of new user and mint and assign Tickets and NOVA to the user
 				}
 
 				// also emit event
@@ -578,7 +596,7 @@ pub mod pallet {
 			// ! Writing state
 
 			let deposit = T::ProxyDepositBase::get() + T::ProxyDepositFactor::get();
-			T::Currency::reserve(&who, deposit)?;
+			<T as pallet_proxy::Config>::Currency::reserve(&who, deposit)?;
 
 			pallet_proxy::Proxies::<T>::insert(&account, (bounded_proxies, deposit));
 
@@ -738,6 +756,12 @@ pub mod pallet {
 					});
 				}
 			}
+		}
+
+		fn calculate_tickets_percentage_to_mint(mut amount: u128) -> <T as pallet_assets::Config>::Balance {
+			// hard set to 20% for the moment
+			amount = (20/100) * amount;
+			amount.saturated_into()
 		}
 
 		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
