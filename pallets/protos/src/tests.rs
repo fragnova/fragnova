@@ -1,7 +1,7 @@
 use crate as pallet_protos;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Compact;
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::Get};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
 use stake_tests::stake_;
 use std::collections::BTreeMap;
 use upload_tests::upload;
@@ -38,7 +38,10 @@ mod upload_tests {
 			proto.category.clone(),
 			proto.tags.clone(),
 			proto.linked_asset.clone(),
-			proto.include_cost.map(|cost| Compact::from(cost)),
+			proto
+				.include_cost
+				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
+				.unwrap_or(UsageLicense::Closed),
 			proto.data.clone(),
 		)
 	}
@@ -77,7 +80,10 @@ mod upload_tests {
 			let correct_proto_struct = Proto {
 				block: block_number,
 				patches: Vec::new(),
-				include_cost: proto.include_cost.map(|cost| Compact::from(cost)),
+				license: proto
+					.include_cost
+					.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
+					.unwrap_or(UsageLicense::Closed),
 				creator: dd.account_id,
 				owner: ProtoOwner::User(dd.account_id),
 				references: proto.references.clone(),
@@ -180,7 +186,7 @@ mod upload_tests {
 
 			assert_noop!(
 				upload(stake.lock.link.clamor_account_id, &proto_with_refs),
-				Error::<Test>::NotEnoughStaked
+				Error::<Test>::NotEnoughTickets
 			);
 		});
 	}
@@ -204,7 +210,7 @@ mod upload_tests {
 
 			assert_noop!(
 				upload(stake.lock.link.clamor_account_id, &proto_with_refs),
-				Error::<Test>::StakeNotFound
+				Error::<Test>::CurationNotFound
 			);
 		});
 	}
@@ -277,7 +283,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"include_cost": Some(proto.include_cost),
+				"tickets": Some(proto.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -319,7 +325,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"include_cost": Some(proto.include_cost),
+				"tickets": Some(proto.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -363,7 +369,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"include_cost": Some(proto.include_cost),
+				"tickets": Some(proto.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -408,7 +414,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"include_cost": Some(proto2.include_cost),
+				"tickets": Some(proto2.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -438,7 +444,7 @@ mod get_protos_tests {
 			let shard_script_num_1: [u8; 8] = [4u8; 8];
 			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};
@@ -472,19 +478,76 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"include_cost": Some(proto1.include_cost),
+				"tickets": Some(proto1.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
 			}, encoded2: {
-				"include_cost": Some(proto_shard_script.include_cost),
+				"tickets": Some(proto_shard_script.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
 			}, encoded3: {
-				"include_cost": Some(proto_text.include_cost),
+				"tickets": Some(proto_text.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+			.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_filter_shards_by_implementing_requiring() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			// Two protos with different trait names
+			let proto_shard_script = dd.proto_shard_script;
+			let proto_shard_script_3 = dd.proto_shard_script_3;			
+			let proto_shard_script_binary = dd.proto_shard_script_4;			
+
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+			assert_ok!(upload(dd.account_id, &proto_shard_script_3));
+			// This below has the same implementing and requiring of script_3, but different format (Binary)
+			assert_ok!(upload(dd.account_id, &proto_shard_script_binary));
+
+			// SEARCH
+			let shard_script_num_4: [u8; 8] = [1u8; 8];
+			let shard_script_num_5: [u8; 8] = [7u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_4],
+				implementing: vec![shard_script_num_5],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 10,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![
+					Categories::Shards(shard_script),
+				],
+				tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto_shard_script_3.get_proto_hash();
+			let encoded2 = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded2: {
+				"tickets": Some(proto_shard_script_3.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -514,7 +577,7 @@ mod get_protos_tests {
 			let shard_script_num_1: [u8; 8] = [4u8; 8];
 			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};
@@ -548,19 +611,19 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"include_cost": Some(proto1.include_cost),
+				"tickets": Some(proto1.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
 			}, encoded2: {
-				"include_cost": Some(proto_shard_script.include_cost),
+				"tickets": Some(proto_shard_script.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
 			}, encoded3: {
-				"include_cost": Some(proto_text.include_cost),
+				"tickets": Some(proto_text.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id_second)
@@ -609,12 +672,12 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"include_cost": Some(proto.include_cost),
+				"tickets": Some(proto.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				}}, encoded2: {
-					"include_cost": Some(proto2.include_cost),
+					"tickets": Some(proto2.include_cost),
 					"owner": {
 						"type": "internal",
 						"value": hex::encode(dd.account_id)
@@ -642,7 +705,7 @@ mod get_protos_tests {
 			let shard_script_num_1: [u8; 8] = [4u8; 8];
 			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};
@@ -666,7 +729,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"include_cost": Some(proto_shard_script.include_cost),
+				"tickets": Some(proto_shard_script.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -679,7 +742,7 @@ mod get_protos_tests {
 	}
 
 	#[test]
-	fn get_protos_by_shards_script_should_not_work() {
+	fn get_protos_by_shards_finds_nothing() {
 		new_test_ext().execute_with(|| {
 			// UPLOAD
 			let dd = DummyData::new();
@@ -691,10 +754,10 @@ mod get_protos_tests {
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 
 			// SEARCH
-			let shard_script_num_1: [u8; 8] = [0u8; 8];
-			let shard_script_num_2: [u8; 8] = [1u8; 8];
+			let shard_script_num_1: [u8; 8] = [99u8; 8];
+			let shard_script_num_2: [u8; 8] = [99u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};
@@ -734,7 +797,7 @@ mod get_protos_tests {
 			let shard_script_num_1: [u8; 8] = [0u8; 8];
 			let shard_script_num_2: [u8; 8] = [5u8; 8];
 			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Binary,
+				format: ShardsFormat::Edn,
 				requiring: vec![shard_script_num_1],
 				implementing: vec![shard_script_num_2],
 			};
@@ -758,7 +821,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"include_cost": Some(proto_shard_script.include_cost),
+				"tickets": Some(proto_shard_script.include_cost),
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -769,6 +832,56 @@ mod get_protos_tests {
 			assert_eq!(result_string, json_expected);
 		});
 	}
+
+	#[test]
+	fn get_protos_by_generic_format() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			let proto_shard_script = dd.proto_shard_script_2;
+
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+
+			// SEARCH
+			let shard_script_num_1: [u8; 8] = [0u8; 8];
+			let shard_script_num_2: [u8; 8] = [0u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_1],
+				implementing: vec![shard_script_num_2],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![Categories::Shards(shard_script)],
+				tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto_shard_script.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto_shard_script.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+			.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
 }
 mod patch_tests {
 	use super::*;
@@ -777,7 +890,7 @@ mod patch_tests {
 		ProtosPallet::patch(
 			Origin::signed(signer),
 			patch.proto_fragment.clone().get_proto_hash(),
-			patch.include_cost.map(|cost| Compact::from(cost)),
+			patch.include_cost.map(|cost| UsageLicense::Tickets(Compact::from(cost))),
 			patch.new_references.clone(),
 			None, // TODO
 			patch.new_data.clone(),
@@ -798,8 +911,11 @@ mod patch_tests {
 			assert_ok!(patch_(dd.account_id, &patch));
 			let proto_struct = <Protos<Test>>::get(patch.proto_fragment.get_proto_hash()).unwrap();
 			assert_eq!(
-				proto_struct.include_cost,
-				patch.include_cost.map(|cost| Compact::from(cost))
+				proto_struct.license,
+				patch
+					.include_cost
+					.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
+					.unwrap_or(UsageLicense::Closed)
 			);
 			assert!(proto_struct.patches.contains(&ProtoPatch {
 				block: block_number,
@@ -907,7 +1023,7 @@ mod patch_tests {
 
 			assert_noop!(
 				patch_(stake.lock.link.clamor_account_id, &patch_with_refs),
-				Error::<Test>::NotEnoughStaked
+				Error::<Test>::NotEnoughTickets
 			);
 		});
 	}
@@ -935,7 +1051,7 @@ mod patch_tests {
 
 			assert_noop!(
 				patch_(stake.lock.link.clamor_account_id, &patch_with_refs),
-				Error::<Test>::StakeNotFound
+				Error::<Test>::CurationNotFound
 			);
 		});
 	}
@@ -1024,8 +1140,8 @@ mod transfer_tests {
 			assert!(
 				<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
 					.unwrap()
-					.contains(&proto.get_proto_hash()) ==
-					false
+					.contains(&proto.get_proto_hash())
+					== false
 			);
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second))
 				.unwrap()
@@ -1159,7 +1275,7 @@ mod stake_tests {
 		proto: &ProtoFragment,
 		stake_amount: &u64,
 	) -> DispatchResult {
-		ProtosPallet::stake(Origin::signed(signer), proto.get_proto_hash(), stake_amount.clone())
+		ProtosPallet::curate(Origin::signed(signer), proto.get_proto_hash(), stake_amount.clone())
 	}
 
 	// TODO
@@ -1193,11 +1309,11 @@ mod stake_tests {
 			);
 
 			assert_eq!(
-				<ProtoStakes<Test>>::get(stake.proto_fragment.get_proto_hash(), dd.account_id)
+				<ProtoCurations<Test>>::get(stake.proto_fragment.get_proto_hash(), dd.account_id)
 					.unwrap(),
 				(stake.get_stake_amount(), current_block_number)
 			);
-			assert!(<AccountStakes<Test>>::get(dd.account_id)
+			assert!(<AccountCurations<Test>>::get(dd.account_id)
 				.unwrap()
 				.contains(&stake.proto_fragment.get_proto_hash()));
 
@@ -1293,137 +1409,6 @@ mod stake_tests {
 			assert_noop!(
 				stake_(stake.lock.link.clamor_account_id, &stake.proto_fragment, &(balance - 1)),
 				Error::<Test>::InsufficientBalance
-			);
-		});
-	}
-}
-
-// TODO
-mod unstake_tests {
-
-	use super::*;
-
-	fn unstake_(
-		signer: <Test as frame_system::Config>::AccountId,
-		proto: &ProtoFragment,
-	) -> DispatchResult {
-		ProtosPallet::unstake(Origin::signed(signer), proto.get_proto_hash())
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn unstake_should_work() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let stake = dd.stake;
-
-			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-
-			let frag_staked =
-				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
-					.unwrap_or_default();
-
-			let current_block_number = System::block_number(); //@sinkingsugar
-
-			assert_ok!(lock_(&stake.lock));
-			_ = link_(&stake.lock.link).unwrap();
-			_ = stake_(
-				stake.lock.link.clamor_account_id,
-				&stake.proto_fragment,
-				&stake.get_stake_amount(),
-			)
-			.unwrap();
-
-			let lockup_period =
-				<<Test as pallet_protos::Config>::StakeLockupPeriod as Get<u64>>::get(); // .saturated_into(); - @sinkingsugar: what is `.saturated_into())`
-
-			run_to_block(current_block_number + lockup_period + 1); // @sinkingsugar should I check if this works in a seperate function
-
-			assert_ok!(unstake_(stake.lock.link.clamor_account_id, &stake.proto_fragment));
-
-			assert_eq!(
-				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id).unwrap(),
-				frag_staked
-			);
-
-			assert!(
-				<ProtoStakes<Test>>::contains_key(
-					stake.proto_fragment.get_proto_hash(),
-					stake.lock.link.clamor_account_id
-				) == false
-			);
-
-			assert!(
-				<AccountStakes<Test>>::get(stake.lock.link.clamor_account_id)
-					.unwrap()
-					.contains(&stake.proto_fragment.get_proto_hash()) ==
-					false
-			);
-
-			let event = <frame_system::Pallet<Test>>::events()
-				.pop()
-				.expect("Expected at least one EventRecord to be found")
-				.event;
-			assert_eq!(
-				event,
-				mock::Event::from(pallet_protos::Event::Unstaked {
-					proto_hash: stake.proto_fragment.get_proto_hash(),
-					account_id: stake.lock.link.clamor_account_id,
-					balance: stake.get_stake_amount()
-				})
-			);
-		});
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn unstake_should_not_work_if_proto_not_found() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-			let stake = dd.stake;
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-
-			assert_noop!(
-				unstake_(stake.lock.link.clamor_account_id, &stake.proto_fragment),
-				Error::<Test>::ProtoNotFound
-			);
-		});
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn unstake_should_not_work_if_lockup_period_has_not_ended() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let stake = dd.stake;
-
-			_ = upload(dd.account_id, &stake.proto_fragment).unwrap();
-
-			let current_block_number = System::block_number(); //@sinkingsugar
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-			assert_ok!(stake_(
-				stake.lock.link.clamor_account_id,
-				&stake.proto_fragment,
-				&stake.get_stake_amount(),
-			));
-
-			let lockup_period =
-				<<Test as pallet_protos::Config>::StakeLockupPeriod as Get<u64>>::get(); // .saturated_into(); - @sinkingsugar: what is `.saturated_into())`
-
-			run_to_block(current_block_number + lockup_period);
-
-			assert_noop!(
-				unstake_(stake.lock.link.clamor_account_id, &stake.proto_fragment),
-				Error::<Test>::StakeLocked
 			);
 		});
 	}

@@ -8,8 +8,7 @@ reorder_imports = true
 # Consistency
 newline_style = "Unix"
 # Format comments
-comment_width = 100
-wrap_comments = true
+wrap_comments = false
 # Misc
 chain_width = 80
 spaces_around_ranges = false

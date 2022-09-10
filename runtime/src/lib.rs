@@ -438,12 +438,16 @@ impl pallet_accounts::Config for Runtime {
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
+parameter_types! {
+	pub const TicketsAssetId: u64 = 1337;
+}
+
 impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	// type StakeLockupPeriod = ConstU64<100800>; // one week
-	type StakeLockupPeriod = ConstU64<5>; // one week
+	type CurationExpiration = ConstU64<100800>; // one week
+	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_detach::Config for Runtime {

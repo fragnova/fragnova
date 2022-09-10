@@ -12,6 +12,8 @@ use protos::permissions::FragmentPerms;
 
 use copied_from_pallet_protos::upload;
 mod copied_from_pallet_protos {
+	use pallet_protos::UsageLicense;
+
 	use super::*;
 
 	pub fn upload(
@@ -24,7 +26,10 @@ mod copied_from_pallet_protos {
 			proto.category.clone(),
 			proto.tags.clone(),
 			proto.linked_asset.clone(),
-			proto.include_cost.map(|cost| Compact::from(cost)),
+			proto
+				.include_cost
+				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
+				.unwrap_or(UsageLicense::Closed),
 			proto.data.clone(),
 		)
 	}
@@ -109,7 +114,7 @@ mod create_tests {
 			assert_eq!(
 				System::events()[System::events().len() - 1].event,
 				mock::Event::from(pallet_fragments::Event::DefinitionCreated {
-					fragment_hash: definition.get_definition_id()
+					definition_hash: definition.get_definition_id()
 				})
 			);
 		});
@@ -164,10 +169,7 @@ mod create_tests {
 			definition.metadata.currency = Some(0);
 
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
-			assert_noop!(
-				create(dd.account_id, &definition),
-				Error::<Test>::CurrencyNotFound
-			);
+			assert_noop!(create(dd.account_id, &definition), Error::<Test>::CurrencyNotFound);
 		});
 	}
 
@@ -182,13 +184,14 @@ mod create_tests {
 
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 
-			Assets::force_create(
-				Origin::root(), 
+			assert_ok!(Assets::force_create(
+				Origin::root(),
 				definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
-				true, // Whether this asset needs users to have an existential deposit to hold this asset
-				69, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
-			);
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
+				69, 
+				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+			));
 
 			assert_ok!(create(dd.account_id, &definition));
 		});
@@ -250,7 +253,7 @@ mod publish_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_fragments::Event::Publishing {
-					fragment_hash: publish.definition.get_definition_id()
+					definition_hash: publish.definition.get_definition_id()
 				})
 			);
 		});
@@ -405,7 +408,7 @@ mod unpublish_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_fragments::Event::Unpublishing {
-					fragment_hash: publish.definition.get_definition_id()
+					definition_hash: publish.definition.get_definition_id()
 				})
 			);
 		});
@@ -544,7 +547,7 @@ mod mint_tests {
 					event,
 					mock::Event::from(pallet_fragments::Event::InventoryAdded {
 						account_id: dd.account_id,
-						fragment_hash: mint_non_unique.definition.get_definition_id(),
+						definition_hash: mint_non_unique.definition.get_definition_id(),
 						fragment_id: (edition_id, 1)
 					})
 				);
@@ -609,7 +612,7 @@ mod mint_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: dd.account_id,
-					fragment_hash: mint_unique.definition.get_definition_id(),
+					definition_hash: mint_unique.definition.get_definition_id(),
 					fragment_id: (1, 1)
 				})
 			);
@@ -864,7 +867,7 @@ mod buy_tests {
 					System::events()[9 + (edition_id - 1) as usize].event.clone(), // we do `9 +` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
 					mock::Event::from(pallet_fragments::Event::InventoryAdded {
 						account_id: dd.account_id_second,
-						fragment_hash: buy_non_unique.publish.definition.get_definition_id(),
+						definition_hash: buy_non_unique.publish.definition.get_definition_id(),
 						fragment_id: (edition_id, 1)
 					})
 				);
@@ -975,7 +978,7 @@ mod buy_tests {
 				System::events()[9 as usize].event.clone(), // we write `9` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: dd.account_id_second,
-					fragment_hash: buy_unique.publish.definition.get_definition_id(),
+					definition_hash: buy_unique.publish.definition.get_definition_id(),
 					fragment_id: (1, 1)
 				})
 			);
@@ -1096,13 +1099,14 @@ mod buy_tests {
 			buy.publish.definition.metadata.currency = Some(0);
 
 			let minimum_balance = 69;
-			Assets::force_create(
-				Origin::root(), 
+			assert_ok!(Assets::force_create(
+				Origin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
-				true, // Whether this asset needs users to have an existential deposit to hold this asset
-				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
-			);
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
+				minimum_balance, 
+				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+			));
 
 			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &buy.publish.definition));
@@ -1113,12 +1117,12 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			Assets::mint(
-				Origin::signed(dd.account_id), 
+			assert_ok!(Assets::mint(
+				Origin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
-				dd.account_id_second, 
-				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance
-			);
+				dd.account_id_second,
+				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
+			));
 
 			assert_ok!(buy_(dd.account_id_second, &buy));
 		});
@@ -1134,13 +1138,14 @@ mod buy_tests {
 			buy.publish.definition.metadata.currency = Some(0);
 
 			let minimum_balance = 69;
-			Assets::force_create(
-				Origin::root(), 
+			assert_ok!(Assets::force_create(
+				Origin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
-				true, // Whether this asset needs users to have an existential deposit to hold this asset
-				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
-			);
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
+				minimum_balance, 
+				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+			));
 
 			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &buy.publish.definition));
@@ -1151,12 +1156,12 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			Assets::mint(
-				Origin::signed(dd.account_id), 
+			assert_ok!(Assets::mint(
+				Origin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
-				dd.account_id_second, 
-				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1
-			);
+				dd.account_id_second,
+				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1,
+			));
 
 			assert_noop!(buy_(dd.account_id_second, &buy), Error::<Test>::InsufficientBalance);
 		});
@@ -1490,7 +1495,7 @@ mod give_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryRemoved {
 					account_id: dd.account_id,
-					fragment_hash: give.mint.definition.get_definition_id(),
+					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id)
 				})
 			);
@@ -1503,7 +1508,7 @@ mod give_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: give.to,
-					fragment_hash: give.mint.definition.get_definition_id(),
+					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id)
 				})
 			);
@@ -1583,7 +1588,7 @@ mod give_tests {
 				event,
 				mock::Event::from(pallet_fragments::Event::InventoryAdded {
 					account_id: give.to,
-					fragment_hash: give.mint.definition.get_definition_id(),
+					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id + 1)
 				})
 			);
@@ -1956,7 +1961,6 @@ mod create_account_tests {
 			assert_ok!(mint_(dd.account_id, &create_account.mint));
 
 			assert_ok!(create_account_(dd.account_id, &create_account));
-
 		});
 	}
 
@@ -1973,7 +1977,7 @@ mod create_account_tests {
 
 			assert_noop!(
 				create_account_(dd.account_id_second, &create_account),
-				Error::<Test>::NotFound 
+				Error::<Test>::NotFound
 			);
 		});
 	}

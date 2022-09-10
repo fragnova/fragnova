@@ -5,10 +5,12 @@ use super::*;
 use crate::Pallet as Fragments;
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
+use pallet_protos::UsageLicense;
 use protos::{
 	categories::{Categories, TextCategories},
 	permissions::FragmentPerms,
 };
+use sp_core::crypto::UncheckedFrom;
 use sp_io::hashing::blake2_128;
 
 const PROTO_HASH: Hash256 = [
@@ -22,7 +24,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 
 benchmarks! {
 	where_clause { where
-		T::AccountId: AsRef<[u8]>
+		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>
 	}
 
 	create {
@@ -30,7 +32,7 @@ benchmarks! {
 		let immutable_data = vec![0u8; 1 as usize];
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![PROTO_HASH];
-		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, None, immutable_data.clone())?;
+		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, UsageLicense::Closed, immutable_data.clone())?;
 		let fragment_data = FragmentMetadata {
 			name: "name".as_bytes().to_vec(),
 			currency: None,
@@ -42,7 +44,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, FragmentPerms::NONE, None, None)
 	verify {
-		assert_last_event::<T>(Event::<T>::DefinitionCreated { fragment_hash: hash }.into())
+		assert_last_event::<T>(Event::<T>::DefinitionCreated { definition_hash: hash }.into())
 	}
 
 	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);
