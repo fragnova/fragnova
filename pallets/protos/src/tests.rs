@@ -542,6 +542,7 @@ mod get_protos_tests {
 					Categories::Shards(shard_script),
 				],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -870,6 +871,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
