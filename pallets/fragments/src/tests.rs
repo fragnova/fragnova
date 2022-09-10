@@ -2029,11 +2029,10 @@ mod get_definitions_tests {
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &definition));
 
-			let definition_second = dd.definition_second;
-
 			assert_eq!(
 				String::from_utf8(FragmentsPallet::get_definitions(GetDefinitionsParams {
 					limit: u64::MAX,
+					owner: Some(dd.account_id),
 					return_owners: true,
 					..Default::default()
 				}).unwrap()).unwrap(),
@@ -2046,6 +2045,31 @@ mod get_definitions_tests {
 						}
 					}
 				}).to_string()
+			);
+
+		});
+
+	}
+
+	#[test]
+	fn get_definitions_should_not_work_for_particular_owner() {
+
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let definition = dd.definition;
+
+			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &definition));
+
+			assert_eq!(
+				FragmentsPallet::get_definitions(GetDefinitionsParams {
+					limit: u64::MAX,
+					owner: Some(dd.account_id_second),
+					return_owners: true,
+					..Default::default()
+				}),
+				Err("Owner not found".into())
 			);
 
 		});
@@ -2071,7 +2095,7 @@ mod get_instances_tests {
 			assert_ok!(mint_(dd.account_id, &mint));
 
 			let mut correct_map_instances = Map::new();
-			for edition_id in (1..=mint.get_quantity()) {
+			for edition_id in 1..=mint.get_quantity() {
 				correct_map_instances.insert(format!("{}.1", edition_id), Map::new().into());
 			}
 
