@@ -93,8 +93,3 @@ impl pallet_detach::Config for Test {
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
-
-pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-	t.into()
-}
