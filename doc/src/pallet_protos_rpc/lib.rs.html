@@ -91,6 +91,7 @@
 <span id="91">91</span>
 <span id="92">92</span>
 <span id="93">93</span>
+<span id="94">94</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::sync::Arc;
 
 <span class="kw">use </span>codec::Codec;
@@ -160,6 +161,7 @@
 			return_owners: params.return_owners,
 			categories: params.categories,
 			tags: params.tags.into_iter().map(|s| s.into_bytes()).collect(),
+			exclude_tags: params.exclude_tags,
 			available: params.available,
 		};
 

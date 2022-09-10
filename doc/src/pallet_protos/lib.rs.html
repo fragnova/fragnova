@@ -1275,6 +1275,19 @@
 <span id="1275">1275</span>
 <span id="1276">1276</span>
 <span id="1277">1277</span>
+<span id="1278">1278</span>
+<span id="1279">1279</span>
+<span id="1280">1280</span>
+<span id="1281">1281</span>
+<span id="1282">1282</span>
+<span id="1283">1283</span>
+<span id="1284">1284</span>
+<span id="1285">1285</span>
+<span id="1286">1286</span>
+<span id="1287">1287</span>
+<span id="1288">1288</span>
+<span id="1289">1289</span>
+<span id="1290">1290</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1363,6 +1376,8 @@
 	<span class="kw">pub </span>return_owners: bool,
 	<span class="kw">pub </span>categories: Vec&lt;Categories&gt;,
 	<span class="kw">pub </span>tags: Vec&lt;TString&gt;,
+	<span class="doccomment">/// The returned Proto-Fragments must not have any tag that is specified in the `tags` field
+	</span><span class="kw">pub </span>exclude_tags: bool,
 	<span class="kw">pub </span>available: <span class="prelude-ty">Option</span>&lt;bool&gt;,
 }
 
@@ -2170,6 +2185,7 @@
 			tags: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 			categories: <span class="kw-2">&amp;</span>[Categories],
 			avail: <span class="prelude-ty">Option</span>&lt;bool&gt;,
+			exclude_tags: bool,
 		) -&gt; bool {
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(struct_proto) = &lt;Protos&lt;T&gt;&gt;::get(proto_id) {
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(avail) = avail {
@@ -2181,9 +2197,9 @@
 				}
 
 				<span class="kw">if </span>categories.len() == <span class="number">0 </span>{
-					<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, <span class="kw-2">&amp;</span>struct_proto);
+					<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, <span class="kw-2">&amp;</span>struct_proto, exclude_tags);
 				} <span class="kw">else </span>{
-					<span class="kw">return </span><span class="self">Self</span>::filter_category(tags, <span class="kw-2">&amp;</span>struct_proto, categories);
+					<span class="kw">return </span><span class="self">Self</span>::filter_category(tags, <span class="kw-2">&amp;</span>struct_proto, categories, exclude_tags);
 				}
 			} <span class="kw">else </span>{
 				<span class="bool-val">false
@@ -2194,6 +2210,7 @@
 			tags: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 			struct_proto: <span class="kw-2">&amp;</span>Proto&lt;T::AccountId, T::BlockNumber&gt;,
 			categories: <span class="kw-2">&amp;</span>[Categories],
+			exclude_tags: bool,
 		) -&gt; bool {
 			<span class="kw">let </span>found: Vec&lt;<span class="kw">_</span>&gt; = categories
 				.into_iter()
@@ -2219,7 +2236,7 @@
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
 							</span><span class="kw">if </span>!implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
 								<span class="kw">if </span>param_script_info.format == stored_script_info.format {
-									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto);
+									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
 								} <span class="kw">else </span>{ <span class="kw">return </span><span class="bool-val">false</span>; }
 							}
 							<span class="comment">// Generic query:
@@ -2227,7 +2244,7 @@
 							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp; 
 									param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp; 
 									param_script_info.format == stored_script_info.format {
-									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto);
+									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
 							}
 							<span class="kw">else </span>{
 								<span class="kw">return </span><span class="bool-val">false</span>;
@@ -2239,7 +2256,7 @@
 					},
 					<span class="kw">_ </span>=&gt; {
 						<span class="kw">if </span><span class="kw-2">*</span>cat == <span class="kw-2">&amp;</span>struct_proto.category {
-							<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto);
+							<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
 						} <span class="kw">else </span>{
 							<span class="kw">return </span><span class="bool-val">false</span>;
 						}
@@ -2257,6 +2274,7 @@
 		<span class="kw">fn </span>filter_tags(
 			tags: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 			struct_proto: <span class="kw-2">&amp;</span>Proto&lt;T::AccountId, T::BlockNumber&gt;,
+			exclude_tags: bool,
 		) -&gt; bool {
 			<span class="kw">if </span>tags.len() == <span class="number">0 </span>{
 				<span class="bool-val">true
@@ -2264,7 +2282,11 @@
 				tags.into_iter().all(|tag| {
 					<span class="kw">let </span>tag_idx = &lt;Tags&lt;T&gt;&gt;::get(tag);
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(tag_idx) = tag_idx {
-						struct_proto.tags.contains(<span class="kw-2">&amp;</span>Compact::from(tag_idx))
+						<span class="kw">if </span>struct_proto.tags.contains(<span class="kw-2">&amp;</span>Compact::from(tag_idx)) {
+							!exclude_tags
+						} <span class="kw">else </span>{
+							exclude_tags
+						}
 					} <span class="kw">else </span>{
 						<span class="bool-val">false
 					</span>}
@@ -2365,6 +2387,7 @@
 									<span class="kw-2">&amp;</span>params.tags,
 									<span class="kw-2">&amp;</span>params.categories,
 									params.available,
+									params.exclude_tags
 								)
 							})
 							.skip(params.from <span class="kw">as </span>usize)
@@ -2380,6 +2403,7 @@
 									<span class="kw-2">&amp;</span>params.tags,
 									<span class="kw-2">&amp;</span>params.categories,
 									params.available,
+									params.exclude_tags
 								)
 							})
 							.skip(params.from <span class="kw">as </span>usize)
@@ -2423,6 +2447,7 @@
 										<span class="kw-2">&amp;</span>params.tags,
 										<span class="kw-2">&amp;</span>params.categories,
 										params.available,
+										params.exclude_tags
 									)
 								})
 								.collect()
@@ -2436,6 +2461,7 @@
 										<span class="kw-2">&amp;</span>params.tags,
 										<span class="kw-2">&amp;</span>params.categories,
 										params.available,
+										params.exclude_tags
 									)
 								})
 								.collect()
