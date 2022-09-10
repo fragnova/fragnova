@@ -190,7 +190,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type CurationExpiration: Get<u64>;
 
-		// Asset ID of the fungible asset "TICKET"
+		/// Asset ID of the fungible asset "TICKET"
 		#[pallet::constant]
 		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
 	}
