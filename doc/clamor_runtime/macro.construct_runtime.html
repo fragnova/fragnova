@@ -4,7 +4,7 @@ and the pallets that are used by the runtime.
 <code>Block</code> is the block type that is used in the runtime and <code>NodeBlock</code> is the block type
 that is used in the node. For instance they can differ in the extrinsics type.</p>
 <h2 id="example"><a href="#example">Example:</a></h2>
-<div class='information'><div class='tooltip ignore'>ⓘ</div></div><div class="example-wrap"><pre class="rust rust-example-rendered ignore"><code><span class="macro">construct_runtime!</span>(
+<div class="example-wrap"><div class='information'><div class='tooltip ignore'>ⓘ</div></div><pre class="rust rust-example-rendered ignore"><code><span class="macro">construct_runtime!</span>(
     <span class="kw">pub enum </span>Runtime <span class="kw">where
         </span>Block = Block,
         NodeBlock = node::Block,
@@ -99,4 +99,4 @@ the pallet depending on it.</p>
 <ul>
 <li>The macro generates a type alias for each pallet to their <code>Pallet</code>. E.g. <code>type System = frame_system::Pallet&lt;Runtime&gt;</code></li>
 </ul>
-</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (c2804e6ec 2022-09-07)" ></div></body></html>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (1d37ed661 2022-09-09)" ></div></body></html>

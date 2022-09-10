@@ -942,6 +942,8 @@
 <span id="942">942</span>
 <span id="943">943</span>
 <span id="944">944</span>
+<span id="945">945</span>
+<span id="946">946</span>
 </pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1663,10 +1665,12 @@
 			<span class="kw">match </span>tx.function {
 				<span class="comment">// We want to prevent polluting blocks with a lot of useless invalid data.
 				// TODO perform quick and preliminary data validation
+				</span><span class="attribute">#[allow(unused_variables)]
 				</span>Call::Protos(ProtosCall::upload{<span class="kw-2">ref </span>data, <span class="kw-2">ref </span>category, <span class="kw-2">ref </span>tags, ..}) =&gt; {
 					<span class="comment">// TODO
 				</span>},
-				Call::Protos(ProtosCall::patch{<span class="kw-2">ref </span>data, ..}) |
+				<span class="attribute">#[allow(unused_variables)]
+				</span>Call::Protos(ProtosCall::patch{<span class="kw-2">ref </span>data, ..}) |
 				Call::Protos(ProtosCall::set_metadata{<span class="kw-2">ref </span>data, ..}) =&gt; {
 					<span class="comment">// TODO
 					// if let Err(_) = &lt;pallet_protos::Pallet&lt;Runtime&gt;&gt;::ensure_valid_auth(auth) {
@@ -1887,4 +1891,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (c2804e6ec 2022-09-07)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (1d37ed661 2022-09-09)" ></div></body></html>
