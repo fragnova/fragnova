@@ -250,25 +250,3 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	ext
 }
-
-/// Simulate block production
-///
-/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls
-/// from all modules with `System::block_number()` as the sole input.
-/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should
-/// prioritize readability to facilitate future maintenance.
-///
-/// Source: https://docs.substrate.io/v3/runtime/testing/
-pub fn run_to_block(n: u64) {
-	while System::block_number() < n {
-		use frame_support::traits::{OnFinalize, OnInitialize};
-
-		if System::block_number() > 0 {
-			ProtosPallet::on_finalize(System::block_number());
-			System::on_finalize(System::block_number());
-		}
-		System::set_block_number(System::block_number() + 1);
-		System::on_initialize(System::block_number());
-		// ProtosPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/protos/src/lib.rs
-	}
-}
