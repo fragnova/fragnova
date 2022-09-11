@@ -52,7 +52,7 @@ use sp_std::{vec::Vec, collections::btree_map::BTreeMap};
 pub use weights::WeightInfo;
 
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 use protos::{permissions::FragmentPerms};
 

@@ -56,7 +56,6 @@ use scale_info::prelude::string::String;
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-/// Import the protos pallet.
 use pallet_protos::GetProtosParams;
 use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
 

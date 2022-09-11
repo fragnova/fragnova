@@ -24,8 +24,8 @@ use sp_std::vec::Vec;
 //
 // For more information, read: https://docs.rs/sp-api/latest/sp_api/macro.decl_runtime_apis.html
 sp_api::decl_runtime_apis! {
-	/// The trait `FragmentsRuntimeAPI` is declared to be a Runtime API
-	pub trait FragmentsRuntimeAPI<AccountId>
+	/// The trait `FragmentsRuntimeApi` is declared to be a Runtime API
+	pub trait FragmentsRuntimeApi<AccountId>
 	where
 		AccountId: Codec
 	{

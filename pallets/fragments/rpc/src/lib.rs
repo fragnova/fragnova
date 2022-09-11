@@ -13,7 +13,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 
-pub use pallet_fragments_rpc_runtime_api::FragmentsRuntimeAPI;
+pub use pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi;
 
 const RUNTIME_ERROR: i32 = 1;
 
@@ -61,7 +61,7 @@ impl<C, Block, AccountId> FragmentsRpcServer<<Block as BlockT>::Hash, AccountId>
 		C: Send + Sync + 'static,
 		C: ProvideRuntimeApi<Block>,
 		C: HeaderBackend<Block>,
-		C::Api: FragmentsRuntimeAPI<Block, AccountId>,
+		C::Api: FragmentsRuntimeApi<Block, AccountId>,
 		AccountId: Codec,
 {
 	/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
