@@ -1999,11 +1999,13 @@ mod get_definitions_tests {
 			assert_ok!(create(dd.account_id, &definition));
 
 			assert_eq!(
-				String::from_utf8(FragmentsPallet::get_definitions(GetDefinitionsParams {
-					limit: u64::MAX,
-					return_owners: true,
-					..Default::default()
-				}).unwrap()).unwrap(),
+				serde_json::from_slice::<Value>(
+					&FragmentsPallet::get_definitions(GetDefinitionsParams {
+						limit: u64::MAX,
+						return_owners: true,
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
 						"num_instances": 0,
@@ -2012,30 +2014,29 @@ mod get_definitions_tests {
 							"value": hex::encode(dd.account_id)
 						}
 					}
-				}).to_string()
+				})
 			);
 
 		});
 	}
 
 	#[test]
-	fn get_definitions_should_work_for_particular_owner() {
-
+	fn get_definitions_should_work_if_owner_owns_definitions() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
-
 			let definition = dd.definition;
-
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &definition));
 
 			assert_eq!(
-				String::from_utf8(FragmentsPallet::get_definitions(GetDefinitionsParams {
-					limit: u64::MAX,
-					owner: Some(dd.account_id),
-					return_owners: true,
-					..Default::default()
-				}).unwrap()).unwrap(),
+				serde_json::from_slice::<Value>(
+					&FragmentsPallet::get_definitions(GetDefinitionsParams {
+						limit: u64::MAX,
+						owner: Some(dd.account_id),
+						return_owners: true,
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
 						"num_instances": 0,
@@ -2044,7 +2045,7 @@ mod get_definitions_tests {
 							"value": hex::encode(dd.account_id)
 						}
 					}
-				}).to_string()
+				})
 			);
 
 		});
@@ -2052,13 +2053,10 @@ mod get_definitions_tests {
 	}
 
 	#[test]
-	fn get_definitions_should_not_work_for_particular_owner() {
-
+	fn get_definitions_should_not_work_if_owner_does_not_own_definitions() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
-
 			let definition = dd.definition;
-
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &definition));
 
@@ -2073,23 +2071,19 @@ mod get_definitions_tests {
 			);
 
 		});
-
 	}
 }
 
 mod get_instances_tests {
-	use serde_json::Map;
 	use super::*;
+	use serde_json::Map;
 
 	#[test]
 	fn get_instances_should_work() {
 
 		new_test_ext().execute_with(|| {
-
 			let dd = DummyData::new();
-
 			let mint = dd.mint_non_unique;
-
 			assert_ok!(upload(dd.account_id, &mint.definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &mint.definition));
 			assert_ok!(mint_(dd.account_id, &mint));
@@ -2100,44 +2094,97 @@ mod get_instances_tests {
 			}
 
 			assert_eq!(
-				String::from_utf8(FragmentsPallet::get_instances(GetInstancesParams {
-					definition_hash: mint.definition.get_definition_id(),
-					limit: u64::MAX,
-					..Default::default()
-				}).unwrap()).unwrap(),
-				json!(correct_map_instances).to_string()
+				serde_json::from_slice::<Value>(
+					&FragmentsPallet::get_instances(GetInstancesParams {
+						definition_hash: mint.definition.get_definition_id(),
+						limit: u64::MAX,
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
+				json!(correct_map_instances)
 			)
 
 		});
-
 	}
 
 	#[test]
-	fn get_instances_should_work_for_particular_owner() {
+	fn get_instances_should_work_if_only_return_first_copies_is_true() {
 		new_test_ext().execute_with(|| {
-
 			let dd = DummyData::new();
-
-			let give = dd.give_no_copy_perms;
-
+			let give = dd.give_copy_perms;
 			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &give.mint.definition));
 			assert_ok!(mint_(dd.account_id, &give.mint));
 			assert_ok!(give_(dd.account_id, &give));
 
-			let mut correct_map_instances = Map::new();
-			correct_map_instances.insert(format!("{}.{}", give.edition_id, give.copy_id), Map::new().into());
+			assert_eq!(
+				serde_json::from_slice::<Value>(
+					&FragmentsPallet::get_instances(GetInstancesParams {
+						definition_hash: give.mint.definition.get_definition_id(),
+						limit: u64::MAX,
+						only_return_first_copies: true,
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
+				json!({
+					"1.1": {},
+				})
+			);
+
+		});
+	}
+
+	#[test]
+	fn get_instances_should_work_if_only_return_first_copies_is_false() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let give = dd.give_copy_perms;
+			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &give.mint.definition));
+			assert_ok!(mint_(dd.account_id, &give.mint));
+			assert_ok!(give_(dd.account_id, &give));
 
 			assert_eq!(
-				String::from_utf8(FragmentsPallet::get_instances(GetInstancesParams {
-					definition_hash: give.mint.definition.get_definition_id(),
-					limit: u64::MAX,
-					owner: Some(give.to),
-					..Default::default()
-				}).unwrap()).unwrap(),
-				json!(correct_map_instances).to_string()
-			)
+				serde_json::from_slice::<Value>(
+					&FragmentsPallet::get_instances(GetInstancesParams {
+						definition_hash: give.mint.definition.get_definition_id(),
+						limit: u64::MAX,
+						only_return_first_copies: false,
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
+				json!({
+					"1.1": {},
+					"1.2": {},
+				})
+			);
 
+		});
+	}
+
+	#[test]
+	fn get_instances_should_work_if_owner_owns_instances() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let give = dd.give_no_copy_perms;
+			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &give.mint.definition));
+			assert_ok!(mint_(dd.account_id, &give.mint));
+			assert_ok!(give_(dd.account_id, &give));
+
+			assert_eq!(
+				serde_json::from_slice::<Value>(
+					&FragmentsPallet::get_instances(GetInstancesParams {
+						definition_hash: give.mint.definition.get_definition_id(),
+						limit: u64::MAX,
+						owner: Some(give.to),
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
+				json!({
+					format!("{}.{}", give.edition_id, give.copy_id): {}
+				})
+			);
 
 		});
 	}

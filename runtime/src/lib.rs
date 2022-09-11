@@ -56,11 +56,11 @@ use scale_info::prelude::string::String;
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-/// Import the fragments pallet.
-pub use pallet_protos;
+/// Import the protos pallet.
+use pallet_protos::GetProtosParams;
+use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
 
 pub use pallet_contracts::Schedule;
-use pallet_protos::GetProtosParams;
 
 // Prints debug output of the `contracts` pallet to stdout if the node is
 // started with `-lruntime::contracts=debug`.
@@ -858,6 +858,15 @@ impl_runtime_apis! {
 	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, AccountId> for Runtime {
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Protos::get_protos(params)
+		}
+	}
+
+	impl pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi<Block, AccountId> for Runtime {
+		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+			Fragments::get_definitions(params)
+		}
+		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+			Fragments::get_instances(params)
 		}
 	}
 

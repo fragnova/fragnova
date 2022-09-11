@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+
 use codec::Codec;
 
 use pallet_protos::GetProtosParams;

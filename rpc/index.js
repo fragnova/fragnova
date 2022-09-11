@@ -6,123 +6,151 @@ const connectToLocalNode = async () => {
     const wsProvider = new WsProvider('ws://127.0.0.1:9944');
 
     api = await ApiPromise.create({
-        provider: wsProvider,
-        rpc: {
-            protos: {
-                getProtos: {
-                    description: "this is the description", type: "String",
-                    params: [
-                        { name: 'params', type: 'GetProtosParams' },
-                        { name: 'at', type: 'BlockHash', isOptional: true }
-                    ]
-                },
-            }
+      provider: wsProvider,
+      rpc: {
+        protos: {
+          getProtos: {
+            description: "This is the description", type: "String",
+            params: [
+              { name: 'params', type: 'GetProtosParams' },
+              { name: 'at', type: 'BlockHash', isOptional: true }
+            ]
+          },
+        },
+        fragments: {
+          getDefinitions: {
+            description: "C'est le description", type: "String",
+            params: [
+              { name: 'params', type: 'GetDefinitionsParams' },
+              { name: 'at', type: 'BlockHash', isOptional: true }
+            ]
+          },
+          getInstances: {
+            description: "这是描述", type: "String",
+            params: [
+              { name: 'params', type: 'GetInstancesParams' },
+              { name: 'at', type: 'BlockHash', isOptional: true }
+            ]
+          }
+        }
+      },
+
+      types: {
+
+        AudioCategories: {
+          _enum: [
+            "oggFile",
+            "mp3File",
+          ]
         },
 
-        types: {
-            ShardsFormat: {
-                _enum: [
-                    "edn",
-                    "binary"
-                ]
-            },
+        ModelCategories: {
+          _enum: [
+            "gltfFile",
+            "sdf",
+            "physicsCollider"
+          ]
+        },
 
-            AudioCategories: {
-                _enum: [
-                    "oggFile",
-                    "mp3File",
-                ]
-            },
+        TextureCategories: {
+          _enum: [
+            "pngFile",
+            "jpgFile"
+          ]
+        },
 
-            ModelCategories: {
-                _enum: [
-                    "gltfFile",
-                    "sdf",
-                    "physicsCollider"
-                ]
-            },
+        VectorCategories: {
+          _enum: [
+            "svgFile",
+            "ttfFile"
+          ]
+        },
 
-            TextureCategories: {
-                _enum: [
-                    "pngFile",
-                    "jpgFile"
-                ]
-            },
+        VideoCategories: {
+          _enum: [
+            "mkvFile",
+            "mp4File"
+          ]
+        },
 
-            VectorCategories: {
-                _enum: [
-                    "svgFile",
-                    "ttfFile"
-                ]
-            },
+        TextCategories: {
+          _enum: [
+            "plain",
+            "json"
+          ]
+        },
 
-            VideoCategories: {
-                _enum: [
-                    "mkvFile",
-                    "mp4File"
-                ]
-            },
+        BinaryCategories: {
+          _enum: [
+            "wasmProgram",
+            "wasmReactor",
+            "blendFile",
+          ]
+        },
 
-            TextCategories: {
-                _enum: [
-                    "plain",
-                    "json"
-                ]
-            },
+        ShardsScriptInfo: {
+          format: 'ShardsFormat',
+          requiring: 'Vec<ShardsTrait>',
+          implementing: 'Vec<ShardsTrait>'
+        },
 
-            BinaryCategories: {
-                _enum: [
-                    "wasmProgram",
-                    "wasmReactor",
-                    "blendFile",
-                ]
-            },
+        ShardsTrait: "Vec<u16>",
 
-            ShardsScriptInfo: {
-                format: 'ShardsFormat',
-                requiring: 'Vec<ShardsTrait>',
-                implementing: 'Vec<ShardsTrait>'
-            },
+        ShardsFormat: {
+          _enum: [
+            "edn",
+            "binary",
+          ]
+        },
 
-            ShardsTrait: "Vec<u16>",
+        Categories: {
+          _enum: {
+            "text": "TextCategories",
+            "trait": "Option<ShardsTrait>",
+            "shards": "ShardsScriptInfo",
+            "audio": "AudioCategories",
+            "texture": "TextureCategories",
+            "vector": "VectorCategories",
+            "video": "VideoCategories",
+            "model": "ModelCategories",
+            "binary": "BinaryCategories",
+          }
+        },
 
-            ShardsFormat: {
-                _enum: [
-                    "edn",
-                    "binary",
-                ]
-            },
+        BlockHash: 'Hash',
 
-            Categories: {
-                _enum: {
-                    "text": "TextCategories",
-                    "trait": "Option<ShardsTrait>",
-                    "shards": "ShardsScriptInfo",
-                    "audio": "AudioCategories",
-                    "texture": "TextureCategories",
-                    "vector": "VectorCategories",
-                    "video": "VideoCategories",
-                    "model": "ModelCategories",
-                    "binary": "BinaryCategories",
-                }
-            },
+        GetProtosParams: {
+          desc: 'bool',
+          from: 'u64',
+          limit: 'u64',
+          metadata_keys: 'Vec<String>',
+          owner: 'Option<AccountId>',
+          return_owners: 'bool',
+          categories: 'Vec<Categories>',
+          tags: 'Vec<String>',
+          available: 'Option<bool>',
+        },
 
-            BlockHash: 'Hash',
+        GetDefinitionsParams: {
+          desc: 'bool',
+          from: 'u64',
+          limit: 'u64',
+          metadata_keys: 'Vec<String>',
+          owner: 'Option<AccountId>',
+          return_owners: 'bool',
+        },
 
-            GetProtosParams: {
-                desc: 'bool',
-                from: 'u32',
-                limit: 'u32',
-                metadata_keys: 'Vec<String>',
-                owner: 'Option<AccountId>',
-                return_owners: 'bool',
-                categories: 'Vec<Categories>',
-                tags: 'Vec<String>',
-                available: 'Option<bool>',
-            }
+        GetInstancesParams: {
+          desc: 'bool',
+          from: 'u64',
+          limit: 'u64',
+          metadata_keys: 'Vec<String>',
+          owner: 'Option<AccountId>',
+          only_return_first_copies: 'bool',
+        },
 
 
-        }
+      }
     });
 
     return api
@@ -134,15 +162,10 @@ const connectToLocalNode = async () => {
 
 // (async () => {
 //     const api = await connectToLocalNode();
-
 //     const params = api.createType("GetProtosParams", {categories: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
 //         metadata_keys: ['A', 'A'], return_owners: true});
-
-
 //     let string_json = await api.rpc.protos.getProtos(params)
-
 //     console.log('string_json is', string_json)
-
 // })()
 
 

@@ -190,6 +190,10 @@ version = '4.0.0-dev'
 path = '../pallets/protos/rpc'
 version = '0.0.1'
 
+[dependencies.pallet-fragments-rpc]
+path = '../pallets/fragments/rpc'
+version = '0.0.1'
+
 [features]
 default = []
 runtime-benchmarks = ['clamor-runtime/runtime-benchmarks']

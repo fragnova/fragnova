@@ -1,20 +1,3 @@
-// This file is part of Substrate.
-
-// Copyright (C) 2019-2022 Parity Technologies (UK) Ltd.
-// SPDX-License-Identifier: Apache-2.0
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// 	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 //! A collection of node-specific RPC methods.
 //!
 //! Since `substrate` core functionality makes no assumptions
@@ -73,6 +56,7 @@ where
 {
 	use pallet_contracts_rpc::{Contracts, ContractsApiServer};
 	use pallet_protos_rpc::{Protos, ProtosApiServer};
+	use pallet_fragments_rpc::{FragmentsRpcServerImpl, FragmentsRpcServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_rpc::dev::{Dev, DevApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
@@ -89,7 +73,9 @@ where
 
 	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
-	io.merge(Protos::new(client).into_rpc())?;
+	io.merge(Protos::new(client.clone()).into_rpc())?;
+
+	io.merge(FragmentsRpcServerImpl::new(client).into_rpc())?;
 
 	Ok(io)
 }
