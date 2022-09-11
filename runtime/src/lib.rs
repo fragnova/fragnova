@@ -720,9 +720,11 @@ impl_runtime_apis! {
 			match tx.function {
 				// We want to prevent polluting blocks with a lot of useless invalid data.
 				// TODO perform quick and preliminary data validation
+				#[allow(unused_variables)]
 				Call::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
 					// TODO
 				},
+				#[allow(unused_variables)]
 				Call::Protos(ProtosCall::patch{ref data, ..}) |
 				Call::Protos(ProtosCall::set_metadata{ref data, ..}) => {
 					// TODO

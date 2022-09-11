@@ -118,6 +118,7 @@ const connectToLocalNode = async () => {
                 return_owners: 'bool',
                 categories: 'Vec<Categories>',
                 tags: 'Vec<String>',
+                exclude_tags: 'bool',
                 available: 'Option<bool>',
             }
 

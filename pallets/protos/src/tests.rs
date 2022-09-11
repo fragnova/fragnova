@@ -243,6 +243,7 @@ mod get_protos_tests {
 				return_owners: false,
 				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -272,6 +273,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Text(TextCategories::Plain)],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -314,6 +316,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -358,6 +361,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -403,6 +407,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Trait(Some(twox_64(&proto2.data)))],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -461,6 +466,7 @@ mod get_protos_tests {
 					Categories::Text(TextCategories::Plain),
 				],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -536,6 +542,7 @@ mod get_protos_tests {
 					Categories::Shards(shard_script),
 				],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -594,6 +601,7 @@ mod get_protos_tests {
 					Categories::Text(TextCategories::Plain),
 				],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -659,6 +667,7 @@ mod get_protos_tests {
 					Categories::Trait(Some(twox_64(&proto2.data))),
 				],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -718,6 +727,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -770,6 +780,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -810,6 +821,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
@@ -859,6 +871,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
+				exclude_tags: false,
 				available: Some(true),
 			};
 
