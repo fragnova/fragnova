@@ -96,7 +96,9 @@ pub struct GetProtosParams<TAccountId, TString> {
 	pub categories: Vec<Categories>,
 	/// List of tags to filter by
 	pub tags: Vec<TString>,
-	/// Whether the Proto-Fragments should be available or not
+	/// The returned Proto-Fragments must not have any tag that is specified in the `tags` field
+	pub exclude_tags: bool,
+  /// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
 }
 
@@ -908,6 +910,7 @@ pub mod pallet {
 			tags: &[Vec<u8>],
 			categories: &[Categories],
 			avail: Option<bool>,
+			exclude_tags: bool,
 		) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
@@ -919,9 +922,9 @@ pub mod pallet {
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto);
+					return Self::filter_tags(tags, &struct_proto, exclude_tags);
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories);
+					return Self::filter_category(tags, &struct_proto, categories, exclude_tags);
 				}
 			} else {
 				false
@@ -932,6 +935,7 @@ pub mod pallet {
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
 			categories: &[Categories],
+			exclude_tags: bool,
 		) -> bool {
 			let found: Vec<_> = categories
 				.into_iter()
@@ -957,7 +961,7 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
 								if param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto);
+									return Self::filter_tags(tags, struct_proto, exclude_tags);
 								} else { return false; }
 							}
 							// Generic query:
@@ -965,7 +969,7 @@ pub mod pallet {
 							else if param_script_info.implementing.contains(&zero_vec) && 
 									param_script_info.requiring.contains(&zero_vec) && 
 									param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto);
+									return Self::filter_tags(tags, struct_proto, exclude_tags);
 							}
 							else {
 								return false;
@@ -977,7 +981,7 @@ pub mod pallet {
 					},
 					_ => {
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto);
+							return Self::filter_tags(tags, struct_proto, exclude_tags);
 						} else {
 							return false;
 						}
@@ -995,6 +999,7 @@ pub mod pallet {
 		fn filter_tags(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
+			exclude_tags: bool,
 		) -> bool {
 			if tags.len() == 0 {
 				true
@@ -1002,7 +1007,11 @@ pub mod pallet {
 				tags.into_iter().all(|tag| {
 					let tag_idx = <Tags<T>>::get(tag);
 					if let Some(tag_idx) = tag_idx {
-						struct_proto.tags.contains(&Compact::from(tag_idx))
+						if struct_proto.tags.contains(&Compact::from(tag_idx)) {
+							!exclude_tags
+						} else {
+							exclude_tags
+						}
 					} else {
 						false
 					}
@@ -1101,6 +1110,7 @@ pub mod pallet {
 									&params.tags,
 									&params.categories,
 									params.available,
+									params.exclude_tags
 								)
 							})
 							.skip(params.from as usize)
@@ -1116,6 +1126,7 @@ pub mod pallet {
 									&params.tags,
 									&params.categories,
 									params.available,
+									params.exclude_tags
 								)
 							})
 							.skip(params.from as usize)
@@ -1159,6 +1170,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
+										params.exclude_tags
 									)
 								})
 								.collect()
@@ -1172,6 +1184,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
+										params.exclude_tags
 									)
 								})
 								.collect()
