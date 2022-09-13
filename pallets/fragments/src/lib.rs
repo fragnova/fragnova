@@ -57,8 +57,8 @@ use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::StaticLookup;
 
 use frame_support::traits::{
-	tokens::fungibles::{Inspect, Transfer},
-	Currency, ExistenceRequirement,
+	tokens::{fungibles, fungible},
+	Currency,
 };
 use sp_runtime::SaturatedConversion;
 
@@ -713,12 +713,12 @@ pub mod pallet {
 
 			if let Some(currency) = fragment_data.metadata.currency {
 				let minimum_balance_needed_to_exist =
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(currency);
-				let price_balance: <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::Balance =
+					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::minimum_balance(currency);
+				let price_balance: <pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::Balance =
 					price.saturated_into();
 
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who)
+					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::balance(currency, &who)
 						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
@@ -749,7 +749,7 @@ pub mod pallet {
 			)?;
 
 			if let Some(currency) = fragment_data.metadata.currency {
-				<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+				<pallet_assets::Pallet<T> as fungibles::Transfer<T::AccountId>>::transfer(
 					// transfer `price` units of `currency` from `who` to `vault`
 					currency,
 					&who,
@@ -759,12 +759,12 @@ pub mod pallet {
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			} else {
-				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::transfer(
+				<pallet_balances::Pallet<T> as fungible::Transfer<T::AccountId>>::transfer(
 					// transfer `price` units of NOVA from `who` to `vault`
 					&who,
 					&vault,
 					price.saturated_into(),
-					ExistenceRequirement::KeepAlive,
+					true,
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}

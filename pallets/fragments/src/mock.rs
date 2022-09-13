@@ -57,6 +57,7 @@ parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
 	pub StorageBytesMultiplier: u64 = 10;
+	pub const IsTransferable: bool = false;
 }
 
 impl frame_system::Config for Test {
@@ -128,6 +129,7 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
+	type IsTransferable = IsTransferable;
 }
 
 parameter_types! {
