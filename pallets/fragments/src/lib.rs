@@ -366,6 +366,8 @@ pub mod pallet {
 		Expired,
 		/// Insufficient funds
 		InsufficientBalance,
+		/// Account cannot exist with the funds that would be given.
+		ReceiverBelowMinimumBalance,
 		/// Fragment sale sold out
 		SoldOut,
 		/// Sale already open
@@ -722,6 +724,11 @@ pub mod pallet {
 						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
+				ensure!(
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault) + price_balance
+						>= minimum_balance_needed_to_exist,
+					Error::<T>::ReceiverBelowMinimumBalance
+				);
 			} else {
 				let minimum_balance_needed_to_exist =
 					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
@@ -732,6 +739,11 @@ pub mod pallet {
 					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who)
 						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
+				);
+				ensure!(
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault) + price_balance
+						>= minimum_balance_needed_to_exist,
+					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			}
 
