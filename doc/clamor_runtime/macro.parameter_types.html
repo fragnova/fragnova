@@ -79,10 +79,10 @@ ONLY available when <code>std</code> is enabled.</strong></p>
 
 <span class="comment">// In testing, `StaticArgument` can be altered later: `StaticArgument::set(8)`.</span></code></pre></div>
 <h2 id="invalid-example"><a href="#invalid-example">Invalid example:</a></h2>
-<div class="example-wrap"><div class='information'><div class='tooltip compile_fail'>ⓘ</div></div><pre class="rust rust-example-rendered compile_fail"><code><span class="comment">// This function cannot be used in a const context.
+<div class="example-wrap compile_fail"><div class='tooltip'>ⓘ</div><pre class="rust rust-example-rendered"><code><span class="comment">// This function cannot be used in a const context.
 </span><span class="kw">fn </span>non_const_expression() -&gt; u64 { <span class="number">99 </span>}
 
 <span class="macro">parameter_types! </span>{
    <span class="kw">pub const </span>Argument: u64 = non_const_expression();
 }</code></pre></div>
-</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (1d37ed661 2022-09-09)" ></div></body></html>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (17cbdfd07 2022-09-13)" ></div></body></html>
