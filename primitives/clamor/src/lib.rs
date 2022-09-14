@@ -1,3 +1,5 @@
+//! Helper Functions and Types that are used in other Packages of the this Workspace
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // #[cfg(feature = "std")]
@@ -8,11 +10,22 @@ use sp_core::offchain::HttpRequestStatus;
 use sp_io::{hashing::blake2_256, offchain};
 use sp_std::vec::Vec;
 
+/// 256 bytes u8-Array
 pub type Hash256 = [u8; 32];
 
+/// 128 bytes u8-Array
 pub type Hash128 = [u8; 16];
+/// 64 bytes u8-Array
 pub type Hash64 = [u8; 8];
 
+/// The IPFS CID prefix used to use to obtain any data that is stored on the Fragnova Blockchain
+///
+/// The format of the CID prefix is: <cid-version><multicodec><multihash> (see: https://proto.school/anatomy-of-a-cid/05)
+///
+/// 0x01 stands for CID v1.
+/// 0x55 is the Multicodec code for raw (https://github.com/multiformats/multicodec)
+/// 0xa0e402 is the Multihash code for blake2b-256 (https://github.com/multiformats/multihash)
+/// 0x20 is the length of the digest
 pub const CID_PREFIX: [u8; 6] = hex_literal::hex!("0155a0e40220");
 
 #[cfg(feature = "std")]
@@ -55,6 +68,7 @@ mod details {
 		// NODE.tick();
 	}
 
+	/// Get the URL of the Fragnova-owned Geth Node
 	pub fn _get_geth_url() -> Option<Vec<u8>> {
 		if let Some(geth_url) = GETH_URL.lock().unwrap().as_ref() {
 			// well, we are doing an allocation every time we call this function here...
@@ -69,11 +83,15 @@ mod details {
 mod details {
 	use super::*;
 
+	/// TODO: Remove
 	pub fn _say_hello_world(data: &str) {}
+
+	/// TODO
 	pub fn _fetch_extrinsic(hash: &Hash256) -> Option<Vec<u8>> {
 		None
 	}
 
+	/// TODO
 	pub fn _get_geth_url() -> Option<Vec<u8>> {
 		None
 	}
@@ -103,16 +121,19 @@ pub trait Clamor {
 		details::_say_hello_world(data);
 	}
 
+	/// TODO
 	fn on_new_fragment(_fragment_hash: &Hash256) -> bool {
 		log::debug!("sp_clamor on_new_fragment called...");
 		true
 	}
 
+	/// Get the URL of the Fragnova-owned Geth Node
 	fn get_geth_url() -> Option<Vec<u8>> {
 		details::_get_geth_url()
 	}
 }
 
+/// Set the Fragnova-owned Geth Node's URL
 #[cfg(feature = "std")]
 pub fn init(geth_url: Option<String>) {
 	if let Some(geth_url) = geth_url {

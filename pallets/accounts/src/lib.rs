@@ -10,6 +10,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[allow(missing_docs)]
 #[cfg(any(test, feature = "compile-dummy-data"))]
 pub mod dummy_data;
 
@@ -22,6 +23,7 @@ pub mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+#[allow(missing_docs)]
 mod weights;
 
 /// keccak256(Lock(address,bytes,uint256)). Try it here: https://emn178.github.io/online-tools/keccak_256.html
@@ -63,6 +65,7 @@ pub mod crypto {
 	// https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	app_crypto!(ed25519, KEY_TYPE);
 
+	/// The identifier type for an offchain worker.
 	pub struct FragAuthId;
 
 	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for FragAuthId {
@@ -108,10 +111,13 @@ use ethabi::ParamType;
 
 use frame_support::traits::ReservableCurrency;
 
+/// TODO: Documentation
 pub type DiscordID = u64;
 
+/// TODO: Documentation
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum ExternalID {
+	/// TODO: Documentation
 	Discord(DiscordID),
 }
 
@@ -138,6 +144,7 @@ pub struct EthLockUpdate<TPublic> {
 	pub locktime: U256,
 	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
+	/// The lock/unlock signature signed by the Ethereum Account ID
 	pub signature: ecdsa::Signature,
 	/// Whether the event was `Lock` or `Unlock`
 	pub lock: bool,
@@ -188,8 +195,11 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
+		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
 
+		/// The Ethereum Chain ID that the Fragnova-owned Ethereum Smart Contract is deployed on.
+		/// This should be the Ethereum Mainnet's Chain ID.
 		#[pallet::constant]
 		type EthChainId: Get<u64>;
 
@@ -197,6 +207,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type EthConfirmations: Get<u64>;
 
+		/// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
 		type EthFragContract: EthFragContract;
 
 		/// Number of votes needed to do something (问Gio)
@@ -207,9 +218,11 @@ pub mod pallet {
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 	}
 
+	/// The Genesis Configuration for the Pallet.
 	#[pallet::genesis_config]
 	#[derive(Default)]
 	pub struct GenesisConfig {
+		/// **List of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		pub keys: Vec<ed25519::Public>,
 	}
 
@@ -277,6 +290,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ExternalAuthorities<T: Config> = StorageValue<_, BTreeSet<T::AccountId>, ValueQuery>;
 
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -307,7 +321,7 @@ pub mod pallet {
 		AccountAlreadyLinked,
 		/// Account not linked
 		AccountNotLinked,
-		// Account linked to different account
+		/// Account linked to different account
 		DifferentAccountLinked,
 		/// Account already exists
 		AccountAlreadyExists,
@@ -324,6 +338,10 @@ pub mod pallet {
 	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+
+		/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		///
+		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
 		#[pallet::weight(25_000)] // TODO - weight
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
