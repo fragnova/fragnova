@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["get_geth_url",""],["on_new_fragment",""],["say_hello_world","A function that can be called from native/wasm."]],"struct":[["HostFunctions","Provides implementations for the extern host functions."]]};
+window.SIDEBAR_ITEMS = {"fn":[["get_geth_url","Get the URL of the Fragnova-owned Geth Node"],["on_new_fragment","TODO"],["say_hello_world","A function that can be called from native/wasm."]],"struct":[["HostFunctions","Provides implementations for the extern host functions."]]};

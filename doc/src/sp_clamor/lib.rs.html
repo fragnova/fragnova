@@ -191,7 +191,30 @@
 <span id="191">191</span>
 <span id="192">192</span>
 <span id="193">193</span>
-</pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Helper Functions and Types that are used in other Packages of the this Workspace
+
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 </span><span class="comment">// #[cfg(feature = &quot;std&quot;)]
 // extern crate chainblocks;
@@ -201,12 +224,23 @@
 <span class="kw">use </span>sp_io::{hashing::blake2_256, offchain};
 <span class="kw">use </span>sp_std::vec::Vec;
 
-<span class="kw">pub type </span>Hash256 = [u8; <span class="number">32</span>];
+<span class="doccomment">/// 256 bytes u8-Array
+</span><span class="kw">pub type </span>Hash256 = [u8; <span class="number">32</span>];
 
-<span class="kw">pub type </span>Hash128 = [u8; <span class="number">16</span>];
-<span class="kw">pub type </span>Hash64 = [u8; <span class="number">8</span>];
+<span class="doccomment">/// 128 bytes u8-Array
+</span><span class="kw">pub type </span>Hash128 = [u8; <span class="number">16</span>];
+<span class="doccomment">/// 64 bytes u8-Array
+</span><span class="kw">pub type </span>Hash64 = [u8; <span class="number">8</span>];
 
-<span class="kw">pub const </span>CID_PREFIX: [u8; <span class="number">6</span>] = <span class="macro">hex_literal::hex!</span>(<span class="string">&quot;0155a0e40220&quot;</span>);
+<span class="doccomment">/// The IPFS CID prefix used to use to obtain any data that is stored on the Fragnova Blockchain
+///
+/// The format of the CID prefix is: &lt;cid-version&gt;&lt;multicodec&gt;&lt;multihash&gt; (see: https://proto.school/anatomy-of-a-cid/05)
+///
+/// 0x01 stands for CID v1.
+/// 0x55 is the Multicodec code for raw (https://github.com/multiformats/multicodec)
+/// 0xa0e402 is the Multihash code for blake2b-256 (https://github.com/multiformats/multihash)
+/// 0x20 is the length of the digest
+</span><span class="kw">pub const </span>CID_PREFIX: [u8; <span class="number">6</span>] = <span class="macro">hex_literal::hex!</span>(<span class="string">&quot;0155a0e40220&quot;</span>);
 
 <span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">mod </span>details {
@@ -248,7 +282,8 @@
 		// NODE.tick();
 	</span>}
 
-	<span class="kw">pub fn </span>_get_geth_url() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
+	<span class="doccomment">/// Get the URL of the Fragnova-owned Geth Node
+	</span><span class="kw">pub fn </span>_get_geth_url() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(geth_url) = GETH_URL.lock().unwrap().as_ref() {
 			<span class="comment">// well, we are doing an allocation every time we call this function here...
 			</span><span class="prelude-val">Some</span>(geth_url.clone())
@@ -262,12 +297,16 @@
 </span><span class="kw">mod </span>details {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-	<span class="kw">pub fn </span>_say_hello_world(data: <span class="kw-2">&amp;</span>str) {}
-	<span class="kw">pub fn </span>_fetch_extrinsic(hash: <span class="kw-2">&amp;</span>Hash256) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
+	<span class="doccomment">/// TODO: Remove
+	</span><span class="kw">pub fn </span>_say_hello_world(data: <span class="kw-2">&amp;</span>str) {}
+
+	<span class="doccomment">/// TODO
+	</span><span class="kw">pub fn </span>_fetch_extrinsic(hash: <span class="kw-2">&amp;</span>Hash256) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
 		<span class="prelude-val">None
 	</span>}
 
-	<span class="kw">pub fn </span>_get_geth_url() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
+	<span class="doccomment">/// TODO
+	</span><span class="kw">pub fn </span>_get_geth_url() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
 		<span class="prelude-val">None
 	</span>}
 }
@@ -296,17 +335,20 @@
 		details::_say_hello_world(data);
 	}
 
-	<span class="kw">fn </span>on_new_fragment(_fragment_hash: <span class="kw-2">&amp;</span>Hash256) -&gt; bool {
+	<span class="doccomment">/// TODO
+	</span><span class="kw">fn </span>on_new_fragment(_fragment_hash: <span class="kw-2">&amp;</span>Hash256) -&gt; bool {
 		<span class="macro">log::debug!</span>(<span class="string">&quot;sp_clamor on_new_fragment called...&quot;</span>);
 		<span class="bool-val">true
 	</span>}
 
-	<span class="kw">fn </span>get_geth_url() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
+	<span class="doccomment">/// Get the URL of the Fragnova-owned Geth Node
+	</span><span class="kw">fn </span>get_geth_url() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt; {
 		details::_get_geth_url()
 	}
 }
 
-<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+<span class="doccomment">/// Set the Fragnova-owned Geth Node&#39;s URL
+</span><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">pub fn </span>init(geth_url: <span class="prelude-ty">Option</span>&lt;String&gt;) {
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(geth_url) = geth_url {
 		<span class="kw-2">*</span>details::GETH_URL.lock().unwrap() = <span class="prelude-val">Some</span>(geth_url.into_bytes());

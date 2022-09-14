@@ -971,6 +971,24 @@
 <span id="971">971</span>
 <span id="972">972</span>
 <span id="973">973</span>
+<span id="974">974</span>
+<span id="975">975</span>
+<span id="976">976</span>
+<span id="977">977</span>
+<span id="978">978</span>
+<span id="979">979</span>
+<span id="980">980</span>
+<span id="981">981</span>
+<span id="982">982</span>
+<span id="983">983</span>
+<span id="984">984</span>
+<span id="985">985</span>
+<span id="986">986</span>
+<span id="987">987</span>
+<span id="988">988</span>
+<span id="989">989</span>
+<span id="990">990</span>
+<span id="991">991</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `frag` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
@@ -983,6 +1001,7 @@
 
 </span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
+#[allow(missing_docs)]
 #[cfg(any(test, feature = <span class="string">&quot;compile-dummy-data&quot;</span>))]
 </span><span class="kw">pub mod </span>dummy_data;
 
@@ -995,7 +1014,8 @@
 <span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">mod </span>benchmarking;
 
-<span class="kw">mod </span>weights;
+<span class="attribute">#[allow(missing_docs)]
+</span><span class="kw">mod </span>weights;
 
 <span class="doccomment">/// keccak256(Lock(address,bytes,uint256)). Try it here: https://emn178.github.io/online-tools/keccak_256.html
 ///
@@ -1036,7 +1056,8 @@
 	// https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	</span><span class="macro">app_crypto!</span>(ed25519, KEY_TYPE);
 
-	<span class="kw">pub struct </span>FragAuthId;
+	<span class="doccomment">/// The identifier type for an offchain worker.
+	</span><span class="kw">pub struct </span>FragAuthId;
 
 	<span class="kw">impl </span>frame_system::offchain::AppCrypto&lt;MultiSigner, MultiSignature&gt; <span class="kw">for </span>FragAuthId {
 		<span class="kw">type </span>RuntimeAppPublic = Public;
@@ -1081,11 +1102,14 @@
 
 <span class="kw">use </span>frame_support::traits::ReservableCurrency;
 
-<span class="kw">pub type </span>DiscordID = u64;
+<span class="doccomment">/// TODO: Documentation
+</span><span class="kw">pub type </span>DiscordID = u64;
 
-<span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+<span class="doccomment">/// TODO: Documentation
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 </span><span class="kw">pub enum </span>ExternalID {
-	Discord(DiscordID),
+	<span class="doccomment">/// TODO: Documentation
+	</span>Discord(DiscordID),
 }
 
 <span class="doccomment">/// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
@@ -1111,7 +1135,8 @@
 	</span><span class="kw">pub </span>locktime: U256,
 	<span class="doccomment">/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	</span><span class="kw">pub </span>sender: H160,
-	<span class="kw">pub </span>signature: ecdsa::Signature,
+	<span class="doccomment">/// The lock/unlock signature signed by the Ethereum Account ID
+	</span><span class="kw">pub </span>signature: ecdsa::Signature,
 	<span class="doccomment">/// Whether the event was `Lock` or `Unlock`
 	</span><span class="kw">pub </span>lock: bool,
 	<span class="doccomment">/// Block number in which the event was emitted
@@ -1161,16 +1186,20 @@
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
 		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
 
-		<span class="kw">type </span>WeightInfo: WeightInfo;
+		<span class="doccomment">/// Weight functions needed for pallet_protos.
+		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 
-		<span class="attribute">#[pallet::constant]
+		<span class="doccomment">/// The Ethereum Chain ID that the Fragnova-owned Ethereum Smart Contract is deployed on.
+		/// This should be the Ethereum Mainnet&#39;s Chain ID.
+		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>EthChainId: Get&lt;u64&gt;;
 
 		<span class="doccomment">/// The **number of confirmations required** to consider a **transaction** on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>EthConfirmations: Get&lt;u64&gt;;
 
-		<span class="kw">type </span>EthFragContract: EthFragContract;
+		<span class="doccomment">/// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
+		</span><span class="kw">type </span>EthFragContract: EthFragContract;
 
 		<span class="doccomment">/// Number of votes needed to do something (问Gio)
 		</span><span class="attribute">#[pallet::constant]
@@ -1180,10 +1209,12 @@
 		</span><span class="kw">type </span>AuthorityId: AppCrypto&lt;<span class="self">Self</span>::Public, <span class="self">Self</span>::Signature&gt;;
 	}
 
-	<span class="attribute">#[pallet::genesis_config]
+	<span class="doccomment">/// The Genesis Configuration for the Pallet.
+	</span><span class="attribute">#[pallet::genesis_config]
 	#[derive(Default)]
 	</span><span class="kw">pub struct </span>GenesisConfig {
-		<span class="kw">pub </span>keys: Vec&lt;ed25519::Public&gt;,
+		<span class="doccomment">/// **List of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		</span><span class="kw">pub </span>keys: Vec&lt;ed25519::Public&gt;,
 	}
 
 	<span class="attribute">#[pallet::genesis_build]
@@ -1250,7 +1281,8 @@
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>ExternalAuthorities&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;T::AccountId&gt;, ValueQuery&gt;;
 
-	<span class="attribute">#[pallet::event]
+	<span class="attribute">#[allow(missing_docs)]
+	#[pallet::event]
 	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
 	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		<span class="doccomment">/// A link happened between native and ethereum account.
@@ -1280,7 +1312,7 @@
 		</span>AccountAlreadyLinked,
 		<span class="doccomment">/// Account not linked
 		</span>AccountNotLinked,
-		<span class="comment">// Account linked to different account
+		<span class="doccomment">/// Account linked to different account
 		</span>DifferentAccountLinked,
 		<span class="doccomment">/// Account already exists
 		</span>AccountAlreadyExists,
@@ -1297,7 +1329,11 @@
 	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
 	</span><span class="attribute">#[pallet::call]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-		<span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+
+		<span class="doccomment">/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		///
+		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
+		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 

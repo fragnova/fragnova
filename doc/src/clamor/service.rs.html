@@ -368,7 +368,25 @@
 <span id="368">368</span>
 <span id="369">369</span>
 <span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
+//!
+//! service.rs: This file defines the implementation of the node. Take note of the libraries that this file imports and the names of the functions it invokes.
+//! In particular, there are references to consensus-related topics, such as the longest chain rule, the Aura block authoring mechanism and the GRANDPA finality gadget.
+</span><span class="comment">// After the node has been built, refer to the embedded documentation to learn more about the capabilities and configuration parameters that it exposes:
+//
+// ```sh
+// ./target/release/node-template --help
+// ```
 
 </span><span class="kw">use </span>clamor_runtime::{<span class="self">self</span>, opaque::Block, RuntimeApi};
 <span class="kw">use </span>sc_client_api::{BlockBackend, ExecutorProvider};
@@ -383,6 +401,7 @@
 <span class="kw">use </span>std::{sync::Arc, time::Duration};
 
 <span class="comment">// Our native executor instance.
+</span><span class="doccomment">/// TODO: Documentation. See: https://substrate.recipes/kitchen-node.html#building-a-service-with-the-runtime
 </span><span class="kw">pub struct </span>ExecutorDispatch;
 
 <span class="kw">impl </span>sc_executor::NativeExecutionDispatch <span class="kw">for </span>ExecutorDispatch {
@@ -408,7 +427,8 @@
 <span class="kw">type </span>FullBackend = sc_service::TFullBackend&lt;Block&gt;;
 <span class="kw">type </span>FullSelectChain = sc_consensus::LongestChain&lt;FullBackend, Block&gt;;
 
-<span class="kw">pub fn </span>new_partial(
+<span class="doccomment">/// TODO: Documentation. See: https://substrate.recipes/kitchen-node.html#building-a-service-with-the-runtime
+</span><span class="kw">pub fn </span>new_partial(
 	config: <span class="kw-2">&amp;</span>Configuration,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;
 	sc_service::PartialComponents&lt;

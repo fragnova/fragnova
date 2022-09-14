@@ -1288,6 +1288,19 @@
 <span id="1288">1288</span>
 <span id="1289">1289</span>
 <span id="1290">1290</span>
+<span id="1291">1291</span>
+<span id="1292">1292</span>
+<span id="1293">1293</span>
+<span id="1294">1294</span>
+<span id="1295">1295</span>
+<span id="1296">1296</span>
+<span id="1297">1297</span>
+<span id="1298">1298</span>
+<span id="1299">1299</span>
+<span id="1300">1300</span>
+<span id="1301">1301</span>
+<span id="1302">1302</span>
+<span id="1303">1303</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1308,7 +1321,8 @@
 <span class="attribute">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
 
-<span class="kw">mod </span>weights;
+<span class="attribute">#[allow(missing_docs)]
+</span><span class="kw">mod </span>weights;
 
 <span class="kw">use </span>protos::{categories::Categories, traits::Trait};
 
@@ -1340,27 +1354,28 @@
 
 <span class="kw">use </span>frame_support::traits::tokens::fungibles::{Inspect, Mutate};
 
-<span class="doccomment">/// ¿
+<span class="doccomment">/// TODO: Documentation
 </span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 </span><span class="kw">pub enum </span>LinkSource {
 	<span class="comment">// Generally we just store this data, we don&#39;t verify it as we assume auth service did it.
 	// (Link signature, Linked block number, EIP155 Chain ID)
+	</span><span class="doccomment">/// TODO: Documentation
 	</span>Evm(ecdsa::Signature, u64, U256),
 }
 
 <span class="doccomment">/// **Types** of **Assets that are linked to a Proto-Fragment** (e.g an ERC-721 Contract etc.)
 </span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 </span><span class="kw">pub enum </span>LinkedAsset {
-	<span class="comment">// Ethereum (ERC721 Contract address, Token ID, Link source)
+	<span class="doccomment">/// Ethereum (ERC721 Contract address, Token ID, Link source)
 	</span>Erc721(H160, U256, LinkSource),
 }
 
 <span class="doccomment">/// **Types** of **Proto-Fragment Owners**
 </span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 </span><span class="kw">pub enum </span>ProtoOwner&lt;TAccountId&gt; {
-	<span class="comment">// A **regular account** on **this chain**
+	<span class="doccomment">/// A **regular account** on **this chain**
 	</span>User(TAccountId),
-	<span class="comment">// An **external asset** not on this chain
+	<span class="doccomment">/// An **external asset** not on this chain
 	</span>ExternalAsset(LinkedAsset),
 }
 
@@ -1368,17 +1383,26 @@
 </span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>GetProtosParams&lt;TAccountId, TString&gt; {
-	<span class="kw">pub </span>desc: bool,
-	<span class="kw">pub </span>from: u64,
-	<span class="kw">pub </span>limit: u64,
-	<span class="kw">pub </span>metadata_keys: Vec&lt;TString&gt;,
-	<span class="kw">pub </span>owner: <span class="prelude-ty">Option</span>&lt;TAccountId&gt;,
-	<span class="kw">pub </span>return_owners: bool,
-	<span class="kw">pub </span>categories: Vec&lt;Categories&gt;,
-	<span class="kw">pub </span>tags: Vec&lt;TString&gt;,
+	<span class="doccomment">/// Whether to order the results in descending or ascending order
+	</span><span class="kw">pub </span>desc: bool,
+	<span class="doccomment">/// Number of Proto-Fragment Results to skip
+	</span><span class="kw">pub </span>from: u64,
+	<span class="doccomment">/// Number of Proto-Fragments to retrieve
+	</span><span class="kw">pub </span>limit: u64,
+	<span class="doccomment">/// List of Metadata Keys of the Proto-Fragment that should also be returned
+	</span><span class="kw">pub </span>metadata_keys: Vec&lt;TString&gt;,
+	<span class="doccomment">/// Owner of the Proto-Fragment
+	</span><span class="kw">pub </span>owner: <span class="prelude-ty">Option</span>&lt;TAccountId&gt;,
+	<span class="doccomment">/// Whether to return the owner(s) of all the returned Proto-Fragments
+	</span><span class="kw">pub </span>return_owners: bool,
+	<span class="doccomment">/// List of categories to filter by
+	</span><span class="kw">pub </span>categories: Vec&lt;Categories&gt;,
+	<span class="doccomment">/// List of tags to filter by
+	</span><span class="kw">pub </span>tags: Vec&lt;TString&gt;,
 	<span class="doccomment">/// The returned Proto-Fragments must not have any tag that is specified in the `tags` field
 	</span><span class="kw">pub </span>exclude_tags: bool,
-	<span class="kw">pub </span>available: <span class="prelude-ty">Option</span>&lt;bool&gt;,
+  <span class="doccomment">/// Whether the Proto-Fragments should be available or not
+	</span><span class="kw">pub </span>available: <span class="prelude-ty">Option</span>&lt;bool&gt;,
 }
 
 <span class="doccomment">/// **Struct** of a **Proto-Fragment Patch**
@@ -1392,10 +1416,13 @@
 	</span><span class="kw">pub </span>references: Vec&lt;Hash256&gt;,
 }
 
-<span class="attribute">#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+<span class="doccomment">/// Struct that represents the account information of a Proto-Fragment
+</span><span class="attribute">#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>AccountsInfo {
-	<span class="kw">pub </span>active_accounts: u128,
-	<span class="kw">pub </span>lifetime_accounts: u128,
+	<span class="doccomment">/// TODO: Documentation
+	</span><span class="kw">pub </span>active_accounts: u128,
+	<span class="doccomment">/// TODO: Documentation
+	</span><span class="kw">pub </span>lifetime_accounts: u128,
 }
 
 <span class="doccomment">/// **Enum** that indicates **how a Proto-Fragment can be used**
@@ -1457,10 +1484,10 @@
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
 		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		<span class="doccomment">/// Weight functions needed for pallet_protos.
+		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 
-		<span class="kw">type </span>WeightInfo: WeightInfo;
-
-		<span class="doccomment">/// Const per byte multiplier
+		<span class="doccomment">/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>StorageBytesMultiplier: Get&lt;u64&gt;;
 
@@ -1468,7 +1495,7 @@
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>CurationExpiration: Get&lt;u64&gt;;
 
-		<span class="comment">// Asset ID of the fungible asset &quot;TICKET&quot;
+		<span class="doccomment">/// Asset ID of the fungible asset &quot;TICKET&quot;
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>TicketsAssetId: Get&lt;&lt;<span class="self">Self </span><span class="kw">as </span>pallet_assets::Config&gt;::AssetId&gt;;
 	}
@@ -1543,7 +1570,8 @@
 	</span><span class="kw">pub type </span>ExpiringCurations&lt;T: Config&gt; =
 		StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::BlockNumber, Vec&lt;T::AccountId&gt;&gt;;
 
-	<span class="attribute">#[pallet::event]
+	<span class="attribute">#[allow(missing_docs)]
+	#[pallet::event]
 	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
 	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		<span class="doccomment">/// A Proto-Fragment was uploaded
@@ -2358,9 +2386,7 @@
 		}
 
 		<span class="doccomment">/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
-		/// type** is a **JSON string** Furthermore, this function also indexes `data` in the
-		/// Blockchain&#39;s Database and makes it available via bitswap (IPFS) directly from every
-		/// chain node permanently.
+		/// type** is a **JSON string**
 		///
 		/// # Arguments
 		///

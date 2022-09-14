@@ -239,10 +239,34 @@
 <span id="239">239</span>
 <span id="240">240</span>
 <span id="241">241</span>
-</pre><pre class="rust"><code><span class="doccomment">//! A chain specification, or &quot;chain spec&quot;, is a collection of configuration information that dictates which network a blockchain node will connect to,
-//! which entities it will initially communicate with, and what consensus-critical state it must have at genesis.
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+</pre><pre class="rust"><code><span class="doccomment">//! In Substrate, a chain specification is the collection of information that describes a Substrate-based blockchain network.
+//! For example, the chain specification identifies the network that a blockchain node connects to,
+//! the other nodes that it initially communicates with, and the initial state that nodes must agree on to produce blocks.
 //!
-//! Source: https://docs.substrate.io/v3/runtime/chain-specs/
+//! The chain specification is defined using the ChainSpec struct. The ChainSpec struct separates the information required for a chain into two parts:
+//!
+//! - A client specification that contains information used by the Substrate outer node to communicate with network participants and send data to telemetry endpoints.
+//!   Many of these chain specification settings can be overridden by command-line options when starting a node or can be changed after the blockchain has started.
+//!
+//! - The initial genesis state that all nodes in the network agree on.
+//!   The genesis state must be established when the blockchain is first started and it cannot be changed thereafter without starting an entirely new blockchain.
+//!
+//! Source: https://docs.substrate.io/build/chain-spec/
 
 </span><span class="kw">use </span>clamor_runtime::{
 	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
@@ -254,9 +278,12 @@
 <span class="kw">use </span>sp_finality_grandpa::AuthorityId <span class="kw">as </span>GrandpaId;
 <span class="kw">use </span>sp_runtime::traits::{IdentifyAccount, Verify};
 
-<span class="kw">pub type </span>UploadId = ecdsa::Public;
-<span class="kw">pub type </span>EthId = ecdsa::Public;
-<span class="kw">pub type </span>DetachId = ed25519::Public;
+<span class="doccomment">/// TODO: Documentation
+</span><span class="kw">pub type </span>UploadId = ecdsa::Public;
+<span class="doccomment">/// TODO: Documentation
+</span><span class="kw">pub type </span>EthId = ecdsa::Public;
+<span class="doccomment">/// TODO: Documentation
+</span><span class="kw">pub type </span>DetachId = ed25519::Public;
 
 <span class="comment">// The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &amp;str = &quot;wss://telemetry.polkadot.io/submit/&quot;;
@@ -304,7 +331,8 @@
 	)
 }
 
-<span class="kw">pub fn </span>development_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, String&gt; {
+<span class="doccomment">/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Development Network
+</span><span class="kw">pub fn </span>development_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, String&gt; {
 	<span class="kw">let </span>wasm_binary = WASM_BINARY.ok_or_else(|| <span class="string">&quot;Development wasm not available&quot;</span>.to_string())<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(ChainSpec::from_genesis(
@@ -345,7 +373,8 @@
 	))
 }
 
-<span class="kw">pub fn </span>local_testnet_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, String&gt; {
+<span class="doccomment">/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Testnet Network
+</span><span class="kw">pub fn </span>local_testnet_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, String&gt; {
 	<span class="kw">let </span>wasm_binary = WASM_BINARY.ok_or_else(|| <span class="string">&quot;Development wasm not available&quot;</span>.to_string())<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(ChainSpec::from_genesis(
@@ -393,7 +422,8 @@
 	))
 }
 
-<span class="kw">pub fn </span>live_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, String&gt; {
+<span class="doccomment">/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Mainnet Network
+</span><span class="kw">pub fn </span>live_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, String&gt; {
 	<span class="kw">let </span>wasm_binary = WASM_BINARY.ok_or_else(|| <span class="string">&quot;Development wasm not available&quot;</span>.to_string())<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(ChainSpec::from_genesis(
@@ -433,7 +463,7 @@
 	))
 }
 
-<span class="doccomment">/// Configure initial storage state for FRAME modules.
+<span class="doccomment">/// Configures the initial storage state for FRAME modules.
 </span><span class="kw">fn </span>testnet_genesis(
 	wasm_binary: <span class="kw-2">&amp;</span>[u8],
 	initial_authorities: Vec&lt;(AuraId, GrandpaId, UploadId, EthId, DetachId)&gt;,

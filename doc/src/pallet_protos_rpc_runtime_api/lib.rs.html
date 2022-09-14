@@ -12,18 +12,58 @@
 <span id="12">12</span>
 <span id="13">13</span>
 <span id="14">14</span>
-</pre><pre class="rust"><code><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+</pre><pre class="rust"><code><span class="doccomment">//! This package declares the Runtime APIs related to Pallet Protos.
+//!
+//! A Runtime API facilitates this kind of communication between the outer node and the runtime
+//!
+//! # Background:
+//!
+//! Each Substrate node contains a runtime.
+//! The runtime contains the business logic of the chain.
+//! It defines what transactions are valid and invalid and determines how the chain&#39;s state changes in response to transactions.
+//! The runtime is compiled to Wasm to facilitate runtime upgrades. The &quot;outer node&quot;, everything other than the runtime,
+//! does not compile to Wasm, only to native.
+//! The outer node is responsible for handling peer discovery, transaction pooling, block and transaction gossiping, consensus,
+//! and answering RPC calls from the outside world. While performing these tasks, the outer node sometimes needs to query the runtime for information,
+//! or provide information to the runtime.
+
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="kw">use </span>codec::Codec;
 
 <span class="kw">use </span>pallet_protos::GetProtosParams;
 <span class="kw">use </span>sp_std::vec::Vec;
 
-<span class="macro">sp_api::decl_runtime_apis! </span>{
-	<span class="kw">pub trait </span>ProtosApi&lt;AccountId&gt;
+<span class="doccomment">/// Declares given traits as runtime apis
+///
+/// For more information, read: https://docs.rs/sp-api/latest/sp_api/macro.decl_runtime_apis.html
+</span><span class="macro">sp_api::decl_runtime_apis! </span>{
+	<span class="doccomment">/// The trait `ProtosApi` is declared to be a Runtime API
+	</span><span class="kw">pub trait </span>ProtosApi&lt;AccountId&gt;
 	<span class="kw">where
 		</span>AccountId: Codec
 	{
-		<span class="kw">fn </span>get_protos(params: GetProtosParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt;;
+		<span class="doccomment">/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
+		</span><span class="kw">fn </span>get_protos(params: GetProtosParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt;;
 	}
 }
 </code></pre></div>

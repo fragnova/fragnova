@@ -673,6 +673,15 @@
 <span id="673">673</span>
 <span id="674">674</span>
 <span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Clamor
 //! Blockchain to an External Blockchain
 
@@ -687,7 +696,8 @@
 <span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">mod </span>benchmarking;
 
-<span class="kw">mod </span>weights;
+<span class="attribute">#[allow(missing_docs)]
+</span><span class="kw">mod </span>weights;
 
 <span class="kw">use </span>sp_core::{crypto::KeyTypeId, ecdsa, ed25519, U256};
 
@@ -719,7 +729,8 @@
 	// More info: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	</span><span class="macro">app_crypto!</span>(ed25519, KEY_TYPE);
 
-	<span class="kw">pub struct </span>DetachAuthId;
+	<span class="doccomment">/// The identifier type for an offchain worker.
+	</span><span class="kw">pub struct </span>DetachAuthId;
 
 	<span class="comment">// implemented for runtime
 	</span><span class="kw">impl </span>frame_system::offchain::AppCrypto&lt;MultiSigner, MultiSignature&gt; <span class="kw">for </span>DetachAuthId {
@@ -756,9 +767,12 @@
 <span class="doccomment">/// **Possible Blockchains into which a **Proto-Fragment** can be **detached**
 </span><span class="attribute">#[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 </span><span class="kw">pub enum </span>SupportedChains {
-	EthereumMainnet,
-	EthereumRinkeby,
-	EthereumGoerli,
+	<span class="doccomment">/// Ethereum Mainnet Chain
+	</span>EthereumMainnet,
+	<span class="doccomment">/// Ethereum Rinkeby Chain
+	</span>EthereumRinkeby,
+	<span class="doccomment">/// Ethereum Goerli Chain
+	</span>EthereumGoerli,
 }
 
 <span class="doccomment">/// **Struct** that **represents** a **request to detach a Proto-Fragment**
@@ -826,17 +840,20 @@
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
 		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
-		<span class="kw">type </span>WeightInfo: WeightInfo;
+		<span class="doccomment">/// Weight functions needed for pallet_detach.
+		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 		<span class="doccomment">/// The identifier type for an offchain worker.
 		</span><span class="kw">type </span>AuthorityId: AppCrypto&lt;<span class="self">Self</span>::Public, <span class="self">Self</span>::Signature&gt;;
 	}
 
-	<span class="attribute">#[pallet::genesis_config]
+	<span class="doccomment">/// The Genesis Configuration for the Pallet.
+	</span><span class="attribute">#[pallet::genesis_config]
 	#[derive(Default)]
 	</span><span class="kw">pub struct </span>GenesisConfig {
-		<span class="doccomment">///
+		<span class="doccomment">/// **List of ECDSA public keys of the Ethereum accounts** that are **authorized to detach a Proto-Fragment** onto **Fragnova&#39;s Ethereum Smart Contract**
 		</span><span class="kw">pub </span>eth_authorities: Vec&lt;ecdsa::Public&gt;,
-		<span class="kw">pub </span>keys: Vec&lt;ed25519::Public&gt;,
+		<span class="doccomment">/// **List of Clamor Account IDs** that can both ***validate*** and ***send*** **unsigned transactions with signed payload**
+		</span><span class="kw">pub </span>keys: Vec&lt;ed25519::Public&gt;,
 	}
 
 	<span class="attribute">#[pallet::genesis_build]
@@ -876,7 +893,8 @@
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>FragKeys&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ed25519::Public&gt;, ValueQuery&gt;;
 
-	<span class="attribute">#[pallet::event]
+	<span class="attribute">#[allow(missing_docs)]
+	#[pallet::event]
 	#[pallet::generate_deposit(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>deposit_event)]
 	</span><span class="kw">pub enum </span>Event&lt;T: Config&gt; {
 		Uploaded { fragment_data_hash: Hash256 },
@@ -960,8 +978,8 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="comment">// Detached a Proto-Fragment from this blockchain (Clamor) by emitting an event that includes a signature (note: the event is placed to the System pallet&#39;s runtime storage for the block this transaction runs it).
-		// The owner of the Proto-Fragment can then attach the Proto-Fragment to the remote target blockchain by using the aforementioned signature .
+		<span class="doccomment">/// Detached a Proto-Fragment from this blockchain (Clamor) by emitting an event that includes a signature (note: the event is placed to the System pallet&#39;s runtime storage for the block this transaction runs it).
+		/// The owner of the Proto-Fragment can then attach the Proto-Fragment to the remote target blockchain by using the aforementioned signature .
 		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>internal_finalize_detach(
 			origin: OriginFor&lt;T&gt;,
