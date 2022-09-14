@@ -12,6 +12,7 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+#[allow(missing_docs)]
 mod weights;
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, U256};
@@ -44,6 +45,7 @@ pub mod crypto {
 	// More info: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	app_crypto!(ed25519, KEY_TYPE);
 
+	/// The identifier type for an offchain worker.
 	pub struct DetachAuthId;
 
 	// implemented for runtime
@@ -81,8 +83,11 @@ use frame_system::offchain::{
 /// **Possible Blockchains into which a **Proto-Fragment** can be **detached**
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum SupportedChains {
+	/// Ethereum Mainnet Chain
 	EthereumMainnet,
+	/// Ethereum Rinkeby Chain
 	EthereumRinkeby,
+	/// Ethereum Goerli Chain
 	EthereumGoerli,
 }
 
@@ -151,16 +156,19 @@ pub mod pallet {
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		/// Weight functions needed for pallet_detach.
 		type WeightInfo: WeightInfo;
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 	}
 
+	/// The Genesis Configuration for the Pallet.
 	#[pallet::genesis_config]
 	#[derive(Default)]
 	pub struct GenesisConfig {
-		///
+		/// **List of ECDSA public keys of the Ethereum accounts** that are **authorized to detach a Proto-Fragment** onto **Fragnova's Ethereum Smart Contract**
 		pub eth_authorities: Vec<ecdsa::Public>,
+		/// **List of Clamor Account IDs** that can both ***validate*** and ***send*** **unsigned transactions with signed payload**
 		pub keys: Vec<ed25519::Public>,
 	}
 
@@ -201,6 +209,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -285,8 +294,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// Detached a Proto-Fragment from this blockchain (Clamor) by emitting an event that includes a signature (note: the event is placed to the System pallet's runtime storage for the block this transaction runs it).
-		// The owner of the Proto-Fragment can then attach the Proto-Fragment to the remote target blockchain by using the aforementioned signature .
+		/// Detached a Proto-Fragment from this blockchain (Clamor) by emitting an event that includes a signature (note: the event is placed to the System pallet's runtime storage for the block this transaction runs it).
+		/// The owner of the Proto-Fragment can then attach the Proto-Fragment to the remote target blockchain by using the aforementioned signature .
 		#[pallet::weight(25_000)] // TODO - weight
 		pub fn internal_finalize_detach(
 			origin: OriginFor<T>,
