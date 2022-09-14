@@ -1210,7 +1210,6 @@
 <span id="1210">1210</span>
 <span id="1211">1211</span>
 <span id="1212">1212</span>
-<span id="1213">1213</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1992,14 +1991,13 @@
 				</span>)
 				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
 			} <span class="kw">else </span>{
-				&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>Currency&lt;T::AccountId&gt;&gt;::transfer(
+				pallet_balances::Pallet::&lt;T&gt;::do_transfer(
 					<span class="comment">// transfer `price` units of NOVA from `who` to `vault`
 					</span><span class="kw-2">&amp;</span>who,
 					<span class="kw-2">&amp;</span>vault,
 					price.saturated_into(),
 					ExistenceRequirement::KeepAlive,
-				)
-				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
+				).map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
 			}
 
 			<span class="prelude-val">Ok</span>(())

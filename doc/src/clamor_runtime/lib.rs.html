@@ -1060,6 +1060,8 @@
 <span id="1060">1060</span>
 <span id="1061">1061</span>
 <span id="1062">1062</span>
+<span id="1063">1063</span>
+<span id="1064">1064</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -1406,6 +1408,7 @@
 	<span class="doccomment">/// The maximum number of locks that should exist on an account.
 	/// Not strictly enforced, but used for weight estimation.
 	</span><span class="kw">pub const </span>MaxLocks: u32 = <span class="number">50</span>;
+	<span class="kw">pub const </span>IsTransferable: bool = <span class="bool-val">false</span>;
 }
 
 <span class="kw">impl </span>pallet_balances::Config <span class="kw">for </span>Runtime {
@@ -1420,6 +1423,7 @@
 	<span class="kw">type </span>ExistentialDeposit = ExistentialDeposit;
 	<span class="kw">type </span>AccountStore = System;
 	<span class="kw">type </span>WeightInfo = pallet_balances::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>IsTransferable = IsTransferable;
 }
 
 <span class="doccomment">/// Parameters related to calculating the Weight fee.
