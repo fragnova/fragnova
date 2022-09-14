@@ -779,14 +779,13 @@ pub mod pallet {
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			} else {
-				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::transfer(
+				pallet_balances::Pallet::<T>::do_transfer(
 					// transfer `price` units of NOVA from `who` to `vault`
 					&who,
 					&vault,
 					price.saturated_into(),
 					ExistenceRequirement::KeepAlive,
-				)
-				.map_err(|_| Error::<T>::InsufficientBalance)?;
+				).map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
 
 			Ok(())

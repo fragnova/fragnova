@@ -344,6 +344,7 @@ parameter_types! {
 	/// The maximum number of locks that should exist on an account.
 	/// Not strictly enforced, but used for weight estimation.
 	pub const MaxLocks: u32 = 50;
+	pub const IsTransferable: bool = false;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -358,6 +359,7 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type IsTransferable = IsTransferable;
 }
 
 /// Parameters related to calculating the Weight fee.
