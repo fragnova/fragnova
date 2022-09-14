@@ -174,6 +174,7 @@ pub enum FragmentBuyOptions {
 pub mod pallet {
 	use super::*;
 	use frame_support::{pallet_prelude::*, Twox64Concat};
+	use frame_support::traits::ExistenceRequirement;
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::DetachedHashes;
 	use pallet_protos::{Proto, ProtoOwner, Protos};
@@ -759,14 +760,13 @@ pub mod pallet {
 				)
 				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			} else {
-				<pallet_balances::Pallet<T> as fungible::Transfer<T::AccountId>>::transfer(
+				pallet_balances::Pallet::<T>::do_transfer(
 					// transfer `price` units of NOVA from `who` to `vault`
 					&who,
 					&vault,
 					price.saturated_into(),
-					true,
-				)
-				.map_err(|_| Error::<T>::InsufficientBalance)?;
+					ExistenceRequirement::KeepAlive,
+				).map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
 
 			Ok(())
