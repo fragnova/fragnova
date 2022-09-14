@@ -144,7 +144,7 @@ pub struct EthLockUpdate<TPublic> {
 	pub amount: U256,
 	/// If the event was `Lock`, it represents the lock period of the FRAG token.
 	/// Owtherwise, if the event was `Unlock`, it is zero.
-	pub locktime: U256,
+	pub lock_period: U256,
 	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
 	/// The lock/unlock signature signed by the Ethereum Account ID
@@ -162,6 +162,17 @@ pub struct EthLock<TBalance, TBlockNum> {
 	pub amount: TBalance,
 	/// Clamor Block Number in which the locked FRAG tokens was "effectively transfered" to the Clamor Blockchain
 	pub block_number: TBlockNum,
+}
+
+/// **Struct** representing the details about the **amount of Tickets owned of a particular Ethereum Account** not linked to any Clamor Account ID.
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub struct EthTickets<TBalance, TBlockNum> {
+	/// Amount of Tickets owned by a particular Ethereum Account
+	pub amount: TBalance,
+	/// Clamor Block Number in which the first batch of Tickets was assigned in the Clamor Blockchain
+	pub block_number: TBlockNum,
+	/// The vesting period of the FRAG tokens chosen by the user in the Ethereum Smart Contract. Useful for purposes such as debug, in case of need.
+	pub lock_time: u8,
 }
 
 impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
@@ -251,6 +262,10 @@ pub mod pallet {
 	pub type EthLockedFrag<T: Config> =
 		StorageMap<_, Identity, H160, EthLock<<T as pallet_assets::Config>::Balance, T::BlockNumber>>;
 
+	/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
+	#[pallet::storage]
+	pub type EthTicketsOwned<T: Config> = StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
+
 	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
 	///
@@ -307,7 +322,7 @@ pub mod pallet {
 		/// A link was removed between native and ethereum account.
 		Unlinked { sender: T::AccountId, eth_key: H160 },
 		/// ETH side lock was updated
-		Locked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance, locktime: T::Moment },
+		Locked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance, lock_period: U256 },
 		/// ETH side lock was unlocked
 		Unlocked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance },
 		/// A new sponsored account was added
@@ -444,7 +459,7 @@ pub mod pallet {
 
 			let data_tuple = (
 				data.amount,
-				data.locktime,
+				data.lock_period,
 				data.sender,
 				data.signature.clone(),
 				data.lock,
@@ -464,8 +479,8 @@ pub mod pallet {
 			let amount: [u8; 32] = data.amount.into();
 			message.extend_from_slice(&amount[..]); // Add amount to message
 			if data.lock {
-				let locktime: [u8; 32] = data.locktime.into();
-				message.extend_from_slice(&locktime[..]); // Add amount to message
+				let lock_period: [u8; 32] = data.lock_period.into();
+				message.extend_from_slice(&lock_period[..]); // Add amount to message
 			}
 
 			let message_hash = keccak_256(&message); // This should be
@@ -521,12 +536,14 @@ pub mod pallet {
 			let amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
+			//TODO - get FRAG price from oracle
+			let tickets_amount = Self::calculate_tickets_percentage_to_mint(data_amount);
+
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
 				// ! TODO TEST
-				let locktime: u128 =
-					data.locktime.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
-				let locktime: T::Moment = locktime.saturated_into();
+				let lock_period: U256 =
+					data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
 					let used = <FragUsage<T>>::get(linked.clone());
@@ -537,24 +554,27 @@ pub mod pallet {
 							// reset usage counter
 							<FragUsage<T>>::remove(linked.clone()); // Remove the Clamor Account `linked` from FragUsage
 										// force dereferencing of protos and more
+							// TODO - Is this needed?
+							// <EthTicketsOwned<T>>::remove(linked.clone()); // Do the same for Tickets
 							<PendingUnlinks<T>>::append(linked.clone()); // Unlink `linked` from `sender`
-						} else {
-							//TODO - get FRAG price from oracle
-							
-							let tickets_amount = Self::calculate_tickets_percentage_to_mint(data_amount);
-
-							 let _ = <pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
-							 	T::TicketsAssetId::get(),
-								&linked,
-								tickets_amount);
 						}
 					}
 				} else {
-					// TODO - link account in case of new user and mint and assign Tickets and NOVA to the user
+					// In case Ethereum Account ID (H160) not linked to Clamor Account ID
+					// register the amount of tickets owned by this H160 for later linking
+					<EthTicketsOwned<T>>::insert(
+						sender.clone(),
+						tickets_amount,
+					);
+					<EthLockedFrag<T>>::insert(
+						// VERY IMPORTANT TO NOTE
+						sender.clone(),
+						EthLock { amount, block_number: current_block_number },
+					);
 				}
 
 				// also emit event
-				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount, locktime });
+				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount, lock_period });
 			// 问Gio for clarification
 			} else {
 				// If we want to unlock all the FRAG tokens that were
@@ -575,6 +595,10 @@ pub mod pallet {
 				// VERY IMPORTANT TO NOTE
 				sender.clone(),
 				EthLock { amount, block_number: current_block_number },
+			);
+			<EthTicketsOwned<T>>::insert(
+				sender.clone(),
+				tickets_amount,
 			);
 
 			// also record link hash
@@ -748,7 +772,7 @@ pub mod pallet {
 					.and_provides((
 						data.public.clone(),
 						data.amount,
-						data.locktime,
+						data.lock_period,
 						data.sender,
 						data.signature.clone(),
 						data.lock,
@@ -905,16 +929,16 @@ pub mod pallet {
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
 
 				// Lock period (`data[2]`). In case of Unlock event, it is zero.
-				let locktime = data[2].clone().into_uint().unwrap_or(U256::from(0));
+				let lock_period = data[2].clone().into_uint().unwrap_or(U256::from(0));
 
 				if locked {
 					log::trace!(
-						"Block: {}, sender: {}, locked: {}, amount: {}, locktime: {}, signature: {:?}",
+						"Block: {}, sender: {}, locked: {}, amount: {}, lock_period: {}, signature: {:?}",
 						block_number,
 						sender,
 						locked,
 						amount,
-						locktime,
+						lock_period,
 						eth_signature.clone(),
 					);
 				} else {
@@ -941,7 +965,7 @@ pub mod pallet {
 							// `account` is an account `Signer::<T, T::AuthorityId>::any_account()`
 							public: account.public.clone(), // 问Gio what is account.public and why is it supposed to be in FragKey
 							amount,
-							locktime,
+							lock_period,
 							sender,
 							signature: eth_signature.clone(),
 							lock: locked,

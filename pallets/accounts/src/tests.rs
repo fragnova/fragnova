@@ -282,7 +282,7 @@ mod sync_frag_locks_tests {
 									&[
 										Token::Bytes(lock.data.signature.0.to_vec()),
 										Token::Uint(lock.data.amount),
-										Token::Uint(lock.data.locktime)
+										Token::Uint(lock.data.lock_period)
 									]
 								),
 							)),
@@ -393,7 +393,7 @@ mod internal_lock_update_tests {
 
 			let data_tuple = (
 				lock.data.amount,
-				lock.data.locktime,
+				lock.data.lock_period,
 				lock.data.sender,
 				lock.data.signature,
 				true,
@@ -415,9 +415,7 @@ mod internal_lock_update_tests {
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount),
-					locktime: SaturatedConversion::saturated_into::<
-						<Test as pallet_timestamp::Config>::Moment,
-					>(lock.data.locktime)
+					lock_period: lock.data.lock_period
 				})
 			);
 		});
@@ -430,11 +428,11 @@ mod internal_lock_update_tests {
 
 			let mut lock = dd.lock;
 			lock.data.amount = U256::from(0u32);
-			lock.data.locktime = U256::from(1234567890);
+			lock.data.lock_period = U256::from(1);
 			lock.data.signature = create_lock_signature(
 				lock.ethereum_account_pair.clone(),
 				lock.data.amount.clone(),
-				lock.data.locktime.clone(),
+				lock.data.lock_period.clone(),
 			);
 
 			assert_noop!(lock_(&lock), Error::<Test>::SystematicFailure);
@@ -506,7 +504,7 @@ mod internal_lock_update_tests {
 
 			let data_tuple = (
 				unlock.data.amount,
-				unlock.data.locktime,
+				unlock.data.lock_period,
 				unlock.data.sender,
 				unlock.data.signature,
 				false,
