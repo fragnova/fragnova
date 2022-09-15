@@ -1,0 +1,131 @@
+(def protos-index 11) ; index of the protos pallet
+(def fragments-index 12) ; index of the fragments pallet
+
+(def rpc-server "http://127.0.0.1:9933")
+(def ws-server-addr "127.0.0.1")
+(def ws-server-port 9944)
+(def ws-server-secure false)
+
+(defn chain-get-block-hash [block-number]
+  (->
+   {"id" 1 "jsonrpc" "2.0" "method" "chain_getBlockHash" "params" [block-number]}
+   (ToJson) (Http.Post rpc-server)
+   (FromJson) (ExpectTable) (Take "result")
+   (ExpectString) (HexToBytes)))
+
+(defwire get-storage-map
+  = .storage-key
+  [.pallet-name .map-name .storage-key] (Substrate.StorageMap true) (ToHex) (Log "Full query") > .account-info-query
+  {"id" 1 "jsonrpc" "2.0" "method" "state_getStorage" "params" [.account-info-query]} (ToJson)
+  (Http.Post rpc-server) (Log "get-storage-map")
+  (FromJson) (ExpectTable) (Take "result"))
+
+(defwire send-signed-extrinsic
+  = .call-data
+
+  ; TODO cache this, as it's not going to change
+  (chain-get-block-hash 0) = .node-genesis-hash
+
+  ; signer
+  ; multiaddress enum
+  [0 .pub-key] (Substrate.Encode ["u8" "a"]) = .signer
+
+  ; extra data to be signed
+  ; [era nonce weight]
+  ; use 0 u8 for era to have an immortal transaction
+  [0 .fragnova-nonce 0] (Substrate.Encode ["u8" "c" "c"]) = .extra-data
+
+  ; increase nonce
+  (Math.Inc .fragnova-nonce)
+  .fragnova-nonce (Log "fragnova-nonce")
+
+  ; additional data to be signed
+  ; [runtime-spec-version transaction-version genesis-hash genesis-or-current-hash]
+  [runtime-spec-version transaction-version] (Substrate.Encode ["u32" "u32"]) >= .additional-data
+  .node-genesis-hash (AppendTo .additional-data) (AppendTo .additional-data) ; twice
+
+  .call-data >= .signed-payload
+  .extra-data (AppendTo .signed-payload)
+  .additional-data (AppendTo .signed-payload)
+  (Count .signed-payload)
+  (If (IsMore 256)
+      ; use hashed version if longer/bigger than 256
+      (-> .signed-payload (Hash.Blake2-256))
+      (-> .signed-payload))
+  (Sr25519.Sign (get Fragnova-Account :private-key)) >= .signature
+  ; add enum index 1
+  "0x01" (HexToBytes) (PrependTo .signature)
+
+  [0x84] (Substrate.Encode ["u8"]) >= .rpc-data
+  .signer (AppendTo .rpc-data)
+  .signature (AppendTo .rpc-data)
+  .extra-data (AppendTo .rpc-data)
+
+  .rpc-data (ToHex) (Log "Sending signed extrinsic (prefix)")
+
+  .call-data (AppendTo .rpc-data)
+  [.rpc-data] (Substrate.Encode [nil]) (ToHex) = .rpc-data-hex
+
+  ; increase rpc index
+  (Math.Inc .fragnova-rpc-index)
+  .fragnova-rpc-index (Log "fragnova-rpc-index")
+
+  {"id" .fragnova-rpc-index "jsonrpc" "2.0" "method" "author_submitAndWatchExtrinsic" "params" [.rpc-data-hex]} (ToJson)
+  (WS.WriteString .fragnova-ws-client))
+
+(defwire make-calldata
+  ; call payload to be signed
+  (| [.pallet-idx .call-idx] (Substrate.Encode ["u8" "u8"]) >= .call-data)
+  (AppendTo .call-data)
+  .call-data)
+
+(defwire get-header
+  = .get-header-block-hash
+  {"id" 1 "jsonrpc" "2.0" "method" "chain_getHeader" "params" [.get-header-block-hash]}
+  (ToJson) (Http.Post rpc-server)
+  (FromJson) (ExpectTable) (Take "result") (ExpectTable))
+
+
+(defloop wait-port
+  (Setup
+   100 >= .tries)
+  (Maybe (->
+          {"id" 1 "jsonrpc" "2.0" "method" "chain_getBlockHash" "params" [0]} (ToJson) (Http.Post rpc-server)
+          (FromJson) (ExpectTable) (Take "result") (ExpectString) (Log)
+          (Stop))
+         (->
+          (Math.Dec .tries)
+          (Pause 2.0)))
+  .tries (Assert.IsNot 0)
+  (Log "Waiting for port"))
+
+
+(deftrait Fragnova-Node
+  ; Set the variables `.fragnova-rpc-index` and `.fragnova-nonce`
+  :setup
+  (->
+
+   (Do wait-port) ; ensure the node is up and running
+
+   0 >== .fragnova-rpc-index ; make it global so Spawn won't copy it ; `.fragnova-rpc-index` is the number of RPC calls made so far
+
+   (get Fragnova-Account :private-key) (Sr25519.PublicKey) (Substrate.AccountId) = .pub-key
+
+   ; account info
+   [.pub-key] (Substrate.Encode ["a"]) (ToHex) >= .account-id-hex
+   ["System" "Account" .account-id-hex] (Substrate.StorageMap) (ToHex) >= .account-info-query
+   {"id" 1 "jsonrpc" "2.0" "method" "state_getStorage" "params" [.account-info-query]} (ToJson)
+   (Http.Post rpc-server)
+   (FromJson) (ExpectTable) (Take "result") (ExpectString) (HexToBytes)
+   (Substrate.Decode [Type.Int] ["u32"]) (Take 0) (ExpectInt) >== .fragnova-nonce (Log "Start Nonce") ; also make it global ; `.fragnova-nonce` is the number of transactions of that the `Fragnova-Account` has sent (i.e its nonce)
+
+   ; this is redundant but we need it for send-extinsics to work...
+   (WS.Client ws-server-addr "/" ws-server-port ws-server-secure) >= .fragnova-ws-client
+
+   ; send-extinsics needs this
+   true >= .fragnova-ready)
+  ; our interfaces
+  :send-signed-extrinsic send-signed-extrinsic
+  :make-calldata make-calldata
+  :get-storage-map get-storage-map
+  :get-header get-header)

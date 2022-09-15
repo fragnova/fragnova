@@ -586,13 +586,16 @@ impl pallet_assets::Config for Runtime {
 //
 // The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
 //
-// Each pallet is declared as such:
+// Each pallet is declared like **"<Identifier>: <path::to::pallet>[<::{Part1, Part<T>, ..}>]"**, where:
 //
 // - `Identifier`: name given to the pallet that uniquely identifies it.
 // - `:`: colon separator
 // - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
-// - `::{ Part1, Part2<T>, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
-// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
+// - `::{ Part1, Part2<T>, .. }` (optional if the pallet was declared with a `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
+
+// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**.
+//  We provide support for the following module parts in a pallet:
+//
 // 	- `Pallet` - Required for all pallets
 // 	- `Call` - If the pallet has callable functions
 // 	- `Storage` - If the pallet uses storage
@@ -603,10 +606,12 @@ impl pallet_assets::Config for Runtime {
 // 	- `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
 //
 //
-// NOTE 1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
+// IMP NOTE 1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
 //
-// NOTE 2: The population of the genesis storage depends on the order of pallets.
+// IMP NOTE 2: The population of the genesis storage depends on the order of pallets.
 // So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
+//
+// V IMP NOTE 3: The order that the pallets appear in this macro determines its pallet index
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block, //  Block is the block type that is used in the runtime
@@ -626,6 +631,7 @@ construct_runtime!(
 		// Our additions
 		Indices: pallet_indices,
 		Contracts: pallet_contracts,
+		// Since this is the 11th pallet that's defined in this macro, its pallet index is "11"
 		Protos: pallet_protos,
 		Fragments: pallet_fragments,
 		Detach: pallet_detach,
