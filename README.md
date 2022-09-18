@@ -1,7 +1,7 @@
 # Clamor
 
 [![license](https://img.shields.io/github/license/fragcolor-xyz/clamor)](./LICENSE)
-[![CI](https://github.com/fragcolor-xyz/clamor/workflows/CI/badge.svg)](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+[![CI](https://github.com/fragcolor-xyz/clamor/workflows/CI/badge.svg)](https://github.com/fragcolor-xyz/clamor/actions/runs/${{ github.run_id }})
 [![codecov](https://codecov.io/gh/fragcolor-xyz/clamor/branch/devel/graph/badge.svg?token=4PMT2FQFDS)](https://codecov.io/gh/fragcolor-xyz/clamor)
 [![docs](https://img.shields.io/badge/docs-API-blueviolet)](https://fragcolor-xyz.github.io/clamor/)
 
