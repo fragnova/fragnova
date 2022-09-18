@@ -239,6 +239,7 @@ pub mod pallet {
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
 
+	/// **StorageMap** that maps a **Proto-Fragment** to a **list of other Proto-Fragments that reference the Proto-Fragment**
 	#[pallet::storage]
 	pub type ProtosByParent<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash256>>;
 
