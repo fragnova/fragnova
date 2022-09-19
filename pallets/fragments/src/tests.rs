@@ -121,6 +121,18 @@ mod create_tests {
 	}
 
 	#[test]
+	fn create_should_not_work_if_metadata_name_is_empty() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let mut definition = dd.definition;
+			definition.metadata.name = b"".to_vec();
+			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
+			assert_noop!(create(dd.account_id, &definition), Error::<Test>::MetadataNameIsEmpty);
+		});
+	}
+
+	#[test]
 	fn create_should_not_work_if_fragment_definition_already_exists() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
