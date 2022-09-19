@@ -360,6 +360,8 @@ pub mod pallet {
 		Detached,
 		/// Already exist
 		AlreadyExist,
+		/// Metadata Name is Empty
+		MetadataNameIsEmpty,
 		/// Not found
 		NotFound,
 		/// Sale has expired
@@ -432,6 +434,8 @@ pub mod pallet {
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Only proto owner can create a fragment definition from proto
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // proto must not have been detached
+
+			ensure!(metadata.name.len() > 0, Error::<T>::MetadataNameIsEmpty);
 
 			let hash = blake2_128(
 				// This is the unique id of the Fragment Definition that will be created
