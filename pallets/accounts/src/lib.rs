@@ -162,17 +162,8 @@ pub struct EthLock<TBalance, TBlockNum> {
 	pub amount: TBalance,
 	/// Clamor Block Number in which the locked FRAG tokens was "effectively transfered" to the Clamor Blockchain
 	pub block_number: TBlockNum,
-}
-
-/// **Struct** representing the details about the **amount of Tickets owned of a particular Ethereum Account** not linked to any Clamor Account ID.
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct EthTickets<TBalance, TBlockNum> {
-	/// Amount of Tickets owned by a particular Ethereum Account
-	pub amount: TBalance,
-	/// Clamor Block Number in which the first batch of Tickets was assigned in the Clamor Blockchain
-	pub block_number: TBlockNum,
-	/// The vesting period of the FRAG tokens chosen by the user in the Ethereum Smart Contract. Useful for purposes such as debug, in case of need.
-	pub lock_time: u8,
+	/// The FRAG lock period chosen by the user on Ethereum and received from the Lock event
+	pub lock_period: U256,
 }
 
 impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
@@ -264,7 +255,7 @@ pub mod pallet {
 
 	/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
 	#[pallet::storage]
-	pub type EthTicketsOwned<T: Config> = StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
+	pub type EthReservedTickets<T: Config> = StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
 
 	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
@@ -276,10 +267,6 @@ pub mod pallet {
 	/// This **StorageMap** is the reverse mapping of `EVMLinks`.
 	#[pallet::storage]
 	pub type EVMLinksReverse<T: Config> = StorageMap<_, Identity, H160, T::AccountId>;
-
-	/// **StorageMap** that maps a **Clamor Account ID** to the **Amount of FRAG token staked by the aforementioned Clamor Account ID**
-	#[pallet::storage]
-	pub type FragUsage<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, <T as pallet_assets::Config>::Balance>;
 
 	/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**.
 	/// The key for this map is:
@@ -427,8 +414,6 @@ pub mod pallet {
 
 			<EVMLinks<T>>::insert(sender.clone(), eth_key);
 			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
-			let zero: <T as pallet_assets::Config>::Balance = 0u32.saturated_into();
-			<FragUsage<T>>::insert(sender.clone(), zero);
 
 			// also emit event
 			Self::deposit_event(Event::Linked { sender, eth_key });
@@ -510,31 +495,15 @@ pub mod pallet {
 			// verifications ended, let's proceed with voting count and writing
 
 			let threshold = T::Threshold::get();
-			if threshold > 1 {
-				// 问Gio
-				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
-				if let Some(current_votes) = current_votes {
-					// Number of votes for the key `data_hash` in EVMLinkVoting
-					if current_votes + 1u64 < threshold {
-						// Current Votes has not passed the threshold
-						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
-						return Ok(());
-					} else {
-						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
-						// we are good to go, but let's remove the record
-						<EVMLinkVoting<T>>::remove(&data_hash);
-					}
-				} else {
-					// If key `data_hash` doesn't exist in EVMLinkVoting
-					<EVMLinkVoting<T>>::insert(&data_hash, 1);
-					return Ok(());
-				}
-			}
+			let _ = Self::vote_count_and_write(&data_hash, threshold);
 
-			// writing here at end (THE lines below only execute if the number of votes receieved by `data_hash` passes the `threshold`)
+			// writing here at end (THE lines below only execute if the number of votes received by `data_hash` passes the `threshold`)
 
 			let amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			let lock_period: U256 =
+				data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
 			//TODO - get FRAG price from oracle
 			let tickets_amount = Self::calculate_tickets_percentage_to_mint(data_amount);
@@ -542,64 +511,49 @@ pub mod pallet {
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
 				// ! TODO TEST
-				let lock_period: U256 =
-					data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
-					let used = <FragUsage<T>>::get(linked.clone());
-					if let Some(used) = used {
-						if used > amount {
-							// Amount is the total amount of FRAG token locked on the Fragnova-owned Ethereum Smart Contract. So that means that if `amount` is smaller than `used`, there's a systemic/catastropic failure somewhere!
-							// this is bad, the user just reduced his balance so we just "slash" all the stakes
-							// reset usage counter
-							<FragUsage<T>>::remove(linked.clone()); // Remove the Clamor Account `linked` from FragUsage
-										// force dereferencing of protos and more
-							// TODO - Is this needed?
-							// <EthTicketsOwned<T>>::remove(linked.clone()); // Do the same for Tickets
-							<PendingUnlinks<T>>::append(linked.clone()); // Unlink `linked` from `sender`
-						}
-					}
+					// mint Tickets for the linked user
+					let _ = <pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+						T::TicketsAssetId::get(),
+						&linked,
+						tickets_amount);
 				} else {
-					// In case Ethereum Account ID (H160) not linked to Clamor Account ID
-					// register the amount of tickets owned by this H160 for later linking
-					<EthTicketsOwned<T>>::insert(
+					// Ethereum Account ID (H160) not linked to Clamor Account ID
+					// So, register the amount of tickets owned by the H160 account for later linking
+					<EthReservedTickets<T>>::insert(
 						sender.clone(),
 						tickets_amount,
 					);
-					<EthLockedFrag<T>>::insert(
-						// VERY IMPORTANT TO NOTE
-						sender.clone(),
-						EthLock { amount, block_number: current_block_number },
-					);
 				}
-
 				// also emit event
 				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount, lock_period });
-			// 问Gio for clarification
+				<EthLockedFrag<T>>::insert(
+					// VERY IMPORTANT TO NOTE
+					sender.clone(),
+					EthLock { amount, block_number: current_block_number, lock_period },
+				);
 			} else {
 				// If we want to unlock all the FRAG tokens that were
 				// ! TODO TEST
-
 				// if we have any link to this account, then force unlinking
 				let linked = <EVMLinksReverse<T>>::get(sender.clone());
 				if let Some(linked) = linked {
 					Self::unlink_account(linked, sender.clone())?; // Unlink Ethereum Account `sender` and Clamor Account `linked`
 				}
-
 				// also emit event
 				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: amount }); // 问Gio for clarification
-			}
 
-			// write this later as unlink_account can fail
-			<EthLockedFrag<T>>::insert(
-				// VERY IMPORTANT TO NOTE
-				sender.clone(),
-				EthLock { amount, block_number: current_block_number },
-			);
-			<EthTicketsOwned<T>>::insert(
-				sender.clone(),
-				tickets_amount,
-			);
+				// The amount here will be zero for both, since it is an UNLOCK event
+				<EthLockedFrag<T>>::insert(
+					sender.clone(),
+					EthLock { amount, block_number: current_block_number, lock_period },
+				);
+				<EthReservedTickets<T>>::insert(
+					sender.clone(),
+					amount,
+				);
+			}
 
 			// also record link hash
 			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
@@ -802,7 +756,10 @@ pub mod pallet {
 
 		fn calculate_tickets_percentage_to_mint(mut amount: u128) -> <T as pallet_assets::Config>::Balance {
 			// hard set to 20% for the moment
-			amount = (20/100) * amount;
+			//let percent = Percentage::from(50);
+			//let percent_applied = percent.apply_to(amount);
+
+			//percent_applied.saturated_into()
 			amount.saturated_into()
 		}
 
@@ -929,7 +886,7 @@ pub mod pallet {
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
 
 				// Lock period (`data[2]`). In case of Unlock event, it is zero.
-				let lock_period = data[2].clone().into_uint().unwrap_or(U256::from(0));
+				let lock_period = data[2].clone().into_uint().unwrap_or(U256::from(999));
 
 				if locked {
 					log::trace!(
@@ -1025,14 +982,35 @@ pub mod pallet {
 
 			<EVMLinks<T>>::remove(sender.clone());
 			<EVMLinksReverse<T>>::remove(account);
-			// reset usage counter
-			<FragUsage<T>>::remove(sender.clone());
 			// force dereferencing of protos and more
 			<PendingUnlinks<T>>::append(sender.clone());
 
 			// also emit event
 			Self::deposit_event(Event::Unlinked { sender, eth_key: account });
 
+			Ok(())
+		}
+
+		fn vote_count_and_write(data_hash: &H256, threshold: u64) -> DispatchResult {
+			if threshold > 1 {
+				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
+				if let Some(current_votes) = current_votes {
+					// Number of votes for the key `data_hash` in EVMLinkVoting
+					if current_votes + 1u64 < threshold {
+						// Current Votes has not passed the threshold
+						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
+						return Ok(());
+					} else {
+						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
+						// we are good to go, but let's remove the record
+						<EVMLinkVoting<T>>::remove(&data_hash);
+					}
+				} else {
+					// If key `data_hash` doesn't exist in EVMLinkVoting
+					<EVMLinkVoting<T>>::insert(&data_hash, 1);
+					return Ok(());
+				}
+			}
 			Ok(())
 		}
 	}

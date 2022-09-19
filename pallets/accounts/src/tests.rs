@@ -13,7 +13,6 @@ pub use link_tests::link_;
 
 mod link_tests {
 	use super::*;
-	use crate::FragUsage;
 
 	pub fn link_(link: &Link) -> DispatchResult {
 		Accounts::link(Origin::signed(link.clamor_account_id), link.link_signature.clone())
@@ -28,16 +27,11 @@ mod link_tests {
 
 			assert_ok!(link_(&link));
 
-			assert!(
-				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap()
-					== link.get_recovered_ethereum_account_id()
-			);
+			assert_eq!(<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap(), link.get_recovered_ethereum_account_id());
 			assert!(
 				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap()
 					== link.clamor_account_id
 			);
-
-			assert!(<FragUsage<Test>>::get(&link.clamor_account_id).unwrap() == 0);
 
 			let event = <frame_system::Pallet<Test>>::events()
 				.pop()
@@ -132,13 +126,8 @@ mod unlink_tests {
 				link.get_recovered_ethereum_account_id()
 			));
 
-			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
-			assert!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id())
-					== false
-			);
-
-			assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);
+			assert_eq!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id), false);
+			assert_eq!(<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()), false);
 
 			assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
 
@@ -388,7 +377,15 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
+					lock_period: U256::from(1),
 				}
+			);
+
+			assert_eq!(
+				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
+				SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(lock.data.amount.clone())
 			);
 
 			let data_tuple = (
@@ -451,35 +448,6 @@ mod internal_lock_update_tests {
 		});
 	}
 
-	// TODO
-	#[test]
-	#[ignore]
-	fn lock_should_remove_staking_information_if_linked_clamor_account_has_a_greater_used_amount_than_the_lock_amount(
-	) {
-		// TODO
-		new_test_ext().execute_with(|| {
-
-            let dd = DummyData::new();
-
-            // let stake = dd.stake;
-            let lock = dd.lock;
-            let link = lock.link.clone();
-
-            assert_ok!(link_(&link));
-            assert_ok!(lock_(&lock));
-
-            // TODO - Stake some FRAG token
-
-            todo!("I have no idea what to do here - because pallet-frag's Cargo.toml file doesn't use pallet-protos as a dependency!");
-
-            // // TODO - Lock more FRAG token
-
-            // assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);
-            // assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
-
-        });
-	}
-
 	#[test]
 	fn unlock_should_work() {
 		new_test_ext().execute_with(|| {
@@ -497,9 +465,17 @@ mod internal_lock_update_tests {
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
-					>(unlock.data.amount.clone()),
+					>(0),
 					block_number: current_block_number,
+					lock_period: U256::from(999),
 				}
+			);
+
+			assert_eq!(
+				<EthReservedTickets<Test>>::get(&unlock.data.sender).unwrap(),
+				SaturatedConversion::saturated_into::<
+					<Test as pallet_balances::Config>::Balance,
+				>(0)
 			);
 
 			let data_tuple = (
@@ -525,7 +501,7 @@ mod internal_lock_update_tests {
 					eth_key: unlock.data.sender,
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
-					>(unlock.data.amount)
+					>(0)
 				})
 			);
 		});
@@ -545,13 +521,8 @@ mod internal_lock_update_tests {
 			assert_ok!(lock_(&lock));
 			assert_ok!(unlock_(&unlock));
 
-			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
-			assert!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id())
-					== false
-			);
-
-			assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);
+			assert_eq!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id), false);
+			assert_eq!(<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()), false);
 
 			assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
 

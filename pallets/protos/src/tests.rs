@@ -515,8 +515,8 @@ mod get_protos_tests {
 			let dd = DummyData::new();
 			// Two protos with different trait names
 			let proto_shard_script = dd.proto_shard_script;
-			let proto_shard_script_3 = dd.proto_shard_script_3;			
-			let proto_shard_script_binary = dd.proto_shard_script_4;			
+			let proto_shard_script_3 = dd.proto_shard_script_3;
+			let proto_shard_script_binary = dd.proto_shard_script_4;
 
 			assert_ok!(upload(dd.account_id, &proto_shard_script));
 			assert_ok!(upload(dd.account_id, &proto_shard_script_3));
@@ -1302,10 +1302,6 @@ mod stake_tests {
 
 			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
 
-			let frag_staked =
-				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
-					.unwrap_or_default();
-
 			let current_block_number = System::block_number(); //@sinkingsugar
 
 			assert_ok!(lock_(&stake.lock));
@@ -1315,11 +1311,6 @@ mod stake_tests {
 				&stake.proto_fragment,
 				&stake.get_stake_amount()
 			));
-
-			assert_eq!(
-				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id).unwrap(),
-				frag_staked.saturating_add(stake.get_stake_amount())
-			);
 
 			assert_eq!(
 				<ProtoCurations<Test>>::get(stake.proto_fragment.get_proto_hash(), dd.account_id)
@@ -1363,65 +1354,6 @@ mod stake_tests {
 					&stake.get_stake_amount()
 				),
 				Error::<Test>::ProtoNotFound
-			);
-		});
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn stake_should_work_if_user_has_sufficient_balance() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let stake = dd.stake;
-
-			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-
-			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
-				stake.lock.link.get_recovered_ethereum_account_id(),
-			)
-			.unwrap()
-			.amount;
-			let frag_staked =
-				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
-					.unwrap_or_default();
-			let balance = frag_locked - frag_staked;
-
-			assert_ok!(stake_(stake.lock.link.clamor_account_id, &stake.proto_fragment, &balance));
-		});
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn stake_should_not_work_if_user_does_has_insufficient_balance() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let stake = dd.stake;
-
-			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-
-			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
-				stake.lock.link.get_recovered_ethereum_account_id(),
-			)
-			.unwrap()
-			.amount;
-			let frag_staked =
-				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
-					.unwrap_or_default();
-			let balance = frag_locked - frag_staked;
-
-			assert_noop!(
-				stake_(stake.lock.link.clamor_account_id, &stake.proto_fragment, &(balance - 1)),
-				Error::<Test>::InsufficientBalance
 			);
 		});
 	}
