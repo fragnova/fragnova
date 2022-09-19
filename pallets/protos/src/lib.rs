@@ -18,6 +18,7 @@ mod benchmarking;
 #[cfg(test)]
 mod tests;
 
+#[allow(missing_docs)]
 mod weights;
 
 use protos::{categories::Categories, traits::Trait};
@@ -50,27 +51,28 @@ use base58::ToBase58;
 
 use frame_support::traits::tokens::fungibles::{Inspect, Mutate};
 
-/// ¿
+/// TODO: Documentation
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkSource {
 	// Generally we just store this data, we don't verify it as we assume auth service did it.
 	// (Link signature, Linked block number, EIP155 Chain ID)
+	/// TODO: Documentation
 	Evm(ecdsa::Signature, u64, U256),
 }
 
 /// **Types** of **Assets that are linked to a Proto-Fragment** (e.g an ERC-721 Contract etc.)
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkedAsset {
-	// Ethereum (ERC721 Contract address, Token ID, Link source)
+	/// Ethereum (ERC721 Contract address, Token ID, Link source)
 	Erc721(H160, U256, LinkSource),
 }
 
 /// **Types** of **Proto-Fragment Owners**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum ProtoOwner<TAccountId> {
-	// A **regular account** on **this chain**
+	/// A **regular account** on **this chain**
 	User(TAccountId),
-	// An **external asset** not on this chain
+	/// An **external asset** not on this chain
 	ExternalAsset(LinkedAsset),
 }
 
@@ -78,14 +80,25 @@ pub enum ProtoOwner<TAccountId> {
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GetProtosParams<TAccountId, TString> {
+	/// Whether to order the results in descending or ascending order
 	pub desc: bool,
+	/// Number of Proto-Fragment Results to skip
 	pub from: u64,
+	/// Number of Proto-Fragments to retrieve
 	pub limit: u64,
+	/// List of Metadata Keys of the Proto-Fragment that should also be returned
 	pub metadata_keys: Vec<TString>,
+	/// Owner of the Proto-Fragment
 	pub owner: Option<TAccountId>,
+	/// Whether to return the owner(s) of all the returned Proto-Fragments
 	pub return_owners: bool,
+	/// List of categories to filter by
 	pub categories: Vec<Categories>,
+	/// List of tags to filter by
 	pub tags: Vec<TString>,
+	/// The returned Proto-Fragments must not have any tag that is specified in the `tags` field
+	pub exclude_tags: bool,
+  /// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
 }
 
@@ -100,9 +113,12 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub references: Vec<Hash256>,
 }
 
+/// Struct that represents the account information of a Proto-Fragment
 #[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct AccountsInfo {
+	/// TODO: Documentation
 	pub active_accounts: u128,
+	/// TODO: Documentation
 	pub lifetime_accounts: u128,
 }
 
@@ -165,10 +181,10 @@ pub mod pallet {
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
-
+		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
 
-		/// Const per byte multiplier
+		/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
 
@@ -176,7 +192,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type CurationExpiration: Get<u64>;
 
-		// Asset ID of the fungible asset "TICKET"
+		/// Asset ID of the fungible asset "TICKET"
 		#[pallet::constant]
 		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
 	}
@@ -251,6 +267,7 @@ pub mod pallet {
 	pub type ExpiringCurations<T: Config> =
 		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::AccountId>>;
 
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -893,6 +910,7 @@ pub mod pallet {
 			tags: &[Vec<u8>],
 			categories: &[Categories],
 			avail: Option<bool>,
+			exclude_tags: bool,
 		) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
@@ -904,9 +922,9 @@ pub mod pallet {
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto);
+					return Self::filter_tags(tags, &struct_proto, exclude_tags);
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories);
+					return Self::filter_category(tags, &struct_proto, categories, exclude_tags);
 				}
 			} else {
 				false
@@ -917,6 +935,7 @@ pub mod pallet {
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
 			categories: &[Categories],
+			exclude_tags: bool,
 		) -> bool {
 			let found: Vec<_> = categories
 				.into_iter()
@@ -936,13 +955,23 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-							if !implementing_diffs.is_empty()
-								|| !requiring_diffs.is_empty() || (param_script_info.format
-								== stored_script_info.format) || (param_script_info
-								== stored_script_info)
-							{
-								return Self::filter_tags(tags, struct_proto);
-							} else {
+							let zero_vec = [0u8; 8];
+
+							// Specific query:
+							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
+							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
+								if param_script_info.format == stored_script_info.format {
+									return Self::filter_tags(tags, struct_proto, exclude_tags);
+								} else { return false; }
+							}
+							// Generic query:
+							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
+							else if param_script_info.implementing.contains(&zero_vec) && 
+									param_script_info.requiring.contains(&zero_vec) && 
+									param_script_info.format == stored_script_info.format {
+									return Self::filter_tags(tags, struct_proto, exclude_tags);
+							}
+							else {
 								return false;
 							}
 						} else {
@@ -952,7 +981,7 @@ pub mod pallet {
 					},
 					_ => {
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto);
+							return Self::filter_tags(tags, struct_proto, exclude_tags);
 						} else {
 							return false;
 						}
@@ -970,6 +999,7 @@ pub mod pallet {
 		fn filter_tags(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
+			exclude_tags: bool,
 		) -> bool {
 			if tags.len() == 0 {
 				true
@@ -977,7 +1007,11 @@ pub mod pallet {
 				tags.into_iter().all(|tag| {
 					let tag_idx = <Tags<T>>::get(tag);
 					if let Some(tag_idx) = tag_idx {
-						struct_proto.tags.contains(&Compact::from(tag_idx))
+						if struct_proto.tags.contains(&Compact::from(tag_idx)) {
+							!exclude_tags
+						} else {
+							exclude_tags
+						}
 					} else {
 						false
 					}
@@ -1008,16 +1042,25 @@ pub mod pallet {
 								.into_iter()
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
+							
+								let zero_vec = [0u8; 8];
 
-							if !implementing_diffs.is_empty()
-								|| !requiring_diffs.is_empty() || (param_script_info.format
-								== stored_script_info.format) || (param_script_info
-								== stored_script_info)
-							{
-								// OK. Found the category matching a shard script info.
-								return true;
-							} else if !(&cat == &category) {
-								return false;
+								// Specific query:
+								// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
+								if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
+									if param_script_info.format == stored_script_info.format {
+										return true;
+									} else { return false; }
+								}
+								// Generic query:
+								// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
+								else if param_script_info.implementing.contains(&zero_vec) && 
+										param_script_info.requiring.contains(&zero_vec) && 
+										param_script_info.format == stored_script_info.format {
+										return true;
+								}
+								else if !(&cat == &category) {
+									return false;
 							} else {
 								return false;
 							}
@@ -1040,9 +1083,7 @@ pub mod pallet {
 		}
 
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
-		/// type** is a **JSON string** Furthermore, this function also indexes `data` in the
-		/// Blockchain's Database and makes it available via bitswap (IPFS) directly from every
-		/// chain node permanently.
+		/// type** is a **JSON string**
 		///
 		/// # Arguments
 		///
@@ -1069,6 +1110,7 @@ pub mod pallet {
 									&params.tags,
 									&params.categories,
 									params.available,
+									params.exclude_tags
 								)
 							})
 							.skip(params.from as usize)
@@ -1084,6 +1126,7 @@ pub mod pallet {
 									&params.tags,
 									&params.categories,
 									params.available,
+									params.exclude_tags
 								)
 							})
 							.skip(params.from as usize)
@@ -1127,6 +1170,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
+										params.exclude_tags
 									)
 								})
 								.collect()
@@ -1140,6 +1184,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
+										params.exclude_tags
 									)
 								})
 								.collect()

@@ -1,3 +1,5 @@
+//! Implementation of the RPC functions related to Pallet Protos
+
 use std::sync::Arc;
 
 use codec::Codec;
@@ -17,6 +19,7 @@ const RUNTIME_ERROR: i32 = 1;
 
 #[rpc(client, server)]
 pub trait ProtosApi<BlockHash, AccountId> {
+	/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 	#[method(name = "protos_getProtos")]
 	fn get_protos(
 		&self,
@@ -48,6 +51,7 @@ where
 	C::Api: ProtosRuntimeApi<Block, AccountId>,
 	AccountId: Codec,
 {
+	/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 	fn get_protos(
 		&self,
 		params: GetProtosParams<AccountId, String>,
@@ -67,6 +71,7 @@ where
 			return_owners: params.return_owners,
 			categories: params.categories,
 			tags: params.tags.into_iter().map(|s| s.into_bytes()).collect(),
+			exclude_tags: params.exclude_tags,
 			available: params.available,
 		};
 

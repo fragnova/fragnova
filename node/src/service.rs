@@ -1,4 +1,12 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
+//!
+//! service.rs: This file defines the implementation of the node. Take note of the libraries that this file imports and the names of the functions it invokes.
+//! In particular, there are references to consensus-related topics, such as the longest chain rule, the Aura block authoring mechanism and the GRANDPA finality gadget.
+// After the node has been built, refer to the embedded documentation to learn more about the capabilities and configuration parameters that it exposes:
+//
+// ```sh
+// ./target/release/node-template --help
+// ```
 
 use clamor_runtime::{self, opaque::Block, RuntimeApi};
 use sc_client_api::{BlockBackend, ExecutorProvider};
@@ -13,6 +21,7 @@ use sp_keystore::SyncCryptoStore;
 use std::{sync::Arc, time::Duration};
 
 // Our native executor instance.
+/// TODO: Documentation. See: https://substrate.recipes/kitchen-node.html#building-a-service-with-the-runtime
 pub struct ExecutorDispatch;
 
 impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
@@ -38,6 +47,7 @@ type FullClient =
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
+/// TODO: Documentation. See: https://substrate.recipes/kitchen-node.html#building-a-service-with-the-runtime
 pub fn new_partial(
 	config: &Configuration,
 ) -> Result<

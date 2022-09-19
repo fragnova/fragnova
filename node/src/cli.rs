@@ -1,5 +1,6 @@
 use sc_cli::RunCmd;
 
+/// An overarching CLI command definition.
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
 	#[clap(subcommand)]
@@ -12,6 +13,24 @@ pub struct Cli {
 	pub geth_url: Option<String>,
 }
 
+/// Possible subcommands of the main binary (i.e of the binary `/target/debug/clamor`).
+///
+/// The basic syntax for running a command:
+///
+// ```sh
+// clamor [subcommand] [flags] [options]
+// ```
+///
+/// # Example
+///
+///  Here's an example of the subcommands of the node-template program: https://docs.substrate.io/reference/command-line-tools/node-template/#subcommands
+///
+/// Note: The node-template program provides a working Substrate node with FRAME system pallets
+/// and a subset of additional pallets for working with common blockchain functional operations.
+/// With its baseline of functional pallets, the node-template serves as a starter kit for building your own blockchain
+/// and developing a custom runtime. You can use the node-template program to start a Substrate node and
+/// to perform the tasks listed in Subcommands.
+/// (https://docs.substrate.io/reference/command-line-tools/node-template)
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
 	/// Key management cli utilities
