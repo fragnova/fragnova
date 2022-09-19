@@ -143,7 +143,7 @@ pub struct EthLockUpdate<TPublic> {
 	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
 	pub amount: U256,
 	/// If the event was `Lock`, it represents the lock period of the FRAG token.
-	/// Owtherwise, if the event was `Unlock`, it is zero.
+	/// If the event was `Unlock`, it is 999.
 	pub lock_period: U256,
 	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
@@ -185,6 +185,8 @@ pub struct AccountInfo<TAccountID, TMoment> {
 pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
+	use frame_support::traits::fungibles::Create;
+	use frame_system::Origin;
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
 
@@ -223,7 +225,7 @@ pub mod pallet {
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 
-		// Asset ID of the fungible asset "TICKET"
+		/// Asset ID of the fungible asset "TICKET"
 		#[pallet::constant]
 		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
 	}
@@ -514,10 +516,19 @@ pub mod pallet {
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
 					// mint Tickets for the linked user
-					let _ = <pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+					sp_std::if_std! {
+						// This code is only being compiled and executed when the `std` feature is enabled.
+						println!("ACCOUNT IS LINKED! Before minting {:?} of asset id {:?}", tickets_amount, T::TicketsAssetId::get());
+					}
+					//pallet_assets::Pallet::<T>::create()
+					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 						T::TicketsAssetId::get(),
 						&linked,
-						tickets_amount);
+						tickets_amount)?;
+					sp_std::if_std! {
+						// This code is only being compiled and executed when the `std` feature is enabled.
+						println!("ACCOUNT IS LINKED! JUST MINTED {:?} TICKETS.", tickets_amount);
+					}
 				} else {
 					// Ethereum Account ID (H160) not linked to Clamor Account ID
 					// So, register the amount of tickets owned by the H160 account for later linking

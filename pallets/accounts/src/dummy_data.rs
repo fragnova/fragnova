@@ -14,7 +14,14 @@ use sp_core::{
 fn get_ethereum_chain_id() -> u64 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;
-	<Test as crate::Config>::EthChainId::get()
+	<Test as Config>::EthChainId::get()
+}
+
+#[cfg(test)]
+pub fn get_ticket_asset_id() -> u32 {
+	use crate::mock::Test;
+	use frame_support::traits::TypedGet;
+	<Test as Config>::TicketsAssetId::get()
 }
 
 #[cfg(not(test))]
@@ -128,7 +135,6 @@ impl Link {
 pub struct Lock {
 	pub data: EthLockUpdate<sp_core::ed25519::Public>,
 	pub link: Link,
-
 	pub ethereum_account_pair: sp_core::ecdsa::Pair,
 }
 pub struct Unlock {

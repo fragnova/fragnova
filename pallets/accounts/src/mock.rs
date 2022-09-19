@@ -152,7 +152,7 @@ parameter_types! {
 	pub const TicketsAssetId: u32 = 1337;
 }
 
-impl pallet_accounts::Config for Test {
+impl Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
