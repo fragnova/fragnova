@@ -1210,6 +1210,10 @@
 <span id="1210">1210</span>
 <span id="1211">1211</span>
 <span id="1212">1212</span>
+<span id="1213">1213</span>
+<span id="1214">1214</span>
+<span id="1215">1215</span>
+<span id="1216">1216</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1580,6 +1584,8 @@
 		</span>Detached,
 		<span class="doccomment">/// Already exist
 		</span>AlreadyExist,
+		<span class="doccomment">/// Metadata Name is Empty
+		</span>MetadataNameIsEmpty,
 		<span class="doccomment">/// Not found
 		</span>NotFound,
 		<span class="doccomment">/// Sale has expired
@@ -1655,7 +1661,9 @@
 
 			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::Detached); <span class="comment">// proto must not have been detached
 
-			</span><span class="kw">let </span>hash = blake2_128(
+			</span><span class="macro">ensure!</span>(metadata.name.len() &gt; <span class="number">0</span>, Error::&lt;T&gt;::MetadataNameIsEmpty);
+
+			<span class="kw">let </span>hash = blake2_128(
 				<span class="comment">// This is the unique id of the Fragment Definition that will be created
 				</span><span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>proto_hash[..], <span class="kw-2">&amp;</span>metadata.name.encode(), <span class="kw-2">&amp;</span>metadata.currency.encode()].concat(),
 			);
@@ -2423,4 +2431,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (17cbdfd07 2022-09-13)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a37499ae6 2022-09-18)" ></div></body></html>
