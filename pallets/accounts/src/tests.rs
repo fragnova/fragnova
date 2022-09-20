@@ -340,7 +340,7 @@ mod sync_frag_locks_tests {
 }
 
 mod internal_lock_update_tests {
-	use std::iter::Inspect;
+	use frame_support::traits::fungible::Inspect;
 	use pallet_assets::AssetDetails;
 	use super::*;
 
@@ -420,7 +420,7 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	fn lock_by_linked_account_should_lock_frag_internally_and_mint_tickets() {
+	fn lock_by_linked_account_should_lock_frag_and_mint_tickets_and_send_nova() {
 		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
 			let lock = dd.lock;
@@ -444,6 +444,9 @@ mod internal_lock_update_tests {
 			let minted = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
 																&link.clamor_account_id);
 			assert_eq!(U256::from(minted), lock.data.amount);
+
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			assert_eq!(U256::from(nova), lock.data.amount);
 		});
 	}
 

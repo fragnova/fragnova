@@ -185,6 +185,7 @@ pub struct AccountInfo<TAccountID, TMoment> {
 pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
+	use frame_support::traits::fungible::Unbalanced;
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
 
@@ -256,6 +257,10 @@ pub mod pallet {
 	/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
 	#[pallet::storage]
 	pub type EthReservedTickets<T: Config> = StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
+
+	/// This **StorageMap** maps an Ethereum AccountID to an amount of NOVA received until a Clamor Account ID is not linked.
+	#[pallet::storage]
+	pub type EthReservedNova<T: Config> = StorageMap<_, Identity, H160, <T as pallet_balances::Config>::Balance>;
 
 	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
@@ -499,11 +504,12 @@ pub mod pallet {
 
 			// writing here at end (THE lines below only execute if the number of votes received by `data_hash` passes the `threshold`)
 
-			let amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			let lock_period: U256 =
 				data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+			let amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
+			let nova_amount: <T as pallet_balances::Config>::Balance = data_amount.saturated_into();
 
 			//TODO - get FRAG price from oracle
 			let tickets_amount = Self::calculate_tickets_percentage_to_mint(data_amount);
@@ -517,13 +523,21 @@ pub mod pallet {
 						T::TicketsAssetId::get(),
 						&linked,
 						tickets_amount)?;
-					//<pallet_balances::Pallet<T>
+					// assign NOVA
+
+					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
+						&linked,
+						nova_amount)?;
 				} else {
 					// Ethereum Account ID (H160) not linked to Clamor Account ID
-					// So, register the amount of tickets owned by the H160 account for later linking
+					// So, register the amount of tickets and NOVA owned by the H160 account for later linking
 					<EthReservedTickets<T>>::insert(
 						sender.clone(),
 						tickets_amount,
+					);
+					<EthReservedNova<T>>::insert(
+						sender.clone(),
+						nova_amount,
 					);
 				}
 				// also emit event
@@ -551,6 +565,12 @@ pub mod pallet {
 				<EthReservedTickets<T>>::insert(
 					sender.clone(),
 					amount,
+				);
+
+				let nova_amount_unlock: <T as pallet_balances::Config>::Balance = amount.saturated_into();
+				<EthReservedNova<T>>::insert(
+					sender.clone(),
+					nova_amount_unlock,
 				);
 			}
 
