@@ -8,9 +8,7 @@
   "telemetryEndpoints": null,
   "protocolId": "frag",
   "properties": {
-    "ss58Format": 93,
-    "tokenDecimals": 12,
-    "tokenSymbol": "NOVA"
+    "ss58Format": 93
   },
   "codeSubstitutes": {},
   "genesis": {
