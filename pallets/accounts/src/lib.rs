@@ -185,7 +185,6 @@ pub struct AccountInfo<TAccountID, TMoment> {
 pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
-	use frame_support::traits::fungibles::Create;
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
 
@@ -511,7 +510,6 @@ pub mod pallet {
 
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
-				// ! TODO TEST
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
 					// mint Tickets for the linked user
@@ -519,6 +517,7 @@ pub mod pallet {
 						T::TicketsAssetId::get(),
 						&linked,
 						tickets_amount)?;
+					//<pallet_balances::Pallet<T>
 				} else {
 					// Ethereum Account ID (H160) not linked to Clamor Account ID
 					// So, register the amount of tickets owned by the H160 account for later linking
@@ -536,7 +535,6 @@ pub mod pallet {
 				);
 			} else {
 				// If we want to unlock all the FRAG tokens that were
-				// ! TODO TEST
 				// if we have any link to this account, then force unlinking
 				let linked = <EVMLinksReverse<T>>::get(sender.clone());
 				if let Some(linked) = linked {
