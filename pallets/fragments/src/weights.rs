@@ -55,9 +55,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Proto2Fragments (r:1 w:1)
 	fn create() -> Weight {
-		(33_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		Weight::from_ref_time(33_000_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(4 as u64))
+			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 }
 
@@ -68,8 +68,8 @@ impl WeightInfo for () {
 	// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Proto2Fragments (r:1 w:1)
 	fn create() -> Weight {
-		(33_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+		Weight::from_ref_time(33_000_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(4 as u64))
+			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 }

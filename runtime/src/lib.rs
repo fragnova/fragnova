@@ -194,7 +194,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_mul(2);
 
 // When to use:
 //
@@ -394,7 +394,7 @@ parameter_types! {
 	/// The maximum number of contracts that can be pending for deletion.
 	pub const DeletionQueueDepth: u32 = 1024;
 	/// The maximum amount of weight that can be consumed per block for lazy trie removal.
-	pub const DeletionWeightLimit: Weight = 500_000_000_000;
+	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
 	// pub const MaxCodeSize: u32 = 2 * 1024;
 	/// Cost schedule and limits.
 	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
@@ -938,7 +938,7 @@ impl_runtime_apis! {
 			storage_deposit_limit: Option<Balance>,
 			input_data: Vec<u8>,
 		) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
+			Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true)
 		}
 
 		/// TODO: Documentation
@@ -952,7 +952,7 @@ impl_runtime_apis! {
 			salt: Vec<u8>,
 		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
 		{
-			Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+			Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
 		}
 
 		/// TODO: Documentation

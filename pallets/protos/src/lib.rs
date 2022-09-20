@@ -341,7 +341,7 @@ pub mod pallet {
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
 		///   **Proto-Fragment** *<u>can't be included</u>* into **other protos**
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -468,7 +468,7 @@ pub mod pallet {
 		///   **patch**
 		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get())]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn patch(
 			origin: OriginFor<T>,
 			// proto hash we want to patch
@@ -640,7 +640,7 @@ pub mod pallet {
 		///   `metadata` of the existing Proto-Fragment's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
 		///   in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + (data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			// proto hash we want to update
@@ -872,7 +872,7 @@ pub mod pallet {
 									who.clone(),
 									contract_address,
 									0u32.saturated_into(),
-									1_000_000, // TODO determine this limit better should not be too high indeed
+									Weight::from_ref_time(1_000_000), // TODO determine this limit better should not be too high indeed
 									None,
 									data,
 									false,
@@ -958,7 +958,7 @@ pub mod pallet {
 							let zero_vec = [0u8; 8];
 
 							// Specific query:
-							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
+							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
 								if param_script_info.format == stored_script_info.format {
 									return Self::filter_tags(tags, struct_proto, exclude_tags);
@@ -966,8 +966,8 @@ pub mod pallet {
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec) && 
-									param_script_info.requiring.contains(&zero_vec) && 
+							else if param_script_info.implementing.contains(&zero_vec) &&
+									param_script_info.requiring.contains(&zero_vec) &&
 									param_script_info.format == stored_script_info.format {
 									return Self::filter_tags(tags, struct_proto, exclude_tags);
 							}
@@ -1042,11 +1042,11 @@ pub mod pallet {
 								.into_iter()
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
-							
+
 								let zero_vec = [0u8; 8];
 
 								// Specific query:
-								// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
+								// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 								if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
 									if param_script_info.format == stored_script_info.format {
 										return true;
@@ -1054,8 +1054,8 @@ pub mod pallet {
 								}
 								// Generic query:
 								// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-								else if param_script_info.implementing.contains(&zero_vec) && 
-										param_script_info.requiring.contains(&zero_vec) && 
+								else if param_script_info.implementing.contains(&zero_vec) &&
+										param_script_info.requiring.contains(&zero_vec) &&
 										param_script_info.format == stored_script_info.format {
 										return true;
 								}
