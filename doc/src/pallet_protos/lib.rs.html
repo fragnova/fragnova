@@ -1644,7 +1644,7 @@
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
 		///   **Proto-Fragment** *&lt;u&gt;can&#39;t be included&lt;/u&gt;* into **other protos**
 		/// * `data` - **Data** of the **Proto-Fragment**
-		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::upload() + (data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::upload() + Weight::from_ref_time(data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
 		</span><span class="kw">pub fn </span>upload(
 			origin: OriginFor&lt;T&gt;,
 			<span class="comment">// we store this in the state as well
@@ -1771,7 +1771,7 @@
 		///   **patch**
 		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
 		/// * `data` - **Data** of the **Proto-Fragment**
-		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get())]
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + Weight::from_ref_time(data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
 		</span><span class="kw">pub fn </span>patch(
 			origin: OriginFor&lt;T&gt;,
 			<span class="comment">// proto hash we want to patch
@@ -1943,7 +1943,7 @@
 		///   `metadata` of the existing Proto-Fragment&#39;s Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
 		///   in the BTreeMap field `metadata` of the existing Proto-Fragment&#39;s Struct Instance
-		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + (data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + Weight::from_ref_time(data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
 		</span><span class="kw">pub fn </span>set_metadata(
 			origin: OriginFor&lt;T&gt;,
 			<span class="comment">// proto hash we want to update
@@ -2175,7 +2175,7 @@
 									who.clone(),
 									contract_address,
 									<span class="number">0u32</span>.saturated_into(),
-									<span class="number">1_000_000</span>, <span class="comment">// TODO determine this limit better should not be too high indeed
+									Weight::from_ref_time(<span class="number">1_000_000</span>), <span class="comment">// TODO determine this limit better should not be too high indeed
 									</span><span class="prelude-val">None</span>,
 									data,
 									<span class="bool-val">false</span>,
@@ -2261,7 +2261,7 @@
 							<span class="kw">let </span>zero_vec = [<span class="number">0u8</span>; <span class="number">8</span>];
 
 							<span class="comment">// Specific query:
-							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
+							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							</span><span class="kw">if </span>!implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
 								<span class="kw">if </span>param_script_info.format == stored_script_info.format {
 									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
@@ -2269,8 +2269,8 @@
 							}
 							<span class="comment">// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp; 
-									param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp; 
+							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
+									param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
 									param_script_info.format == stored_script_info.format {
 									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
 							}
@@ -2345,11 +2345,11 @@
 								.into_iter()
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
-							
+
 								<span class="kw">let </span>zero_vec = [<span class="number">0u8</span>; <span class="number">8</span>];
 
 								<span class="comment">// Specific query:
-								// Partial or full match {requiring, implementing}. Same format {Edn|Binary}. 
+								// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 								</span><span class="kw">if </span>!implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
 									<span class="kw">if </span>param_script_info.format == stored_script_info.format {
 										<span class="kw">return </span><span class="bool-val">true</span>;
@@ -2357,8 +2357,8 @@
 								}
 								<span class="comment">// Generic query:
 								// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-								</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp; 
-										param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp; 
+								</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
+										param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
 										param_script_info.format == stored_script_info.format {
 										<span class="kw">return </span><span class="bool-val">true</span>;
 								}
@@ -2605,4 +2605,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a37499ae6 2022-09-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (2019147c5 2022-09-19)" ></div></body></html>

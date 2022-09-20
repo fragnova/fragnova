@@ -130,9 +130,9 @@
 	// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Proto2Fragments (r:1 w:1)
 	</span><span class="kw">fn </span>create() -&gt; Weight {
-		(<span class="number">33_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">33_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 }
 
@@ -143,10 +143,10 @@
 	// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Proto2Fragments (r:1 w:1)
 	</span><span class="kw">fn </span>create() -&gt; Weight {
-		(<span class="number">33_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">33_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a37499ae6 2022-09-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (2019147c5 2022-09-19)" ></div></body></html>

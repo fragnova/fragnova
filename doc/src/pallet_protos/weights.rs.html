@@ -217,15 +217,15 @@
 <span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="comment">// Storage: Protos UploadAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>add_upload_auth() -&gt; Weight {
-		(<span class="number">3_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">3_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos UploadAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>del_upload_auth() -&gt; Weight {
-		(<span class="number">4_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">4_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos UserNonces (r:1 w:1)
 	// Storage: Protos UploadAuthorities (r:1 w:0)
@@ -234,9 +234,9 @@
 	// Storage: Protos ProtosByCategory (r:1 w:1)
 	// Storage: Protos ProtosByOwner (r:1 w:1)
 	</span><span class="kw">fn </span>upload() -&gt; Weight {
-		(<span class="number">158_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">158_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos UserNonces (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:1)
@@ -244,25 +244,25 @@
 	// Storage: Protos UploadAuthorities (r:1 w:0)
 	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
 	</span><span class="kw">fn </span>patch() -&gt; Weight {
-		(<span class="number">162_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">162_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Detach DetachRequests (r:1 w:1)
 	</span><span class="kw">fn </span>detach() -&gt; Weight {
-		(<span class="number">8_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">8_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Protos ProtosByOwner (r:2 w:2)
 	</span><span class="kw">fn </span>transfer() -&gt; Weight {
-		(<span class="number">21_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">21_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
 }
 
@@ -270,15 +270,15 @@
 </span><span class="kw">impl </span>WeightInfo <span class="kw">for </span>() {
 	<span class="comment">// Storage: Protos UploadAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>add_upload_auth() -&gt; Weight {
-		(<span class="number">3_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">3_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos UploadAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>del_upload_auth() -&gt; Weight {
-		(<span class="number">4_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">4_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos UserNonces (r:1 w:1)
 	// Storage: Protos UploadAuthorities (r:1 w:0)
@@ -287,9 +287,9 @@
 	// Storage: Protos ProtosByCategory (r:1 w:1)
 	// Storage: Protos ProtosByOwner (r:1 w:1)
 	</span><span class="kw">fn </span>upload() -&gt; Weight {
-		(<span class="number">158_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">158_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos UserNonces (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:1)
@@ -297,26 +297,26 @@
 	// Storage: Protos UploadAuthorities (r:1 w:0)
 	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
 	</span><span class="kw">fn </span>patch() -&gt; Weight {
-		(<span class="number">162_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">162_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Detach DetachRequests (r:1 w:1)
 	</span><span class="kw">fn </span>detach() -&gt; Weight {
-		(<span class="number">8_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">8_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Protos ProtosByOwner (r:2 w:2)
 	</span><span class="kw">fn </span>transfer() -&gt; Weight {
-		(<span class="number">21_000_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">21_000_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a37499ae6 2022-09-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (2019147c5 2022-09-19)" ></div></body></html>

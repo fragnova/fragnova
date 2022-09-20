@@ -1258,7 +1258,7 @@
 /// by  Operational  extrinsics.
 </span><span class="kw">const </span>NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(<span class="number">75</span>);
 <span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.
-</span><span class="kw">const </span>MAXIMUM_BLOCK_WEIGHT: Weight = <span class="number">2 </span>* WEIGHT_PER_SECOND;
+</span><span class="kw">const </span>MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_mul(<span class="number">2</span>);
 
 <span class="comment">// When to use:
 //
@@ -1458,7 +1458,7 @@
 	</span><span class="doccomment">/// The maximum number of contracts that can be pending for deletion.
 	</span><span class="kw">pub const </span>DeletionQueueDepth: u32 = <span class="number">1024</span>;
 	<span class="doccomment">/// The maximum amount of weight that can be consumed per block for lazy trie removal.
-	</span><span class="kw">pub const </span>DeletionWeightLimit: Weight = <span class="number">500_000_000_000</span>;
+	</span><span class="kw">pub const </span>DeletionWeightLimit: Weight = Weight::from_ref_time(<span class="number">500_000_000_000</span>);
 	<span class="comment">// pub const MaxCodeSize: u32 = 2 * 1024;
 	</span><span class="doccomment">/// Cost schedule and limits.
 	</span><span class="kw">pub </span>MySchedule: Schedule&lt;Runtime&gt; = &lt;Schedule&lt;Runtime&gt;&gt;::default();
@@ -2002,7 +2002,7 @@
 			storage_deposit_limit: <span class="prelude-ty">Option</span>&lt;Balance&gt;,
 			input_data: Vec&lt;u8&gt;,
 		) -&gt; pallet_contracts_primitives::ContractExecResult&lt;Balance&gt; {
-			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, <span class="bool-val">true</span>)
+			Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, <span class="bool-val">true</span>)
 		}
 
 		<span class="doccomment">/// TODO: Documentation
@@ -2016,7 +2016,7 @@
 			salt: Vec&lt;u8&gt;,
 		) -&gt; pallet_contracts_primitives::ContractInstantiateResult&lt;AccountId, Balance&gt;
 		{
-			Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, <span class="bool-val">true</span>)
+			Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, <span class="bool-val">true</span>)
 		}
 
 		<span class="doccomment">/// TODO: Documentation
@@ -2127,4 +2127,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a37499ae6 2022-09-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (2019147c5 2022-09-19)" ></div></body></html>
