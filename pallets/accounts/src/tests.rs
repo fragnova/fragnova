@@ -19,7 +19,6 @@ mod link_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn link_should_work() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -49,7 +48,6 @@ mod link_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn link_should_not_work_if_signature_parameter_is_invalid() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -61,7 +59,6 @@ mod link_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn link_should_not_work_if_clamor_account_is_already_linked() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -86,7 +83,6 @@ mod link_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn link_should_not_work_if_ethereum_account_is_already_linked() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -118,7 +114,6 @@ mod unlink_tests {
 	use super::*;
 
 	#[test]
-	#[ignore]
 	fn unlink_should_work() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -151,7 +146,6 @@ mod unlink_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn unlink_should_not_work_if_link_does_not_exist() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -168,7 +162,6 @@ mod unlink_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn unlink_should_not_work_if_origin_parameter_and_account_paramter_are_linked_but_not_with_each_other(
 	) {
 		new_test_ext().execute_with(|| {
@@ -305,7 +298,6 @@ mod sync_frag_locks_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn sync_frag_locks_should_work() {
 		let (mut t, pool_state, offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
 
@@ -349,6 +341,7 @@ mod sync_frag_locks_tests {
 
 mod internal_lock_update_tests {
 	use std::iter::Inspect;
+	use pallet_assets::AssetDetails;
 	use super::*;
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
@@ -368,7 +361,6 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn lock_by_unlinked_account_should_lock_frag_internally_and_reserve_tickets() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -429,42 +421,33 @@ mod internal_lock_update_tests {
 
 	#[test]
 	fn lock_by_linked_account_should_lock_frag_internally_and_mint_tickets() {
-		new_test_ext().execute_with(|| {
+		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
-
-			let current_block_number = System::block_number();
-
 			let lock = dd.lock;
 			let link = lock.link.clone();
+			let current_block_number = System::block_number();
 
 			assert_ok!(link_(&link));
-			//assert!(::contains_key(get_ticket_asset_id()));
 			assert_ok!(lock_(&lock));
-			//
-			// assert_eq!(
-			// 	<EthLockedFrag<Test>>::get(&lock.data.sender).unwrap(),
-			// 	EthLock {
-			// 		amount: SaturatedConversion::saturated_into::<
-			// 			<Test as pallet_balances::Config>::Balance,
-			// 		>(lock.data.amount.clone()),
-			// 		block_number: current_block_number,
-			// 		lock_period: U256::from(1),
-			// 	}
-			// );
-			//
-			// // assert_eq!(
-			// // 	<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap_or(None),
-			// // 	None
-			// // );
-			//
-			// let minted = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
-			// 													&link.clamor_account_id);
-			// assert_eq!(U256::from(minted), lock.data.amount);
+			// assert that Frag is locked in Clamor
+			assert_eq!(
+				<EthLockedFrag<Test>>::get(&lock.data.sender).unwrap(),
+				EthLock {
+					amount: SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(lock.data.amount.clone()),
+					block_number: current_block_number,
+					lock_period: U256::from(1),
+				}
+			);
+			// check the balance of the Clamor account
+			let minted = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
+																&link.clamor_account_id);
+			assert_eq!(U256::from(minted), lock.data.amount);
 		});
 	}
 
 	#[test]
-	#[ignore]
 	fn lock_should_not_work_if_locked_amount_is_zero() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -483,7 +466,6 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn lock_should_not_work_if_the_sender_is_not_recovered_from_the_signature() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -496,7 +478,6 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn unlock_should_work() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -556,9 +537,8 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn unlock_should_unlink_clamor_account_if_clamor_account_is_linked() {
-		new_test_ext().execute_with(|| {
+		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
 
 			let unlock = dd.unlock;
@@ -591,7 +571,6 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn unlock_should_not_work_if_unlocked_amount_is_greater_than_zero() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();

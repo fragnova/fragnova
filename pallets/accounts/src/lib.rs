@@ -186,7 +186,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_support::traits::fungibles::Create;
-	use frame_system::Origin;
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
 
@@ -516,19 +515,10 @@ pub mod pallet {
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
 					// mint Tickets for the linked user
-					sp_std::if_std! {
-						// This code is only being compiled and executed when the `std` feature is enabled.
-						println!("ACCOUNT IS LINKED! Before minting {:?} of asset id {:?}", tickets_amount, T::TicketsAssetId::get());
-					}
-					//pallet_assets::Pallet::<T>::create()
 					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 						T::TicketsAssetId::get(),
 						&linked,
 						tickets_amount)?;
-					sp_std::if_std! {
-						// This code is only being compiled and executed when the `std` feature is enabled.
-						println!("ACCOUNT IS LINKED! JUST MINTED {:?} TICKETS.", tickets_amount);
-					}
 				} else {
 					// Ethereum Account ID (H160) not linked to Clamor Account ID
 					// So, register the amount of tickets owned by the H160 account for later linking
@@ -765,7 +755,7 @@ pub mod pallet {
 			}
 		}
 
-		fn calculate_tickets_percentage_to_mint(mut amount: u128) -> <T as pallet_assets::Config>::Balance {
+		fn calculate_tickets_percentage_to_mint(amount: u128) -> <T as pallet_assets::Config>::Balance {
 			// hard set to 20% for the moment
 			//let percent = Percentage::from(50);
 			//let percent_applied = percent.apply_to(amount);
