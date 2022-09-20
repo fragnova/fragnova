@@ -4,7 +4,7 @@ use crate::*;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, ConstU64},
-	weights::constants::WEIGHT_PER_SECOND,
+	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system;
 
@@ -208,6 +208,7 @@ impl pallet_proxy::Config for Test {
 }
 
 parameter_types! {
+	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
 	pub MySchedule: pallet_contracts::Schedule<Test> = {
 		let mut schedule = <pallet_contracts::Schedule<Test>>::default();
 		// We want stack height to be always enabled for tests so that this
@@ -218,7 +219,7 @@ parameter_types! {
 	pub static DepositPerByte: u64 = 1;
 	pub const DepositPerItem: u64 = 2;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(2 * WEIGHT_PER_SECOND);
+		frame_system::limits::BlockWeights::simple_max(WEIGHT_PER_SECOND.saturating_mul(2));
 }
 
 impl pallet_contracts::Config for Test {
@@ -235,7 +236,7 @@ impl pallet_contracts::Config for Test {
 	type WeightInfo = ();
 	type ChainExtension = ();
 	type DeletionQueueDepth = ConstU32<1024>;
-	type DeletionWeightLimit = ConstU64<500_000_000_000>;
+	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
 	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<BlockWeights>;
