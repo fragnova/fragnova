@@ -1,9 +1,9 @@
-const { ApiPromise, WsProvider } = require('@polkadot/api');
+const { ApiPromise, WsProvider } = require("@polkadot/api");
 
-const { Text } = require('@polkadot/types')
+const { Text } = require("@polkadot/types")
 
 const connectToLocalNode = async () => {
-    const wsProvider = new WsProvider('ws://127.0.0.1:9944');
+    const wsProvider = new WsProvider("ws://127.0.0.1:9944");
 
     api = await ApiPromise.create({
       provider: wsProvider,
@@ -12,38 +12,36 @@ const connectToLocalNode = async () => {
           getProtos: {
             description: "This is the description", type: "String",
             params: [
-              { name: 'params', type: 'GetProtosParams' },
-              { name: 'at', type: 'BlockHash', isOptional: true }
+              { name: "params", type: "GetProtosParams" },
+              { name: "at", type: "BlockHash", isOptional: true }
             ]
           },
         },
         fragments: {
           getDefinitions: {
-            description: "C'est le description", type: "String",
+            description: "C"est le description", type: "String",
             params: [
-              { name: 'params', type: 'GetDefinitionsParams' },
-              { name: 'at', type: 'BlockHash', isOptional: true }
+              { name: "params", type: "GetDefinitionsParams" },
+              { name: "at", type: "BlockHash", isOptional: true }
             ]
           },
           getInstances: {
             description: "这是描述", type: "String",
             params: [
-              { name: 'params', type: 'GetInstancesParams' },
-              { name: 'at', type: 'BlockHash', isOptional: true }
+              { name: "params", type: "GetInstancesParams" },
+              { name: "at", type: "BlockHash", isOptional: true }
             ]
           }
         }
       },
 
       types: {
-
         AudioCategories: {
           _enum: [
             "oggFile",
             "mp3File",
           ]
         },
-
         ModelCategories: {
           _enum: [
             "gltfFile",
@@ -51,35 +49,30 @@ const connectToLocalNode = async () => {
             "physicsCollider"
           ]
         },
-
         TextureCategories: {
           _enum: [
             "pngFile",
             "jpgFile"
           ]
         },
-
         VectorCategories: {
           _enum: [
             "svgFile",
             "ttfFile"
           ]
         },
-
         VideoCategories: {
           _enum: [
             "mkvFile",
             "mp4File"
           ]
         },
-
         TextCategories: {
           _enum: [
             "plain",
             "json"
           ]
         },
-
         BinaryCategories: {
           _enum: [
             "wasmProgram",
@@ -87,22 +80,18 @@ const connectToLocalNode = async () => {
             "blendFile",
           ]
         },
-
         ShardsScriptInfo: {
-          format: 'ShardsFormat',
-          requiring: 'Vec<ShardsTrait>',
-          implementing: 'Vec<ShardsTrait>'
+          format: "ShardsFormat",
+          requiring: "Vec<ShardsTrait>",
+          implementing: "Vec<ShardsTrait>"
         },
-
         ShardsTrait: "Vec<u16>",
-
         ShardsFormat: {
           _enum: [
             "edn",
             "binary",
           ]
         },
-
         Categories: {
           _enum: {
             "text": "TextCategories",
@@ -116,37 +105,38 @@ const connectToLocalNode = async () => {
             "binary": "BinaryCategories",
           }
         },
-
-        BlockHash: 'Hash',
+        BlockHash: "Hash",
+        Hash128: "[u8; 16]",
 
         GetProtosParams: {
-          desc: 'bool',
-          from: 'u64',
-          limit: 'u64',
-          metadata_keys: 'Vec<String>',
-          owner: 'Option<AccountId>',
-          return_owners: 'bool',
-          categories: 'Vec<Categories>',
-          tags: 'Vec<String>',
-          available: 'Option<bool>',
+          desc: "bool",
+          from: "u64",
+          limit: "u64",
+          metadata_keys: "Vec<String>",
+          owner: "Option<AccountId>",
+          return_owners: "bool",
+          categories: "Vec<Categories>",
+          tags: "Vec<String>",
+          available: "Option<bool>",
         },
 
         GetDefinitionsParams: {
-          desc: 'bool',
-          from: 'u64',
-          limit: 'u64',
-          metadata_keys: 'Vec<String>',
-          owner: 'Option<AccountId>',
-          return_owners: 'bool',
+          desc: "bool",
+          from: "u64",
+          limit: "u64",
+          metadata_keys: "Vec<String>",
+          owner: "Option<AccountId>",
+          return_owners: "bool",
         },
 
         GetInstancesParams: {
-          desc: 'bool',
-          from: 'u64',
-          limit: 'u64',
-          metadata_keys: 'Vec<String>',
-          owner: 'Option<AccountId>',
-          only_return_first_copies: 'bool',
+          desc: "bool",
+          from: "u64",
+          limit: "u64",
+          definition_hash: "Hash128",
+          metadata_keys: "Vec<String>",
+          owner: "Option<AccountId>",
+          only_return_first_copies: "bool",
         },
 
 
@@ -163,9 +153,9 @@ const connectToLocalNode = async () => {
 // (async () => {
 //     const api = await connectToLocalNode();
 //     const params = api.createType("GetProtosParams", {categories: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
-//         metadata_keys: ['A', 'A'], return_owners: true});
+//         metadata_keys: ["A", "A"], return_owners: true});
 //     let string_json = await api.rpc.protos.getProtos(params)
-//     console.log('string_json is', string_json)
+//     console.log("string_json is", string_json)
 // })()
 
 

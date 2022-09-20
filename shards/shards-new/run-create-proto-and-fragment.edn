@@ -1,0 +1,67 @@
+(deftrait Fragnova-Account
+  :private-key "//Alice")
+
+(load-file "fragnova.edn")
+
+(def UPLOAD-CALL-DATA-EXCL-DATA-PARAM "0x0b00000000000000") ; encoded call data that defines a call to `protos.upload()` with certain hardcoded parameters. See: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws.fragnova.network#/extrinsics/decode/0x0b0000000000000000
+(def SET-METADATA-CALL-INDEX "0x0b03") ; call index of `protos.set_metadata()`
+(def CREATE-FRAGMENT-INDEX "0x0c00")
+(def CREATE-FRAGMENT-CALL-DATA-AFTER-PROTO-PARAM "0x106e616d6500000000000000")
+
+(defwire upload-proto
+  (ExpectBytes) = .data
+
+  UPLOAD-CALL-DATA-EXCL-DATA-PARAM (HexToBytes) >= .call-data
+  [.data] (Substrate.Encode [nil]) (AppendTo .call-data)
+
+  .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of send-signed-extrinsic-as-http-request is")
+
+  .data (Hash.Blake2-256) (Log "Uploaded Proto With Proto Hash")
+  )
+
+(defwire set-metadata
+  SET-METADATA-CALL-INDEX (HexToBytes) >= .call-data
+  .proto-hash (AppendTo .call-data)
+  [.metadata-key .metadata-data] (Substrate.Encode [nil, nil]) (AppendTo .call-data)
+
+  .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of send-signed-extrinsic-as-http-request is"))
+
+
+(defwire create-proto
+  (ExpectBytes) (Do upload-proto) = .proto-hash
+
+  "json_description" >= .metadata-key
+  {"name" "monalisa" "desc" "iconic, priceless, renaissance art"} (ToJson) (ToBytes) >= .metadata-data
+  (Do set-metadata)
+
+  "image" > .metadata-key
+  "monalisa.jpeg" (FS.Read :Bytes true) > .metadata-data
+  (Do set-metadata)
+
+  .proto-hash)
+
+
+(defwire create-fragment
+  (ExpectBytes) = .proto-hash
+
+  CREATE-FRAGMENT-INDEX (HexToBytes) >= .call-data
+  .proto-hash (AppendTo .call-data)
+  CREATE-FRAGMENT-CALL-DATA-AFTER-PROTO-PARAM (HexToBytes) (AppendTo .call-data)
+
+  .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of send-signed-extrinsic-as-http-request is"))
+
+
+(defwire create-proto-and-fragment
+  = .data
+
+  .data (Do create-proto) (Do create-fragment))
+
+(defwire main
+  (Setup
+   (get Fragnova-Node :setup))
+
+  (vec (range 1 1)) (Map (ToBytes)) (TryMany create-proto-and-fragment))
+
+(defmesh root)
+(schedule root main)
+(run root 0.1)
