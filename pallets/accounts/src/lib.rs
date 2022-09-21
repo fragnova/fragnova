@@ -421,6 +421,23 @@ pub mod pallet {
 			<EVMLinks<T>>::insert(sender.clone(), eth_key);
 			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
 
+			// Check if the Ethereum account has already some tickets and nova registered when it was not linked
+			if <EthReservedTickets<T>>::contains_key(&eth_key) {
+				// mint tickets
+				let tickets_amount = <EthReservedTickets<T>>::get(&eth_key).unwrap();
+				<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+					T::TicketsAssetId::get(),
+					&sender,
+					tickets_amount)?;
+			}
+			if <EthReservedNova<T>>::contains_key(&eth_key) {
+				// assign NOVA
+				let nova_amount = <EthReservedNova<T>>::get(&eth_key).unwrap();
+				<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
+					&sender,
+					nova_amount)?;
+			}
+
 			// also emit event
 			Self::deposit_event(Event::Linked { sender, eth_key });
 
@@ -512,9 +529,14 @@ pub mod pallet {
 
 			let frag_amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 
-			//TODO - get FRAG price from oracle
+			// TODO - get FRAG price from oracle
+			/* NOTE: this is assigning 20% of Tickets and NOVA. It will be replaced by a call to
+			   an oracle to retrieve the price of FRAG/USD and mint the correct amount of Tickets.
+			 */
 			let percentage_amount = Self::apply_20_percent(data_amount);
 
+			// TODO - apply mechanism of periodic vesting of NOVA
+			// NOTE: at the moment there is no mechanism of periodic vesting of NOVA.
 			let nova_amount: <T as pallet_balances::Config>::Balance = percentage_amount.saturated_into();
 			let tickets_amount: <T as pallet_assets::Config>::Balance = percentage_amount.saturated_into();
 

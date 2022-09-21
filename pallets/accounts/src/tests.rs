@@ -467,6 +467,65 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
+	fn link_an_account_with_reserved_tickets_and_nova_should_mint_and_increase_balance() {
+		new_test_ext_with_nova().execute_with(|| {
+			let dd = DummyData::new();
+			let lock = dd.lock;
+			let link = lock.link.clone();
+			let current_block_number = System::block_number();
+
+			assert_ok!(lock_(&lock));
+			// assert that Frag is locked in Clamor
+			assert_eq!(
+				<EthLockedFrag<Test>>::get(&lock.data.sender).unwrap(),
+				EthLock {
+					amount: SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(lock.data.amount.clone()),
+					block_number: current_block_number,
+					lock_period: U256::from(1),
+				}
+			);
+
+			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
+
+			assert_eq!(
+				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
+				SaturatedConversion::saturated_into::<
+					<Test as pallet_balances::Config>::Balance,
+				>(percentage_amount)
+			);
+
+			assert_eq!(
+				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
+				SaturatedConversion::saturated_into::<
+					<Test as pallet_balances::Config>::Balance,
+				>(percentage_amount)
+			);
+			// check the balance of the Clamor account
+			let minted = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
+																&link.clamor_account_id);
+			assert_eq!(minted, 0);
+
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			assert_eq!(nova, 0);
+
+			// now link the account to have the reserved tickets and nova minted and put in balance
+			// of Clamor account
+			assert_ok!(link_(&link));
+
+			let minted_linked = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
+																	   &link.clamor_account_id);
+			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
+			assert_eq!(U256::from(minted_linked), U256::from(percentage_amount));
+
+			let nova_linked = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			assert_eq!(U256::from(nova_linked), U256::from(percentage_amount));
+
+		});
+	}
+
+	#[test]
 	fn lock_should_not_work_if_locked_amount_is_zero() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
