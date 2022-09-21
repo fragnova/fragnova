@@ -45,6 +45,7 @@ jobs:
           sleep 10
 
           docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards sh /data/shards/shards-new/test-rpcs.sh
+          kill %1
 
       - name: Run IPFS Test
         run: |

@@ -106,7 +106,7 @@ pub struct GetInstancesParams<TAccountId, TString> {
 	pub desc: bool,
 	pub from: u64,
 	pub limit: u64,
-	pub definition_hash: Hash128,
+	pub definition_hash: TString,
 	pub metadata_keys: Vec<TString>,
 	pub owner: Option<TAccountId>,
 	pub only_return_first_copies: bool
@@ -1636,7 +1636,12 @@ pub mod pallet {
 
 			let mut map = Map::new();
 
-			let definition_hash = params.definition_hash;
+			let definition_hash: Hash128 = hex::decode(params.definition_hash)
+				.map_err(|_| "Failed to convert string to u8 slice")?
+				.try_into()
+				.map_err(|_| "Failed to convert u8 slice to Hash128")?;
+
+
 			let editions: u64 = <EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 
 			let list_tuple_edition_id_copy_id = if let Some(owner) = params.owner {

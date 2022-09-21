@@ -112,7 +112,7 @@ impl<C, Block, AccountId> FragmentsRpcServer<<Block as BlockT>::Hash, AccountId>
 			desc: params.desc,
 			from: params.from,
 			limit: params.limit,
-			definition_hash: params.definition_hash,
+			definition_hash: params.definition_hash.into_bytes(),
 			owner: params.owner,
 			only_return_first_copies: params.only_return_first_copies,
 		};
