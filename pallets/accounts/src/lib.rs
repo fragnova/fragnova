@@ -429,6 +429,8 @@ pub mod pallet {
 					T::TicketsAssetId::get(),
 					&sender,
 					tickets_amount)?;
+
+				<EthReservedTickets<T>>::remove(&eth_key);
 			}
 			if <EthReservedNova<T>>::contains_key(&eth_key) {
 				// assign NOVA
@@ -436,6 +438,8 @@ pub mod pallet {
 				<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
 					&sender,
 					nova_amount)?;
+
+				<EthReservedNova<T>>::remove(&eth_key);
 			}
 
 			// also emit event
@@ -444,7 +448,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// TODO
 		/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
 		#[pallet::weight(25_000)] // TODO - weight
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
@@ -550,7 +553,6 @@ pub mod pallet {
 						&linked,
 						tickets_amount)?;
 					// assign NOVA
-
 					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
 						&linked,
 						nova_amount)?;
@@ -569,7 +571,6 @@ pub mod pallet {
 				// also emit event
 				Self::deposit_event(Event::Locked { eth_key: sender, balance: frag_amount, lock_period });
 				<EthLockedFrag<T>>::insert(
-					// VERY IMPORTANT TO NOTE
 					sender.clone(),
 					EthLock { amount: frag_amount, block_number: current_block_number, lock_period },
 				);

@@ -522,6 +522,9 @@ mod internal_lock_update_tests {
 			let nova_linked = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(U256::from(nova_linked), U256::from(percentage_amount));
 
+			assert_eq!(<EthReservedTickets<Test>>::contains_key(&lock.data.sender), false);
+			assert_eq!(<EthReservedNova<Test>>::contains_key(&lock.data.sender), false);
+
 		});
 	}
 
