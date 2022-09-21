@@ -417,8 +417,10 @@ mod internal_lock_update_tests {
 
 			assert_eq!(<EVMLinkVotingClosed<Test>>::get(&data_hash).unwrap(), current_block_number);
 
-			let event = <frame_system::Pallet<Test>>::events()
-				.pop()
+			let mut events = <frame_system::Pallet<Test>>::events();
+			assert_eq!(events.clone().len(), 3);
+
+			let event = events.pop()
 				.expect("Expected at least one EventRecord to be found")
 				.event;
 			assert_eq!(
@@ -429,6 +431,32 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount),
 					lock_period: lock.data.lock_period
+				})
+			);
+
+			let event = events.pop()
+				.expect("Expected at least one EventRecord to be found")
+				.event;
+			assert_eq!(
+				event,
+				mock::Event::from(pallet_accounts::Event::NOVAReserved {
+					eth_key: lock.data.sender,
+					balance: SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(apply_20_percent(lock.data.amount.as_u128()))
+				})
+			);
+
+			let event = events.pop()
+				.expect("Expected at least one EventRecord to be found")
+				.event;
+			assert_eq!(
+				event,
+				mock::Event::from(pallet_accounts::Event::TicketsReserved {
+					eth_key: lock.data.sender,
+					balance: SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(apply_20_percent(lock.data.amount.as_u128()))
 				})
 			);
 		});

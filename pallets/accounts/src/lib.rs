@@ -189,6 +189,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
 	use num_traits::float::FloatCore;
+	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -314,6 +315,14 @@ pub mod pallet {
 		Linked { sender: T::AccountId, eth_key: H160 },
 		/// A link was removed between native and ethereum account.
 		Unlinked { sender: T::AccountId, eth_key: H160 },
+		/// Tickets were reserved for an unlinked ethereum account.
+		TicketsReserved { eth_key: H160, balance: <T as pallet_assets::Config>::Balance },
+		/// NOVA were reserved for an unlinked ethereum account.
+		NOVAReserved { eth_key: H160, balance: <T as pallet_balances::Config>::Balance },
+		/// Tickets were minted into an account.
+		TicketsMinted { sender: T::AccountId, balance: <T as pallet_assets::Config>::Balance },
+		/// NOVA were assigned to an account balance.
+		NOVAAssigned { sender: T::AccountId, balance: <T as pallet_balances::Config>::Balance },
 		/// ETH side lock was updated
 		Locked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance, lock_period: U256 },
 		/// ETH side lock was unlocked
@@ -427,23 +436,27 @@ pub mod pallet {
 				let tickets_amount = <EthReservedTickets<T>>::get(&eth_key).unwrap();
 				<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 					T::TicketsAssetId::get(),
-					&sender,
+					&sender.clone(),
 					tickets_amount)?;
 
 				<EthReservedTickets<T>>::remove(&eth_key);
+				// also emit event
+				Self::deposit_event(TicketsMinted { sender: sender.clone(), balance: tickets_amount });
 			}
 			if <EthReservedNova<T>>::contains_key(&eth_key) {
 				// assign NOVA
 				let nova_amount = <EthReservedNova<T>>::get(&eth_key).unwrap();
 				<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
-					&sender,
+					&sender.clone(),
 					nova_amount)?;
 
 				<EthReservedNova<T>>::remove(&eth_key);
+				// also emit event
+				Self::deposit_event(NOVAAssigned { sender: sender.clone(), balance: nova_amount });
 			}
 
 			// also emit event
-			Self::deposit_event(Event::Linked { sender, eth_key });
+			Self::deposit_event(Event::Linked { sender: sender.clone(), eth_key });
 
 			Ok(())
 		}
@@ -552,10 +565,13 @@ pub mod pallet {
 						T::TicketsAssetId::get(),
 						&linked,
 						tickets_amount)?;
+					Self::deposit_event(TicketsMinted {sender: linked.clone(), balance: tickets_amount});
+
 					// assign NOVA
 					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
 						&linked,
 						nova_amount)?;
+					Self::deposit_event(NOVAAssigned {sender: linked.clone(), balance: nova_amount});
 				} else {
 					// Ethereum Account ID (H160) not linked to Clamor Account ID
 					// So, register the amount of tickets and NOVA owned by the H160 account for later linking
@@ -563,10 +579,13 @@ pub mod pallet {
 						sender.clone(),
 						tickets_amount,
 					);
+					Self::deposit_event(TicketsReserved { eth_key: sender.clone(), balance: tickets_amount});
+
 					<EthReservedNova<T>>::insert(
 						sender.clone(),
 						nova_amount,
 					);
+					Self::deposit_event(NOVAReserved {eth_key: sender.clone(), balance: nova_amount});
 				}
 				// also emit event
 				Self::deposit_event(Event::Locked { eth_key: sender, balance: frag_amount, lock_period });
