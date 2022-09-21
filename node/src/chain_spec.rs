@@ -78,6 +78,7 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId, UploadId, EthId,
 
 fn chain_spec_properties() -> serde_json::map::Map<String, serde_json::Value> {
 	serde_json::json!({
+		"ss58Format": 93,
 		"tokenDecimals": 12,
 		"tokenSymbol": "NOVA"
 	})
