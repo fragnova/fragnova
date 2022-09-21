@@ -19,7 +19,7 @@ const connectToLocalNode = async () => {
         },
         fragments: {
           getDefinitions: {
-            description: "C"est le description", type: "String",
+            description: "C'est le description", type: "String",
             params: [
               { name: "params", type: "GetDefinitionsParams" },
               { name: "at", type: "BlockHash", isOptional: true }
@@ -133,7 +133,7 @@ const connectToLocalNode = async () => {
           desc: "bool",
           from: "u64",
           limit: "u64",
-          definition_hash: "Hash128",
+          definition_hash: "String", // "Hash128",  // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
           metadata_keys: "Vec<String>",
           owner: "Option<AccountId>",
           only_return_first_copies: "bool",
