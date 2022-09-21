@@ -44,7 +44,7 @@ jobs:
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
           sleep 10
 
-          sh /data/shards/shards-new/test-rpcs.sh
+          chmod +x /data/shards/shards-new/test-rpcs.sh | /data/shards/shards-new/test-rpcs.sh
 
           kill %1
 
