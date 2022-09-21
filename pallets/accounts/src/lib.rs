@@ -188,6 +188,7 @@ pub mod pallet {
 	use frame_support::traits::fungible::Unbalanced;
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
+	use num_traits::float::FloatCore;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -508,11 +509,14 @@ pub mod pallet {
 
 			let lock_period: U256 =
 				data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
-			let amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
-			let nova_amount: <T as pallet_balances::Config>::Balance = data_amount.saturated_into();
+
+			let frag_amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 
 			//TODO - get FRAG price from oracle
-			let tickets_amount = Self::calculate_tickets_percentage_to_mint(data_amount);
+			let percentage_amount = Self::apply_20_percent(data_amount);
+
+			let nova_amount: <T as pallet_balances::Config>::Balance = percentage_amount.saturated_into();
+			let tickets_amount: <T as pallet_assets::Config>::Balance = percentage_amount.saturated_into();
 
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
@@ -541,11 +545,11 @@ pub mod pallet {
 					);
 				}
 				// also emit event
-				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount, lock_period });
+				Self::deposit_event(Event::Locked { eth_key: sender, balance: frag_amount, lock_period });
 				<EthLockedFrag<T>>::insert(
 					// VERY IMPORTANT TO NOTE
 					sender.clone(),
-					EthLock { amount, block_number: current_block_number, lock_period },
+					EthLock { amount: frag_amount, block_number: current_block_number, lock_period },
 				);
 			} else {
 				// If we want to unlock all the FRAG tokens that were
@@ -555,22 +559,21 @@ pub mod pallet {
 					Self::unlink_account(linked, sender.clone())?; // Unlink Ethereum Account `sender` and Clamor Account `linked`
 				}
 				// also emit event
-				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: amount }); // 问Gio for clarification
+				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: frag_amount }); // 问Gio for clarification
 
 				// The amount here will be zero for both, since it is an UNLOCK event
 				<EthLockedFrag<T>>::insert(
 					sender.clone(),
-					EthLock { amount, block_number: current_block_number, lock_period },
+					EthLock { amount: frag_amount, block_number: current_block_number, lock_period },
 				);
 				<EthReservedTickets<T>>::insert(
 					sender.clone(),
-					amount,
+					tickets_amount,
 				);
 
-				let nova_amount_unlock: <T as pallet_balances::Config>::Balance = amount.saturated_into();
 				<EthReservedNova<T>>::insert(
 					sender.clone(),
-					nova_amount_unlock,
+					nova_amount,
 				);
 			}
 
@@ -773,13 +776,13 @@ pub mod pallet {
 			}
 		}
 
-		fn calculate_tickets_percentage_to_mint(amount: u128) -> <T as pallet_assets::Config>::Balance {
-			// hard set to 20% for the moment
-			//let percent = Percentage::from(50);
-			//let percent_applied = percent.apply_to(amount);
-
-			//percent_applied.saturated_into()
-			amount.saturated_into()
+		fn apply_20_percent(amount: u128) -> u128 {
+			if amount == 0 {
+				return 0;
+			}
+			let amount_float = amount as f64;
+			let result = (amount_float/100.0 * 20.0).round();
+			result as u128
 		}
 
 		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.

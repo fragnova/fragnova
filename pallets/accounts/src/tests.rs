@@ -340,8 +340,6 @@ mod sync_frag_locks_tests {
 }
 
 mod internal_lock_update_tests {
-	use frame_support::traits::fungible::Inspect;
-	use pallet_assets::AssetDetails;
 	use super::*;
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
@@ -360,8 +358,17 @@ mod internal_lock_update_tests {
 		)
 	}
 
+	fn apply_20_percent(amount: u128) -> u128 {
+		if amount == 0 {
+			return 0;
+		}
+		let amount_float = amount as f64;
+		let result = (amount_float/100.0 * 20.0).round();
+		result as u128
+	}
+
 	#[test]
-	fn lock_by_unlinked_account_should_lock_frag_internally_and_reserve_tickets() {
+	fn lock_by_unlinked_account_should_lock_frag_internally_and_reserve_tickets_and_nova() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -381,12 +388,20 @@ mod internal_lock_update_tests {
 					lock_period: U256::from(1),
 				}
 			);
+			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
 				SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
-					>(lock.data.amount.clone())
+					>(percentage_amount)
+			);
+
+			assert_eq!(
+				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
+				SaturatedConversion::saturated_into::<
+					<Test as pallet_balances::Config>::Balance,
+				>(percentage_amount)
 			);
 
 			let data_tuple = (
@@ -420,7 +435,7 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	fn lock_by_linked_account_should_lock_frag_and_mint_tickets_and_send_nova() {
+	fn lock_by_linked_account_should_lock_frag_and_mint_tickets_and_assign_nova() {
 		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
 			let lock = dd.lock;
@@ -443,10 +458,11 @@ mod internal_lock_update_tests {
 			// check the balance of the Clamor account
 			let minted = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
 																&link.clamor_account_id);
-			assert_eq!(U256::from(minted), lock.data.amount);
+			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
+			assert_eq!(U256::from(minted), U256::from(percentage_amount));
 
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
-			assert_eq!(U256::from(nova), lock.data.amount);
+			assert_eq!(U256::from(nova), U256::from(percentage_amount));
 		});
 	}
 
@@ -485,6 +501,8 @@ mod internal_lock_update_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 			let unlock = dd.unlock;
+			//let lock = dd.lock;
+			let link = unlock.lock.link.clone();
 
 			let current_block_number = System::block_number(); //@sinkingsugar
 
@@ -509,6 +527,20 @@ mod internal_lock_update_tests {
 					<Test as pallet_balances::Config>::Balance,
 				>(0)
 			);
+
+			assert_eq!(
+				<EthReservedNova<Test>>::get(&unlock.data.sender).unwrap(),
+				SaturatedConversion::saturated_into::<
+					<Test as pallet_balances::Config>::Balance,
+				>(0)
+			);
+
+			let minted = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
+																&link.clamor_account_id);
+			assert_eq!(minted, 0);
+
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			assert_eq!(nova, 0);
 
 			let data_tuple = (
 				unlock.data.amount,
