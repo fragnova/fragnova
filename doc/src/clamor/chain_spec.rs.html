@@ -254,6 +254,18 @@
 <span id="254">254</span>
 <span id="255">255</span>
 <span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
 </pre><pre class="rust"><code><span class="doccomment">//! In Substrate, a chain specification is the collection of information that describes a Substrate-based blockchain network.
 //! For example, the chain specification identifies the network that a blockchain node connects to,
 //! the other nodes that it initially communicates with, and the initial state that nodes must agree on to produce blocks.
@@ -277,6 +289,7 @@
 <span class="kw">use </span>sp_core::{ecdsa, ed25519, sr25519, Pair, Public};
 <span class="kw">use </span>sp_finality_grandpa::AuthorityId <span class="kw">as </span>GrandpaId;
 <span class="kw">use </span>sp_runtime::traits::{IdentifyAccount, Verify};
+<span class="kw">use </span>serde_json;
 
 <span class="doccomment">/// TODO: Documentation
 </span><span class="kw">pub type </span>UploadId = ecdsa::Public;
@@ -331,6 +344,17 @@
 	)
 }
 
+<span class="kw">fn </span>chain_spec_properties() -&gt; serde_json::map::Map&lt;String, serde_json::Value&gt; {
+	<span class="macro">serde_json::json!</span>({
+		<span class="string">&quot;ss58Format&quot;</span>: <span class="number">93</span>,
+		<span class="string">&quot;tokenDecimals&quot;</span>: <span class="number">12</span>,
+		<span class="string">&quot;tokenSymbol&quot;</span>: <span class="string">&quot;NOVA&quot;
+	</span>})
+		.as_object()
+		.expect(<span class="string">&quot;Map given; qed&quot;</span>)
+		.clone()
+}
+
 <span class="doccomment">/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Development Network
 </span><span class="kw">pub fn </span>development_config() -&gt; <span class="prelude-ty">Result</span>&lt;ChainSpec, String&gt; {
 	<span class="kw">let </span>wasm_binary = WASM_BINARY.ok_or_else(|| <span class="string">&quot;Development wasm not available&quot;</span>.to_string())<span class="question-mark">?</span>;
@@ -367,7 +391,7 @@
 		</span><span class="prelude-val">None</span>,
 		<span class="prelude-val">None</span>,
 		<span class="comment">// Properties
-		</span><span class="prelude-val">None</span>,
+		</span><span class="prelude-val">Some</span>(chain_spec_properties()),
 		<span class="comment">// Extensions
 		</span><span class="prelude-val">None</span>,
 	))
@@ -416,7 +440,7 @@
 		</span><span class="prelude-val">None</span>,
 		<span class="prelude-val">None</span>,
 		<span class="comment">// Properties
-		</span><span class="prelude-val">None</span>,
+		</span><span class="prelude-val">Some</span>(chain_spec_properties()),
 		<span class="comment">// Extensions
 		</span><span class="prelude-val">None</span>,
 	))
@@ -457,7 +481,7 @@
 		</span><span class="prelude-val">None</span>,
 		<span class="prelude-val">None</span>,
 		<span class="comment">// Properties
-		</span><span class="prelude-val">None</span>,
+		</span><span class="prelude-val">Some</span>(chain_spec_properties()),
 		<span class="comment">// Extensions
 		</span><span class="prelude-val">None</span>,
 	))
@@ -511,4 +535,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (2019147c5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (432abd86f 2022-09-20)" ></div></body></html>
