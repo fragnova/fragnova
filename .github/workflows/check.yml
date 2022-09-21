@@ -44,7 +44,9 @@ jobs:
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
           sleep 10
 
-          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards sh /data/shards/shards-new/test-rpcs.sh
+          sh /data/shards/shards-new/test-rpcs.sh
+#          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards sh /data/shards/shards-new/test-rpcs.sh
+
           kill %1
 
       - name: Run IPFS Test
