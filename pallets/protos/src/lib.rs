@@ -463,6 +463,7 @@ pub mod pallet {
 
 			let proto_struct = <Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 
+			<Protos<T>>::remove(&proto_hash);
 			<ProtosByCategory<T>>::mutate(&proto_struct.category, |list_protos| {
 				if let Some(list_protos) = list_protos {
 					list_protos.retain(|current_hash| proto_hash != *current_hash);
