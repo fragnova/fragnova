@@ -9,11 +9,11 @@
 ;; Index of the Upload Function in Protos Pallet
 (def upload-index 0)
 ;; Index of the Patch Function in Protos Pallet
-(def patch-index 1)
+(def patch-index 2)
 ;; Index of the Set Metadata Function in Protos Pallet
-(def set-metadata-index 3)
+(def set-metadata-index 4)
 ;; Index of the Detach Function in Protos Pallet
-(def detach-index 4)
+(def detach-index 5)
 
 (defmesh root)
 
@@ -114,7 +114,7 @@
   (| (Take 5) (ExpectInt) = .frag-nonce)
 
   .data (Hash.Blake2-256) >= .data-cid
-  
+
   .frag-hash >= .payload
   [.metadata-key] (Substrate.Encode [nil]) (AppendTo .payload)
   [.data] (Substrate.Encode [nil]) (AppendTo .payload)
