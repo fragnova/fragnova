@@ -89,10 +89,7 @@ impl<C, Block, AccountId> FragmentsRpcServer<<Block as BlockT>::Hash, AccountId>
 		});
 		match result {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
-			Ok(result) => match result {
-				Err(e) => Err(runtime_error_into_rpc_err(e)),
-				Ok(result) => Ok(result),
-			},
+			Ok(result) => Ok(result),
 		}
 	}
 
@@ -122,10 +119,7 @@ impl<C, Block, AccountId> FragmentsRpcServer<<Block as BlockT>::Hash, AccountId>
 		});
 		match result {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
-			Ok(result) => match result {
-				Err(e) => Err(runtime_error_into_rpc_err(e)),
-				Ok(result) => Ok(result),
-			},
+			Ok(result) => Ok(result),
 		}
 	}
 }
