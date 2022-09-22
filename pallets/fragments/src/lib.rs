@@ -1593,7 +1593,7 @@ pub mod pallet {
 
 				let num_instances: Unit = if let Some(editions) = <EditionsCount<T>>::get(array_definition_id) {
 					let editions: Unit = editions.into();
-					(1..editions)
+					(1..=editions)
 						.map(|edition_id| -> Result<Unit, _> {
 							<CopiesCount<T>>::get((array_definition_id, edition_id)).map(Into::<Unit>::into).ok_or("No. of Copies not found for an Existing Edition!")
 						})
