@@ -80,8 +80,8 @@ describe("Test Protos RPCs", () => {
       let result = await api.rpc.protos.getProtos(params);
       let json = JSON.parse(result.toHuman());
       console.log(json);
-      assert.equal(json[PROTO]["image"], PROTO_IMAGE);
-      assert.equal(json[PROTO]["json_description"], PROTO_JSON_DESCRIPTION);
+      assert.equal(json[PROTO]["metadata"]["image"], PROTO_IMAGE);
+      assert.equal(json[PROTO]["metadata"]["json_description"], PROTO_JSON_DESCRIPTION);
     });
 
   });

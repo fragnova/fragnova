@@ -1202,8 +1202,9 @@ pub mod pallet {
 
 					if !params.metadata_keys.is_empty() {
 						let proto_metadata = proto_struct.metadata;
-						let mut map_of_matching_metadata_keys = Self::get_map_of_matching_metadata_keys(&params.metadata_keys, &proto_metadata);
-						(*map_proto).append(&mut map_of_matching_metadata_keys);
+						let map_of_matching_metadata_keys = Self::get_map_of_matching_metadata_keys(&params.metadata_keys, &proto_metadata);
+						(*map_proto).insert("metadata".into(), map_of_matching_metadata_keys.into());
+						// (*map_proto).append(&mut map_of_matching_metadata_keys);
 					}
 
 				}

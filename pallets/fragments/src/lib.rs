@@ -112,7 +112,7 @@ pub struct GetInstancesParams<TAccountId, TString> {
 	pub only_return_first_copies: bool
 }
 #[cfg(test)]
-impl<TAccountId, TString> Default for GetInstancesParams<TAccountId, TString> {
+impl<TAccountId, TString: Default> Default for GetInstancesParams<TAccountId, TString> {
 	fn default() -> Self {
 		Self {
 			desc: Default::default(),
@@ -1604,21 +1604,24 @@ pub mod pallet {
 
 				(*map_definition).insert("num_instances".into(), num_instances.into());
 
-				if params.return_owners || !params.metadata_keys.is_empty() {
-					let definition_struct = <Definitions<T>>::get(array_definition_id).ok_or("Failed to get definition struct")?;
+				let definition_struct = <Definitions<T>>::get(array_definition_id).ok_or("Failed to get definition struct")?;
 
-					if params.return_owners {
-						let owner = <Protos<T>>::get(definition_struct.proto_hash).ok_or("Failed to get proto struct")?.owner;
-						let json_owner = pallet_protos::Pallet::<T>::get_owner_in_json_format(owner);
-						(*map_definition).insert(String::from("owner"), json_owner);
-					}
+				(*map_definition).insert("name".into(), definition_struct.metadata.name.into());
+				// (*map_definition).insert("currency".into(), definition_struct.metadata.currency.into());
 
-					if !params.metadata_keys.is_empty() {
-						let definition_metadata = definition_struct.custom_metadata;
-						let mut map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &definition_metadata);
-						(*map_definition).append(&mut map_of_matching_metadata_keys);
-					}
+				if params.return_owners {
+					let owner = <Protos<T>>::get(definition_struct.proto_hash).ok_or("Failed to get proto struct")?.owner;
+					let json_owner = pallet_protos::Pallet::<T>::get_owner_in_json_format(owner);
+					(*map_definition).insert(String::from("owner"), json_owner);
 				}
+
+				if !params.metadata_keys.is_empty() {
+					let definition_metadata = definition_struct.custom_metadata;
+					let map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &definition_metadata);
+					(*map_definition).insert("metadata".into(), map_of_matching_metadata_keys.into());
+					// (*map_definition).append(&mut map_of_matching_metadata_keys);
+				}
+
 
 			}
 

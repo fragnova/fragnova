@@ -2096,7 +2096,7 @@ mod get_instances_tests {
 			assert_eq!(
 				serde_json::from_slice::<Value>(
 					&FragmentsPallet::get_instances(GetInstancesParams {
-						definition_hash: mint.definition.get_definition_id(),
+						definition_hash: hex::encode(mint.definition.get_definition_id()).into_bytes(),
 						limit: u64::MAX,
 						..Default::default()
 					}).unwrap()
@@ -2120,7 +2120,7 @@ mod get_instances_tests {
 			assert_eq!(
 				serde_json::from_slice::<Value>(
 					&FragmentsPallet::get_instances(GetInstancesParams {
-						definition_hash: give.mint.definition.get_definition_id(),
+						definition_hash: hex::encode(give.mint.definition.get_definition_id()).into_bytes(),
 						limit: u64::MAX,
 						only_return_first_copies: true,
 						..Default::default()
@@ -2147,7 +2147,7 @@ mod get_instances_tests {
 			assert_eq!(
 				serde_json::from_slice::<Value>(
 					&FragmentsPallet::get_instances(GetInstancesParams {
-						definition_hash: give.mint.definition.get_definition_id(),
+						definition_hash: hex::encode(give.mint.definition.get_definition_id()).into(),
 						limit: u64::MAX,
 						only_return_first_copies: false,
 						..Default::default()
@@ -2175,7 +2175,7 @@ mod get_instances_tests {
 			assert_eq!(
 				serde_json::from_slice::<Value>(
 					&FragmentsPallet::get_instances(GetInstancesParams {
-						definition_hash: give.mint.definition.get_definition_id(),
+						definition_hash: hex::encode(give.mint.definition.get_definition_id()).into(),
 						limit: u64::MAX,
 						owner: Some(give.to),
 						..Default::default()
