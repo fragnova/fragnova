@@ -4,6 +4,7 @@ use crate::*;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, ConstU64},
+	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system;
 
@@ -35,9 +36,11 @@ frame_support::construct_runtime!(
 		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -55,6 +58,7 @@ parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
 	pub StorageBytesMultiplier: u64 = 10;
+	pub const IsTransferable: bool = false;
 }
 
 impl frame_system::Config for Test {
@@ -131,6 +135,7 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
+	type IsTransferable = IsTransferable;
 }
 
 impl pallet_accounts::Config for Test {
@@ -143,11 +148,33 @@ impl pallet_accounts::Config for Test {
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
+impl pallet_assets::Config for Test {
+	type Event = Event;
+	type Balance = u64;
+	type AssetId = u32;
+	type Currency = ();
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type AssetDeposit = ConstU32<1>;
+	type AssetAccountDeposit = ConstU32<10>;
+	type MetadataDepositBase = ConstU32<1>;
+	type MetadataDepositPerByte = ConstU32<1>;
+	type ApprovalDeposit = ConstU32<1>;
+	type StringLimit = ConstU32<50>;
+	type Freezer = ();
+	type WeightInfo = ();
+	type Extra = ();
+}
+
+parameter_types! {
+	pub const TicketsAssetId: u32 = 1337;
+}
+
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type StakeLockupPeriod = ConstU64<5>; // one week
+	type CurationExpiration = ConstU64<5>;
+	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_detach::Config for Test {
@@ -179,6 +206,44 @@ impl pallet_proxy::Config for Test {
 	type AnnouncementDepositFactor = ConstU32<1>;
 }
 
+parameter_types! {
+	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
+	pub MySchedule: pallet_contracts::Schedule<Test> = {
+		let mut schedule = <pallet_contracts::Schedule<Test>>::default();
+		// We want stack height to be always enabled for tests so that this
+		// instrumentation path is always tested implicitly.
+		schedule.limits.stack_height = Some(512);
+		schedule
+	};
+	pub static DepositPerByte: u64 = 1;
+	pub const DepositPerItem: u64 = 2;
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(WEIGHT_PER_SECOND.saturating_mul(2));
+}
+
+impl pallet_contracts::Config for Test {
+	type Time = Timestamp;
+	type Randomness = CollectiveFlip;
+	type Currency = Balances;
+	type Event = Event;
+	type Call = Call;
+	type CallFilter = frame_support::traits::Nothing;
+	type DepositPerItem = DepositPerItem;
+	type DepositPerByte = DepositPerByte;
+	type CallStack = [pallet_contracts::Frame<Self>; 31];
+	type WeightPrice = ();
+	type WeightInfo = ();
+	type ChainExtension = ();
+	type DeletionQueueDepth = ConstU32<1024>;
+	type DeletionWeightLimit = DeletionWeightLimit;
+	type Schedule = MySchedule;
+	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<BlockWeights>;
+	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
+	type MaxStorageKeyLen = ConstU32<128>;
+}
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 
@@ -187,26 +252,4 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
 
 	ext
-}
-
-/// Simulate block production
-///
-/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls
-/// from all modules with `System::block_number()` as the sole input.
-/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should
-/// prioritize readability to facilitate future maintenance.
-///
-/// Source: https://docs.substrate.io/v3/runtime/testing/
-pub fn run_to_block(n: u64) {
-	while System::block_number() < n {
-		use frame_support::traits::{OnFinalize, OnInitialize};
-
-		if System::block_number() > 0 {
-			ProtosPallet::on_finalize(System::block_number());
-			System::on_finalize(System::block_number());
-		}
-		System::set_block_number(System::block_number() + 1);
-		System::on_initialize(System::block_number());
-		// ProtosPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/protos/src/lib.rs
-	}
 }

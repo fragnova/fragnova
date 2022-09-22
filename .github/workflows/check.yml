@@ -1,4 +1,4 @@
-name: Check Set-Up & Build
+name: CI
 
 # Controls when the action will run.
 on:
@@ -57,7 +57,7 @@ jobs:
 
       - name: Check Build
         run: |
-          cargo check
+          RUSTFLAGS="-D missing-docs" cargo check
 
       - name: Check Build for Benchmarking
         run: |
@@ -71,3 +71,9 @@ jobs:
       - name: Check if Rustdocs Builds
         run: |
           cargo doc
+          
+      - name: Push to codecov.io
+        run: |
+          cargo install cargo-tarpaulin
+          cargo tarpaulin --out Xml
+          bash <(curl -s https://codecov.io/bash) -X gcov -t $CODECOV_TOKEN

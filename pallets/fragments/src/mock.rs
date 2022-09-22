@@ -3,6 +3,7 @@ use crate::*;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU128, ConstU32, ConstU64},
+	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system;
 use sp_core::{ed25519::Signature, H256};
@@ -32,11 +33,13 @@ frame_support::construct_runtime!(
 		Protos: pallet_protos::{Pallet, Call, Storage, Event<T>},
 		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
 		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
+		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -54,6 +57,7 @@ parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
 	pub StorageBytesMultiplier: u64 = 10;
+	pub const IsTransferable: bool = false;
 }
 
 impl frame_system::Config for Test {
@@ -125,6 +129,7 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
+	type IsTransferable = IsTransferable;
 }
 
 parameter_types! {
@@ -148,15 +153,58 @@ impl pallet_assets::Config for Test {
 	type ApprovalDeposit = ApprovalDeposit;
 	type StringLimit = StringLimit;
 	type Freezer = ();
-	type Extra = ();
 	type WeightInfo = ();
+	type Extra = ();
+}
+
+parameter_types! {
+	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
+	pub MySchedule: pallet_contracts::Schedule<Test> = {
+		let mut schedule = <pallet_contracts::Schedule<Test>>::default();
+		// We want stack height to be always enabled for tests so that this
+		// instrumentation path is always tested implicitly.
+		schedule.limits.stack_height = Some(512);
+		schedule
+	};
+	pub static DepositPerByte: u64 = 1;
+	pub const DepositPerItem: u64 = 2;
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(WEIGHT_PER_SECOND.saturating_mul(2));
+}
+
+impl pallet_contracts::Config for Test {
+	type Time = Timestamp;
+	type Randomness = CollectiveFlip;
+	type Currency = Balances;
+	type Event = Event;
+	type Call = Call;
+	type CallFilter = frame_support::traits::Nothing;
+	type DepositPerItem = DepositPerItem;
+	type DepositPerByte = DepositPerByte;
+	type CallStack = [pallet_contracts::Frame<Self>; 31];
+	type WeightPrice = ();
+	type WeightInfo = ();
+	type ChainExtension = ();
+	type DeletionQueueDepth = ConstU32<1024>;
+	type DeletionWeightLimit = DeletionWeightLimit;
+	type Schedule = MySchedule;
+	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<BlockWeights>;
+	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
+	type MaxStorageKeyLen = ConstU32<128>;
+}
+
+parameter_types! {
+	pub const TicketsAssetId: u32 = 1337;
 }
 
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type StakeLockupPeriod = ConstU64<100800>; // one week
+	type CurationExpiration = ConstU64<5>;
+	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_accounts::Config for Test {

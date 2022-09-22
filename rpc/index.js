@@ -3,147 +3,147 @@ const { ApiPromise, WsProvider } = require("@polkadot/api");
 const { Text } = require("@polkadot/types")
 
 const connectToLocalNode = async () => {
-    const wsProvider = new WsProvider("ws://127.0.0.1:9944");
+  const wsProvider = new WsProvider("ws://127.0.0.1:9944");
 
-    api = await ApiPromise.create({
-      provider: wsProvider,
-      rpc: {
-        protos: {
-          getProtos: {
-            description: "This is the description", type: "String",
-            params: [
-              { name: "params", type: "GetProtosParams" },
-              { name: "at", type: "BlockHash", isOptional: true }
-            ]
-          },
+  api = await ApiPromise.create({
+    provider: wsProvider,
+    rpc: {
+      protos: {
+        getProtos: {
+          description: "This is the description", type: "String",
+          params: [
+            { name: "params", type: "GetProtosParams" },
+            { name: "at", type: "BlockHash", isOptional: true }
+          ]
         },
-        fragments: {
-          getDefinitions: {
-            description: "C'est le description", type: "String",
-            params: [
-              { name: "params", type: "GetDefinitionsParams" },
-              { name: "at", type: "BlockHash", isOptional: true }
-            ]
-          },
-          getInstances: {
-            description: "这是描述", type: "String",
-            params: [
-              { name: "params", type: "GetInstancesParams" },
-              { name: "at", type: "BlockHash", isOptional: true }
-            ]
-          }
+      },
+      fragments: {
+        getDefinitions: {
+          description: "C'est le description", type: "String",
+          params: [
+            { name: "params", type: "GetDefinitionsParams" },
+            { name: "at", type: "BlockHash", isOptional: true }
+          ]
+        },
+        getInstances: {
+          description: "这是描述", type: "String",
+          params: [
+            { name: "params", type: "GetInstancesParams" },
+            { name: "at", type: "BlockHash", isOptional: true }
+          ]
+        }
+      }
+    },
+
+    types: {
+      AudioCategories: {
+        _enum: [
+          "oggFile",
+          "mp3File",
+        ]
+      },
+      ModelCategories: {
+        _enum: [
+          "gltfFile",
+          "sdf",
+          "physicsCollider"
+        ]
+      },
+      TextureCategories: {
+        _enum: [
+          "pngFile",
+          "jpgFile"
+        ]
+      },
+      VectorCategories: {
+        _enum: [
+          "svgFile",
+          "ttfFile"
+        ]
+      },
+      VideoCategories: {
+        _enum: [
+          "mkvFile",
+          "mp4File"
+        ]
+      },
+      TextCategories: {
+        _enum: [
+          "plain",
+          "json"
+        ]
+      },
+      BinaryCategories: {
+        _enum: [
+          "wasmProgram",
+          "wasmReactor",
+          "blendFile",
+        ]
+      },
+      ShardsScriptInfo: {
+        format: "ShardsFormat",
+        requiring: "Vec<ShardsTrait>",
+        implementing: "Vec<ShardsTrait>"
+      },
+      ShardsTrait: "Vec<u16>",
+      ShardsFormat: {
+        _enum: [
+          "edn",
+          "binary",
+        ]
+      },
+      Categories: {
+        _enum: {
+          "text": "TextCategories",
+          "trait": "Option<ShardsTrait>",
+          "shards": "ShardsScriptInfo",
+          "audio": "AudioCategories",
+          "texture": "TextureCategories",
+          "vector": "VectorCategories",
+          "video": "VideoCategories",
+          "model": "ModelCategories",
+          "binary": "BinaryCategories",
         }
       },
+      BlockHash: "Hash",
+      Hash128: "[u8; 16]",
 
-      types: {
-        AudioCategories: {
-          _enum: [
-            "oggFile",
-            "mp3File",
-          ]
-        },
-        ModelCategories: {
-          _enum: [
-            "gltfFile",
-            "sdf",
-            "physicsCollider"
-          ]
-        },
-        TextureCategories: {
-          _enum: [
-            "pngFile",
-            "jpgFile"
-          ]
-        },
-        VectorCategories: {
-          _enum: [
-            "svgFile",
-            "ttfFile"
-          ]
-        },
-        VideoCategories: {
-          _enum: [
-            "mkvFile",
-            "mp4File"
-          ]
-        },
-        TextCategories: {
-          _enum: [
-            "plain",
-            "json"
-          ]
-        },
-        BinaryCategories: {
-          _enum: [
-            "wasmProgram",
-            "wasmReactor",
-            "blendFile",
-          ]
-        },
-        ShardsScriptInfo: {
-          format: "ShardsFormat",
-          requiring: "Vec<ShardsTrait>",
-          implementing: "Vec<ShardsTrait>"
-        },
-        ShardsTrait: "Vec<u16>",
-        ShardsFormat: {
-          _enum: [
-            "edn",
-            "binary",
-          ]
-        },
-        Categories: {
-          _enum: {
-            "text": "TextCategories",
-            "trait": "Option<ShardsTrait>",
-            "shards": "ShardsScriptInfo",
-            "audio": "AudioCategories",
-            "texture": "TextureCategories",
-            "vector": "VectorCategories",
-            "video": "VideoCategories",
-            "model": "ModelCategories",
-            "binary": "BinaryCategories",
-          }
-        },
-        BlockHash: "Hash",
-        Hash128: "[u8; 16]",
+      GetProtosParams: {
+        desc: "bool",
+        from: "u64",
+        limit: "u64",
+        metadata_keys: "Vec<String>",
+        owner: "Option<AccountId>",
+        return_owners: "bool",
+        categories: "Vec<Categories>",
+        tags: "Vec<String>",
+        available: "Option<bool>",
+      },
 
-        GetProtosParams: {
-          desc: "bool",
-          from: "u64",
-          limit: "u64",
-          metadata_keys: "Vec<String>",
-          owner: "Option<AccountId>",
-          return_owners: "bool",
-          categories: "Vec<Categories>",
-          tags: "Vec<String>",
-          available: "Option<bool>",
-        },
+      GetDefinitionsParams: {
+        desc: "bool",
+        from: "u64",
+        limit: "u64",
+        metadata_keys: "Vec<String>",
+        owner: "Option<AccountId>",
+        return_owners: "bool",
+      },
 
-        GetDefinitionsParams: {
-          desc: "bool",
-          from: "u64",
-          limit: "u64",
-          metadata_keys: "Vec<String>",
-          owner: "Option<AccountId>",
-          return_owners: "bool",
-        },
-
-        GetInstancesParams: {
-          desc: "bool",
-          from: "u64",
-          limit: "u64",
-          definition_hash: "String", // "Hash128",  // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
-          metadata_keys: "Vec<String>",
-          owner: "Option<AccountId>",
-          only_return_first_copies: "bool",
-        },
+      GetInstancesParams: {
+        desc: "bool",
+        from: "u64",
+        limit: "u64",
+        definition_hash: "String", // "Hash128",  // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
+        metadata_keys: "Vec<String>",
+        owner: "Option<AccountId>",
+        only_return_first_copies: "bool",
+      },
 
 
-      }
-    });
+    }
+  });
 
-    return api
+  return api
 
 
 };

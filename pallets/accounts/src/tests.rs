@@ -1,17 +1,12 @@
 use crate as pallet_accounts;
-use crate::dummy_data::*;
-use crate::mock;
-use crate::mock::*;
-use crate::*;
+use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Encode;
 use ethabi::Token;
-use frame_support::dispatch::DispatchResult;
-use frame_support::{assert_noop, assert_ok, traits::TypedGet};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::TypedGet};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 use serde_json::json;
 use sp_core::{offchain::testing, H256};
-use sp_runtime::offchain::storage::StorageValueRef;
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{offchain::storage::StorageValueRef, SaturatedConversion};
 
 pub use internal_lock_update_tests::lock_;
 pub use link_tests::link_;
@@ -436,8 +431,11 @@ mod internal_lock_update_tests {
 			let mut lock = dd.lock;
 			lock.data.amount = U256::from(0u32);
 			lock.data.locktime = U256::from(1234567890);
-			lock.data.signature =
-				create_lock_signature(lock.ethereum_account_pair.clone(), lock.data.amount.clone(), lock.data.locktime.clone());
+			lock.data.signature = create_lock_signature(
+				lock.ethereum_account_pair.clone(),
+				lock.data.amount.clone(),
+				lock.data.locktime.clone(),
+			);
 
 			assert_noop!(lock_(&lock), Error::<Test>::SystematicFailure);
 		});
@@ -582,7 +580,7 @@ mod internal_lock_update_tests {
 			unlock.data.amount = U256::from(69u32); // greater than zero
 			unlock.data.signature = create_unlock_signature(
 				unlock.lock.ethereum_account_pair.clone(),
-				U256::from(69u32)
+				U256::from(69u32),
 			);
 
 			assert_ok!(lock_(&unlock.lock));

@@ -1,5 +1,10 @@
 # Clamor
 
+[![license](https://img.shields.io/github/license/fragcolor-xyz/clamor)](./LICENSE)
+![CI](https://github.com/fragcolor-xyz/clamor/workflows/CI/badge.svg)
+[![codecov](https://codecov.io/gh/fragcolor-xyz/clamor/branch/devel/graph/badge.svg?token=4PMT2FQFDS)](https://codecov.io/gh/fragcolor-xyz/clamor)
+[![docs](https://img.shields.io/badge/docs-API-blueviolet)](https://fragcolor-xyz.github.io/clamor/)
+
 Clamor is a custom blockchain built on the [Substrate](https://substrate.io/) framework.
 
 It is a protocol and networking stack that enables complete on-chain storage and full synchronization of asset data (protos, fragments, chainblocks code etc.) across the blockchain nodes.

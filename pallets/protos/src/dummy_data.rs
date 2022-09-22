@@ -15,7 +15,7 @@ use sp_clamor::{Hash256, CID_PREFIX};
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
-use protos::traits::{RecordInfo, Trait, VariableType};
+use protos::traits::{RecordInfo, Trait, VariableType, VariableTypeInfo};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
@@ -96,6 +96,8 @@ pub struct DummyData {
 	pub proto_fragment_fifth: ProtoFragment,
 	pub proto_shard_script: ProtoFragment,
 	pub proto_shard_script_2: ProtoFragment,
+	pub proto_shard_script_3: ProtoFragment,
+	pub proto_shard_script_4: ProtoFragment,
 	pub patch: Patch,
 	pub metadata: Metadata,
 	pub stake: Stake,
@@ -124,7 +126,7 @@ impl DummyData {
 			data: "0x222".as_bytes().to_vec(),
 		};
 
-		let records1 = vec![("int1".to_string(), RecordInfo::SingleType(VariableType::Int))];
+		let records1 = vec![("int1".to_string(), RecordInfo::SingleType(VariableTypeInfo { type_: VariableType::Int, default: Some(Vec::new()) }))];
 		let trait1 = Trait { name: "Trait1".to_string(), records: records1 };
 
 		let data_trait = twox_64(&trait1.encode());
@@ -138,7 +140,7 @@ impl DummyData {
 			data: trait1.encode(),
 		};
 
-		let records2 = vec![("int2".to_string(), RecordInfo::SingleType(VariableType::Int))];
+		let records2 = vec![("int2".to_string(), RecordInfo::SingleType(VariableTypeInfo { type_: VariableType::Int, default: Some(Vec::new()) }))];
 
 		let trait2 = Trait { name: "Trait2".to_string(), records: records2 };
 
@@ -153,7 +155,7 @@ impl DummyData {
 			data: trait2.encode(),
 		};
 
-		let records3 = vec![("int3".to_string(), RecordInfo::SingleType(VariableType::Int))];
+		let records3 = vec![("int3".to_string(), RecordInfo::SingleType(VariableTypeInfo { type_: VariableType::Int, default: Some(Vec::new()) }))];
 
 		let trait3 = Trait { name: "Trait3".to_string(), records: records3 };
 		let data_trait_3 = twox_64(&trait3.encode());
@@ -169,7 +171,7 @@ impl DummyData {
 
 		let shard_script_num_1: [u8; 8] = [4u8; 8];
 		let shard_script_num_2: [u8; 8] = [5u8; 8];
-		let shard_script = ShardsScriptInfo {
+		let shard_script_1 = ShardsScriptInfo {
 			format: ShardsFormat::Edn,
 			requiring: vec![shard_script_num_1],
 			implementing: vec![shard_script_num_2],
@@ -177,7 +179,7 @@ impl DummyData {
 
 		let proto_shard_script = ProtoFragment {
 			references: Vec::new(),
-			category: Categories::Shards(shard_script),
+			category: Categories::Shards(shard_script_1),
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
@@ -185,7 +187,7 @@ impl DummyData {
 		};
 
 		let shard_script_num_3: [u8; 8] = [9u8; 8];
-		let shard_script = ShardsScriptInfo {
+		let shard_script_2 = ShardsScriptInfo {
 			format: ShardsFormat::Edn,
 			requiring: vec![shard_script_num_1],
 			implementing: vec![shard_script_num_2, shard_script_num_3],
@@ -193,11 +195,43 @@ impl DummyData {
 
 		let proto_shard_script_2 = ProtoFragment {
 			references: Vec::new(),
-			category: Categories::Shards(shard_script),
+			category: Categories::Shards(shard_script_2),
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
 			data: "0x667".as_bytes().to_vec(),
+		};
+
+		let shard_script_num_4: [u8; 8] = [1u8; 8];
+		let shard_script_num_5: [u8; 8] = [7u8; 8];
+		let shard_script_3 = ShardsScriptInfo {
+			format: ShardsFormat::Edn,
+			requiring: vec![shard_script_num_4],
+			implementing: vec![shard_script_num_5],
+		};
+
+		let proto_shard_script_3 = ProtoFragment {
+			references: Vec::new(),
+			category: Categories::Shards(shard_script_3),
+			tags: Vec::new(),
+			linked_asset: None,
+			include_cost: Some(2),
+			data: "0x669".as_bytes().to_vec(),
+		};
+
+		let shard_script_4 = ShardsScriptInfo {
+			format: ShardsFormat::Binary,
+			requiring: vec![shard_script_num_4],
+			implementing: vec![shard_script_num_5],
+		};
+
+		let proto_shard_script_4 = ProtoFragment {
+			references: Vec::new(),
+			category: Categories::Shards(shard_script_4),
+			tags: Vec::new(),
+			linked_asset: None,
+			include_cost: Some(2),
+			data: "0x670".as_bytes().to_vec(),
 		};
 
 		let patch = Patch {
@@ -247,7 +281,7 @@ impl DummyData {
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 						U256::from(69u32),
-						U256::from(1234567890)
+						U256::from(1234567890),
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
@@ -271,6 +305,8 @@ impl DummyData {
 			proto_fragment_fifth: proto_fifth,
 			proto_shard_script,
 			proto_shard_script_2,
+			proto_shard_script_3,
+			proto_shard_script_4,
 			patch,
 			metadata,
 			stake,

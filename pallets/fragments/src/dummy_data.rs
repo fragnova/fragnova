@@ -7,7 +7,6 @@ mod copied_from_pallet_protos {
 
 	use super::*;
 
-
 	pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 		blake2_256(&data)
 	}
@@ -23,7 +22,6 @@ mod copied_from_pallet_protos {
 
 	// 	cid
 	// }
-
 
 	#[derive(Clone)]
 	pub struct ProtoFragment {
@@ -51,7 +49,9 @@ use sp_clamor::Hash256;
 
 use protos::categories::{Categories, TextCategories};
 
-pub struct Definition { // "Definition" is short for "Fragment Definition"
+#[derive(Clone)]
+pub struct Definition {
+	// "Definition" is short for "Fragment Definition"
 	pub proto_fragment: ProtoFragment,
 
 	pub metadata: FragmentMetadata<u64>,
@@ -80,7 +80,7 @@ impl Definition {
 	}
 }
 
-
+#[derive(Clone)]
 pub struct Publish {
 	pub definition: Definition,
 
@@ -96,11 +96,11 @@ pub struct Publish {
 	pub amount: Option<u64>,
 }
 
-
+#[derive(Clone)]
 pub struct Mint {
 	pub definition: Definition,
 	pub buy_options: FragmentBuyOptions,
-	pub amount: Option<u64>
+	pub amount: Option<u64>,
 }
 
 impl Mint {
@@ -112,7 +112,7 @@ impl Mint {
 	}
 }
 
-
+#[derive(Clone)]
 pub struct Buy {
 	pub publish: Publish,
 	pub buy_options: FragmentBuyOptions,
@@ -127,10 +127,35 @@ pub struct Give {
 	pub expiration: Option<u64>,
 }
 
-pub struct CreateAccount { // Creates Account for a Fragment Instance
+pub struct CreateAccount {
+	// Creates Account for a Fragment Instance
 	pub mint: Mint,
 	pub edition_id: u64,
 	pub copy_id: u64,
+}
+
+/// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
+pub struct DummyData {
+	pub definition: Definition,
+
+	pub publish: Publish,
+	pub publish_with_max_supply: Publish,
+
+	pub mint_non_unique: Mint,
+	pub mint_unique: Mint,
+	pub mint_non_unique_with_max_supply: Mint,
+
+	pub buy_non_unique: Buy,
+	pub buy_unique: Buy,
+	pub buy_non_unique_with_limited_published_quantity: Buy,
+
+	pub give_no_copy_perms: Give,
+	pub give_copy_perms: Give,
+
+	pub create_account: CreateAccount,
+
+	pub account_id: sp_core::ed25519::Public,
+	pub account_id_second: sp_core::ed25519::Public,
 }
 
 
@@ -143,9 +168,11 @@ pub struct DummyData {
 
 	pub mint_non_unique: Mint,
 	pub mint_unique: Mint,
+	pub mint_non_unique_with_max_supply: Mint,
 
 	pub buy_non_unique: Buy,
 	pub buy_unique: Buy,
+	pub buy_non_unique_with_limited_published_quantity: Buy,
 
 	pub give_no_copy_perms: Give,
 	pub give_copy_perms: Give,
@@ -158,7 +185,6 @@ pub struct DummyData {
 
 impl DummyData {
 	pub fn new() -> Self {
-
 		let definition = Definition {
 			proto_fragment: ProtoFragment {
 				references: Vec::new(),
@@ -171,159 +197,72 @@ impl DummyData {
 			metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None },
 			permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 			unique: Some(UniqueOptions { mutable: true }),
-			max_supply: Some(111),
+			max_supply: None,
+		};
+		let definition_unique = definition.clone();
+		let definition_non_unique = Definition {
+			unique: None,
+			..definition.clone()
 		};
 
 		let publish = Publish {
-			definition: Definition {
-				proto_fragment: ProtoFragment {
-					references: Vec::new(),
-					category: Categories::Text(TextCategories::Plain),
-					tags: Vec::new(),
-					linked_asset: None,
-					include_cost: Some(222),
-					data: "0x222".as_bytes().to_vec(),
-				},
-				metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
-				permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-				unique: None,
-				max_supply: None,
-			},
+			definition: definition.clone(),
 			price: 2,
-			quantity: Some(222),
+			quantity: None,
 			expires: None,
 			amount: None,
 		};
-
 		let publish_with_max_supply = Publish {
 			definition: Definition {
-				proto_fragment: ProtoFragment {
-					references: Vec::new(),
-					category: Categories::Text(TextCategories::Plain),
-					tags: Vec::new(),
-					linked_asset: None,
-					include_cost: Some(333),
-					data: "0x333".as_bytes().to_vec(),
-				},
-				metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None },
-				permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-				unique: None,
 				max_supply: Some(1234), // with max supply!
+				..definition.clone()
 			},
-			price: 3,
-			quantity: Some(123),
-			expires: None,
-			amount: None,
+			..publish.clone()
 		};
-
 
 		let mint_non_unique = Mint {
-			definition: Definition {
-				proto_fragment: ProtoFragment {
-					references: Vec::new(),
-					category: Categories::Text(TextCategories::Plain),
-					tags: Vec::new(),
-					linked_asset: None,
-					include_cost: Some(444),
-					data: "0x444".as_bytes().to_vec(),
-				},
-				metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
-				permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-				unique: None,
-				max_supply: Some(1234),
-			},
-			buy_options: FragmentBuyOptions::Quantity(123),
+			definition: definition_non_unique.clone(),
+			buy_options: FragmentBuyOptions::Quantity(1), // 1 ensures `quantity` is never above `definition.max_supply`!
 			amount: None,
 		};
-
 		let mint_unique = Mint {
-			definition: Definition {
-				proto_fragment: ProtoFragment {
-					references: Vec::new(),
-					category: Categories::Text(TextCategories::Plain),
-					tags: Vec::new(),
-					linked_asset: None,
-					include_cost: Some(555),
-					data: "0x555".as_bytes().to_vec(),
-				},
-				metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
-				permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-				unique: Some(UniqueOptions { mutable: false }),
-				max_supply: Some(1234),
-			},
+			definition: definition_unique.clone(),
 			buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
 			amount: None,
 		};
-
+		let mint_non_unique_with_max_supply: Mint = {
+			let mut mint_non_unique = mint_non_unique.clone();
+			mint_non_unique.definition.max_supply = Some(1234);
+			mint_non_unique
+		};
 
 		let buy_non_unique = Buy {
 			publish: Publish {
-				definition: Definition {
-					proto_fragment: ProtoFragment {
-						references: Vec::new(),
-						category: Categories::Text(TextCategories::Plain),
-						tags: Vec::new(),
-						linked_asset: None,
-						include_cost: Some(666),
-						data: "0x666".as_bytes().to_vec(),
-					},
-					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
-					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-					unique: None,
-					max_supply: Some(1234)
-				},
-				price: 6,
-				quantity: Some(123),
-				expires: Some(999),
-				amount: None,
+				definition: definition_non_unique.clone(),
+				..publish.clone()
 			},
-			buy_options: FragmentBuyOptions::Quantity(123),
+			buy_options: FragmentBuyOptions::Quantity(1), // 1 ensures `quantity` is never above `definition.max_supply`!
 		};
-
 		let buy_unique = Buy {
 			publish: Publish {
-				definition: Definition {
-					proto_fragment: ProtoFragment {
-						references: Vec::new(),
-						category: Categories::Text(TextCategories::Plain),
-						tags: Vec::new(),
-						linked_asset: None,
-						include_cost: Some(777),
-						data: "0x777".as_bytes().to_vec(),
-					},
-					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
-					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-					unique: Some(UniqueOptions { mutable: false }),
-					max_supply: Some(1234)
-				},
-				price: 6,
-				quantity: Some(123),
-				expires: Some(999),
-				amount: None,
+				definition: definition_unique.clone(),
+				..publish.clone()
 			},
 			buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
 		};
-
-
+		let buy_non_unique_with_limited_published_quantity: Buy = {
+			let mut buy_non_unique = buy_non_unique.clone();
+			buy_non_unique.publish.quantity = Some(1234); // with limited published quantity
+			buy_non_unique
+		};
 
 		let give_no_copy_perms = Give {
 			mint: Mint {
 				definition: Definition {
-					proto_fragment: ProtoFragment {
-						references: Vec::new(),
-						category: Categories::Text(TextCategories::Plain),
-						tags: Vec::new(),
-						linked_asset: None,
-						include_cost: Some(888),
-						data: "0x888".as_bytes().to_vec(),
-					},
-					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
 					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER, // no copy perms
-					unique: Some(UniqueOptions { mutable: false }),
-					max_supply: Some(1234),
+					..mint_unique.definition.clone()
 				},
-				buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
-				amount: None,
+				..mint_unique.clone()
 			},
 			edition_id: 1,
 			copy_id: 1,
@@ -331,25 +270,13 @@ impl DummyData {
 			new_permissions: Some(FragmentPerms::NONE),
 			expiration: Some(999),
 		};
-
 		let give_copy_perms = Give {
 			mint: Mint {
 				definition: Definition {
-					proto_fragment: ProtoFragment {
-						references: Vec::new(),
-						category: Categories::Text(TextCategories::Plain),
-						tags: Vec::new(),
-						linked_asset: None,
-						include_cost: Some(999),
-						data: "0x999".as_bytes().to_vec(),
-					},
-					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
 					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER | FragmentPerms::COPY, // copy perms
-					unique: Some(UniqueOptions { mutable: false }),
-					max_supply: Some(1234),
+					..mint_unique.definition.clone()
 				},
-				buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
-				amount: None,
+				..mint_unique.clone()
 			},
 			edition_id: 1,
 			copy_id: 1,
@@ -359,44 +286,29 @@ impl DummyData {
 		};
 
 		let create_account = CreateAccount {
-			mint: Mint {
-				definition: Definition {
-					proto_fragment: ProtoFragment {
-						references: Vec::new(),
-						category: Categories::Text(TextCategories::Plain),
-						tags: Vec::new(),
-						linked_asset: None,
-						include_cost: Some(101010),
-						data: "0x101010".as_bytes().to_vec(),
-					},
-					metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None},
-					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-					unique: Some(UniqueOptions { mutable: false }),
-					max_supply: Some(1234),
-				},
-				buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
-				amount: None,
-			},
+			mint: mint_unique.clone(),
 			edition_id: 1,
 			copy_id: 1,
 		};
 
 		Self {
-			definition: definition,
+			definition,
 
-			publish: publish,
-			publish_with_max_supply: publish_with_max_supply,
+			publish,
+			publish_with_max_supply,
 
-			mint_non_unique: mint_non_unique,
-			mint_unique: mint_unique,
+			mint_non_unique,
+			mint_unique,
+			mint_non_unique_with_max_supply,
 
-			buy_non_unique: buy_non_unique,
-			buy_unique: buy_unique,
+			buy_non_unique,
+			buy_unique,
+			buy_non_unique_with_limited_published_quantity,
 
-			give_copy_perms: give_copy_perms,
-			give_no_copy_perms: give_no_copy_perms,
+			give_copy_perms,
+			give_no_copy_perms,
 
-			create_account: create_account,
+			create_account,
 
 			account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([2u8; 32]),

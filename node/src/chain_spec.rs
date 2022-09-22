@@ -1,7 +1,16 @@
-//! A chain specification, or "chain spec", is a collection of configuration information that dictates which network a blockchain node will connect to,
-//! which entities it will initially communicate with, and what consensus-critical state it must have at genesis.
+//! In Substrate, a chain specification is the collection of information that describes a Substrate-based blockchain network.
+//! For example, the chain specification identifies the network that a blockchain node connects to,
+//! the other nodes that it initially communicates with, and the initial state that nodes must agree on to produce blocks.
 //!
-//! Source: https://docs.substrate.io/v3/runtime/chain-specs/
+//! The chain specification is defined using the ChainSpec struct. The ChainSpec struct separates the information required for a chain into two parts:
+//!
+//! - A client specification that contains information used by the Substrate outer node to communicate with network participants and send data to telemetry endpoints.
+//!   Many of these chain specification settings can be overridden by command-line options when starting a node or can be changed after the blockchain has started.
+//!
+//! - The initial genesis state that all nodes in the network agree on.
+//!   The genesis state must be established when the blockchain is first started and it cannot be changed thereafter without starting an entirely new blockchain.
+//!
+//! Source: https://docs.substrate.io/build/chain-spec/
 
 use clamor_runtime::{
 	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
@@ -12,9 +21,13 @@ use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{ecdsa, ed25519, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use serde_json;
 
+/// TODO: Documentation
 pub type UploadId = ecdsa::Public;
+/// TODO: Documentation
 pub type EthId = ecdsa::Public;
+/// TODO: Documentation
 pub type DetachId = ed25519::Public;
 
 // The URL for the telemetry server.
@@ -63,6 +76,18 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId, UploadId, EthId,
 	)
 }
 
+fn chain_spec_properties() -> serde_json::map::Map<String, serde_json::Value> {
+	serde_json::json!({
+		"ss58Format": 93,
+		"tokenDecimals": 12,
+		"tokenSymbol": "NOVA"
+	})
+		.as_object()
+		.expect("Map given; qed")
+		.clone()
+}
+
+/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Development Network
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
@@ -76,7 +101,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 			testnet_genesis(
 				wasm_binary,
 				// Initial PoA authorities
-				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
+				vec![authority_keys_from_seed("Alice")],
 				// Sudo account
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Pre-funded accounts
@@ -98,12 +123,13 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		None,
 		None,
 		// Properties
-		None,
+		Some(chain_spec_properties()),
 		// Extensions
 		None,
 	))
 }
 
+/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Testnet Network
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
@@ -146,12 +172,13 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		None,
 		None,
 		// Properties
-		None,
+		Some(chain_spec_properties()),
 		// Extensions
 		None,
 	))
 }
 
+/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Mainnet Network
 pub fn live_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
@@ -186,13 +213,13 @@ pub fn live_config() -> Result<ChainSpec, String> {
 		None,
 		None,
 		// Properties
-		None,
+		Some(chain_spec_properties()),
 		// Extensions
 		None,
 	))
 }
 
-/// Configure initial storage state for FRAME modules.
+/// Configures the initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
 	initial_authorities: Vec<(AuraId, GrandpaId, UploadId, EthId, DetachId)>,
@@ -229,7 +256,11 @@ fn testnet_genesis(
 			eth_authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
-		assets: AssetsConfig { assets: vec![], metadata: vec![], accounts: vec![] },
+		assets: AssetsConfig {
+			assets: vec![(1337, root_key.clone(), true, 1, false)], // Genesis assets: id, owner, is_sufficient, min_balance, is_tradeable
+			metadata: vec![(1337, "Fragnova Network Tickets".into(), "TICKET".into(), 0)], // Genesis metadata: id, name, symbol, decimals
+			accounts: vec![], // Genesis accounts: id, account_id, balance
+		},
 		accounts: AccountsConfig {
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
