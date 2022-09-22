@@ -1084,6 +1084,7 @@ pub mod pallet {
 			return found;
 		}
 
+		/// Converts a `ProtoOwner` struct into a JSON
 		pub fn get_owner_in_json_format(owner: ProtoOwner<T::AccountId>) -> Value {
 
 			let json_owner = match owner {
@@ -1117,6 +1118,7 @@ pub mod pallet {
 			json_owner
 		}
 
+		/// Queries the `metadata_keys` that exist in the map `metadata` and returns them as a JSON (along with their corresponding data hashes)
 		pub fn get_map_of_matching_metadata_keys(
 			metadata_keys: &Vec<Vec<u8>>,
 			metadata: &BTreeMap<Compact<u64>, Hash256>,
