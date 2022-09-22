@@ -84,12 +84,15 @@ impl<C, Block, AccountId> FragmentsRpcServer<<Block as BlockT>::Hash, AccountId>
 			return_owners: params.return_owners,
 		};
 
-		let result = api.get_definitions(&at, params_no_std).map(|list_bytes| {
+		let result_outer = api.get_definitions(&at, params_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
 		});
-		match result {
+		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
-			Ok(result) => Ok(result),
+			Ok(result_outer) => match result_outer {
+				Err(e) => Err(runtime_error_into_rpc_err(e)),
+				Ok(result_inner) => Ok(result_inner),
+			},
 		}
 	}
 
@@ -114,12 +117,15 @@ impl<C, Block, AccountId> FragmentsRpcServer<<Block as BlockT>::Hash, AccountId>
 			only_return_first_copies: params.only_return_first_copies,
 		};
 
-		let result = api.get_instances(&at, params_no_std).map(|list_bytes| {
+		let result_outer = api.get_instances(&at, params_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
 		});
-		match result {
+		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
-			Ok(result) => Ok(result),
+			Ok(result_outer) => match result_outer {
+				Err(e) => Err(runtime_error_into_rpc_err(e)),
+				Ok(result_inner) => Ok(result_inner),
+			},
 		}
 	}
 }
