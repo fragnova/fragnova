@@ -158,31 +158,6 @@ pub struct DummyData {
 	pub account_id_second: sp_core::ed25519::Public,
 }
 
-
-/// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
-pub struct DummyData {
-	pub definition: Definition,
-
-	pub publish: Publish,
-	pub publish_with_max_supply: Publish,
-
-	pub mint_non_unique: Mint,
-	pub mint_unique: Mint,
-	pub mint_non_unique_with_max_supply: Mint,
-
-	pub buy_non_unique: Buy,
-	pub buy_unique: Buy,
-	pub buy_non_unique_with_limited_published_quantity: Buy,
-
-	pub give_no_copy_perms: Give,
-	pub give_copy_perms: Give,
-
-	pub create_account: CreateAccount,
-
-	pub account_id: sp_core::ed25519::Public,
-	pub account_id_second: sp_core::ed25519::Public,
-}
-
 impl DummyData {
 	pub fn new() -> Self {
 		let definition = Definition {

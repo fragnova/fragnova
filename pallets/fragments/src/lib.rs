@@ -44,6 +44,7 @@ mod weights;
 
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
+use sp_core::crypto::UncheckedFrom;
 use sp_clamor::{Hash128, Hash256};
 use sp_io::{
 	hashing::{blake2_128, blake2_256},
@@ -1474,7 +1475,7 @@ impl<T: Config> Pallet<T> {
 	/// Implementation Block of `Pallet` specifically for RPC-related functions
 	impl<T : Config> Pallet<T>
 		where
-			T::AccountId: AsRef<[u8]>,
+			T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 	{
 
 
@@ -1633,7 +1634,7 @@ impl<T: Config> Pallet<T> {
 
 				let definition_struct = <Definitions<T>>::get(array_definition_id).ok_or("Failed to get definition struct")?;
 
-				(*map_definition).insert("name".into(), definition_struct.metadata.name.into());
+				(*map_definition).insert("name".into(), String::from_utf8(definition_struct.metadata.name).map_err(|_| "Failed to convert u8 vec to sring")?.into());
 				// (*map_definition).insert("currency".into(), definition_struct.metadata.currency.into());
 
 				if params.return_owners {

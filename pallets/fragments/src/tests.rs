@@ -2106,6 +2106,7 @@ mod get_definitions_tests {
 				).unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
+						"name": String::from_utf8(definition.metadata.name).unwrap(),
 						"num_instances": 0,
 						"owner": {
 							"type": "internal",
@@ -2137,6 +2138,7 @@ mod get_definitions_tests {
 				).unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
+						"name": String::from_utf8(definition.metadata.name).unwrap(),
 						"num_instances": 0,
 						"owner": {
 							"type": "internal",

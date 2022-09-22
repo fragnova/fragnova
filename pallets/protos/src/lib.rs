@@ -1186,6 +1186,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
+								params.exclude_tags
 							)
 						})
 						.skip(params.from as usize)
@@ -1200,6 +1201,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
+								params.exclude_tags
 							)
 						})
 						.skip(params.from as usize)
@@ -1284,7 +1286,7 @@ pub mod pallet {
 
 					let proto_struct = <Protos<T>>::get(array_proto_id).ok_or("Failed to get proto")?;
 
-					match license {
+					match proto_struct.license {
 						UsageLicense::Tickets(amount) => {
 							let n: u64 = amount.into();
 							(*map_proto).insert(String::from("tickets"), Value::Number(n.into()));
