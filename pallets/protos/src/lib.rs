@@ -458,12 +458,11 @@ pub mod pallet {
 
 		/// Delete Proto-Fragment `proto_hash` from all relevant Storage Items
 		#[pallet::weight(50_000)]
-		pub fn delete_proto(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
+		pub fn ban(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
 			ensure_root(origin)?;
 
 			let proto_struct = <Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 
-			<Protos<T>>::remove(&proto_hash);
 			<ProtosByCategory<T>>::mutate(&proto_struct.category, |list_protos| {
 				if let Some(list_protos) = list_protos {
 					list_protos.retain(|current_hash| proto_hash != *current_hash);
