@@ -79,11 +79,17 @@ type Unit = u64;
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GetDefinitionsParams<TAccountId, TString> {
+	/// Whether to order the results in descending or ascending order
 	pub desc: bool,
+	/// Number of FD Results to skip
 	pub from: u64,
+	/// Number of FDs to retrieve
 	pub limit: u64,
+	/// List of Custom-Metadata Keys of the FD that should also be returned
 	pub metadata_keys: Vec<TString>,
+	/// Owner of the FD
 	pub owner: Option<TAccountId>,
+	/// Whether to return the owner(s) of all the returned FDs
 	pub return_owners: bool,
 	// pub categories: Vec<Categories>,
 	// pub tags: Vec<TString>,
@@ -106,12 +112,19 @@ impl<TAccountId, TString> Default for GetDefinitionsParams<TAccountId, TString> 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GetInstancesParams<TAccountId, TString> {
+	/// Whether to order the results in descending or ascending order
 	pub desc: bool,
+	/// Number of FI Results to skip
 	pub from: u64,
+	/// Number of FIs to retrieve
 	pub limit: u64,
+	/// The Fragment Definition/Collection that all the FIs must be in
 	pub definition_hash: TString,
+	/// List of Metadata Keys of the FI that should also be returned
 	pub metadata_keys: Vec<TString>,
+	/// Owner of the FIs
 	pub owner: Option<TAccountId>,
+	/// Whether to only return FIs that have a Copy ID of 1
 	pub only_return_first_copies: bool
 }
 #[cfg(test)]
@@ -128,21 +141,6 @@ impl<TAccountId, TString: Default> Default for GetInstancesParams<TAccountId, TS
 		}
 	}
 }
-
-/// **Data Type** used to **Query and Filter for Fragment Instances**
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct GetCopiesParams<TAccountId, TString> {
-	pub desc: bool,
-	pub from: u64,
-	pub limit: u64,
-	pub definition_hash: Hash128,
-	pub edition_id: Unit,
-	pub metadata_keys: Vec<TString>,
-	pub owner: Option<TAccountId>,
-	pub return_owners: bool,
-}
-
 
 /// **Struct** of a **Fragment Definition's Metadata**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -421,6 +419,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type DataHashMapIndex<T: Config> = StorageMap<_, Identity, Hash128, u64>;
 
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -670,8 +669,18 @@ pub mod pallet {
 			Ok(())
 		}
 
-
-
+		/// **Alters** the **metadata** of a **Fragment Instance** (whose Fragment Definition ID is `definition_hash`,
+		/// whose Edition ID is `edition_id` and whose Copy ID is `copy_id`).
+		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrinsic / dispatchable function
+		/// * `definition_hash` - **ID of the Fragment Instance's Fragment Definition**
+		/// * `edition_id` - **Edition ID of the Fragment Instance**
+		/// * `copy_id` - **Copy ID of the Fragment Instance**
+		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Fragment Instance's Struct Instance
+		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Fragment Instance's Struct Instance
 		#[pallet::weight(50_000)]
 		pub fn set_instance_metadata(
 			origin: OriginFor<T>,
@@ -1051,7 +1060,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Give the **Fragment Instance whose Fragment Definition ID is `class`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
+		/// Give the **Fragment Instance whose Fragment Definition ID is `definition_hash`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
 		///
 		/// If the **current permitted actions of the Fragment Instance** allows for it to be duplicated (i.e if it has the permission **FragmentPerms::COPY**),
 		/// then it is duplicated and the duplicate's ownership is assigned to `to`.
@@ -1572,7 +1581,7 @@ impl<T: Config> Pallet<T> {
 		// 	Ok(result.into_bytes())
 		// }
 
-
+		/// **Query** and **Return** **Fragmnent Definition(s)** based on **`params`**
 		pub fn get_definitions(params: GetDefinitionsParams<T::AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 
 
@@ -1660,7 +1669,7 @@ impl<T: Config> Pallet<T> {
 			Ok(result.into_bytes())
 		}
 
-
+		/// **Query** and **Return** **Fragmnent Instance(s)** based on **`params`**
 		pub fn get_instances(
 			params: GetInstancesParams<T::AccountId, Vec<u8>>
 		) -> Result<Vec<u8>, Vec<u8>> {
