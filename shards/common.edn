@@ -11,9 +11,9 @@
 ;; Index of the Patch Function in Protos Pallet
 (def patch-index 1)
 ;; Index of the Set Metadata Function in Protos Pallet
-(def set-metadata-index 4)
+(def set-metadata-index 3)
 ;; Index of the Detach Function in Protos Pallet
-(def detach-index 5)
+(def detach-index 4)
 
 (defmesh root)
 
