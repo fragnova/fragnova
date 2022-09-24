@@ -9,7 +9,7 @@
 ;; Index of the Upload Function in Protos Pallet
 (def upload-index 0)
 ;; Index of the Patch Function in Protos Pallet
-(def patch-index 2)
+(def patch-index 1)
 ;; Index of the Set Metadata Function in Protos Pallet
 (def set-metadata-index 4)
 ;; Index of the Detach Function in Protos Pallet
