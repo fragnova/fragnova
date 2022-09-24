@@ -456,36 +456,6 @@ pub mod pallet {
 		}
 
 
-		/// Delete Proto-Fragment `proto_hash` from all relevant Storage Items
-		#[pallet::weight(50_000)]
-		pub fn ban(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
-			ensure_root(origin)?;
-
-			let proto_struct = <Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
-
-			<ProtosByCategory<T>>::mutate(&proto_struct.category, |list_protos| {
-				if let Some(list_protos) = list_protos {
-					list_protos.retain(|current_hash| proto_hash != *current_hash);
-				}
-			});
-			<ProtosByOwner<T>>::mutate(proto_struct.owner, |list_protos| {
-				if let Some(list_protos) = list_protos {
-					list_protos.retain(|current_hash| proto_hash != *current_hash);
-				}
-			});
-			for account_that_curated_proto  in <ProtoCurations<T>>::iter_key_prefix(proto_hash) {
-				<AccountCurations<T>>::mutate(&account_that_curated_proto, |list_protos| {
-					if let Some(list_protos) = list_protos {
-						list_protos.retain(|current_hash| proto_hash != *current_hash);
-					}
-				});
-			}
-			<ProtoCurations<T>>::clear_prefix(proto_hash, u32::MAX, None);
-
-			Ok(())
-
-		}
-
 		/// **Patch** an **existing Proto-Fragment** (*by appending the hash of `data` to the Vector
 		/// field `patches` of the existing Proto-Fragment's Struct Instance*) Furthermore, this
 		/// function also indexes `data` in the Blockchain's Database and stores it in the IPFS
@@ -826,6 +796,37 @@ pub mod pallet {
 			Self::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); // 问Gio
 
 			Ok(())
+		}
+
+
+		/// Delete Proto-Fragment `proto_hash` from all relevant Storage Items
+		#[pallet::weight(50_000)]
+		pub fn ban(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
+			ensure_root(origin)?;
+
+			let proto_struct = <Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+
+			<ProtosByCategory<T>>::mutate(&proto_struct.category, |list_protos| {
+				if let Some(list_protos) = list_protos {
+					list_protos.retain(|current_hash| proto_hash != *current_hash);
+				}
+			});
+			<ProtosByOwner<T>>::mutate(proto_struct.owner, |list_protos| {
+				if let Some(list_protos) = list_protos {
+					list_protos.retain(|current_hash| proto_hash != *current_hash);
+				}
+			});
+			for account_that_curated_proto  in <ProtoCurations<T>>::iter_key_prefix(proto_hash) {
+				<AccountCurations<T>>::mutate(&account_that_curated_proto, |list_protos| {
+					if let Some(list_protos) = list_protos {
+						list_protos.retain(|current_hash| proto_hash != *current_hash);
+					}
+				});
+			}
+			<ProtoCurations<T>>::clear_prefix(proto_hash, u32::MAX, None);
+
+			Ok(())
+
 		}
 	}
 
