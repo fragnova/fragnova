@@ -1324,15 +1324,6 @@
 <span id="1324">1324</span>
 <span id="1325">1325</span>
 <span id="1326">1326</span>
-<span id="1327">1327</span>
-<span id="1328">1328</span>
-<span id="1329">1329</span>
-<span id="1330">1330</span>
-<span id="1331">1331</span>
-<span id="1332">1332</span>
-<span id="1333">1333</span>
-<span id="1334">1334</span>
-<span id="1335">1335</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -2151,17 +2142,8 @@
 					list_protos.retain(|current_hash| proto_hash != <span class="kw-2">*</span>current_hash);
 				}
 			});
-			<span class="kw">for </span>account_that_curated_proto  <span class="kw">in </span>&lt;ProtoCurations&lt;T&gt;&gt;::iter_key_prefix(proto_hash) {
-				&lt;AccountCurations&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>account_that_curated_proto, |list_protos| {
-					<span class="kw">if let </span><span class="prelude-val">Some</span>(list_protos) = list_protos {
-						list_protos.retain(|current_hash| proto_hash != <span class="kw-2">*</span>current_hash);
-					}
-				});
-			}
-			&lt;ProtoCurations&lt;T&gt;&gt;::clear_prefix(proto_hash, u32::MAX, <span class="prelude-val">None</span>);
 
 			<span class="prelude-val">Ok</span>(())
-
 		}
 	}
 
