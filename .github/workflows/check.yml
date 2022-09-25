@@ -40,7 +40,7 @@ jobs:
           
       - name: Check if Clamor Builds
         run: |
-          RUSTFLAGS="-D missing-docs" cargo build --features=runtime-benchmarks
+          RUSTFLAGS="-D missing-docs" cargo build --features=runtime-benchmarks --tests
           
       - name: Check if all the Polkadot.js RPC tests pass
         run: |
@@ -66,7 +66,7 @@ jobs:
 
       - name: Check if Rustdoc Builds
         run: |
-          cargo doc
+          cargo doc --no-deps
           
       - name: Push to codecov.io
         run: |
