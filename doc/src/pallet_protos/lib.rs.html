@@ -1301,6 +1301,38 @@
 <span id="1301">1301</span>
 <span id="1302">1302</span>
 <span id="1303">1303</span>
+<span id="1304">1304</span>
+<span id="1305">1305</span>
+<span id="1306">1306</span>
+<span id="1307">1307</span>
+<span id="1308">1308</span>
+<span id="1309">1309</span>
+<span id="1310">1310</span>
+<span id="1311">1311</span>
+<span id="1312">1312</span>
+<span id="1313">1313</span>
+<span id="1314">1314</span>
+<span id="1315">1315</span>
+<span id="1316">1316</span>
+<span id="1317">1317</span>
+<span id="1318">1318</span>
+<span id="1319">1319</span>
+<span id="1320">1320</span>
+<span id="1321">1321</span>
+<span id="1322">1322</span>
+<span id="1323">1323</span>
+<span id="1324">1324</span>
+<span id="1325">1325</span>
+<span id="1326">1326</span>
+<span id="1327">1327</span>
+<span id="1328">1328</span>
+<span id="1329">1329</span>
+<span id="1330">1330</span>
+<span id="1331">1331</span>
+<span id="1332">1332</span>
+<span id="1333">1333</span>
+<span id="1334">1334</span>
+<span id="1335">1335</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1758,6 +1790,7 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
+
 		<span class="doccomment">/// **Patch** an **existing Proto-Fragment** (*by appending the hash of `data` to the Vector
 		/// field `patches` of the existing Proto-Fragment&#39;s Struct Instance*) Furthermore, this
 		/// function also indexes `data` in the Blockchain&#39;s Database and stores it in the IPFS
@@ -2098,6 +2131,37 @@
 			</span><span class="self">Self</span>::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); <span class="comment">// 问Gio
 
 			</span><span class="prelude-val">Ok</span>(())
+		}
+
+
+		<span class="doccomment">/// Delete Proto-Fragment `proto_hash` from all relevant Storage Items
+		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
+		</span><span class="kw">pub fn </span>ban(origin: OriginFor&lt;T&gt;, proto_hash: Hash256) -&gt; DispatchResult {
+			ensure_root(origin)<span class="question-mark">?</span>;
+
+			<span class="kw">let </span>proto_struct = &lt;Protos&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>proto_hash).ok_or(Error::&lt;T&gt;::ProtoNotFound)<span class="question-mark">?</span>;
+
+			&lt;ProtosByCategory&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>proto_struct.category, |list_protos| {
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(list_protos) = list_protos {
+					list_protos.retain(|current_hash| proto_hash != <span class="kw-2">*</span>current_hash);
+				}
+			});
+			&lt;ProtosByOwner&lt;T&gt;&gt;::mutate(proto_struct.owner, |list_protos| {
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(list_protos) = list_protos {
+					list_protos.retain(|current_hash| proto_hash != <span class="kw-2">*</span>current_hash);
+				}
+			});
+			<span class="kw">for </span>account_that_curated_proto  <span class="kw">in </span>&lt;ProtoCurations&lt;T&gt;&gt;::iter_key_prefix(proto_hash) {
+				&lt;AccountCurations&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>account_that_curated_proto, |list_protos| {
+					<span class="kw">if let </span><span class="prelude-val">Some</span>(list_protos) = list_protos {
+						list_protos.retain(|current_hash| proto_hash != <span class="kw-2">*</span>current_hash);
+					}
+				});
+			}
+			&lt;ProtoCurations&lt;T&gt;&gt;::clear_prefix(proto_hash, u32::MAX, <span class="prelude-val">None</span>);
+
+			<span class="prelude-val">Ok</span>(())
+
 		}
 	}
 
@@ -2605,4 +2669,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9062b780b 2022-09-21)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (3f83906b3 2022-09-24)" ></div></body></html>
