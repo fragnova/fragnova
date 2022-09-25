@@ -816,17 +816,8 @@ pub mod pallet {
 					list_protos.retain(|current_hash| proto_hash != *current_hash);
 				}
 			});
-			for account_that_curated_proto  in <ProtoCurations<T>>::iter_key_prefix(proto_hash) {
-				<AccountCurations<T>>::mutate(&account_that_curated_proto, |list_protos| {
-					if let Some(list_protos) = list_protos {
-						list_protos.retain(|current_hash| proto_hash != *current_hash);
-					}
-				});
-			}
-			<ProtoCurations<T>>::clear_prefix(proto_hash, u32::MAX, None);
 
 			Ok(())
-
 		}
 	}
 
