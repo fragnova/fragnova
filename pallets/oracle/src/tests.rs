@@ -118,7 +118,7 @@ parameter_types! {
 
 impl Config for Test {
 	type Event = Event;
-	type AuthorityId = crypto::TestAuthId;
+	type AuthorityId = crypto::FragAuthId;
 	type Call = Call;
 	type GracePeriod = ConstU64<5>;
 	type UnsignedInterval = ConstU64<128>;
@@ -289,7 +289,7 @@ fn should_submit_unsigned_transaction_on_chain_for_any_account() {
 				<PricePayload<
 					<Test as SigningTypes>::Public,
 					<Test as frame_system::Config>::BlockNumber,
-				> as SignedPayload<Test>>::verify::<crypto::TestAuthId>(&price_payload, signature);
+				> as SignedPayload<Test>>::verify::<crypto::FragAuthId>(&price_payload, signature);
 
 			assert!(signature_valid);
 		}
@@ -348,7 +348,7 @@ fn should_submit_unsigned_transaction_on_chain_for_all_accounts() {
 				<PricePayload<
 					<Test as SigningTypes>::Public,
 					<Test as frame_system::Config>::BlockNumber,
-				> as SignedPayload<Test>>::verify::<crypto::TestAuthId>(&price_payload, signature);
+				> as SignedPayload<Test>>::verify::<crypto::FragAuthId>(&price_payload, signature);
 
 			assert!(signature_valid);
 		}

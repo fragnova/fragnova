@@ -78,7 +78,7 @@ mod tests;
 /// When offchain worker is signing transactions it's going to request keys of type
 /// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"btc!");
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
 
 /// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
 /// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
@@ -93,9 +93,9 @@ pub mod crypto {
 	};
 	app_crypto!(sr25519, KEY_TYPE);
 
-	pub struct TestAuthId;
+	pub struct FragAuthId;
 
-	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for TestAuthId {
+	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for FragAuthId {
 		type RuntimeAppPublic = Public;
 		type GenericPublic = sp_core::sr25519::Public;
 		type GenericSignature = sp_core::sr25519::Signature;
@@ -103,7 +103,7 @@ pub mod crypto {
 
 	// implemented for mock runtime in test
 	impl frame_system::offchain::AppCrypto<<Sr25519Signature as Verify>::Signer, Sr25519Signature>
-		for TestAuthId
+		for FragAuthId
 	{
 		type RuntimeAppPublic = Public;
 		type GenericPublic = sp_core::sr25519::Public;
@@ -121,7 +121,10 @@ pub mod pallet {
 
 	/// This pallet's configuration trait
 	#[pallet::config]
-	pub trait Config: CreateSignedTransaction<Call<Self>> + frame_system::Config {
+	pub trait Config:
+		CreateSignedTransaction<Call<Self>>
+		+ frame_system::Config
+	{
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 
@@ -158,6 +161,21 @@ pub mod pallet {
 		/// Maximum number of prices.
 		#[pallet::constant]
 		type MaxPrices: Get<u32>;
+	}
+
+	/// The Genesis Configuration for the Pallet.
+	#[pallet::genesis_config]
+	#[derive(Default)]
+	pub struct GenesisConfig {
+		/// **List of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		pub keys: Vec<ed25519::Public>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+		fn build(&self) {
+			Pallet::<T>::initialize_keys(&self.keys);
+		}
 	}
 
 	#[pallet::pallet]
