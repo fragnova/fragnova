@@ -19,10 +19,10 @@ use sp_core::{
 
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
 
-use std::sync::Arc;
 use frame_support::traits::GenesisBuild;
 use sp_core::ed25519::Public;
 use sp_io::TestExternalities;
+use std::sync::Arc;
 
 use sp_runtime::{
 	testing::{Header, TestXt},
@@ -196,11 +196,9 @@ fn create_public_key(keystore: &KeyStore) -> Public {
 		keystore,
 		<crate::crypto::Public as RuntimeAppPublic>::ID,
 		Some(&format!("{}", PHRASE)),
-	).unwrap();
-	keystore.ed25519_public_keys(crate::crypto::Public::ID)
-			.get(0)
-			.unwrap()
-			.clone()
+	)
+	.unwrap();
+	keystore.ed25519_public_keys(crate::crypto::Public::ID).get(0).unwrap().clone()
 }
 
 pub fn new_test_ext_with_nova() -> sp_io::TestExternalities {

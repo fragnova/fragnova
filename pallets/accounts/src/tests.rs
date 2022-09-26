@@ -27,10 +27,13 @@ mod link_tests {
 
 			assert_ok!(link_(&link));
 
-			assert_eq!(<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap(), link.get_recovered_ethereum_account_id());
+			assert_eq!(
+				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap(),
+				link.get_recovered_ethereum_account_id()
+			);
 			assert!(
-				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap()
-					== link.clamor_account_id
+				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap() ==
+					link.clamor_account_id
 			);
 
 			let event = <frame_system::Pallet<Test>>::events()
@@ -127,7 +130,10 @@ mod unlink_tests {
 			));
 
 			assert_eq!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id), false);
-			assert_eq!(<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()), false);
+			assert_eq!(
+				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()),
+				false
+			);
 
 			assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
 
@@ -360,11 +366,9 @@ mod internal_lock_update_tests {
 
 	fn apply_20_percent(amount: u128) -> u128 {
 		if amount == 0 {
-			return 0;
+			return 0
 		}
-		let amount_float = amount as f64;
-		let result = (amount_float/100.0 * 20.0).round();
-		result as u128
+		amount * 20 / 100
 	}
 
 	#[test]
@@ -392,16 +396,16 @@ mod internal_lock_update_tests {
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
-					>(percentage_amount)
+				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
+					percentage_amount
+				)
 			);
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<
-					<Test as pallet_balances::Config>::Balance,
-				>(percentage_amount)
+				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
+					percentage_amount
+				)
 			);
 
 			let data_tuple = (
@@ -420,9 +424,7 @@ mod internal_lock_update_tests {
 			let mut events = <frame_system::Pallet<Test>>::events();
 			assert_eq!(events.clone().len(), 3);
 
-			let event = events.pop()
-				.expect("Expected at least one EventRecord to be found")
-				.event;
+			let event = events.pop().expect("Expected at least one EventRecord to be found").event;
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_accounts::Event::Locked {
@@ -434,9 +436,7 @@ mod internal_lock_update_tests {
 				})
 			);
 
-			let event = events.pop()
-				.expect("Expected at least one EventRecord to be found")
-				.event;
+			let event = events.pop().expect("Expected at least one EventRecord to be found").event;
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_accounts::Event::NOVAReserved {
@@ -447,9 +447,7 @@ mod internal_lock_update_tests {
 				})
 			);
 
-			let event = events.pop()
-				.expect("Expected at least one EventRecord to be found")
-				.event;
+			let event = events.pop().expect("Expected at least one EventRecord to be found").event;
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_accounts::Event::TicketsReserved {
@@ -484,8 +482,10 @@ mod internal_lock_update_tests {
 				}
 			);
 			// check the balance of the Clamor account
-			let minted = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
-																&link.clamor_account_id);
+			let minted = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
+			);
 			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
 			assert_eq!(U256::from(minted), U256::from(percentage_amount));
 
@@ -519,20 +519,22 @@ mod internal_lock_update_tests {
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<
-					<Test as pallet_balances::Config>::Balance,
-				>(percentage_amount)
+				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
+					percentage_amount
+				)
 			);
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<
-					<Test as pallet_balances::Config>::Balance,
-				>(percentage_amount)
+				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
+					percentage_amount
+				)
 			);
 			// check the balance of the Clamor account
-			let minted = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
-																&link.clamor_account_id);
+			let minted = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
+			);
 			assert_eq!(minted, 0);
 
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
@@ -542,17 +544,19 @@ mod internal_lock_update_tests {
 			// of Clamor account
 			assert_ok!(link_(&link));
 
-			let minted_linked = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
-																	   &link.clamor_account_id);
+			let minted_linked = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
+			);
 			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
 			assert_eq!(U256::from(minted_linked), U256::from(percentage_amount));
 
-			let nova_linked = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			let nova_linked =
+				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(U256::from(nova_linked), U256::from(percentage_amount));
 
 			assert_eq!(<EthReservedTickets<Test>>::contains_key(&lock.data.sender), false);
 			assert_eq!(<EthReservedNova<Test>>::contains_key(&lock.data.sender), false);
-
 		});
 	}
 
@@ -613,20 +617,22 @@ mod internal_lock_update_tests {
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&unlock.data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<
-					<Test as pallet_balances::Config>::Balance,
-				>(0)
+				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
+					0
+				)
 			);
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&unlock.data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<
-					<Test as pallet_balances::Config>::Balance,
-				>(0)
+				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
+					0
+				)
 			);
 
-			let minted = pallet_assets::Pallet::<Test>::balance(get_ticket_asset_id(),
-																&link.clamor_account_id);
+			let minted = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
+			);
 			assert_eq!(minted, 0);
 
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
@@ -676,7 +682,10 @@ mod internal_lock_update_tests {
 			assert_ok!(unlock_(&unlock));
 
 			assert_eq!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id), false);
-			assert_eq!(<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()), false);
+			assert_eq!(
+				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()),
+				false
+			);
 
 			assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
 

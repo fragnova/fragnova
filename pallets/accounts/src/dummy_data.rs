@@ -225,8 +225,8 @@ impl DummyData {
 			},
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([69u8; 32]),
-				amount: U256::from(0u32), // when unlocking, amount must be 0u32
-				lock_period: U256::from(999),  // can be whatever. It is not considered in case of unlock.
+				amount: U256::from(0u32),     // when unlocking, amount must be 0u32
+				lock_period: U256::from(999), // can be whatever. It is not considered in case of unlock.
 				sender: get_ethereum_account_id_from_ecdsa_public_struct(
 					&sp_core::ecdsa::Pair::from_seed(&[4u8; 32]).public(),
 				),

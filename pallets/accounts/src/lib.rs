@@ -109,10 +109,7 @@ use serde_json::{json, Value};
 
 use ethabi::ParamType;
 
-use frame_support::traits::{
-	ReservableCurrency,
-	tokens::fungibles::Mutate,
-};
+use frame_support::traits::{tokens::fungibles::Mutate, ReservableCurrency};
 
 /// TODO: Documentation
 pub type DiscordID = u64;
@@ -184,12 +181,12 @@ pub struct AccountInfo<TAccountID, TMoment> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
-	use frame_support::traits::fungible::Unbalanced;
+	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
+	use frame_support::{
+		dispatch::DispatchResult, pallet_prelude::*, traits::fungible::Unbalanced, Twox64Concat,
+	};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::SaturatedConversion;
-	use num_traits::float::FloatCore;
-	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -253,16 +250,22 @@ pub mod pallet {
 
 	/// **StorageMap** that maps an **Ethereum Account ID** to a to an ***Ethlock* struct of the aforementioned Ethereum Account Id (the struct contains the amount of FRAG token locked, amongst other things)**
 	#[pallet::storage]
-	pub type EthLockedFrag<T: Config> =
-		StorageMap<_, Identity, H160, EthLock<<T as pallet_assets::Config>::Balance, T::BlockNumber>>;
+	pub type EthLockedFrag<T: Config> = StorageMap<
+		_,
+		Identity,
+		H160,
+		EthLock<<T as pallet_assets::Config>::Balance, T::BlockNumber>,
+	>;
 
 	/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
 	#[pallet::storage]
-	pub type EthReservedTickets<T: Config> = StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
+	pub type EthReservedTickets<T: Config> =
+		StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
 
 	/// This **StorageMap** maps an Ethereum AccountID to an amount of NOVA received until a Clamor Account ID is not linked.
 	#[pallet::storage]
-	pub type EthReservedNova<T: Config> = StorageMap<_, Identity, H160, <T as pallet_balances::Config>::Balance>;
+	pub type EthReservedNova<T: Config> =
+		StorageMap<_, Identity, H160, <T as pallet_balances::Config>::Balance>;
 
 	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
@@ -363,7 +366,6 @@ pub mod pallet {
 	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
@@ -427,34 +429,45 @@ pub mod pallet {
 			ensure!(!<EVMLinks<T>>::contains_key(&sender), Error::<T>::AccountAlreadyLinked);
 			ensure!(!<EVMLinksReverse<T>>::contains_key(eth_key), Error::<T>::AccountAlreadyLinked);
 
-			<EVMLinks<T>>::insert(sender.clone(), eth_key);
-			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
-
 			// Check if the Ethereum account has already some tickets and nova registered when it was not linked
 			if <EthReservedTickets<T>>::contains_key(&eth_key) {
 				// mint tickets
-				let tickets_amount = <EthReservedTickets<T>>::get(&eth_key).unwrap();
-				<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
-					T::TicketsAssetId::get(),
-					&sender.clone(),
-					tickets_amount)?;
+				let tickets_amount = <EthReservedTickets<T>>::get(&eth_key);
+				if let Some(amount) = tickets_amount {
+					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+						T::TicketsAssetId::get(),
+						&sender.clone(),
+						amount,
+					)?;
 
-				<EthReservedTickets<T>>::remove(&eth_key);
-				// also emit event
-				Self::deposit_event(TicketsMinted { sender: sender.clone(), balance: tickets_amount });
+					<EthReservedTickets<T>>::remove(&eth_key);
+					// also emit event
+					Self::deposit_event(TicketsMinted {
+						sender: sender.clone(),
+						balance: amount,
+					});
+				}
 			}
 			if <EthReservedNova<T>>::contains_key(&eth_key) {
 				// assign NOVA
-				let nova_amount = <EthReservedNova<T>>::get(&eth_key).unwrap();
-				<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
-					&sender.clone(),
-					nova_amount)?;
+				let nova_amount = <EthReservedNova<T>>::get(&eth_key);
+				if let Some(amount) = nova_amount {
+					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
+						&sender.clone(),
+						amount,
+					)?;
 
-				<EthReservedNova<T>>::remove(&eth_key);
-				// also emit event
-				Self::deposit_event(NOVAAssigned { sender: sender.clone(), balance: nova_amount });
+					<EthReservedNova<T>>::remove(&eth_key);
+					// also emit event
+					Self::deposit_event(NOVAAssigned {
+						sender: sender.clone(),
+						balance: amount,
+					});
+				}
 			}
 
+			<EVMLinks<T>>::insert(sender.clone(), eth_key);
+			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
 			// also emit event
 			Self::deposit_event(Event::Linked { sender: sender.clone(), eth_key });
 
@@ -523,7 +536,8 @@ pub mod pallet {
 			let pub_key = &pub_key[12..];
 			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
-			let data_amount: u128 = data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+			let data_amount: u128 =
+				data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
 			if !data.lock {
 				ensure!(data_amount == 0, Error::<T>::SystematicFailure);
@@ -534,20 +548,36 @@ pub mod pallet {
 			// verifications ended, let's proceed with voting count and writing
 
 			let threshold = T::Threshold::get();
-			let _ = Self::vote_count_and_write(&data_hash, threshold);
+			if threshold > 1 {
+				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
+				if let Some(current_votes) = current_votes {
+					// Number of votes for the key `data_hash` in EVMLinkVoting
+					if current_votes + 1u64 < threshold {
+						// Current Votes has not passed the threshold
+						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
+						return Ok(())
+					} else {
+						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
+						// we are good to go, but let's remove the record
+						<EVMLinkVoting<T>>::remove(&data_hash);
+					}
+				} else {
+					// If key `data_hash` doesn't exist in EVMLinkVoting
+					<EVMLinkVoting<T>>::insert(&data_hash, 1);
+					return Ok(())
+				}
+			}
 
-			// writing here at end (THE lines below only execute if the number of votes received by `data_hash` passes the `threshold`)
+			// The lines below only execute if the number of votes received by `data_hash` passes the `threshold`)
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			let lock_period: U256 =
 				data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
-
 			let frag_amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 
 			// TODO - get FRAG price from oracle
-			/* NOTE: this is assigning 20% of Tickets and NOVA. It will be replaced by a call to
-			   an oracle to retrieve the price of FRAG/USD and mint the correct amount of Tickets.
+			/* NOTE: this is assigning 20% of Tickets and NOVA.
 			 */
 			let percentage_amount = Self::apply_20_percent(data_amount);
 
@@ -564,35 +594,45 @@ pub mod pallet {
 					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 						T::TicketsAssetId::get(),
 						&linked,
-						tickets_amount)?;
-					Self::deposit_event(TicketsMinted {sender: linked.clone(), balance: tickets_amount});
+						tickets_amount,
+					)?;
 
 					// assign NOVA
 					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
 						&linked,
-						nova_amount)?;
-					Self::deposit_event(NOVAAssigned {sender: linked.clone(), balance: nova_amount});
+						nova_amount,
+					)?;
+
+					Self::deposit_event(TicketsMinted {
+						sender: linked.clone(),
+						balance: tickets_amount,
+					});
+					Self::deposit_event(NOVAAssigned {
+						sender: linked.clone(),
+						balance: nova_amount,
+					});
 				} else {
 					// Ethereum Account ID (H160) not linked to Clamor Account ID
 					// So, register the amount of tickets and NOVA owned by the H160 account for later linking
-					<EthReservedTickets<T>>::insert(
-						sender.clone(),
-						tickets_amount,
-					);
-					Self::deposit_event(TicketsReserved { eth_key: sender.clone(), balance: tickets_amount});
+					<EthReservedTickets<T>>::insert(sender.clone(), tickets_amount);
+					<EthReservedNova<T>>::insert(sender.clone(), nova_amount);
 
-					<EthReservedNova<T>>::insert(
-						sender.clone(),
-						nova_amount,
-					);
-					Self::deposit_event(NOVAReserved {eth_key: sender.clone(), balance: nova_amount});
+					Self::deposit_event(TicketsReserved {
+						eth_key: sender.clone(),
+						balance: tickets_amount,
+					});
+					Self::deposit_event(NOVAReserved {
+						eth_key: sender.clone(),
+						balance: nova_amount,
+					});
 				}
 				// also emit event
-				Self::deposit_event(Event::Locked { eth_key: sender, balance: frag_amount, lock_period });
-				<EthLockedFrag<T>>::insert(
-					sender.clone(),
-					EthLock { amount: frag_amount, block_number: current_block_number, lock_period },
-				);
+				Self::deposit_event(Event::Locked {
+					eth_key: sender,
+					balance: frag_amount,
+					lock_period,
+				});
+
 			} else {
 				// If we want to unlock all the FRAG tokens that were
 				// if we have any link to this account, then force unlinking
@@ -602,22 +642,20 @@ pub mod pallet {
 				}
 				// also emit event
 				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: frag_amount }); // 问Gio for clarification
-
-				// The amount here will be zero for both, since it is an UNLOCK event
-				<EthLockedFrag<T>>::insert(
-					sender.clone(),
-					EthLock { amount: frag_amount, block_number: current_block_number, lock_period },
-				);
-				<EthReservedTickets<T>>::insert(
-					sender.clone(),
-					tickets_amount,
-				);
-
-				<EthReservedNova<T>>::insert(
-					sender.clone(),
-					nova_amount,
-				);
 			}
+
+			// write this later as unlink_account can fail
+			// We already made sure that amount, tickets_amount and nova_amount == 0 for an UNLOCK event
+			<EthLockedFrag<T>>::insert(
+				sender.clone(),
+				EthLock {
+					amount: frag_amount,
+					block_number: current_block_number,
+					lock_period,
+				},
+			);
+			<EthReservedTickets<T>>::insert(sender.clone(), tickets_amount);
+			<EthReservedNova<T>>::insert(sender.clone(), nova_amount);
 
 			// also record link hash
 			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
@@ -748,7 +786,7 @@ pub mod pallet {
 					_ => {
 						log::debug!("Not a local transaction");
 						// Return TransactionValidityError˘ if the call is not allowed.
-						return InvalidTransaction::Call.into();
+						return InvalidTransaction::Call.into()
 					},
 				}
 
@@ -765,13 +803,13 @@ pub mod pallet {
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into(); // // 问Gio
+						return InvalidTransaction::BadSigner.into() // // 问Gio
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
 					// return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadSigner.into();
+					return InvalidTransaction::BadSigner.into()
 				}
 
 				// most expensive bit last
@@ -781,7 +819,7 @@ pub mod pallet {
 																	   // The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 
 				log::debug!("Sending frag lock update extrinsic");
@@ -820,11 +858,9 @@ pub mod pallet {
 
 		fn apply_20_percent(amount: u128) -> u128 {
 			if amount == 0 {
-				return 0;
+				return 0
 			}
-			let amount_float = amount as f64;
-			let result = (amount_float/100.0 * 20.0).round();
-			result as u128
+			amount * 20 / 100
 		}
 
 		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
@@ -854,7 +890,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth");
+				return Err("Failed to get response from geth")
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -903,7 +939,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth");
+				return Err("Failed to get response from geth")
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -1022,7 +1058,7 @@ pub mod pallet {
 				String::from_utf8(geth).unwrap()
 			} else {
 				log::debug!("No geth url found, skipping sync");
-				return; // It is fine to have a node not syncing with eth
+				return // It is fine to have a node not syncing with eth
 			};
 
 			let contracts = T::EthFragContract::get_partner_contracts();
@@ -1038,10 +1074,10 @@ pub mod pallet {
 		/// account address `account`**
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
 			if <EVMLinks<T>>::get(sender.clone()).ok_or(Error::<T>::AccountNotLinked)? != account {
-				return Err(Error::<T>::DifferentAccountLinked.into());
+				return Err(Error::<T>::DifferentAccountLinked.into())
 			}
 			if <EVMLinksReverse<T>>::get(account).ok_or(Error::<T>::AccountNotLinked)? != sender {
-				return Err(Error::<T>::DifferentAccountLinked.into());
+				return Err(Error::<T>::DifferentAccountLinked.into())
 			}
 
 			<EVMLinks<T>>::remove(sender.clone());
@@ -1052,29 +1088,6 @@ pub mod pallet {
 			// also emit event
 			Self::deposit_event(Event::Unlinked { sender, eth_key: account });
 
-			Ok(())
-		}
-
-		fn vote_count_and_write(data_hash: &H256, threshold: u64) -> DispatchResult {
-			if threshold > 1 {
-				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
-				if let Some(current_votes) = current_votes {
-					// Number of votes for the key `data_hash` in EVMLinkVoting
-					if current_votes + 1u64 < threshold {
-						// Current Votes has not passed the threshold
-						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
-						return Ok(());
-					} else {
-						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
-						// we are good to go, but let's remove the record
-						<EVMLinkVoting<T>>::remove(&data_hash);
-					}
-				} else {
-					// If key `data_hash` doesn't exist in EVMLinkVoting
-					<EVMLinkVoting<T>>::insert(&data_hash, 1);
-					return Ok(());
-				}
-			}
 			Ok(())
 		}
 	}
