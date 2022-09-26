@@ -985,7 +985,7 @@ pub mod pallet {
 
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
 
-				// Lock period (`data[2]`). In case of Unlock event, it is zero.
+				// Lock period (`data[2]`). In case of Unlock event, it is 999.
 				let lock_period = data[2].clone().into_uint().unwrap_or(U256::from(999));
 
 				if locked {

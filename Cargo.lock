@@ -4070,7 +4070,6 @@ dependencies = [
  "hex",
  "libsecp256k1",
  "log",
- "num-traits",
  "pallet-assets",
  "pallet-balances",
  "pallet-proxy",
