@@ -1358,3 +1358,63 @@ mod stake_tests {
 		});
 	}
 }
+
+
+mod ban_tests {
+
+	use super::*;
+
+	pub fn ban(
+		proto: &ProtoFragment,
+	) -> DispatchResult {
+		ProtosPallet::ban(
+			Origin::root(),
+			proto.get_proto_hash()
+		)
+	}
+
+	#[test]
+	fn ban_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment;
+			assert_ok!(upload(dd.account_id, &proto));
+			assert_ok!(ban(&proto));
+			assert!(
+				!<ProtosByCategory<Test>>::get(&proto.category)
+					.unwrap_or_default()
+					.contains(&proto.get_proto_hash())
+			);
+			assert!(
+				!<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
+					.unwrap_or_default()
+					.contains(&proto.get_proto_hash())
+			);
+		});
+	}
+
+	#[test]
+	fn ban_should_not_work_if_proto_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment;
+			assert_noop!(
+				ban(&proto),
+				Error::<Test>::ProtoNotFound
+			);
+		});
+	}
+
+	#[test]
+	fn ban_should_not_work_if_caller_is_not_root() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment;
+			assert_ok!(upload(dd.account_id, &proto));
+			assert_noop!(
+				ProtosPallet::ban(Origin::signed(dd.account_id), proto.get_proto_hash()),
+				sp_runtime::DispatchError::BadOrigin
+			);
+		});
+	}
+}

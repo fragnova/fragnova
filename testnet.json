@@ -7,7 +7,11 @@
   ],
   "telemetryEndpoints": null,
   "protocolId": "frag",
-  "properties": {},
+  "properties": {
+    "ss58Format": 93,
+    "tokenDecimals": 12,
+    "tokenSymbol": "NOVA"
+  },
   "codeSubstitutes": {},
   "genesis": {
     "runtime": {
@@ -33,13 +37,62 @@
           ]
         ]
       },
-      "transactionPayment": null,
+      "transactionPayment": {
+        "multiplier": "1000000000000000000"
+      },
       "sudo": {
         "key": "fRgxJR1Ghei8ccgooy4hC1muwfwinNMszgubrbyGT8cS621tA"
       },
       "assets": {
-        "assets": [],
-        "metadata": [],
+        "assets": [
+          [
+            1337,
+            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+            true,
+            1,
+            false
+          ]
+        ],
+        "metadata": [
+          [
+            1337,
+            [
+              70,
+              114,
+              97,
+              103,
+              110,
+              111,
+              118,
+              97,
+              32,
+              78,
+              101,
+              116,
+              119,
+              111,
+              114,
+              107,
+              32,
+              84,
+              105,
+              99,
+              107,
+              101,
+              116,
+              115
+            ],
+            [
+              84,
+              73,
+              67,
+              75,
+              69,
+              84
+            ],
+            0
+          ]
+        ],
         "accounts": []
       },
       "indices": {
