@@ -389,6 +389,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
+					first_lock: current_block_number,
 					lock_period: U256::from(1),
 				}
 			);
@@ -478,6 +479,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
+					first_lock: current_block_number,
 					lock_period: U256::from(1),
 				}
 			);
@@ -511,6 +513,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
+					first_lock: current_block_number,
 					lock_period: U256::from(1),
 				}
 			);
@@ -591,6 +594,35 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
+	fn block_number_of_first_lock_event_should_be_correct() {
+		new_test_ext_with_nova().execute_with(|| {
+			let dd = DummyData::new();
+			let mut unlock = dd.unlock;
+			let link = unlock.lock.link.clone();
+			let current_block_number = System::block_number();
+
+			assert_ok!(link_(&link));
+			assert_ok!(lock_(&unlock.lock));
+			assert_ok!(unlock_(&unlock));
+
+			let first_lock_block = <EthLockedFrag<Test>>::get(&unlock.data.sender).unwrap().first_lock;
+
+			// assert that Frag is locked in Clamor
+			assert_eq!(
+				<EthLockedFrag<Test>>::get(&unlock.data.sender).unwrap(),
+				EthLock {
+					amount: SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(unlock.data.amount.clone()),
+					block_number: current_block_number,
+					first_lock: first_lock_block,
+					lock_period: U256::from(999),
+				}
+			);
+		});
+	}
+
+	#[test]
 	fn unlock_should_work() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
@@ -598,7 +630,7 @@ mod internal_lock_update_tests {
 			//let lock = dd.lock;
 			let link = unlock.lock.link.clone();
 
-			let current_block_number = System::block_number(); //@sinkingsugar
+			let current_block_number = System::block_number();
 
 			assert_ok!(lock_(&unlock.lock));
 
@@ -611,21 +643,24 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(0),
 					block_number: current_block_number,
+					first_lock: current_block_number,
 					lock_period: U256::from(999),
 				}
 			);
 
+			let percentage_amount = apply_20_percent(unlock.lock.data.amount.clone().as_u128());
+
 			assert_eq!(
-				<EthReservedTickets<Test>>::get(&unlock.data.sender).unwrap(),
+				<EthReservedTickets<Test>>::get(&unlock.lock.data.sender).unwrap(),
 				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
-					0
+					percentage_amount
 				)
 			);
 
 			assert_eq!(
-				<EthReservedNova<Test>>::get(&unlock.data.sender).unwrap(),
+				<EthReservedNova<Test>>::get(&unlock.lock.data.sender).unwrap(),
 				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
-					0
+					percentage_amount
 				)
 			);
 
@@ -662,43 +697,6 @@ mod internal_lock_update_tests {
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(0)
-				})
-			);
-		});
-	}
-
-	#[test]
-	fn unlock_should_unlink_clamor_account_if_clamor_account_is_linked() {
-		new_test_ext_with_nova().execute_with(|| {
-			let dd = DummyData::new();
-
-			let unlock = dd.unlock;
-			let lock = unlock.lock.clone();
-			let link = lock.link.clone();
-
-			assert_ok!(link_(&link));
-
-			assert_ok!(lock_(&lock));
-			assert_ok!(unlock_(&unlock));
-
-			assert_eq!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id), false);
-			assert_eq!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()),
-				false
-			);
-
-			assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
-
-			let event = System::events()
-				.get(System::events().len() - 2)
-				.expect("Expected at least two EventRecords to be found")
-				.event
-				.clone();
-			assert_eq!(
-				event,
-				mock::Event::from(pallet_accounts::Event::Unlinked {
-					sender: link.clamor_account_id,
-					eth_key: link.get_recovered_ethereum_account_id()
 				})
 			);
 		});

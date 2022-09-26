@@ -159,6 +159,8 @@ pub struct EthLock<TBalance, TBlockNum> {
 	pub amount: TBalance,
 	/// Clamor Block Number in which the locked FRAG tokens was "effectively transfered" to the Clamor Blockchain
 	pub block_number: TBlockNum,
+	/// The block number when FRAG were locked the first time
+	pub first_lock: TBlockNum,
 	/// The FRAG lock period chosen by the user on Ethereum and received from the Lock event
 	pub lock_period: U256,
 }
@@ -186,6 +188,7 @@ pub mod pallet {
 		dispatch::DispatchResult, pallet_prelude::*, traits::fungible::Unbalanced, Twox64Concat,
 	};
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::traits::Zero;
 	use sp_runtime::SaturatedConversion;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -354,7 +357,7 @@ pub mod pallet {
 		/// Account already exists
 		AccountAlreadyExists,
 		/// Too many proxies
-		TooManyProxies,
+		TooManyProxies
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -431,9 +434,10 @@ pub mod pallet {
 
 			// Check if the Ethereum account has already some tickets and nova registered when it was not linked
 			if <EthReservedTickets<T>>::contains_key(&eth_key) {
-				// mint tickets
 				let tickets_amount = <EthReservedTickets<T>>::get(&eth_key);
 				if let Some(amount) = tickets_amount {
+					ensure!(!amount.is_zero(), Error::<T>::AccountAlreadyLinked);
+					// mint tickets
 					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 						T::TicketsAssetId::get(),
 						&sender.clone(),
@@ -449,9 +453,10 @@ pub mod pallet {
 				}
 			}
 			if <EthReservedNova<T>>::contains_key(&eth_key) {
-				// assign NOVA
 				let nova_amount = <EthReservedNova<T>>::get(&eth_key);
 				if let Some(amount) = nova_amount {
+					ensure!(!amount.is_zero(), Error::<T>::AccountAlreadyLinked);
+					// Assign NOVA
 					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
 						&sender.clone(),
 						amount,
@@ -581,8 +586,7 @@ pub mod pallet {
 			 */
 			let percentage_amount = Self::apply_20_percent(data_amount);
 
-			// TODO - apply mechanism of periodic vesting of NOVA
-			// NOTE: at the moment there is no mechanism of periodic vesting of NOVA.
+			// TODO - apply mechanism of periodic vesting of NOVA and Tickets
 			let nova_amount: <T as pallet_balances::Config>::Balance = percentage_amount.saturated_into();
 			let tickets_amount: <T as pallet_assets::Config>::Balance = percentage_amount.saturated_into();
 
@@ -594,13 +598,13 @@ pub mod pallet {
 					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 						T::TicketsAssetId::get(),
 						&linked,
-						tickets_amount,
+						tickets_amount, // amount already ensured to be > 0 in case of Lock
 					)?;
 
 					// assign NOVA
 					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
 						&linked,
-						nova_amount,
+						nova_amount, // amount already ensured to be > 0 in case of Lock
 					)?;
 
 					Self::deposit_event(TicketsMinted {
@@ -634,29 +638,31 @@ pub mod pallet {
 				});
 
 			} else {
-				// If we want to unlock all the FRAG tokens that were
-				// if we have any link to this account, then force unlinking
-				let linked = <EVMLinksReverse<T>>::get(sender.clone());
-				if let Some(linked) = linked {
-					Self::unlink_account(linked, sender.clone())?; // Unlink Ethereum Account `sender` and Clamor Account `linked`
-				}
-				// also emit event
-				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: frag_amount }); // 问Gio for clarification
+				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: frag_amount });
 			}
 
-			// write this later as unlink_account can fail
-			// We already made sure that amount, tickets_amount and nova_amount == 0 for an UNLOCK event
+			// need to track when we received the first Lock event from the user.
+			// This is needed in the case the user locks some FRAG, unlock and then Lock again later.
+			let mut first_lock_block_num = current_block_number;
+
+			let lock_event = <EthLockedFrag<T>>::get(&sender);
+			match lock_event {
+				// if it is not the first lock event, then use the existing value
+				Some(event) => {
+					first_lock_block_num = event.first_lock;
+				},
+				// if it is the first lock event, then use current_block_number set before
+				None => {}
+			}
 			<EthLockedFrag<T>>::insert(
 				sender.clone(),
 				EthLock {
-					amount: frag_amount,
+					amount: frag_amount, // amount already ensured to be > 0 for lock, = 0 for unlock
 					block_number: current_block_number,
+					first_lock: first_lock_block_num,
 					lock_period,
 				},
 			);
-			<EthReservedTickets<T>>::insert(sender.clone(), tickets_amount);
-			<EthReservedNova<T>>::insert(sender.clone(), nova_amount);
-
 			// also record link hash
 			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
 
@@ -854,13 +860,6 @@ pub mod pallet {
 					});
 				}
 			}
-		}
-
-		fn apply_20_percent(amount: u128) -> u128 {
-			if amount == 0 {
-				return 0
-			}
-			amount * 20 / 100
 		}
 
 		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
@@ -1090,5 +1089,13 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		fn apply_20_percent(amount: u128) -> u128 {
+			if amount == 0 {
+				return 0
+			}
+			amount * 20 / 100
+		}
+
 	}
 }
