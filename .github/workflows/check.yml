@@ -27,10 +27,10 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source ~/.cargo/env
-          rustup default nightly
+          rustup default stable
           rustup update nightly
           rustup update stable
-          rustup target add wasm32-unknown-unknown --toolchain nightly
+          rustup target add wasm32-unknown-unknown --toolchain stable
 
       - uses: Swatinem/rust-cache@v1
 
@@ -73,7 +73,7 @@ jobs:
       - name: Check if Rustdocs Builds
         run: |
           cargo doc
-          
+
       - name: Push to codecov.io
         run: |
           cargo install cargo-tarpaulin
