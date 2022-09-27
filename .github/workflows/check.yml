@@ -37,11 +37,11 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '14'  # The node-version input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
-          
+
       - name: Check if Clamor Builds
         run: |
-          RUSTFLAGS="-D missing-docs" cargo build --features=runtime-benchmarks --tests
-          
+          RUSTFLAGS="-D missing-docs" cargo build --features=runtime-benchmarks --lib --bins --tests
+
       - name: Check if all the Polkadot.js RPC tests pass
         run: |
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
@@ -67,7 +67,7 @@ jobs:
       - name: Check if Rustdoc Builds
         run: |
           cargo doc --no-deps
-          
+
       - name: Push to codecov.io
         run: |
           cargo install cargo-tarpaulin
