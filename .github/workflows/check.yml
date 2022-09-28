@@ -40,7 +40,7 @@ jobs:
 
       - name: Check if Clamor Builds
         run: |
-          RUSTFLAGS="-D missing-docs" cargo build --features=runtime-benchmarks
+          RUSTFLAGS="-D missing-docs" cargo build --features runtime-benchmarks
 
       - name: Check if all the Polkadot.js RPC tests pass
         run: |
@@ -68,13 +68,6 @@ jobs:
         run: |
           cargo doc --no-deps
 
-
-  check_code_coverage:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
       - name: Push to codecov.io
         run: |
           cargo install cargo-tarpaulin
