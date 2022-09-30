@@ -4,7 +4,6 @@
 
 use super::*;
 #[allow(unused)]
-use crate::Pallet as Protos;
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_detach::Pallet as Detach;
@@ -14,13 +13,15 @@ use sp_io::hashing::blake2_256;
 
 const SEED: u32 = 0;
 
+use crate::Pallet as Protos;
+
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
-const MAX_REFERENCES_LENGTH: usize = 100;
-const MAX_TAGS_LENGTH: usize = 100;
-const MAX_DATA_LENGTH: usize = 1_000_000; // 1 MegaByte
+const MAX_REFERENCES_LENGTH: u32 = 100;
+const MAX_TAGS_LENGTH: u32 = 100;
+const MAX_DATA_LENGTH: u32 = 1_000_000; // 1 MegaByte
 
 benchmarks! {
 
@@ -29,12 +30,12 @@ benchmarks! {
 	}
 
 	upload_benchmark {
-		let r = 1 .. MAX_REFERENCES_LENGTH; // `references` length
-		let t = 1 .. MAX_TAGS_LENGTH; // `tags` length
+		let r in 1 .. MAX_REFERENCES_LENGTH; // `references` length
+		let t in 1 .. MAX_TAGS_LENGTH; // `tags` length
 		let d in 1 .. MAX_DATA_LENGTH; // `data` length
 		let caller: T::AccountId = whitelisted_caller();
 
-		let references: Vec<Hash256> = (0 .. r).into_iter().map(|i| {
+		let references: Vec<Hash256> = (0 .. r).into_iter().map(|i| -> Result<Hash256, sp_runtime::DispatchError> {
 			let proto_data = format!("{}", i).into_bytes();
 			Protos::<T>::upload(
 				RawOrigin::Signed(caller.clone()).into(),
@@ -46,8 +47,8 @@ benchmarks! {
 				proto_data.clone()
 			)?;
 			let proto_hash = blake2_256(&proto_data);
-			proto_hash
-		}).collect::<Vec<Hash256>>();
+			Ok(proto_hash)
+		}).collect::<Result::<Vec<Hash256>, _>>()?;
 		let category = Categories::Text(TextCategories::Plain);
 		let tags = (0 .. t).into_iter().map(|i| {
 			format!("{}", i).into_bytes().to_vec()
@@ -56,7 +57,7 @@ benchmarks! {
 		let license = UsageLicense::Closed;
 		let data = vec![7u8; d as usize];
 
-	}: upload(RawOrigin::Signed(caller), references, category, tags, linked_asset, license, data)
+	}: upload(RawOrigin::Signed(caller), references, category, tags, linked_asset, license, data.clone())
 	verify {
 		let proto_hash = blake2_256(&data);
 		let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
@@ -66,8 +67,8 @@ benchmarks! {
 	}
 
 	patch_benchmark {
-		let r = 1 .. MAX_REFERENCES_LENGTH; // `new_references` length
-		let t = 1 .. MAX_TAGS_LENGTH; // `new_tags` length
+		let r in 1 .. MAX_REFERENCES_LENGTH; // `new_references` length
+		let t in 1 .. MAX_TAGS_LENGTH; // `new_tags` length
 		let d in 1 .. MAX_DATA_LENGTH; // `data` length
 		let caller: T::AccountId = whitelisted_caller();
 
@@ -83,7 +84,7 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let new_references: Vec<Hash256> = (0 .. r).into_iter().map(|i| {
+		let new_references: Vec<Hash256> = (0 .. r).into_iter().map(|i| -> Result<Hash256, sp_runtime::DispatchError> {
 			let proto_data = format!("{}", i).into_bytes();
 			Protos::<T>::upload(
 				RawOrigin::Signed(caller.clone()).into(),
@@ -95,8 +96,8 @@ benchmarks! {
 				proto_data.clone()
 			)?;
 			let proto_hash = blake2_256(&proto_data);
-			proto_hash
-		}).collect::<Vec<Hash256>>();
+			Ok(proto_hash)
+		}).collect::<Result::<Vec<Hash256>, _>>()?;
 		let new_tags: Option<Vec<Vec<u8>>> = Some(
 			(0 .. t).into_iter().map(|i| {
 				format!("{}", i).into_bytes().to_vec()
@@ -105,7 +106,7 @@ benchmarks! {
 		let license = Some(UsageLicense::Tickets(Compact(100))); // we do this since this will trigger an extra DB write (so it lets us simulate the worst-case scenario)
 		let data = vec![7u8; d as usize];
 
-	}: patch(RawOrigin::Signed(caller), proto_hash, license, new_references, new_tags, data)
+	}: patch(RawOrigin::Signed(caller), proto_hash, license, new_references, new_tags, data.clone())
 	verify {
 		let patch_hash = blake2_256(&data);
 		let cid = [&CID_PREFIX[..], &patch_hash[..]].concat();

@@ -2,7 +2,6 @@
 
 use super::*;
 #[allow(unused)]
-use crate::Pallet as Fragments;
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_protos::UsageLicense;
@@ -12,6 +11,9 @@ use protos::{
 };
 use sp_core::crypto::UncheckedFrom;
 use sp_io::hashing::blake2_128;
+
+use crate::Pallet as Fragments;
+use pallet_protos::Pallet as Protos;
 
 const PROTO_HASH: Hash256 = [
 	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
@@ -69,13 +71,13 @@ benchmarks! {
 
 		let metadata = FragmentMetadata {
 			name: vec![7u8; n as usize],
-			currency: c,
+			currency: Some(T::AssetId::default()),
 		};
 		let permissions: FragmentPerms = FragmentPerms::EDIT | FragmentPerms::TRANSFER;
 		let unique: Option<UniqueOptions> = Some(UniqueOptions { mutable: false});
 		let max_supply: Option<Unit> = Some(7);
 
-	}: create(RawOrigin::Signed(caller), proto_hash, metadata, permissions, unique, max_supply) // Execution phase
+	}: create(RawOrigin::Signed(caller), proto_hash, metadata.clone(), permissions, unique, max_supply) // Execution phase
 	verify { // Optional verification phase
 		let definition_hash = blake2_128(
 			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
@@ -103,22 +105,22 @@ benchmarks! {
 			currency: None,
 		};
 		Fragments::<T>::create(
-			RawOrigin::Signed(caller),
+			RawOrigin::Signed(caller.clone()).into(),
 			proto_hash,
-			metadata
+			metadata.clone(),
 			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 			None,
 			// we make the Definition's `max_supply` Some,
 			// because this causes `publish()` to check if `max_supply` is exceeded
 			Some(7)
-		)
+		)?;
 		let definition_hash = blake2_128(
 			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
 		);
 
-		let price = 7u8;
+		let price = 7u128;
 		let quantity = Some(7); // making `quantity` Some causes an if condition to execute
-		let expires: Option<T::BlockNumber> = Some(7);
+		let expires: Option<T::BlockNumber> = Some(T::BlockNumber::from(10u32));
 		let amount: Option<Unit> = Some(7);
 
 	}: publish(RawOrigin::Signed(caller), definition_hash, price, quantity, expires, amount) // Execution phase
@@ -146,18 +148,18 @@ benchmarks! {
 			currency: None,
 		};
 		Fragments::<T>::create(
-			RawOrigin::Signed(caller),
+			RawOrigin::Signed(caller.clone()).into(),
 			proto_hash,
-			metadata
+			metadata.clone(),
 			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 			None,
 			None
-		);
+		)?;
 		let definition_hash = blake2_128(
 			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
 		);
 		Fragments::<T>::publish(
-			RawOrigin::Signed(caller),
+			RawOrigin::Signed(caller.clone()).into(),
 			definition_hash,
 			7,
 			None,
@@ -190,22 +192,21 @@ benchmarks! {
 			currency: None,
 		};
 		Fragments::<T>::create(
-			RawOrigin::Signed(caller),
+			RawOrigin::Signed(caller.clone()).into(),
 			proto_hash,
-			metadata
+			metadata.clone(),
 			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 			None,
 			// we make the Definition's `max_supply` Some,
 			// because this causes `publish()` to check if `max_supply` is exceeded
 			Some(7)
-		)
+		)?;
 		let definition_hash = blake2_128(
 			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
 		);
-
-		// TODO - create variable "options"
-		/// TODO - create variable "amount"
-
+		/// TODO - Review
+		let options = FragmentBuyOptions::Quantity(7);
+		let amount: Option<Unit> = Some(7);
 
 	}: mint(RawOrigin::Signed(caller), definition_hash, options, amount) // Execution phase
 	verify { // Optional verification phase
