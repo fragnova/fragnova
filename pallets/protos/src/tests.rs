@@ -9,11 +9,6 @@ use upload_tests::upload;
 use copied_from_pallet_accounts::{link_, lock_};
 use protos::categories::TextCategories;
 
-#[test]
-pub fn dummy_test_function() {
-	assert!(false);
-}
-
 mod copied_from_pallet_accounts {
 	use super::*;
 
