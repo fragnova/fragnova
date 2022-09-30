@@ -59,7 +59,7 @@ jobs:
 
       - name: Check Build
         run: |
-          RUSTFLAGS="-D missing-docs" cargo check
+          cargo check
 
       - name: Check Build for Benchmarking
         run: |
@@ -73,7 +73,7 @@ jobs:
       - name: Check if Rustdocs Builds
         run: |
           cargo doc
-          
+
       - name: Push to codecov.io
         run: |
           cargo install cargo-tarpaulin
