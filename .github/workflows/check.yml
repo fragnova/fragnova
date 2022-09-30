@@ -59,17 +59,14 @@ jobs:
           docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards sh /data/shards/run.sh
           kill %1
 
-      - name: Check if all Tests Pass
+      - name: Check if Tests Pass and Push to Codecov.io
         run: |
-          cargo test --no-fail-fast
+          # cargo test --no-fail-fast
+          cargo install cargo-tarpaulin
+          cargo tarpaulin --out Xml
+          bash <(curl -s https://codecov.io/bash) -f coverage/coverage.f.info || echo "Codecov did not collect coverage reports"
 
 
       - name: Check if Rustdoc Builds
         run: |
           cargo doc --no-deps
-
-      - name: Push to codecov.io
-        run: |
-          cargo install cargo-tarpaulin
-          cargo tarpaulin --out Xml
-          bash <(curl -s https://codecov.io/bash) -f coverage/coverage.f.info || echo "Codecov did not collect coverage reports"
