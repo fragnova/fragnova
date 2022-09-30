@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../clamor_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../clamor_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../clamor_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `runtime/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../clamor_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../clamor_runtime/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../clamor_runtime/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -1018,63 +1018,18 @@
 <span id="1018">1018</span>
 <span id="1019">1019</span>
 <span id="1020">1020</span>
-<span id="1021">1021</span>
-<span id="1022">1022</span>
-<span id="1023">1023</span>
-<span id="1024">1024</span>
-<span id="1025">1025</span>
-<span id="1026">1026</span>
-<span id="1027">1027</span>
-<span id="1028">1028</span>
-<span id="1029">1029</span>
-<span id="1030">1030</span>
-<span id="1031">1031</span>
-<span id="1032">1032</span>
-<span id="1033">1033</span>
-<span id="1034">1034</span>
-<span id="1035">1035</span>
-<span id="1036">1036</span>
-<span id="1037">1037</span>
-<span id="1038">1038</span>
-<span id="1039">1039</span>
-<span id="1040">1040</span>
-<span id="1041">1041</span>
-<span id="1042">1042</span>
-<span id="1043">1043</span>
-<span id="1044">1044</span>
-<span id="1045">1045</span>
-<span id="1046">1046</span>
-<span id="1047">1047</span>
-<span id="1048">1048</span>
-<span id="1049">1049</span>
-<span id="1050">1050</span>
-<span id="1051">1051</span>
-<span id="1052">1052</span>
-<span id="1053">1053</span>
-<span id="1054">1054</span>
-<span id="1055">1055</span>
-<span id="1056">1056</span>
-<span id="1057">1057</span>
-<span id="1058">1058</span>
-<span id="1059">1059</span>
-<span id="1060">1060</span>
-<span id="1061">1061</span>
-<span id="1062">1062</span>
-<span id="1063">1063</span>
-<span id="1064">1064</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
 //! for executing transactions, saving state transitions, and interacting with the outer node.
 
-</span><span class="attribute">#![warn(missing_docs)]
 
-#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
 
-</span><span class="doccomment">/// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
-</span><span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="comment">// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
 </span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
 
 <span class="kw">use </span>frame_support::{
@@ -1181,10 +1136,9 @@
 	<span class="doccomment">/// Opaque block identifier type.
 	</span><span class="kw">pub type </span>BlockId = generic::BlockId&lt;Block&gt;;
 
-	<span class="doccomment">/// Implement OpaqueKeys for a described struct.
-	/// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
-	</span><span class="macro">impl_opaque_keys! </span>{
-		<span class="doccomment">/// TODO: Documentation
+	<span class="macro">impl_opaque_keys! </span>{
+		<span class="doccomment">/// Implement OpaqueKeys for a described struct.
+		/// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
 		</span><span class="kw">pub struct </span>SessionKeys {
 			<span class="doccomment">/// TODO: Documentation
 			</span><span class="kw">pub </span>aura: Aura,
@@ -1426,7 +1380,7 @@
 	<span class="kw">type </span>IsTransferable = IsTransferable;
 }
 
-<span class="doccomment">/// Parameters related to calculating the Weight fee.
+<span class="comment">// Parameters related to calculating the Weight fee.
 </span><span class="macro">parameter_types! </span>{
 	<span class="doccomment">/// The amount of balance a caller (here &quot;caller&quot; refers to a &quot;smart-contract account&quot;) has to pay for each storage item.
 	///
@@ -1723,31 +1677,31 @@
 	<span class="kw">type </span>WeightInfo = pallet_assets::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="doccomment">/// Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
-///
-/// The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
-///
-/// Each pallet is declared as such:
-///
-/// - `Identifier`: name given to the pallet that uniquely identifies it.
-/// - `:`: colon separator
-/// - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
-/// - `::{ Part1, Part2&lt;T&gt;, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
-/// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
-/// - `Pallet` - Required for all pallets
-/// - `Call` - If the pallet has callable functions
-/// - `Storage` - If the pallet uses storage
-/// - `Event` or `Event&lt;T&gt;` (if the event is generic) - If the pallet emits events
-/// - `Origin` or `Origin&lt;T&gt;` (if the origin is generic) - If the pallet has instanciable origins
-/// - `Config` or `Config&lt;T&gt;` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
-/// - `Inherent` - If the pallet provides/can check inherents.
-/// - `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
-///
-///
-/// NOTE #1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet&lt;Runtime&gt;`
-///
-/// NOTE #2: The population of the genesis storage depends on the order of pallets.
-/// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
+<span class="comment">// Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
+//
+// The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
+//
+// Each pallet is declared as such:
+//
+// - `Identifier`: name given to the pallet that uniquely identifies it.
+// - `:`: colon separator
+// - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
+// - `::{ Part1, Part2&lt;T&gt;, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
+// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
+// - `Pallet` - Required for all pallets
+// - `Call` - If the pallet has callable functions
+// - `Storage` - If the pallet uses storage
+// - `Event` or `Event&lt;T&gt;` (if the event is generic) - If the pallet emits events
+// - `Origin` or `Origin&lt;T&gt;` (if the origin is generic) - If the pallet has instanciable origins
+// - `Config` or `Config&lt;T&gt;` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
+// - `Inherent` - If the pallet provides/can check inherents.
+// - `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
+//
+//
+// NOTE #1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet&lt;Runtime&gt;`
+//
+// NOTE #2: The population of the genesis storage depends on the order of pallets.
+// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
 </span><span class="macro">construct_runtime!</span>(
 	<span class="kw">pub enum </span>Runtime <span class="kw">where
 		</span>Block = Block, <span class="comment">//  Block is the block type that is used in the runtime
@@ -1804,56 +1758,44 @@
 	AllPalletsWithSystem,
 &gt;;
 
-<span class="doccomment">/// Marks the given trait implementations as runtime apis.
-///
-/// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
+<span class="comment">// Marks the given trait implementations as runtime apis.
+// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
 </span><span class="macro">impl_runtime_apis! </span>{
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>sp_api::Core&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>version() -&gt; RuntimeVersion {
+	<span class="kw">impl </span>sp_api::Core&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>version() -&gt; RuntimeVersion {
 			VERSION
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>execute_block(block: Block) {
+		<span class="kw">fn </span>execute_block(block: Block) {
 			Executive::execute_block(block);
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>initialize_block(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
+		<span class="kw">fn </span>initialize_block(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
 			Executive::initialize_block(header)
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>sp_api::Metadata&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>metadata() -&gt; OpaqueMetadata {
+	<span class="kw">impl </span>sp_api::Metadata&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>metadata() -&gt; OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>sp_block_builder::BlockBuilder&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>apply_extrinsic(extrinsic: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic) -&gt; ApplyExtrinsicResult {
+	<span class="kw">impl </span>sp_block_builder::BlockBuilder&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>apply_extrinsic(extrinsic: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic) -&gt; ApplyExtrinsicResult {
 			Executive::apply_extrinsic(extrinsic)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>finalize_block() -&gt; &lt;Block <span class="kw">as </span>BlockT&gt;::Header {
+		<span class="kw">fn </span>finalize_block() -&gt; &lt;Block <span class="kw">as </span>BlockT&gt;::Header {
 			Executive::finalize_block()
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>inherent_extrinsics(data: sp_inherents::InherentData) -&gt; Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; {
+		<span class="kw">fn </span>inherent_extrinsics(data: sp_inherents::InherentData) -&gt; Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; {
 			data.create_extrinsics()
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>check_inherents(
+		<span class="kw">fn </span>check_inherents(
 			block: Block,
 			data: sp_inherents::InherentData,
 		) -&gt; sp_inherents::CheckInherentsResult {
@@ -1861,10 +1803,8 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>validate_transaction(
+	<span class="kw">impl </span>sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>validate_transaction(
 			source: TransactionSource,
 			tx: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
 			block_hash: &lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
@@ -1891,56 +1831,44 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>sp_offchain::OffchainWorkerApi&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>offchain_worker(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
+	<span class="kw">impl </span>sp_offchain::OffchainWorkerApi&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>offchain_worker(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
 			Executive::offchain_worker(header)
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>sp_consensus_aura::AuraApi&lt;Block, AuraId&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>slot_duration() -&gt; sp_consensus_aura::SlotDuration {
+	<span class="kw">impl </span>sp_consensus_aura::AuraApi&lt;Block, AuraId&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>slot_duration() -&gt; sp_consensus_aura::SlotDuration {
 			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>authorities() -&gt; Vec&lt;AuraId&gt; {
+		<span class="kw">fn </span>authorities() -&gt; Vec&lt;AuraId&gt; {
 			Aura::authorities().into_inner()
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>sp_session::SessionKeys&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>generate_session_keys(seed: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;) -&gt; Vec&lt;u8&gt; {
+	<span class="kw">impl </span>sp_session::SessionKeys&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>generate_session_keys(seed: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;) -&gt; Vec&lt;u8&gt; {
 			opaque::SessionKeys::generate(seed)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>decode_session_keys(
+		<span class="kw">fn </span>decode_session_keys(
 			encoded: Vec&lt;u8&gt;,
 		) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;(Vec&lt;u8&gt;, KeyTypeId)&gt;&gt; {
 			opaque::SessionKeys::decode_into_raw_public_keys(<span class="kw-2">&amp;</span>encoded)
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>fg_primitives::GrandpaApi&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>grandpa_authorities() -&gt; GrandpaAuthorityList {
+	<span class="kw">impl </span>fg_primitives::GrandpaApi&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>grandpa_authorities() -&gt; GrandpaAuthorityList {
 			Grandpa::grandpa_authorities()
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>current_set_id() -&gt; fg_primitives::SetId {
+		<span class="kw">fn </span>current_set_id() -&gt; fg_primitives::SetId {
 			Grandpa::current_set_id()
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>submit_report_equivocation_unsigned_extrinsic(
+		<span class="kw">fn </span>submit_report_equivocation_unsigned_extrinsic(
 			_equivocation_proof: fg_primitives::EquivocationProof&lt;
 				&lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
 				NumberFor&lt;Block&gt;,
@@ -1950,8 +1878,7 @@
 			<span class="prelude-val">None
 		</span>}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>generate_key_ownership_proof(
+		<span class="kw">fn </span>generate_key_ownership_proof(
 			_set_id: fg_primitives::SetId,
 			_authority_id: GrandpaId,
 		) -&gt; <span class="prelude-ty">Option</span>&lt;fg_primitives::OpaqueKeyOwnershipProof&gt; {
@@ -1962,26 +1889,21 @@
 		</span>}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Index&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>account_nonce(account: AccountId) -&gt; Index {
+	<span class="kw">impl </span>frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Index&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>account_nonce(account: AccountId) -&gt; Index {
 			System::account_nonce(account)
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;Block, Balance&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>query_info(
+	<span class="kw">impl </span>pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;Block, Balance&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>query_info(
 			uxt: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
 			len: u32,
 		) -&gt; pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo&lt;Balance&gt; {
 			TransactionPayment::query_info(uxt, len)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>query_fee_details(
+		<span class="kw">fn </span>query_fee_details(
 			uxt: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
 			len: u32,
 		) -&gt; pallet_transaction_payment::FeeDetails&lt;Balance&gt; {
@@ -1989,12 +1911,10 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">impl </span>pallet_contracts_rpc_runtime_api::ContractsApi&lt;Block, AccountId, Balance, BlockNumber, Hash&gt;
+		<span class="kw">impl </span>pallet_contracts_rpc_runtime_api::ContractsApi&lt;Block, AccountId, Balance, BlockNumber, Hash&gt;
 		<span class="kw">for </span>Runtime
 	{
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>call(
+		<span class="kw">fn </span>call(
 			origin: AccountId,
 			dest: AccountId,
 			value: Balance,
@@ -2005,8 +1925,7 @@
 			Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, <span class="bool-val">true</span>)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>instantiate(
+		<span class="kw">fn </span>instantiate(
 			origin: AccountId,
 			value: Balance,
 			gas_limit: u64,
@@ -2019,8 +1938,7 @@
 			Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, <span class="bool-val">true</span>)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>upload_code(
+		<span class="kw">fn </span>upload_code(
 			origin: AccountId,
 			code: Vec&lt;u8&gt;,
 			storage_deposit_limit: <span class="prelude-ty">Option</span>&lt;Balance&gt;,
@@ -2029,8 +1947,7 @@
 			Contracts::bare_upload_code(origin, code, storage_deposit_limit)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>get_storage(
+		<span class="kw">fn </span>get_storage(
 			address: AccountId,
 			key: Vec&lt;u8&gt;,
 		) -&gt; pallet_contracts_primitives::GetStorageResult {
@@ -2038,19 +1955,15 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">impl </span>pallet_protos_rpc_runtime_api::ProtosApi&lt;Block, AccountId&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>get_protos(params: GetProtosParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
+	<span class="kw">impl </span>pallet_protos_rpc_runtime_api::ProtosApi&lt;Block, AccountId&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>get_protos(params: GetProtosParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
 			Protos::get_protos(params)
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+	<span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 	</span><span class="kw">impl </span>frame_benchmarking::Benchmark&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>benchmark_metadata(extra: bool) -&gt; (
+		<span class="kw">fn </span>benchmark_metadata(extra: bool) -&gt; (
 			Vec&lt;frame_benchmarking::BenchmarkList&gt;,
 			Vec&lt;frame_support::traits::StorageInfo&gt;,
 		) {
@@ -2080,8 +1993,7 @@
 			<span class="kw">return </span>(list, storage_info)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">fn </span>dispatch_benchmark(
+		<span class="kw">fn </span>dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;frame_benchmarking::BenchmarkBatch&gt;, sp_runtime::RuntimeString&gt; {
 			<span class="kw">use </span>frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
@@ -2127,4 +2039,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8b705839c 2022-09-26)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (9c56d9d6f 2022-09-29)" ></div></body></html>
