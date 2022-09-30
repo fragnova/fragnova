@@ -202,7 +202,7 @@ mod create_tests {
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				69,
-				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+				true // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
 			));
 
 			assert_ok!(create(dd.account_id, &definition));
@@ -1155,7 +1155,7 @@ mod buy_tests {
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				minimum_balance,
-				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+				true // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
 			));
 
 			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
@@ -1178,9 +1178,10 @@ mod buy_tests {
 		});
 	}
 
-
 	#[test]
-	fn buy_should_work_if_the_vault_id_of_fd_will_not_have_a_minimum_balance_of_the_asset_after_transaction() { // "fd" stands for fragment definition
+	fn buy_should_work_if_the_vault_id_of_fd_will_not_have_a_minimum_balance_of_the_asset_after_transaction(
+	) {
+		// "fd" stands for fragment definition
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -1219,7 +1220,9 @@ mod buy_tests {
 	}
 
 	#[test]
-	fn buy_should_not_work_if_the_vault_id_of_fd_will_not_have_a_minimum_balance_of_the_asset_after_transaction() { // "fd" stands for fragment definition
+	fn buy_should_not_work_if_the_vault_id_of_fd_will_not_have_a_minimum_balance_of_the_asset_after_transaction(
+	) {
+		// "fd" stands for fragment definition
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -1253,7 +1256,10 @@ mod buy_tests {
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			));
 
-			assert_noop!(buy_(dd.account_id_second, &buy), Error::<Test>::ReceiverBelowMinimumBalance);
+			assert_noop!(
+				buy_(dd.account_id_second, &buy),
+				Error::<Test>::ReceiverBelowMinimumBalance
+			);
 		});
 	}
 

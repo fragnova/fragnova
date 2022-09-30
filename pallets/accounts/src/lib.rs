@@ -91,7 +91,7 @@ use sp_io::{
 	crypto as Crypto,
 	hashing::{blake2_256, keccak_256},
 };
-use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
+use sp_runtime::{offchain::storage::StorageValueRef, traits::Zero, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use frame_system::offchain::{
@@ -338,7 +338,6 @@ pub mod pallet {
 	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
@@ -386,16 +385,29 @@ pub mod pallet {
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			// the idea is to prove to this chain that the sender knows the private key of the external address
-			let mut message = b"EVM2Fragnova".to_vec();
-			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
-			message.extend_from_slice(&sender.encode());
-			let message_hash = keccak_256(&message);
+			let genesis_hash = <frame_system::Pallet<T>>::block_hash(T::BlockNumber::zero());
+			let genesis_hash = hex::encode(genesis_hash);
+
+			let sender_string = hex::encode(sender.encode());
+
+			// Metamask signTypedData_v4 - https://jsfiddle.net/4mwu2g80/43/
+			// We emulate JS JSON.stringify behavior here basically...
+			let message = format!(r#"{{"domain":{{"name":"Fragnova Network","version":"1","chainId":{},"verifyingContract":"0xF5A0Af5a0AF5a0AF5a0af5A0Af5A0AF5a0AF5A0A"}},"message":{{"fragnovaGenesis":"{}","op":"link","sender":"{}"}},"primaryType":"Msg","types":{{"EIP712Domain":[{{"name":"name","type":"string"}},{{"name":"version","type":"string"}},{{"name":"chainId","type":"uint256"}},{{"name":"verifyingContract","type":"address"}}],"Msg":[{{"name":"fragnovaGenesis","type":"string"}},{{"name":"op","type":"string"}},{{"name":"sender","type":"string"}}]}}}}"#, T::EthChainId::get(), genesis_hash, sender_string);
+
+			// TODO, THE ABOVE IS WRONG.
+			// We need to follow https://eips.ethereum.org/EIPS/eip-712 spec.. which is convoluted...
+
+			log::trace!("message: {}", message);
+
+			let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
+
+			let message_hash = keccak_256(message.as_bytes());
 
 			let recovered = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
-				.map_err(|_| Error::<T>::VerificationFailed)?; // Verify the `signature` for the message keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)
+				.map_err(|_| Error::<T>::VerificationFailed)?;
 
 			let eth_key = keccak_256(&recovered[..]);
+			let eth_key = keccak_256(&eth_key[1..]);
 			let eth_key = &eth_key[12..];
 			let eth_key = H160::from_slice(&eth_key[..]);
 
@@ -495,7 +507,7 @@ pub mod pallet {
 					if current_votes + 1u64 < threshold {
 						// Current Votes has not passed the threshold
 						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
-						return Ok(());
+						return Ok(())
 					} else {
 						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
 						// we are good to go, but let's remove the record
@@ -504,7 +516,7 @@ pub mod pallet {
 				} else {
 					// If key `data_hash` doesn't exist in EVMLinkVoting
 					<EVMLinkVoting<T>>::insert(&data_hash, 1);
-					return Ok(());
+					return Ok(())
 				}
 			}
 
@@ -688,7 +700,7 @@ pub mod pallet {
 					_ => {
 						log::debug!("Not a local transaction");
 						// Return TransactionValidityError˘ if the call is not allowed.
-						return InvalidTransaction::Call.into();
+						return InvalidTransaction::Call.into()
 					},
 				}
 
@@ -705,13 +717,13 @@ pub mod pallet {
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into(); // // 问Gio
+						return InvalidTransaction::BadSigner.into() // // 问Gio
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
 					// return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadSigner.into();
+					return InvalidTransaction::BadSigner.into()
 				}
 
 				// most expensive bit last
@@ -721,7 +733,7 @@ pub mod pallet {
 																	   // The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 
 				log::debug!("Sending frag lock update extrinsic");
@@ -785,7 +797,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth");
+				return Err("Failed to get response from geth")
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -834,7 +846,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth");
+				return Err("Failed to get response from geth")
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -953,7 +965,7 @@ pub mod pallet {
 				String::from_utf8(geth).unwrap()
 			} else {
 				log::debug!("No geth url found, skipping sync");
-				return; // It is fine to have a node not syncing with eth
+				return // It is fine to have a node not syncing with eth
 			};
 
 			let contracts = T::EthFragContract::get_partner_contracts();
@@ -969,10 +981,10 @@ pub mod pallet {
 		/// account address `account`**
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
 			if <EVMLinks<T>>::get(sender.clone()).ok_or(Error::<T>::AccountNotLinked)? != account {
-				return Err(Error::<T>::DifferentAccountLinked.into());
+				return Err(Error::<T>::DifferentAccountLinked.into())
 			}
 			if <EVMLinksReverse<T>>::get(account).ok_or(Error::<T>::AccountNotLinked)? != sender {
-				return Err(Error::<T>::DifferentAccountLinked.into());
+				return Err(Error::<T>::DifferentAccountLinked.into())
 			}
 
 			<EVMLinks<T>>::remove(sender.clone());

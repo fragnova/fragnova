@@ -534,7 +534,8 @@ pub mod pallet {
 
 			ensure!(!<Publishing<T>>::contains_key(&definition_hash), Error::<T>::SaleAlreadyOpen); // Ensure `definition_hash` isn't already published
 
-			let fragment_data = <Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?; // Get `FragmentDefinition` struct from `definition_hash`
+			let fragment_data =
+				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?; // Get `FragmentDefinition` struct from `definition_hash`
 
 			if let Some(max_supply) = fragment_data.max_supply {
 				let max: Unit = max_supply.into();
@@ -546,10 +547,10 @@ pub mod pallet {
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached); // Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				} else {
 					// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
-					return Err(Error::<T>::ParamsNotValid.into());
+					return Err(Error::<T>::ParamsNotValid.into())
 				}
 				if left == 0 {
-					return Err(Error::<T>::MaxSupplyReached.into());
+					return Err(Error::<T>::MaxSupplyReached.into())
 				}
 			}
 
@@ -565,7 +566,7 @@ pub mod pallet {
 				},
 			);
 
-			Self::deposit_event(Event::Publishing { definition_hash: definition_hash });
+			Self::deposit_event(Event::Publishing { definition_hash });
 
 			Ok(())
 		}
@@ -605,7 +606,7 @@ pub mod pallet {
 
 			<Publishing<T>>::remove(&definition_hash); // Remove Fragment Definition `definition_hash` from `Publishing`
 
-			Self::deposit_event(Event::Unpublishing { definition_hash: definition_hash });
+			Self::deposit_event(Event::Unpublishing { definition_hash });
 
 			Ok(())
 		}
@@ -714,7 +715,8 @@ pub mod pallet {
 
 			let price: u128 = sale.price.into();
 
-			let fragment_data = <Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
+			let fragment_data =
+				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
 
 			let vault = &Self::get_vault_id(definition_hash); // Get the Vault Account ID of `definition_hash`
 
@@ -732,13 +734,13 @@ pub mod pallet {
 					price.saturated_into();
 
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who)
-						>= price_balance + minimum_balance_needed_to_exist,
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who) >=
+						price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault) + price_balance
-						>= minimum_balance_needed_to_exist,
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault) +
+						price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			} else {
@@ -748,13 +750,13 @@ pub mod pallet {
 					price.saturated_into();
 
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who)
-						>= price_balance + minimum_balance_needed_to_exist,
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who) >=
+						price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault) + price_balance
-						>= minimum_balance_needed_to_exist,
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault) +
+						price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			}
@@ -789,7 +791,8 @@ pub mod pallet {
 					&vault,
 					price.saturated_into(),
 					ExistenceRequirement::KeepAlive,
-				).map_err(|_| Error::<T>::InsufficientBalance)?;
+				)
+				.map_err(|_| Error::<T>::InsufficientBalance)?;
 			}
 
 			Ok(())
@@ -834,8 +837,8 @@ pub mod pallet {
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-			let mut item_data =
-				<Fragments<T>>::get((definition_hash, edition, copy)).ok_or(Error::<T>::NotFound)?;
+			let mut item_data = <Fragments<T>>::get((definition_hash, edition, copy))
+				.ok_or(Error::<T>::NotFound)?;
 
 			// no go if will expire this block
 			if let Some(item_expiration) = item_data.expiring_at {
@@ -847,7 +850,8 @@ pub mod pallet {
 			}
 
 			// Only the owner of this fragment can transfer it
-			let ids = <Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
+			let ids =
+				<Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
 
 			ensure!(ids.contains(&(Compact(edition), Compact(copy))), Error::<T>::NoPermission);
 
@@ -889,8 +893,9 @@ pub mod pallet {
 				// we will copy the item to the new account
 				item_data.permissions = perms;
 
-				let copy: u64 =
-					<CopiesCount<T>>::get((definition_hash, edition)).ok_or(Error::<T>::NotFound)?.into();
+				let copy: u64 = <CopiesCount<T>>::get((definition_hash, edition))
+					.ok_or(Error::<T>::NotFound)?
+					.into();
 
 				let copy = copy + 1;
 
@@ -898,7 +903,11 @@ pub mod pallet {
 
 				<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition), Compact(copy)));
 
-				<Inventory<T>>::append(to.clone(), definition_hash, (Compact(edition), Compact(copy)));
+				<Inventory<T>>::append(
+					to.clone(),
+					definition_hash,
+					(Compact(edition), Compact(copy)),
+				);
 
 				// handle expiration
 				if let Some(expiring_at) = item_data.expiring_at {
@@ -912,17 +921,23 @@ pub mod pallet {
 					} else {
 						expiring_at
 					};
-					<Expirations<T>>::append(expiration, (definition_hash, Compact(edition), Compact(copy)));
+					<Expirations<T>>::append(
+						expiration,
+						(definition_hash, Compact(edition), Compact(copy)),
+					);
 				} else if let Some(expiration) = expiration {
 					item_data.expiring_at = Some(expiration);
-					<Expirations<T>>::append(expiration, (definition_hash, Compact(edition), Compact(copy)));
+					<Expirations<T>>::append(
+						expiration,
+						(definition_hash, Compact(edition), Compact(copy)),
+					);
 				}
 
 				<Fragments<T>>::insert((definition_hash, edition, copy), item_data);
 
 				Self::deposit_event(Event::InventoryAdded {
 					account_id: to,
-					definition_hash: definition_hash,
+					definition_hash,
 					fragment_id: (edition, copy),
 				});
 			} else {
@@ -941,17 +956,21 @@ pub mod pallet {
 
 				Self::deposit_event(Event::InventoryRemoved {
 					account_id: who.clone(),
-					definition_hash: definition_hash,
+					definition_hash,
 					fragment_id: (edition, copy),
 				});
 
 				<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition), Compact(copy)));
 
-				<Inventory<T>>::append(to.clone(), definition_hash, (Compact(edition), Compact(copy)));
+				<Inventory<T>>::append(
+					to.clone(),
+					definition_hash,
+					(Compact(edition), Compact(copy)),
+				);
 
 				Self::deposit_event(Event::InventoryAdded {
 					account_id: to,
-					definition_hash: definition_hash,
+					definition_hash,
 					fragment_id: (edition, copy),
 				});
 
@@ -985,7 +1004,8 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// Only the owner of this fragment can transfer it
-			let ids = <Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
+			let ids =
+				<Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
 
 			ensure!(ids.contains(&(Compact(edition), Compact(copy))), Error::<T>::NoPermission);
 
@@ -1045,7 +1065,7 @@ pub mod pallet {
 							});
 
 							// fragments are unique so we are done here
-							break;
+							break
 						}
 					}
 				}
@@ -1067,9 +1087,14 @@ impl<T: Config> Pallet<T> {
 	/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
 	///
 	/// This Account ID is determinstically computed using the Fragment Definition ID `class_hash`, the Edition ID `edition` and the Copy ID `copy`
-	pub fn get_fragment_account_id(definition_hash: Hash128, edition: Unit, copy: Unit) -> T::AccountId {
+	pub fn get_fragment_account_id(
+		definition_hash: Hash128,
+		edition: Unit,
+		copy: Unit,
+	) -> T::AccountId {
 		let hash = blake2_256(
-			&[&b"fragments-account"[..], &definition_hash, &edition.encode(), &copy.encode()].concat(),
+			&[&b"fragments-account"[..], &definition_hash, &edition.encode(), &copy.encode()]
+				.concat(),
 		);
 		T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 	}
@@ -1115,7 +1140,7 @@ impl<T: Config> Pallet<T> {
 		let (data_hash, data_len) = match options {
 			FragmentBuyOptions::UniqueData(data) => {
 				if fragment_data.unique.is_none() || quantity != 1 {
-					return Err(Error::<T>::ParamsNotValid.into());
+					return Err(Error::<T>::ParamsNotValid.into())
 				}
 
 				let data_hash = blake2_256(&data);
@@ -1129,7 +1154,7 @@ impl<T: Config> Pallet<T> {
 			},
 			FragmentBuyOptions::Quantity(_) => {
 				if fragment_data.unique.is_some() {
-					return Err(Error::<T>::ParamsNotValid.into());
+					return Err(Error::<T>::ParamsNotValid.into())
 				}
 
 				(None, None)
@@ -1142,7 +1167,7 @@ impl<T: Config> Pallet<T> {
 			// if limited amount let's reduce the amount of units left
 			if let Some(units_left) = sale.units_left {
 				if quantity > units_left.into() {
-					return Err(Error::<T>::PublishedQuantityReached.into());
+					return Err(Error::<T>::PublishedQuantityReached.into())
 				} else {
 					<Publishing<T>>::mutate(&*definition_hash, |sale| {
 						if let Some(sale) = sale {
@@ -1159,7 +1184,7 @@ impl<T: Config> Pallet<T> {
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 				if quantity > left {
 					// Ensure the function parameter `quantity` is smaller than or equal to `left`
-					return Err(Error::<T>::MaxSupplyReached.into());
+					return Err(Error::<T>::MaxSupplyReached.into())
 				}
 			}
 		}

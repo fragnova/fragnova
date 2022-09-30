@@ -98,7 +98,7 @@ pub struct GetProtosParams<TAccountId, TString> {
 	pub tags: Vec<TString>,
 	/// The returned Proto-Fragments must not have any tag that is specified in the `tags` field
 	pub exclude_tags: bool,
-  /// Whether the Proto-Fragments should be available or not
+	/// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
 }
 
@@ -455,7 +455,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-
 		/// **Patch** an **existing Proto-Fragment** (*by appending the hash of `data` to the Vector
 		/// field `patches` of the existing Proto-Fragment's Struct Instance*) Furthermore, this
 		/// function also indexes `data` in the Blockchain's Database and stores it in the IPFS
@@ -798,7 +797,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-
 		/// Delete Proto-Fragment `proto_hash` from all relevant Storage Items
 		#[pallet::weight(50_000)]
 		pub fn ban(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
@@ -867,7 +865,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue;
+							continue
 						}
 					}
 
@@ -885,7 +883,7 @@ pub mod pallet {
 								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
 							} else {
 								// Curation not found
-								return Err(Error::<T>::CurationNotFound.into());
+								return Err(Error::<T>::CurationNotFound.into())
 							}
 						},
 						UsageLicense::Contract(contract_address) => {
@@ -910,19 +908,19 @@ pub mod pallet {
 								let allowed = bool::decode(&mut &res.data.0[..]);
 								if let Ok(allowed) = allowed {
 									if !allowed {
-										return Err(Error::<T>::Unauthorized.into());
+										return Err(Error::<T>::Unauthorized.into())
 									}
 								} else {
-									return Err(Error::<T>::Unauthorized.into());
+									return Err(Error::<T>::Unauthorized.into())
 								}
 							} else {
-								return Err(Error::<T>::Unauthorized.into());
+								return Err(Error::<T>::Unauthorized.into())
 							}
 						},
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into());
+					return Err(Error::<T>::ReferenceNotFound.into())
 				}
 			}
 			Ok(())
@@ -938,16 +936,16 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.license == UsageLicense::Closed {
-						return false;
+						return false
 					} else if !avail && struct_proto.license != UsageLicense::Closed {
-						return false;
+						return false
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto, exclude_tags);
+					return Self::filter_tags(tags, &struct_proto, exclude_tags)
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories, exclude_tags);
+					return Self::filter_category(tags, &struct_proto, categories, exclude_tags)
 				}
 			} else {
 				false
@@ -982,40 +980,41 @@ pub mod pallet {
 
 							// Specific query:
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
-							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
+							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto, exclude_tags);
-								} else { return false; }
+									return Self::filter_tags(tags, struct_proto, exclude_tags)
+								} else {
+									return false
+								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
 							else if param_script_info.implementing.contains(&zero_vec) &&
-									param_script_info.requiring.contains(&zero_vec) &&
-									param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto, exclude_tags);
-							}
-							else {
-								return false;
+								param_script_info.requiring.contains(&zero_vec) &&
+								param_script_info.format == stored_script_info.format
+							{
+								return Self::filter_tags(tags, struct_proto, exclude_tags)
+							} else {
+								return false
 							}
 						} else {
 							// it should never go here
-							return false;
+							return false
 						}
 					},
-					_ => {
+					_ =>
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto, exclude_tags);
+							return Self::filter_tags(tags, struct_proto, exclude_tags)
 						} else {
-							return false;
-						}
-					},
+							return false
+						},
 				})
 				.collect();
 
 			if found.is_empty() {
-				return false;
+				return false
 			} else {
-				return true;
+				return true
 			}
 		}
 
@@ -1066,43 +1065,44 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-								let zero_vec = [0u8; 8];
+							let zero_vec = [0u8; 8];
 
-								// Specific query:
-								// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
-								if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
-									if param_script_info.format == stored_script_info.format {
-										return true;
-									} else { return false; }
+							// Specific query:
+							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
+							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
+								if param_script_info.format == stored_script_info.format {
+									return true
+								} else {
+									return false
 								}
-								// Generic query:
-								// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-								else if param_script_info.implementing.contains(&zero_vec) &&
-										param_script_info.requiring.contains(&zero_vec) &&
-										param_script_info.format == stored_script_info.format {
-										return true;
-								}
-								else if !(&cat == &category) {
-									return false;
+							}
+							// Generic query:
+							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
+							else if param_script_info.implementing.contains(&zero_vec) &&
+								param_script_info.requiring.contains(&zero_vec) &&
+								param_script_info.format == stored_script_info.format
+							{
+								return true
+							} else if !(&cat == &category) {
+								return false
 							} else {
-								return false;
+								return false
 							}
 						} else {
-							return false;
+							return false
 						}
 					},
 					// for all other types of Categories
-					_ => {
+					_ =>
 						if !(&cat == &category) {
-							return false;
+							return false
 						} else {
-							return true;
-						}
-					},
+							return true
+						},
 				})
 				.collect();
 
-			return found;
+			return found
 		}
 
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
@@ -1133,7 +1133,7 @@ pub mod pallet {
 									&params.tags,
 									&params.categories,
 									params.available,
-									params.exclude_tags
+									params.exclude_tags,
 								)
 							})
 							.skip(params.from as usize)
@@ -1149,7 +1149,7 @@ pub mod pallet {
 									&params.tags,
 									&params.categories,
 									params.available,
-									params.exclude_tags
+									params.exclude_tags,
 								)
 							})
 							.skip(params.from as usize)
@@ -1158,7 +1158,7 @@ pub mod pallet {
 					}
 				} else {
 					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into());
+					return Err("Owner not found".into())
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -1175,7 +1175,7 @@ pub mod pallet {
 						// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						if found.is_empty() {
-							continue;
+							continue
 						}
 					}
 					// Found the category.
@@ -1193,7 +1193,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										params.exclude_tags
+										params.exclude_tags,
 									)
 								})
 								.collect()
@@ -1207,7 +1207,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										params.exclude_tags
+										params.exclude_tags,
 									)
 								})
 								.collect()
@@ -1233,17 +1233,17 @@ pub mod pallet {
 						if let Ok(array_proto_id) = array_proto_id.try_into() {
 							array_proto_id
 						} else {
-							return Err("Failed to convert proto_id to Hash256".into());
+							return Err("Failed to convert proto_id to Hash256".into())
 						}
 					} else {
-						return Err("Failed to decode proto_id".into());
+						return Err("Failed to decode proto_id".into())
 					};
 
 					let (owner, map_metadata, license) =
 						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
 							(proto.owner, proto.metadata, proto.license)
 						} else {
-							return Err("Failed to get proto".into());
+							return Err("Failed to get proto".into())
 						};
 
 					let map_proto = match map_proto {

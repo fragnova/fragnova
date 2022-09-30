@@ -538,9 +538,7 @@ mod get_protos_tests {
 				metadata_keys: Vec::new(),
 				owner: None,
 				return_owners: true,
-				categories: vec![
-					Categories::Shards(shard_script),
-				],
+				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
 				exclude_tags: false,
 				available: Some(true),
@@ -894,7 +892,6 @@ mod get_protos_tests {
 			assert_eq!(result_string, json_expected);
 		});
 	}
-
 }
 mod patch_tests {
 	use super::*;
@@ -1153,8 +1150,8 @@ mod transfer_tests {
 			assert!(
 				<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
 					.unwrap()
-					.contains(&proto.get_proto_hash())
-					== false
+					.contains(&proto.get_proto_hash()) ==
+					false
 			);
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second))
 				.unwrap()
@@ -1427,18 +1424,12 @@ mod stake_tests {
 	}
 }
 
-
 mod ban_tests {
 
 	use super::*;
 
-	pub fn ban(
-		proto: &ProtoFragment,
-	) -> DispatchResult {
-		ProtosPallet::ban(
-			Origin::root(),
-			proto.get_proto_hash()
-		)
+	pub fn ban(proto: &ProtoFragment) -> DispatchResult {
+		ProtosPallet::ban(Origin::root(), proto.get_proto_hash())
 	}
 
 	#[test]
@@ -1448,16 +1439,12 @@ mod ban_tests {
 			let proto = dd.proto_fragment;
 			assert_ok!(upload(dd.account_id, &proto));
 			assert_ok!(ban(&proto));
-			assert!(
-				!<ProtosByCategory<Test>>::get(&proto.category)
-					.unwrap_or_default()
-					.contains(&proto.get_proto_hash())
-			);
-			assert!(
-				!<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
-					.unwrap_or_default()
-					.contains(&proto.get_proto_hash())
-			);
+			assert!(!<ProtosByCategory<Test>>::get(&proto.category)
+				.unwrap_or_default()
+				.contains(&proto.get_proto_hash()));
+			assert!(!<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
+				.unwrap_or_default()
+				.contains(&proto.get_proto_hash()));
 		});
 	}
 
@@ -1466,10 +1453,7 @@ mod ban_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 			let proto = dd.proto_fragment;
-			assert_noop!(
-				ban(&proto),
-				Error::<Test>::ProtoNotFound
-			);
+			assert_noop!(ban(&proto), Error::<Test>::ProtoNotFound);
 		});
 	}
 
