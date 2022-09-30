@@ -3,7 +3,8 @@
 //! The runtime for a Substrate node contains all of the business logic
 //! for executing transactions, saving state transitions, and interacting with the outer node.
 
-#![warn(missing_docs)]
+// Some of the Substrate Macros in this file throw missing_docs warnings. That's why we allow this file to have missing_docs.
+#![allow(missing_docs)]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
