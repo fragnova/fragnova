@@ -1,7 +1,7 @@
 //! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
-//!
+//!/**/
 //! A Proto-Fragment is a digital asset that can be used to build a game or application
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -467,7 +467,7 @@ pub mod pallet {
 		/// * `license` (optional) - If **this value** is **not None**, the **existing Proto-Fragment's current license** is overwritten to **this value**
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the
 		///   **patch**
-		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
+		/// * `new_tags` (optional) - If **this value** is **not None**, the **existing Proto-Fragment's current list of tags** is overwritten to **this value**
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn patch(

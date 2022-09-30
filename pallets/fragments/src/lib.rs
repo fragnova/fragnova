@@ -541,15 +541,15 @@ pub mod pallet {
 				let existing: Unit =
 					<EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
+				if left == 0 {
+					return Err(Error::<T>::MaxSupplyReached.into());
+				}
 				if let Some(quantity) = quantity {
 					let quantity: Unit = quantity.into();
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached); // Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				} else {
 					// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
 					return Err(Error::<T>::ParamsNotValid.into());
-				}
-				if left == 0 {
-					return Err(Error::<T>::MaxSupplyReached.into());
 				}
 			}
 

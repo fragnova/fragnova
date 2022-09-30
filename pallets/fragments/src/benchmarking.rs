@@ -47,5 +47,172 @@ benchmarks! {
 		assert_last_event::<T>(Event::<T>::DefinitionCreated { definition_hash: hash }.into())
 	}
 
+
+	create_benchmark { // Benchmark setup phase
+		let n in 1 .. 100; // `metadata.name` length
+		let c in 1 .. 1_000_000; // `metadata.currency`'s Asset ID number
+
+		// `whitelisted_caller()`'s DB operations will not be counted when we run the extrinsic
+		let caller: T::AccountId = whitelisted_caller();
+
+		let proto_data = b"Je suis Data".to_vec();
+		Protos::<T>::upload(
+			RawOrigin::Signed(caller.clone()).into(),
+			Vec::<Hash256>::new(),
+			Categories::Text(TextCategories::Plain),
+			Vec::<Vec<u8>>::new(),
+			None,
+			UsageLicense::Closed,
+			proto_data.clone()
+		)?;
+		let proto_hash = blake2_256(&proto_data);
+
+		let metadata = FragmentMetadata {
+			name: vec![7u8; n as usize],
+			currency: c,
+		};
+		let permissions: FragmentPerms = FragmentPerms::EDIT | FragmentPerms::TRANSFER;
+		let unique: Option<UniqueOptions> = Some(UniqueOptions { mutable: false});
+		let max_supply: Option<Unit> = Some(7);
+
+	}: create(RawOrigin::Signed(caller), proto_hash, metadata, permissions, unique, max_supply) // Execution phase
+	verify { // Optional verification phase
+		let definition_hash = blake2_128(
+			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
+		);
+		assert_last_event::<T>(Event::<T>::DefinitionCreated { definition_hash: definition_hash}.into())
+	}
+
+	publish_benchmark { // Benchmark setup phase
+		let caller: T::AccountId = whitelisted_caller();
+
+		let proto_data = b"Je suis Data".to_vec();
+		Protos::<T>::upload(
+			RawOrigin::Signed(caller.clone()).into(),
+			Vec::<Hash256>::new(),
+			Categories::Text(TextCategories::Plain),
+			Vec::<Vec<u8>>::new(),
+			None,
+			UsageLicense::Closed,
+			proto_data.clone()
+		)?;
+		let proto_hash = blake2_256(&proto_data);
+
+		let metadata = FragmentMetadata {
+			name: b"Je suis un Nom".to_vec(),
+			currency: None,
+		};
+		Fragments::<T>::create(
+			RawOrigin::Signed(caller),
+			proto_hash,
+			metadata
+			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
+			None,
+			// we make the Definition's `max_supply` Some,
+			// because this causes `publish()` to check if `max_supply` is exceeded
+			Some(7)
+		)
+		let definition_hash = blake2_128(
+			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
+		);
+
+		let price = 7u8;
+		let quantity = Some(7); // making `quantity` Some causes an if condition to execute
+		let expires: Option<T::BlockNumber> = Some(7);
+		let amount: Option<Unit> = Some(7);
+
+	}: publish(RawOrigin::Signed(caller), definition_hash, price, quantity, expires, amount) // Execution phase
+	verify { // Optional verification phase
+		assert_last_event::<T>(Event::<T>::Publishing { definition_hash: definition_hash}.into())
+	}
+
+	unpublish_benchmark { // Benchmark setup phase
+		let caller: T::AccountId = whitelisted_caller();
+
+		let proto_data = b"Je suis Data".to_vec();
+		Protos::<T>::upload(
+			RawOrigin::Signed(caller.clone()).into(),
+			Vec::<Hash256>::new(),
+			Categories::Text(TextCategories::Plain),
+			Vec::<Vec<u8>>::new(),
+			None,
+			UsageLicense::Closed,
+			proto_data.clone()
+		)?;
+		let proto_hash = blake2_256(&proto_data);
+
+		let metadata = FragmentMetadata {
+			name: b"Je suis un Nom".to_vec(),
+			currency: None,
+		};
+		Fragments::<T>::create(
+			RawOrigin::Signed(caller),
+			proto_hash,
+			metadata
+			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
+			None,
+			None
+		);
+		let definition_hash = blake2_128(
+			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
+		);
+		Fragments::<T>::publish(
+			RawOrigin::Signed(caller),
+			definition_hash,
+			7,
+			None,
+			None,
+			None
+		);
+
+	}: unpublish(RawOrigin::Signed(caller), definition_hash) // Execution phase
+	verify { // Optional verification phase
+		assert_last_event::<T>(Event::<T>::Unpublishing { definition_hash: definition_hash}.into())
+	}
+
+	mint_benchmark { // Benchmark setup phase
+		let caller: T::AccountId = whitelisted_caller();
+
+		let proto_data = b"Je suis Data".to_vec();
+		Protos::<T>::upload(
+			RawOrigin::Signed(caller.clone()).into(),
+			Vec::<Hash256>::new(),
+			Categories::Text(TextCategories::Plain),
+			Vec::<Vec<u8>>::new(),
+			None,
+			UsageLicense::Closed,
+			proto_data.clone()
+		)?;
+		let proto_hash = blake2_256(&proto_data);
+
+		let metadata = FragmentMetadata {
+			name: b"Je suis un Nom".to_vec(),
+			currency: None,
+		};
+		Fragments::<T>::create(
+			RawOrigin::Signed(caller),
+			proto_hash,
+			metadata
+			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
+			None,
+			// we make the Definition's `max_supply` Some,
+			// because this causes `publish()` to check if `max_supply` is exceeded
+			Some(7)
+		)
+		let definition_hash = blake2_128(
+			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
+		);
+
+		// TODO - create variable "options"
+		/// TODO - create variable "amount"
+
+
+	}: mint(RawOrigin::Signed(caller), definition_hash, options, amount) // Execution phase
+	verify { // Optional verification phase
+		assert_last_event::<T>(Event::<T>::Publishing { definition_hash: definition_hash}.into())
+	}
+
+
+
 	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);
 }
