@@ -1324,6 +1324,13 @@
 <span id="1324">1324</span>
 <span id="1325">1325</span>
 <span id="1326">1326</span>
+<span id="1327">1327</span>
+<span id="1328">1328</span>
+<span id="1329">1329</span>
+<span id="1330">1330</span>
+<span id="1331">1331</span>
+<span id="1332">1332</span>
+<span id="1333">1333</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1642,6 +1649,8 @@
 		</span>ReferenceNotFound,
 		<span class="doccomment">/// Not enough tokens to stake
 		</span>InsufficientBalance,
+		<span class="doccomment">/// Proto-Fragment&#39;s References includes itself!
+		</span>CircularReference,
 	}
 
 	<span class="comment">// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -1693,6 +1702,9 @@
 
 			<span class="comment">// make sure the proto does not exist already!
 			</span><span class="macro">ensure!</span>(!&lt;Protos&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::ProtoExists);
+
+			<span class="comment">// proto cannot refer itself!
+			</span><span class="macro">ensure!</span>(!references.contains(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::CircularReference);
 
 			<span class="comment">// we need this to index transactions
 			</span><span class="kw">let </span>extrinsic_index = &lt;frame_system::Pallet&lt;T&gt;&gt;::extrinsic_index()
@@ -1793,7 +1805,7 @@
 		/// * `license` (optional) - If **this value** is **not None**, the **existing Proto-Fragment&#39;s current license** is overwritten to **this value**
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the
 		///   **patch**
-		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
+		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment&#39;s current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
 		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::patch() + Weight::from_ref_time(data.len() <span class="kw">as </span>u64 * &lt;T <span class="kw">as </span>pallet::Config&gt;::StorageBytesMultiplier::get()))]
 		</span><span class="kw">pub fn </span>patch(
@@ -1802,7 +1814,7 @@
 			</span>proto_hash: Hash256,
 			license: <span class="prelude-ty">Option</span>&lt;UsageLicense&lt;T::AccountId&gt;&gt;,
 			new_references: Vec&lt;Hash256&gt;,
-			new_tags: <span class="prelude-ty">Option</span>&lt;Vec&lt;Vec&lt;u8&gt;&gt;&gt;,
+			tags: <span class="prelude-ty">Option</span>&lt;Vec&lt;Vec&lt;u8&gt;&gt;&gt;,
 			<span class="comment">// data we want to patch last because of the way we store blocks (storage chain)
 			</span>data: Vec&lt;u8&gt;,
 		) -&gt; DispatchResult {
@@ -1810,6 +1822,8 @@
 
 			<span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
 				&lt;Protos&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>proto_hash).ok_or(Error::&lt;T&gt;::ProtoNotFound)<span class="question-mark">?</span>;
+
+			<span class="macro">ensure!</span>(!new_references.contains(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::CircularReference);
 
 			<span class="kw">match </span>proto.owner {
 				ProtoOwner::User(owner) =&gt; <span class="macro">ensure!</span>(owner == who, Error::&lt;T&gt;::Unauthorized),
@@ -1856,8 +1870,8 @@
 				}
 
 				<span class="comment">// Replace previous tags if not None
-				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(new_tags) = new_tags {
-					<span class="kw">let </span>tags = new_tags
+				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(tags) = tags {
+					<span class="kw">let </span>tags = tags
 						.iter()
 						.map(|s| {
 							<span class="kw">let </span>tag_index = &lt;Tags&lt;T&gt;&gt;::get(s);
