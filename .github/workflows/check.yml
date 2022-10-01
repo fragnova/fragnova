@@ -17,9 +17,9 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - name: Setup
+      - name: Install the Necessary Packages
         run: |
           sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
 
@@ -38,9 +38,12 @@ jobs:
         with:
           node-version: '14'  # The node-version input is optional. If not supplied, the node version from PATH will be used. However, it is recommended to always specify Node.js version and don't rely on the system one.
 
-      - name: Test RPCs
+      - name: Check if Clamor Builds
         run: |
-          cargo build
+          RUSTFLAGS="-D missing-docs" cargo build --features runtime-benchmarks
+
+      - name: Check if all the Polkadot.js RPC tests pass
+        run: |
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
           sleep 10
           docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards shards /data/shards/test-protos-rpc.edn
@@ -52,32 +55,18 @@ jobs:
 
       - name: Run IPFS Test
         run: |
-          cargo build
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
           docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards sh /data/shards/run.sh
           kill %1
 
-      - name: Check Build
+      - name: Check if Tests Pass and Push to Codecov.io
         run: |
-          cargo check
-
-      - name: Check Build for Benchmarking
-        run: |
-          cargo check --features=runtime-benchmarks
-
-      - name: Check Test
-        run: |
-          cargo test --no-fail-fast
-
-
-      - name: Check if Rustdocs Builds
-        run: |
-          cargo doc
-
-      - name: Push to codecov.io
-        run: |
+          # cargo test --no-fail-fast
           cargo install cargo-tarpaulin
           cargo tarpaulin --out Xml
-          # bash <(curl -s https://codecov.io/bash) -X gcov -t $CODECOV_TOKEN
           bash <(curl -s https://codecov.io/bash) -f coverage/coverage.f.info || echo "Codecov did not collect coverage reports"
 
+
+      - name: Check if Rustdoc Builds
+        run: |
+          cargo doc --no-deps

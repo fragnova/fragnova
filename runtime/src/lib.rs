@@ -3,13 +3,16 @@
 //! The runtime for a Substrate node contains all of the business logic
 //! for executing transactions, saving state transitions, and interacting with the outer node.
 
+// Some of the Substrate Macros in this file throw missing_docs warnings. 
+// That's why we allow this file to have missing_docs.
+#![allow(missing_docs)]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+/// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
 #[cfg(feature = "std")]
-// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
@@ -116,9 +119,10 @@ pub mod opaque {
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
 
+	/// Implement OpaqueKeys for a described struct.
+	/// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
 	impl_opaque_keys! {
-		/// Implement OpaqueKeys for a described struct.
-		/// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
+		/// TODO: Documentation
 		pub struct SessionKeys {
 			/// TODO: Documentation
 			pub aura: Aura,
@@ -360,7 +364,7 @@ impl pallet_balances::Config for Runtime {
 	type IsTransferable = IsTransferable;
 }
 
-// Parameters related to calculating the Weight fee.
+/// Parameters related to calculating the Weight fee.
 parameter_types! {
 	/// The amount of balance a caller (here "caller" refers to a "smart-contract account") has to pay for each storage item.
 	///
@@ -657,31 +661,31 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
-// Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
-//
-// The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
-//
-// Each pallet is declared as such:
-//
-// - `Identifier`: name given to the pallet that uniquely identifies it.
-// - `:`: colon separator
-// - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
-// - `::{ Part1, Part2<T>, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
-// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
-// - `Pallet` - Required for all pallets
-// - `Call` - If the pallet has callable functions
-// - `Storage` - If the pallet uses storage
-// - `Event` or `Event<T>` (if the event is generic) - If the pallet emits events
-// - `Origin` or `Origin<T>` (if the origin is generic) - If the pallet has instanciable origins
-// - `Config` or `Config<T>` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
-// - `Inherent` - If the pallet provides/can check inherents.
-// - `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
-//
-//
-// NOTE #1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
-//
-// NOTE #2: The population of the genesis storage depends on the order of pallets.
-// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
+/// Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
+///
+/// The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
+///
+/// Each pallet is declared as such:
+///
+/// - `Identifier`: name given to the pallet that uniquely identifies it.
+/// - `:`: colon separator
+/// - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
+/// - `::{ Part1, Part2<T>, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
+/// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
+/// - `Pallet` - Required for all pallets
+/// - `Call` - If the pallet has callable functions
+/// - `Storage` - If the pallet uses storage
+/// - `Event` or `Event<T>` (if the event is generic) - If the pallet emits events
+/// - `Origin` or `Origin<T>` (if the origin is generic) - If the pallet has instanciable origins
+/// - `Config` or `Config<T>` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
+/// - `Inherent` - If the pallet provides/can check inherents.
+/// - `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
+///
+///
+/// NOTE #1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
+///
+/// NOTE #2: The population of the genesis storage depends on the order of pallets.
+/// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block, //  Block is the block type that is used in the runtime
@@ -738,43 +742,55 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 >;
 
-// Marks the given trait implementations as runtime apis.
-// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
+/// Marks the given trait implementations as runtime apis.
+///
+/// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
 impl_runtime_apis! {
 
+	/// TODO: Documentation
 	impl sp_api::Core<Block> for Runtime {
+		/// TODO: Documentation
 		fn version() -> RuntimeVersion {
 			VERSION
 		}
 
+		/// TODO: Documentation
 		fn execute_block(block: Block) {
 			Executive::execute_block(block);
 		}
 
+		/// TODO: Documentation
 		fn initialize_block(header: &<Block as BlockT>::Header) {
 			Executive::initialize_block(header)
 		}
 	}
 
+	/// TODO: Documentation
 	impl sp_api::Metadata<Block> for Runtime {
+		/// TODO: Documentation
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
+	/// TODO: Documentation
 	impl sp_block_builder::BlockBuilder<Block> for Runtime {
+		/// TODO: Documentation
 		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
 			Executive::apply_extrinsic(extrinsic)
 		}
 
+		/// TODO: Documentation
 		fn finalize_block() -> <Block as BlockT>::Header {
 			Executive::finalize_block()
 		}
 
+		/// TODO: Documentation
 		fn inherent_extrinsics(data: sp_inherents::InherentData) -> Vec<<Block as BlockT>::Extrinsic> {
 			data.create_extrinsics()
 		}
 
+		/// TODO: Documentation
 		fn check_inherents(
 			block: Block,
 			data: sp_inherents::InherentData,
@@ -783,7 +799,9 @@ impl_runtime_apis! {
 		}
 	}
 
+	/// TODO: Documentation
 	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
+		/// TODO: Documentation
 		fn validate_transaction(
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
@@ -811,27 +829,35 @@ impl_runtime_apis! {
 		}
 	}
 
+	/// TODO: Documentation
 	impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
+		/// TODO: Documentation
 		fn offchain_worker(header: &<Block as BlockT>::Header) {
 			Executive::offchain_worker(header)
 		}
 	}
 
+	/// TODO: Documentation
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+		/// TODO: Documentation
 		fn slot_duration() -> sp_consensus_aura::SlotDuration {
 			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
 		}
 
+		/// TODO: Documentation
 		fn authorities() -> Vec<AuraId> {
 			Aura::authorities().into_inner()
 		}
 	}
 
+	/// TODO: Documentation
 	impl sp_session::SessionKeys<Block> for Runtime {
+		/// TODO: Documentation
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
 			opaque::SessionKeys::generate(seed)
 		}
 
+		/// TODO: Documentation
 		fn decode_session_keys(
 			encoded: Vec<u8>,
 		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
@@ -839,15 +865,19 @@ impl_runtime_apis! {
 		}
 	}
 
+	/// TODO: Documentation
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
+		/// TODO: Documentation
 		fn grandpa_authorities() -> GrandpaAuthorityList {
 			Grandpa::grandpa_authorities()
 		}
 
+		/// TODO: Documentation
 		fn current_set_id() -> fg_primitives::SetId {
 			Grandpa::current_set_id()
 		}
 
+		/// TODO: Documentation
 		fn submit_report_equivocation_unsigned_extrinsic(
 			_equivocation_proof: fg_primitives::EquivocationProof<
 				<Block as BlockT>::Hash,
@@ -858,6 +888,7 @@ impl_runtime_apis! {
 			None
 		}
 
+		/// TODO: Documentation
 		fn generate_key_ownership_proof(
 			_set_id: fg_primitives::SetId,
 			_authority_id: GrandpaId,
@@ -869,13 +900,17 @@ impl_runtime_apis! {
 		}
 	}
 
+	/// TODO: Documentation
 	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
+		/// TODO: Documentation
 		fn account_nonce(account: AccountId) -> Index {
 			System::account_nonce(account)
 		}
 	}
 
+	/// TODO: Documentation
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
+		/// TODO: Documentation
 		fn query_info(
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
@@ -883,6 +918,7 @@ impl_runtime_apis! {
 			TransactionPayment::query_info(uxt, len)
 		}
 
+		/// TODO: Documentation
 		fn query_fee_details(
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
@@ -891,9 +927,11 @@ impl_runtime_apis! {
 		}
 	}
 
+	/// TODO: Documentation
 		impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
 		for Runtime
 	{
+		/// TODO: Documentation
 		fn call(
 			origin: AccountId,
 			dest: AccountId,
@@ -905,6 +943,7 @@ impl_runtime_apis! {
 			Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true)
 		}
 
+		/// TODO: Documentation
 		fn instantiate(
 			origin: AccountId,
 			value: Balance,
@@ -918,6 +957,7 @@ impl_runtime_apis! {
 			Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
 		}
 
+		/// TODO: Documentation
 		fn upload_code(
 			origin: AccountId,
 			code: Vec<u8>,
@@ -927,6 +967,7 @@ impl_runtime_apis! {
 			Contracts::bare_upload_code(origin, code, storage_deposit_limit)
 		}
 
+		/// TODO: Documentation
 		fn get_storage(
 			address: AccountId,
 			key: Vec<u8>,
@@ -935,14 +976,18 @@ impl_runtime_apis! {
 		}
 	}
 
+	/// TODO: Documentation
 	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, AccountId> for Runtime {
+		/// TODO: Documentation
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Protos::get_protos(params)
 		}
 	}
 
+	/// TODO: Documentation
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
+		/// TODO: Documentation
 		fn benchmark_metadata(extra: bool) -> (
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
@@ -973,6 +1018,7 @@ impl_runtime_apis! {
 			return (list, storage_info)
 		}
 
+		/// TODO: Documentation
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
