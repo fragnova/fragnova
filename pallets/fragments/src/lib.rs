@@ -657,7 +657,7 @@ pub mod pallet {
 
 			let quantity = match options {
 				// Number of fragment instances to mint
-				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
+				FragmentBuyOptions::Quantity(quantity) => u64::from(quantity),
 				_ => 1u64,
 			};
 
@@ -795,11 +795,11 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Give the **Fragment Instance whose Fragment Definition ID is `class`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
+		/// Give the **Fragment Instance whose Fragment Definition ID is `definition_hash`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
 		///
 		/// If the **current permitted actions of the Fragment Instance** allows for it to be duplicated (i.e if it has the permission **FragmentPerms::COPY**),
 		/// then it is duplicated and the duplicate's ownership is assigned to `to`.
-		/// Otherwise, its ownernship is transferred from `origin` to `to`.
+		/// Otherwise, its ownership is transferred from `origin` to `to`.
 		///
 		/// Note: **Only** the **Fragment Instance's owner** is **allowed** to give the Fragment Instance
 		///

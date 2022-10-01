@@ -1667,6 +1667,16 @@ mod give_tests {
 				.permissions,
 				give.new_permissions.unwrap()
 			);
+			assert_eq!(
+				<Fragments<Test>>::get((
+					give.mint.definition.get_definition_id(),
+					give.edition_id,
+					give.copy_id + 1
+				))
+				.unwrap()
+				.expiring_at, 
+				give.expiration.unwrap()
+			);
 
 			assert!(<Expirations<Test>>::get(&give.expiration.unwrap()).unwrap().contains(&(
 				give.mint.definition.get_definition_id(),
