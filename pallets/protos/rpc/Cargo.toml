@@ -21,22 +21,22 @@ protos = { version = "0.1.16", default-features = false }
 # Substrate Dependencies
 [dependencies.sp-api]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.29-1'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sp-runtime]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.29-1'
+tag = 'fragnova-v0.9.29-2'
 version = '6.0.0'
 
 [dependencies.sp-rpc]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.29-1'
+tag = 'fragnova-v0.9.29-2'
 version = '6.0.0'
 
 [dependencies.sp-blockchain]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.29-1'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.pallet-protos-rpc-runtime-api]

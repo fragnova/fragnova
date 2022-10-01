@@ -20,9 +20,8 @@ use codec::Codec;
 use pallet_protos::GetProtosParams;
 use sp_std::vec::Vec;
 
-/// Declares given traits as runtime apis
-///
-/// For more information, read: https://docs.rs/sp-api/latest/sp_api/macro.decl_runtime_apis.html
+// Declares given traits as runtime apis
+// For more information, read: https://docs.rs/sp-api/latest/sp_api/macro.decl_runtime_apis.html
 sp_api::decl_runtime_apis! {
 	/// The trait `ProtosApi` is declared to be a Runtime API
 	pub trait ProtosApi<AccountId>
