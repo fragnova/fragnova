@@ -62,7 +62,7 @@ jobs:
           # cargo test --no-fail-fast
           cargo install cargo-tarpaulin
           cargo tarpaulin --out Xml
-          bash <(curl -s https://codecov.io/bash) -f coverage/coverage.f.info || echo "Codecov did not collect coverage reports"
+          bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
 
 
       - name: Check if Rustdoc Builds
