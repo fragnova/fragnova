@@ -55,14 +55,15 @@ impl<C, P> FragmentsRpcServerImpl<C, P> {
 
 // Note that the trait name we use is `FragmentsRpcServer`, not `FragmentsRpc`!
 #[async_trait]
-impl<C, Block, AccountId> FragmentsRpcServer<<Block as BlockT>::Hash, AccountId> for FragmentsRpcServerImpl<C, Block>
-	where
-		Block: BlockT,
-		C: Send + Sync + 'static,
-		C: ProvideRuntimeApi<Block>,
-		C: HeaderBackend<Block>,
-		C::Api: FragmentsRuntimeApi<Block, AccountId>,
-		AccountId: Codec,
+impl<C, Block, AccountId> FragmentsRpcServer<<Block as BlockT>::Hash, AccountId>
+	for FragmentsRpcServerImpl<C, Block>
+where
+	Block: BlockT,
+	C: Send + Sync + 'static,
+	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block>,
+	C::Api: FragmentsRuntimeApi<Block, AccountId>,
+	AccountId: Codec,
 {
 	/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 	fn get_definitions(
@@ -136,5 +137,5 @@ fn runtime_error_into_rpc_err(err: impl std::fmt::Debug) -> JsonRpseeError {
 		"Runtime error",
 		Some(format!("{:?}", err)),
 	))
-		.into()
+	.into()
 }

@@ -202,7 +202,7 @@ mod create_tests {
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				69,
-				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+				true // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
 			));
 
 			assert_ok!(create(dd.account_id, &definition));
@@ -1159,7 +1159,7 @@ mod buy_tests {
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				minimum_balance,
-				true// The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+				true // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
 			));
 
 			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
@@ -1182,9 +1182,10 @@ mod buy_tests {
 		});
 	}
 
-
 	#[test]
-	fn buy_should_work_if_the_vault_id_of_fd_will_not_have_a_minimum_balance_of_the_asset_after_transaction() { // "fd" stands for fragment definition
+	fn buy_should_work_if_the_vault_id_of_fd_will_not_have_a_minimum_balance_of_the_asset_after_transaction(
+	) {
+		// "fd" stands for fragment definition
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -1223,7 +1224,9 @@ mod buy_tests {
 	}
 
 	#[test]
-	fn buy_should_not_work_if_the_vault_id_of_fd_will_not_have_a_minimum_balance_of_the_asset_after_transaction() { // "fd" stands for fragment definition
+	fn buy_should_not_work_if_the_vault_id_of_fd_will_not_have_a_minimum_balance_of_the_asset_after_transaction(
+	) {
+		// "fd" stands for fragment definition
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -1257,7 +1260,10 @@ mod buy_tests {
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			));
 
-			assert_noop!(buy_(dd.account_id_second, &buy), Error::<Test>::ReceiverBelowMinimumBalance);
+			assert_noop!(
+				buy_(dd.account_id_second, &buy),
+				Error::<Test>::ReceiverBelowMinimumBalance
+			);
 		});
 	}
 
@@ -2082,7 +2088,6 @@ mod create_account_tests {
 	}
 }
 
-
 mod get_definitions_tests {
 	use super::*;
 
@@ -2102,8 +2107,10 @@ mod get_definitions_tests {
 						limit: u64::MAX,
 						return_owners: true,
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
 						"name": String::from_utf8(definition.metadata.name).unwrap(),
@@ -2115,7 +2122,6 @@ mod get_definitions_tests {
 					}
 				})
 			);
-
 		});
 	}
 
@@ -2134,8 +2140,10 @@ mod get_definitions_tests {
 						owner: Some(dd.account_id),
 						return_owners: true,
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
 						"name": String::from_utf8(definition.metadata.name).unwrap(),
@@ -2147,9 +2155,7 @@ mod get_definitions_tests {
 					}
 				})
 			);
-
 		});
-
 	}
 
 	#[test]
@@ -2169,7 +2175,6 @@ mod get_definitions_tests {
 				}),
 				Err("Owner not found".into())
 			);
-
 		});
 	}
 }
@@ -2180,7 +2185,6 @@ mod get_instances_tests {
 
 	#[test]
 	fn get_instances_should_work() {
-
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 			let mint = dd.mint_non_unique;
@@ -2196,14 +2200,16 @@ mod get_instances_tests {
 			assert_eq!(
 				serde_json::from_slice::<Value>(
 					&FragmentsPallet::get_instances(GetInstancesParams {
-						definition_hash: hex::encode(mint.definition.get_definition_id()).into_bytes(),
+						definition_hash: hex::encode(mint.definition.get_definition_id())
+							.into_bytes(),
 						limit: u64::MAX,
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!(correct_map_instances)
 			)
-
 		});
 	}
 
@@ -2220,17 +2226,19 @@ mod get_instances_tests {
 			assert_eq!(
 				serde_json::from_slice::<Value>(
 					&FragmentsPallet::get_instances(GetInstancesParams {
-						definition_hash: hex::encode(give.mint.definition.get_definition_id()).into_bytes(),
+						definition_hash: hex::encode(give.mint.definition.get_definition_id())
+							.into_bytes(),
 						limit: u64::MAX,
 						only_return_first_copies: true,
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					"1.1": {},
 				})
 			);
-
 		});
 	}
 
@@ -2247,18 +2255,20 @@ mod get_instances_tests {
 			assert_eq!(
 				serde_json::from_slice::<Value>(
 					&FragmentsPallet::get_instances(GetInstancesParams {
-						definition_hash: hex::encode(give.mint.definition.get_definition_id()).into(),
+						definition_hash: hex::encode(give.mint.definition.get_definition_id())
+							.into(),
 						limit: u64::MAX,
 						only_return_first_copies: false,
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					"1.1": {},
 					"1.2": {},
 				})
 			);
-
 		});
 	}
 
@@ -2275,18 +2285,19 @@ mod get_instances_tests {
 			assert_eq!(
 				serde_json::from_slice::<Value>(
 					&FragmentsPallet::get_instances(GetInstancesParams {
-						definition_hash: hex::encode(give.mint.definition.get_definition_id()).into(),
+						definition_hash: hex::encode(give.mint.definition.get_definition_id())
+							.into(),
 						limit: u64::MAX,
 						owner: Some(give.to),
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					format!("{}.{}", give.edition_id, give.copy_id): {}
 				})
 			);
-
 		});
 	}
-
 }

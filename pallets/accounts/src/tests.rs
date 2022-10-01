@@ -29,12 +29,12 @@ mod link_tests {
 			assert_ok!(link_(&link));
 
 			assert!(
-				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap()
-					== link.get_recovered_ethereum_account_id()
+				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap() ==
+					link.get_recovered_ethereum_account_id()
 			);
 			assert!(
-				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap()
-					== link.clamor_account_id
+				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap() ==
+					link.clamor_account_id
 			);
 
 			assert!(<FragUsage<Test>>::get(&link.clamor_account_id).unwrap() == 0);
@@ -134,8 +134,8 @@ mod unlink_tests {
 
 			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
 			assert!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id())
-					== false
+				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()) ==
+					false
 			);
 
 			assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);
@@ -549,8 +549,8 @@ mod internal_lock_update_tests {
 
 			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
 			assert!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id())
-					== false
+				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()) ==
+					false
 			);
 
 			assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);

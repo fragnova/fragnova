@@ -3,10 +3,9 @@
 //! The runtime for a Substrate node contains all of the business logic
 //! for executing transactions, saving state transitions, and interacting with the outer node.
 
-// Some of the Substrate Macros in this file throw missing_docs warnings. 
+// Some of the Substrate Macros in this file throw missing_docs warnings.
 // That's why we allow this file to have missing_docs.
 #![allow(missing_docs)]
-
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
@@ -65,8 +64,8 @@ use scale_info::prelude::string::String;
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-use pallet_protos::GetProtosParams;
 use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
+use pallet_protos::GetProtosParams;
 
 pub use pallet_contracts::Schedule;
 
