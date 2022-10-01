@@ -317,7 +317,7 @@ pub mod pallet {
 		/// Not enough tokens to stake
 		InsufficientBalance,
 		/// Proto-Fragment's References includes itself!
-		ProtoInReferences,
+		CircularReference,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -371,7 +371,7 @@ pub mod pallet {
 			ensure!(!<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoExists);
 
 			// proto cannot refer itself!
-			ensure!(!references.contains(&proto_hash), Error::<T>::ProtoInReferences);
+			ensure!(!references.contains(&proto_hash), Error::<T>::CircularReference);
 
 			// we need this to index transactions
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
@@ -490,7 +490,7 @@ pub mod pallet {
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 
-			ensure!(!new_references.contains(&proto_hash), Error::<T>::ProtoInReferences);
+			ensure!(!new_references.contains(&proto_hash), Error::<T>::CircularReference);
 
 			match proto.owner {
 				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
