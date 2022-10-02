@@ -11,9 +11,9 @@ use protos::categories::{Categories, TextCategories};
 use sp_clamor::CID_PREFIX;
 use sp_io::hashing::blake2_256;
 
-const SEED: u32 = 0;
-
 use crate::Pallet as Protos;
+
+const SEED: u32 = 0;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
