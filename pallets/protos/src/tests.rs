@@ -205,7 +205,7 @@ mod upload_tests {
 
 			let proto_with_refs = ProtoFragment {
 				references: vec![stake.proto_fragment.get_proto_hash()],
-				..dd.proto_fragment
+				..dd.proto_fragment_second
 			};
 
 			assert_noop!(
@@ -1053,10 +1053,10 @@ mod patch_tests {
 			assert_ok!(lock_(&stake.lock));
 			assert_ok!(link_(&stake.lock.link));
 
-			assert_ok!(upload(stake.lock.link.clamor_account_id, &dd.proto_fragment));
+			assert_ok!(upload(stake.lock.link.clamor_account_id, &dd.proto_fragment_second));
 
 			let patch_with_refs = Patch {
-				proto_fragment: dd.proto_fragment,
+				proto_fragment: dd.proto_fragment_second,
 				include_cost: None,
 				new_references: vec![stake.proto_fragment.get_proto_hash()],
 				new_data: b"<insert anything here>".to_vec(),

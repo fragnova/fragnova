@@ -316,6 +316,8 @@ pub mod pallet {
 		ReferenceNotFound,
 		/// Not enough tokens to stake
 		InsufficientBalance,
+		/// Proto-Fragment's References includes itself!
+		CircularReference,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -367,6 +369,9 @@ pub mod pallet {
 
 			// make sure the proto does not exist already!
 			ensure!(!<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoExists);
+
+			// proto cannot refer itself!
+			ensure!(!references.contains(&proto_hash), Error::<T>::CircularReference);
 
 			// we need this to index transactions
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
@@ -467,7 +472,7 @@ pub mod pallet {
 		/// * `license` (optional) - If **this value** is **not None**, the **existing Proto-Fragment's current license** is overwritten to **this value**
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the
 		///   **patch**
-		/// * `new_tags` (optional) - If **this value** is **not None**, the **existing Proto-Fragment's current list of tags** is overwritten to **this value**
+		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment's current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn patch(
@@ -476,7 +481,7 @@ pub mod pallet {
 			proto_hash: Hash256,
 			license: Option<UsageLicense<T::AccountId>>,
 			new_references: Vec<Hash256>,
-			new_tags: Option<Vec<Vec<u8>>>,
+			tags: Option<Vec<Vec<u8>>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -484,6 +489,8 @@ pub mod pallet {
 
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+
+			ensure!(!new_references.contains(&proto_hash), Error::<T>::CircularReference);
 
 			match proto.owner {
 				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
@@ -530,8 +537,8 @@ pub mod pallet {
 				}
 
 				// Replace previous tags if not None
-				if let Some(new_tags) = new_tags {
-					let tags = new_tags
+				if let Some(tags) = tags {
+					let tags = tags
 						.iter()
 						.map(|s| {
 							let tag_index = <Tags<T>>::get(s);
