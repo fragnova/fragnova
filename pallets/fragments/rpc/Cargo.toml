@@ -1,10 +1,9 @@
 [package]
 authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
-description = 'Protos Asset Store pallet.'
+description = 'Implementation of the RPC functions related to Pallet Fragments'
 edition = '2021'
 license = 'BUSL-1.1'
-name = 'pallet-protos-rpc'
-readme = 'README.md'
+name = 'pallet-fragments-rpc'
 version = '0.0.1'
 
 [package.metadata.docs.rs]
@@ -16,7 +15,7 @@ jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 serde = { version = "1", features = ["derive"] }
 sp-clamor = { version = '0.1.0', path = '../../../primitives/clamor', default-features = false }
 hex = "^0.4.3"
-protos = { version = "0.1.16", default-features = false }
+protos = { version = "0.1.15", default-features = false }
 
 # Substrate Dependencies
 [dependencies.sp-api]
@@ -39,14 +38,14 @@ git = 'https://github.com/fragcolor-xyz/substrate.git'
 tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
-[dependencies.pallet-protos-rpc-runtime-api]
+[dependencies.pallet-fragments-rpc-runtime-api]
 path = '../rpc/runtime-api'
 version = '0.0.1'
 
 [dev-dependencies]
 serde_json = "1"
 
-[dependencies.pallet-protos]
+[dependencies.pallet-fragments]
 default-features = false
 path = '..'
 version = '0.0.1'

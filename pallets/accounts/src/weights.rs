@@ -57,15 +57,15 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Protos UploadAuthorities (r:1 w:1)
 	fn add_upload_auth() -> Weight {
-		(3_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(3_000_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Protos UploadAuthorities (r:1 w:1)
 	fn del_upload_auth() -> Weight {
-		(4_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(4_000_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Protos UserNonces (r:1 w:1)
 	// Storage: Protos UploadAuthorities (r:1 w:0)
@@ -74,9 +74,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Protos ProtosByCategory (r:1 w:1)
 	// Storage: Protos ProtosByOwner (r:1 w:1)
 	fn upload() -> Weight {
-		(158_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+		Weight::from_ref_time(158_000_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(6 as u64))
+			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	// Storage: Protos UserNonces (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:1)
@@ -84,25 +84,25 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Protos UploadAuthorities (r:1 w:0)
 	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
 	fn patch() -> Weight {
-		(162_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		Weight::from_ref_time(162_000_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(5 as u64))
+			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Detach DetachRequests (r:1 w:1)
 	fn detach() -> Weight {
-		(8_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(8_000_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(3 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Protos ProtosByOwner (r:2 w:2)
 	fn transfer() -> Weight {
-		(21_000_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		Weight::from_ref_time(21_000_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(4 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 }
 
@@ -110,15 +110,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
 	// Storage: Protos UploadAuthorities (r:1 w:1)
 	fn add_upload_auth() -> Weight {
-		(3_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(3_000_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Protos UploadAuthorities (r:1 w:1)
 	fn del_upload_auth() -> Weight {
-		(4_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(4_000_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Protos UserNonces (r:1 w:1)
 	// Storage: Protos UploadAuthorities (r:1 w:0)
@@ -127,9 +127,9 @@ impl WeightInfo for () {
 	// Storage: Protos ProtosByCategory (r:1 w:1)
 	// Storage: Protos ProtosByOwner (r:1 w:1)
 	fn upload() -> Weight {
-		(158_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+		Weight::from_ref_time(158_000_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(6 as u64))
+			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
 	// Storage: Protos UserNonces (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:1)
@@ -137,24 +137,24 @@ impl WeightInfo for () {
 	// Storage: Protos UploadAuthorities (r:1 w:0)
 	// Storage: unknown [0x3a65787472696e7369635f696e646578] (r:1 w:0)
 	fn patch() -> Weight {
-		(162_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+		Weight::from_ref_time(162_000_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(5 as u64))
+			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 	// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Detach DetachRequests (r:1 w:1)
 	fn detach() -> Weight {
-		(8_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(8_000_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(3 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Protos ProtosByOwner (r:2 w:2)
 	fn transfer() -> Weight {
-		(21_000_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		Weight::from_ref_time(21_000_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(4 as u64))
+			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 }

@@ -1,4 +1,4 @@
-//! This package declares the Runtime APIs related to Pallet Protos.
+//! This package declares the Runtime APIs related to Pallet Fragments.
 //!
 //! A Runtime API facilitates this kind of communication between the outer node and the runtime
 //!
@@ -17,20 +17,22 @@
 
 use codec::Codec;
 
-use pallet_protos::{GetProtosParams, GetGenealogy};
+use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
 use sp_std::vec::Vec;
 
 // Declares given traits as runtime apis
+//
 // For more information, read: https://docs.rs/sp-api/latest/sp_api/macro.decl_runtime_apis.html
 sp_api::decl_runtime_apis! {
-	/// The trait `ProtosRuntimeApi` is declared to be a Runtime API
-	pub trait ProtosRuntimeApi<AccountId>
+	/// The trait `FragmentsRuntimeApi` is declared to be a Runtime API
+	pub trait FragmentsRuntimeApi<AccountId>
 	where
 		AccountId: Codec
 	{
-		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
-		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
-		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
-		fn get_genealogy(params: GetGenealogy<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+		/// **Query** and **Return** **Fragmnent Definition(s)** based on **`params`**
+		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+
+		/// **Query** and **Return** **Fragmnent Instance(s)** based on **`params`**
+		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
 	}
 }

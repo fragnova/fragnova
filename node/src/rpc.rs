@@ -51,11 +51,13 @@ where
 	C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: pallet_protos_rpc::ProtosRuntimeApi<Block, AccountId>,
+	C::Api: pallet_fragments_rpc::FragmentsRuntimeApi<Block, AccountId>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + 'static,
 {
 	use pallet_contracts_rpc::{Contracts, ContractsApiServer};
-	use pallet_protos_rpc::{ProtosRpcServerImpl, ProtosRpcServer};
+	use pallet_protos_rpc::{ProtosRpcServer, ProtosRpcServerImpl};
+	use pallet_fragments_rpc::{FragmentsRpcServer, FragmentsRpcServerImpl};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_rpc::dev::{Dev, DevApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
@@ -73,6 +75,8 @@ where
 	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
 	io.merge(ProtosRpcServerImpl::new(client).into_rpc())?;
+
+	io.merge(FragmentsRpcServerImpl::new(client).into_rpc())?;
 
 	Ok(io)
 }

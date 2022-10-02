@@ -3,8 +3,9 @@
 //! The runtime for a Substrate node contains all of the business logic
 //! for executing transactions, saving state transitions, and interacting with the outer node.
 
-#![warn(missing_docs)]
-
+// Some of the Substrate Macros in this file throw missing_docs warnings.
+// That's why we allow this file to have missing_docs.
+#![allow(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
@@ -63,11 +64,10 @@ use scale_info::prelude::string::String;
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-/// Import the fragments pallet.
-pub use pallet_protos;
+use pallet_protos::{GetProtosParams, GetGenealogy};
+use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
 
 pub use pallet_contracts::Schedule;
-use pallet_protos::{GetProtosParams, GetGenealogy};
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.
@@ -194,7 +194,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_mul(2);
 
 // When to use:
 //
@@ -396,7 +396,7 @@ parameter_types! {
 	/// The maximum number of contracts that can be pending for deletion.
 	pub const DeletionQueueDepth: u32 = 1024;
 	/// The maximum amount of weight that can be consumed per block for lazy trie removal.
-	pub const DeletionWeightLimit: Weight = 500_000_000_000;
+	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
 	// pub const MaxCodeSize: u32 = 2 * 1024;
 	/// Cost schedule and limits.
 	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
@@ -666,27 +666,32 @@ impl pallet_assets::Config for Runtime {
 //
 // The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
 //
-// Each pallet is declared as such:
+// Each pallet is declared like **"<Identifier>: <path::to::pallet>[<::{Part1, Part<T>, ..}>]"**, where:
 //
 // - `Identifier`: name given to the pallet that uniquely identifies it.
 // - `:`: colon separator
 // - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
-// - `::{ Part1, Part2<T>, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
-// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
-// - `Pallet` - Required for all pallets
-// - `Call` - If the pallet has callable functions
-// - `Storage` - If the pallet uses storage
-// - `Event` or `Event<T>` (if the event is generic) - If the pallet emits events
-// - `Origin` or `Origin<T>` (if the origin is generic) - If the pallet has instanciable origins
-// - `Config` or `Config<T>` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
-// - `Inherent` - If the pallet provides/can check inherents.
-// - `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
+// - `::{ Part1, Part2<T>, .. }` (optional if the pallet was declared with a `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
+
+// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**.
+//  We provide support for the following module parts in a pallet:
+//
+// 	- `Pallet` - Required for all pallets
+// 	- `Call` - If the pallet has callable functions
+// 	- `Storage` - If the pallet uses storage
+// 	- `Event` or `Event<T>` (if the event is generic) - If the pallet emits events
+// 	- `Origin` or `Origin<T>` (if the origin is generic) - If the pallet has instanciable origins
+// 	- `Config` or `Config<T>` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
+// 	- `Inherent` - If the pallet provides/can check inherents.
+// 	- `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
 //
 //
-// NOTE #1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
+// IMP NOTE 1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
 //
-// NOTE #2: The population of the genesis storage depends on the order of pallets.
+// IMP NOTE 2: The population of the genesis storage depends on the order of pallets.
 // So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
+//
+// V IMP NOTE 3: The order that the pallets appear in this macro determines its pallet index
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block, //  Block is the block type that is used in the runtime
@@ -706,6 +711,7 @@ construct_runtime!(
 		// Our additions
 		Indices: pallet_indices,
 		Contracts: pallet_contracts,
+		// Since this is the 11th pallet that's defined in this macro, its pallet index is "11"
 		Protos: pallet_protos,
 		Fragments: pallet_fragments,
 		Detach: pallet_detach,
@@ -941,7 +947,7 @@ impl_runtime_apis! {
 			storage_deposit_limit: Option<Balance>,
 			input_data: Vec<u8>,
 		) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
+			Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true)
 		}
 
 		/// TODO: Documentation
@@ -955,7 +961,7 @@ impl_runtime_apis! {
 			salt: Vec<u8>,
 		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
 		{
-			Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+			Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
 		}
 
 		/// TODO: Documentation
@@ -986,6 +992,16 @@ impl_runtime_apis! {
 		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
 		fn get_genealogy(params: GetGenealogy<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Protos::get_genealogy(params)
+		}
+	}
+
+	/// TODO: Documentation
+	impl pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi<Block, AccountId> for Runtime {
+		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+			Fragments::get_definitions(params)
+		}
+		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+			Fragments::get_instances(params)
 		}
 	}
 

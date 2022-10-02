@@ -85,14 +85,14 @@ where
 			available: params.available,
 		};
 
-		let result = api.get_protos(&at, params_no_std).map(|list_bytes| {
+		let result_outer = api.get_protos(&at, params_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
 		});
-		match result {
+		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
-			Ok(result) => match result {
+			Ok(result_outer) => match result_outer {
 				Err(e) => Err(runtime_error_into_rpc_err(e)),
-				Ok(result) => Ok(result),
+				Ok(result_inner) => Ok(result_inner),
 			},
 		}
 	}

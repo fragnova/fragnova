@@ -17,6 +17,7 @@ use clamor_runtime::{
 	GenesisConfig, GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
+use serde_json;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{ecdsa, ed25519, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
@@ -75,6 +76,17 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId, UploadId, EthId,
 	)
 }
 
+fn chain_spec_properties() -> serde_json::map::Map<String, serde_json::Value> {
+	serde_json::json!({
+		"ss58Format": 93,
+		"tokenDecimals": 12,
+		"tokenSymbol": "NOVA"
+	})
+	.as_object()
+	.expect("Map given; qed")
+	.clone()
+}
+
 /// Returns the `ChainSpec` struct used when for starting/joining a Clamor Development Network
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
@@ -111,7 +123,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 		None,
 		None,
 		// Properties
-		None,
+		Some(chain_spec_properties()),
 		// Extensions
 		None,
 	))
@@ -160,7 +172,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 		None,
 		None,
 		// Properties
-		None,
+		Some(chain_spec_properties()),
 		// Extensions
 		None,
 	))
@@ -201,7 +213,7 @@ pub fn live_config() -> Result<ChainSpec, String> {
 		None,
 		None,
 		// Properties
-		None,
+		Some(chain_spec_properties()),
 		// Extensions
 		None,
 	))
