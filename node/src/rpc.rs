@@ -74,7 +74,7 @@ where
 
 	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
-	io.merge(ProtosRpcServerImpl::new(client).into_rpc())?;
+	io.merge(ProtosRpcServerImpl::new(client.clone()).into_rpc())?;
 
 	io.merge(FragmentsRpcServerImpl::new(client).into_rpc())?;
 
