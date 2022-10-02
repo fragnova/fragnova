@@ -2,7 +2,7 @@
 
 use super::*;
 #[allow(unused)]
-use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
+use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_protos::UsageLicense;
 use protos::{
@@ -15,10 +15,7 @@ use sp_io::hashing::blake2_128;
 use crate::Pallet as Fragments;
 use pallet_protos::Pallet as Protos;
 
-const PROTO_HASH: Hash256 = [
-	30, 138, 136, 186, 232, 46, 112, 65, 122, 54, 110, 89, 123, 195, 7, 150, 12, 134, 10, 179, 245,
-	51, 83, 227, 72, 251, 5, 148, 207, 251, 119, 59,
-];
+const SEED: u32 = 0;
 
 const MAX_DATA_LENGTH: u32 = 1_000_000; // 1 MegaByte
 
@@ -33,27 +30,6 @@ benchmarks! {
 	where_clause { where
 		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>
 	}
-
-	create {
-		let caller: T::AccountId = whitelisted_caller();
-		let immutable_data = vec![0u8; 1 as usize];
-		let proto_hash = blake2_256(immutable_data.as_slice());
-		let references = vec![PROTO_HASH];
-		pallet_protos::Pallet::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, UsageLicense::Closed, immutable_data.clone())?;
-		let fragment_data = FragmentMetadata {
-			name: "name".as_bytes().to_vec(),
-			currency: None,
-		};
-
-		let hash = blake2_128(
-			&[&proto_hash[..], &fragment_data.name.encode(), &fragment_data.currency.encode()].concat(),
-		);
-
-	}: _(RawOrigin::Signed(caller.clone()), proto_hash, fragment_data, FragmentPerms::NONE, None, None)
-	verify {
-		assert_last_event::<T>(Event::<T>::DefinitionCreated { definition_hash: hash }.into())
-	}
-
 
 	create_benchmark { // Benchmark setup phase
 		let n in 1 .. 100; // `metadata.name` length
@@ -219,7 +195,7 @@ benchmarks! {
 		for edition_id in 1..=q {
 			assert_has_event::<T>(
 				Event::<T>::InventoryAdded {
-					account_id: caller,
+					account_id: caller.clone(),
 					definition_hash: definition_hash,
 					fragment_id: (edition_id.into(), 1)
 				}.into()
@@ -305,7 +281,7 @@ benchmarks! {
 			None, // non-unique
 			// we make the Definition's `max_supply` Some,
 			// because this causes `mint()` to check if `max_supply` is exceeded
-			Some(q.into() + 1).map(|ms| ms.into())
+			Some(q + 1).map(|ms| ms.into())
 		)?;
 		let definition_hash = blake2_128(
 			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
@@ -331,7 +307,7 @@ benchmarks! {
 		for edition_id in 1..=q {
 			assert_has_event::<T>(
 				Event::<T>::InventoryAdded {
-					account_id: caller,
+					account_id: caller.clone(),
 					definition_hash: definition_hash,
 					fragment_id: (edition_id.into(), 1)
 				}.into()
@@ -441,13 +417,13 @@ benchmarks! {
 
 		let edition = 1;
 		let copy = 1;
-		let to: T::AccountId = account("Sample", 100, SEED);
+		let to = T::Lookup::unlookup(account("Sample", 100, SEED));
 		// by making `new_permissions` Some, it executes an extra if-statement block
 		let new_permissions = Some(FragmentPerms::TRANSFER);
 		// whether `expiration` is Some or None doesn't make a difference to the extrinsic time, if the instance doesn't have the copy permission
 		let expiration = Some(T::BlockNumber::from(7u32));
 
-	}: give(RawOrigin::Signed(caller), definition_hash, edition, copy, to, new_permissions, expiration) // Execution phase
+	}: give(RawOrigin::Signed(caller.clone()), definition_hash, edition, copy, to.clone(), new_permissions, expiration) // Execution phase
 	verify { // Optional verification phase
 		assert_has_event::<T>(
 			Event::<T>::InventoryRemoved {
@@ -458,7 +434,7 @@ benchmarks! {
 		);
 		assert_has_event::<T>(
 			Event::<T>::InventoryAdded {
-				account_id: to,
+				account_id: T::Lookup::lookup(to).unwrap(),
 				definition_hash: definition_hash,
 				fragment_id: (1, 1)
 			}.into()
@@ -506,14 +482,14 @@ benchmarks! {
 
 		let edition = 1;
 		let copy = 1;
-		let to: T::AccountId = account("Sample", 100, SEED);
+		let to = T::Lookup::unlookup(account("Sample", 100, SEED));
 		// by making `new_permissions` Some, it executes an extra if-statement block
 		let new_permissions = Some(FragmentPerms::TRANSFER);
 		// by making `expiration` Some, it causes an extra DB write operation (only if instance has copy perms).
 		// This aforementioned DB write operation adds a key to the StorageMap `Expirations`
 		let expiration = Some(T::BlockNumber::from(7u32));
 
-	}: give(RawOrigin::Signed(caller), definition_hash, edition, copy, to.clone(), new_permissions, expiration) // Execution phase
+	}: give(RawOrigin::Signed(caller.clone()), definition_hash, edition, copy, to.clone(), new_permissions, expiration) // Execution phase
 	verify { // Optional verification phase
 		assert_has_event::<T>(
 			Event::<T>::InventoryRemoved {
@@ -524,7 +500,7 @@ benchmarks! {
 		);
 		assert_has_event::<T>(
 			Event::<T>::InventoryAdded {
-				account_id: to,
+				account_id: T::Lookup::lookup(to).unwrap(),
 				definition_hash: definition_hash,
 				fragment_id: (1, 1)
 			}.into()
