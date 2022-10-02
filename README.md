@@ -31,7 +31,7 @@ cargo build
 
 Run the following command from the root folder of Clamor project:
 ```
-RUST_LOG=bitswap=trace,pallet_protos::pallet=trace,pallet_frag::pallet=trace,pallet_fragments::pallet=trace cargo run -- --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server  
+RUST_LOG=bitswap=trace,pallet_protos::pallet=trace,pallet_frag::pallet=trace,pallet_fragments::pallet=trace cargo run -- --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server
 ```
 
 If you want to run the Clamor node with a [chain specification](https://docs.substrate.io/v3/runtime/chain-specs/) instead, use this script:
@@ -44,7 +44,7 @@ cargo run -- --chain=spec_raw.json --validator --rpc-external --rpc-port 9933 --
 To run all the unit tests:
 ```
 cargo test
-``` 
+```
 ## Run the rpc tests in Javascript
 To run the Javascript rpc tests, which calls the APIs provided by Clamor and are located in `/clamor/rpc/test/protosTest.js` you need to:
 1. run the local node (described [above](#run-a-local-node))
@@ -55,7 +55,7 @@ To run the Javascript rpc tests, which calls the APIs provided by Clamor and are
 
 ### Uploading test data into the node using Docker
 
-Once you have a Clamor node running locally you can programatically upload test data to it with the following script (using the Docker image of [Shards](https://docs.fragcolor.xyz/shards/)):
+Once you have a Clamor node running locally you can programmatically upload test data to it with the following script (using the Docker image of [Shards](https://docs.fragcolor.xyz/shards/)):
 
 ```
 docker run --rm --user root --network host -v `pwd`:/data chainblocks/shards shards /data/shards/add-test-assets.edn

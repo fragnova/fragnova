@@ -126,7 +126,13 @@ impl DummyData {
 			data: "0x222".as_bytes().to_vec(),
 		};
 
-		let records1 = vec![("int1".to_string(), RecordInfo::SingleType(VariableTypeInfo { type_: VariableType::Int, default: Some(Vec::new()) }))];
+		let records1 = vec![(
+			"int1".to_string(),
+			RecordInfo::SingleType(VariableTypeInfo {
+				type_: VariableType::Int,
+				default: Some(Vec::new()),
+			}),
+		)];
 		let trait1 = Trait { name: "Trait1".to_string(), records: records1 };
 
 		let data_trait = twox_64(&trait1.encode());
@@ -140,7 +146,13 @@ impl DummyData {
 			data: trait1.encode(),
 		};
 
-		let records2 = vec![("int2".to_string(), RecordInfo::SingleType(VariableTypeInfo { type_: VariableType::Int, default: Some(Vec::new()) }))];
+		let records2 = vec![(
+			"int2".to_string(),
+			RecordInfo::SingleType(VariableTypeInfo {
+				type_: VariableType::Int,
+				default: Some(Vec::new()),
+			}),
+		)];
 
 		let trait2 = Trait { name: "Trait2".to_string(), records: records2 };
 
@@ -155,7 +167,13 @@ impl DummyData {
 			data: trait2.encode(),
 		};
 
-		let records3 = vec![("int3".to_string(), RecordInfo::SingleType(VariableTypeInfo { type_: VariableType::Int, default: Some(Vec::new()) }))];
+		let records3 = vec![(
+			"int3".to_string(),
+			RecordInfo::SingleType(VariableTypeInfo {
+				type_: VariableType::Int,
+				default: Some(Vec::new()),
+			}),
+		)];
 
 		let trait3 = Trait { name: "Trait3".to_string(), records: records3 };
 		let data_trait_3 = twox_64(&trait3.encode());
@@ -235,41 +253,20 @@ impl DummyData {
 		};
 
 		let patch = Patch {
-			proto_fragment: ProtoFragment {
-				references: Vec::new(),
-				category: Categories::Text(TextCategories::Plain),
-				tags: Vec::new(),
-				linked_asset: None,
-				include_cost: Some(3),
-				data: "0x333".as_bytes().to_vec(),
-			},
+			proto_fragment: proto.clone(),
 			include_cost: Some(123),
 			new_references: Vec::new(),
 			new_data: b"<Insert Anything Here>".to_vec(),
 		};
 
 		let metadata = Metadata {
-			proto_fragment: ProtoFragment {
-				references: Vec::new(),
-				category: Categories::Text(TextCategories::Plain),
-				tags: Vec::new(),
-				linked_asset: None,
-				include_cost: Some(4),
-				data: "0x444".as_bytes().to_vec(),
-			},
+			proto_fragment: proto.clone(),
 			metadata_key: b"json_description".to_vec(),
 			data: b"{\"name\": \"ram\"}".to_vec(),
 		};
 
 		let stake = Stake {
-			proto_fragment: ProtoFragment {
-				references: Vec::new(),
-				category: Categories::Text(TextCategories::Plain),
-				tags: Vec::new(),
-				linked_asset: None,
-				include_cost: Some(5),
-				data: "0x555".as_bytes().to_vec(),
-			},
+			proto_fragment: proto.clone(),
 			lock: Lock {
 				data: pallet_accounts::EthLockUpdate {
 					public: sp_core::ed25519::Public([69u8; 32]),
