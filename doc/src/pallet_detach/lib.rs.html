@@ -1065,7 +1065,7 @@
 					TransactionSource::InBlock | TransactionSource::Local =&gt; {},
 					<span class="kw">_ </span>=&gt; {
 						<span class="macro">log::debug!</span>(<span class="string">&quot;Not a local transaction&quot;</span>);
-						<span class="kw">return </span>InvalidTransaction::Call.into();
+						<span class="kw">return </span>InvalidTransaction::Call.into()
 					},
 				}
 
@@ -1081,18 +1081,18 @@
 					{
 						pub_key
 					} <span class="kw">else </span>{
-						<span class="kw">return </span>InvalidTransaction::BadSigner.into();
+						<span class="kw">return </span>InvalidTransaction::BadSigner.into()
 					}
 				};
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Public key: {:?}&quot;</span>, pub_key);
 				<span class="kw">if </span>!valid_keys.contains(<span class="kw-2">&amp;</span>pub_key) {
-					<span class="kw">return </span>InvalidTransaction::BadSigner.into(); <span class="comment">// 问Gio
+					<span class="kw">return </span>InvalidTransaction::BadSigner.into() <span class="comment">// 问Gio
 				</span>}
 				<span class="comment">// most expensive bit last
 				</span><span class="kw">let </span>signature_valid =
 					SignedPayload::&lt;T&gt;::verify::&lt;T::AuthorityId&gt;(data, signature.clone()); <span class="comment">// Verifying a Data with a Signature Returns a Public Key
 				</span><span class="kw">if </span>!signature_valid {
-					<span class="kw">return </span>InvalidTransaction::BadProof.into();
+					<span class="kw">return </span>InvalidTransaction::BadProof.into()
 				}
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Sending detach finalization extrinsic&quot;</span>);
 				ValidTransaction::with_tag_prefix(<span class="string">&quot;Detach&quot;</span>) <span class="comment">// The tag prefix prevents other nodes to do the same transaction that have the same tag prefixes
@@ -1159,9 +1159,9 @@
 						<span class="macro">log::debug!</span>(<span class="string">&quot;Got {} detach requests&quot;</span>, requests.len());
 						<span class="kw">for </span>request <span class="kw">in </span>requests {
 							<span class="kw">let </span>values = <span class="kw">match </span>request.target_chain {
-								SupportedChains::EthereumMainnet
-								| SupportedChains::EthereumRinkeby
-								| SupportedChains::EthereumGoerli =&gt; {
+								SupportedChains::EthereumMainnet |
+								SupportedChains::EthereumRinkeby |
+								SupportedChains::EthereumGoerli =&gt; {
 									<span class="comment">// Get ECDSA public keys from Local Storage.
 									// If no key exist, return an empty BTreeSet&lt;ed25519::Public&gt; to be filled with keys
 									// This storage_ref key does not exist when the blockchain is first launched
@@ -1217,7 +1217,7 @@
 										<span class="self">Self</span>::add_chainid_to_payload(<span class="kw-2">&amp;</span>request, <span class="kw-2">&amp;mut </span>payload);
 
 										<span class="kw">if </span>request.target_account.len() != <span class="number">20 </span>{
-											<span class="kw">return </span><span class="prelude-val">Err</span>(FAILED);
+											<span class="kw">return </span><span class="prelude-val">Err</span>(FAILED)
 										}
 										<span class="self">Self</span>::add_target_account_to_payload(<span class="kw-2">&amp;</span>request, <span class="kw-2">&amp;mut </span>payload);
 
@@ -1367,4 +1367,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_detach" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8ce3204af 2022-09-30)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_detach" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (57f097ea2 2022-10-01)" ></div></body></html>

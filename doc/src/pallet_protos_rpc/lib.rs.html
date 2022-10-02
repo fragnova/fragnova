@@ -173,14 +173,14 @@
 			available: params.available,
 		};
 
-		<span class="kw">let </span>result = api.get_protos(<span class="kw-2">&amp;</span>at, params_no_std).map(|list_bytes| {
+		<span class="kw">let </span>result_outer = api.get_protos(<span class="kw-2">&amp;</span>at, params_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from(<span class="string">&quot;&quot;</span>)))
 		});
-		<span class="kw">match </span>result {
+		<span class="kw">match </span>result_outer {
 			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
-			<span class="prelude-val">Ok</span>(result) =&gt; <span class="kw">match </span>result {
+			<span class="prelude-val">Ok</span>(result_outer) =&gt; <span class="kw">match </span>result_outer {
 				<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
-				<span class="prelude-val">Ok</span>(result) =&gt; <span class="prelude-val">Ok</span>(result),
+				<span class="prelude-val">Ok</span>(result_inner) =&gt; <span class="prelude-val">Ok</span>(result_inner),
 			},
 		}
 	}
@@ -195,4 +195,4 @@
 	.into()
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8ce3204af 2022-09-30)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (57f097ea2 2022-10-01)" ></div></body></html>

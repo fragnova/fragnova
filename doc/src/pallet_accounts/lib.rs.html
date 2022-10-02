@@ -988,7 +988,6 @@
 <span id="988">988</span>
 <span id="989">989</span>
 <span id="990">990</span>
-<span id="991">991</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `frag` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
@@ -1329,7 +1328,6 @@
 	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
 	</span><span class="attribute">#[pallet::call]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-
 		<span class="doccomment">/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
@@ -1486,7 +1484,7 @@
 					</span><span class="kw">if </span>current_votes + <span class="number">1u64 </span>&lt; threshold {
 						<span class="comment">// Current Votes has not passed the threshold
 						</span>&lt;EVMLinkVoting&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>data_hash, current_votes + <span class="number">1</span>);
-						<span class="kw">return </span><span class="prelude-val">Ok</span>(());
+						<span class="kw">return </span><span class="prelude-val">Ok</span>(())
 					} <span class="kw">else </span>{
 						<span class="comment">// Current votes passes the threshold, let&#39;s remove EVMLinkVoting perque perque non! (问Gio)
 						// we are good to go, but let&#39;s remove the record
@@ -1495,7 +1493,7 @@
 				} <span class="kw">else </span>{
 					<span class="comment">// If key `data_hash` doesn&#39;t exist in EVMLinkVoting
 					</span>&lt;EVMLinkVoting&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>data_hash, <span class="number">1</span>);
-					<span class="kw">return </span><span class="prelude-val">Ok</span>(());
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(())
 				}
 			}
 
@@ -1679,7 +1677,7 @@
 					<span class="kw">_ </span>=&gt; {
 						<span class="macro">log::debug!</span>(<span class="string">&quot;Not a local transaction&quot;</span>);
 						<span class="comment">// Return TransactionValidityError˘ if the call is not allowed.
-						</span><span class="kw">return </span>InvalidTransaction::Call.into();
+						</span><span class="kw">return </span>InvalidTransaction::Call.into()
 					},
 				}
 
@@ -1696,13 +1694,13 @@
 						pub_key
 					} <span class="kw">else </span>{
 						<span class="comment">// Return TransactionValidityError if the call is not allowed.
-						</span><span class="kw">return </span>InvalidTransaction::BadSigner.into(); <span class="comment">// // 问Gio
+						</span><span class="kw">return </span>InvalidTransaction::BadSigner.into() <span class="comment">// // 问Gio
 					</span>}
 				};
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Public key: {:?}&quot;</span>, pub_key);
 				<span class="kw">if </span>!valid_keys.contains(<span class="kw-2">&amp;</span>pub_key) {
 					<span class="comment">// return TransactionValidityError if the call is not allowed.
-					</span><span class="kw">return </span>InvalidTransaction::BadSigner.into();
+					</span><span class="kw">return </span>InvalidTransaction::BadSigner.into()
 				}
 
 				<span class="comment">// most expensive bit last
@@ -1712,7 +1710,7 @@
 																	   // The provided signature does not match the public key used to sign the payload
 				</span><span class="kw">if </span>!signature_valid {
 					<span class="comment">// Return TransactionValidityError if the call is not allowed.
-					</span><span class="kw">return </span>InvalidTransaction::BadProof.into();
+					</span><span class="kw">return </span>InvalidTransaction::BadProof.into()
 				}
 
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Sending frag lock update extrinsic&quot;</span>);
@@ -1776,7 +1774,7 @@
 			</span><span class="kw">let </span>response_body = <span class="kw">if let </span><span class="prelude-val">Ok</span>(response) = response_body {
 				response
 			} <span class="kw">else </span>{
-				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
+				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>)
 			};
 
 			<span class="kw">let </span>response = String::from_utf8(response_body).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
@@ -1825,7 +1823,7 @@
 			</span><span class="kw">let </span>response_body = <span class="kw">if let </span><span class="prelude-val">Ok</span>(response) = response_body {
 				response
 			} <span class="kw">else </span>{
-				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
+				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>)
 			};
 
 			<span class="kw">let </span>response = String::from_utf8(response_body).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
@@ -1944,7 +1942,7 @@
 				String::from_utf8(geth).unwrap()
 			} <span class="kw">else </span>{
 				<span class="macro">log::debug!</span>(<span class="string">&quot;No geth url found, skipping sync&quot;</span>);
-				<span class="kw">return</span>; <span class="comment">// It is fine to have a node not syncing with eth
+				<span class="kw">return </span><span class="comment">// It is fine to have a node not syncing with eth
 			</span>};
 
 			<span class="kw">let </span>contracts = T::EthFragContract::get_partner_contracts();
@@ -1960,10 +1958,10 @@
 		/// account address `account`**
 		</span><span class="kw">fn </span>unlink_account(sender: T::AccountId, account: H160) -&gt; DispatchResult {
 			<span class="kw">if </span>&lt;EVMLinks&lt;T&gt;&gt;::get(sender.clone()).ok_or(Error::&lt;T&gt;::AccountNotLinked)<span class="question-mark">? </span>!= account {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into())
 			}
 			<span class="kw">if </span>&lt;EVMLinksReverse&lt;T&gt;&gt;::get(account).ok_or(Error::&lt;T&gt;::AccountNotLinked)<span class="question-mark">? </span>!= sender {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into())
 			}
 
 			&lt;EVMLinks&lt;T&gt;&gt;::remove(sender.clone());
@@ -1981,4 +1979,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8ce3204af 2022-09-30)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (57f097ea2 2022-10-01)" ></div></body></html>

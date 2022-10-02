@@ -1064,15 +1064,28 @@
 <span id="1064">1064</span>
 <span id="1065">1065</span>
 <span id="1066">1066</span>
+<span id="1067">1067</span>
+<span id="1068">1068</span>
+<span id="1069">1069</span>
+<span id="1070">1070</span>
+<span id="1071">1071</span>
+<span id="1072">1072</span>
+<span id="1073">1073</span>
+<span id="1074">1074</span>
+<span id="1075">1075</span>
+<span id="1076">1076</span>
+<span id="1077">1077</span>
+<span id="1078">1078</span>
+<span id="1079">1079</span>
+<span id="1080">1080</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
 //! for executing transactions, saving state transitions, and interacting with the outer node.
 
-</span><span class="comment">// Some of the Substrate Macros in this file throw missing_docs warnings. 
+</span><span class="comment">// Some of the Substrate Macros in this file throw missing_docs warnings.
 // That&#39;s why we allow this file to have missing_docs.
 </span><span class="attribute">#![allow(missing_docs)]
-
 #![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attribute">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
@@ -1131,11 +1144,10 @@
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-<span class="doccomment">/// Import the fragments pallet.
-</span><span class="kw">pub use </span>pallet_protos;
+<span class="kw">use </span>pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
+<span class="kw">use </span>pallet_protos::GetProtosParams;
 
 <span class="kw">pub use </span>pallet_contracts::Schedule;
-<span class="kw">use </span>pallet_protos::GetProtosParams;
 
 <span class="doccomment">/// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.
@@ -1727,31 +1739,36 @@
 	<span class="kw">type </span>WeightInfo = pallet_assets::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
-<span class="doccomment">/// Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
-///
-/// The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
-///
-/// Each pallet is declared as such:
-///
-/// - `Identifier`: name given to the pallet that uniquely identifies it.
-/// - `:`: colon separator
-/// - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
-/// - `::{ Part1, Part2&lt;T&gt;, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
-/// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
-/// - `Pallet` - Required for all pallets
-/// - `Call` - If the pallet has callable functions
-/// - `Storage` - If the pallet uses storage
-/// - `Event` or `Event&lt;T&gt;` (if the event is generic) - If the pallet emits events
-/// - `Origin` or `Origin&lt;T&gt;` (if the origin is generic) - If the pallet has instanciable origins
-/// - `Config` or `Config&lt;T&gt;` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
-/// - `Inherent` - If the pallet provides/can check inherents.
-/// - `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
-///
-///
-/// NOTE #1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet&lt;Runtime&gt;`
-///
-/// NOTE #2: The population of the genesis storage depends on the order of pallets.
-/// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
+<span class="comment">// Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
+//
+// The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
+//
+// Each pallet is declared like **&quot;&lt;Identifier&gt;: &lt;path::to::pallet&gt;[&lt;::{Part1, Part&lt;T&gt;, ..}&gt;]&quot;**, where:
+//
+// - `Identifier`: name given to the pallet that uniquely identifies it.
+// - `:`: colon separator
+// - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
+// - `::{ Part1, Part2&lt;T&gt;, .. }` (optional if the pallet was declared with a `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
+
+// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**.
+//  We provide support for the following module parts in a pallet:
+//
+// 	- `Pallet` - Required for all pallets
+// 	- `Call` - If the pallet has callable functions
+// 	- `Storage` - If the pallet uses storage
+// 	- `Event` or `Event&lt;T&gt;` (if the event is generic) - If the pallet emits events
+// 	- `Origin` or `Origin&lt;T&gt;` (if the origin is generic) - If the pallet has instanciable origins
+// 	- `Config` or `Config&lt;T&gt;` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
+// 	- `Inherent` - If the pallet provides/can check inherents.
+// 	- `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
+//
+//
+// IMP NOTE 1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet&lt;Runtime&gt;`
+//
+// IMP NOTE 2: The population of the genesis storage depends on the order of pallets.
+// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
+//
+// V IMP NOTE 3: The order that the pallets appear in this macro determines its pallet index
 </span><span class="macro">construct_runtime!</span>(
 	<span class="kw">pub enum </span>Runtime <span class="kw">where
 		</span>Block = Block, <span class="comment">//  Block is the block type that is used in the runtime
@@ -1771,7 +1788,8 @@
 		<span class="comment">// Our additions
 		</span>Indices: pallet_indices,
 		Contracts: pallet_contracts,
-		Protos: pallet_protos,
+		<span class="comment">// Since this is the 11th pallet that&#39;s defined in this macro, its pallet index is &quot;11&quot;
+		</span>Protos: pallet_protos,
 		Fragments: pallet_fragments,
 		Detach: pallet_detach,
 		Multisig: pallet_multisig,
@@ -2051,6 +2069,16 @@
 	}
 
 	<span class="doccomment">/// TODO: Documentation
+	</span><span class="kw">impl </span>pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi&lt;Block, AccountId&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>get_definitions(params: GetDefinitionsParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
+			Fragments::get_definitions(params)
+		}
+		<span class="kw">fn </span>get_instances(params: GetInstancesParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
+			Fragments::get_instances(params)
+		}
+	}
+
+	<span class="doccomment">/// TODO: Documentation
 	</span><span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 	</span><span class="kw">impl </span>frame_benchmarking::Benchmark&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="doccomment">/// TODO: Documentation
@@ -2129,5 +2157,6 @@
 			<span class="prelude-val">Ok</span>(batches)
 		}
 	}
-}</code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8ce3204af 2022-09-30)" ></div></body></html>
+}
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (57f097ea2 2022-10-01)" ></div></body></html>

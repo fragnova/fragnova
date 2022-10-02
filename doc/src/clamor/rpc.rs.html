@@ -76,6 +76,10 @@
 <span id="76">76</span>
 <span id="77">77</span>
 <span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A collection of node-specific RPC methods.
 //!
 //! Since `substrate` core functionality makes no assumptions
@@ -129,10 +133,12 @@
 	C::Api: pallet_contracts_rpc::ContractsRuntimeApi&lt;Block, AccountId, Balance, BlockNumber, Hash&gt;,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;,
 	C::Api: pallet_protos_rpc::ProtosRuntimeApi&lt;Block, AccountId&gt;,
+	C::Api: pallet_fragments_rpc::FragmentsRuntimeApi&lt;Block, AccountId&gt;,
 	C::Api: BlockBuilder&lt;Block&gt;,
 	P: TransactionPool + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">use </span>pallet_contracts_rpc::{Contracts, ContractsApiServer};
+	<span class="kw">use </span>pallet_fragments_rpc::{FragmentsRpcServer, FragmentsRpcServerImpl};
 	<span class="kw">use </span>pallet_protos_rpc::{Protos, ProtosApiServer};
 	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	<span class="kw">use </span>sc_rpc::dev::{Dev, DevApiServer};
@@ -150,9 +156,11 @@
 
 	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())<span class="question-mark">?</span>;
 
-	io.merge(Protos::new(client).into_rpc())<span class="question-mark">?</span>;
+	io.merge(Protos::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+
+	io.merge(FragmentsRpcServerImpl::new(client).into_rpc())<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(io)
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8ce3204af 2022-09-30)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (57f097ea2 2022-10-01)" ></div></body></html>

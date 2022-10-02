@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"trait":[["FragmentsRuntimeApi","The trait `FragmentsRuntimeApi` is declared to be a Runtime API"]]};

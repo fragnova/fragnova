@@ -285,11 +285,11 @@
 	GenesisConfig, GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 <span class="kw">use </span>sc_service::ChainType;
+<span class="kw">use </span>serde_json;
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
 <span class="kw">use </span>sp_core::{ecdsa, ed25519, sr25519, Pair, Public};
 <span class="kw">use </span>sp_finality_grandpa::AuthorityId <span class="kw">as </span>GrandpaId;
 <span class="kw">use </span>sp_runtime::traits::{IdentifyAccount, Verify};
-<span class="kw">use </span>serde_json;
 
 <span class="doccomment">/// TODO: Documentation
 </span><span class="kw">pub type </span>UploadId = ecdsa::Public;
@@ -350,9 +350,9 @@
 		<span class="string">&quot;tokenDecimals&quot;</span>: <span class="number">12</span>,
 		<span class="string">&quot;tokenSymbol&quot;</span>: <span class="string">&quot;NOVA&quot;
 	</span>})
-		.as_object()
-		.expect(<span class="string">&quot;Map given; qed&quot;</span>)
-		.clone()
+	.as_object()
+	.expect(<span class="string">&quot;Map given; qed&quot;</span>)
+	.clone()
 }
 
 <span class="doccomment">/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Development Network
@@ -535,4 +535,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8ce3204af 2022-09-30)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (57f097ea2 2022-10-01)" ></div></body></html>

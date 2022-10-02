@@ -397,8 +397,8 @@
 					<span class="kw">let </span>len =
 						offchain::http_response_read_body(request, <span class="kw-2">&amp;mut </span>buffer, <span class="prelude-val">None</span>).unwrap();
 					<span class="kw">if </span>len == <span class="number">0 </span>{
-						<span class="kw">break</span>;
-					}
+						<span class="kw">break
+					</span>}
 					response_body.extend_from_slice(<span class="kw-2">&amp;</span>buffer[..len <span class="kw">as </span>usize]);
 				}
 				<span class="prelude-val">Ok</span>(response_body)
@@ -427,4 +427,4 @@
 	TAccountId::decode(<span class="kw-2">&amp;mut &amp;</span>who[..])
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sp_clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8ce3204af 2022-09-30)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sp_clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (57f097ea2 2022-10-01)" ></div></body></html>
