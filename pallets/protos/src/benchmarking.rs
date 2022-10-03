@@ -33,6 +33,9 @@ benchmarks! {
 		let r in 1 .. MAX_REFERENCES_LENGTH; // `references` length
 		let t in 1 .. MAX_TAGS_LENGTH; // `tags` length
 		let d in 1 .. MAX_DATA_LENGTH; // `data` length
+		// `whitelisted_caller()` is a special function from `frame_benchmark`
+		// that returns an account whose DB operations (for e.g taking the fee from the account, or updating the nonce)
+		// will not be counted for when we run the extrinsic
 		let caller: T::AccountId = whitelisted_caller();
 
 		let references: Vec<Hash256> = (0 .. r).into_iter().map(|i| -> Result<Hash256, sp_runtime::DispatchError> {
