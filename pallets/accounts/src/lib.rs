@@ -187,6 +187,7 @@ pub mod pallet {
 	use frame_support::{
 		dispatch::DispatchResult, pallet_prelude::*, traits::fungible::Unbalanced, Twox64Concat,
 	};
+	use frame_support::traits::fungibles::Inspect;
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::Zero;
 	use sp_runtime::SaturatedConversion;
@@ -586,7 +587,6 @@ pub mod pallet {
 			 */
 			let percentage_amount = Self::apply_20_percent(data_amount);
 
-			// TODO - apply mechanism of periodic vesting of NOVA and Tickets
 			let nova_amount: <T as pallet_balances::Config>::Balance = percentage_amount.saturated_into();
 			let tickets_amount: <T as pallet_assets::Config>::Balance = percentage_amount.saturated_into();
 
@@ -652,7 +652,7 @@ pub mod pallet {
 					first_lock_block_num = event.first_lock;
 				},
 				// if it is the first lock event, then use current_block_number set before
-				None => {}
+				_ => {}
 			}
 			<EthLockedFrag<T>>::insert(
 				sender.clone(),
@@ -1095,6 +1095,33 @@ pub mod pallet {
 				return 0
 			}
 			amount * 20 / 100
+		}
+
+		fn get_oracle_price() -> u128 {
+			1 // Assume the current price of 1 FRAG = 1 USD
+			// TODO implement Oracle
+		}
+
+		fn redeem_vested_tickets(sender: H160) {
+			let locked_frag = <EthLockedFrag<T>>::get(&sender);
+			if let Some(locked_frag) = locked_frag {
+				let first_lock = locked_frag.first_lock;
+				let total_frag_locked_amount = locked_frag.amount;
+				let lock_period = locked_frag.lock_period;
+				let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+				let clamor_account = <EVMLinksReverse<T>>::get(&sender);
+
+				if let Some(account) = clamor_account {
+					let ticket_balance = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(
+						<T as Config>::TicketsAssetId::get(),
+						&account,
+					);
+					let blocks_vested_so_far = current_block_number - first_lock;
+				}
+
+
+			}
 		}
 
 	}
