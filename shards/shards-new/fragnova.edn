@@ -1,0 +1,136 @@
+(def RPC-SERVER "http://127.0.0.1:9933")
+(def WS-SERVER-ADDR "127.0.0.1")
+(def WS-SERVER-PORT 9944)
+(def WS-SERVER-SECURE false)
+
+(def RUNTIME-SPEC-VERSION 2)
+(def TRANSACTION-VERSION 1)
+
+(defshards chain-get-block-hash [block-number]
+  {"id" 1 "jsonrpc" "2.0" "method" "chain_getBlockHash" "params" [block-number]}
+  (ToJson) (Http.Post RPC-SERVER)
+  (FromJson) (ExpectTable) (Take "result")
+  (ExpectString) (HexToBytes))
+
+
+(defwire Substrate.CreateSerializedTransaction ; same format as: https://wiki.polkadot.network/docs/build-transaction-construction
+  .call-data (ExpectBytes)
+
+  ; signer
+  ; multiaddress enum
+  [0 .pub-key] (Substrate.Encode ["u8" "a"]) = .signer
+
+  ; extra data to be signed
+  ; [era nonce weight]
+  ; use 0 u8 for era to have an immortal transaction
+  [0 .fragnova-nonce 0] (Substrate.Encode ["u8" "c" "c"]) = .extra-data
+
+  ; additional data to be signed
+  ; [RUNTIME-SPEC-VERSION TRANSACTION-VERSION genesis-hash genesis-or-current-hash]
+  [RUNTIME-SPEC-VERSION TRANSACTION-VERSION] (Substrate.Encode ["u32" "u32"]) >= .additional-data
+  .node-genesis-hash (AppendTo .additional-data) (AppendTo .additional-data) ; twice
+
+  .call-data >= .signed-payload
+  .extra-data (AppendTo .signed-payload)
+  .additional-data (AppendTo .signed-payload)
+  (Count .signed-payload)
+  (If (IsMore 256)
+      ; use hashed version if longer/bigger than 256
+      (-> .signed-payload (Hash.Blake2-256))
+      (-> .signed-payload))
+  (Sr25519.Sign (get Fragnova-Account :private-key)) >= .signature
+  ; add enum index 1
+  "0x01" (HexToBytes) (PrependTo .signature)
+
+  [0x84] (Substrate.Encode ["u8"]) >= .serialized-transaction
+  .signer (AppendTo .serialized-transaction)
+  .signature (AppendTo .serialized-transaction)
+  .extra-data (AppendTo .serialized-transaction)
+
+  .serialized-transaction (ToHex)
+
+  .call-data (AppendTo .serialized-transaction)
+  [.serialized-transaction] (Substrate.Encode [nil]) (ToHex) = .serialized-transaction-hex
+
+  .serialized-transaction-hex)
+
+(defwire get-storage-map
+  = .storage-key
+  [.pallet-name .map-name .storage-key] (Substrate.StorageMap true) (ToHex) (Log "Full query") > .account-info-query
+  {"id" 1 "jsonrpc" "2.0" "method" "state_getStorage" "params" [.account-info-query]} (ToJson)
+  (Http.Post RPC-SERVER) (Log "get-storage-map")
+  (FromJson) (ExpectTable) (Take "result"))
+
+(defwire send-signed-extrinsic-as-ws-request
+  (ExpectBytes) = .call-data
+  (Do Substrate.CreateSerializedTransaction) (ExpectString) = .seriaized-transaction
+
+  ; increase rpc index
+  (Math.Inc .fragnova-rpc-index)
+  .fragnova-rpc-index (Log "fragnova-rpc-index")
+
+  ; increase nonce
+  (Math.Inc .fragnova-nonce)
+  .fragnova-nonce (Log "fragnova-nonce")
+
+  {"id" .fragnova-rpc-index "jsonrpc" "2.0" "method" "author_submitAndWatchExtrinsic" "params" [.rpc-data-hex]} (ToJson) (WS.WriteString .fragnova-ws-client))
+
+(defwire send-signed-extrinsic-as-http-request
+  (ExpectBytes) = .call-data
+  (Do Substrate.CreateSerializedTransaction) (ExpectString) = .seriaized-transaction
+
+  ; increase nonce
+  (Math.Inc .fragnova-nonce)
+  .fragnova-nonce (Log "fragnova-nonce")
+
+  {"id" 1 "jsonrpc" "2.0" "method" "author_submitExtrinsic" "params" [.seriaized-transaction]} (ToJson) (Http.Post RPC-SERVER) (FromJson))
+
+(defwire get-header
+  = .get-header-block-hash
+  {"id" 1 "jsonrpc" "2.0" "method" "chain_getHeader" "params" [.get-header-block-hash]}
+  (ToJson) (Http.Post RPC-SERVER)
+  (FromJson) (ExpectTable) (Take "result") (ExpectTable))
+
+
+(defloop get-node-genesis-hash
+  (Setup
+   100 >= .tries)
+  (Maybe (->
+          (chain-get-block-hash 0)
+          (Stop))
+         (->
+          (Math.Dec .tries)
+          (Pause 2.0)))
+  .tries (Assert.IsNot 0)
+  (Log "Waiting for port"))
+
+
+(deftrait Fragnova-Node
+  ; Set the variables `.fragnova-rpc-index` and `.fragnova-nonce`
+  :setup
+  (->
+
+   (Do get-node-genesis-hash) (ExpectBytes) = .node-genesis-hash ; ensure the node is up and running
+
+   0 >== .fragnova-rpc-index ; make it global so Spawn won't copy it ; `.fragnova-rpc-index` is the number of RPC calls made so far by the account
+
+   (get Fragnova-Account :private-key) (Sr25519.PublicKey) (Substrate.AccountId) = .pub-key
+
+   ; account info
+   [.pub-key] (Substrate.Encode ["a"]) (ToHex) >= .account-id-hex
+   ["System" "Account" .account-id-hex] (Substrate.StorageMap) (ToHex) >= .account-info-query
+
+   {"id" 1 "jsonrpc" "2.0" "method" "state_getStorage" "params" [.account-info-query]} (ToJson)
+   (Http.Post RPC-SERVER)
+   (FromJson) (ExpectTable) (Take "result") (ExpectString) (HexToBytes)
+   (Substrate.Decode [Type.Int] ["u32"]) (Take 0) (ExpectInt) >== .fragnova-nonce (Log "Start Nonce") ; also make it global ; `.fragnova-nonce` is the number of transactions of that the `Fragnova-Account` has sent (i.e its nonce)
+
+   ; this is redundant but we need it for send-extinsics to work...
+   (WS.Client WS-SERVER-ADDR "/" WS-SERVER-PORT WS-SERVER-SECURE) >= .fragnova-ws-client
+
+   )
+  ; our interfaces
+  :send-signed-extrinsic-as-ws-request send-signed-extrinsic-as-ws-request
+  :send-signed-extrinsic-as-http-request send-signed-extrinsic-as-http-request
+  :get-storage-map get-storage-map
+  :get-header get-header)

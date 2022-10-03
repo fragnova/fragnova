@@ -1,10 +1,9 @@
 [package]
 authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
-description = 'Protos Asset Store pallet.'
+description = 'Declaration of Runtime APIs related to Pallet Fragments'
 edition = '2021'
 license = 'BUSL-1.1'
-name = 'pallet-protos-rpc-runtime-api'
-readme = 'README.md'
+name = 'pallet-fragments-rpc-runtime-api'
 version = '0.0.1'
 
 [package.metadata.docs.rs]
@@ -34,7 +33,7 @@ git = 'https://github.com/fragcolor-xyz/substrate.git'
 tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
-[dependencies.pallet-protos]
+[dependencies.pallet-fragments]
 default-features = false
 path = '../..'
 version = '0.0.1'

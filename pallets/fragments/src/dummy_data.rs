@@ -103,6 +103,15 @@ pub struct Mint {
 	pub amount: Option<u64>,
 }
 
+impl Mint {
+	pub fn get_quantity(&self) -> u64 {
+		match &self.buy_options {
+			FragmentBuyOptions::Quantity(q) => q.clone(),
+			FragmentBuyOptions::UniqueData(_) => 1,
+		}
+	}
+}
+
 #[derive(Clone)]
 pub struct Buy {
 	pub publish: Publish,
@@ -166,10 +175,7 @@ impl DummyData {
 			max_supply: None,
 		};
 		let definition_unique = definition.clone();
-		let definition_non_unique = Definition {
-			unique: None,
-			..definition.clone()
-		};
+		let definition_non_unique = Definition { unique: None, ..definition.clone() };
 
 		let publish = Publish {
 			definition: definition.clone(),
@@ -203,17 +209,11 @@ impl DummyData {
 		};
 
 		let buy_non_unique = Buy {
-			publish: Publish {
-				definition: definition_non_unique.clone(),
-				..publish.clone()
-			},
+			publish: Publish { definition: definition_non_unique.clone(), ..publish.clone() },
 			buy_options: FragmentBuyOptions::Quantity(1), // 1 ensures `quantity` is never above `definition.max_supply`!
 		};
 		let buy_unique = Buy {
-			publish: Publish {
-				definition: definition_unique.clone(),
-				..publish.clone()
-			},
+			publish: Publish { definition: definition_unique.clone(), ..publish.clone() },
 			buy_options: FragmentBuyOptions::UniqueData(b"I Dati".to_vec()),
 		};
 		let buy_non_unique_with_limited_published_quantity: Buy = {
@@ -239,7 +239,8 @@ impl DummyData {
 		let give_copy_perms = Give {
 			mint: Mint {
 				definition: Definition {
-					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER | FragmentPerms::COPY, // copy perms
+					permissions: FragmentPerms::EDIT |
+						FragmentPerms::TRANSFER | FragmentPerms::COPY, // copy perms
 					..mint_unique.definition.clone()
 				},
 				..mint_unique.clone()
@@ -251,11 +252,7 @@ impl DummyData {
 			expiration: Some(999),
 		};
 
-		let create_account = CreateAccount {
-			mint: mint_unique.clone(),
-			edition_id: 1,
-			copy_id: 1,
-		};
+		let create_account = CreateAccount { mint: mint_unique.clone(), edition_id: 1, copy_id: 1 };
 
 		Self {
 			definition,

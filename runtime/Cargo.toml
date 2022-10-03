@@ -210,6 +210,11 @@ default-features = false
 path = '../pallets/fragments'
 version = '0.0.1'
 
+[dependencies.pallet-fragments-rpc-runtime-api]
+default-features = false
+path = '../pallets/fragments/rpc/runtime-api'
+version = '0.0.1'
+
 [dependencies.pallet-detach]
 default-features = false
 path = '../pallets/detach'
@@ -319,6 +324,7 @@ std = [
     'pallet-protos/std',
     'pallet-protos-rpc-runtime-api/std',
     'pallet-fragments/std',
+    'pallet-fragments-rpc-runtime-api/std',
     'pallet-detach/std',
     'pallet-indices/std',
     'pallet-contracts/std',
