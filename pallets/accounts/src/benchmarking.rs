@@ -42,6 +42,13 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 
 benchmarks! {
 
+	// I need these trait bounds so that I can create a dummy `T::Public` value and a dummy `T::Signature` value
+	where_clause {
+		where
+			T::Public: From<sp_core::ed25519::Public>,
+			T::Signature: From<sp_core::ed25519::Signature>
+	}
+
 	add_key_benchmark {
 		let public = sp_core::ed25519::Public::from_raw([7u8; 32]);
 
@@ -75,7 +82,7 @@ benchmarks! {
 			].concat())
 		);
 
-	}: link(RawOrigin::Signed(caller), signature)
+	}: link(RawOrigin::Signed(caller.clone()), signature)
 	verify {
 		assert_last_event::<T>(
 			Event::<T>::Linked {
@@ -100,7 +107,7 @@ benchmarks! {
 			)
 		);
 
-	}: unlink(RawOrigin::Signed(caller), get_ethereum_public_key(&ethereum_account_pair))
+	}: unlink(RawOrigin::Signed(caller.clone()), get_ethereum_public_key(&ethereum_account_pair))
 	verify {
 		assert_last_event::<T>(
 			Event::<T>::Unlinked {
@@ -116,7 +123,7 @@ benchmarks! {
 		let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
 
 		let data = EthLockUpdate::<T::Public> {
-			public: Into::<T::Public>::into(sp_core::ed25519::Public([69u8; 32])),
+			public: sp_core::ed25519::Public([7u8; 32]).into(),
 			amount: U256::from(7),
 			locktime: U256::from(7),
 			sender: get_ethereum_public_key(&ethereum_account_pair),
@@ -139,23 +146,37 @@ benchmarks! {
 			lock: true, // yes, please lock it!
 			block_number: 7,
 		};
-		let signature: T::Signature = Into::<T::Signature>::into(sp_core::ed25519::Signature([69u8; 64])); // this can be anything and it will still work
-	}: internal_lock_update(RawOrigin::Signed(caller), data, signature)
+		let signature: T::Signature = sp_core::ed25519::Signature([69u8; 64]).into(); // this can be anything and it will still work
+	}: internal_lock_update(RawOrigin::Signed(caller), data.clone(), signature)
 	verify {
 		assert_last_event::<T>(
 			Event::<T>::Locked {
 				eth_key: get_ethereum_public_key(&ethereum_account_pair),
-				balance: data.amount.saturated_into(),
-				locktime: data.locktime.saturated_into(),
+				balance: TryInto::<u128>::try_into(data.amount).unwrap().saturated_into::<T::Balance>(),
+				locktime: TryInto::<u128>::try_into(data.locktime).unwrap().saturated_into::<T::Moment>(),
 			}.into()
 		)
 	}
 
-	sponser_account_benchmark {
+	sponsor_account_benchmark {
 		let caller: T::AccountId = whitelisted_caller();
-	}: sponser_account(RawOrigin::Signed(caller), external_id)
+
+		let external_id = ExternalID::Discord(7u64);
+
+	}: sponsor_account(RawOrigin::Signed(caller.clone()), external_id.clone())
 	verify {
-		todo!()
+		assert_last_event::<T>(
+			Event::<T>::SponsoredAccount {
+				sponsor: caller.clone(),
+				sponsored: T::AccountId::decode(
+					&mut &blake2_256(
+						&[&b"fragnova-sponsor-account"[..], &caller.encode(), &external_id.encode()]
+						.concat(),
+					)[..]
+				).unwrap(),
+				external_id: external_id,
+			}.into()
+		)
 	}
 
 	add_sponsor_benchmark {
@@ -171,7 +192,7 @@ benchmarks! {
 
 		Accounts::<T>::add_sponsor(
 			RawOrigin::Root.into(),
-			account
+			account.clone()
 		)?;
 
 	}: remove_sponsor(RawOrigin::Root, account)
