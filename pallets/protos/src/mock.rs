@@ -11,7 +11,7 @@ use frame_system;
 use sp_core::{ed25519::Signature, H256};
 
 use sp_runtime::traits::{
-	BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
+	BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
 };
 
 use sp_runtime::testing::{Header, TestXt};
@@ -151,6 +151,9 @@ impl pallet_accounts::Config for Test {
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 	type TicketsAssetId = TicketsAssetId;
+	type InitialPercentageTickets = ConstU64<80>;
+	type InitialPercentageNova = ConstU64<20>;
+	type USDEquivalentAmount = ConstU64<100>;
 }
 
 impl pallet_assets::Config for Test {

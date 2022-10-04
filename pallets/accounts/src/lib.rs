@@ -160,7 +160,7 @@ pub struct EthLock<TBalance, TBlockNum> {
 	/// Clamor Block Number in which the locked FRAG tokens was "effectively transfered" to the Clamor Blockchain
 	pub block_number: TBlockNum,
 	/// The block number when FRAG were locked the first time
-	pub first_lock: TBlockNum,
+	pub first_lock_block_number: TBlockNum,
 	/// The FRAG lock period chosen by the user on Ethereum and received from the Lock event
 	pub lock_period: U256,
 }
@@ -183,14 +183,21 @@ pub struct AccountInfo<TAccountID, TMoment> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
-	use frame_support::{
-		dispatch::DispatchResult, pallet_prelude::*, traits::fungible::Unbalanced, Twox64Concat,
+	use crate::{
+		Error::SystematicFailure,
+		Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved},
 	};
-	use frame_support::traits::fungibles::Inspect;
+	use frame_support::{
+		dispatch::DispatchResult,
+		pallet_prelude::*,
+		traits::{fungible::Unbalanced, fungibles::Inspect},
+		Twox64Concat,
+	};
 	use frame_system::pallet_prelude::*;
-	use sp_runtime::traits::Zero;
-	use sp_runtime::SaturatedConversion;
+	use sp_runtime::{
+		traits::{Saturating, Zero},
+		SaturatedConversion,
+	};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -230,6 +237,18 @@ pub mod pallet {
 		/// Asset ID of the fungible asset "TICKET"
 		#[pallet::constant]
 		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
+
+		/// Initial amount of Tickets that are converted as soon as FRAG are locked
+		#[pallet::constant]
+		type InitialPercentageTickets: Get<u64>;
+
+		/// Initial amount of NOVA that are converted as soon as FRAG are locked
+		#[pallet::constant]
+		type InitialPercentageNova: Get<u64>;
+
+		/// Amount of Tickets/NOVA equal to 1 USD
+		#[pallet::constant]
+		type USDEquivalentAmount: Get<u64>;
 	}
 
 	/// The Genesis Configuration for the Pallet.
@@ -358,7 +377,11 @@ pub mod pallet {
 		/// Account already exists
 		AccountAlreadyExists,
 		/// Too many proxies
-		TooManyProxies
+		TooManyProxies,
+		/// Nothing to withdraw
+		NothingToWithdraw,
+		/// Lock period out of range
+		LockPeriodOutOfRange,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -447,16 +470,13 @@ pub mod pallet {
 
 					<EthReservedTickets<T>>::remove(&eth_key);
 					// also emit event
-					Self::deposit_event(TicketsMinted {
-						sender: sender.clone(),
-						balance: amount,
-					});
+					Self::deposit_event(TicketsMinted { sender: sender.clone(), balance: amount });
 				}
 			}
 			if <EthReservedNova<T>>::contains_key(&eth_key) {
 				let nova_amount = <EthReservedNova<T>>::get(&eth_key);
 				if let Some(amount) = nova_amount {
-					ensure!(!amount.is_zero(), Error::<T>::AccountAlreadyLinked);
+					ensure!(!amount.is_zero(), Error::<T>::SystematicFailure);
 					// Assign NOVA
 					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
 						&sender.clone(),
@@ -465,10 +485,7 @@ pub mod pallet {
 
 					<EthReservedNova<T>>::remove(&eth_key);
 					// also emit event
-					Self::deposit_event(NOVAAssigned {
-						sender: sender.clone(),
-						balance: amount,
-					});
+					Self::deposit_event(NOVAAssigned { sender: sender.clone(), balance: amount });
 				}
 			}
 
@@ -542,7 +559,7 @@ pub mod pallet {
 			let pub_key = &pub_key[12..];
 			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
-			let data_amount: u128 =
+			let data_amount: u64 =
 				data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
 			if !data.lock {
@@ -550,8 +567,6 @@ pub mod pallet {
 			} else {
 				ensure!(data_amount > 0, Error::<T>::SystematicFailure);
 			}
-
-			// verifications ended, let's proceed with voting count and writing
 
 			let threshold = T::Threshold::get();
 			if threshold > 1 {
@@ -574,7 +589,7 @@ pub mod pallet {
 				}
 			}
 
-			// The lines below only execute if the number of votes received by `data_hash` passes the `threshold`)
+			// The lines below only execute if the number of votes received by `data_hash` passes the `threshold`
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
@@ -582,13 +597,38 @@ pub mod pallet {
 				data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 			let frag_amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 
-			// TODO - get FRAG price from oracle
-			/* NOTE: this is assigning 20% of Tickets and NOVA.
-			 */
-			let percentage_amount = Self::apply_20_percent(data_amount);
+			let current_frag_price = Self::get_oracle_price();
+			// Calculate the initial amount of Tickets and NOVA to convert based on
+			// 1) the amount of FRAG locked, 2) the initial percentages defined in Config, 3) the current FRAG price
+			let initial_nova_amount = Self::initial_amount(
+				data_amount,
+				T::InitialPercentageNova::get(),
+				current_frag_price,
+			);
+			let initial_tickets_amount = Self::initial_amount(
+				data_amount,
+				T::InitialPercentageTickets::get(),
+				current_frag_price,
+			);
+			// convert
+			let nova_amount: <T as pallet_balances::Config>::Balance =
+				initial_nova_amount.saturated_into();
+			let tickets_amount: <T as pallet_assets::Config>::Balance =
+				initial_tickets_amount.saturated_into();
 
-			let nova_amount: <T as pallet_balances::Config>::Balance = percentage_amount.saturated_into();
-			let tickets_amount: <T as pallet_assets::Config>::Balance = percentage_amount.saturated_into();
+			// need to track when we received the first Lock event from the user.
+			// This is needed in the case the user locks some FRAG, unlock and then Lock again later.
+			let mut first_lock_block_num = current_block_number;
+
+			let lock_event = <EthLockedFrag<T>>::get(&sender);
+			match lock_event {
+				// if it is not the first lock event
+				Some(event) => {
+					first_lock_block_num = event.first_lock_block_number; // don't change the block number of first FRAG lock
+				},
+				// if it is the first lock event, then use current_block_number set before
+				None => {},
+			}
 
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
@@ -600,7 +640,6 @@ pub mod pallet {
 						&linked,
 						tickets_amount, // amount already ensured to be > 0 in case of Lock
 					)?;
-
 					// assign NOVA
 					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
 						&linked,
@@ -636,30 +675,16 @@ pub mod pallet {
 					balance: frag_amount,
 					lock_period,
 				});
-
 			} else {
 				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: frag_amount });
 			}
 
-			// need to track when we received the first Lock event from the user.
-			// This is needed in the case the user locks some FRAG, unlock and then Lock again later.
-			let mut first_lock_block_num = current_block_number;
-
-			let lock_event = <EthLockedFrag<T>>::get(&sender);
-			match lock_event {
-				// if it is not the first lock event, then use the existing value
-				Some(event) => {
-					first_lock_block_num = event.first_lock;
-				},
-				// if it is the first lock event, then use current_block_number set before
-				_ => {}
-			}
 			<EthLockedFrag<T>>::insert(
 				sender.clone(),
 				EthLock {
 					amount: frag_amount, // amount already ensured to be > 0 for lock, = 0 for unlock
 					block_number: current_block_number,
-					first_lock: first_lock_block_num,
+					first_lock_block_number: first_lock_block_num,
 					lock_period,
 				},
 			);
@@ -747,6 +772,13 @@ pub mod pallet {
 			});
 
 			Ok(())
+		}
+
+		/// Withdraw vested tickets and NOVA
+		#[pallet::weight(25_000)] // TODO - weight
+		pub fn withdraw(origin: OriginFor<T>) -> DispatchResult {
+			let account = ensure_signed(origin)?;
+			Self::withdraw_tickets_and_nova(account)
 		}
 	}
 
@@ -1090,39 +1122,147 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn apply_20_percent(amount: u128) -> u128 {
+		/// Withdraw vested tickets and NOVA
+		fn withdraw_tickets_and_nova(account: T::AccountId) -> DispatchResult {
+			const SECONDS_IN_WEEK: u64 = 3600 * 24 * 7;
+			const SECONDS_IN_BLOCK: u64 = 6;
+			let current_block_number =
+				<frame_system::Pallet<T>>::block_number().saturated_into::<u64>();
+
+			let eth_account = <EVMLinks<T>>::get(&account);
+			if let Some(eth_account) = eth_account {
+				let eth_locked_frag = <EthLockedFrag<T>>::get(&eth_account);
+				if let Some(eth_locked_frag) = eth_locked_frag {
+					// Retrieve the info related to the FRAG locked by this account
+					let frag_lock_block_number =
+						eth_locked_frag.first_lock_block_number.saturated_into::<u64>();
+					let total_frag_locked_on_eth = eth_locked_frag.amount.saturated_into::<u64>();
+					let frag_lock_period = eth_locked_frag.lock_period.saturated_into::<u64>();
+
+					// convert for convenience. The calculations below are made by num of weeks
+					// calculated from the num of blocks from the block num of the FRAG lock to the current block.
+					let lock_period_in_weeks =
+						Self::eth_lock_period_to_weeks(frag_lock_period).unwrap(); // unwrap here is safe
+
+					// Example: 100 FRAG locked => <80 FRAG convertible to Tickets immediately, 20 vested>
+					// If vesting period = 4 weeks => 20 / 4 = 5 FRAG convertible each week.
+					let tickets_convertible_per_week = Self::apply_percent(
+						total_frag_locked_on_eth,
+						100 - T::InitialPercentageTickets::get(),
+					) / lock_period_in_weeks;
+
+					let nova_convertible_per_week = Self::apply_percent(
+						total_frag_locked_on_eth,
+						100 - T::InitialPercentageNova::get(),
+					) / lock_period_in_weeks;
+
+					let current_frag_price = Self::get_oracle_price();
+					// The amount of Tickets and NOVA will depend on the price of 1 FRAG at the time of withdraw
+					let tickets_amount_per_week_at_current_price = current_frag_price *
+						T::USDEquivalentAmount::get() *
+						tickets_convertible_per_week;
+					let nova_amount_at_current_price = current_frag_price *
+						T::USDEquivalentAmount::get() *
+						nova_convertible_per_week;
+
+					let num_weeks_since_lock_frag = (current_block_number - frag_lock_block_number) // The blocks passed from FRAG lock
+							* SECONDS_IN_BLOCK / SECONDS_IN_WEEK +
+						1; // converted to weeks
+					let tickets_amount_to_withdraw =
+						tickets_amount_per_week_at_current_price * num_weeks_since_lock_frag;
+					let nova_amount_to_withdraw =
+						nova_amount_at_current_price * num_weeks_since_lock_frag;
+
+					sp_std::if_std! {
+						// This code is only being compiled and executed when the `std` feature is enabled.
+						println!("frag_lock_block_num: {}", frag_lock_block_number);
+						println!("total_frag_locked_on_eth: {}", total_frag_locked_on_eth);
+						println!("frag_lock_period: {}", frag_lock_period);
+						println!("frag_lock_period_in_weeks: {}", lock_period_in_weeks);
+						println!("tickets_convertible_per_week: {}", tickets_convertible_per_week);
+						println!("nova_convertible_per_week: {}", nova_convertible_per_week);
+						println!("current_block_number: {}", current_block_number);
+						println!("weeks_vested_so_far: {}", num_weeks_since_lock_frag);
+						println!("tickets_amount_at_current_price: {}", tickets_amount_per_week_at_current_price);
+						println!("nova_amount_at_current_price: {}", nova_amount_at_current_price);
+						println!("tickets_amount_to_redeem: {}", tickets_amount_to_withdraw);
+						println!("nova_amount_to_redeem: {}", nova_amount_to_withdraw);
+					}
+					ensure!(
+						num_weeks_since_lock_frag <= lock_period_in_weeks,
+						Error::<T>::SystematicFailure
+					);
+
+					let tickets_amount_to_mint: <T as pallet_assets::Config>::Balance =
+						tickets_amount_to_withdraw.saturated_into();
+					let nova_amount_to_send: <T as pallet_balances::Config>::Balance =
+						nova_amount_to_withdraw.saturated_into();
+
+					sp_std::if_std! {
+						// This code is only being compiled and executed when the `std` feature is enabled.
+						println!("tickets_amount_to_mint: {:?}", tickets_amount_to_mint);
+						println!("nova_amount_to_send: {:?}", nova_amount_to_send);
+					}
+					// mint tickets
+					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+						T::TicketsAssetId::get(),
+						&account.clone(),
+						tickets_amount_to_mint,
+					)?;
+
+					let minted = pallet_assets::Pallet::<T>::balance(
+						T::TicketsAssetId::get(),
+						&account.clone(),
+					);
+					sp_std::if_std! {
+						// This code is only being compiled and executed when the `std` feature is enabled.
+						println!("MINTED: {:?}", minted);
+					}
+					// Assign NOVA
+					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
+						&account.clone(),
+						nova_amount_to_send,
+					)?;
+				} else {
+					return Err(Error::<T>::NothingToWithdraw.into())
+				}
+			} else {
+				return Err(Error::<T>::AccountNotLinked.into())
+			}
+			Ok(())
+		}
+
+		fn initial_amount(amount: u64, percent: u64, current_frag_price: u64) -> u64 {
 			if amount == 0 {
 				return 0
 			}
-			amount * 20 / 100
+			let percentage_amount = amount * percent / 100;
+			percentage_amount * current_frag_price * 100
 		}
 
-		fn get_oracle_price() -> u128 {
-			1 // Assume the current price of 1 FRAG = 1 USD
-			// TODO implement Oracle
-		}
-
-		fn redeem_vested_tickets(sender: H160) {
-			let locked_frag = <EthLockedFrag<T>>::get(&sender);
-			if let Some(locked_frag) = locked_frag {
-				let first_lock = locked_frag.first_lock;
-				let total_frag_locked_amount = locked_frag.amount;
-				let lock_period = locked_frag.lock_period;
-				let current_block_number = <frame_system::Pallet<T>>::block_number();
-
-				let clamor_account = <EVMLinksReverse<T>>::get(&sender);
-
-				if let Some(account) = clamor_account {
-					let ticket_balance = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(
-						<T as Config>::TicketsAssetId::get(),
-						&account,
-					);
-					let blocks_vested_so_far = current_block_number - first_lock;
-				}
-
-
+		fn apply_percent(amount: u64, percent: u64) -> u64 {
+			if amount == 0 {
+				return 0
 			}
+			amount * percent / 100
 		}
 
+		fn get_oracle_price() -> u64 {
+			1 // Assume the current price of 1 FRAG = 1 USD
+			 // TODO implement pallet Oracle
+		}
+
+		fn eth_lock_period_to_weeks(lock_period: u64) -> Result<u64, Error<T>> {
+			let sec = match lock_period {
+				// For lock_period refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
+				0 => 2,  // 2 weeks
+				1 => 4,  // 1 month
+				2 => 12, // 3 months
+				3 => 24, // 6 months
+				4 => 52, // 1 year
+				_ => return Err(Error::<T>::LockPeriodOutOfRange),
+			};
+			Ok(sec)
+		}
 	}
 }

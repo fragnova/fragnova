@@ -11,6 +11,18 @@ use sp_runtime::{offchain::storage::StorageValueRef, SaturatedConversion};
 pub use internal_lock_update_tests::lock_;
 pub use link_tests::link_;
 
+fn apply_percent(amount: u64, percent: u64) -> u64 {
+	if amount == 0 {
+		return 0
+	}
+	amount * percent / 100
+}
+
+fn get_oracle_price() -> u64 {
+	1 // Assume the current price of 1 FRAG = 1 USD
+	 // TODO implement Oracle
+}
+
 mod link_tests {
 	use super::*;
 
@@ -364,13 +376,6 @@ mod internal_lock_update_tests {
 		)
 	}
 
-	fn apply_20_percent(amount: u128) -> u128 {
-		if amount == 0 {
-			return 0
-		}
-		amount * 20 / 100
-	}
-
 	#[test]
 	fn lock_by_unlinked_account_should_lock_frag_internally_and_reserve_tickets_and_nova() {
 		new_test_ext().execute_with(|| {
@@ -389,23 +394,31 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
-					first_lock: current_block_number,
+					first_lock_block_number: current_block_number,
 					lock_period: U256::from(1),
 				}
 			);
-			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
+			let initial_nova_amount =
+				apply_percent(lock.data.amount.clone().as_u64(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
+			let initial_tickets_amount = apply_percent(
+				lock.data.amount.clone().as_u64(),
+				get_initial_percentage_tickets(),
+			) * get_usd_equivalent_amount() *
+				get_oracle_price();
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
 				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
-					percentage_amount
+					initial_tickets_amount
 				)
 			);
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
 				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
-					percentage_amount
+					initial_nova_amount
 				)
 			);
 
@@ -429,7 +442,7 @@ mod internal_lock_update_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_accounts::Event::Locked {
-					eth_key: lock.data.sender,
+					eth_key: lock.data.sender.clone(),
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount),
@@ -441,10 +454,13 @@ mod internal_lock_update_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_accounts::Event::NOVAReserved {
-					eth_key: lock.data.sender,
+					eth_key: lock.data.sender.clone(),
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
-					>(apply_20_percent(lock.data.amount.as_u128()))
+					>(
+						apply_percent(lock.data.amount.as_u64(), get_initial_percentage_nova()) *
+							get_usd_equivalent_amount() * get_oracle_price()
+					)
 				})
 			);
 
@@ -452,10 +468,13 @@ mod internal_lock_update_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_accounts::Event::TicketsReserved {
-					eth_key: lock.data.sender,
+					eth_key: lock.data.sender.clone(),
 					balance: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
-					>(apply_20_percent(lock.data.amount.as_u128()))
+						<Test as pallet_assets::Config>::Balance,
+					>(
+						apply_percent(lock.data.amount.as_u64(), get_initial_percentage_tickets()) *
+							get_usd_equivalent_amount() * get_oracle_price()
+					)
 				})
 			);
 		});
@@ -479,7 +498,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
-					first_lock: current_block_number,
+					first_lock_block_number: current_block_number,
 					lock_period: U256::from(1),
 				}
 			);
@@ -488,11 +507,19 @@ mod internal_lock_update_tests {
 				get_ticket_asset_id(),
 				&link.clamor_account_id,
 			);
-			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
-			assert_eq!(U256::from(minted), U256::from(percentage_amount));
+			let initial_nova_amount =
+				apply_percent(lock.data.amount.clone().as_u64(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
+			let initial_tickets_amount = apply_percent(
+				lock.data.amount.clone().as_u64(),
+				get_initial_percentage_tickets(),
+			) * get_usd_equivalent_amount() *
+				get_oracle_price();
+			assert_eq!(U256::from(minted), U256::from(initial_tickets_amount));
 
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
-			assert_eq!(U256::from(nova), U256::from(percentage_amount));
+			assert_eq!(U256::from(nova), U256::from(initial_nova_amount));
 		});
 	}
 
@@ -513,24 +540,32 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
-					first_lock: current_block_number,
+					first_lock_block_number: current_block_number,
 					lock_period: U256::from(1),
 				}
 			);
 
-			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
+			let initial_nova_amount =
+				apply_percent(lock.data.amount.clone().as_u64(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
+			let initial_tickets_amount = apply_percent(
+				lock.data.amount.clone().as_u64(),
+				get_initial_percentage_tickets(),
+			) * get_usd_equivalent_amount() *
+				get_oracle_price();
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
 				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
-					percentage_amount
+					initial_tickets_amount
 				)
 			);
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
 				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
-					percentage_amount
+					initial_nova_amount
 				)
 			);
 			// check the balance of the Clamor account
@@ -551,12 +586,11 @@ mod internal_lock_update_tests {
 				get_ticket_asset_id(),
 				&link.clamor_account_id,
 			);
-			let percentage_amount = apply_20_percent(lock.data.amount.clone().as_u128());
-			assert_eq!(U256::from(minted_linked), U256::from(percentage_amount));
+			assert_eq!(U256::from(minted_linked), U256::from(initial_tickets_amount.clone()));
 
 			let nova_linked =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
-			assert_eq!(U256::from(nova_linked), U256::from(percentage_amount));
+			assert_eq!(U256::from(nova_linked), U256::from(initial_nova_amount.clone()));
 
 			assert_eq!(<EthReservedTickets<Test>>::contains_key(&lock.data.sender), false);
 			assert_eq!(<EthReservedNova<Test>>::contains_key(&lock.data.sender), false);
@@ -597,7 +631,7 @@ mod internal_lock_update_tests {
 	fn block_number_of_first_lock_event_should_be_correct() {
 		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
-			let mut unlock = dd.unlock;
+			let unlock = dd.unlock;
 			let link = unlock.lock.link.clone();
 			let current_block_number = System::block_number();
 
@@ -605,7 +639,8 @@ mod internal_lock_update_tests {
 			assert_ok!(lock_(&unlock.lock));
 			assert_ok!(unlock_(&unlock));
 
-			let first_lock_block = <EthLockedFrag<Test>>::get(&unlock.data.sender).unwrap().first_lock;
+			let first_lock_block =
+				<EthLockedFrag<Test>>::get(&unlock.data.sender).unwrap().first_lock_block_number;
 
 			// assert that Frag is locked in Clamor
 			assert_eq!(
@@ -615,7 +650,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(unlock.data.amount.clone()),
 					block_number: current_block_number,
-					first_lock: first_lock_block,
+					first_lock_block_number: first_lock_block,
 					lock_period: U256::from(999),
 				}
 			);
@@ -643,24 +678,33 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(0),
 					block_number: current_block_number,
-					first_lock: current_block_number,
+					first_lock_block_number: current_block_number,
 					lock_period: U256::from(999),
 				}
 			);
 
-			let percentage_amount = apply_20_percent(unlock.lock.data.amount.clone().as_u128());
+			let initial_nova_amount = apply_percent(
+				unlock.lock.data.amount.clone().as_u64(),
+				get_initial_percentage_nova(),
+			) * get_usd_equivalent_amount() *
+				get_oracle_price();
+			let initial_tickets_amount = apply_percent(
+				unlock.lock.data.amount.clone().as_u64(),
+				get_initial_percentage_tickets(),
+			) * get_usd_equivalent_amount() *
+				get_oracle_price();
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&unlock.lock.data.sender).unwrap(),
 				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
-					percentage_amount
+					initial_tickets_amount
 				)
 			);
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&unlock.lock.data.sender).unwrap(),
 				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
-					percentage_amount
+					initial_nova_amount
 				)
 			);
 
@@ -716,6 +760,77 @@ mod internal_lock_update_tests {
 			assert_ok!(lock_(&unlock.lock));
 
 			assert_noop!(unlock_(&unlock), Error::<Test>::SystematicFailure);
+		});
+	}
+}
+
+mod withdraw_tests {
+	use super::*;
+
+	fn withdraw_(lock: &Lock) -> DispatchResult {
+		Accounts::withdraw(Origin::signed(lock.link.clamor_account_id))
+	}
+
+	#[test]
+	fn withdraw_should_increase_tickets_and_nova_balance() {
+		new_test_ext_with_nova().execute_with(|| {
+			let dd = DummyData::new();
+			let lock = dd.lock;
+			let link = lock.link.clone();
+			let current_block_number = System::block_number();
+
+			assert_ok!(link_(&link));
+			assert_ok!(lock_(&lock));
+			// assert that Frag is locked in Clamor
+			assert_eq!(
+				<EthLockedFrag<Test>>::get(&lock.data.sender).unwrap(),
+				EthLock {
+					amount: SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(lock.data.amount.clone()),
+					block_number: current_block_number,
+					first_lock_block_number: current_block_number,
+					lock_period: U256::from(1),
+				}
+			);
+			// check the balance of the Clamor account
+			let minted = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
+			);
+			let initial_nova_amount =
+				apply_percent(lock.data.amount.clone().as_u64(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
+
+			let initial_tickets_amount = apply_percent(
+				lock.data.amount.clone().as_u64(),
+				get_initial_percentage_tickets(),
+			) * get_usd_equivalent_amount() *
+				get_oracle_price();
+			assert_eq!(minted as u64, initial_tickets_amount);
+
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			assert_eq!(nova as u64, initial_nova_amount);
+
+			let week_num = 4;
+			System::set_block_number(60 * 60 * 24 * 7 * week_num / 6); // 4 week later = 604800(seconds in 1 week) * 4(weeks) / 6(seconds in 1 block)
+
+			assert_ok!(withdraw_(&lock));
+
+			let minted = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
+			);
+			let data_amount: u64 = lock.data.amount.try_into().ok().unwrap();
+			// 80% of tickets have already been sent to user. 100% - 80% is the remaining amount due.
+			let tickets_per_week =
+				(100 - apply_percent(data_amount, get_initial_percentage_tickets())) / week_num;
+			let expected_amount = tickets_per_week
+					* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
+					* week_num // weeks
+					* get_oracle_price(); // oracle price for 1 FRAG = 1 USD
+			assert_eq!(U256::from(minted), U256::from(expected_amount + initial_tickets_amount));
 		});
 	}
 }

@@ -24,6 +24,27 @@ pub fn get_ticket_asset_id() -> u32 {
 	<Test as Config>::TicketsAssetId::get()
 }
 
+#[cfg(test)]
+pub fn get_initial_percentage_tickets() -> u64 {
+	use crate::mock::Test;
+	use frame_support::traits::TypedGet;
+	<Test as Config>::InitialPercentageTickets::get()
+}
+
+#[cfg(test)]
+pub fn get_initial_percentage_nova() -> u64 {
+	use crate::mock::Test;
+	use frame_support::traits::TypedGet;
+	<Test as Config>::InitialPercentageNova::get()
+}
+
+#[cfg(test)]
+pub fn get_usd_equivalent_amount() -> u64 {
+	use crate::mock::Test;
+	use frame_support::traits::TypedGet;
+	<Test as Config>::USDEquivalentAmount::get()
+}
+
 #[cfg(not(test))]
 fn get_ethereum_chain_id() -> u64 {
 	5
@@ -174,14 +195,14 @@ impl DummyData {
 		let lock = Lock {
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([69u8; 32]),
-				amount: U256::from(69u32),
+				amount: U256::from(100u32),
 				lock_period: U256::from(1),
 				sender: get_ethereum_account_id_from_ecdsa_public_struct(
 					&sp_core::ecdsa::Pair::from_seed(&[3u8; 32]).public(),
 				),
 				signature: create_lock_signature(
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
-					U256::from(69u32),
+					U256::from(100u32),
 					U256::from(1),
 				),
 				lock: true, // yes, please lock it!
