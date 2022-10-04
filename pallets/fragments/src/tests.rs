@@ -1674,8 +1674,8 @@ mod give_tests {
 					give.copy_id + 1
 				))
 				.unwrap()
-				.expiring_at, 
-				give.expiration.unwrap()
+				.expiring_at,
+				give.expiration
 			);
 
 			assert!(<Expirations<Test>>::get(&give.expiration.unwrap()).unwrap().contains(&(

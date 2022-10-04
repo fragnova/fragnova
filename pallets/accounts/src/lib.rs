@@ -114,7 +114,7 @@ use frame_support::traits::ReservableCurrency;
 /// TODO: Documentation
 pub type DiscordID = u64;
 
-/// TODO: Documentation
+/// Enum that indicates the different types of External Account IDs that can be "used as an account" on the Clamor Blockchain
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum ExternalID {
 	/// TODO: Documentation
@@ -187,6 +187,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
+		// This trait is meant to be implemented by the runtime and is responsible for
+		// constructing a payload to be signed and contained within the extrinsic.
 		+ CreateSignedTransaction<Call<Self>>
 		+ pallet_balances::Config
 		+ pallet_proxy::Config
@@ -195,7 +197,7 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// Weight functions needed for pallet_protos.
+		/// Weight functions needed for pallet_accounts.
 		type WeightInfo: WeightInfo;
 
 		/// The Ethereum Chain ID that the Fragnova-owned Ethereum Smart Contract is deployed on.
@@ -203,7 +205,8 @@ pub mod pallet {
 		#[pallet::constant]
 		type EthChainId: Get<u64>;
 
-		/// The **number of confirmations required** to consider a **transaction** on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
+		/// The **number of confirmations required** to consider a **transaction**
+		/// on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
 		#[pallet::constant]
 		type EthConfirmations: Get<u64>;
 
@@ -281,7 +284,9 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
-	/// The map between external accounts and the local accounts that are linked to them. (Discord, Telegram, etc)
+	/// StorageMap that maps an **External Account ID** to an
+	/// **`AccountInfo` struct that contains
+	/// the External Account ID's linked Clamor Account ID, amongst other things**.
 	#[pallet::storage]
 	pub type ExternalID2Account<T: Config> =
 		StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
@@ -565,7 +570,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// TODO
+		/// Allow the External Account ID `external_id` to be used as a proxy
+		/// for the Clamor Account ID `origin`
 		#[pallet::weight(25_000)] // TODO - weight
 		pub fn sponsor_account(origin: OriginFor<T>, external_id: ExternalID) -> DispatchResult {
 			let who = ensure_signed(origin)?;
