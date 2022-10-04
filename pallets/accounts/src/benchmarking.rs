@@ -52,9 +52,9 @@ benchmarks! {
 	add_key_benchmark {
 		let public = sp_core::ed25519::Public::from_raw([7u8; 32]);
 
-	}: add_key(RawOrigin::Root, public)
+	}: add_key(RawOrigin::Root, public.clone())
 	verify {
-		todo!()
+		assert_eq!(FragKeys::<T>::get(), BTreeSet::from([public]));
 	}
 
 	del_key_benchmark {
@@ -67,7 +67,7 @@ benchmarks! {
 
 	}: del_key(RawOrigin::Root, public)
 	verify {
-		todo!()
+		assert_eq!(FragKeys::<T>::get(), BTreeSet::new());
 	}
 
 	link_benchmark {
@@ -182,9 +182,9 @@ benchmarks! {
 	add_sponsor_benchmark {
 		let account: T::AccountId = account("Sample", 100, SEED);
 
-	}: add_sponsor(RawOrigin::Root, account)
+	}: add_sponsor(RawOrigin::Root, account.clone())
 	verify {
-		todo!()
+		assert_eq!(ExternalAuthorities::<T>::get(), BTreeSet::from([account]));
 	}
 
 	remove_sponsor_benchmark {
@@ -195,9 +195,9 @@ benchmarks! {
 			account.clone()
 		)?;
 
-	}: remove_sponsor(RawOrigin::Root, account)
+	}: remove_sponsor(RawOrigin::Root, account.clone())
 	verify {
-		todo!()
+		assert_eq!(ExternalAuthorities::<T>::get(), BTreeSet::new());
 	}
 
 	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);
