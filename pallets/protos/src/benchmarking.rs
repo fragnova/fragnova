@@ -1,9 +1,8 @@
-//! Benchmarking setup for pallet-fragments
+//! Benchmarking setup for pallet-protos
 //!
 //! We want to simulate the worst-case scenario for each extrinsic
 
 use super::*;
-#[allow(unused)]
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_detach::Pallet as Detach;
@@ -22,6 +21,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 const MAX_REFERENCES_LENGTH: u32 = 100;
 const MAX_TAGS_LENGTH: u32 = 100;
 const MAX_DATA_LENGTH: u32 = 1_000_000; // 1 MegaByte
+const MAX_METADATA_KEY_LENGTH: u32 = 100;
 
 benchmarks! {
 
@@ -29,7 +29,7 @@ benchmarks! {
 		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>
 	}
 
-	upload_benchmark {
+	upload {
 		let r in 1 .. MAX_REFERENCES_LENGTH; // `references` length
 		let t in 1 .. MAX_TAGS_LENGTH; // `tags` length
 		let d in 1 .. MAX_DATA_LENGTH; // `data` length
@@ -69,7 +69,7 @@ benchmarks! {
 		assert_last_event::<T>(Event::<T>::Uploaded { proto_hash: proto_hash, cid: cid }.into())
 	}
 
-	patch_benchmark {
+	patch {
 		let r in 1 .. MAX_REFERENCES_LENGTH; // `new_references` length
 		let t in 1 .. MAX_TAGS_LENGTH; // `new_tags` length
 		let d in 1 .. MAX_DATA_LENGTH; // `data` length
@@ -140,7 +140,7 @@ benchmarks! {
 		assert_eq!(<pallet_detach::DetachRequests<T>>::get().len(), pre_len + 1 as usize);
 	}
 
-	transfer_benchmark {
+	transfer {
 		let caller: T::AccountId = whitelisted_caller();
 		let new_owner: T::AccountId = account("Sample", 100, SEED);
 
@@ -161,8 +161,8 @@ benchmarks! {
 		assert_last_event::<T>(Event::<T>::Transferred { proto_hash: proto_hash, owner_id: new_owner }.into())
 	}
 
-	set_metadata_benchmark { // Benchmark setup phase
-		let m in 1 .. 100; // `metadata_key` length
+	set_metadata { // Benchmark setup phase
+		let m in 1 .. MAX_METADATA_KEY_LENGTH; // `metadata_key` length
 		let d in 1 .. MAX_DATA_LENGTH; // 1 byte to 1 Megabyte (I tried 1 byte to 1 Gigabyte, but I got the error: Thread 'main' panicked at 'Failed to allocate memory: "Requested allocation size is too large"', /Users/home/.cargo/git/checkouts/substrate-c784a31f8dac2358/401804d/primitives/io/src/lib.rs:1382)
 
 		// `whitelisted_caller()`'s DB operations will not be counted when we run the extrinsic

@@ -20,6 +20,8 @@ use pallet_balances::Pallet as Balances;
 const SEED: u32 = 0;
 
 const MAX_DATA_LENGTH: u32 = 1_000_000; // 1 MegaByte
+const MAX_METADATA_NAME_LENGTH: u32 = 100;
+const MAX_QUANTITY_TO_MINT: u32 = 100;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
@@ -33,9 +35,8 @@ benchmarks! {
 		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>
 	}
 
-	create_benchmark { // Benchmark setup phase
-		let n in 1 .. 100; // `metadata.name` length
-		let c in 1 .. 1_000_000; // `metadata.currency`'s Asset ID number
+	create { // Benchmark setup phase
+		let n in 1 .. MAX_METADATA_NAME_LENGTH; // `metadata.name` length
 
 		// `whitelisted_caller()`'s DB operations will not be counted when we run the extrinsic
 		let caller: T::AccountId = whitelisted_caller();
@@ -47,7 +48,7 @@ benchmarks! {
 			true,
 			7u128.saturated_into::<<T as pallet_assets::Config>::Balance>(),
 			true
-		);
+		)?;
 
 		let proto_data = b"Je suis Data".to_vec();
 		Protos::<T>::upload(
@@ -78,7 +79,7 @@ benchmarks! {
 		assert_last_event::<T>(Event::<T>::DefinitionCreated { definition_hash: definition_hash}.into())
 	}
 
-	publish_benchmark { // Benchmark setup phase
+	publish { // Benchmark setup phase
 		let caller: T::AccountId = whitelisted_caller();
 
 		let proto_data = b"Je suis Data".to_vec();
@@ -121,7 +122,7 @@ benchmarks! {
 		assert_last_event::<T>(Event::<T>::Publishing { definition_hash: definition_hash}.into())
 	}
 
-	unpublish_benchmark { // Benchmark setup phase
+	unpublish { // Benchmark setup phase
 		let caller: T::AccountId = whitelisted_caller();
 
 		let proto_data = b"Je suis Data".to_vec();
@@ -166,7 +167,7 @@ benchmarks! {
 	}
 
 	mint_definition_that_has_non_unique_capability { // Benchmark setup phase
-		let q in 1 .. 100; // `FragmentBuyOptions::Quantity(quantity)`'s `quantity's` length
+		let q in 1 .. MAX_QUANTITY_TO_MINT; // `FragmentBuyOptions::Quantity(quantity)`'s `quantity's` length
 		let caller: T::AccountId = whitelisted_caller();
 
 		let proto_data = b"Je suis Data".to_vec();
@@ -264,7 +265,7 @@ benchmarks! {
 	}
 
 	buy_definition_that_has_non_unique_capability { // Benchmark setup phase
-		let q in 1 .. 100; // `FragmentBuyOptions::Quantity(quantity)`'s `quantity's` length
+		let q in 1 .. MAX_QUANTITY_TO_MINT; // `FragmentBuyOptions::Quantity(quantity)`'s `quantity's` length
 		let caller: T::AccountId = whitelisted_caller();
 		let definition_owner: T::AccountId = account("Sample", 100, SEED);
 
@@ -308,7 +309,7 @@ benchmarks! {
 			None,
 			None
 		)?;
-		<Balances::<T> as Currency<T::AccountId>>::deposit_creating(
+		_ = <Balances::<T> as Currency<T::AccountId>>::deposit_creating(
 			&caller.clone(),
 			<T as pallet_balances::Config>::Balance::from(price.saturating_mul(q))
 			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
@@ -375,7 +376,7 @@ benchmarks! {
 			None
 		)?;
 
-		<Balances::<T> as Currency<T::AccountId>>::deposit_creating(
+		_ = <Balances::<T> as Currency<T::AccountId>>::deposit_creating(
 			&caller,
 			<T as pallet_balances::Config>::Balance::from(price)
 			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
@@ -431,7 +432,7 @@ benchmarks! {
 			definition_hash,
 			FragmentBuyOptions::Quantity(1), // only mint 1 FI
 			None
-		);
+		)?;
 
 		let edition = 1;
 		let copy = 1;
@@ -517,8 +518,6 @@ benchmarks! {
 			}.into()
 		)
 	}
-
-
 
 
 	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);

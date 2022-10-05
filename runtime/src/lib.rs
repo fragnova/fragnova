@@ -11,7 +11,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-/// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
+// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
@@ -364,7 +364,7 @@ impl pallet_balances::Config for Runtime {
 	type IsTransferable = IsTransferable;
 }
 
-/// Parameters related to calculating the Weight fee.
+// Parameters related to calculating the Weight fee.
 parameter_types! {
 	/// The amount of balance a caller (here "caller" refers to a "smart-contract account") has to pay for each storage item.
 	///
@@ -1003,15 +1003,16 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			// list_benchmark!(list, extra, pallet_accounts, Accounts);
-			list_benchmark!(list, extra, pallet_protos, Protos);
 			list_benchmark!(list, extra, pallet_assets, Assets);
-			list_benchmark!(list, extra, pallet_fragments, Fragments);
-			list_benchmark!(list, extra, pallet_detach, Detach);
 			list_benchmark!(list, extra, pallet_multisig, Multisig);
 			list_benchmark!(list, extra, pallet_proxy, Proxy);
 			list_benchmark!(list, extra, pallet_identity, Identity);
 			list_benchmark!(list, extra, pallet_utility, Utility);
+
+			list_benchmark!(list, extra, pallet_accounts, Accounts);
+			list_benchmark!(list, extra, pallet_detach, Detach);
+			list_benchmark!(list, extra, pallet_fragments, Fragments);
+			list_benchmark!(list, extra, pallet_protos, Protos);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1050,15 +1051,16 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			// add_benchmark!(params, batches, pallet_accounts, Accounts);
-			add_benchmark!(params, batches, pallet_protos, Protos);
 			add_benchmark!(params, batches, pallet_assets, Assets);
-			add_benchmark!(params, batches, pallet_fragments, Fragments);
-			add_benchmark!(params, batches, pallet_detach, Detach);
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
 			add_benchmark!(params, batches, pallet_proxy, Proxy);
 			add_benchmark!(params, batches, pallet_identity, Identity);
 			add_benchmark!(params, batches, pallet_utility, Utility);
+
+			add_benchmark!(params, batches, pallet_accounts, Accounts);
+			add_benchmark!(params, batches, pallet_detach, Detach);
+			add_benchmark!(params, batches, pallet_fragments, Fragments);
+			add_benchmark!(params, batches, pallet_protos, Protos);
 
 			Ok(batches)
 		}

@@ -341,7 +341,7 @@ pub mod pallet {
 		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g
 		///   an ERC-721 Contract)
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
-		///   **Proto-Fragment** *<u>can't be included</u>* into **other protos**
+		///   **Proto-Fragment** *<u>can't be included</u>* into **other Proto-Fragments**
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn upload(
