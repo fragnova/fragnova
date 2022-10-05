@@ -648,10 +648,6 @@ pub mod pallet {
 				// If FRAG tokens were locked on Ethereum
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
-					sp_std::if_std! {
-						// This code is only being compiled and executed when the `std` feature is enabled.
-						println!("LINKED!!!!");
-					}
 					// mint Tickets for the linked user
 					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 						T::TicketsAssetId::get(),
