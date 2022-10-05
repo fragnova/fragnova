@@ -11,7 +11,7 @@ use frame_system;
 use sp_core::{ed25519::Signature, H256};
 
 use sp_runtime::traits::{
-	BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
+	BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
 };
 
 use sp_runtime::testing::{Header, TestXt};

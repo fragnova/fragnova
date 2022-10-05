@@ -183,19 +183,16 @@ pub struct AccountInfo<TAccountID, TMoment> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::{
-		Error::SystematicFailure,
-		Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved},
-	};
+	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
 	use frame_support::{
 		dispatch::DispatchResult,
 		pallet_prelude::*,
-		traits::{fungible::Unbalanced, fungibles::Inspect},
+		traits::{fungible, Currency},
 		Twox64Concat,
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::{
-		traits::{Saturating, Zero},
+		traits::{CheckedAdd, Zero},
 		SaturatedConversion,
 	};
 
@@ -382,6 +379,8 @@ pub mod pallet {
 		NothingToWithdraw,
 		/// Lock period out of range
 		LockPeriodOutOfRange,
+		/// Amount below minimum balance
+		BelowMinimumBalance,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -460,7 +459,7 @@ pub mod pallet {
 			if <EthReservedTickets<T>>::contains_key(&eth_key) {
 				let tickets_amount = <EthReservedTickets<T>>::get(&eth_key);
 				if let Some(amount) = tickets_amount {
-					ensure!(!amount.is_zero(), Error::<T>::AccountAlreadyLinked);
+					ensure!(!amount.is_zero(), Error::<T>::SystematicFailure);
 					// mint tickets
 					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 						T::TicketsAssetId::get(),
@@ -477,11 +476,25 @@ pub mod pallet {
 				let nova_amount = <EthReservedNova<T>>::get(&eth_key);
 				if let Some(amount) = nova_amount {
 					ensure!(!amount.is_zero(), Error::<T>::SystematicFailure);
+					let nova_old_balance =
+						pallet_balances::Pallet::<T>::free_balance(&sender.clone());
+					ensure!(
+						nova_old_balance + amount >=
+							<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
+							),
+						Error::<T>::BelowMinimumBalance
+					);
+					ensure!(
+						!nova_old_balance.checked_add(&amount).is_none(),
+						Error::<T>::SystematicFailure
+					);
+
 					// Assign NOVA
-					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
-						&sender.clone(),
-						amount,
-					)?;
+					let _ =
+						<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+							&sender.clone(),
+							amount,
+						)?;
 
 					<EthReservedNova<T>>::remove(&eth_key);
 					// also emit event
@@ -559,7 +572,7 @@ pub mod pallet {
 			let pub_key = &pub_key[12..];
 			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
-			let data_amount: u64 =
+			let data_amount: u128 =
 				data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
 			if !data.lock {
@@ -602,13 +615,13 @@ pub mod pallet {
 			// 1) the amount of FRAG locked, 2) the initial percentages defined in Config, 3) the current FRAG price
 			let initial_nova_amount = Self::initial_amount(
 				data_amount,
-				T::InitialPercentageNova::get(),
-				current_frag_price,
+				T::InitialPercentageNova::get() as u128,
+				current_frag_price as u128,
 			);
 			let initial_tickets_amount = Self::initial_amount(
 				data_amount,
-				T::InitialPercentageTickets::get(),
-				current_frag_price,
+				T::InitialPercentageTickets::get() as u128,
+				current_frag_price as u128,
 			);
 			// convert
 			let nova_amount: <T as pallet_balances::Config>::Balance =
@@ -617,7 +630,8 @@ pub mod pallet {
 				initial_tickets_amount.saturated_into();
 
 			// need to track when we received the first Lock event from the user.
-			// This is needed in the case the user locks some FRAG, unlock and then Lock again later.
+			// This is needed because EthLockedFrag is used for both Lock and Unlock events,
+			// so when the user withdraws after unlock, we would lose when the first lock happened.
 			let mut first_lock_block_num = current_block_number;
 
 			let lock_event = <EthLockedFrag<T>>::get(&sender);
@@ -634,6 +648,10 @@ pub mod pallet {
 				// If FRAG tokens were locked on Ethereum
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
+					sp_std::if_std! {
+						// This code is only being compiled and executed when the `std` feature is enabled.
+						println!("LINKED!!!!");
+					}
 					// mint Tickets for the linked user
 					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 						T::TicketsAssetId::get(),
@@ -641,10 +659,24 @@ pub mod pallet {
 						tickets_amount, // amount already ensured to be > 0 in case of Lock
 					)?;
 					// assign NOVA
-					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
-						&linked,
-						nova_amount, // amount already ensured to be > 0 in case of Lock
-					)?;
+					let nova_old_balance = pallet_balances::Pallet::<T>::free_balance(&linked);
+					ensure!(
+						nova_old_balance + nova_amount >=
+							<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
+							),
+						Error::<T>::BelowMinimumBalance
+					);
+					ensure!(
+						!nova_old_balance.checked_add(&nova_amount).is_none(),
+						Error::<T>::SystematicFailure
+					);
+
+					// Checks passed. Now write.
+					let _ =
+						<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+							&linked,
+							nova_amount, // amount already ensured to be > 0 in case of Lock
+						)?;
 
 					Self::deposit_event(TicketsMinted {
 						sender: linked.clone(),
@@ -1122,12 +1154,21 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Withdraw vested tickets and NOVA
+		/// This function allows the account to withdraw the vested amount of Tickets and NOVA.
+		///
+		/// An account can decide to withdraw before or after the FRAG lock period is over.
+		/// The amount is calculated with this formula:
+		/// amount = (num of weeks since FRAG lock) * (tickets/NOVA available each week) * (FRAG price in USD).
+		///
+		/// To be noted that an initial amount of Tickets and NOVA have been already given to the account
+		/// when FRAG have been locked (see internal_lock_update). The initial amount is a percentage of the amount
+		/// of FRAG locked (percentage that is set in Config for both Tickets and NOVA).
+		///
 		fn withdraw_tickets_and_nova(account: T::AccountId) -> DispatchResult {
-			const SECONDS_IN_WEEK: u64 = 3600 * 24 * 7;
-			const SECONDS_IN_BLOCK: u64 = 6;
+			let seconds_in_week = 3600 * 24 * 7;
+			let seconds_in_block = 6;
 			let current_block_number =
-				<frame_system::Pallet<T>>::block_number().saturated_into::<u64>();
+				<frame_system::Pallet<T>>::block_number().saturated_into::<u128>();
 
 			let eth_account = <EVMLinks<T>>::get(&account);
 			if let Some(eth_account) = eth_account {
@@ -1135,8 +1176,8 @@ pub mod pallet {
 				if let Some(eth_locked_frag) = eth_locked_frag {
 					// Retrieve the info related to the FRAG locked by this account
 					let frag_lock_block_number =
-						eth_locked_frag.first_lock_block_number.saturated_into::<u64>();
-					let total_frag_locked_on_eth = eth_locked_frag.amount.saturated_into::<u64>();
+						eth_locked_frag.first_lock_block_number.saturated_into::<u128>();
+					let total_frag_locked_on_eth = eth_locked_frag.amount.saturated_into::<u128>();
 					let frag_lock_period = eth_locked_frag.lock_period.saturated_into::<u64>();
 
 					// convert for convenience. The calculations below are made by num of weeks
@@ -1148,61 +1189,75 @@ pub mod pallet {
 					// If vesting period = 4 weeks => 20 / 4 = 5 FRAG convertible each week.
 					let tickets_convertible_per_week = Self::apply_percent(
 						total_frag_locked_on_eth,
-						100 - T::InitialPercentageTickets::get(),
-					) / lock_period_in_weeks;
+						100 - T::InitialPercentageTickets::get() as u128,
+					) / lock_period_in_weeks as u128;
 
 					let nova_convertible_per_week = Self::apply_percent(
 						total_frag_locked_on_eth,
-						100 - T::InitialPercentageNova::get(),
-					) / lock_period_in_weeks;
+						100 - T::InitialPercentageNova::get() as u128,
+					) / lock_period_in_weeks as u128;
 
 					let current_frag_price = Self::get_oracle_price();
 					// The amount of Tickets and NOVA will depend on the price of 1 FRAG at the time of withdraw
-					let tickets_amount_per_week_at_current_price = current_frag_price *
-						T::USDEquivalentAmount::get() *
+					let tickets_amount_per_week_at_current_price = current_frag_price as u128 *
+						T::USDEquivalentAmount::get() as u128 *
 						tickets_convertible_per_week;
-					let nova_amount_at_current_price = current_frag_price *
-						T::USDEquivalentAmount::get() *
+					let nova_amount_per_week_at_current_price = current_frag_price as u128 *
+						T::USDEquivalentAmount::get() as u128 *
 						nova_convertible_per_week;
 
-					let num_weeks_since_lock_frag = (current_block_number - frag_lock_block_number) // The blocks passed from FRAG lock
-							* SECONDS_IN_BLOCK / SECONDS_IN_WEEK +
-						1; // converted to weeks
+					let mut num_weeks_since_lock_frag = (current_block_number -
+						frag_lock_block_number) * seconds_in_block /
+						seconds_in_week + 1; // +1 to include all weeks
+
+					// In case of withdraw when lock period is already over
+					if num_weeks_since_lock_frag >= lock_period_in_weeks.into() {
+						num_weeks_since_lock_frag = lock_period_in_weeks.into();
+					}
+
 					let tickets_amount_to_withdraw =
 						tickets_amount_per_week_at_current_price * num_weeks_since_lock_frag;
 					let nova_amount_to_withdraw =
-						nova_amount_at_current_price * num_weeks_since_lock_frag;
+						nova_amount_per_week_at_current_price * num_weeks_since_lock_frag;
 
-					sp_std::if_std! {
-						// This code is only being compiled and executed when the `std` feature is enabled.
-						println!("frag_lock_block_num: {}", frag_lock_block_number);
-						println!("total_frag_locked_on_eth: {}", total_frag_locked_on_eth);
-						println!("frag_lock_period: {}", frag_lock_period);
-						println!("frag_lock_period_in_weeks: {}", lock_period_in_weeks);
-						println!("tickets_convertible_per_week: {}", tickets_convertible_per_week);
-						println!("nova_convertible_per_week: {}", nova_convertible_per_week);
-						println!("current_block_number: {}", current_block_number);
-						println!("weeks_vested_so_far: {}", num_weeks_since_lock_frag);
-						println!("tickets_amount_at_current_price: {}", tickets_amount_per_week_at_current_price);
-						println!("nova_amount_at_current_price: {}", nova_amount_at_current_price);
-						println!("tickets_amount_to_redeem: {}", tickets_amount_to_withdraw);
-						println!("nova_amount_to_redeem: {}", nova_amount_to_withdraw);
-					}
-					ensure!(
-						num_weeks_since_lock_frag <= lock_period_in_weeks,
-						Error::<T>::SystematicFailure
+					log::trace!("total_frag_locked_on_eth: {}", total_frag_locked_on_eth);
+					log::trace!("frag_lock_period_in_weeks: {}", lock_period_in_weeks);
+					log::trace!("tickets_convertible_per_week: {}", tickets_convertible_per_week);
+					log::trace!("nova_convertible_per_week: {}", nova_convertible_per_week);
+					log::trace!("num_weeks_since_lock_frag: {}", num_weeks_since_lock_frag);
+					log::trace!(
+						"tickets_amount_per_week_at_current_price: {}",
+						tickets_amount_per_week_at_current_price
 					);
+					log::trace!(
+						"nova_amount_per_week_at_current_price: {}",
+						nova_amount_per_week_at_current_price
+					);
+					log::trace!("tickets_amount_to_withdraw: {}", tickets_amount_to_withdraw);
+					log::trace!("nova_amount_to_withdraw: {}", nova_amount_to_withdraw);
 
 					let tickets_amount_to_mint: <T as pallet_assets::Config>::Balance =
 						tickets_amount_to_withdraw.saturated_into();
-					let nova_amount_to_send: <T as pallet_balances::Config>::Balance =
+					let nova_amount_to_deposit: <T as pallet_balances::Config>::Balance =
 						nova_amount_to_withdraw.saturated_into();
 
-					sp_std::if_std! {
-						// This code is only being compiled and executed when the `std` feature is enabled.
-						println!("tickets_amount_to_mint: {:?}", tickets_amount_to_mint);
-						println!("nova_amount_to_send: {:?}", nova_amount_to_send);
-					}
+					ensure!(tickets_amount_to_withdraw > 0, Error::<T>::SystematicFailure);
+					ensure!(nova_amount_to_withdraw > 0, Error::<T>::SystematicFailure);
+					let nova_old_balance =
+						pallet_balances::Pallet::<T>::free_balance(&account.clone());
+					ensure!(
+						nova_old_balance + nova_amount_to_deposit >=
+							<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
+							),
+						Error::<T>::SystematicFailure // this should never happen
+					);
+
+					ensure!(
+						!nova_old_balance.checked_add(&nova_amount_to_deposit).is_none(),
+						Error::<T>::SystematicFailure
+					);
+
+					// Checks completed, now write
 					// mint tickets
 					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
 						T::TicketsAssetId::get(),
@@ -1210,19 +1265,13 @@ pub mod pallet {
 						tickets_amount_to_mint,
 					)?;
 
-					let minted = pallet_assets::Pallet::<T>::balance(
-						T::TicketsAssetId::get(),
-						&account.clone(),
-					);
-					sp_std::if_std! {
-						// This code is only being compiled and executed when the `std` feature is enabled.
-						println!("MINTED: {:?}", minted);
-					}
 					// Assign NOVA
-					<pallet_balances::Pallet<T> as Unbalanced<T::AccountId>>::set_balance(
-						&account.clone(),
-						nova_amount_to_send,
-					)?;
+					// This will not fail if all the checks above passed, so the result can be ignored
+					let _ =
+						<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+							&account.clone(),
+							nova_amount_to_deposit,
+						)?;
 				} else {
 					return Err(Error::<T>::NothingToWithdraw.into())
 				}
@@ -1232,15 +1281,15 @@ pub mod pallet {
 			Ok(())
 		}
 
-		fn initial_amount(amount: u64, percent: u64, current_frag_price: u64) -> u64 {
+		fn initial_amount(amount: u128, percent: u128, current_frag_price: u128) -> u128 {
 			if amount == 0 {
 				return 0
 			}
-			let percentage_amount = amount * percent / 100;
+			let percentage_amount = Self::apply_percent(amount, percent);
 			percentage_amount * current_frag_price * 100
 		}
 
-		fn apply_percent(amount: u64, percent: u64) -> u64 {
+		fn apply_percent(amount: u128, percent: u128) -> u128 {
 			if amount == 0 {
 				return 0
 			}

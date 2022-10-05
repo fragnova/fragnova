@@ -26,9 +26,7 @@ use std::sync::Arc;
 
 use sp_runtime::{
 	testing::{Header, TestXt},
-	traits::{
-		BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
-	},
+	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
 	RuntimeAppPublic,
 };
 

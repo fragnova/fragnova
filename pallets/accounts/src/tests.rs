@@ -368,7 +368,7 @@ mod internal_lock_update_tests {
 		)
 	}
 
-	fn unlock_(unlock: &Unlock) -> DispatchResult {
+	pub fn unlock_(unlock: &Unlock) -> DispatchResult {
 		Accounts::internal_lock_update(
 			Origin::none(),
 			unlock.data.clone(),
@@ -586,11 +586,12 @@ mod internal_lock_update_tests {
 				get_ticket_asset_id(),
 				&link.clamor_account_id,
 			);
-			assert_eq!(U256::from(minted_linked), U256::from(initial_tickets_amount.clone()));
+			assert_eq!(minted_linked as u64, initial_tickets_amount);
 
 			let nova_linked =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
-			assert_eq!(U256::from(nova_linked), U256::from(initial_nova_amount.clone()));
+
+			assert_eq!(nova_linked as u64, initial_nova_amount);
 
 			assert_eq!(<EthReservedTickets<Test>>::contains_key(&lock.data.sender), false);
 			assert_eq!(<EthReservedNova<Test>>::contains_key(&lock.data.sender), false);
@@ -777,27 +778,83 @@ mod withdraw_tests {
 			let dd = DummyData::new();
 			let lock = dd.lock;
 			let link = lock.link.clone();
-			let current_block_number = System::block_number();
 
 			assert_ok!(link_(&link));
 			assert_ok!(lock_(&lock));
-			// assert that Frag is locked in Clamor
-			assert_eq!(
-				<EthLockedFrag<Test>>::get(&lock.data.sender).unwrap(),
-				EthLock {
-					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
-					>(lock.data.amount.clone()),
-					block_number: current_block_number,
-					first_lock_block_number: current_block_number,
-					lock_period: U256::from(1),
-				}
+
+			// check the balance of the Clamor account
+			let tickets_balance = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
 			);
+			let nova_balance =
+				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+
+			let initial_nova_amount =
+				apply_percent(lock.data.amount.clone().as_u64(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
+
+			let initial_tickets_amount = apply_percent(
+				lock.data.amount.clone().as_u64(),
+				get_initial_percentage_tickets(),
+			) * get_usd_equivalent_amount() *
+				get_oracle_price();
+
+			assert_eq!(tickets_balance as u64, initial_tickets_amount);
+			assert_eq!(nova_balance as u64, initial_nova_amount);
+
+			let week_num = 3; // fast forward to week 3
+			let lock_period = 4;
+			System::set_block_number(60 * 60 * 24 * 7 * week_num / 6); // 4 week later = 604800(seconds in 1 week) * 4(weeks) / 6(seconds in 1 block)
+
+			assert_ok!(withdraw_(&lock));
+
+			let tickets_balance_after_withdraw = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
+			);
+			let data_amount: u64 = lock.data.amount.try_into().ok().unwrap();
+			// 80% of tickets have already been sent to user. 100% - 80% is the remaining amount due.
+			let tickets_per_week =
+				(100 - apply_percent(data_amount, get_initial_percentage_tickets())) / lock_period;
+			let expected_amount = tickets_per_week
+					* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
+					* week_num // weeks
+					* get_oracle_price(); // oracle price for 1 FRAG = 1 USD
+			assert_eq!(
+				tickets_balance_after_withdraw as u64,
+				expected_amount + initial_tickets_amount
+			);
+
+			let nova_per_week =
+				(100 - apply_percent(data_amount, get_initial_percentage_nova())) / lock_period;
+			let expected_amount = nova_per_week
+				* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
+				* week_num // weeks
+				* get_oracle_price(); //
+
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			assert_eq!(nova as u64, expected_amount + initial_nova_amount);
+		});
+	}
+
+	#[test]
+	fn withdraw_after_lock_period_gives_correct_amounts() {
+		new_test_ext_with_nova().execute_with(|| {
+			let dd = DummyData::new();
+			let lock = dd.lock;
+			let link = lock.link.clone();
+
+			assert_ok!(link_(&link));
+			assert_ok!(lock_(&lock));
+
 			// check the balance of the Clamor account
 			let minted = pallet_assets::Pallet::<Test>::balance(
 				get_ticket_asset_id(),
 				&link.clamor_account_id,
 			);
+
 			let initial_nova_amount =
 				apply_percent(lock.data.amount.clone().as_u64(), get_initial_percentage_nova()) *
 					get_usd_equivalent_amount() *
@@ -813,8 +870,9 @@ mod withdraw_tests {
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova as u64, initial_nova_amount);
 
-			let week_num = 4;
-			System::set_block_number(60 * 60 * 24 * 7 * week_num / 6); // 4 week later = 604800(seconds in 1 week) * 4(weeks) / 6(seconds in 1 block)
+			let lock_period = 4;
+			let exceeding_week_num = 5;
+			System::set_block_number(60 * 60 * 24 * 7 * exceeding_week_num / 6);
 
 			assert_ok!(withdraw_(&lock));
 
@@ -825,12 +883,17 @@ mod withdraw_tests {
 			let data_amount: u64 = lock.data.amount.try_into().ok().unwrap();
 			// 80% of tickets have already been sent to user. 100% - 80% is the remaining amount due.
 			let tickets_per_week =
-				(100 - apply_percent(data_amount, get_initial_percentage_tickets())) / week_num;
+				(100 - apply_percent(data_amount, get_initial_percentage_tickets())) / lock_period;
 			let expected_amount = tickets_per_week
-					* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
-					* week_num // weeks
-					* get_oracle_price(); // oracle price for 1 FRAG = 1 USD
-			assert_eq!(U256::from(minted), U256::from(expected_amount + initial_tickets_amount));
+				* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
+				* lock_period // weeks
+				* get_oracle_price(); // oracle price for 1 FRAG = 1 USD
+
+			assert_eq!(
+				minted as u64,
+				expected_amount + initial_tickets_amount,
+				"Amount of Tickets minted are equivalent to 4 weeks even if account withdraws at week 5"
+			);
 		});
 	}
 }
