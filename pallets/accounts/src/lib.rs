@@ -1268,6 +1268,8 @@ pub mod pallet {
 							&account.clone(),
 							nova_amount_to_deposit,
 						)?;
+					// remove the locked frag information for this account
+					<EthLockedFrag<T>>::remove(&eth_account);
 				} else {
 					return Err(Error::<T>::NothingToWithdraw.into())
 				}

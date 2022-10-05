@@ -896,4 +896,18 @@ mod withdraw_tests {
 			);
 		});
 	}
+
+	#[test]
+	fn subsequent_withdraws_is_not_possible() {
+		new_test_ext_with_nova().execute_with(|| {
+			let dd = DummyData::new();
+			let lock = dd.lock;
+			let link = lock.link.clone();
+
+			assert_ok!(link_(&link));
+			assert_ok!(lock_(&lock));
+			assert_ok!(withdraw_(&lock));
+			assert_noop!(withdraw_(&lock), Error::<Test>::NothingToWithdraw);
+		});
+	}
 }
