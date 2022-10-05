@@ -347,7 +347,7 @@ pub mod pallet {
 		/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_key())]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -363,7 +363,7 @@ pub mod pallet {
 		/// Remove a Clamor Account ID from `FragKeys`
 
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::del_key())]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -387,7 +387,7 @@ pub mod pallet {
 		/// `signature`).
 		///
 		/// After linking, also emit an event indicating that the two accounts were linked.
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::link())]
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -420,7 +420,7 @@ pub mod pallet {
 
 		// TODO
 		/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::unlink())]
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			Self::unlink_account(sender, account)
@@ -429,7 +429,7 @@ pub mod pallet {
 		/// Update 'data'
 		///
 		/// TODO
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::internal_lock_update())]
 		pub fn internal_lock_update(
 			origin: OriginFor<T>,
 			data: EthLockUpdate<T::Public>,
@@ -572,7 +572,7 @@ pub mod pallet {
 
 		/// Allow the External Account ID `external_id` to be used as a proxy
 		/// for the Clamor Account ID `origin`
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::sponsor_account())]
 		pub fn sponsor_account(origin: OriginFor<T>, external_id: ExternalID) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -624,7 +624,7 @@ pub mod pallet {
 		}
 
 		/// Add a sponsor account to the list of sponsors able to sponsor external accounts.
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_sponsor())]
 		pub fn add_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -638,7 +638,7 @@ pub mod pallet {
 		}
 
 		/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::remove_sponsor())]
 		pub fn remove_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 

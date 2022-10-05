@@ -343,7 +343,7 @@ pub mod pallet {
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
 		///   **Proto-Fragment** *<u>can't be included</u>* into **other Proto-Fragments**
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len(), tags.len(), data.len()))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -474,7 +474,7 @@ pub mod pallet {
 		///   **patch**
 		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment's current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len(), tags.len(), data.len()))]
 		pub fn patch(
 			origin: OriginFor<T>,
 			// proto hash we want to patch
@@ -648,7 +648,7 @@ pub mod pallet {
 		///   `metadata` of the existing Proto-Fragment's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
 		///   in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata(metadata_key.len(), data.len()))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			// proto hash we want to update
