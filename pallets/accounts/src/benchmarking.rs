@@ -105,7 +105,7 @@ benchmarks! {
 					&caller.encode()
 				].concat())
 			)
-		);
+		)?;
 
 	}: unlink(RawOrigin::Signed(caller.clone()), get_ethereum_public_key(&ethereum_account_pair))
 	verify {
@@ -118,8 +118,6 @@ benchmarks! {
 	}
 
 	internal_lock_update_benchmark {
-		let caller: T::AccountId = whitelisted_caller();
-
 		let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
 
 		let data = EthLockUpdate::<T::Public> {
@@ -147,7 +145,7 @@ benchmarks! {
 			block_number: 7,
 		};
 		let signature: T::Signature = sp_core::ed25519::Signature([69u8; 64]).into(); // this can be anything and it will still work
-	}: internal_lock_update(RawOrigin::Signed(caller), data.clone(), signature)
+	}: internal_lock_update(RawOrigin::None, data.clone(), signature)
 	verify {
 		assert_last_event::<T>(
 			Event::<T>::Locked {
@@ -160,6 +158,11 @@ benchmarks! {
 
 	sponsor_account_benchmark {
 		let caller: T::AccountId = whitelisted_caller();
+
+		Accounts::<T>::add_sponsor(
+			RawOrigin::Root.into(),
+			caller.clone()
+		)?;
 
 		let external_id = ExternalID::Discord(7u64);
 
@@ -200,5 +203,5 @@ benchmarks! {
 		assert_eq!(ExternalAuthorities::<T>::get(), BTreeSet::new());
 	}
 
-	impl_benchmark_test_suite!(Fragments, crate::mock::new_test_ext(), crate::mock::Test);
+	impl_benchmark_test_suite!(Accounts, crate::mock::new_test_ext(), crate::mock::Test);
 }

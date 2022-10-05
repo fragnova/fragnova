@@ -162,7 +162,7 @@ benchmarks! {
 
 	set_metadata_benchmark { // Benchmark setup phase
 		let m in 1 .. 100; // `metadata_key` length
-		let d in 1 .. 1_000_000; // 1 byte to 1 Megabyte (I tried 1 byte to 1 Gigabyte, but I got the error: Thread 'main' panicked at 'Failed to allocate memory: "Requested allocation size is too large"', /Users/home/.cargo/git/checkouts/substrate-c784a31f8dac2358/401804d/primitives/io/src/lib.rs:1382)
+		let d in 1 .. MAX_DATA_LENGTH; // 1 byte to 1 Megabyte (I tried 1 byte to 1 Gigabyte, but I got the error: Thread 'main' panicked at 'Failed to allocate memory: "Requested allocation size is too large"', /Users/home/.cargo/git/checkouts/substrate-c784a31f8dac2358/401804d/primitives/io/src/lib.rs:1382)
 
 		// `whitelisted_caller()`'s DB operations will not be counted when we run the extrinsic
 		let caller: T::AccountId = whitelisted_caller();

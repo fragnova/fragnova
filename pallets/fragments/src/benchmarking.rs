@@ -14,6 +14,8 @@ use sp_io::hashing::blake2_128;
 
 use crate::Pallet as Fragments;
 use pallet_protos::Pallet as Protos;
+use pallet_assets::Pallet as Assets;
+use pallet_balances::Pallet as Balances;
 
 const SEED: u32 = 0;
 
@@ -38,6 +40,15 @@ benchmarks! {
 		// `whitelisted_caller()`'s DB operations will not be counted when we run the extrinsic
 		let caller: T::AccountId = whitelisted_caller();
 
+		Assets::<T>::force_create(
+			RawOrigin::Root.into(),
+			T::AssetId::default(),
+			T::Lookup::unlookup(caller.clone()),
+			true,
+			7u128.saturated_into::<<T as pallet_assets::Config>::Balance>(),
+			true
+		);
+
 		let proto_data = b"Je suis Data".to_vec();
 		Protos::<T>::upload(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -52,6 +63,7 @@ benchmarks! {
 
 		let metadata = FragmentMetadata {
 			name: vec![7u8; n as usize],
+			// By making currency Some, we enter an extra if-statement and also do an extra DB read operation
 			currency: Some(T::AssetId::default()),
 		};
 		let permissions: FragmentPerms = FragmentPerms::EDIT | FragmentPerms::TRANSFER;
@@ -146,7 +158,7 @@ benchmarks! {
 			None,
 			None,
 			None
-		);
+		)?;
 
 	}: unpublish(RawOrigin::Signed(caller), definition_hash) // Execution phase
 	verify { // Optional verification phase
@@ -251,7 +263,6 @@ benchmarks! {
 		)
 	}
 
-
 	buy_definition_that_has_non_unique_capability { // Benchmark setup phase
 		let q in 1 .. 100; // `FragmentBuyOptions::Quantity(quantity)`'s `quantity's` length
 		let caller: T::AccountId = whitelisted_caller();
@@ -279,24 +290,28 @@ benchmarks! {
 			metadata.clone(),
 			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 			None, // non-unique
-			// we make the Definition's `max_supply` Some,
-			// because this causes `mint()` to check if `max_supply` is exceeded
-			Some(q + 1).map(|ms| ms.into())
+			None
 		)?;
 		let definition_hash = blake2_128(
 			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
 		);
 
+		let price = 7u32;
 		Fragments::<T>::publish(
 			RawOrigin::Signed(definition_owner).into(),
 			definition_hash,
-			7, // price
+			price as u128, // price
 			// We make the `quantity` Some, since this will cause an extra DB write operation
 			// when we call `buy()`.
 			// The aforementioned DB write operation is the modification of the value `units_left` for the Publishing Struct in the `Publishing` StorageMap
-			Some(7),
+			Some(q + 1).map(|ms| ms.into()),
 			None,
 			None
+		)?;
+		<Balances::<T> as Currency<T::AccountId>>::deposit_creating(
+			&caller.clone(),
+			<T as pallet_balances::Config>::Balance::from(price.saturating_mul(q))
+			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
 		);
 
 		/// TODO - Review
@@ -322,7 +337,7 @@ benchmarks! {
 
 		let proto_data = b"Je suis Data".to_vec();
 		Protos::<T>::upload(
-			RawOrigin::Signed(caller.clone()).into(),
+			RawOrigin::Signed(definition_owner.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
 			Vec::<Vec<u8>>::new(),
@@ -337,29 +352,34 @@ benchmarks! {
 			currency: None,
 		};
 		Fragments::<T>::create(
-			RawOrigin::Signed(caller.clone()).into(),
+			RawOrigin::Signed(definition_owner.clone()).into(),
 			proto_hash,
 			metadata.clone(),
 			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 			Some(UniqueOptions {mutable: false}), // unique
-			// we make the Definition's `max_supply` Some,
-			// because this causes `mint()` to check if `max_supply` is exceeded
-			Some(7)
+			None
 		)?;
 		let definition_hash = blake2_128(
 			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
 		);
 
+		let price = 7u32;
 		Fragments::<T>::publish(
 			RawOrigin::Signed(definition_owner).into(),
 			definition_hash,
-			7, // price
+			price as u128, // price
 			// We make the `quantity` Some, since this will cause an extra DB write operation
 			// when we call `buy()`.
 			// The aforementioned DB write operation is the modification of the value `units_left` for the Publishing Struct in the `Publishing` StorageMap
 			Some(7),
 			None,
 			None
+		)?;
+
+		<Balances::<T> as Currency<T::AccountId>>::deposit_creating(
+			&caller,
+			<T as pallet_balances::Config>::Balance::from(price)
+			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
 		);
 
 		/// TODO - Review
@@ -367,7 +387,7 @@ benchmarks! {
 
 	}: buy(RawOrigin::Signed(caller.clone()), definition_hash, options) // Execution phase
 	verify { // Optional verification phase
-		assert_last_event::<T>(
+		assert_has_event::<T>(
 			Event::<T>::InventoryAdded {
 				account_id: caller,
 				definition_hash: definition_hash,
@@ -442,7 +462,7 @@ benchmarks! {
 	}
 
 
-	benchmark_give_instance_that_does_has_copy_perms { // Benchmark setup phase
+	benchmark_give_instance_that_has_copy_perms { // Benchmark setup phase
 		let caller: T::AccountId = whitelisted_caller();
 
 		let proto_data = b"Je suis Data".to_vec();
@@ -478,7 +498,7 @@ benchmarks! {
 			definition_hash,
 			FragmentBuyOptions::Quantity(1), // only mint 1 FI
 			None
-		);
+		)?;
 
 		let edition = 1;
 		let copy = 1;
@@ -492,17 +512,10 @@ benchmarks! {
 	}: give(RawOrigin::Signed(caller.clone()), definition_hash, edition, copy, to.clone(), new_permissions, expiration) // Execution phase
 	verify { // Optional verification phase
 		assert_has_event::<T>(
-			Event::<T>::InventoryRemoved {
-				account_id: caller,
-				definition_hash: definition_hash,
-				fragment_id: (1, 1)
-			}.into()
-		);
-		assert_has_event::<T>(
 			Event::<T>::InventoryAdded {
 				account_id: T::Lookup::lookup(to).unwrap(),
 				definition_hash: definition_hash,
-				fragment_id: (1, 1)
+				fragment_id: (1, 2)
 			}.into()
 		)
 	}
