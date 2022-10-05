@@ -118,6 +118,7 @@ benchmarks! {
 		assert_last_event::<T>(Event::<T>::Patched { proto_hash: proto_hash, cid: cid }.into())
 	}
 
+	// TODO - Redo this benchmark after `detach()` is refactored to detach Fragments rather than Proto-Fragments
 	detach {
 		let caller: T::AccountId = whitelisted_caller();
 

@@ -198,7 +198,7 @@ benchmarks! {
 		let definition_hash = blake2_128(
 			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
 		);
-		/// TODO - Review
+
 		let options = FragmentBuyOptions::Quantity(q.into());
 		let amount: Option<Unit> = Some(7);
 
@@ -248,7 +248,7 @@ benchmarks! {
 		let definition_hash = blake2_128(
 			&[&proto_hash[..], &metadata.name.encode(), &metadata.currency.encode()].concat(),
 		);
-		/// TODO - Review
+
 		let options = FragmentBuyOptions::UniqueData(vec![7u8; d as usize]);
 		let amount: Option<Unit> = Some(7);
 
@@ -314,7 +314,6 @@ benchmarks! {
 			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
 		);
 
-		/// TODO - Review
 		let options = FragmentBuyOptions::Quantity(q.into());
 
 	}: buy(RawOrigin::Signed(caller.clone()), definition_hash, options) // Execution phase
@@ -382,7 +381,6 @@ benchmarks! {
 			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
 		);
 
-		/// TODO - Review
 		let options = FragmentBuyOptions::UniqueData(vec![7u8; d as usize]);
 
 	}: buy(RawOrigin::Signed(caller.clone()), definition_hash, options) // Execution phase

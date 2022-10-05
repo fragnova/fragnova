@@ -1057,7 +1057,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	/// **Get** the **Account ID** of the Fragment Definition `definition_hash`**
 	///
-	/// This Account ID is determinstically computed using the Fragment Definition `class_hash`
+	/// This Account ID is determinstically computed using the Fragment Definition `definition_hash`
 	pub fn get_vault_id(definition_hash: Hash128) -> T::AccountId {
 		let hash = blake2_256(&[&b"fragments-vault"[..], &definition_hash].concat());
 		T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")

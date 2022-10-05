@@ -7,7 +7,7 @@ cargo build --profile=production --features runtime-benchmarks
 # The executable to use.
 CLAMOR=./target/production/clamor
 
-PALLETS=("pallet_accounts" "pallet_detach" "pallet_fragments" "pallet_protos")
+PALLETS=("pallet_accounts" "pallet_fragments" "pallet_protos") # "pallet_detach")
 
 
 # Define the error file.
@@ -22,11 +22,15 @@ do
   WEIGHT_FILE="./pallets/${FOLDER}/src/weights.rs"
   echo "[+] Benchmarking $PALLET with weight file $WEIGHT_FILE"
 
+  # The option "--step=50" takes 50 samples for every benchmark test across the defined variable(s) range.
+  # Note: No two samples can have the exact same set of values for all the variables
+  #
+  # The option "--repeat=20" executes the benchmark test on each sample 20 times
   OUTPUT=$(
     $CLAMOR benchmark pallet \
     --chain=dev \
-    --steps=50 \ # across the defined component(s)/variable(s) range, take 50 samples. Note: No two samples can have the exact same set of component values
-    --repeat=20 \ # execute the benchmark on each sample 20 times
+    --steps=50 \
+    --repeat=20 \
     --pallet="$PALLET" \
     --extrinsic="*" \
     --execution=wasm \
