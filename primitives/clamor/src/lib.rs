@@ -184,7 +184,7 @@ pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
 					let len =
 						offchain::http_response_read_body(request, &mut buffer, None).unwrap();
 					if len == 0 {
-						break;
+						break
 					}
 					response_body.extend_from_slice(&buffer[..len as usize]);
 				}

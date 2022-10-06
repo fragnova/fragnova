@@ -382,7 +382,7 @@ pub mod pallet {
 					TransactionSource::InBlock | TransactionSource::Local => {},
 					_ => {
 						log::debug!("Not a local transaction");
-						return InvalidTransaction::Call.into();
+						return InvalidTransaction::Call.into()
 					},
 				}
 
@@ -398,18 +398,18 @@ pub mod pallet {
 					{
 						pub_key
 					} else {
-						return InvalidTransaction::BadSigner.into();
+						return InvalidTransaction::BadSigner.into()
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
-					return InvalidTransaction::BadSigner.into(); // 问Gio
+					return InvalidTransaction::BadSigner.into() // 问Gio
 				}
 				// most expensive bit last
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 				log::debug!("Sending detach finalization extrinsic");
 				ValidTransaction::with_tag_prefix("Detach") // The tag prefix prevents other nodes to do the same transaction that have the same tag prefixes
@@ -476,9 +476,9 @@ pub mod pallet {
 						log::debug!("Got {} detach requests", requests.len());
 						for request in requests {
 							let values = match request.target_chain {
-								SupportedChains::EthereumMainnet
-								| SupportedChains::EthereumRinkeby
-								| SupportedChains::EthereumGoerli => {
+								SupportedChains::EthereumMainnet |
+								SupportedChains::EthereumRinkeby |
+								SupportedChains::EthereumGoerli => {
 									// Get ECDSA public keys from Local Storage.
 									// If no key exist, return an empty BTreeSet<ed25519::Public> to be filled with keys
 									// This storage_ref key does not exist when the blockchain is first launched
@@ -534,7 +534,7 @@ pub mod pallet {
 										Self::add_chainid_to_payload(&request, &mut payload);
 
 										if request.target_account.len() != 20 {
-											return Err(FAILED);
+											return Err(FAILED)
 										}
 										Self::add_target_account_to_payload(&request, &mut payload);
 

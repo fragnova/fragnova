@@ -1,0 +1,77 @@
+(deftrait Fragnova-Account :private-key "//Alice")
+(load-file "fragnova.edn")
+
+(def UPLOAD-CALL-DATA-EXCL-DATA-PARAM "0x0b00000000000000") ; encoded call data that defines a call to `protos.upload()` with certain hardcoded parameters. See: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws.fragnova.network#/extrinsics/decode/0x0b0000000000000000
+(def SET-METADATA-CALL-INDEX "0x0b03") ; call index of `protos.set_metadata()`
+(def CREATE-FRAGMENT-CALL-INDEX "0x0c00")
+(def CREATE-FRAGMENT-SERIALIZED-METADATA-STRUCT "0x106e616d6500") ; https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/extrinsics/decode/0x0c000000000000000000000000000000000000000000000000000000000000000000106e616d6500000000000000
+(def CREATE-FRAGMENT-CALL-DATA-AFTER-PROTO-PARAM "0x106e616d6500000000000000") ; https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/extrinsics/decode/0x0c000000000000000000000000000000000000000000000000000000000000000000106e616d6500000000000000
+(def MINT-INSTANCE-CALL-INDEX "0x0c05")
+(def MINT-INSTANCE-CALL-DATA-AFTER-DEFINITION-PARAM "0x00010000000000000000") ; mints one instance. see: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws.fragnova.network#/extrinsics/decode/0x0c030000000000000000000000000000000000010000000000000000
+
+(defwire upload-proto
+
+  UPLOAD-CALL-DATA-EXCL-DATA-PARAM (HexToBytes) >= .call-data
+  .proto-data >> .seq .seq (Substrate.Encode [nil]) (AppendTo .call-data)
+
+  .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of protos.upload() is")
+
+  .proto-data (Hash.Blake2-256) (| (ToHex) (Log "Uploaded Proto With Proto Hash"))
+  )
+
+(defwire set-metadata
+  SET-METADATA-CALL-INDEX (HexToBytes) >= .call-data
+  .proto-hash (AppendTo .call-data)
+  [.metadata-key .metadata-data] (Substrate.Encode [nil, nil]) (AppendTo .call-data)
+
+  .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of protos.setMetadata() is"))
+
+
+
+(defwire create-fragment-definition
+  CREATE-FRAGMENT-CALL-INDEX (HexToBytes) >= .call-data
+  .proto-hash (AppendTo .call-data)
+  CREATE-FRAGMENT-CALL-DATA-AFTER-PROTO-PARAM (HexToBytes) (AppendTo .call-data)
+
+  .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of fragments.create() is")
+
+  .proto-hash >= .definition
+  CREATE-FRAGMENT-SERIALIZED-METADATA-STRUCT (HexToBytes) (AppendTo .definition)
+  .definition (Hash.Blake2-128) (| (ToHex) (Log "Created Definition's Hash"))
+  )
+
+(defwire mint-fragment-instance
+  MINT-INSTANCE-CALL-INDEX (HexToBytes) >= .call-data
+  .definition-hash (AppendTo .call-data)
+  MINT-INSTANCE-CALL-DATA-AFTER-DEFINITION-PARAM (HexToBytes) (AppendTo .call-data)
+
+  .call-data (ToHex) (Log "le call-data is")
+
+  .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of fragments.mint() is"))
+
+
+(defwire add-proto-and-fragment-to-blockchain
+  (ExpectBytes) = .proto-data
+
+  (Do upload-proto) = .proto-hash
+
+  "json_description" >= .metadata-key
+  {"name" "monalisa" "desc" "iconic, priceless, renaissance art"} (ToJson) (ToBytes) >= .metadata-data
+  (Do set-metadata)
+  "image" > .metadata-key
+  "monalisa.jpeg" (FS.Read :Bytes true) > .metadata-data
+  (Do set-metadata)
+
+  (Do create-fragment-definition) = .definition-hash
+
+  (Do mint-fragment-instance))
+
+(defwire main
+  (Setup
+   (get Fragnova-Node :setup))
+
+  (vec (range 1 1)) (Map (ToBytes)) (TryMany add-proto-and-fragment-to-blockchain))
+
+(defmesh root)
+(schedule root main)
+(run root 0.1)

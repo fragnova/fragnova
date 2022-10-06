@@ -765,6 +765,7 @@ dependencies = [
  "jsonrpsee",
  "log",
  "pallet-contracts-rpc",
+ "pallet-fragments-rpc",
  "pallet-protos-rpc",
  "pallet-transaction-payment-rpc",
  "protos",
@@ -821,6 +822,7 @@ dependencies = [
  "pallet-contracts-rpc-runtime-api",
  "pallet-detach",
  "pallet-fragments",
+ "pallet-fragments-rpc-runtime-api",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-indices",
@@ -4256,6 +4258,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
  "itertools",
  "log",
  "pallet-accounts",
@@ -4270,9 +4273,43 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "protos",
  "scale-info 2.2.0",
+ "serde",
+ "serde_json",
  "sp-clamor",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-fragments-rpc"
+version = "0.0.1"
+dependencies = [
+ "hex",
+ "jsonrpsee",
+ "pallet-fragments",
+ "pallet-fragments-rpc-runtime-api",
+ "parity-scale-codec 3.2.1",
+ "protos",
+ "serde",
+ "serde_json",
+ "sp-api",
+ "sp-blockchain",
+ "sp-clamor",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-fragments-rpc-runtime-api"
+version = "0.0.1"
+dependencies = [
+ "pallet-fragments",
+ "parity-scale-codec 3.2.1",
+ "scale-info 2.2.0",
+ "sp-api",
+ "sp-clamor",
  "sp-runtime",
  "sp-std",
 ]

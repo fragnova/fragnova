@@ -46,11 +46,9 @@ jobs:
         run: |
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
           sleep 10
-          docker run --rm --user root --network host -v ${{ github.workspace }}:/data chainblocks/shards shards /data/shards/test-protos-rpc.edn
-          echo "before changing directory"
-          cd rpc
-          npm install
-          npm test
+
+          sh ./shards/shards-new/test-rpcs.sh
+
           kill %1
 
       - name: Run IPFS Test
@@ -64,8 +62,7 @@ jobs:
           # cargo test --no-fail-fast
           cargo install cargo-tarpaulin
           cargo tarpaulin --features runtime-benchmarks --out Xml
-          bash <(curl -s https://codecov.io/bash) -f coverage/coverage.f.info || echo "Codecov did not collect coverage reports"
-
+          bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
 
       - name: Check if Rustdoc Builds
         run: |

@@ -99,7 +99,7 @@ pub struct GetProtosParams<TAccountId, TString> {
 	pub tags: Vec<TString>,
 	/// The returned Proto-Fragments must not have any tag that is specified in the `tags` field
 	pub exclude_tags: bool,
-  /// Whether the Proto-Fragments should be available or not
+	/// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
 }
 
@@ -461,7 +461,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-
 		/// **Patch** an **existing Proto-Fragment** (*by appending the hash of `data` to the Vector
 		/// field `patches` of the existing Proto-Fragment's Struct Instance*) Furthermore, this
 		/// function also indexes `data` in the Blockchain's Database and stores it in the IPFS
@@ -682,6 +681,8 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
+			// Write STATE from now, ensure no errors from now...
+
 			let metadata_key_index = {
 				let index = <MetaKeys<T>>::get(metadata_key.clone());
 				if let Some(index) = index {
@@ -696,8 +697,6 @@ pub mod pallet {
 					<Compact<u64>>::from(next_index)
 				}
 			};
-
-			// Write STATE from now, ensure no errors from now...
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
@@ -807,7 +806,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-
 		/// Delete Proto-Fragment `proto_hash` from all relevant Storage Items
 		#[pallet::weight(50_000)]
 		pub fn ban(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
@@ -876,7 +874,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue;
+							continue
 						}
 					}
 
@@ -894,7 +892,7 @@ pub mod pallet {
 								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
 							} else {
 								// Curation not found
-								return Err(Error::<T>::CurationNotFound.into());
+								return Err(Error::<T>::CurationNotFound.into())
 							}
 						},
 						UsageLicense::Contract(contract_address) => {
@@ -919,19 +917,19 @@ pub mod pallet {
 								let allowed = bool::decode(&mut &res.data.0[..]);
 								if let Ok(allowed) = allowed {
 									if !allowed {
-										return Err(Error::<T>::Unauthorized.into());
+										return Err(Error::<T>::Unauthorized.into())
 									}
 								} else {
-									return Err(Error::<T>::Unauthorized.into());
+									return Err(Error::<T>::Unauthorized.into())
 								}
 							} else {
-								return Err(Error::<T>::Unauthorized.into());
+								return Err(Error::<T>::Unauthorized.into())
 							}
 						},
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into());
+					return Err(Error::<T>::ReferenceNotFound.into())
 				}
 			}
 			Ok(())
@@ -947,22 +945,23 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.license == UsageLicense::Closed {
-						return false;
+						return false
 					} else if !avail && struct_proto.license != UsageLicense::Closed {
-						return false;
+						return false
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto, exclude_tags);
+					return Self::filter_tags(tags, &struct_proto, exclude_tags)
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories, exclude_tags);
+					return Self::filter_category(tags, &struct_proto, categories, exclude_tags)
 				}
 			} else {
 				false
 			}
 		}
 
+		/// Whether `struct_proto` has all the tags `tags` and categories `categories`
 		fn filter_category(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
@@ -991,43 +990,45 @@ pub mod pallet {
 
 							// Specific query:
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
-							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
+							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto, exclude_tags);
-								} else { return false; }
+									return Self::filter_tags(tags, struct_proto, exclude_tags)
+								} else {
+									return false
+								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
 							else if param_script_info.implementing.contains(&zero_vec) &&
-									param_script_info.requiring.contains(&zero_vec) &&
-									param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto, exclude_tags);
-							}
-							else {
-								return false;
+								param_script_info.requiring.contains(&zero_vec) &&
+								param_script_info.format == stored_script_info.format
+							{
+								return Self::filter_tags(tags, struct_proto, exclude_tags)
+							} else {
+								return false
 							}
 						} else {
 							// it should never go here
-							return false;
+							return false
 						}
 					},
-					_ => {
+					_ =>
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto, exclude_tags);
+							return Self::filter_tags(tags, struct_proto, exclude_tags)
 						} else {
-							return false;
-						}
-					},
+							return false
+						},
 				})
 				.collect();
 
 			if found.is_empty() {
-				return false;
+				return false
 			} else {
-				return true;
+				return true
 			}
 		}
 
+		/// Whether `struct_proto` has all the tags `tags`
 		fn filter_tags(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
@@ -1075,43 +1076,104 @@ pub mod pallet {
 								.filter(|item| stored_script_info.requiring.contains(item))
 								.collect();
 
-								let zero_vec = [0u8; 8];
+							let zero_vec = [0u8; 8];
 
-								// Specific query:
-								// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
-								if !implementing_diffs.is_empty() || !requiring_diffs.is_empty(){
-									if param_script_info.format == stored_script_info.format {
-										return true;
-									} else { return false; }
+							// Specific query:
+							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
+							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
+								if param_script_info.format == stored_script_info.format {
+									return true
+								} else {
+									return false
 								}
-								// Generic query:
-								// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-								else if param_script_info.implementing.contains(&zero_vec) &&
-										param_script_info.requiring.contains(&zero_vec) &&
-										param_script_info.format == stored_script_info.format {
-										return true;
-								}
-								else if !(&cat == &category) {
-									return false;
+							}
+							// Generic query:
+							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
+							else if param_script_info.implementing.contains(&zero_vec) &&
+								param_script_info.requiring.contains(&zero_vec) &&
+								param_script_info.format == stored_script_info.format
+							{
+								return true
+							} else if !(&cat == &category) {
+								return false
 							} else {
-								return false;
+								return false
 							}
 						} else {
-							return false;
+							return false
 						}
 					},
 					// for all other types of Categories
-					_ => {
+					_ =>
 						if !(&cat == &category) {
-							return false;
+							return false
 						} else {
-							return true;
-						}
-					},
+							return true
+						},
 				})
 				.collect();
 
-			return found;
+			return found
+		}
+
+		/// Converts a `ProtoOwner` struct into a JSON
+		pub fn get_owner_in_json_format(owner: ProtoOwner<T::AccountId>) -> Value {
+			let json_owner = match owner {
+				ProtoOwner::User(account_id) => json!({
+					"type": "internal",
+					"value": hex::encode(account_id)
+				}),
+				ProtoOwner::ExternalAsset(linked_asset) => {
+					let value = match linked_asset {
+						LinkedAsset::Erc721(contract, token_id, source) => {
+							let chain_id = match source {
+								LinkSource::Evm(_sig, _block, chain_id) => chain_id,
+							};
+							json!({
+								"type": "erc721",
+								"value": {
+									"contract": format!("0x{:x}", contract),
+									"token_id": format!("0x{:x}", token_id),
+									"chain_id": format!("0x{:x}", chain_id)
+								}
+							})
+						},
+					};
+					json!({
+						"type": "external",
+						"value": value,
+					})
+				},
+			};
+
+			json_owner
+		}
+
+		/// Queries the `metadata_keys` that exist in the map `metadata` and returns them as a JSON (along with their corresponding data hashes)
+		pub fn get_map_of_matching_metadata_keys(
+			metadata_keys: &Vec<Vec<u8>>,
+			metadata: &BTreeMap<Compact<u64>, Hash256>,
+		) -> Map<String, Value> {
+			let mut map = Map::new();
+
+			for metadata_key in metadata_keys.clone().iter() {
+				let metadata_value =
+					if let Some(metadata_key_index) = <MetaKeys<T>>::get(metadata_key) {
+						if let Some(data_hash) = metadata.get(&Compact(metadata_key_index)) {
+							Value::String(hex::encode(data_hash))
+						} else {
+							Value::Null
+						}
+					} else {
+						Value::Null
+					};
+
+				if let Ok(string_metadata_key) = String::from_utf8(metadata_key.clone()) {
+					map.insert(string_metadata_key, metadata_value);
+				}
+			}
+
+			map
 		}
 
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
@@ -1123,51 +1185,62 @@ pub mod pallet {
 		pub fn get_protos(
 			params: GetProtosParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
+			let protos_map: Map<String, Value> = Self::get_protos_map(params)?;
+
+			let result = json!(protos_map).to_string();
+
+			Ok(result.into_bytes())
+		}
+
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
+		/// type** is a **JSON string**
+		///
+		/// # Arguments
+		///
+		/// * `params` - A ***GetProtosParams* struct**
+		pub fn get_protos_map(
+			params: GetProtosParams<T::AccountId, Vec<u8>>,
+		) -> Result<Map<String, Value>, Vec<u8>> {
 			let mut map = Map::new();
 
 			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
 				// `owner` exists
-				if let Some(list_protos_owner) =
+				let list_protos_owner =
 					<ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner))
-				{
-					// `owner` exists in `ProtosByOwner`
-					if params.desc {
-						// Sort in descending order
-						list_protos_owner
-							.into_iter()
-							.rev()
-							.filter(|proto_id| {
-								Self::filter_proto(
-									proto_id,
-									&params.tags,
-									&params.categories,
-									params.available,
-									params.exclude_tags
-								)
-							})
-							.skip(params.from as usize)
-							.take(params.limit as usize)
-							.collect::<Vec<Hash256>>()
-					} else {
-						// Sort in ascending order
-						list_protos_owner
-							.into_iter()
-							.filter(|proto_id| {
-								Self::filter_proto(
-									proto_id,
-									&params.tags,
-									&params.categories,
-									params.available,
-									params.exclude_tags
-								)
-							})
-							.skip(params.from as usize)
-							.take(params.limit as usize)
-							.collect::<Vec<Hash256>>()
-					}
+						.ok_or("Owner not found")?; // `owner` exists in `ProtosByOwner`
+				if params.desc {
+					// Sort in descending order
+					list_protos_owner
+						.into_iter()
+						.rev()
+						.filter(|proto_id| {
+							Self::filter_proto(
+								proto_id,
+								&params.tags,
+								&params.categories,
+								params.available,
+								params.exclude_tags,
+							)
+						})
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect()
 				} else {
-					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into());
+					// Sort in ascending order
+					list_protos_owner
+						.into_iter()
+						.filter(|proto_id| {
+							Self::filter_proto(
+								proto_id,
+								&params.tags,
+								&params.categories,
+								params.available,
+								params.exclude_tags,
+							)
+						})
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect()
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -1184,7 +1257,7 @@ pub mod pallet {
 						// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						if found.is_empty() {
-							continue;
+							continue
 						}
 					}
 					// Found the category.
@@ -1202,7 +1275,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										params.exclude_tags
+										params.exclude_tags,
 									)
 								})
 								.collect()
@@ -1216,7 +1289,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										params.exclude_tags
+										params.exclude_tags,
 									)
 								})
 								.collect()
@@ -1237,30 +1310,20 @@ pub mod pallet {
 
 			if params.return_owners || !params.metadata_keys.is_empty() {
 				for (proto_id, map_proto) in map.iter_mut() {
-					let array_proto_id: Hash256 = if let Ok(array_proto_id) = hex::decode(proto_id)
-					{
-						if let Ok(array_proto_id) = array_proto_id.try_into() {
-							array_proto_id
-						} else {
-							return Err("Failed to convert proto_id to Hash256".into());
-						}
-					} else {
-						return Err("Failed to decode proto_id".into());
-					};
-
-					let (owner, map_metadata, license) =
-						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
-							(proto.owner, proto.metadata, proto.license)
-						} else {
-							return Err("Failed to get proto".into());
-						};
-
 					let map_proto = match map_proto {
 						Value::Object(map_proto) => map_proto,
 						_ => return Err("Failed to get map_proto".into()),
 					};
 
-					match license {
+					let array_proto_id: Hash256 = hex::decode(proto_id)
+						.or(Err("`Failed to decode `proto_id``"))?
+						.try_into()
+						.or(Err("Failed to convert `proto_id` to Hash256"))?;
+
+					let proto_struct =
+						<Protos<T>>::get(array_proto_id).ok_or("Failed to get proto")?;
+
+					match proto_struct.license {
 						UsageLicense::Tickets(amount) => {
 							let n: u64 = amount.into();
 							(*map_proto).insert(String::from("tickets"), Value::Number(n.into()));
@@ -1271,65 +1334,25 @@ pub mod pallet {
 					}
 
 					if params.return_owners {
-						let owner = match owner {
-							ProtoOwner::User(account_id) => json!({
-								"type": "internal",
-								"value": hex::encode(account_id)
-							}),
-							ProtoOwner::ExternalAsset(linked_asset) => {
-								let value = match linked_asset {
-									LinkedAsset::Erc721(contract, token_id, source) => {
-										let chain_id = match source {
-											LinkSource::Evm(_sig, _block, chain_id) => chain_id,
-										};
-										json!({
-											"type": "erc721",
-											"value": {
-												"contract": format!("0x{:x}", contract),
-												"token_id": format!("0x{:x}", token_id),
-												"chain_id": format!("0x{:x}", chain_id)
-											}
-										})
-									},
-								};
-								json!({
-									"type": "external",
-									"value": value,
-								})
-							},
-						};
-
-						(*map_proto).insert(String::from("owner"), owner);
+						let owner = proto_struct.owner;
+						let json_owner = Self::get_owner_in_json_format(owner);
+						(*map_proto).insert("owner".into(), json_owner);
 					}
 
 					if !params.metadata_keys.is_empty() {
-						for metadata_key in params.metadata_keys.iter() {
-							let metadata_key_index = <MetaKeys<T>>::get(metadata_key.clone());
-							let metadata_value = if let Some(metadata_key_index) =
-								metadata_key_index
-							{
-								let metadata_key_index = <Compact<u64>>::from(metadata_key_index);
-
-								if let Some(data_hash) = map_metadata.get(&metadata_key_index) {
-									Value::String(hex::encode(data_hash))
-								} else {
-									Value::Null
-								}
-							} else {
-								Value::Null
-							};
-
-							if let Ok(key) = String::from_utf8(metadata_key.clone()) {
-								(*map_proto).insert(key, metadata_value);
-							}
-						}
+						let proto_metadata = proto_struct.metadata;
+						let map_of_matching_metadata_keys = Self::get_map_of_matching_metadata_keys(
+							&params.metadata_keys,
+							&proto_metadata,
+						);
+						(*map_proto)
+							.insert("metadata".into(), map_of_matching_metadata_keys.into());
+						// (*map_proto).append(&mut map_of_matching_metadata_keys);
 					}
 				}
 			}
 
-			let result = json!(map).to_string();
-
-			Ok(result.into_bytes())
+			Ok(map)
 		}
 	}
 }
