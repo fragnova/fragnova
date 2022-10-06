@@ -1,7 +1,8 @@
 //! Benchmarking setup for pallet-fragments
 
+#![cfg(feature = "runtime-benchmarks")]
+
 use super::*;
-#[allow(unused)]
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
 use pallet_protos::UsageLicense;

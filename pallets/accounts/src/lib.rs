@@ -1,4 +1,4 @@
-//! This pallet `frag` performs logic related to FRAG Token
+//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term "lock" refers to the *"effective transfer"* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
 //!
@@ -8,6 +8,7 @@
 //!
 //! IMPORTANT: locking != staking
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[allow(missing_docs)]
@@ -280,7 +281,7 @@ pub mod pallet {
 	// to present to external chains to detach onto
 	/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
-	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit `this list
+	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 

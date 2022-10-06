@@ -1,22 +1,19 @@
 //! Benchmarking setup for pallet-accounts
 
+#![cfg(feature = "runtime-benchmarks")]
+
 use super::*;
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_system::RawOrigin;
 use frame_support::traits::Get;
 use sp_runtime::SaturatedConversion;
-
-// use sp_core::{
-// 	ecdsa,
-// 	keccak_256,
-// 	Pair,
-// 	H160, // size of an Ethereum Account Address
-// 	U256,
-// };
-
+use sp_std::{
+	collections::btree_set::BTreeSet
+};
 use sp_io::{
 	hashing::keccak_256,
 };
+use frame_support::traits::Currency;
 
 use crate::Pallet as Accounts;
 
@@ -62,7 +59,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 
 benchmarks! {
 
-	// I need these trait bounds so that I can create a dummy `T::Public` value and a dummy `T::Signature` value
+	// I need these trait bounds so that I can create a dummy `T::Public` value and a dummy `T::Signature` value in some of the benchmark tests
 	where_clause {
 		where
 			T::Public: From<sp_core::ed25519::Public>,
@@ -70,16 +67,19 @@ benchmarks! {
 	}
 
 	add_key {
-		let public = sp_core::ed25519::Public::from_raw([7u8; 32]);
+		let mut frag_keys = FragKeys::<T>::get();
 
+		let public = sp_core::ed25519::Public::from_raw([7u8; 32]);
 	}: add_key(RawOrigin::Root, public.clone())
 	verify {
-		assert_eq!(FragKeys::<T>::get(), BTreeSet::from([public]));
+		frag_keys.insert(public); // log::info!("FragKeys' length are: {}", FragKeys::<T>::get().len());
+		assert_eq!(FragKeys::<T>::get(), frag_keys);
 	}
 
 	del_key {
-		let public = sp_core::ed25519::Public::from_raw([7u8; 32]);
+		let frag_keys = FragKeys::<T>::get();
 
+		let public = sp_core::ed25519::Public::from_raw([7u8; 32]);
 		Accounts::<T>::add_key(
 			RawOrigin::Root.into(),
 			public
@@ -87,7 +87,7 @@ benchmarks! {
 
 	}: del_key(RawOrigin::Root, public)
 	verify {
-		assert_eq!(FragKeys::<T>::get(), BTreeSet::new());
+		assert_eq!(FragKeys::<T>::get(), frag_keys);
 	}
 
 	link {
@@ -117,7 +117,7 @@ benchmarks! {
 		)
 	}
 
-	unlink_benchmark {
+	unlink {
 		let caller: T::AccountId = whitelisted_caller();
 
 		// let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
@@ -189,13 +189,18 @@ benchmarks! {
 		)
 	}
 
-	sponsor_account_benchmark {
+	sponsor_account {
 		let caller: T::AccountId = whitelisted_caller();
 
 		Accounts::<T>::add_sponsor(
 			RawOrigin::Root.into(),
 			caller.clone()
 		)?;
+
+		_ = T::Currency::deposit_creating(
+			&caller.clone(),
+			T::ProxyDepositBase::get() + T::ProxyDepositFactor::get() + T::Currency::minimum_balance(),
+		);
 
 		let external_id = ExternalID::Discord(7u64);
 

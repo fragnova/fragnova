@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_accounts;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Encode;

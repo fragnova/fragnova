@@ -12,6 +12,8 @@
 //!
 //! Source: https://docs.substrate.io/build/chain-spec/
 
+// The imports from `clamor_runtime` that follow the pattern "<Pallet>Config" are the <Pallet>'s `GenesisConfig` struct
+// See for more info: https://docs.substrate.io/reference/how-to-guides/basics/configure-genesis-state/
 use clamor_runtime::{
 	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
 	GenesisConfig, GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,

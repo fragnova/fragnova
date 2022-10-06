@@ -7,6 +7,7 @@
 // That's why we allow this file to have missing_docs.
 #![allow(missing_docs)]
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]

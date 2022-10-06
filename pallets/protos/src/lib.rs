@@ -4,6 +4,7 @@
 //!/**/
 //! A Proto-Fragment is a digital asset that can be used to build a game or application
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -343,7 +344,7 @@ pub mod pallet {
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
 		///   **Proto-Fragment** *<u>can't be included</u>* into **other Proto-Fragments**
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len(), tags.len(), data.len()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -474,7 +475,8 @@ pub mod pallet {
 		///   **patch**
 		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment's current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len(), tags.len(), data.len()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len() as u32,
+		tags.as_ref().map(|tags| tags.len() as u32).unwrap_or_default(), data.len() as u32))]
 		pub fn patch(
 			origin: OriginFor<T>,
 			// proto hash we want to patch
@@ -648,7 +650,7 @@ pub mod pallet {
 		///   `metadata` of the existing Proto-Fragment's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
 		///   in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata(metadata_key.len(), data.len()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata(metadata_key.len() as u32, data.len() as u32))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			// proto hash we want to update

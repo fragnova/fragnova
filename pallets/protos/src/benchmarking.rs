@@ -2,6 +2,8 @@
 //!
 //! We want to simulate the worst-case scenario for each extrinsic
 
+#![cfg(feature = "runtime-benchmarks")]
+
 use super::*;
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
