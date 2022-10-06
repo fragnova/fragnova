@@ -1310,6 +1310,7 @@ pub mod pallet {
 			percentage_amount * current_frag_price * 100
 		}
 
+		/// Calculate a percentage
 		pub fn apply_percent(amount: u128, percent: u128) -> u128 {
 			if amount == 0 {
 				return 0
@@ -1317,14 +1318,16 @@ pub mod pallet {
 			amount * percent / 100
 		}
 
+		/// Get the price of FRAG from pallet-oracle
 		pub fn get_oracle_price() -> u128 {
 			1 // Assume the current price of 1 FRAG = 1 USD
 			 // TODO implement pallet Oracle
 		}
 
+		/// Convert the lock period integer retrieved from Ethereum event into the number of weeks.
+		/// Refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 		pub fn eth_lock_period_to_weeks(lock_period: u128) -> Result<u128, Error<T>> {
 			let sec = match lock_period {
-				// For lock_period refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 				0 => 2,  // 2 weeks
 				1 => 4,  // 1 month
 				2 => 12, // 3 months
