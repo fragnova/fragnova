@@ -428,15 +428,14 @@ pub mod pallet {
 
 		// Firstly: Verify the `signature` for the message keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)
 		// Secondly: After verification, recover the public key used to sign the aforementioned `signature` for the aforementioned message
-		// Third: Add
-		// TODO
 		/// **Link** the **Clamor public account address that calls this extrinsic** with the
 		/// **public account address that is returned from verifying the signature `signature` for
 		/// the message `keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)`** (NOTE: The
 		/// returned public account address is of the account that signed the signature
 		/// `signature`).
-		///
-		/// After linking, also emit an event indicating that the two accounts were linked.
+		/// This function also checks whether or not the linked account has some reserved Tickets or NOVA
+		/// from any previous lock of FRAG. If there are, then they are minted.
+		/// After linking and minting, it emit events indicating that the two accounts were linked and that Tickets and NOVA were minted.
 		#[pallet::weight(25_000)] // TODO - weight
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
@@ -1233,7 +1232,10 @@ pub mod pallet {
 
 					log::trace!("Tickets available per week: {}", tickets_convertible_per_week);
 					log::trace!("NOVA available per week: {}", nova_convertible_per_week);
-					log::trace!("Weeks passed since FRAG was locked: {}", num_weeks_since_lock_frag);
+					log::trace!(
+						"Weeks passed since FRAG was locked: {}",
+						num_weeks_since_lock_frag
+					);
 					log::trace!(
 						"Tickets available per week at current price: {}",
 						tickets_amount_per_week_at_current_price
