@@ -25,21 +25,21 @@ pub fn get_ticket_asset_id() -> u32 {
 }
 
 #[cfg(test)]
-pub fn get_initial_percentage_tickets() -> u64 {
+pub fn get_initial_percentage_tickets() -> u128 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;
 	<Test as Config>::InitialPercentageTickets::get()
 }
 
 #[cfg(test)]
-pub fn get_initial_percentage_nova() -> u64 {
+pub fn get_initial_percentage_nova() -> u128 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;
 	<Test as Config>::InitialPercentageNova::get()
 }
 
 #[cfg(test)]
-pub fn get_usd_equivalent_amount() -> u64 {
+pub fn get_usd_equivalent_amount() -> u128 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;
 	<Test as Config>::USDEquivalentAmount::get()

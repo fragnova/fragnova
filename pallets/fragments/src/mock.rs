@@ -216,9 +216,9 @@ impl pallet_accounts::Config for Test {
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU64<80>;
-	type InitialPercentageNova = ConstU64<20>;
-	type USDEquivalentAmount = ConstU64<100>;
+	type InitialPercentageTickets = ConstU128<80>;
+	type InitialPercentageNova = ConstU128<20>;
+	type USDEquivalentAmount = ConstU128<100>;
 }
 
 impl pallet_proxy::Config for Test {

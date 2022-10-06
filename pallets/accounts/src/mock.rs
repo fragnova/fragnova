@@ -26,7 +26,9 @@ use std::sync::Arc;
 
 use sp_runtime::{
 	testing::{Header, TestXt},
-	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
+	traits::{
+		BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
+	},
 	RuntimeAppPublic,
 };
 
@@ -164,9 +166,9 @@ impl Config for Test {
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU64<80>;
-	type InitialPercentageNova = ConstU64<20>;
-	type USDEquivalentAmount = ConstU64<100>;
+	type InitialPercentageTickets = ConstU128<80>;
+	type InitialPercentageNova = ConstU128<20>;
+	type USDEquivalentAmount = ConstU128<100>;
 }
 
 impl pallet_proxy::Config for Test {
