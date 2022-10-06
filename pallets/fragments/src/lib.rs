@@ -422,7 +422,7 @@ pub mod pallet {
 		/// * `unique` (*optional*) - **Whether** the **Fragment Definiton** is **unique**
 		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)**
 		/// that **can be created** using the **Fragment Definition**
-		#[pallet::weight(<T as Config>::WeightInfo::create(metadata.name.len()))]
+		#[pallet::weight(<T as Config>::WeightInfo::create(metadata.name.len() as u32))]
 		pub fn create(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
@@ -630,7 +630,7 @@ pub mod pallet {
 		/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
 		#[pallet::weight(match options {
 			FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(q),
-			FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len())
+			FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
 		})]
 		pub fn mint(
 			origin: OriginFor<T>,
