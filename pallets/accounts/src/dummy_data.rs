@@ -14,36 +14,28 @@ use sp_core::{
 fn get_ethereum_chain_id() -> u64 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;
-	let eth_chain_id = <Test as Config>::EthChainId::get();
-	assert_eq!(eth_chain_id, 5);
-	eth_chain_id
+	<Test as Config>::EthChainId::get()
 }
 
 #[cfg(test)]
 pub fn get_ticket_asset_id() -> u32 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;
-	let tickets_asset_id = <Test as Config>::TicketsAssetId::get();
-	assert_eq!(tickets_asset_id, 1337);
-	tickets_asset_id
+	<Test as Config>::TicketsAssetId::get()
 }
 
 #[cfg(test)]
 pub fn get_initial_percentage_tickets() -> u128 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;
-	let initial_percentage_tickets = <Test as Config>::InitialPercentageTickets::get();
-	assert_eq!(initial_percentage_tickets, 80);
-	initial_percentage_tickets
+	<Test as Config>::InitialPercentageTickets::get()
 }
 
 #[cfg(test)]
 pub fn get_initial_percentage_nova() -> u128 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;
-	let initial_percentage_nova = <Test as Config>::InitialPercentageNova::get();
-	assert_eq!(initial_percentage_nova, 20);
-	initial_percentage_nova
+	<Test as Config>::InitialPercentageNova::get()
 }
 
 #[cfg(test)]
