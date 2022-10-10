@@ -28,6 +28,7 @@ fn get_genesis_hash() -> sp_core::H256 {
 // (If pallet_accounts::dummy_data is being built in another pallet)
 #[cfg(not(test))]
 fn get_genesis_hash() -> sp_core::H256 {
+	// I don't what to return if the build-dummy-data flag is enabled!
 	H256([0u8; 32])
 }
 
