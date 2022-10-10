@@ -76,8 +76,8 @@ pub fn create_link_signature(
 	].concat();
 
 	let message = [
-		format!("\x19Ethereum Signed Message:\n{}", message.len()).into_bytes(),
-		message
+		b"\x19Ethereum Signed Message:\n32",
+		&keccak_256(&message)[..],
 	].concat();
 
 	let hashed_message = keccak_256(&message);

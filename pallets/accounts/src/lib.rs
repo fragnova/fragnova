@@ -443,8 +443,8 @@ pub mod pallet {
 
 			// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
 			let message = [
-				format!("\x19Ethereum Signed Message:\n{}", message.len()).into_bytes(),
-				message
+				b"\x19Ethereum Signed Message:\n32",
+				&keccak_256(&message)[..],
 			].concat();
 
 			let message_hash = keccak_256(&message);
