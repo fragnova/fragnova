@@ -12,3 +12,9 @@ coverage:
       default:
         enabled: no
         if_not_found: success
+        
+
+flags:
+  pallets:
+    paths:
+      - pallets/*/src/lib.rs
