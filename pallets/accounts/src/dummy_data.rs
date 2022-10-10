@@ -155,7 +155,7 @@ pub struct Link {
 }
 
 impl Link {
-	pub fn get_recovered_ethereum_account_id(&self) -> H160 {
+	pub fn get_ethereum_public_address_of_signer(&self) -> H160 {
 		get_ethereum_public_address(&self._ethereum_account_pair)
 	}
 }

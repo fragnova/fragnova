@@ -30,10 +30,10 @@ mod link_tests {
 
 			assert!(
 				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap() ==
-					link.get_recovered_ethereum_account_id()
+					link.get_ethereum_public_address_of_signer()
 			);
 			assert!(
-				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap() ==
+				<EVMLinksReverse<Test>>::get(&link.get_ethereum_public_address_of_signer()).unwrap() ==
 					link.clamor_account_id
 			);
 
@@ -47,7 +47,7 @@ mod link_tests {
 				event,
 				mock::Event::from(pallet_accounts::Event::Linked {
 					sender: link.clamor_account_id,
-					eth_key: link.get_recovered_ethereum_account_id()
+					eth_key: link.get_ethereum_public_address_of_signer()
 				})
 			);
 		});
@@ -132,12 +132,12 @@ mod unlink_tests {
 
 			assert_ok!(Accounts::unlink(
 				Origin::signed(link.clamor_account_id),
-				link.get_recovered_ethereum_account_id()
+				link.get_ethereum_public_address_of_signer()
 			));
 
 			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
 			assert!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()) ==
+				<EVMLinksReverse<Test>>::contains_key(&link.get_ethereum_public_address_of_signer()) ==
 					false
 			);
 
@@ -153,7 +153,7 @@ mod unlink_tests {
 				event,
 				mock::Event::from(pallet_accounts::Event::Unlinked {
 					sender: link.clamor_account_id,
-					eth_key: link.get_recovered_ethereum_account_id(),
+					eth_key: link.get_ethereum_public_address_of_signer(),
 				})
 			);
 		});
@@ -168,7 +168,7 @@ mod unlink_tests {
 			assert_noop!(
 				Accounts::unlink(
 					Origin::signed(link.clamor_account_id),
-					link.get_recovered_ethereum_account_id()
+					link.get_ethereum_public_address_of_signer()
 				),
 				Error::<Test>::AccountNotLinked
 			);
@@ -191,7 +191,7 @@ mod unlink_tests {
 			assert_noop!(
 				Accounts::unlink(
 					Origin::signed(link.clamor_account_id),
-					link_second.get_recovered_ethereum_account_id()
+					link_second.get_ethereum_public_address_of_signer()
 				),
 				Error::<Test>::DifferentAccountLinked
 			);
@@ -564,7 +564,7 @@ mod internal_lock_update_tests {
 
 			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
 			assert!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()) ==
+				<EVMLinksReverse<Test>>::contains_key(&link.get_ethereum_public_address_of_signer()) ==
 					false
 			);
 
@@ -581,7 +581,7 @@ mod internal_lock_update_tests {
 				event,
 				mock::Event::from(pallet_accounts::Event::Unlinked {
 					sender: link.clamor_account_id,
-					eth_key: link.get_recovered_ethereum_account_id()
+					eth_key: link.get_ethereum_public_address_of_signer()
 				})
 			);
 		});
