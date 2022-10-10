@@ -103,6 +103,15 @@ pub struct Mint {
 	pub amount: Option<u64>,
 }
 
+impl Mint {
+	pub fn get_quantity(&self) -> u64 {
+		match &self.buy_options {
+			FragmentBuyOptions::Quantity(q) => q.clone(),
+			FragmentBuyOptions::UniqueData(_) => 1,
+		}
+	}
+}
+
 #[derive(Clone)]
 pub struct Buy {
 	pub publish: Publish,

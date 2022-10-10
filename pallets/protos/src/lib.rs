@@ -316,6 +316,8 @@ pub mod pallet {
 		ReferenceNotFound,
 		/// Not enough tokens to stake
 		InsufficientBalance,
+		/// Proto-Fragment's References includes itself!
+		CircularReference,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -367,6 +369,9 @@ pub mod pallet {
 
 			// make sure the proto does not exist already!
 			ensure!(!<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoExists);
+
+			// proto cannot refer itself!
+			ensure!(!references.contains(&proto_hash), Error::<T>::CircularReference);
 
 			// we need this to index transactions
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
@@ -466,7 +471,7 @@ pub mod pallet {
 		/// * `license` (optional) - If **this value** is **not None**, the **existing Proto-Fragment's current license** is overwritten to **this value**
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the
 		///   **patch**
-		/// * `new_tags` - **List of Tags**, notice: it will replace previous tags if not None
+		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment's current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
 		pub fn patch(
@@ -475,7 +480,7 @@ pub mod pallet {
 			proto_hash: Hash256,
 			license: Option<UsageLicense<T::AccountId>>,
 			new_references: Vec<Hash256>,
-			new_tags: Option<Vec<Vec<u8>>>,
+			tags: Option<Vec<Vec<u8>>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -483,6 +488,8 @@ pub mod pallet {
 
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+
+			ensure!(!new_references.contains(&proto_hash), Error::<T>::CircularReference);
 
 			match proto.owner {
 				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
@@ -529,8 +536,8 @@ pub mod pallet {
 				}
 
 				// Replace previous tags if not None
-				if let Some(new_tags) = new_tags {
-					let tags = new_tags
+				if let Some(tags) = tags {
+					let tags = tags
 						.iter()
 						.map(|s| {
 							let tag_index = <Tags<T>>::get(s);
@@ -672,6 +679,8 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
+			// Write STATE from now, ensure no errors from now...
+
 			let metadata_key_index = {
 				let index = <MetaKeys<T>>::get(metadata_key.clone());
 				if let Some(index) = index {
@@ -686,8 +695,6 @@ pub mod pallet {
 					<Compact<u64>>::from(next_index)
 				}
 			};
-
-			// Write STATE from now, ensure no errors from now...
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
 				let proto = proto.as_mut().unwrap();
@@ -952,6 +959,7 @@ pub mod pallet {
 			}
 		}
 
+		/// Whether `struct_proto` has all the tags `tags` and categories `categories`
 		fn filter_category(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
@@ -1018,6 +1026,7 @@ pub mod pallet {
 			}
 		}
 
+		/// Whether `struct_proto` has all the tags `tags`
 		fn filter_tags(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
@@ -1105,6 +1114,66 @@ pub mod pallet {
 			return found
 		}
 
+		/// Converts a `ProtoOwner` struct into a JSON
+		pub fn get_owner_in_json_format(owner: ProtoOwner<T::AccountId>) -> Value {
+			let json_owner = match owner {
+				ProtoOwner::User(account_id) => json!({
+					"type": "internal",
+					"value": hex::encode(account_id)
+				}),
+				ProtoOwner::ExternalAsset(linked_asset) => {
+					let value = match linked_asset {
+						LinkedAsset::Erc721(contract, token_id, source) => {
+							let chain_id = match source {
+								LinkSource::Evm(_sig, _block, chain_id) => chain_id,
+							};
+							json!({
+								"type": "erc721",
+								"value": {
+									"contract": format!("0x{:x}", contract),
+									"token_id": format!("0x{:x}", token_id),
+									"chain_id": format!("0x{:x}", chain_id)
+								}
+							})
+						},
+					};
+					json!({
+						"type": "external",
+						"value": value,
+					})
+				},
+			};
+
+			json_owner
+		}
+
+		/// Queries the `metadata_keys` that exist in the map `metadata` and returns them as a JSON (along with their corresponding data hashes)
+		pub fn get_map_of_matching_metadata_keys(
+			metadata_keys: &Vec<Vec<u8>>,
+			metadata: &BTreeMap<Compact<u64>, Hash256>,
+		) -> Map<String, Value> {
+			let mut map = Map::new();
+
+			for metadata_key in metadata_keys.clone().iter() {
+				let metadata_value =
+					if let Some(metadata_key_index) = <MetaKeys<T>>::get(metadata_key) {
+						if let Some(data_hash) = metadata.get(&Compact(metadata_key_index)) {
+							Value::String(hex::encode(data_hash))
+						} else {
+							Value::Null
+						}
+					} else {
+						Value::Null
+					};
+
+				if let Ok(string_metadata_key) = String::from_utf8(metadata_key.clone()) {
+					map.insert(string_metadata_key, metadata_value);
+				}
+			}
+
+			map
+		}
+
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
 		/// type** is a **JSON string**
 		///
@@ -1114,51 +1183,62 @@ pub mod pallet {
 		pub fn get_protos(
 			params: GetProtosParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
+			let protos_map: Map<String, Value> = Self::get_protos_map(params)?;
+
+			let result = json!(protos_map).to_string();
+
+			Ok(result.into_bytes())
+		}
+
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
+		/// type** is a **JSON string**
+		///
+		/// # Arguments
+		///
+		/// * `params` - A ***GetProtosParams* struct**
+		pub fn get_protos_map(
+			params: GetProtosParams<T::AccountId, Vec<u8>>,
+		) -> Result<Map<String, Value>, Vec<u8>> {
 			let mut map = Map::new();
 
 			let list_protos_final: Vec<Hash256> = if let Some(owner) = params.owner {
 				// `owner` exists
-				if let Some(list_protos_owner) =
+				let list_protos_owner =
 					<ProtosByOwner<T>>::get(ProtoOwner::<T::AccountId>::User(owner))
-				{
-					// `owner` exists in `ProtosByOwner`
-					if params.desc {
-						// Sort in descending order
-						list_protos_owner
-							.into_iter()
-							.rev()
-							.filter(|proto_id| {
-								Self::filter_proto(
-									proto_id,
-									&params.tags,
-									&params.categories,
-									params.available,
-									params.exclude_tags,
-								)
-							})
-							.skip(params.from as usize)
-							.take(params.limit as usize)
-							.collect::<Vec<Hash256>>()
-					} else {
-						// Sort in ascending order
-						list_protos_owner
-							.into_iter()
-							.filter(|proto_id| {
-								Self::filter_proto(
-									proto_id,
-									&params.tags,
-									&params.categories,
-									params.available,
-									params.exclude_tags,
-								)
-							})
-							.skip(params.from as usize)
-							.take(params.limit as usize)
-							.collect::<Vec<Hash256>>()
-					}
+						.ok_or("Owner not found")?; // `owner` exists in `ProtosByOwner`
+				if params.desc {
+					// Sort in descending order
+					list_protos_owner
+						.into_iter()
+						.rev()
+						.filter(|proto_id| {
+							Self::filter_proto(
+								proto_id,
+								&params.tags,
+								&params.categories,
+								params.available,
+								params.exclude_tags,
+							)
+						})
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect()
 				} else {
-					// `owner` doesn't exist in `ProtosByOwner`
-					return Err("Owner not found".into())
+					// Sort in ascending order
+					list_protos_owner
+						.into_iter()
+						.filter(|proto_id| {
+							Self::filter_proto(
+								proto_id,
+								&params.tags,
+								&params.categories,
+								params.available,
+								params.exclude_tags,
+							)
+						})
+						.skip(params.from as usize)
+						.take(params.limit as usize)
+						.collect()
 				}
 			} else {
 				// Notice this wastes time and memory and needs a better implementation
@@ -1228,30 +1308,20 @@ pub mod pallet {
 
 			if params.return_owners || !params.metadata_keys.is_empty() {
 				for (proto_id, map_proto) in map.iter_mut() {
-					let array_proto_id: Hash256 = if let Ok(array_proto_id) = hex::decode(proto_id)
-					{
-						if let Ok(array_proto_id) = array_proto_id.try_into() {
-							array_proto_id
-						} else {
-							return Err("Failed to convert proto_id to Hash256".into())
-						}
-					} else {
-						return Err("Failed to decode proto_id".into())
-					};
-
-					let (owner, map_metadata, license) =
-						if let Some(proto) = <Protos<T>>::get(array_proto_id) {
-							(proto.owner, proto.metadata, proto.license)
-						} else {
-							return Err("Failed to get proto".into())
-						};
-
 					let map_proto = match map_proto {
 						Value::Object(map_proto) => map_proto,
 						_ => return Err("Failed to get map_proto".into()),
 					};
 
-					match license {
+					let array_proto_id: Hash256 = hex::decode(proto_id)
+						.or(Err("`Failed to decode `proto_id``"))?
+						.try_into()
+						.or(Err("Failed to convert `proto_id` to Hash256"))?;
+
+					let proto_struct =
+						<Protos<T>>::get(array_proto_id).ok_or("Failed to get proto")?;
+
+					match proto_struct.license {
 						UsageLicense::Tickets(amount) => {
 							let n: u64 = amount.into();
 							(*map_proto).insert(String::from("tickets"), Value::Number(n.into()));
@@ -1262,65 +1332,25 @@ pub mod pallet {
 					}
 
 					if params.return_owners {
-						let owner = match owner {
-							ProtoOwner::User(account_id) => json!({
-								"type": "internal",
-								"value": hex::encode(account_id)
-							}),
-							ProtoOwner::ExternalAsset(linked_asset) => {
-								let value = match linked_asset {
-									LinkedAsset::Erc721(contract, token_id, source) => {
-										let chain_id = match source {
-											LinkSource::Evm(_sig, _block, chain_id) => chain_id,
-										};
-										json!({
-											"type": "erc721",
-											"value": {
-												"contract": format!("0x{:x}", contract),
-												"token_id": format!("0x{:x}", token_id),
-												"chain_id": format!("0x{:x}", chain_id)
-											}
-										})
-									},
-								};
-								json!({
-									"type": "external",
-									"value": value,
-								})
-							},
-						};
-
-						(*map_proto).insert(String::from("owner"), owner);
+						let owner = proto_struct.owner;
+						let json_owner = Self::get_owner_in_json_format(owner);
+						(*map_proto).insert("owner".into(), json_owner);
 					}
 
 					if !params.metadata_keys.is_empty() {
-						for metadata_key in params.metadata_keys.iter() {
-							let metadata_key_index = <MetaKeys<T>>::get(metadata_key.clone());
-							let metadata_value = if let Some(metadata_key_index) =
-								metadata_key_index
-							{
-								let metadata_key_index = <Compact<u64>>::from(metadata_key_index);
-
-								if let Some(data_hash) = map_metadata.get(&metadata_key_index) {
-									Value::String(hex::encode(data_hash))
-								} else {
-									Value::Null
-								}
-							} else {
-								Value::Null
-							};
-
-							if let Ok(key) = String::from_utf8(metadata_key.clone()) {
-								(*map_proto).insert(key, metadata_value);
-							}
-						}
+						let proto_metadata = proto_struct.metadata;
+						let map_of_matching_metadata_keys = Self::get_map_of_matching_metadata_keys(
+							&params.metadata_keys,
+							&proto_metadata,
+						);
+						(*map_proto)
+							.insert("metadata".into(), map_of_matching_metadata_keys.into());
+						// (*map_proto).append(&mut map_of_matching_metadata_keys);
 					}
 				}
 			}
 
-			let result = json!(map).to_string();
-
-			Ok(result.into_bytes())
+			Ok(map)
 		}
 	}
 }
