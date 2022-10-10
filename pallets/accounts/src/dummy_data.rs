@@ -35,10 +35,6 @@ pub fn create_link_signature(
 	clamor_account_id: sp_core::ed25519::Public,
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 ) -> sp_core::ecdsa::Signature {
-	// let mut message = b"EVM2Fragnova".to_vec();
-	// message.extend_from_slice(&get_ethereum_chain_id().to_be_bytes());
-	// message.extend_from_slice(&clamor_account_id.encode());
-
 
 	let sender_string = hex::encode(clamor_account_id);
 	let genesis_hash_string = hex::encode(get_genesis_hash());
@@ -93,46 +89,42 @@ pub fn create_lock_signature(
 	lock_amount: U256,
 	locktime: U256,
 ) -> sp_core::ecdsa::Signature {
-	let ethereum_account_id =
-		get_ethereum_public_address(&ethereum_account_pair);
-
-	let mut message = b"FragLock".to_vec();
-	message.extend_from_slice(&ethereum_account_id.0[..]);
-	message.extend_from_slice(&get_ethereum_chain_id().to_be_bytes());
-	message.extend_from_slice(&Into::<[u8; 32]>::into(lock_amount.clone()));
-	message.extend_from_slice(&Into::<[u8; 32]>::into(locktime.clone()));
-
-	let hashed_message = keccak_256(&message);
-
-	// Ethereum Signature is produced by signing a keccak256 hash with the following format:
-	// "\x19Ethereum Signed Message\n" + len(msg) + msg
-	// Note: `msg` is the hashed message
-	let hashed_message =
-		keccak_256(&[b"\x19Ethereum Signed Message:\n32", &hashed_message[..]].concat());
-
-	ethereum_account_pair.sign_prehashed(&hashed_message)
+	ethereum_account_pair.sign_prehashed(
+		&keccak_256(
+			&[
+				b"\x19Ethereum Signed Message:\n32",
+				&keccak_256(
+					&[
+						&b"FragLock"[..],
+						&get_ethereum_public_address(&ethereum_account_pair).0[..],
+						&get_ethereum_chain_id().to_be_bytes(),
+						&Into::<[u8; 32]>::into(lock_amount.clone()),
+						&Into::<[u8; 32]>::into(locktime.clone())
+					].concat()
+				)[..]
+			].concat()
+		)
+	)
 }
 pub fn create_unlock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 	unlock_amount: U256,
 ) -> sp_core::ecdsa::Signature {
-	let ethereum_account_id =
-		get_ethereum_public_address(&ethereum_account_pair);
-
-	let mut message = b"FragUnlock".to_vec();
-	message.extend_from_slice(&ethereum_account_id.0[..]);
-	message.extend_from_slice(&get_ethereum_chain_id().to_be_bytes());
-	message.extend_from_slice(&Into::<[u8; 32]>::into(unlock_amount.clone()));
-
-	let hashed_message = keccak_256(&message);
-
-	// Ethereum Signature is produced by signing a keccak256 hash with the following format:
-	// "\x19Ethereum Signed Message\n" + len(msg) + msg
-	// Note: `msg` is the hashed message
-	let hashed_message =
-		keccak_256(&[b"\x19Ethereum Signed Message:\n32", &hashed_message[..]].concat());
-
-	ethereum_account_pair.sign_prehashed(&hashed_message)
+	ethereum_account_pair.sign_prehashed(
+		&keccak_256(
+			&[
+				b"\x19Ethereum Signed Message:\n32",
+				&keccak_256(
+					&[
+						&b"FragUnlock"[..],
+						&get_ethereum_public_address(&ethereum_account_pair).0[..],
+						&get_ethereum_chain_id().to_be_bytes(),
+						&Into::<[u8; 32]>::into(unlock_amount.clone())
+					].concat()
+				)[..]
+			].concat()
+		)
+	)
 }
 
 pub fn get_ethereum_public_address(
@@ -163,66 +155,7 @@ pub struct Link {
 
 impl Link {
 	pub fn get_recovered_ethereum_account_id(&self) -> H160 {
-		// let mut message = b"EVM2Fragnova".to_vec();
-		// message.extend_from_slice(&get_ethereum_chain_id().to_be_bytes());
-		// message.extend_from_slice(&self.clamor_account_id.encode());
-		// let hashed_message = keccak_256(&message);
-
-
-		let sender_string = hex::encode(self.clamor_account_id);
-		let genesis_hash_string = hex::encode(get_genesis_hash());
-
-		let message: Vec<u8> = [
-			&[0x19, 0x01],
-			// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
-			&keccak_256(
-				// We use the ABI encoding Rust library since it encodes each token as 32-bytes
-				&ethabi::encode(
-					&vec![
-						Token::Uint(
-							U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
-						),
-						Token::Uint(U256::from(keccak_256(b"Fragnova Network"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
-						Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
-						Token::Uint(U256::from(get_ethereum_chain_id())),
-						Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode("F5A0Af5a0AF5a0AF5a0af5A0Af5A0AF5a0AF5A0A").unwrap()).unwrap())),
-					]
-				)
-			)[..],
-			// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
-			&keccak_256(
-				// We use the ABI encoding Rust library since it encodes each token as 32-bytes
-				&ethabi::encode(
-					&vec![
-						// This is the `typeHash`
-						Token::Uint(
-							U256::from(keccak_256(b"Msg(string fragnovaGenesis,string op,string sender)"))
-						),
-						// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
-						Token::Uint(U256::from(keccak_256(&genesis_hash_string.into_bytes()))),
-						Token::Uint(U256::from(keccak_256(b"link"))),
-						Token::Uint(U256::from(keccak_256(&sender_string.into_bytes()))),
-					]
-				)
-			)[..]
-		].concat();
-		let message = [
-			format!("\x19Ethereum Signed Message:\n{}", message.len()).into_bytes(),
-			message
-		].concat();
-		let hashed_message = keccak_256(&message);
-
-		let uncompressed_public_key_without_prefix =
-			Crypto::secp256k1_ecdsa_recover(&self.link_signature.0, &hashed_message)
-				.map_err(|_| format!("Mayday!"))
-				.unwrap();
-
-		let ethererum_account_id = keccak_256(&uncompressed_public_key_without_prefix[..]);
-		// let ethererum_account_id = keccak_256(&ethererum_account_id[1..]);
-		let ethererum_account_id = &ethererum_account_id[12..];
-		let ethererum_account_id = H160::from_slice(&ethererum_account_id[..]);
-
-		ethererum_account_id
+		get_ethereum_public_address(&self._ethereum_account_pair)
 	}
 }
 
