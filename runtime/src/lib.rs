@@ -8,7 +8,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-/// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
+// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
@@ -116,8 +116,8 @@ pub mod opaque {
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
 
-	/// Implement OpaqueKeys for a described struct.
-	/// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
+	// Implement OpaqueKeys for a described struct.
+	// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
 	impl_opaque_keys! {
 		/// TODO: Documentation
 		pub struct SessionKeys {
@@ -361,7 +361,7 @@ impl pallet_balances::Config for Runtime {
 	type IsTransferable = IsTransferable;
 }
 
-/// Parameters related to calculating the Weight fee.
+// Parameters related to calculating the Weight fee.
 parameter_types! {
 	/// The amount of balance a caller (here "caller" refers to a "smart-contract account") has to pay for each storage item.
 	///
@@ -658,31 +658,31 @@ impl pallet_assets::Config for Runtime {
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
-/// Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
-///
-/// The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
-///
-/// Each pallet is declared as such:
-///
-/// - `Identifier`: name given to the pallet that uniquely identifies it.
-/// - `:`: colon separator
-/// - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
-/// - `::{ Part1, Part2<T>, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
-/// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
-/// - `Pallet` - Required for all pallets
-/// - `Call` - If the pallet has callable functions
-/// - `Storage` - If the pallet uses storage
-/// - `Event` or `Event<T>` (if the event is generic) - If the pallet emits events
-/// - `Origin` or `Origin<T>` (if the origin is generic) - If the pallet has instanciable origins
-/// - `Config` or `Config<T>` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
-/// - `Inherent` - If the pallet provides/can check inherents.
-/// - `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
-///
-///
-/// NOTE #1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
-///
-/// NOTE #2: The population of the genesis storage depends on the order of pallets.
-/// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
+// Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
+//
+// The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
+//
+// Each pallet is declared as such:
+//
+// - `Identifier`: name given to the pallet that uniquely identifies it.
+// - `:`: colon separator
+// - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
+// - `::{ Part1, Part2<T>, .. }` (optional if pallet declared with `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
+// 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**. We provide support for the following module parts in a pallet:
+// - `Pallet` - Required for all pallets
+// - `Call` - If the pallet has callable functions
+// - `Storage` - If the pallet uses storage
+// - `Event` or `Event<T>` (if the event is generic) - If the pallet emits events
+// - `Origin` or `Origin<T>` (if the origin is generic) - If the pallet has instanciable origins
+// - `Config` or `Config<T>` (if the config is generic) - If the pallet builds the genesis storage with GenesisConfig
+// - `Inherent` - If the pallet provides/can check inherents.
+// - `ValidateUnsigned` - If the pallet validates unsigned extrinsics.
+//
+//
+// NOTE #1: The macro generates a type alias for each pallet to their `Pallet`. E.g. `type System = frame_system::Pallet<Runtime>`
+//
+// NOTE #2: The population of the genesis storage depends on the order of pallets.
+// So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block, //  Block is the block type that is used in the runtime
@@ -739,9 +739,9 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 >;
 
-/// Marks the given trait implementations as runtime apis.
-///
-/// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
+// Marks the given trait implementations as runtime apis.
+//
+// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
 impl_runtime_apis! {
 
 	/// TODO: Documentation
