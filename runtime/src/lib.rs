@@ -10,7 +10,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-/// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
+// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
@@ -36,7 +36,10 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, MultiSignature,
 };
-use sp_std::prelude::*;
+use sp_std::{
+	prelude::*,
+	str,
+};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -117,8 +120,8 @@ pub mod opaque {
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
 
-	/// Implement OpaqueKeys for a described struct.
-	/// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
+	// Implement OpaqueKeys for a described struct.
+	// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
 	impl_opaque_keys! {
 		/// TODO: Documentation
 		pub struct SessionKeys {
@@ -362,7 +365,7 @@ impl pallet_balances::Config for Runtime {
 	type IsTransferable = IsTransferable;
 }
 
-/// Parameters related to calculating the Weight fee.
+// Parameters related to calculating the Weight fee.
 parameter_types! {
 	/// The amount of balance a caller (here "caller" refers to a "smart-contract account") has to pay for each storage item.
 	///
@@ -746,9 +749,9 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 >;
 
-/// Marks the given trait implementations as runtime apis.
-///
-/// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
+// Marks the given trait implementations as runtime apis.
+//
+// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
 impl_runtime_apis! {
 
 	/// TODO: Documentation
@@ -817,6 +820,58 @@ impl_runtime_apis! {
 				#[allow(unused_variables)]
 				Call::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
 					// TODO
+					use protos::categories::{
+						Categories,
+						AudioCategories,
+						BinaryCategories,
+						ModelCategories,
+						ShardsFormat,
+						ShardsScriptInfo,
+						// ShardsTrait,
+						TextCategories,
+						TextureCategories,
+						VectorCategories,
+						VideoCategories
+					};
+					match category {
+						Categories::Text(sub_categories) => match sub_categories {
+							TextCategories::Plain => str::from_utf8(data).is_ok(),
+							TextCategories::Json => false, // ToJson
+						},
+						Categories::Trait(il_tratto) => match il_tratto { // Non Capisco Cosa Fare Qui!!!
+							Some(shards_trait) => false,
+							None => false,
+						},
+						Categories::Shards(shards_script_info_struct) => false,
+						Categories::Audio(sub_categories) => match sub_categories {
+							AudioCategories::OggFile => false, // Audio.ReadFile
+							AudioCategories::Mp3File => false, // Audio.ReadFile
+						},
+						Categories::Texture(sub_categories) => match sub_categories {
+							TextureCategories::PngFile => false, // Non Esiste!!!
+							TextureCategories::JpgFile => false, // Non Esiste!!!
+						},
+						Categories::Vector(sub_categories) => match sub_categories {
+							VectorCategories::SvgFile => false, // Non Esiste!!!
+							VectorCategories::TtfFile => false, // Non Esiste!!!
+						},
+						Categories::Video(sub_categories) => match sub_categories {
+							VideoCategories::MkvFile => false, // Non Esiste!!!
+							VideoCategories::Mp4File => false, // Non Esiste!!!
+						},
+						Categories::Model(sub_categories) => match sub_categories {
+							ModelCategories::GltfFile => false, // Non Esiste!!!
+							ModelCategories::Sdf => false, // Non Esiste!!!
+							ModelCategories::PhysicsCollider => false, // Non Esiste!!!
+						},
+						Categories::Binary(sub_categories) => match sub_categories {
+							BinaryCategories::WasmProgram => false, // Non Esiste!!!
+							BinaryCategories::WasmReactor => false, // Non Esiste!!!
+							BinaryCategories::BlendFile => false, // Non Esiste!!!
+							BinaryCategories::OnnxModel => false, // Non Esiste!!!
+						},
+					};
+					()
 				},
 				#[allow(unused_variables)]
 				Call::Protos(ProtosCall::patch{ref data, ..}) |
