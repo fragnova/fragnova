@@ -101,6 +101,23 @@ pub struct GetProtosParams<TAccountId, TString> {
   /// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
 }
+#[cfg(test)]
+impl<TAccountId, TString> Default for GetProtosParams<TAccountId, TString> {
+	fn default() -> Self {
+		Self {
+			desc: Default::default(),
+			from: Default::default(),
+			limit: Default::default(),
+			metadata_keys: Default::default(),
+			owner: None,
+			return_owners: Default::default(),
+			categories: Default::default(),
+			tags: Default::default(),
+			exclude_tags: Default::default(),
+			available: Default::default(),
+		}
+	}
+}
 
 /// **Struct** of a **Proto-Fragment Patch**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
@@ -1032,26 +1049,24 @@ pub mod pallet {
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
 			exclude_tags: &[Vec<u8>],
 		) -> bool {
-			if tags.len() == 0 {
-				true
-			} else {
-				let proto_has_any_unwanted_tag = exclude_tags.into_iter().any(|tag| {
-					if let Some(tag_idx) = <Tags<T>>::get(tag) {
-						struct_proto.tags.contains(&Compact::from(tag_idx))
-					} else {
-						false
-					}
-				});
-				let proto_has_all_wanted_tags = tags.into_iter().all(|tag| {
-					if let Some(tag_idx) = <Tags<T>>::get(tag) {
-						struct_proto.tags.contains(&Compact::from(tag_idx))
-					} else {
-						false
-					}
-				});
+			// empty iterator returns `false` for `Iterator::any()`
+			let proto_has_any_unwanted_tag = exclude_tags.into_iter().any(|tag| {
+				if let Some(tag_idx) = <Tags<T>>::get(tag) {
+					struct_proto.tags.contains(&Compact::from(tag_idx))
+				} else {
+					false
+				}
+			});
+			// empty iterator returns `true` for `Iterator::all()`
+			let proto_has_all_wanted_tags = tags.into_iter().all(|tag| {
+				if let Some(tag_idx) = <Tags<T>>::get(tag) {
+					struct_proto.tags.contains(&Compact::from(tag_idx))
+				} else {
+					false
+				}
+			});
 
-				proto_has_all_wanted_tags && !proto_has_any_unwanted_tag
-			}
+			proto_has_all_wanted_tags && !proto_has_any_unwanted_tag
 		}
 
 		fn get_list_of_matching_categories(
