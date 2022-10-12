@@ -1815,6 +1815,17 @@
 <span id="1815">1815</span>
 <span id="1816">1816</span>
 <span id="1817">1817</span>
+<span id="1818">1818</span>
+<span id="1819">1819</span>
+<span id="1820">1820</span>
+<span id="1821">1821</span>
+<span id="1822">1822</span>
+<span id="1823">1823</span>
+<span id="1824">1824</span>
+<span id="1825">1825</span>
+<span id="1826">1826</span>
+<span id="1827">1827</span>
+<span id="1828">1828</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1842,6 +1853,7 @@
 //!
 //! The Copy ID allows us to distinguish a Fragment Instance that has the same Fragment Definition ID and the same Edition ID.
 
+</span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 #[cfg(test)]
@@ -2338,7 +2350,7 @@
 		/// * `unique` (*optional*) - **Whether** the **Fragment Definiton** is **unique**
 		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)**
 		/// that **can be created** using the **Fragment Definition**
-		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::create())]
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::create(metadata.name.len() <span class="kw">as </span>u32))]
 		</span><span class="kw">pub fn </span>create(
 			origin: OriginFor&lt;T&gt;,
 			proto_hash: Hash256,
@@ -2606,7 +2618,7 @@
 		/// * `expires` (*optional*) - **Block number** that the sale ends at (*optional*)
 		/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// the **number of items** to **top up** in the **stack of stackable items**
-		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::publish())]
 		</span><span class="kw">pub fn </span>publish(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -2643,15 +2655,15 @@
 				<span class="kw">let </span>existing: Unit =
 					&lt;EditionsCount&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>definition_hash).unwrap_or(Compact(<span class="number">0</span>)).into();
 				<span class="kw">let </span>left = max.saturating_sub(existing); <span class="comment">// `left` = `max` - `existing`
-				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(quantity) = quantity {
+				</span><span class="kw">if </span>left == <span class="number">0 </span>{
+					<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::MaxSupplyReached.into());
+				}
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(quantity) = quantity {
 					<span class="kw">let </span>quantity: Unit = quantity.into();
 					<span class="macro">ensure!</span>(quantity &lt;= left, Error::&lt;T&gt;::MaxSupplyReached); <span class="comment">// Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				</span>} <span class="kw">else </span>{
 					<span class="comment">// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
 					</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ParamsNotValid.into())
-				}
-				<span class="kw">if </span>left == <span class="number">0 </span>{
-					<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::MaxSupplyReached.into())
 				}
 			}
 
@@ -2681,7 +2693,7 @@
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `definition_hash` - **ID** of the **Fragment Definition** to take off sale
-		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::unpublish())]
 		</span><span class="kw">pub fn </span>unpublish(origin: OriginFor&lt;T&gt;, definition_hash: Hash128) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -2730,7 +2742,12 @@
 		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
 		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
-		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
+		///
+		/// TODO - `*q as u32` might cause problems if q is too big (since q is u64)!!!
+		</span><span class="attribute">#[pallet::weight(<span class="kw">match </span>options {
+			FragmentBuyOptions::Quantity(q) =&gt; &lt;T <span class="kw">as </span>Config&gt;::WeightInfo::mint_definition_that_has_non_unique_capability(<span class="kw-2">*</span>q <span class="kw">as </span>u32),
+			FragmentBuyOptions::UniqueData(d) =&gt; &lt;T <span class="kw">as </span>Config&gt;::WeightInfo::mint_definition_that_has_unique_capability(d.len() <span class="kw">as </span>u32)
+		})]
 		</span><span class="kw">pub fn </span>mint(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -2759,7 +2776,7 @@
 
 			</span><span class="kw">let </span>quantity = <span class="kw">match </span>options {
 				<span class="comment">// Number of fragment instances to mint
-				</span>FragmentBuyOptions::Quantity(amount) =&gt; u64::from(amount),
+				</span>FragmentBuyOptions::Quantity(quantity) =&gt; u64::from(quantity),
 				<span class="kw">_ </span>=&gt; <span class="number">1u64</span>,
 			};
 
@@ -2795,7 +2812,12 @@
 		/// * `options` - **Enum** indicating whether to
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
-		</span><span class="attribute">#[pallet::weight(<span class="number">50_000</span>)]
+		///
+		/// TODO - `*=q as u32` might cause problems if q is too big (since q is u64)!!!
+		</span><span class="attribute">#[pallet::weight(<span class="kw">match </span>options {
+			FragmentBuyOptions::Quantity(q) =&gt; &lt;T <span class="kw">as </span>Config&gt;::WeightInfo::buy_definition_that_has_non_unique_capability(<span class="kw-2">*</span>q <span class="kw">as </span>u32),
+			FragmentBuyOptions::UniqueData(d) =&gt; &lt;T <span class="kw">as </span>Config&gt;::WeightInfo::buy_definition_that_has_unique_capability(d.len() <span class="kw">as </span>u32)
+		})]
 		</span><span class="kw">pub fn </span>buy(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -2903,7 +2925,7 @@
 		///
 		/// If the **current permitted actions of the Fragment Instance** allows for it to be duplicated (i.e if it has the permission **FragmentPerms::COPY**),
 		/// then it is duplicated and the duplicate&#39;s ownership is assigned to `to`.
-		/// Otherwise, its ownernship is transferred from `origin` to `to`.
+		/// Otherwise, its ownership is transferred from `origin` to `to`.
 		///
 		/// Note: **Only** the **Fragment Instance&#39;s owner** is **allowed** to give the Fragment Instance
 		///
@@ -3177,7 +3199,7 @@
 	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
 		<span class="doccomment">/// **Get** the **Account ID** of the Fragment Definition `definition_hash`**
 		///
-		/// This Account ID is determinstically computed using the Fragment Definition `class_hash`
+		/// This Account ID is determinstically computed using the Fragment Definition `definition_hash`
 		</span><span class="kw">pub fn </span>get_vault_id(definition_hash: Hash128) -&gt; T::AccountId {
 			<span class="kw">let </span>hash = blake2_256(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragments-vault&quot;</span>[..], <span class="kw-2">&amp;</span>definition_hash].concat());
 			T::AccountId::decode(<span class="kw-2">&amp;mut &amp;</span>hash[..]).expect(<span class="string">&quot;T::AccountId should decode&quot;</span>)

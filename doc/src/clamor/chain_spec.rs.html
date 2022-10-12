@@ -266,6 +266,8 @@
 <span id="266">266</span>
 <span id="267">267</span>
 <span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
 </pre><pre class="rust"><code><span class="doccomment">//! In Substrate, a chain specification is the collection of information that describes a Substrate-based blockchain network.
 //! For example, the chain specification identifies the network that a blockchain node connects to,
 //! the other nodes that it initially communicates with, and the initial state that nodes must agree on to produce blocks.
@@ -280,6 +282,8 @@
 //!
 //! Source: https://docs.substrate.io/build/chain-spec/
 
+</span><span class="comment">// The imports from `clamor_runtime` that follow the pattern &quot;&lt;Pallet&gt;Config&quot; are the &lt;Pallet&gt;&#39;s `GenesisConfig` struct
+// See for more info: https://docs.substrate.io/reference/how-to-guides/basics/configure-genesis-state/
 </span><span class="kw">use </span>clamor_runtime::{
 	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
 	GenesisConfig, GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,

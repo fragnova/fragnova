@@ -682,9 +682,11 @@
 <span id="682">682</span>
 <span id="683">683</span>
 <span id="684">684</span>
+<span id="685">685</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Clamor
 //! Blockchain to an External Blockchain
 
+</span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 #[cfg(test)]

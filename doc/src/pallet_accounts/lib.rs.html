@@ -988,7 +988,14 @@
 <span id="988">988</span>
 <span id="989">989</span>
 <span id="990">990</span>
-</pre><pre class="rust"><code><span class="doccomment">//! This pallet `frag` performs logic related to FRAG Token
+<span id="991">991</span>
+<span id="992">992</span>
+<span id="993">993</span>
+<span id="994">994</span>
+<span id="995">995</span>
+<span id="996">996</span>
+<span id="997">997</span>
+</pre><pre class="rust"><code><span class="doccomment">//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
 //!
@@ -998,6 +1005,7 @@
 //!
 //! IMPORTANT: locking != staking
 
+</span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 #[allow(missing_docs)]
@@ -1104,7 +1112,7 @@
 <span class="doccomment">/// TODO: Documentation
 </span><span class="kw">pub type </span>DiscordID = u64;
 
-<span class="doccomment">/// TODO: Documentation
+<span class="doccomment">/// Enum that indicates the different types of External Account IDs that can be &quot;used as an account&quot; on the Clamor Blockchain
 </span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 </span><span class="kw">pub enum </span>ExternalID {
 	<span class="doccomment">/// TODO: Documentation
@@ -1177,7 +1185,9 @@
 	</span><span class="attribute">#[pallet::config]
 	</span><span class="kw">pub trait </span>Config:
 		frame_system::Config
-		+ CreateSignedTransaction&lt;Call&lt;<span class="self">Self</span>&gt;&gt;
+		<span class="comment">// This trait is meant to be implemented by the runtime and is responsible for
+		// constructing a payload to be signed and contained within the extrinsic.
+		</span>+ CreateSignedTransaction&lt;Call&lt;<span class="self">Self</span>&gt;&gt;
 		+ pallet_balances::Config
 		+ pallet_proxy::Config
 		+ pallet_timestamp::Config
@@ -1185,7 +1195,7 @@
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
 		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
 
-		<span class="doccomment">/// Weight functions needed for pallet_protos.
+		<span class="doccomment">/// Weight functions needed for pallet_accounts.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 
 		<span class="doccomment">/// The Ethereum Chain ID that the Fragnova-owned Ethereum Smart Contract is deployed on.
@@ -1193,7 +1203,8 @@
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>EthChainId: Get&lt;u64&gt;;
 
-		<span class="doccomment">/// The **number of confirmations required** to consider a **transaction** on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
+		<span class="doccomment">/// The **number of confirmations required** to consider a **transaction**
+		/// on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>EthConfirmations: Get&lt;u64&gt;;
 
@@ -1267,11 +1278,13 @@
 	// to present to external chains to detach onto
 	</span><span class="doccomment">/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
-	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit `this list
+	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>FragKeys&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ed25519::Public&gt;, ValueQuery&gt;;
 
-	<span class="doccomment">/// The map between external accounts and the local accounts that are linked to them. (Discord, Telegram, etc)
+	<span class="doccomment">/// StorageMap that maps an **External Account ID** to an
+	/// **`AccountInfo` struct that contains
+	/// the External Account ID&#39;s linked Clamor Account ID, amongst other things**.
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>ExternalID2Account&lt;T: Config&gt; =
 		StorageMap&lt;<span class="kw">_</span>, Twox64Concat, ExternalID, AccountInfo&lt;T::AccountId, T::Moment&gt;&gt;;
@@ -1331,7 +1344,7 @@
 		<span class="doccomment">/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::add_key())]
 		</span><span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1347,7 +1360,7 @@
 		<span class="doccomment">/// Remove a Clamor Account ID from `FragKeys`
 
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::del_key())]
 		</span><span class="kw">pub fn </span>del_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1371,7 +1384,7 @@
 		/// `signature`).
 		///
 		/// After linking, also emit an event indicating that the two accounts were linked.
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::link())]
 		</span><span class="kw">pub fn </span>link(origin: OriginFor&lt;T&gt;, signature: ecdsa::Signature) -&gt; DispatchResult {
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -1404,7 +1417,7 @@
 
 		<span class="comment">// TODO
 		</span><span class="doccomment">/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::unlink())]
 		</span><span class="kw">pub fn </span>unlink(origin: OriginFor&lt;T&gt;, account: H160) -&gt; DispatchResult {
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 			<span class="self">Self</span>::unlink_account(sender, account)
@@ -1413,7 +1426,7 @@
 		<span class="doccomment">/// Update &#39;data&#39;
 		///
 		/// TODO
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::internal_lock_update())]
 		</span><span class="kw">pub fn </span>internal_lock_update(
 			origin: OriginFor&lt;T&gt;,
 			data: EthLockUpdate&lt;T::Public&gt;,
@@ -1554,8 +1567,9 @@
 			</span><span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// TODO
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		<span class="doccomment">/// Allow the External Account ID `external_id` to be used as a proxy
+		/// for the Clamor Account ID `origin`
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::sponsor_account())]
 		</span><span class="kw">pub fn </span>sponsor_account(origin: OriginFor&lt;T&gt;, external_id: ExternalID) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -1607,7 +1621,7 @@
 		}
 
 		<span class="doccomment">/// Add a sponsor account to the list of sponsors able to sponsor external accounts.
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::add_sponsor())]
 		</span><span class="kw">pub fn </span>add_sponsor(origin: OriginFor&lt;T&gt;, account: T::AccountId) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1621,7 +1635,7 @@
 		}
 
 		<span class="doccomment">/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.
-		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::remove_sponsor())]
 		</span><span class="kw">pub fn </span>remove_sponsor(origin: OriginFor&lt;T&gt;, account: T::AccountId) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
