@@ -1,5 +1,7 @@
 //! Benchmarking setup for pallet-detach
 
+#![cfg(feature = "runtime-benchmarks")]
+
 use super::*;
 #[allow(unused)]
 use crate::Pallet as Detach;

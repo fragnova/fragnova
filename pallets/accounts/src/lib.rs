@@ -1,4 +1,4 @@
-//! This pallet `frag` performs logic related to FRAG Token
+//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term "lock" refers to the *"effective transfer"* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
 //!
@@ -8,6 +8,7 @@
 //!
 //! IMPORTANT: locking != staking
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[allow(missing_docs)]
@@ -114,7 +115,7 @@ use frame_support::traits::ReservableCurrency;
 /// TODO: Documentation
 pub type DiscordID = u64;
 
-/// TODO: Documentation
+/// Enum that indicates the different types of External Account IDs that can be "used as an account" on the Clamor Blockchain
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum ExternalID {
 	/// TODO: Documentation
@@ -187,6 +188,8 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
+		// This trait is meant to be implemented by the runtime and is responsible for
+		// constructing a payload to be signed and contained within the extrinsic.
 		+ CreateSignedTransaction<Call<Self>>
 		+ pallet_balances::Config
 		+ pallet_proxy::Config
@@ -195,7 +198,7 @@ pub mod pallet {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// Weight functions needed for pallet_protos.
+		/// Weight functions needed for pallet_accounts.
 		type WeightInfo: WeightInfo;
 
 		/// The Ethereum Chain ID that the Fragnova-owned Ethereum Smart Contract is deployed on.
@@ -203,7 +206,8 @@ pub mod pallet {
 		#[pallet::constant]
 		type EthChainId: Get<u64>;
 
-		/// The **number of confirmations required** to consider a **transaction** on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
+		/// The **number of confirmations required** to consider a **transaction**
+		/// on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
 		#[pallet::constant]
 		type EthConfirmations: Get<u64>;
 
@@ -277,11 +281,13 @@ pub mod pallet {
 	// to present to external chains to detach onto
 	/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
-	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit `this list
+	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
-	/// The map between external accounts and the local accounts that are linked to them. (Discord, Telegram, etc)
+	/// StorageMap that maps an **External Account ID** to an
+	/// **`AccountInfo` struct that contains
+	/// the External Account ID's linked Clamor Account ID, amongst other things**.
 	#[pallet::storage]
 	pub type ExternalID2Account<T: Config> =
 		StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
@@ -341,7 +347,7 @@ pub mod pallet {
 		/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_key())]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -357,7 +363,7 @@ pub mod pallet {
 		/// Remove a Clamor Account ID from `FragKeys`
 
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::del_key())]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -381,7 +387,7 @@ pub mod pallet {
 		/// `signature`).
 		///
 		/// After linking, also emit an event indicating that the two accounts were linked.
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::link())]
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -414,7 +420,7 @@ pub mod pallet {
 
 		// TODO
 		/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::unlink())]
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			Self::unlink_account(sender, account)
@@ -423,7 +429,7 @@ pub mod pallet {
 		/// Update 'data'
 		///
 		/// TODO
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::internal_lock_update())]
 		pub fn internal_lock_update(
 			origin: OriginFor<T>,
 			data: EthLockUpdate<T::Public>,
@@ -564,8 +570,9 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// TODO
-		#[pallet::weight(25_000)] // TODO - weight
+		/// Allow the External Account ID `external_id` to be used as a proxy
+		/// for the Clamor Account ID `origin`
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::sponsor_account())]
 		pub fn sponsor_account(origin: OriginFor<T>, external_id: ExternalID) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -617,7 +624,7 @@ pub mod pallet {
 		}
 
 		/// Add a sponsor account to the list of sponsors able to sponsor external accounts.
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_sponsor())]
 		pub fn add_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -631,7 +638,7 @@ pub mod pallet {
 		}
 
 		/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::remove_sponsor())]
 		pub fn remove_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
