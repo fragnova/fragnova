@@ -1494,7 +1494,7 @@ mod get_genealogy_tests {
 
 			assert_eq!(
 				serde_json::from_slice::<Value>(
-					&ProtosPallet::get_genealogy(GetGenealogy {
+					&ProtosPallet::get_genealogy(GetGenealogyParams {
 						proto_hash: hex::encode(proto_third.get_proto_hash()).into_bytes(),
 						get_ancestors: true,
 					}).unwrap()
@@ -1530,7 +1530,7 @@ mod get_genealogy_tests {
 
 			assert_eq!(
 				serde_json::from_slice::<Value>(
-					&ProtosPallet::get_genealogy(GetGenealogy {
+					&ProtosPallet::get_genealogy(GetGenealogyParams {
 						proto_hash: hex::encode(proto.get_proto_hash()).into_bytes(),
 						get_ancestors: false,
 					}).unwrap()

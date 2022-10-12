@@ -64,7 +64,7 @@ use scale_info::prelude::string::String;
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-use pallet_protos::{GetProtosParams, GetGenealogy};
+use pallet_protos::{GetProtosParams, GetGenealogyParams};
 use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
 
 pub use pallet_contracts::Schedule;
@@ -990,7 +990,7 @@ impl_runtime_apis! {
 			Protos::get_protos(params)
 		}
 		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
-		fn get_genealogy(params: GetGenealogy<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Protos::get_genealogy(params)
 		}
 	}

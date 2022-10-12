@@ -105,7 +105,7 @@ pub struct GetProtosParams<TAccountId, TString> {
 /// **Data Type** used to **Query the Genealogy of a Proto-Fragment**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct GetGenealogy<TString> {
+pub struct GetGenealogyParams<TString> {
 	/// The Proto-Fragment whose Genealogy will be retrieved
 	pub proto_hash: TString,
 	/// Whether to retrieve the ancestors of the Proto-Fragment. If `false`, the descendants are retrieved instead
@@ -1382,8 +1382,8 @@ pub mod pallet {
 		///
 		/// # Arguments
 		///
-		/// * `params` - A ***GetGenealogy* struct**
-		pub fn get_genealogy(params: GetGenealogy<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+		/// * `params` - A ***GetGenealogyParams* struct**
+		pub fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 
 			let proto_hash: Hash256 = hex::decode(params.proto_hash)
 				.map_err(|_| "Failed to convert string to u8 slice")?

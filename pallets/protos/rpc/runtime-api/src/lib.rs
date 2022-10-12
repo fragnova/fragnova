@@ -17,7 +17,7 @@
 
 use codec::Codec;
 
-use pallet_protos::{GetProtosParams, GetGenealogy};
+use pallet_protos::{GetProtosParams, GetGenealogyParams};
 use sp_std::vec::Vec;
 
 // Declares given traits as runtime apis
@@ -31,6 +31,6 @@ sp_api::decl_runtime_apis! {
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
 		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
-		fn get_genealogy(params: GetGenealogy<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
 	}
 }

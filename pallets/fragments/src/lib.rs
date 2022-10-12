@@ -1626,7 +1626,7 @@ pub mod pallet {
 		// 	Ok(result.into_bytes())
 		// }
 
-		/// **Query** and **Return** **Fragmnent Definition(s)** based on **`params`**
+		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		pub fn get_definitions(
 			params: GetDefinitionsParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
@@ -1731,7 +1731,7 @@ pub mod pallet {
 			Ok(result.into_bytes())
 		}
 
-		/// **Query** and **Return** **Fragmnent Instance(s)** based on **`params`**
+		/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
 		pub fn get_instances(
 			params: GetInstancesParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {

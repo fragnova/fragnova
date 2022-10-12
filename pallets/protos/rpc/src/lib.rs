@@ -8,7 +8,7 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
-use pallet_protos::{GetProtosParams, GetGenealogy};
+use pallet_protos::{GetProtosParams, GetGenealogyParams};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -33,7 +33,7 @@ pub trait ProtosRpc<BlockHash, AccountId> {
 	#[method(name = "getGenealogy")]
 	fn get_genealogy(
 		&self,
-		params: GetGenealogy<String>,
+		params: GetGenealogyParams<String>,
 		at: Option<BlockHash>,
 	) -> RpcResult<String>;
 }
@@ -99,7 +99,7 @@ where
 
 	fn get_genealogy(
 		&self,
-		params: GetGenealogy<String>,
+		params: GetGenealogyParams<String>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<String> {
 		let api = self.client.runtime_api();
@@ -107,7 +107,7 @@ where
 		// If the block hash is not supplied in `at`, use the best block's hash
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-		let params_no_std = GetGenealogy::<Vec<u8>> {
+		let params_no_std = GetGenealogyParams::<Vec<u8>> {
 			proto_hash: params.proto_hash.into_bytes(),
 			get_ancestors: params.get_ancestors,
 		};
