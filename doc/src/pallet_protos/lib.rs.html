@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/protos/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_protos/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_protos/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_protos/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/protos/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_protos/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_protos/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -1354,6 +1354,25 @@
 <span id="1354">1354</span>
 <span id="1355">1355</span>
 <span id="1356">1356</span>
+<span id="1357">1357</span>
+<span id="1358">1358</span>
+<span id="1359">1359</span>
+<span id="1360">1360</span>
+<span id="1361">1361</span>
+<span id="1362">1362</span>
+<span id="1363">1363</span>
+<span id="1364">1364</span>
+<span id="1365">1365</span>
+<span id="1366">1366</span>
+<span id="1367">1367</span>
+<span id="1368">1368</span>
+<span id="1369">1369</span>
+<span id="1370">1370</span>
+<span id="1371">1371</span>
+<span id="1372">1372</span>
+<span id="1373">1373</span>
+<span id="1374">1374</span>
+<span id="1375">1375</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1452,10 +1471,27 @@
 	</span><span class="kw">pub </span>categories: Vec&lt;Categories&gt;,
 	<span class="doccomment">/// List of tags to filter by
 	</span><span class="kw">pub </span>tags: Vec&lt;TString&gt;,
-	<span class="doccomment">/// The returned Proto-Fragments must not have any tag that is specified in the `tags` field
-	</span><span class="kw">pub </span>exclude_tags: bool,
-	<span class="doccomment">/// Whether the Proto-Fragments should be available or not
+	<span class="doccomment">/// The returned Proto-Fragments must not have any tag that is specified in the `exclude_tags` field
+	</span><span class="kw">pub </span>exclude_tags: Vec&lt;TString&gt;,
+  <span class="doccomment">/// Whether the Proto-Fragments should be available or not
 	</span><span class="kw">pub </span>available: <span class="prelude-ty">Option</span>&lt;bool&gt;,
+}
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">impl</span>&lt;TAccountId, TString&gt; Default <span class="kw">for </span>GetProtosParams&lt;TAccountId, TString&gt; {
+	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{
+			desc: Default::default(),
+			from: Default::default(),
+			limit: Default::default(),
+			metadata_keys: Default::default(),
+			owner: <span class="prelude-val">None</span>,
+			return_owners: Default::default(),
+			categories: Default::default(),
+			tags: Default::default(),
+			exclude_tags: Default::default(),
+			available: Default::default(),
+		}
+	}
 }
 
 <span class="doccomment">/// **Struct** of a **Proto-Fragment Patch**
@@ -2294,7 +2330,7 @@
 			tags: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 			categories: <span class="kw-2">&amp;</span>[Categories],
 			avail: <span class="prelude-ty">Option</span>&lt;bool&gt;,
-			exclude_tags: bool,
+			exclude_tags: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 		) -&gt; bool {
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(struct_proto) = &lt;Protos&lt;T&gt;&gt;::get(proto_id) {
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(avail) = avail {
@@ -2320,7 +2356,7 @@
 			tags: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 			struct_proto: <span class="kw-2">&amp;</span>Proto&lt;T::AccountId, T::BlockNumber&gt;,
 			categories: <span class="kw-2">&amp;</span>[Categories],
-			exclude_tags: bool,
+			exclude_tags: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 		) -&gt; bool {
 			<span class="kw">let </span>found: Vec&lt;<span class="kw">_</span>&gt; = categories
 				.into_iter()
@@ -2386,24 +2422,26 @@
 		</span><span class="kw">fn </span>filter_tags(
 			tags: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 			struct_proto: <span class="kw-2">&amp;</span>Proto&lt;T::AccountId, T::BlockNumber&gt;,
-			exclude_tags: bool,
+			exclude_tags: <span class="kw-2">&amp;</span>[Vec&lt;u8&gt;],
 		) -&gt; bool {
-			<span class="kw">if </span>tags.len() == <span class="number">0 </span>{
-				<span class="bool-val">true
-			</span>} <span class="kw">else </span>{
-				tags.into_iter().all(|tag| {
-					<span class="kw">let </span>tag_idx = &lt;Tags&lt;T&gt;&gt;::get(tag);
-					<span class="kw">if let </span><span class="prelude-val">Some</span>(tag_idx) = tag_idx {
-						<span class="kw">if </span>struct_proto.tags.contains(<span class="kw-2">&amp;</span>Compact::from(tag_idx)) {
-							!exclude_tags
-						} <span class="kw">else </span>{
-							exclude_tags
-						}
-					} <span class="kw">else </span>{
-						<span class="bool-val">false
-					</span>}
-				})
-			}
+			<span class="comment">// empty iterator returns `false` for `Iterator::any()`
+			</span><span class="kw">let </span>proto_has_any_unwanted_tag = exclude_tags.into_iter().any(|tag| {
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(tag_idx) = &lt;Tags&lt;T&gt;&gt;::get(tag) {
+					struct_proto.tags.contains(<span class="kw-2">&amp;</span>Compact::from(tag_idx))
+				} <span class="kw">else </span>{
+					<span class="bool-val">false
+				</span>}
+			});
+			<span class="comment">// empty iterator returns `true` for `Iterator::all()`
+			</span><span class="kw">let </span>proto_has_all_wanted_tags = tags.into_iter().all(|tag| {
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(tag_idx) = &lt;Tags&lt;T&gt;&gt;::get(tag) {
+					struct_proto.tags.contains(<span class="kw-2">&amp;</span>Compact::from(tag_idx))
+				} <span class="kw">else </span>{
+					<span class="bool-val">false
+				</span>}
+			});
+
+			proto_has_all_wanted_tags &amp;&amp; !proto_has_any_unwanted_tag
 		}
 
 		<span class="kw">fn </span>get_list_of_matching_categories(
@@ -2573,7 +2611,7 @@
 								<span class="kw-2">&amp;</span>params.tags,
 								<span class="kw-2">&amp;</span>params.categories,
 								params.available,
-								params.exclude_tags,
+								<span class="kw-2">&amp;</span>params.exclude_tags
 							)
 						})
 						.skip(params.from <span class="kw">as </span>usize)
@@ -2589,7 +2627,7 @@
 								<span class="kw-2">&amp;</span>params.tags,
 								<span class="kw-2">&amp;</span>params.categories,
 								params.available,
-								params.exclude_tags,
+								<span class="kw-2">&amp;</span>params.exclude_tags
 							)
 						})
 						.skip(params.from <span class="kw">as </span>usize)
@@ -2629,7 +2667,7 @@
 										<span class="kw-2">&amp;</span>params.tags,
 										<span class="kw-2">&amp;</span>params.categories,
 										params.available,
-										params.exclude_tags,
+										<span class="kw-2">&amp;</span>params.exclude_tags
 									)
 								})
 								.collect()
@@ -2643,7 +2681,7 @@
 										<span class="kw-2">&amp;</span>params.tags,
 										<span class="kw-2">&amp;</span>params.categories,
 										params.available,
-										params.exclude_tags,
+										<span class="kw-2">&amp;</span>params.exclude_tags
 									)
 								})
 								.collect()
@@ -2711,4 +2749,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (57f097ea2 2022-10-01)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (db0597f56 2022-10-11)" ></div></body></html>
