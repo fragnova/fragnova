@@ -26,11 +26,11 @@ mod benchmarking;
 #[allow(missing_docs)]
 mod weights;
 
-/// keccak256(Lock(address,bytes,uint256)). Try it here: https://emn178.github.io/online-tools/keccak_256.html
+/// keccak256(Lock(address,bytes,uint256,uint8)). Try it here: https://emn178.github.io/online-tools/keccak_256.html
 ///
 /// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
-const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f";
-/// keccak256(Lock(address,bytes,uint256))
+const LOCK_EVENT: &str = "0xb9416cbc88978dc45c762d25315c5781c5270bd47c1c3879ddb4ff478695c83b";
+/// keccak256(Lock(address,bytes,uint256,uint8))
 ///
 /// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
@@ -85,6 +85,7 @@ pub mod crypto {
 }
 
 use codec::{Decode, Encode};
+use ethabi::ethereum_types::U128;
 pub use pallet::*;
 
 use sp_io::{
@@ -159,10 +160,8 @@ pub struct EthLock<TBalance, TBlockNum> {
 	pub amount: TBalance,
 	/// Clamor Block Number in which the locked FRAG tokens was "effectively transfered" to the Clamor Blockchain
 	pub block_number: TBlockNum,
-	/// The block number when FRAG were locked the first time
-	pub first_lock_block_number: TBlockNum,
 	/// The FRAG lock period chosen by the user on Ethereum and received from the Lock event
-	pub lock_period: U256,
+	pub lock_period: U128,
 	/// The week number of the last withdraw. It is zero if the account never withdrawn
 	pub last_withdraw: u128,
 }
@@ -186,6 +185,7 @@ pub struct AccountInfo<TAccountID, TMoment> {
 pub mod pallet {
 	use super::*;
 	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
+	use ethabi::ethereum_types::U128;
 	use frame_support::{
 		dispatch::DispatchResult,
 		pallet_prelude::*,
@@ -194,7 +194,7 @@ pub mod pallet {
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::{
-		traits::{CheckedAdd, Zero},
+		traits::{CheckedAdd, Saturating, Zero},
 		SaturatedConversion,
 	};
 
@@ -272,11 +272,24 @@ pub mod pallet {
 
 	/// **StorageMap** that maps an **Ethereum Account ID** to a to an ***Ethlock* struct of the aforementioned Ethereum Account Id (the struct contains the amount of FRAG token locked, amongst other things)**
 	#[pallet::storage]
-	pub type EthLockedFrag<T: Config> = StorageMap<
+	pub type EthLockedFrag<T: Config> = StorageDoubleMap<
 		_,
 		Identity,
 		H160,
+		Identity,
+		T::BlockNumber,
 		EthLock<<T as pallet_assets::Config>::Balance, T::BlockNumber>,
+	>;
+
+	/// **StorageMap** that maps an **Ethereum Account ID** to the block number when the unlock happened**
+	#[pallet::storage]
+	pub type EthUnlockedFrag<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		H160,
+		Identity,
+		T::BlockNumber,
+		<T as pallet_assets::Config>::Balance,
 	>;
 
 	/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
@@ -349,7 +362,7 @@ pub mod pallet {
 		/// NOVA were assigned to an account balance.
 		NOVAAssigned { sender: T::AccountId, balance: <T as pallet_balances::Config>::Balance },
 		/// ETH side lock was updated
-		Locked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance, lock_period: U256 },
+		Locked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance, lock_period: U128 },
 		/// ETH side lock was unlocked
 		Unlocked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance },
 		/// A new sponsored account was added
@@ -563,7 +576,7 @@ pub mod pallet {
 			let message_hash = keccak_256(&message);
 
 			let signature = data.signature;
-			let sender = data.sender;
+			let sender = data.sender.clone();
 
 			// We check if the `message_hash` and **the signature in the emitted event `Lock` or `Unlock`**
 			// **allow us** to **recover the Ethereum sender account address** that was in the **same aforementioned emitted event `Lock` or `Unlock`**
@@ -607,7 +620,7 @@ pub mod pallet {
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-			let lock_period: U256 =
+			let lock_period: U128 =
 				data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 			let frag_amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 
@@ -629,21 +642,6 @@ pub mod pallet {
 				initial_nova_amount.saturated_into();
 			let tickets_amount: <T as pallet_assets::Config>::Balance =
 				initial_tickets_amount.saturated_into();
-
-			// need to track when we received the first Lock event from the user.
-			// This is needed because EthLockedFrag is used for both Lock and Unlock events,
-			// so when the user withdraws after unlock, we would lose when the first lock happened.
-			let mut first_lock_block_num = current_block_number;
-
-			let lock_event = <EthLockedFrag<T>>::get(&sender);
-			match lock_event {
-				// if it is not the first lock event
-				Some(event) => {
-					first_lock_block_num = event.first_lock_block_number; // don't change the block number of first FRAG lock
-				},
-				// if it is the first lock event, then use current_block_number set before
-				None => {},
-			}
 
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
@@ -704,20 +702,22 @@ pub mod pallet {
 					balance: frag_amount,
 					lock_period,
 				});
+
+				<EthLockedFrag<T>>::insert(
+					sender.clone(),
+					current_block_number,
+					EthLock {
+						amount: frag_amount, // amount already ensured to be > 0 for lock, = 0 for unlock
+						block_number: current_block_number,
+						lock_period,
+						last_withdraw: 0, // never withdrawn
+					},
+				);
 			} else {
 				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: frag_amount });
+				<EthUnlockedFrag<T>>::insert(sender.clone(), current_block_number, frag_amount);
 			}
 
-			<EthLockedFrag<T>>::insert(
-				sender.clone(),
-				EthLock {
-					amount: frag_amount, // amount already ensured to be > 0 for lock, = 0 for unlock
-					block_number: current_block_number,
-					first_lock_block_number: first_lock_block_num,
-					lock_period,
-					last_withdraw: 0, // never withdrawn
-				},
-			);
 			// also record link hash
 			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
 
@@ -1047,7 +1047,7 @@ pub mod pallet {
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
 
 				// Lock period (`data[2]`). In case of Unlock event, it is 999.
-				let lock_period = data[2].clone().into_uint().unwrap_or(U256::from(999));
+				let lock_period = data[2].clone().into_uint().unwrap_or(U128::from(99).into());
 
 				if locked {
 					log::trace!(
@@ -1106,7 +1106,7 @@ pub mod pallet {
 		}
 
 		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
-		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
+		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount, uint8 lock_period)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
 		///
 		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
 		/// (NOTE: the signed payload consists of a payload and a signature.
@@ -1170,14 +1170,21 @@ pub mod pallet {
 
 			let eth_account = <EVMLinks<T>>::get(&account);
 			if let Some(eth_account) = eth_account {
-				let eth_locked_frag = <EthLockedFrag<T>>::get(&eth_account);
-				if let Some(eth_locked_frag) = eth_locked_frag {
+				ensure!(
+					<EthLockedFrag<T>>::iter_prefix(eth_account).count() > 0,
+					Error::<T>::NothingToWithdraw
+				);
+
+				let mut tickets_amount: <T as pallet_assets::Config>::Balance = (0 as u32).into();
+				let mut nova_amount: <T as pallet_balances::Config>::Balance = (0 as u32).into();
+
+				for (block_number, eth_lock) in <EthLockedFrag<T>>::iter_prefix(eth_account) {
+
 					// Retrieve the info related to the FRAG locked by this account
-					let frag_lock_block_number =
-						eth_locked_frag.first_lock_block_number.saturated_into::<u128>();
-					let total_frag_locked_on_eth = eth_locked_frag.amount.saturated_into::<u128>();
-					let frag_lock_period = eth_locked_frag.lock_period.saturated_into::<u128>();
-					let last_withdraw_week = eth_locked_frag.last_withdraw.saturated_into::<u128>();
+					let frag_lock_block_number = eth_lock.block_number.saturated_into::<u128>();
+					let total_frag_locked_on_eth = eth_lock.amount.saturated_into::<u128>();
+					let frag_lock_period = eth_lock.lock_period.saturated_into::<u128>();
+					let last_withdraw_week = eth_lock.last_withdraw.saturated_into::<u128>();
 
 					// convert for convenience. The calculations below are made by num of weeks
 					// calculated from the num of blocks from the block num of the FRAG lock to the current block.
@@ -1209,8 +1216,8 @@ pub mod pallet {
 
 					// Weeks passed since FRAG was locked
 					let mut num_weeks_since_lock_frag: u128 =
-						(current_block_number - frag_lock_block_number) * seconds_in_block /
-							seconds_in_week + 1; // +1 to include all weeks
+						((current_block_number - frag_lock_block_number) * seconds_in_block) /
+							seconds_in_week + 1;
 
 					// The week number of the last withdraw is stored,
 					// so this checks the case of subsequent withdraws done in the same week when nothing has been yielded.
@@ -1219,7 +1226,7 @@ pub mod pallet {
 					}
 
 					// This is for the case of withdraw performed when the FRAG lock period is already over.
-					// In this case the total withdrawable amount cannot be more than the total amount yielded until within the lock period.
+					// In this case the total withdrawal amount cannot be more than the total amount yielded until within the lock period.
 					if num_weeks_since_lock_frag >= lock_period_in_weeks {
 						num_weeks_since_lock_frag = lock_period_in_weeks;
 					}
@@ -1254,54 +1261,55 @@ pub mod pallet {
 
 					ensure!(tickets_amount_to_withdraw > 0, Error::<T>::SystematicFailure);
 					ensure!(nova_amount_to_withdraw > 0, Error::<T>::SystematicFailure);
-					let nova_old_balance =
-						pallet_balances::Pallet::<T>::free_balance(&account.clone());
-					ensure!(
-						nova_old_balance + nova_amount_to_deposit >=
-							<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
-							),
-						Error::<T>::SystematicFailure // this should never happen
-					);
 
-					ensure!(
-						!nova_old_balance.checked_add(&nova_amount_to_deposit).is_none(),
-						Error::<T>::SystematicFailure
-					);
+					tickets_amount = tickets_amount.saturating_add(tickets_amount_to_mint);
+					nova_amount = nova_amount.saturating_add(nova_amount_to_deposit);
 
-					// Checks completed, now write
-					// mint tickets
-					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
-						T::TicketsAssetId::get(),
-						&account.clone(),
-						tickets_amount_to_mint,
-					)?;
-
-					// Assign NOVA
-					// This will not fail if all the checks above passed, so the result can be ignored
-					let _ =
-						<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
-							&account.clone(),
-							nova_amount_to_deposit,
-						)?;
-
-					// remove the locked frag information for this account
 					if num_weeks_since_lock_frag == lock_period_in_weeks {
-						<EthLockedFrag<T>>::remove(&eth_account);
+						<EthLockedFrag<T>>::remove(eth_account.clone(), eth_lock.block_number);
 					} else {
 						// Update the week number of the latest withdraw
-						<EthLockedFrag<T>>::mutate(&eth_account, |eth_lock| {
-							let eth_lock = eth_lock.as_mut().unwrap();
-							eth_lock.block_number = <frame_system::Pallet<T>>::block_number();
-							eth_lock.last_withdraw = num_weeks_since_lock_frag;
-						});
+						<EthLockedFrag<T>>::mutate(
+							&eth_account,
+							eth_lock.block_number,
+							|eth_lock| {
+								let eth_lock = eth_lock.as_mut().unwrap();
+								eth_lock.last_withdraw = num_weeks_since_lock_frag;
+							},
+						);
 					}
-				} else {
-					return Err(Error::<T>::NothingToWithdraw.into())
 				}
+
+				let nova_old_balance = pallet_balances::Pallet::<T>::free_balance(&account.clone());
+				ensure!(
+					nova_old_balance + nova_amount >=
+						<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
+						),
+					Error::<T>::SystematicFailure // this should never happen
+				);
+
+				ensure!(
+					!nova_old_balance.checked_add(&nova_amount).is_none(),
+					Error::<T>::SystematicFailure
+				);
+
+				// Checks completed, now write
+				// mint tickets
+				<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+					T::TicketsAssetId::get(),
+					&account.clone(),
+					tickets_amount,
+				)?;
+
+				// Assign NOVA
+				<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+					&account.clone(),
+					nova_amount,
+				)?;
+				Ok(())
 			} else {
-				return Err(Error::<T>::AccountNotLinked.into())
+				return Err(Error::<T>::NothingToWithdraw.into())
 			}
-			Ok(())
 		}
 
 		fn initial_amount(amount: u128, percent: u128, current_frag_price: u128) -> u128 {

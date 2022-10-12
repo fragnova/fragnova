@@ -68,7 +68,7 @@ pub fn create_link_signature(
 pub fn create_lock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 	lock_amount: U256,
-	lock_period: U256,
+	lock_period: U128,
 ) -> sp_core::ecdsa::Signature {
 	let ethereum_account_id =
 		get_ethereum_account_id_from_ecdsa_public_struct(&ethereum_account_pair.public());
@@ -77,7 +77,7 @@ pub fn create_lock_signature(
 	message.extend_from_slice(&ethereum_account_id.0[..]);
 	message.extend_from_slice(&get_ethereum_chain_id().to_be_bytes());
 	message.extend_from_slice(&Into::<[u8; 32]>::into(lock_amount.clone()));
-	message.extend_from_slice(&Into::<[u8; 32]>::into(lock_period.clone()));
+	message.extend_from_slice(&Into::<[u8; 32]>::into(U256::from(lock_period.clone())));
 
 	let hashed_message = keccak_256(&message);
 
@@ -168,6 +168,7 @@ pub struct DummyData {
 	pub link: Link,
 	pub link_second: Link,
 	pub lock: Lock,
+	pub lock2: Lock,
 	pub unlock: Unlock,
 	pub account_id: sp_core::ed25519::Public,
 	pub account_id_second: sp_core::ed25519::Public,
@@ -205,7 +206,33 @@ impl DummyData {
 				signature: create_lock_signature(
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 					U256::from(100u32),
-					U256::from(1),
+					U128::from(1),
+				),
+				lock: true, // yes, please lock it!
+				block_number: 69,
+			},
+			link: Link {
+				clamor_account_id: sp_core::ed25519::Public::from_raw([3u8; 32]),
+				link_signature: create_link_signature(
+					sp_core::ed25519::Public::from_raw([3u8; 32]),
+					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
+				),
+			},
+			ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
+		};
+
+		let lock2 = Lock {
+			data: EthLockUpdate {
+				public: sp_core::ed25519::Public([69u8; 32]),
+				amount: U256::from(100u32),
+				lock_period: U256::from(3),
+				sender: get_ethereum_account_id_from_ecdsa_public_struct(
+					&sp_core::ecdsa::Pair::from_seed(&[3u8; 32]).public(),
+				),
+				signature: create_lock_signature(
+					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
+					U256::from(100u32),
+					U128::from(3),
 				),
 				lock: true, // yes, please lock it!
 				block_number: 69,
@@ -232,7 +259,7 @@ impl DummyData {
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[4u8; 32]),
 						U256::from(69u32),
-						U256::from(999),
+						U128::from(999),
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
@@ -266,6 +293,7 @@ impl DummyData {
 			link,
 			link_second,
 			lock,
+			lock2,
 			unlock,
 			account_id: sp_core::ed25519::Public::from_raw([111u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([222u8; 32]),

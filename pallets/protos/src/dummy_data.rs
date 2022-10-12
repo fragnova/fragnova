@@ -15,6 +15,7 @@ use sp_clamor::{Hash256, CID_PREFIX};
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
+use ethabi::ethereum_types::U128;
 use protos::traits::{RecordInfo, Trait, VariableType, VariableTypeInfo};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
@@ -278,7 +279,7 @@ impl DummyData {
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 						U256::from(69u32),
-						U256::from(1),
+						U128::from(1),
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
