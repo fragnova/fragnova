@@ -1,6 +1,7 @@
 //! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Clamor
 //! Blockchain to an External Blockchain
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]

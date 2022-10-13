@@ -6,11 +6,12 @@
 // Some of the Substrate Macros in this file throw missing_docs warnings.
 // That's why we allow this file to have missing_docs.
 #![allow(missing_docs)]
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-/// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
+// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
@@ -117,8 +118,8 @@ pub mod opaque {
 	/// Opaque block identifier type.
 	pub type BlockId = generic::BlockId<Block>;
 
-	/// Implement OpaqueKeys for a described struct.
-	/// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
+	// Implement OpaqueKeys for a described struct.
+	// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
 	impl_opaque_keys! {
 		/// TODO: Documentation
 		pub struct SessionKeys {
@@ -362,7 +363,7 @@ impl pallet_balances::Config for Runtime {
 	type IsTransferable = IsTransferable;
 }
 
-/// Parameters related to calculating the Weight fee.
+// Parameters related to calculating the Weight fee.
 parameter_types! {
 	/// The amount of balance a caller (here "caller" refers to a "smart-contract account") has to pay for each storage item.
 	///
@@ -673,7 +674,7 @@ impl pallet_assets::Config for Runtime {
 // - `:`: colon separator
 // - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
 // - `::{ Part1, Part2<T>, .. }` (optional if the pallet was declared with a `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
-
+//
 // 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**.
 //  We provide support for the following module parts in a pallet:
 //
@@ -750,9 +751,9 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 >;
 
-/// Marks the given trait implementations as runtime apis.
-///
-/// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
+// Marks the given trait implementations as runtime apis.
+//
+// For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
 impl_runtime_apis! {
 
 	/// TODO: Documentation
@@ -1021,15 +1022,16 @@ impl_runtime_apis! {
 			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			// list_benchmark!(list, extra, pallet_accounts, Accounts);
-			list_benchmark!(list, extra, pallet_protos, Protos);
 			list_benchmark!(list, extra, pallet_assets, Assets);
-			list_benchmark!(list, extra, pallet_fragments, Fragments);
-			list_benchmark!(list, extra, pallet_detach, Detach);
 			list_benchmark!(list, extra, pallet_multisig, Multisig);
 			list_benchmark!(list, extra, pallet_proxy, Proxy);
 			list_benchmark!(list, extra, pallet_identity, Identity);
 			list_benchmark!(list, extra, pallet_utility, Utility);
+
+			list_benchmark!(list, extra, pallet_accounts, Accounts);
+			list_benchmark!(list, extra, pallet_detach, Detach);
+			list_benchmark!(list, extra, pallet_fragments, Fragments);
+			list_benchmark!(list, extra, pallet_protos, Protos);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1068,15 +1070,16 @@ impl_runtime_apis! {
 			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
 			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			// add_benchmark!(params, batches, pallet_accounts, Accounts);
-			add_benchmark!(params, batches, pallet_protos, Protos);
 			add_benchmark!(params, batches, pallet_assets, Assets);
-			add_benchmark!(params, batches, pallet_fragments, Fragments);
-			add_benchmark!(params, batches, pallet_detach, Detach);
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
 			add_benchmark!(params, batches, pallet_proxy, Proxy);
 			add_benchmark!(params, batches, pallet_identity, Identity);
 			add_benchmark!(params, batches, pallet_utility, Utility);
+
+			add_benchmark!(params, batches, pallet_accounts, Accounts);
+			add_benchmark!(params, batches, pallet_detach, Detach);
+			add_benchmark!(params, batches, pallet_fragments, Fragments);
+			add_benchmark!(params, batches, pallet_protos, Protos);
 
 			Ok(batches)
 		}

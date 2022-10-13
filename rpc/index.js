@@ -109,16 +109,16 @@ const connectToLocalNode = async () => {
       Hash128: "[u8; 16]",
 
       GetProtosParams: {
-        desc: "bool",
-        from: "u64",
-        limit: "u64",
-        metadata_keys: "Vec<String>",
-        owner: "Option<AccountId>",
-        return_owners: "bool",
-        categories: "Vec<Categories>",
-        tags: "Vec<String>",
-        exclude_tags: 'bool',
-        available: "Option<bool>",
+        desc: 'bool',
+        from: 'u32',
+        limit: 'u32',
+        metadata_keys: 'Vec<String>',
+        owner: 'Option<AccountId>',
+        return_owners: 'bool',
+        categories: 'Vec<Categories>',
+        tags: 'Vec<String>',
+        exclude_tags: 'Vec<String>',
+        available: 'Option<bool>',
       },
 
       GetDefinitionsParams: {

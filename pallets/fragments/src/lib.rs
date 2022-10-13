@@ -25,6 +25,7 @@
 //!
 //! The Copy ID allows us to distinguish a Fragment Instance that has the same Fragment Definition ID and the same Edition ID.
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -521,7 +522,7 @@ pub mod pallet {
 		/// * `unique` (*optional*) - **Whether** the **Fragment Definiton** is **unique**
 		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)**
 		/// that **can be created** using the **Fragment Definition**
-		#[pallet::weight(<T as Config>::WeightInfo::create())]
+		#[pallet::weight(<T as Config>::WeightInfo::create(metadata.name.len() as u32))]
 		pub fn create(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
@@ -789,7 +790,7 @@ pub mod pallet {
 		/// * `expires` (*optional*) - **Block number** that the sale ends at (*optional*)
 		/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// the **number of items** to **top up** in the **stack of stackable items**
-		#[pallet::weight(50_000)]
+		#[pallet::weight(<T as Config>::WeightInfo::publish())]
 		pub fn publish(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -826,15 +827,15 @@ pub mod pallet {
 				let existing: Unit =
 					<EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
+				if left == 0 {
+					return Err(Error::<T>::MaxSupplyReached.into());
+				}
 				if let Some(quantity) = quantity {
 					let quantity: Unit = quantity.into();
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached); // Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				} else {
 					// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
 					return Err(Error::<T>::ParamsNotValid.into())
-				}
-				if left == 0 {
-					return Err(Error::<T>::MaxSupplyReached.into())
 				}
 			}
 
@@ -864,7 +865,7 @@ pub mod pallet {
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `definition_hash` - **ID** of the **Fragment Definition** to take off sale
-		#[pallet::weight(50_000)]
+		#[pallet::weight(<T as Config>::WeightInfo::unpublish())]
 		pub fn unpublish(origin: OriginFor<T>, definition_hash: Hash128) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -913,7 +914,12 @@ pub mod pallet {
 		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
 		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
-		#[pallet::weight(50_000)]
+		///
+		/// TODO - `*q as u32` might cause problems if q is too big (since q is u64)!!!
+		#[pallet::weight(match options {
+			FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(*q as u32),
+			FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
+		})]
 		pub fn mint(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -942,7 +948,7 @@ pub mod pallet {
 
 			let quantity = match options {
 				// Number of fragment instances to mint
-				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
+				FragmentBuyOptions::Quantity(quantity) => u64::from(quantity),
 				_ => 1u64,
 			};
 
@@ -978,7 +984,12 @@ pub mod pallet {
 		/// * `options` - **Enum** indicating whether to
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
-		#[pallet::weight(50_000)]
+		///
+		/// TODO - `*=q as u32` might cause problems if q is too big (since q is u64)!!!
+		#[pallet::weight(match options {
+			FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::buy_definition_that_has_non_unique_capability(*q as u32),
+			FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::buy_definition_that_has_unique_capability(d.len() as u32)
+		})]
 		pub fn buy(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1086,7 +1097,7 @@ pub mod pallet {
 		///
 		/// If the **current permitted actions of the Fragment Instance** allows for it to be duplicated (i.e if it has the permission **FragmentPerms::COPY**),
 		/// then it is duplicated and the duplicate's ownership is assigned to `to`.
-		/// Otherwise, its ownernship is transferred from `origin` to `to`.
+		/// Otherwise, its ownership is transferred from `origin` to `to`.
 		///
 		/// Note: **Only** the **Fragment Instance's owner** is **allowed** to give the Fragment Instance
 		///
@@ -1360,7 +1371,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// **Get** the **Account ID** of the Fragment Definition `definition_hash`**
 		///
-		/// This Account ID is determinstically computed using the Fragment Definition `class_hash`
+		/// This Account ID is determinstically computed using the Fragment Definition `definition_hash`
 		pub fn get_vault_id(definition_hash: Hash128) -> T::AccountId {
 			let hash = blake2_256(&[&b"fragments-vault"[..], &definition_hash].concat());
 			T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")

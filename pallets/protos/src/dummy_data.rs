@@ -82,8 +82,8 @@ pub struct Stake {
 }
 
 impl Stake {
-	pub fn get_stake_amount(&self) -> u64 {
-		self.proto_fragment.include_cost.unwrap()
+	pub fn get_stake_amount(&self) -> u128 {
+		self.proto_fragment.include_cost.unwrap().into()
 	}
 }
 

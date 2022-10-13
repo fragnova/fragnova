@@ -59,7 +59,6 @@ parameter_types! {
 	pub StorageBytesMultiplier: u64 = 10;
 	pub const IsTransferable: bool = false;
 }
-
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
@@ -123,7 +122,8 @@ impl pallet_balances::Config for Test {
 	type Balance = Balance;
 	type DustRemoval = ();
 	type Event = Event;
-	type ExistentialDeposit = ConstU128<1>;
+	/// The minimum amount required to keep an account open.
+	type ExistentialDeposit = ConstU128<500>;
 	type AccountStore = System;
 	type WeightInfo = ();
 	type MaxLocks = ();
@@ -196,7 +196,7 @@ impl pallet_contracts::Config for Test {
 }
 
 parameter_types! {
-	pub const TicketsAssetId: u32 = 1337;
+	pub const TicketsAssetId: u64 = 1337;
 }
 
 impl pallet_protos::Config for Test {
