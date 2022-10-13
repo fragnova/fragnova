@@ -64,7 +64,7 @@ describe("RPCs", () => {
   let protoHashChild;
   let protoHashGrandchild;
 
-  before(async () => {
+  before(async function () {
 
     // the `beforeAll` hook should timeout after 20,000 ms (the default is 2000 ms). We do this because it takes time to connect to the local node, since the node was just launched immediately prior.
     this.timeout(200_000);
