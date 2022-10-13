@@ -1,4 +1,4 @@
 (function() {var implementors = {
 "pallet_fragments_rpc_runtime_api":[["impl&lt;Block:&nbsp;BlockT, AccountId&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_fragments_rpc_runtime_api/trait.FragmentsRuntimeApi.html\" title=\"trait pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi\">FragmentsRuntimeApi</a>&lt;Block, AccountId&gt;"]],
-"pallet_protos_rpc_runtime_api":[["impl&lt;Block:&nbsp;BlockT, AccountId&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_protos_rpc_runtime_api/trait.ProtosApi.html\" title=\"trait pallet_protos_rpc_runtime_api::ProtosApi\">ProtosApi</a>&lt;Block, AccountId&gt;"]]
+"pallet_protos_rpc_runtime_api":[["impl&lt;Block:&nbsp;BlockT, AccountId&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_protos_rpc_runtime_api/trait.ProtosRuntimeApi.html\" title=\"trait pallet_protos_rpc_runtime_api::ProtosRuntimeApi\">ProtosRuntimeApi</a>&lt;Block, AccountId&gt;"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

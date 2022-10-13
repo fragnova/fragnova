@@ -96,6 +96,44 @@
 <span id="96">96</span>
 <span id="97">97</span>
 <span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Implementation of the RPC functions related to Pallet Protos
 
 </span><span class="kw">use </span>std::sync::Arc;
@@ -106,41 +144,51 @@
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
-<span class="kw">use </span>pallet_protos::GetProtosParams;
+<span class="kw">use </span>pallet_protos::{GetProtosParams, GetGenealogyParams};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
 
-<span class="kw">pub use </span>pallet_protos_rpc_runtime_api::ProtosApi <span class="kw">as </span>ProtosRuntimeApi;
+<span class="kw">pub use </span>pallet_protos_rpc_runtime_api::ProtosRuntimeApi;
 
 <span class="kw">const </span>RUNTIME_ERROR: i32 = <span class="number">1</span>;
 
-<span class="attribute">#[rpc(client, server)]
-</span><span class="kw">pub trait </span>ProtosApi&lt;BlockHash, AccountId&gt; {
-	<span class="doccomment">/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
-	</span><span class="attribute">#[method(name = <span class="string">&quot;protos_getProtos&quot;</span>)]
+<span class="attribute">#[rpc(client, server, namespace = <span class="string">&quot;protos&quot;</span>)]
+</span><span class="kw">pub trait </span>ProtosRpc&lt;BlockHash, AccountId&gt; {
+	<span class="doccomment">/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**.
+	/// The **return type** is a **JSON string**.
+	</span><span class="attribute">#[method(name = <span class="string">&quot;getProtos&quot;</span>)]
 	</span><span class="kw">fn </span>get_protos(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		params: GetProtosParams&lt;AccountId, String&gt;,
 		at: <span class="prelude-ty">Option</span>&lt;BlockHash&gt;,
 	) -&gt; RpcResult&lt;String&gt;;
+
+	<span class="doccomment">/// **Query** the Genealogy of a Proto-Fragment based on **`params`**.
+	/// The **return type** is a **JSON string** that represents an Adjacency List.
+	</span><span class="attribute">#[method(name = <span class="string">&quot;getGenealogy&quot;</span>)]
+	</span><span class="kw">fn </span>get_genealogy(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		params: GetGenealogyParams&lt;String&gt;,
+		at: <span class="prelude-ty">Option</span>&lt;BlockHash&gt;,
+	) -&gt; RpcResult&lt;String&gt;;
 }
 
 <span class="doccomment">/// An implementation of protos specific RPC methods.
-</span><span class="kw">pub struct </span>Protos&lt;C, M&gt; {
+</span><span class="kw">pub struct </span>ProtosRpcServerImpl&lt;C, M&gt; {
 	client: Arc&lt;C&gt;,
 	_marker: std::marker::PhantomData&lt;M&gt;,
 }
 
-<span class="kw">impl</span>&lt;C, P&gt; Protos&lt;C, P&gt; {
-	<span class="doccomment">/// Create new `Protos` with the given reference to the client.
+<span class="kw">impl</span>&lt;C, P&gt; ProtosRpcServerImpl&lt;C, P&gt; {
+	<span class="doccomment">/// Create new `ProtosRpcServerImpl` with the given reference to the client.
 	</span><span class="kw">pub fn </span>new(client: Arc&lt;C&gt;) -&gt; <span class="self">Self </span>{
-		Protos { client, _marker: Default::default() }
+		<span class="self">Self </span>{ client, _marker: Default::default() }
 	}
 }
 
 <span class="attribute">#[async_trait]
-</span><span class="kw">impl</span>&lt;C, Block, AccountId&gt; ProtosApiServer&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash, AccountId&gt; <span class="kw">for </span>Protos&lt;C, Block&gt;
+</span><span class="kw">impl</span>&lt;C, Block, AccountId&gt; ProtosRpcServer&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash, AccountId&gt; <span class="kw">for </span>ProtosRpcServerImpl&lt;C, Block&gt;
 <span class="kw">where
 	</span>Block: BlockT,
 	C: Send + Sync + <span class="lifetime">&#39;static</span>,
@@ -184,6 +232,34 @@
 			},
 		}
 	}
+
+	<span class="kw">fn </span>get_genealogy(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		params: GetGenealogyParams&lt;String&gt;,
+		at: <span class="prelude-ty">Option</span>&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;,
+	) -&gt; RpcResult&lt;String&gt; {
+		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
+
+		<span class="comment">// If the block hash is not supplied in `at`, use the best block&#39;s hash
+		</span><span class="kw">let </span>at = BlockId::hash(at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash));
+
+		<span class="kw">let </span>params_no_std = GetGenealogyParams::&lt;Vec&lt;u8&gt;&gt; {
+			proto_hash: params.proto_hash.into_bytes(),
+			get_ancestors: params.get_ancestors,
+		};
+
+		<span class="kw">let </span>result = api.get_genealogy(<span class="kw-2">&amp;</span>at, params_no_std).map(|list_bytes| {
+			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from(<span class="string">&quot;&quot;</span>)))
+		});
+		<span class="kw">match </span>result {
+			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
+			<span class="prelude-val">Ok</span>(result) =&gt; <span class="kw">match </span>result {
+				<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
+				<span class="prelude-val">Ok</span>(result) =&gt; <span class="prelude-val">Ok</span>(result),
+			},
+		}
+
+	}
 }
 
 <span class="kw">fn </span>runtime_error_into_rpc_err(err: <span class="kw">impl </span>std::fmt::Debug) -&gt; JsonRpseeError {
@@ -195,4 +271,4 @@
 	.into()
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (db0597f56 2022-10-11)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (c0983a9aa 2022-10-12)" ></div></body></html>

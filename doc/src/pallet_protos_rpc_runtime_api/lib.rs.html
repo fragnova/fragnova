@@ -32,6 +32,8 @@
 <span id="32">32</span>
 <span id="33">33</span>
 <span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This package declares the Runtime APIs related to Pallet Protos.
 //!
 //! A Runtime API facilitates this kind of communication between the outer node and the runtime
@@ -51,20 +53,22 @@
 
 </span><span class="kw">use </span>codec::Codec;
 
-<span class="kw">use </span>pallet_protos::GetProtosParams;
+<span class="kw">use </span>pallet_protos::{GetProtosParams, GetGenealogyParams};
 <span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="comment">// Declares given traits as runtime apis
 // For more information, read: https://docs.rs/sp-api/latest/sp_api/macro.decl_runtime_apis.html
 </span><span class="macro">sp_api::decl_runtime_apis! </span>{
-	<span class="doccomment">/// The trait `ProtosApi` is declared to be a Runtime API
-	</span><span class="kw">pub trait </span>ProtosApi&lt;AccountId&gt;
+	<span class="doccomment">/// The trait `ProtosRuntimeApi` is declared to be a Runtime API
+	</span><span class="kw">pub trait </span>ProtosRuntimeApi&lt;AccountId&gt;
 	<span class="kw">where
 		</span>AccountId: Codec
 	{
 		<span class="doccomment">/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 		</span><span class="kw">fn </span>get_protos(params: GetProtosParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt;;
+		<span class="doccomment">/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
+		</span><span class="kw">fn </span>get_genealogy(params: GetGenealogyParams&lt;Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt;;
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc_runtime_api" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (db0597f56 2022-10-11)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc_runtime_api" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (c0983a9aa 2022-10-12)" ></div></body></html>

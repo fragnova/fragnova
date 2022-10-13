@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":[["ProtosApi","The trait `ProtosApi` is declared to be a Runtime API"]]};
+window.SIDEBAR_ITEMS = {"trait":[["ProtosRuntimeApi","The trait `ProtosRuntimeApi` is declared to be a Runtime API"]]};

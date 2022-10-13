@@ -1375,6 +1375,81 @@
 <span id="1375">1375</span>
 <span id="1376">1376</span>
 <span id="1377">1377</span>
+<span id="1378">1378</span>
+<span id="1379">1379</span>
+<span id="1380">1380</span>
+<span id="1381">1381</span>
+<span id="1382">1382</span>
+<span id="1383">1383</span>
+<span id="1384">1384</span>
+<span id="1385">1385</span>
+<span id="1386">1386</span>
+<span id="1387">1387</span>
+<span id="1388">1388</span>
+<span id="1389">1389</span>
+<span id="1390">1390</span>
+<span id="1391">1391</span>
+<span id="1392">1392</span>
+<span id="1393">1393</span>
+<span id="1394">1394</span>
+<span id="1395">1395</span>
+<span id="1396">1396</span>
+<span id="1397">1397</span>
+<span id="1398">1398</span>
+<span id="1399">1399</span>
+<span id="1400">1400</span>
+<span id="1401">1401</span>
+<span id="1402">1402</span>
+<span id="1403">1403</span>
+<span id="1404">1404</span>
+<span id="1405">1405</span>
+<span id="1406">1406</span>
+<span id="1407">1407</span>
+<span id="1408">1408</span>
+<span id="1409">1409</span>
+<span id="1410">1410</span>
+<span id="1411">1411</span>
+<span id="1412">1412</span>
+<span id="1413">1413</span>
+<span id="1414">1414</span>
+<span id="1415">1415</span>
+<span id="1416">1416</span>
+<span id="1417">1417</span>
+<span id="1418">1418</span>
+<span id="1419">1419</span>
+<span id="1420">1420</span>
+<span id="1421">1421</span>
+<span id="1422">1422</span>
+<span id="1423">1423</span>
+<span id="1424">1424</span>
+<span id="1425">1425</span>
+<span id="1426">1426</span>
+<span id="1427">1427</span>
+<span id="1428">1428</span>
+<span id="1429">1429</span>
+<span id="1430">1430</span>
+<span id="1431">1431</span>
+<span id="1432">1432</span>
+<span id="1433">1433</span>
+<span id="1434">1434</span>
+<span id="1435">1435</span>
+<span id="1436">1436</span>
+<span id="1437">1437</span>
+<span id="1438">1438</span>
+<span id="1439">1439</span>
+<span id="1440">1440</span>
+<span id="1441">1441</span>
+<span id="1442">1442</span>
+<span id="1443">1443</span>
+<span id="1444">1444</span>
+<span id="1445">1445</span>
+<span id="1446">1446</span>
+<span id="1447">1447</span>
+<span id="1448">1448</span>
+<span id="1449">1449</span>
+<span id="1450">1450</span>
+<span id="1451">1451</span>
+<span id="1452">1452</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1413,7 +1488,7 @@
 	hashing::{blake2_256, twox_64},
 	transaction_index,
 };
-<span class="kw">use </span>sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
+<span class="kw">use </span>sp_std::{collections::{btree_map::BTreeMap, vec_deque::VecDeque}, vec, vec::Vec};
 
 <span class="kw">pub use </span>weights::WeightInfo;
 
@@ -1495,6 +1570,16 @@
 			available: Default::default(),
 		}
 	}
+}
+
+<span class="doccomment">/// **Data Type** used to **Query the Genealogy of a Proto-Fragment**
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
+</span><span class="kw">pub struct </span>GetGenealogyParams&lt;TString&gt; {
+	<span class="doccomment">/// The Proto-Fragment whose Genealogy will be retrieved
+	</span><span class="kw">pub </span>proto_hash: TString,
+	<span class="doccomment">/// Whether to retrieve the ancestors of the Proto-Fragment. If `false`, the descendants are retrieved instead
+	</span><span class="kw">pub </span>get_ancestors: bool,
 }
 
 <span class="doccomment">/// **Struct** of a **Proto-Fragment Patch**
@@ -1623,6 +1708,10 @@
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>Protos&lt;T: Config&gt; =
 		StorageMap&lt;<span class="kw">_</span>, Identity, Hash256, Proto&lt;T::AccountId, T::BlockNumber&gt;&gt;;
+
+	<span class="doccomment">/// **StorageMap** that maps a **Proto-Fragment** to a **list of other Proto-Fragments that reference the Proto-Fragment**
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>ProtosByParent&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash256, Vec&lt;Hash256&gt;&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment
 	/// hashes (that have the aforementioned variant)**
@@ -1825,7 +1914,7 @@
 				license,
 				creator: who.clone(),
 				owner: owner.clone(),
-				references,
+				references: references.clone(),
 				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
@@ -1835,10 +1924,16 @@
 			<span class="comment">// store proto
 			</span>&lt;Protos&lt;T&gt;&gt;::insert(proto_hash, proto);
 
+			<span class="comment">// store by parent
+			</span><span class="kw">for </span>reference <span class="kw">in </span>references.into_iter() {
+				&lt;ProtosByParent&lt;T&gt;&gt;::append(reference, proto_hash);
+			}
+
 			<span class="comment">// store by category
 			</span>&lt;ProtosByCategory&lt;T&gt;&gt;::append(category, proto_hash);
 
-			&lt;ProtosByOwner&lt;T&gt;&gt;::append(owner, proto_hash);
+			<span class="comment">// store by owner
+			</span>&lt;ProtosByOwner&lt;T&gt;&gt;::append(owner, proto_hash);
 
 			<span class="comment">// index immutable data for IPFS discovery
 			</span>transaction_index::index(extrinsic_index, data_len <span class="kw">as </span>u32, proto_hash);
@@ -1920,7 +2015,7 @@
 					</span>proto.patches.push(ProtoPatch {
 						block: current_block_number,
 						data_hash,
-						references: new_references,
+						references: new_references.clone(),
 					});
 					<span class="comment">// index mutable data for IPFS discovery as well
 					</span>transaction_index::index(extrinsic_index, data.len() <span class="kw">as </span>u32, data_hash);
@@ -1954,6 +2049,10 @@
 					proto.tags = tags;
 				}
 			});
+
+			<span class="kw">for </span>new_reference <span class="kw">in </span>new_references.into_iter() {
+				&lt;ProtosByParent&lt;T&gt;&gt;::append(new_reference, proto_hash);
+			}
 
 			<span class="kw">let </span>cid = [<span class="kw-2">&amp;</span>CID_PREFIX[..], <span class="kw-2">&amp;</span>data_hash[..]].concat();
 			<span class="kw">let </span>cid = cid.to_base58();
@@ -2750,7 +2849,58 @@
 
 			<span class="prelude-val">Ok</span>(map)
 		}
+
+		<span class="doccomment">/// **Query** the Genealogy of a Proto-Fragment based on **`params`**. The **return
+		/// type** is a **JSON string** that represents an Adjacency List.
+		///
+		/// # Arguments
+		///
+		/// * `params` - A ***GetGenealogyParams* struct**
+		</span><span class="kw">pub fn </span>get_genealogy(params: GetGenealogyParams&lt;Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
+
+			<span class="kw">let </span>proto_hash: Hash256 = hex::decode(params.proto_hash)
+				.map_err(|<span class="kw">_</span>| <span class="string">&quot;Failed to convert string to u8 slice&quot;</span>)<span class="question-mark">?
+				</span>.try_into()
+				.map_err(|<span class="kw">_</span>| <span class="string">&quot;Failed to convert u8 slice to Hash256&quot;</span>)<span class="question-mark">?</span>;
+
+			<span class="kw">let </span><span class="kw-2">mut </span>adjacency_list = BTreeMap::&lt;String, Vec&lt;String&gt;&gt;::new();
+
+			<span class="kw">let </span><span class="kw-2">mut </span>queue = VecDeque::&lt;Hash256&gt;::new();
+			queue.push_back(proto_hash);
+
+			<span class="kw">let </span><span class="kw-2">mut </span>visited = BTreeMap::&lt;Hash256, bool&gt;::new();
+			visited.insert(proto_hash, <span class="bool-val">true</span>);
+
+			<span class="kw">while let </span><span class="prelude-val">Some</span>(proto) = queue.pop_front() {
+
+				<span class="kw">let </span>neighbors = <span class="kw">if </span>params.get_ancestors {
+					<span class="kw">let </span>proto_struct = &lt;Protos&lt;T&gt;&gt;::get(proto).ok_or(<span class="string">&quot;Proto Hash Does Not Exist!&quot;</span>)<span class="question-mark">?</span>;
+					<span class="kw">let </span><span class="kw-2">mut </span>parents = proto_struct.references;
+					<span class="kw">let </span><span class="kw-2">mut </span>references_from_patches = proto_struct.patches.into_iter().flat_map(|pp: ProtoPatch&lt;<span class="kw">_</span>&gt;| pp.references).collect::&lt;Vec&lt;Hash256&gt;&gt;();
+					parents.append(<span class="kw-2">&amp;mut </span>references_from_patches);
+					parents
+				} <span class="kw">else </span>{
+					<span class="kw">let </span>children = &lt;ProtosByParent&lt;T&gt;&gt;::get(proto).unwrap_or_default();
+					children
+				};
+
+				adjacency_list.insert(hex::encode(proto), neighbors.iter().map(|p| hex::encode(p)).collect());
+
+				<span class="kw">for </span>neighbor <span class="kw">in </span>neighbors.into_iter() {
+					<span class="kw">if </span>!visited.contains_key(<span class="kw-2">&amp;</span>neighbor) {
+						visited.insert(neighbor, <span class="bool-val">true</span>);
+						queue.push_back(neighbor);
+					}
+				}
+			}
+
+			<span class="prelude-val">Ok</span>(<span class="macro">json!</span>(adjacency_list).to_string().into_bytes())
+
+		}
+
+
 	}
+
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (db0597f56 2022-10-11)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (c0983a9aa 2022-10-12)" ></div></body></html>
