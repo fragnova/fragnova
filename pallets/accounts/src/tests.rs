@@ -1036,11 +1036,8 @@ mod withdraw_tests {
 			let lock = dd.lock;
 			let lock2 = dd.lock2;
 			let link = lock.link.clone();
-			let link2 = lock2.link.clone();
 			let lock_period = lock.data.lock_period;
-			let lock_period2 = lock2.data.lock_period;
 			let lock_period_in_weeks = Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
-			let lock_period_in_weeks2 = Accounts::eth_lock_period_to_weeks(lock_period2).ok().unwrap();
 
 			assert_ok!(link_(&link));
 			assert_ok!(lock_(&lock));
@@ -1079,32 +1076,67 @@ mod withdraw_tests {
 					last_withdraw: 0,
 				}
 			);
+			assert_eq!(
+				<EthLockedFrag<Test>>::get(&lock2.data.sender, future_block_number).unwrap(),
+				EthLock {
+					amount: SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(lock2.data.amount.clone()),
+					block_number: future_block_number,
+					lock_period: lock2.data.lock_period,
+					last_withdraw: 0,
+				}
+			);
 
 			assert_ok!(withdraw_(&lock)); // withdraw at week 2
 
 			let last_withdraw = (future_block_number - current_block) * 6 / (60 * 60 * 24 * 7);
 
 			assert_eq!(
-				<EthLockedFrag<Test>>::get(&lock2.data.sender, future_block_number.clone()).unwrap(),
+				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block.clone()).unwrap(),
+				EthLock {
+					amount: SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(lock.data.amount.clone()),
+					block_number: current_block.clone(),
+					lock_period: lock.data.lock_period.clone(),
+					last_withdraw: (last_withdraw +1) as u128,
+				}
+			);
+			assert_eq!(
+				<EthLockedFrag<Test>>::get(&lock2.data.sender, future_block_number).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(lock2.data.amount.clone()),
-					block_number: future_block_number.clone(),
-					lock_period: lock2.data.lock_period.clone(),
+					block_number: future_block_number,
+					lock_period: lock2.data.lock_period,
 					last_withdraw: last_withdraw as u128,
 				}
 			);
 
 			let next_week = (60 * 60 * 24 * 7 * lock_period_in_weeks as u64)/ 6;
 			System::set_block_number(next_week);
-			let last_withdraw = (next_week - future_block_number) * 6 / (60 * 60 * 24 * 7);
+			let last_withdraw = (next_week - future_block_number) * 6 / (60 * 60 * 24 * 7) + 1;
 
 			assert_ok!(withdraw_(&lock)); // withdraw at week 1
 			assert_eq!(
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block.clone()), None,
 				"EthLockedFrag should have been removed for this account since there is nothing more to possibly withdraw"
 			);
+
+			assert_eq!(
+				<EthLockedFrag<Test>>::get(&lock2.data.sender, future_block_number).unwrap(),
+				EthLock {
+					amount: SaturatedConversion::saturated_into::<
+						<Test as pallet_balances::Config>::Balance,
+					>(lock2.data.amount.clone()),
+					block_number: future_block_number,
+					lock_period: lock2.data.lock_period,
+					last_withdraw: last_withdraw as u128,
+				}
+			);
+
 		});
 	}
 
