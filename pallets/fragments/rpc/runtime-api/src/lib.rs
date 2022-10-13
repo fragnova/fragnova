@@ -17,7 +17,7 @@
 
 use codec::Codec;
 
-use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
+use pallet_fragments::{GetDefinitionsParams, GetInstancesParams, GetInstanceOwnerParams};
 use sp_std::vec::Vec;
 
 // Declares given traits as runtime apis
@@ -34,5 +34,8 @@ sp_api::decl_runtime_apis! {
 
 		/// **Query** and **Return** **Fragmnent Instance(s)** based on **`params`**
 		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+
+		/// Query the owner of a Fragment Instance. The return type is a String
+		fn get_instance_owner(params: GetInstanceOwnerParams) -> Result<Vec<u8>, Vec<u8>>;
 	}
 }

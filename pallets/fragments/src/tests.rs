@@ -2313,3 +2313,48 @@ mod get_instances_tests {
 		});
 	}
 }
+
+
+mod get_instance_owner_tests {
+	use super::*;
+
+	#[test]
+	fn get_instance_owner_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let mint = dd.mint_non_unique;
+			assert_ok!(upload(dd.account_id, &mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &mint.definition));
+			assert_ok!(mint_(dd.account_id, &mint));
+
+			assert_eq!(
+				FragmentsPallet::get_instance_owner(GetInstanceOwnerParams {
+					definition_hash: mint.definition.get_definition_id(),
+					edition_id: 1,
+					copy_id: 1,
+				}).unwrap(),
+				hex::encode(dd.account_id).into_bytes()
+			);
+
+		});
+	}
+
+	#[test]
+	fn get_instance_owner_should_not_work_if_instance_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let mint = dd.mint_non_unique;
+			assert_ok!(upload(dd.account_id, &mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &mint.definition));
+
+			assert_eq!(
+				FragmentsPallet::get_instance_owner(GetInstanceOwnerParams {
+					definition_hash: mint.definition.get_definition_id(),
+					edition_id: 1,
+					copy_id: 1,
+				}),
+				Err("Instance not found".into())
+			);
+		});
+	}
+}

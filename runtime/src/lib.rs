@@ -66,7 +66,7 @@ use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
 use pallet_protos::{GetProtosParams, GetGenealogyParams};
-use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
+use pallet_fragments::{GetDefinitionsParams, GetInstancesParams, GetInstanceOwnerParams};
 
 pub use pallet_contracts::Schedule;
 
@@ -1003,6 +1003,9 @@ impl_runtime_apis! {
 		}
 		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Fragments::get_instances(params)
+		}
+		fn get_instance_owner(params: GetInstanceOwnerParams) -> Result<Vec<u8>, Vec<u8>> {
+			Fragments::get_instance_owner(params)
 		}
 	}
 

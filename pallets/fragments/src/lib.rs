@@ -74,6 +74,7 @@ use scale_info::prelude::{
 };
 use serde_json::{json, Map, Value};
 
+/// Type used to represent an Instance's Edition ID and an Instance's Copy ID
 type Unit = u64;
 
 /// **Data Type** used to **Query and Filter for Fragment Definitions**
@@ -108,7 +109,6 @@ impl<TAccountId, TString> Default for GetDefinitionsParams<TAccountId, TString> 
 		}
 	}
 }
-
 /// **Data Type** used to **Query and Filter for Fragment Instances**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -141,6 +141,17 @@ impl<TAccountId, TString: Default> Default for GetInstancesParams<TAccountId, TS
 			only_return_first_copies: Default::default(),
 		}
 	}
+}
+/// **Data Type** used to **Query the owner of a Fragment Instance**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GetInstanceOwnerParams {
+	/// Fragment Definition/Collection that the Fragment Instance is in
+	pub definition_hash: Hash128,
+	/// Edition ID of the Fragment Instance
+	pub edition_id: Unit,
+	/// Copy ID of the Fragment Instance
+	pub copy_id: Unit,
 }
 
 /// **Struct** of a **Fragment Definition's Metadata**
@@ -1696,7 +1707,7 @@ pub mod pallet {
 							.map(|edition_id| -> Result<Unit, _> {
 								<CopiesCount<T>>::get((array_definition_id, edition_id))
 									.map(Into::<Unit>::into)
-									.ok_or("No. of Copies not found for an Existing Edition!")
+									.ok_or("Number of Copies not found for an existing edition")
 							})
 							.sum::<Result<Unit, _>>()?
 					} else {
@@ -1793,7 +1804,7 @@ pub mod pallet {
 
 					let instance_struct =
 						<Fragments<T>>::get((definition_hash, edition_id, copy_id))
-							.ok_or("Instance Not Found!")?;
+							.ok_or("Instance not found")?;
 
 					if !params.metadata_keys.is_empty() {
 						let metadata = instance_struct
@@ -1802,7 +1813,7 @@ pub mod pallet {
 							.map(|(metadata_key_index, data_hash_index)| {
 								let data_hash =
 									<DataHashMap<T>>::get(definition_hash, data_hash_index)
-										.ok_or::<Vec<u8>>("Data Hash Not Found!".into())?;
+										.ok_or::<Vec<u8>>("Data hash not found".into())?;
 								Ok((metadata_key_index.clone(), data_hash))
 							})
 							.collect::<Result<BTreeMap<Compact<u64>, Hash256>, Vec<u8>>>()?;
@@ -1823,6 +1834,27 @@ pub mod pallet {
 			let result = json!(map).to_string();
 
 			Ok(result.into_bytes())
+		}
+
+
+		/// Query the owner of a Fragment Instance. The return type is a String
+		pub fn get_instance_owner(
+			params: GetInstanceOwnerParams
+		) -> Result<Vec<u8>, Vec<u8>> {
+
+			if params.copy_id > CopiesCount::<T>::get((params.definition_hash, params.edition_id)).unwrap_or(Compact(0)).into() {
+				return Err("Instance not found".into());
+			}
+
+			let owner = Owners::<T>::iter_prefix(params.definition_hash)
+				.find(|(_owner, vec_instances)|
+					vec_instances.iter().any(
+						|(edition_id, copy_id)|
+							Compact(params.edition_id) == *edition_id && Compact(params.copy_id) == *copy_id
+					)
+				).ok_or("Owner not found (this should never happen)")?.0;
+
+			Ok(hex::encode(owner).into_bytes())
 		}
 	}
 }
