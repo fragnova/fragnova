@@ -142,7 +142,7 @@ pub struct EthLockUpdate<TPublic> {
 	pub amount: U256,
 	/// If the event was `Lock`, it represents the lock period of the FRAG token.
 	/// If the event was `Unlock`, it is 999.
-	pub lock_period: U256,
+	pub lock_period: u64,
 	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
 	/// The lock/unlock signature signed by the Ethereum Account ID
@@ -161,7 +161,7 @@ pub struct EthLock<TBalance, TBlockNum> {
 	/// Clamor Block Number in which the locked FRAG tokens was "effectively transfered" to the Clamor Blockchain
 	pub block_number: TBlockNum,
 	/// The FRAG lock period chosen by the user on Ethereum and received from the Lock event
-	pub lock_period: U128,
+	pub lock_period: u64,
 	/// The week number of the last withdraw. It is zero if the account never withdrawn
 	pub last_withdraw: u128,
 }
@@ -185,7 +185,7 @@ pub struct AccountInfo<TAccountID, TMoment> {
 pub mod pallet {
 	use super::*;
 	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
-	use ethabi::ethereum_types::U128;
+	use ethabi::Uint;
 	use frame_support::{
 		dispatch::DispatchResult,
 		pallet_prelude::*,
@@ -362,7 +362,7 @@ pub mod pallet {
 		/// NOVA were assigned to an account balance.
 		NOVAAssigned { sender: T::AccountId, balance: <T as pallet_balances::Config>::Balance },
 		/// ETH side lock was updated
-		Locked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance, lock_period: U128 },
+		Locked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance, lock_period: u64 },
 		/// ETH side lock was unlocked
 		Unlocked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance },
 		/// A new sponsored account was added
@@ -566,7 +566,7 @@ pub mod pallet {
 			let amount: [u8; 32] = data.amount.into();
 			message.extend_from_slice(&amount[..]); // Add amount to message
 			if data.lock {
-				let lock_period: [u8; 32] = data.lock_period.into();
+				let lock_period: [u8; 16] = U128::from(data.lock_period.clone()).into();
 				message.extend_from_slice(&lock_period[..]); // Add amount to message
 			}
 
@@ -620,7 +620,7 @@ pub mod pallet {
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-			let lock_period: U128 =
+			let lock_period: u64 =
 				data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 			let frag_amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 
@@ -1047,7 +1047,7 @@ pub mod pallet {
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
 
 				// Lock period (`data[2]`). In case of Unlock event, it is 999.
-				let lock_period = data[2].clone().into_uint().unwrap_or(U128::from(99).into());
+				let lock_period = data[2].clone().into_uint().ok_or_else(|| "Invalid data")?;
 
 				if locked {
 					log::trace!(
@@ -1071,6 +1071,8 @@ pub mod pallet {
 					);
 				}
 
+				let lock_period = u64::try_from(lock_period).unwrap();
+
 				// `send_unsigned_transaction` is returning a type of `Option<(Account<T>, Result<(), ()>)>`.
 				//   The returned result means:
 				//   - `None`: no account is available for sending transaction
@@ -1083,6 +1085,7 @@ pub mod pallet {
 							// `account` is an account `Signer::<T, T::AuthorityId>::any_account()`
 							public: account.public.clone(), // 问Gio what is account.public and why is it supposed to be in FragKey
 							amount,
+							// TODO magari meglio levarlo da mezzo sto lock period in case of unlock?
 							lock_period,
 							sender,
 							signature: eth_signature.clone(),
@@ -1183,7 +1186,7 @@ pub mod pallet {
 					// Retrieve the info related to the FRAG locked by this account
 					let frag_lock_block_number = eth_lock.block_number.saturated_into::<u128>();
 					let total_frag_locked_on_eth = eth_lock.amount.saturated_into::<u128>();
-					let frag_lock_period = eth_lock.lock_period.saturated_into::<u128>();
+					let frag_lock_period = eth_lock.lock_period.saturated_into::<u64>();
 					let last_withdraw_week = eth_lock.last_withdraw.saturated_into::<u128>();
 
 					// convert for convenience. The calculations below are made by num of weeks
@@ -1196,12 +1199,12 @@ pub mod pallet {
 					let tickets_convertible_per_week = Self::apply_percent(
 						total_frag_locked_on_eth,
 						100 - T::InitialPercentageTickets::get(),
-					) / lock_period_in_weeks;
+					) / lock_period_in_weeks as u128;
 
 					let nova_convertible_per_week = Self::apply_percent(
 						total_frag_locked_on_eth,
 						100 - T::InitialPercentageNova::get(),
-					) / lock_period_in_weeks;
+					) / lock_period_in_weeks as u128;
 
 					// price of 1 FRAG in USD
 					let current_frag_price = Self::get_oracle_price();
@@ -1227,8 +1230,8 @@ pub mod pallet {
 
 					// This is for the case of withdraw performed when the FRAG lock period is already over.
 					// In this case the total withdrawal amount cannot be more than the total amount yielded until within the lock period.
-					if num_weeks_since_lock_frag >= lock_period_in_weeks {
-						num_weeks_since_lock_frag = lock_period_in_weeks;
+					if num_weeks_since_lock_frag >= lock_period_in_weeks as u128 {
+						num_weeks_since_lock_frag = lock_period_in_weeks as u128;
 					}
 
 					let tickets_amount_to_withdraw = tickets_amount_per_week_at_current_price *
@@ -1265,7 +1268,7 @@ pub mod pallet {
 					tickets_amount = tickets_amount.saturating_add(tickets_amount_to_mint);
 					nova_amount = nova_amount.saturating_add(nova_amount_to_deposit);
 
-					if num_weeks_since_lock_frag == lock_period_in_weeks {
+					if num_weeks_since_lock_frag == lock_period_in_weeks as u128 {
 						<EthLockedFrag<T>>::remove(eth_account.clone(), eth_lock.block_number);
 					} else {
 						// Update the week number of the latest withdraw
@@ -1336,7 +1339,7 @@ pub mod pallet {
 
 		/// Convert the lock period integer retrieved from Ethereum event into the number of weeks.
 		/// Refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
-		pub fn eth_lock_period_to_weeks(lock_period: u128) -> Result<u128, Error<T>> {
+		pub fn eth_lock_period_to_weeks(lock_period: u64) -> Result<u64, Error<T>> {
 			let sec = match lock_period {
 				0 => 2,  // 2 weeks
 				1 => 4,  // 1 month

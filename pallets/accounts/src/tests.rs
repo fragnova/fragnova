@@ -290,7 +290,7 @@ mod sync_frag_locks_tests {
 									&[
 										Token::Bytes(lock.data.signature.0.to_vec()),
 										Token::Uint(lock.data.amount),
-										Token::Uint(lock.data.lock_period)
+										Token::Uint(U256::from(lock.data.lock_period))
 									]
 								),
 							)),
@@ -395,7 +395,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
-					lock_period: U128::from(1),
+					lock_period: u64::try_from(1).unwrap(),
 					last_withdraw: 0,
 				}
 			);
@@ -447,7 +447,7 @@ mod internal_lock_update_tests {
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount),
-					lock_period: U128::try_from(lock.data.lock_period).unwrap()
+					lock_period: lock.data.lock_period.clone()
 				})
 			);
 
@@ -499,7 +499,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
-					lock_period: U128::from(1),
+					lock_period: u64::try_from(1).unwrap(),
 					last_withdraw: 0,
 				}
 			);
@@ -541,7 +541,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
-					lock_period: U128::from(1),
+					lock_period: u64::try_from(1).unwrap(),
 					last_withdraw: 0,
 				}
 			);
@@ -606,11 +606,11 @@ mod internal_lock_update_tests {
 
 			let mut lock = dd.lock;
 			lock.data.amount = U256::from(0u32);
-			lock.data.lock_period = U256::from(1);
+			lock.data.lock_period = 1 as u64;
 			lock.data.signature = create_lock_signature(
 				lock.ethereum_account_pair.clone(),
 				lock.data.amount.clone(),
-				U128::try_from(lock.data.lock_period.clone()).unwrap(),
+				lock.data.lock_period.clone(),
 			);
 
 			assert_noop!(lock_(&lock), Error::<Test>::SystematicFailure);
@@ -649,7 +649,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(unlock.lock.data.amount.clone()),
 					block_number: current_block_number,
-					lock_period: U128::from(999),
+					lock_period: u64::try_from(999).unwrap(),
 					last_withdraw: 0,
 				}
 			);
@@ -676,7 +676,7 @@ mod internal_lock_update_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(unlock.lock.data.amount),
 					block_number: current_block_number,
-					lock_period: U128::from(999),
+					lock_period: u64::try_from(999).unwrap(),
 					last_withdraw: 0,
 				}
 			);
@@ -783,22 +783,22 @@ mod withdraw_tests {
 		(initial_nova_amount, initial_tickets_amount)
 	}
 
-	pub fn expected_nova_amount(week_num: u128, lock_period: u128, data_amount: u128) -> u128 {
+	pub fn expected_nova_amount(week_num: u64, lock_period: u64, data_amount: u128) -> u128 {
 		let nova_per_week =
-			(100 - apply_percent(data_amount, get_initial_percentage_nova())) / lock_period;
+			(100 - apply_percent(data_amount, get_initial_percentage_nova())) / u128::try_from(lock_period).unwrap();
 		let expected_amount = nova_per_week
 			* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
-			* week_num
+			* u128::try_from(week_num).unwrap()
 			* get_oracle_price(); //
 		expected_amount
 	}
 
-	pub fn expected_tickets_amount(week_num: u128, lock_period: u128, data_amount: u128) -> u128 {
+	pub fn expected_tickets_amount(week_num: u64, lock_period: u64, data_amount: u128) -> u128 {
 		let tickets_per_week =
-			(100 - apply_percent(data_amount, get_initial_percentage_tickets())) / lock_period;
+			(100 - apply_percent(data_amount, get_initial_percentage_tickets())) / u128::try_from(lock_period).unwrap();
 		let expected_amount = tickets_per_week
 			* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
-			* week_num
+			* u128::try_from(week_num).unwrap()
 			* get_oracle_price(); // oracle price for 1 FRAG = 1 USD
 		expected_amount
 	}
@@ -828,12 +828,12 @@ mod withdraw_tests {
 
 			let lock_period = <EthLockedFrag<Test>>::get(&lock.data.sender, current_block)
 				.unwrap()
-				.lock_period
-				.as_u128();
+				.lock_period;
+
 			let lock_period_in_weeks =
 				Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
 			let week_num = lock_period_in_weeks - 1;
-			System::set_block_number(60 * 60 * 24 * 7 * week_num as u64 / 6);
+			System::set_block_number(60 * 60 * 24 * 7 * week_num / 6);
 
 			assert_ok!(withdraw_(&lock)); // withdraw at week 3
 
@@ -882,12 +882,11 @@ mod withdraw_tests {
 
 			let lock_period = <EthLockedFrag<Test>>::get(&lock.data.sender, current_block)
 				.unwrap()
-				.lock_period
-				.as_u128();
+				.lock_period;
 			let lock_period_in_weeks =
 				Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
 			let exceeding_week_num = lock_period_in_weeks + 1; //
-			System::set_block_number(60 * 60 * 24 * 7 * exceeding_week_num as u64 / 6);
+			System::set_block_number(60 * 60 * 24 * 7 * exceeding_week_num / 6);
 
 			assert_ok!(withdraw_(&lock));
 
@@ -954,12 +953,12 @@ mod withdraw_tests {
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova as u128, initial_nova_amount);
 
-			let lock_period = <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period.as_u128();
+			let lock_period = <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period;
 			let lock_period_in_weeks = Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
 
 			// GO TWO WEEKS LATER FOR A WITHDRAW
 			let first_withdraw_week = lock_period_in_weeks - 2;
-			let future_block_number = (60 * 60 * 24 * 7 * first_withdraw_week as u64)/ 6;
+			let future_block_number = (60 * 60 * 24 * 7 * first_withdraw_week)/ 6;
 			assert_eq!(future_block_number, 201600);
 
 			System::set_block_number(future_block_number);
@@ -974,7 +973,7 @@ mod withdraw_tests {
 					>(lock.data.amount.clone()),
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
-					last_withdraw: first_withdraw_week,
+					last_withdraw: u128::try_from(first_withdraw_week).unwrap(),
 				}
 			);
 
@@ -1025,7 +1024,7 @@ mod withdraw_tests {
 		});
 	}
 
-	#[test] #[ignore]
+	#[test]
 	fn subsequent_withdraws_after_multiple_locks_mint_correct_amounts_of_tickets_and_nova() {
 		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
@@ -1063,12 +1062,12 @@ mod withdraw_tests {
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova as u128, initial_nova_amount);
 
-			let lock_period = lock.data.lock_period.as_u128();
+			let lock_period = lock.data.lock_period;
 			let lock_period_in_weeks = Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
 
 			// GO TWO WEEKS LATER FOR A WITHDRAW
 			let first_withdraw_week = lock_period_in_weeks - 2;
-			let future_block_number = (60 * 60 * 24 * 7 * first_withdraw_week as u64)/ 6;
+			let future_block_number = (60 * 60 * 24 * 7 * first_withdraw_week)/ 6;
 			assert_eq!(future_block_number, 201600);
 
 			System::set_block_number(future_block_number);
@@ -1095,7 +1094,7 @@ mod withdraw_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock2.data.amount.clone()),
 					block_number: future_block_number,
-					lock_period: U128::from(lock2.data.lock_period.as_u128()),
+					lock_period: lock2.data.lock_period.clone(),
 					last_withdraw: 0,
 				}
 			);
@@ -1155,7 +1154,7 @@ mod withdraw_tests {
 			let lock2 = dd.lock2;
 			let link = lock.link.clone();
 			let current_block = System::block_number();
-			let lock_period = lock.data.lock_period.as_u128();
+			let lock_period = lock.data.lock_period;
 			let lock_period_in_weeks =
 				Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
 
@@ -1169,7 +1168,7 @@ mod withdraw_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block,
-					lock_period: U128::from(lock_period),
+					lock_period: lock_period.clone(),
 					last_withdraw: 0,
 				}
 			);
@@ -1186,18 +1185,18 @@ mod withdraw_tests {
 						<Test as pallet_balances::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block,
-					lock_period: U128::from(lock_period),
+					lock_period: lock_period.clone(),
 					last_withdraw: 0,
 				}
 			);
 			assert_eq!(
-				<EthLockedFrag<Test>>::get(&lock.data.sender, future_block_number).unwrap(),
+				<EthLockedFrag<Test>>::get(&lock.data.sender, future_block_number.clone()).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(lock2.data.amount.clone()),
-					block_number: future_block_number,
-					lock_period: U128::from(lock2.data.lock_period.as_u128()),
+					block_number: future_block_number.clone(),
+					lock_period: lock2.data.lock_period,
 					last_withdraw: 0,
 				}
 			);
