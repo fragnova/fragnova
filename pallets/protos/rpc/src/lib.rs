@@ -81,7 +81,7 @@ where
 			return_owners: params.return_owners,
 			categories: params.categories,
 			tags: params.tags.into_iter().map(|s| s.into_bytes()).collect(),
-			exclude_tags: params.exclude_tags,
+			exclude_tags: params.exclude_tags.into_iter().map(|s| s.into_bytes()).collect(),
 			available: params.available,
 		};
 

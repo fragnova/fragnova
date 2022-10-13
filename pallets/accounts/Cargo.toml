@@ -109,11 +109,11 @@ serde = { version = "1.0.136", features = ["derive"], optional = true }
 serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
 ethabi = { version = "17.0.0", default-features = false }
 parking_lot = "0.12.1" # copied from https://github.com/JoshOrndorff/recipes/blob/master/pallets/ocw-demo/Cargo.toml#L11
-libsecp256k1 = {version = "0.7.0", default-features = false} # https://crates.io/crates/libsecp256k1
+libsecp256k1 = {version = "0.7.0", default-features = false} # https://crates.io/crates/libsecp256k1 (libsecp256k1 is owned by Parity Tech by the way)
 
 [features]
 default = ['std']
-runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks']
+runtime-benchmarks = ['frame-benchmarking/runtime-benchmarks', 'libsecp256k1/static-context', 'libsecp256k1/hmac']
 std = [
 	'serde',
     'codec/std',

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_protos;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Compact;
@@ -801,7 +803,7 @@ mod get_protos_tests {
 	use upload_tests::upload;
 
 	#[test]
-	fn get_protos_should_not_work_if_owner_not_exists() {
+	fn get_protos_should_not_work_if_owner_does_not_exist() {
 		new_test_ext().execute_with(|| {
 			// UPLOAD
 			let dd = DummyData::new();
@@ -822,7 +824,7 @@ mod get_protos_tests {
 				return_owners: false,
 				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -852,7 +854,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Text(TextCategories::Plain)],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -895,7 +897,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -940,7 +942,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -986,7 +988,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Trait(Some(twox_64(&proto2.data)))],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -1045,7 +1047,7 @@ mod get_protos_tests {
 					Categories::Text(TextCategories::Plain),
 				],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -1119,7 +1121,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -1178,7 +1180,7 @@ mod get_protos_tests {
 					Categories::Text(TextCategories::Plain),
 				],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -1244,7 +1246,7 @@ mod get_protos_tests {
 					Categories::Trait(Some(twox_64(&proto2.data))),
 				],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -1304,7 +1306,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -1357,7 +1359,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -1398,7 +1400,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -1448,7 +1450,7 @@ mod get_protos_tests {
 				return_owners: true,
 				categories: vec![Categories::Shards(shard_script)],
 				tags: Vec::new(),
-				exclude_tags: false,
+				exclude_tags: Vec::new(),
 				available: Some(true),
 			};
 
@@ -1469,6 +1471,48 @@ mod get_protos_tests {
 				.to_string();
 
 			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_should_exclude_tags() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let mut proto = dd.proto_fragment;
+			let mut proto_second = dd.proto_fragment_second;
+
+			proto.tags = vec![b"2D".to_vec()];
+			proto_second.tags = vec![b"NSFW".to_vec()];
+
+			assert_ok!(upload(dd.account_id, &proto));
+			assert_ok!(upload(dd.account_id, &proto_second));
+
+			assert_eq!(
+				serde_json::from_slice::<Value>(
+					&ProtosPallet::get_protos(GetProtosParams {
+						limit: u64::MAX,
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
+				json!({
+					hex::encode(proto.get_proto_hash()): {},
+					hex::encode(proto_second.get_proto_hash()): {},
+				})
+			);
+
+			assert_eq!(
+				serde_json::from_slice::<Value>(
+					&ProtosPallet::get_protos(GetProtosParams {
+						limit: u64::MAX,
+						exclude_tags: proto_second.tags, // exclude tags!
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
+				json!({
+					hex::encode(proto.get_proto_hash()): {},
+				})
+			);
+
 		});
 	}
 }
@@ -1547,6 +1591,5 @@ mod get_genealogy_tests {
 			);
 		});
 	}
-
 
 }

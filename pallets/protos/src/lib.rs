@@ -1,9 +1,10 @@
 //! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
-//!
+//!/**/
 //! A Proto-Fragment is a digital asset that can be used to build a game or application
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -96,10 +97,27 @@ pub struct GetProtosParams<TAccountId, TString> {
 	pub categories: Vec<Categories>,
 	/// List of tags to filter by
 	pub tags: Vec<TString>,
-	/// The returned Proto-Fragments must not have any tag that is specified in the `tags` field
-	pub exclude_tags: bool,
-	/// Whether the Proto-Fragments should be available or not
+	/// The returned Proto-Fragments must not have any tag that is specified in the `exclude_tags` field
+	pub exclude_tags: Vec<TString>,
+  /// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
+}
+#[cfg(test)]
+impl<TAccountId, TString> Default for GetProtosParams<TAccountId, TString> {
+	fn default() -> Self {
+		Self {
+			desc: Default::default(),
+			from: Default::default(),
+			limit: Default::default(),
+			metadata_keys: Default::default(),
+			owner: None,
+			return_owners: Default::default(),
+			categories: Default::default(),
+			tags: Default::default(),
+			exclude_tags: Default::default(),
+			available: Default::default(),
+		}
+	}
 }
 
 /// **Data Type** used to **Query the Genealogy of a Proto-Fragment**
@@ -355,9 +373,9 @@ pub mod pallet {
 		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g
 		///   an ERC-721 Contract)
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
-		///   **Proto-Fragment** *<u>can't be included</u>* into **other protos**
+		///   **Proto-Fragment** *<u>can't be included</u>* into **other Proto-Fragments**
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -493,7 +511,8 @@ pub mod pallet {
 		///   **patch**
 		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment's current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len() as u32,
+		tags.as_ref().map(|tags| tags.len() as u32).unwrap_or_default(), data.len() as u32))]
 		pub fn patch(
 			origin: OriginFor<T>,
 			// proto hash we want to patch
@@ -671,7 +690,7 @@ pub mod pallet {
 		///   `metadata` of the existing Proto-Fragment's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
 		///   in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata(metadata_key.len() as u32, data.len() as u32))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			// proto hash we want to update
@@ -962,7 +981,7 @@ pub mod pallet {
 			tags: &[Vec<u8>],
 			categories: &[Categories],
 			avail: Option<bool>,
-			exclude_tags: bool,
+			exclude_tags: &[Vec<u8>],
 		) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
@@ -988,7 +1007,7 @@ pub mod pallet {
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
 			categories: &[Categories],
-			exclude_tags: bool,
+			exclude_tags: &[Vec<u8>],
 		) -> bool {
 			let found: Vec<_> = categories
 				.into_iter()
@@ -1054,24 +1073,26 @@ pub mod pallet {
 		fn filter_tags(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
-			exclude_tags: bool,
+			exclude_tags: &[Vec<u8>],
 		) -> bool {
-			if tags.len() == 0 {
-				true
-			} else {
-				tags.into_iter().all(|tag| {
-					let tag_idx = <Tags<T>>::get(tag);
-					if let Some(tag_idx) = tag_idx {
-						if struct_proto.tags.contains(&Compact::from(tag_idx)) {
-							!exclude_tags
-						} else {
-							exclude_tags
-						}
-					} else {
-						false
-					}
-				})
-			}
+			// empty iterator returns `false` for `Iterator::any()`
+			let proto_has_any_unwanted_tag = exclude_tags.into_iter().any(|tag| {
+				if let Some(tag_idx) = <Tags<T>>::get(tag) {
+					struct_proto.tags.contains(&Compact::from(tag_idx))
+				} else {
+					false
+				}
+			});
+			// empty iterator returns `true` for `Iterator::all()`
+			let proto_has_all_wanted_tags = tags.into_iter().all(|tag| {
+				if let Some(tag_idx) = <Tags<T>>::get(tag) {
+					struct_proto.tags.contains(&Compact::from(tag_idx))
+				} else {
+					false
+				}
+			});
+
+			proto_has_all_wanted_tags && !proto_has_any_unwanted_tag
 		}
 
 		fn get_list_of_matching_categories(
@@ -1241,7 +1262,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
-								params.exclude_tags,
+								&params.exclude_tags
 							)
 						})
 						.skip(params.from as usize)
@@ -1257,7 +1278,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
-								params.exclude_tags,
+								&params.exclude_tags
 							)
 						})
 						.skip(params.from as usize)
@@ -1297,7 +1318,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										params.exclude_tags,
+										&params.exclude_tags
 									)
 								})
 								.collect()
@@ -1311,7 +1332,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										params.exclude_tags,
+										&params.exclude_tags
 									)
 								})
 								.collect()
