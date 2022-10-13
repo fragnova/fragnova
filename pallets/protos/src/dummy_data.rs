@@ -15,7 +15,6 @@ use sp_clamor::{Hash256, CID_PREFIX};
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
-use ethabi::ethereum_types::U128;
 use protos::traits::{RecordInfo, Trait, VariableType, VariableTypeInfo};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {

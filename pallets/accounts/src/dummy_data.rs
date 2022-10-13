@@ -224,14 +224,14 @@ impl DummyData {
 		let lock2 = Lock {
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([69u8; 32]),
-				amount: U256::from(100u32),
+				amount: U256::from(1000u32),
 				lock_period: u64::try_from(3).unwrap(),
 				sender: get_ethereum_account_id_from_ecdsa_public_struct(
 					&sp_core::ecdsa::Pair::from_seed(&[3u8; 32]).public(),
 				),
 				signature: create_lock_signature(
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
-					U256::from(100u32),
+					U256::from(1000u32),
 					u64::try_from(3).unwrap(),
 				),
 				lock: true, // yes, please lock it!
@@ -275,7 +275,7 @@ impl DummyData {
 			},
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([69u8; 32]),
-				amount: U256::from(0u32),     // when unlocking, amount must be 0u32
+				amount: U256::from(0u32), // when unlocking, amount must be 0u32
 				lock_period: u64::try_from(999).unwrap(), // can be whatever. It is not considered in case of unlock.
 				sender: get_ethereum_account_id_from_ecdsa_public_struct(
 					&sp_core::ecdsa::Pair::from_seed(&[4u8; 32]).public(),

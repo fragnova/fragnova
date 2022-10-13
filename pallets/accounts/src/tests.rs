@@ -25,7 +25,6 @@ fn get_oracle_price() -> u128 {
 
 mod link_tests {
 	use super::*;
-	use frame_support::traits::Len;
 
 	pub fn link_(link: &Link) -> DispatchResult {
 		Accounts::link(Origin::signed(link.clamor_account_id), link.link_signature.clone())
@@ -784,8 +783,8 @@ mod withdraw_tests {
 	}
 
 	pub fn expected_nova_amount(week_num: u64, lock_period: u64, data_amount: u128) -> u128 {
-		let nova_per_week =
-			(100 - apply_percent(data_amount, get_initial_percentage_nova())) / u128::try_from(lock_period).unwrap();
+		let nova_per_week = apply_percent(data_amount, 100 - get_initial_percentage_nova()) /
+			u128::try_from(lock_period).unwrap();
 		let expected_amount = nova_per_week
 			* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
 			* u128::try_from(week_num).unwrap()
@@ -794,8 +793,8 @@ mod withdraw_tests {
 	}
 
 	pub fn expected_tickets_amount(week_num: u64, lock_period: u64, data_amount: u128) -> u128 {
-		let tickets_per_week =
-			(100 - apply_percent(data_amount, get_initial_percentage_tickets())) / u128::try_from(lock_period).unwrap();
+		let tickets_per_week = apply_percent(data_amount, 100 - get_initial_percentage_tickets()) /
+			u128::try_from(lock_period).unwrap();
 		let expected_amount = tickets_per_week
 			* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
 			* u128::try_from(week_num).unwrap()
@@ -850,7 +849,8 @@ mod withdraw_tests {
 				expected_amount + initial_tickets_amount
 			);
 
-			let expected_amount = expected_nova_amount(week_num, lock_period_in_weeks, data_amount);
+			let expected_amount =
+				expected_nova_amount(week_num, lock_period_in_weeks, data_amount.clone());
 			let nova_new_balance =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);
@@ -906,8 +906,11 @@ mod withdraw_tests {
 				(i.e. lock period) even if account withdraws at week 5"
 			);
 
-			let expected_amount =
-				expected_nova_amount(lock_period_in_weeks, lock_period_in_weeks, data_amount);
+			let expected_amount = expected_nova_amount(
+				lock_period_in_weeks,
+				lock_period_in_weeks,
+				data_amount.clone(),
+			);
 			let nova_new_balance =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);
@@ -957,9 +960,9 @@ mod withdraw_tests {
 			let lock_period_in_weeks = Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
 
 			// GO TWO WEEKS LATER FOR A WITHDRAW
-			let first_withdraw_week = lock_period_in_weeks - 2;
-			let future_block_number = (60 * 60 * 24 * 7 * first_withdraw_week)/ 6;
-			assert_eq!(future_block_number, 201600);
+			let weeks_after_first_lock = 1;
+			let future_block_number = (60 * 60 * 24 * 7 * weeks_after_first_lock)/ 6;
+			assert_eq!(future_block_number, 100800);
 
 			System::set_block_number(future_block_number);
 
@@ -973,7 +976,7 @@ mod withdraw_tests {
 					>(lock.data.amount.clone()),
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
-					last_withdraw: u128::try_from(first_withdraw_week).unwrap(),
+					last_withdraw: u128::try_from(weeks_after_first_lock.clone()).unwrap(),
 				}
 			);
 
@@ -984,7 +987,7 @@ mod withdraw_tests {
 
 			let data_amount: u128 = lock.data.amount.try_into().ok().unwrap();
 			// 80% of tickets have already been sent to user. 100% - 80% is the remaining amount due.
-			let expected_amount = expected_tickets_amount(first_withdraw_week, lock_period_in_weeks, data_amount);
+			let expected_amount = expected_tickets_amount(weeks_after_first_lock.clone(), lock_period_in_weeks, data_amount);
 
 			assert_eq!(
 				tickets_balance_after_1st_withdraw as u128,
@@ -992,7 +995,7 @@ mod withdraw_tests {
 				"Amount of Tickets minted are equivalent to 4 weeks even if account withdraws at week 5"
 			);
 
-			let expected_amount = expected_nova_amount(first_withdraw_week, lock_period_in_weeks, data_amount);
+			let expected_amount = expected_nova_amount(weeks_after_first_lock.clone(), lock_period_in_weeks, data_amount.clone());
 			let nova_new_balance =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);
@@ -1001,7 +1004,7 @@ mod withdraw_tests {
 
 			assert_ok!(withdraw_(&lock)); // withdraw at week 1
 			assert_eq!(
-				<EthLockedFrag<Test>>::get(&lock.data.sender, future_block_number), None,
+				<EthLockedFrag<Test>>::get(&lock.data.sender, future_block_number.clone()), None,
 				"EthLockedFrag should have been removed for this account since there is nothing more to possibly withdraw"
 			);
 
@@ -1010,27 +1013,32 @@ mod withdraw_tests {
 				&link.clamor_account_id,
 			);
 
-			let expected_amount = expected_tickets_amount(lock_period_in_weeks, lock_period_in_weeks, data_amount);
+			let expected_amount = expected_tickets_amount(lock_period_in_weeks, lock_period_in_weeks, data_amount.clone());
 			assert_eq!(
 				tickets_balance as u128,
-				expected_amount + initial_tickets_amount,
+				expected_amount + initial_tickets_amount.clone(),
 				"Amount of Tickets minted are equal to the total amount due after two subsequent withdraws"
 			);
 
-			let expected_amount = expected_nova_amount(lock_period_in_weeks, lock_period_in_weeks, data_amount);
+			let expected_amount = expected_nova_amount(lock_period_in_weeks, lock_period_in_weeks, data_amount.clone());
 			let nova_new_balance =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
-			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);
+			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount.clone());
 		});
 	}
 
 	#[test]
-	fn subsequent_withdraws_after_multiple_locks_mint_correct_amounts_of_tickets_and_nova() {
+	fn subsequent_withdraws_after_multiple_locks_registrations_are_correct() {
 		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
 			let lock = dd.lock;
 			let lock2 = dd.lock2;
 			let link = lock.link.clone();
+			let link2 = lock2.link.clone();
+			let lock_period = lock.data.lock_period;
+			let lock_period2 = lock2.data.lock_period;
+			let lock_period_in_weeks = Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
+			let lock_period_in_weeks2 = Accounts::eth_lock_period_to_weeks(lock_period2).ok().unwrap();
 
 			assert_ok!(link_(&link));
 			assert_ok!(lock_(&lock));
@@ -1050,24 +1058,9 @@ mod withdraw_tests {
 				}
 			);
 
-			// check the balance of the Clamor account
-			let minted = pallet_assets::Pallet::<Test>::balance(
-				get_ticket_asset_id(),
-				&link.clamor_account_id,
-			);
-
-			let (initial_nova_amount, initial_tickets_amount) = get_initial_amounts(&lock);
-			assert_eq!(minted as u128, initial_tickets_amount);
-
-			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
-			assert_eq!(nova as u128, initial_nova_amount);
-
-			let lock_period = lock.data.lock_period;
-			let lock_period_in_weeks = Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
-
 			// GO TWO WEEKS LATER FOR A WITHDRAW
-			let first_withdraw_week = lock_period_in_weeks - 2;
-			let future_block_number = (60 * 60 * 24 * 7 * first_withdraw_week)/ 6;
+			let weeks_later_from_first_lock = 2;
+			let future_block_number = (60 * 60 * 24 * 7 * weeks_later_from_first_lock.clone())/ 6;
 			assert_eq!(future_block_number, 201600);
 
 			System::set_block_number(future_block_number);
@@ -1085,64 +1078,179 @@ mod withdraw_tests {
 				}
 			);
 
-			assert_ok!(withdraw_(&lock)); // withdraw at week 1
+			assert_ok!(withdraw_(&lock)); // withdraw at week 2
+
+			let last_withdraw = (future_block_number - current_block) * 6 / (60 * 60 * 24 * 7);
 
 			assert_eq!(
-				<EthLockedFrag<Test>>::get(&lock2.data.sender, future_block_number).unwrap(),
+				<EthLockedFrag<Test>>::get(&lock2.data.sender, future_block_number.clone()).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(lock2.data.amount.clone()),
-					block_number: future_block_number,
+					block_number: future_block_number.clone(),
 					lock_period: lock2.data.lock_period.clone(),
-					last_withdraw: 0,
+					last_withdraw: last_withdraw as u128,
 				}
 			);
+
+			let next_week = (60 * 60 * 24 * 7 * lock_period_in_weeks as u64)/ 6;
+			System::set_block_number(next_week);
+			let last_withdraw = (next_week - future_block_number) * 6 / (60 * 60 * 24 * 7);
+
+			assert_ok!(withdraw_(&lock)); // withdraw at week 1
+			assert_eq!(
+				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block.clone()), None,
+				"EthLockedFrag should have been removed for this account since there is nothing more to possibly withdraw"
+			);
+		});
+	}
+
+	#[test]
+	fn subsequent_withdraws_after_multiple_locks_balances_are_correct() {
+		new_test_ext_with_nova().execute_with(|| {
+			let dd = DummyData::new();
+			let lock = dd.lock;
+			let lock2 = dd.lock2;
+			let link = lock.link.clone();
+			let link2 = lock2.link.clone();
+			let lock_period = lock.data.lock_period;
+			let lock_period2 = lock2.data.lock_period;
+			let lock_period_in_weeks =
+				Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
+			let lock_period_in_weeks2 =
+				Accounts::eth_lock_period_to_weeks(lock_period2).ok().unwrap();
+			let data_amount: u128 = lock.data.amount.try_into().ok().unwrap();
+			let data_amount2: u128 = lock2.data.amount.try_into().ok().unwrap();
+
+			assert_ok!(link_(&link));
+			assert_ok!(lock_(&lock));
+
+			let current_block = System::block_number();
+			assert_eq!(current_block, 1);
+
+			// check the balance of the Clamor account
+			let minted = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
+			);
+
+			let (initial_nova_amount, initial_tickets_amount) = get_initial_amounts(&lock);
+			assert_eq!(minted as u128, initial_tickets_amount);
+
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			assert_eq!(nova as u128, initial_nova_amount);
+
+			// GO TWO WEEKS LATER FOR A WITHDRAW
+			let weeks_later_from_first_lock = 2;
+			let future_block_number = (60 * 60 * 24 * 7 * weeks_later_from_first_lock.clone()) / 6;
+			System::set_block_number(future_block_number);
+
+			assert_ok!(lock_(&lock2));
+
+			// check the balance of the Clamor account
+			let minted2 = pallet_assets::Pallet::<Test>::balance(
+				get_ticket_asset_id(),
+				&link.clamor_account_id,
+			);
+
+			let (initial_nova_amount2, initial_tickets_amount2) = get_initial_amounts(&lock2);
+			assert_eq!(minted2 as u128, initial_tickets_amount2 + initial_tickets_amount);
+
+			let nova2 = pallet_balances::Pallet::<Test>::free_balance(&link2.clamor_account_id);
+			assert_eq!(nova2 as u128, initial_nova_amount2 + initial_nova_amount);
+
+			assert_ok!(withdraw_(&lock)); // withdraw at week 2
 
 			let tickets_balance_after_1st_withdraw = pallet_assets::Pallet::<Test>::balance(
 				get_ticket_asset_id(),
 				&link.clamor_account_id,
 			);
 
-			let data_amount: u128 = lock.data.amount.try_into().ok().unwrap();
 			// 80% of tickets have already been sent to user. 100% - 80% is the remaining amount due.
-			let expected_amount = expected_tickets_amount(first_withdraw_week, lock_period_in_weeks, data_amount);
+			let expected_amount = expected_tickets_amount(
+				weeks_later_from_first_lock.clone(),
+				lock_period_in_weeks,
+				data_amount,
+			);
+			let expected_amount2 = expected_tickets_amount(
+				weeks_later_from_first_lock.clone() - 1,
+				lock_period_in_weeks2,
+				data_amount2,
+			);
 
 			assert_eq!(
 				tickets_balance_after_1st_withdraw as u128,
-				expected_amount + initial_tickets_amount,
-				"Amount of Tickets minted are equivalent to 4 weeks even if account withdraws at week 5"
+				expected_amount +
+					expected_amount2 + initial_tickets_amount.clone() +
+					initial_tickets_amount2.clone(),
 			);
 
-			let expected_amount = expected_nova_amount(first_withdraw_week, lock_period_in_weeks, data_amount);
+			let expected_amount = expected_nova_amount(
+				weeks_later_from_first_lock.clone(),
+				lock_period_in_weeks,
+				data_amount.clone(),
+			);
+			let expected_amount2 = expected_nova_amount(
+				weeks_later_from_first_lock.clone() - 1,
+				lock_period_in_weeks2,
+				data_amount2.clone(),
+			);
+
 			let nova_new_balance =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
-			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);
+			assert_eq!(
+				nova_new_balance as u128,
+				expected_amount +
+					expected_amount2 + initial_nova_amount.clone() +
+					initial_nova_amount2.clone()
+			);
 
-			System::set_block_number(60 * 60 * 24 * 7 * lock_period_in_weeks as u64/ 6);
+			let next_week = (60 * 60 * 24 * 7 * lock_period_in_weeks as u64) / 6;
+			System::set_block_number(next_week);
 
 			assert_ok!(withdraw_(&lock)); // withdraw at week 1
-			assert_eq!(
-				<EthLockedFrag<Test>>::get(&lock.data.sender, future_block_number), None,
-				"EthLockedFrag should have been removed for this account since there is nothing more to possibly withdraw"
-			);
 
 			let tickets_balance = pallet_assets::Pallet::<Test>::balance(
 				get_ticket_asset_id(),
 				&link.clamor_account_id,
 			);
 
-			let expected_amount = expected_tickets_amount(lock_period_in_weeks, lock_period_in_weeks, data_amount);
+			let expected_amount = expected_tickets_amount(
+				lock_period_in_weeks,
+				lock_period_in_weeks,
+				data_amount.clone(),
+			);
+			let expected_amount2 = expected_tickets_amount(
+				lock_period_in_weeks - 1,
+				lock_period_in_weeks2,
+				data_amount2.clone(),
+			);
 			assert_eq!(
 				tickets_balance as u128,
-				expected_amount + initial_tickets_amount,
-				"Amount of Tickets minted are equal to the total amount due after two subsequent withdraws"
+				expected_amount +
+					expected_amount2 + initial_tickets_amount.clone() +
+					initial_tickets_amount2.clone(),
 			);
 
-			let expected_amount = expected_nova_amount(lock_period_in_weeks, lock_period_in_weeks, data_amount);
+			let expected_amount = expected_nova_amount(
+				lock_period_in_weeks,
+				lock_period_in_weeks,
+				data_amount.clone(),
+			);
+			let expected_amount2 = expected_nova_amount(
+				lock_period_in_weeks - 1,
+				lock_period_in_weeks2,
+				data_amount2.clone(),
+			);
 			let nova_new_balance =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
-			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);
+			assert_eq!(
+				nova_new_balance as u128,
+				expected_amount +
+					expected_amount2 + initial_nova_amount.clone() +
+					initial_nova_amount2.clone()
+			);
 		});
 	}
 
