@@ -608,7 +608,7 @@ mod stake_tests {
 	pub fn stake_(
 		signer: <Test as frame_system::Config>::AccountId,
 		proto: &ProtoFragment,
-		stake_amount: &u64,
+		stake_amount: &<Test as pallet_assets::Config>::Balance,
 	) -> DispatchResult {
 		ProtosPallet::curate(Origin::signed(signer), proto.get_proto_hash(), stake_amount.clone())
 	}
