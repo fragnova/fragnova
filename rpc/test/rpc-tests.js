@@ -1,5 +1,5 @@
 const assert = require("chai").assert;
-const index = require("./index");
+const index = require("../index");
 const { Keyring } = require('@polkadot/keyring');
 const {blake2AsU8a} = require('@polkadot/util-crypto')
 const fs = require('fs').promises;
@@ -67,7 +67,7 @@ describe("RPCs", () => {
   before(async () => {
 
     // the `beforeAll` hook should timeout after 20,000 ms (the default is 2000 ms). We do this because it takes time to connect to the local node, since the node was just launched immediately prior.
-    this.timeout(20000);
+    this.timeout(200_000);
 
     api = await index.connectToLocalNode();
 
