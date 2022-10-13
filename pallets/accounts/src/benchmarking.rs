@@ -153,7 +153,7 @@ benchmarks! {
 		let data = EthLockUpdate::<T::Public> {
 			public: sp_core::ed25519::Public([7u8; 32]).into(),
 			amount: U256::from(7),
-			locktime: U256::from(7),
+			lock_period: u64::try_from(7).unwrap(),
 			sender: get_ethereum_public_key(&ethereum_secret_key_struct),
 			signature: sign(
 				&libsecp256k1::Message::parse(
@@ -166,7 +166,7 @@ benchmarks! {
 									&get_ethereum_public_key(&ethereum_secret_key_struct).0[..],
 									&T::EthChainId::get().to_be_bytes(),
 									&Into::<[u8; 32]>::into(U256::from(7u32)), // same as `data.amount`
-									&Into::<[u8; 32]>::into(U256::from(7u32)) // same as `data.locktime`
+									&Into::<[u8; 16]>::into(U128::from(7u32)) // same as `data.lock_period`
 								].concat()
 							)[..]
 						].concat()
@@ -183,8 +183,8 @@ benchmarks! {
 		assert_last_event::<T>(
 			Event::<T>::Locked {
 				eth_key: get_ethereum_public_key(&ethereum_secret_key_struct),
-				balance: TryInto::<u128>::try_into(data.amount).unwrap().saturated_into::<T::Balance>(),
-				locktime: TryInto::<u128>::try_into(data.locktime).unwrap().saturated_into::<T::Moment>(),
+				balance: TryInto::<u128>::try_into(data.amount).unwrap().saturated_into::<<T as pallet_assets::Config>::Balance>(),
+				lock_period: u64::try_from(data.lock_period).unwrap(),
 			}.into()
 		)
 	}
@@ -197,9 +197,9 @@ benchmarks! {
 			caller.clone()
 		)?;
 
-		_ = T::Currency::deposit_creating(
+		_ = <T as pallet_proxy::Config>::Currency::deposit_creating(
 			&caller.clone(),
-			T::ProxyDepositBase::get() + T::ProxyDepositFactor::get() + T::Currency::minimum_balance(),
+			<T as pallet_proxy::Config>::ProxyDepositBase::get() + <T as pallet_proxy::Config>::ProxyDepositFactor::get() + <T as pallet_proxy::Config>::Currency::minimum_balance(),
 		);
 
 		let external_id = ExternalID::Discord(7u64);
@@ -239,6 +239,11 @@ benchmarks! {
 	}: remove_sponsor(RawOrigin::Root, account.clone())
 	verify {
 		assert_eq!(ExternalAuthorities::<T>::get(), BTreeSet::new());
+	}
+
+	withdraw {
+		let caller: T::AccountId = whitelisted_caller();
+
 	}
 
 	impl_benchmark_test_suite!(Accounts, crate::mock::new_test_ext(), crate::mock::Test);
