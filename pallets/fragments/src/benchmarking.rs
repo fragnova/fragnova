@@ -14,9 +14,9 @@ use sp_core::crypto::UncheckedFrom;
 use sp_io::hashing::blake2_128;
 
 use crate::Pallet as Fragments;
-use pallet_protos::Pallet as Protos;
 use pallet_assets::Pallet as Assets;
 use pallet_balances::Pallet as Balances;
+use pallet_protos::Pallet as Protos;
 
 const SEED: u32 = 0;
 

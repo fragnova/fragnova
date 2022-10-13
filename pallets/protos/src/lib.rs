@@ -99,7 +99,7 @@ pub struct GetProtosParams<TAccountId, TString> {
 	pub tags: Vec<TString>,
 	/// The returned Proto-Fragments must not have any tag that is specified in the `exclude_tags` field
 	pub exclude_tags: Vec<TString>,
-  /// Whether the Proto-Fragments should be available or not
+	/// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
 }
 #[cfg(test)]
@@ -1238,7 +1238,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
-								&params.exclude_tags
+								&params.exclude_tags,
 							)
 						})
 						.skip(params.from as usize)
@@ -1254,7 +1254,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
-								&params.exclude_tags
+								&params.exclude_tags,
 							)
 						})
 						.skip(params.from as usize)
@@ -1294,7 +1294,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										&params.exclude_tags
+										&params.exclude_tags,
 									)
 								})
 								.collect()
@@ -1308,7 +1308,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										&params.exclude_tags
+										&params.exclude_tags,
 									)
 								})
 								.collect()

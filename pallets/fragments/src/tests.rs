@@ -202,9 +202,9 @@ mod create_tests {
 				Origin::root(),
 				definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
-				true, // Whether this asset needs users to have an existential deposit to hold this asset
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				69, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
-				true // Whether the asset is transferable or not
+				true  // Whether the asset is transferable or not
 			));
 
 			assert_ok!(create(dd.account_id, &definition));

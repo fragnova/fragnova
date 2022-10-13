@@ -828,7 +828,7 @@ pub mod pallet {
 					<EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 				if left == 0 {
-					return Err(Error::<T>::MaxSupplyReached.into());
+					return Err(Error::<T>::MaxSupplyReached.into())
 				}
 				if let Some(quantity) = quantity {
 					let quantity: Unit = quantity.into();

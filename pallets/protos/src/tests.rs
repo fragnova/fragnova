@@ -913,8 +913,10 @@ mod get_protos_tests {
 					&ProtosPallet::get_protos(GetProtosParams {
 						limit: u64::MAX,
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): {},
 					hex::encode(proto_second.get_proto_hash()): {},
@@ -927,13 +929,14 @@ mod get_protos_tests {
 						limit: u64::MAX,
 						exclude_tags: proto_second.tags, // exclude tags!
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): {},
 				})
 			);
-
 		});
 	}
 }

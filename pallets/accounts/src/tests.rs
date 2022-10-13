@@ -823,6 +823,7 @@ mod withdraw_tests {
 			let nova_balance =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 
+			// initial amounts of Tickets = 80%, NOVA = 20%
 			let (initial_nova_amount, initial_tickets_amount) = get_initial_amounts(&lock);
 			assert_eq!(tickets_balance as u128, initial_tickets_amount);
 			assert_eq!(nova_balance as u128, initial_nova_amount);
@@ -833,6 +834,7 @@ mod withdraw_tests {
 
 			let lock_period_in_weeks =
 				Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
+			// fast forward to week 3
 			let week_num = lock_period_in_weeks - 1;
 			System::set_block_number(60 * 60 * 24 * 7 * week_num / 6);
 
@@ -860,7 +862,7 @@ mod withdraw_tests {
 	}
 
 	#[test]
-	fn withdraw_after_lock_period_gives_correct_amounts() {
+	fn withdraw_after_lock_period_is_over_gives_correct_amounts() {
 		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
 			let lock = dd.lock;
@@ -904,8 +906,8 @@ mod withdraw_tests {
 			assert_eq!(
 				tickets_balance as u128,
 				expected_amount + initial_tickets_amount,
-				"Amount of Tickets minted are equivalent to the max withdrawable amount \
-				(i.e. lock period) even if account withdraws at week 5"
+				"Amount of Tickets minted are equivalent to the max withdrawal amount possible \
+				(i.e. yielded until lock period) even if account withdraws at week 5 (i.e. one week after lock period)"
 			);
 
 			let expected_amount = expected_nova_amount(
@@ -922,7 +924,7 @@ mod withdraw_tests {
 	}
 
 	#[test]
-	fn subsequent_withdraws_after_one_lock_mint_correct_amounts_of_tickets_and_nova() {
+	fn subsequent_withdraws_after_one_lock_mint_correct_amounts() {
 		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
 			let lock = dd.lock;
@@ -961,7 +963,7 @@ mod withdraw_tests {
 			let lock_period = <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period;
 			let lock_period_in_weeks = Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
 
-			// GO TWO WEEKS LATER FOR A WITHDRAW
+			// Go to week 1 after lock
 			let weeks_after_first_lock = 1;
 			let future_block_number = (60 * 60 * 24 * 7 * weeks_after_first_lock)/ 6;
 			assert_eq!(future_block_number, 100800);
@@ -970,6 +972,7 @@ mod withdraw_tests {
 
 			assert_ok!(withdraw_(&lock)); // withdraw at week 1
 
+			// check that we registered to correct info about lock and that last_withdraw field is updated
 			assert_eq!(
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap(),
 				EthLock {
@@ -994,7 +997,6 @@ mod withdraw_tests {
 			assert_eq!(
 				tickets_balance_after_1st_withdraw as u128,
 				expected_amount + initial_tickets_amount,
-				"Amount of Tickets minted are equivalent to 4 weeks even if account withdraws at week 5"
 			);
 
 			let expected_amount = expected_nova_amount(weeks_after_first_lock.clone(), lock_period_in_weeks, data_amount.clone());
@@ -1004,10 +1006,10 @@ mod withdraw_tests {
 
 			System::set_block_number(60 * 60 * 24 * 7 * lock_period_in_weeks as u64/ 6);
 
-			assert_ok!(withdraw_(&lock)); // withdraw at week 1
+			assert_ok!(withdraw_(&lock)); // withdraw at week 4
 			assert_eq!(
 				<EthLockedFrag<Test>>::get(&lock.data.sender, future_block_number.clone()), None,
-				"EthLockedFrag should have been removed for this account since there is nothing more to possibly withdraw"
+				"EthLockedFrag should have been removed for this lock event since all the due amount is yielded and withdrawn."
 			);
 
 			let tickets_balance = pallet_assets::Pallet::<Test>::balance(
@@ -1030,7 +1032,7 @@ mod withdraw_tests {
 	}
 
 	#[test]
-	fn subsequent_withdraws_after_multiple_locks_registrations_are_correct() {
+	fn subsequent_withdraws_after_multiple_locks_produces_correct_lock_registrations() {
 		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
 			let lock = dd.lock;
@@ -1141,7 +1143,7 @@ mod withdraw_tests {
 	}
 
 	#[test]
-	fn subsequent_withdraws_after_multiple_locks_balances_are_correct() {
+	fn subsequent_withdraws_after_multiple_locks_produces_correct_balances() {
 		new_test_ext_with_nova().execute_with(|| {
 			let dd = DummyData::new();
 			let lock = dd.lock;
@@ -1284,63 +1286,6 @@ mod withdraw_tests {
 				expected_amount +
 					expected_amount2 + initial_nova_amount.clone() +
 					initial_nova_amount2.clone()
-			);
-		});
-	}
-
-	#[test]
-	fn subsequent_locks_are_all_registered() {
-		new_test_ext_with_nova().execute_with(|| {
-			let dd = DummyData::new();
-			let lock = dd.lock;
-			let lock2 = dd.lock2;
-			let link = lock.link.clone();
-			let current_block = System::block_number();
-			let lock_period = lock.data.lock_period;
-			let lock_period_in_weeks =
-				Accounts::eth_lock_period_to_weeks(lock_period).ok().unwrap();
-
-			assert_ok!(link_(&link));
-			assert_ok!(lock_(&lock));
-
-			assert_eq!(
-				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap(),
-				EthLock {
-					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
-					>(lock.data.amount.clone()),
-					block_number: current_block,
-					lock_period: lock_period.clone(),
-					last_withdraw: 0,
-				}
-			);
-
-			let week_num = lock_period_in_weeks - 1;
-			let future_block_number = 60 * 60 * 24 * 7 * week_num as u64 / 6;
-			System::set_block_number(future_block_number);
-
-			assert_ok!(lock_(&lock2));
-			assert_eq!(
-				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap(),
-				EthLock {
-					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
-					>(lock.data.amount.clone()),
-					block_number: current_block,
-					lock_period: lock_period.clone(),
-					last_withdraw: 0,
-				}
-			);
-			assert_eq!(
-				<EthLockedFrag<Test>>::get(&lock.data.sender, future_block_number.clone()).unwrap(),
-				EthLock {
-					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
-					>(lock2.data.amount.clone()),
-					block_number: future_block_number.clone(),
-					lock_period: lock2.data.lock_period,
-					last_withdraw: 0,
-				}
 			);
 		});
 	}

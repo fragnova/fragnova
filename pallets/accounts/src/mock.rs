@@ -3,7 +3,7 @@ use crate::*;
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, ConstU64, ConstU128},
+	traits::{ConstU128, ConstU32, ConstU64},
 };
 
 use parking_lot::RwLock;
@@ -26,9 +26,7 @@ use std::sync::Arc;
 
 use sp_runtime::{
 	testing::{Header, TestXt},
-	traits::{
-		BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
-	},
+	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
 	RuntimeAppPublic,
 };
 
