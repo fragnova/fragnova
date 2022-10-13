@@ -46,7 +46,7 @@ To run all the unit tests:
 cargo test
 ```
 ## Run the rpc tests in Javascript
-To run the Javascript rpc tests, which calls the APIs provided by Clamor and are located in `/clamor/rpc/test/protosTest.js` you need to:
+To run the Javascript rpc tests, which calls the APIs provided by Clamor and are located in `/clamor/rpc/test/rpc-tests.js` you need to:
 1. run the local node (described [above](#run-a-local-node))
 2. upload some test data into the node (described [below](#usage))
 3. `cd /rpc && npm install && npm test`

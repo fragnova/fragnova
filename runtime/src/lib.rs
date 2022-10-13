@@ -65,8 +65,8 @@ use scale_info::prelude::string::String;
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
+use pallet_protos::{GetProtosParams, GetGenealogyParams};
 use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
-use pallet_protos::GetProtosParams;
 
 pub use pallet_contracts::Schedule;
 
@@ -219,6 +219,7 @@ parameter_types! {
 	pub RuntimeBlockLength: BlockLength = BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 
+	/// TODO: Documentation
 	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
 		.base_block(BlockExecutionWeight::get())
 		.for_class(DispatchClass::all(), |weights| {
@@ -345,6 +346,7 @@ parameter_types! {
 	/// The maximum number of locks that should exist on an account.
 	/// Not strictly enforced, but used for weight estimation.
 	pub const MaxLocks: u32 = 50;
+	/// TODO: Documentation
 	pub const IsTransferable: bool = false;
 }
 
@@ -442,6 +444,7 @@ impl pallet_accounts::Config for Runtime {
 }
 
 parameter_types! {
+	/// Asset ID of the fungible asset "TICKET"
 	pub const TicketsAssetId: u64 = 1337;
 }
 
@@ -982,10 +985,14 @@ impl_runtime_apis! {
 	}
 
 	/// TODO: Documentation
-	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, AccountId> for Runtime {
-		/// TODO: Documentation
+	impl pallet_protos_rpc_runtime_api::ProtosRuntimeApi<Block, AccountId> for Runtime {
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Protos::get_protos(params)
+		}
+		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
+		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+			Protos::get_genealogy(params)
 		}
 	}
 

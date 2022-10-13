@@ -36,7 +36,7 @@ use sp_io::{
 	hashing::{blake2_256, twox_64},
 	transaction_index,
 };
-use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
+use sp_std::{collections::{btree_map::BTreeMap, vec_deque::VecDeque}, vec, vec::Vec};
 
 pub use weights::WeightInfo;
 
@@ -118,6 +118,16 @@ impl<TAccountId, TString> Default for GetProtosParams<TAccountId, TString> {
 			available: Default::default(),
 		}
 	}
+}
+
+/// **Data Type** used to **Query the Genealogy of a Proto-Fragment**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GetGenealogyParams<TString> {
+	/// The Proto-Fragment whose Genealogy will be retrieved
+	pub proto_hash: TString,
+	/// Whether to retrieve the ancestors of the Proto-Fragment. If `false`, the descendants are retrieved instead
+	pub get_ancestors: bool,
 }
 
 /// **Struct** of a **Proto-Fragment Patch**
@@ -246,6 +256,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
+
+	/// **StorageMap** that maps a **Proto-Fragment** to a **list of other Proto-Fragments that reference the Proto-Fragment**
+	#[pallet::storage]
+	pub type ProtosByParent<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash256>>;
 
 	/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment
 	/// hashes (that have the aforementioned variant)**
@@ -448,7 +462,7 @@ pub mod pallet {
 				license,
 				creator: who.clone(),
 				owner: owner.clone(),
-				references,
+				references: references.clone(),
 				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
@@ -458,9 +472,15 @@ pub mod pallet {
 			// store proto
 			<Protos<T>>::insert(proto_hash, proto);
 
+			// store by parent
+			for reference in references.into_iter() {
+				<ProtosByParent<T>>::append(reference, proto_hash);
+			}
+
 			// store by category
 			<ProtosByCategory<T>>::append(category, proto_hash);
 
+			// store by owner
 			<ProtosByOwner<T>>::append(owner, proto_hash);
 
 			// index immutable data for IPFS discovery
@@ -543,7 +563,7 @@ pub mod pallet {
 					proto.patches.push(ProtoPatch {
 						block: current_block_number,
 						data_hash,
-						references: new_references,
+						references: new_references.clone(),
 					});
 					// index mutable data for IPFS discovery as well
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
@@ -577,6 +597,10 @@ pub mod pallet {
 					proto.tags = tags;
 				}
 			});
+
+			for new_reference in new_references.into_iter() {
+				<ProtosByParent<T>>::append(new_reference, proto_hash);
+			}
 
 			let cid = [&CID_PREFIX[..], &data_hash[..]].concat();
 			let cid = cid.to_base58();
@@ -1373,5 +1397,56 @@ pub mod pallet {
 
 			Ok(map)
 		}
+
+		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**. The **return
+		/// type** is a **JSON string** that represents an Adjacency List.
+		///
+		/// # Arguments
+		///
+		/// * `params` - A ***GetGenealogyParams* struct**
+		pub fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+
+			let proto_hash: Hash256 = hex::decode(params.proto_hash)
+				.map_err(|_| "Failed to convert string to u8 slice")?
+				.try_into()
+				.map_err(|_| "Failed to convert u8 slice to Hash256")?;
+
+			let mut adjacency_list = BTreeMap::<String, Vec<String>>::new();
+
+			let mut queue = VecDeque::<Hash256>::new();
+			queue.push_back(proto_hash);
+
+			let mut visited = BTreeMap::<Hash256, bool>::new();
+			visited.insert(proto_hash, true);
+
+			while let Some(proto) = queue.pop_front() {
+
+				let neighbors = if params.get_ancestors {
+					let proto_struct = <Protos<T>>::get(proto).ok_or("Proto Hash Does Not Exist!")?;
+					let mut parents = proto_struct.references;
+					let mut references_from_patches = proto_struct.patches.into_iter().flat_map(|pp: ProtoPatch<_>| pp.references).collect::<Vec<Hash256>>();
+					parents.append(&mut references_from_patches);
+					parents
+				} else {
+					let children = <ProtosByParent<T>>::get(proto).unwrap_or_default();
+					children
+				};
+
+				adjacency_list.insert(hex::encode(proto), neighbors.iter().map(|p| hex::encode(p)).collect());
+
+				for neighbor in neighbors.into_iter() {
+					if !visited.contains_key(&neighbor) {
+						visited.insert(neighbor, true);
+						queue.push_back(neighbor);
+					}
+				}
+			}
+
+			Ok(json!(adjacency_list).to_string().into_bytes())
+
+		}
+
+
 	}
+
 }

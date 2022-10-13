@@ -45,9 +45,11 @@ jobs:
       - name: Check if all the Polkadot.js RPC tests pass
         run: |
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
-          sleep 10
-
-          sh ./shards/shards-new/test-rpcs.sh
+          sleep 120 # sleep 10
+          # sh ./shards/shards-new/test-rpcs.sh
+          cd ./rpc &&
+          npm install &&
+          npm test
 
           kill %1
 
