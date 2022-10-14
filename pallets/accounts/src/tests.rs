@@ -393,7 +393,7 @@ mod internal_lock_update_tests {
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block_number).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
 					lock_period: u64::try_from(1).unwrap(),
@@ -412,7 +412,7 @@ mod internal_lock_update_tests {
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
+				SaturatedConversion::saturated_into::<<Test as pallet_assets::Config>::Balance>(
 					initial_tickets_amount
 				)
 			);
@@ -446,7 +446,7 @@ mod internal_lock_update_tests {
 				mock::Event::from(pallet_accounts::Event::Locked {
 					eth_key: lock.data.sender.clone(),
 					balance: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock.data.amount),
 					lock_period: lock.data.lock_period.clone()
 				})
@@ -497,7 +497,7 @@ mod internal_lock_update_tests {
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block_number).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
 					lock_period: u64::try_from(1).unwrap(),
@@ -539,7 +539,7 @@ mod internal_lock_update_tests {
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block_number).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block_number,
 					lock_period: u64::try_from(1).unwrap(),
@@ -559,7 +559,7 @@ mod internal_lock_update_tests {
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
+				SaturatedConversion::saturated_into::<<Test as pallet_assets::Config>::Balance>(
 					initial_tickets_amount
 				)
 			);
@@ -647,7 +647,7 @@ mod internal_lock_update_tests {
 				<EthLockedFrag<Test>>::get(&unlock.data.sender, current_block_number).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(unlock.lock.data.amount.clone()),
 					block_number: current_block_number,
 					lock_period: u64::try_from(999).unwrap(),
@@ -674,7 +674,7 @@ mod internal_lock_update_tests {
 				<EthLockedFrag<Test>>::get(&unlock.data.sender, current_block_number).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(unlock.lock.data.amount),
 					block_number: current_block_number,
 					lock_period: u64::try_from(999).unwrap(),
@@ -695,7 +695,7 @@ mod internal_lock_update_tests {
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&unlock.lock.data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<<Test as pallet_balances::Config>::Balance>(
+				SaturatedConversion::saturated_into::<<Test as pallet_assets::Config>::Balance>(
 					initial_tickets_amount
 				)
 			);
@@ -738,7 +738,7 @@ mod internal_lock_update_tests {
 				mock::Event::from(pallet_accounts::Event::Unlocked {
 					eth_key: unlock.data.sender,
 					balance: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(0)
 				})
 			);
@@ -940,7 +940,7 @@ mod withdraw_tests {
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
@@ -977,7 +977,7 @@ mod withdraw_tests {
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
@@ -1051,7 +1051,7 @@ mod withdraw_tests {
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
@@ -1071,7 +1071,7 @@ mod withdraw_tests {
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
@@ -1082,7 +1082,7 @@ mod withdraw_tests {
 				<EthLockedFrag<Test>>::get(&lock2.data.sender, future_block_number).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock2.data.amount.clone()),
 					block_number: future_block_number,
 					lock_period: lock2.data.lock_period,
@@ -1098,7 +1098,7 @@ mod withdraw_tests {
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block.clone()).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock.data.amount.clone()),
 					block_number: current_block.clone(),
 					lock_period: lock.data.lock_period.clone(),
@@ -1109,7 +1109,7 @@ mod withdraw_tests {
 				<EthLockedFrag<Test>>::get(&lock2.data.sender, future_block_number).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock2.data.amount.clone()),
 					block_number: future_block_number,
 					lock_period: lock2.data.lock_period,
@@ -1131,7 +1131,7 @@ mod withdraw_tests {
 				<EthLockedFrag<Test>>::get(&lock2.data.sender, future_block_number).unwrap(),
 				EthLock {
 					amount: SaturatedConversion::saturated_into::<
-						<Test as pallet_balances::Config>::Balance,
+						<Test as pallet_assets::Config>::Balance,
 					>(lock2.data.amount.clone()),
 					block_number: future_block_number,
 					lock_period: lock2.data.lock_period,
