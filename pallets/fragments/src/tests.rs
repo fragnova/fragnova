@@ -252,7 +252,7 @@ mod publish_tests {
 				price: Compact::from(publish.price),
 				units_left: publish.quantity.map(|quantity| Compact::from(quantity)),
 				expiration: publish.expires,
-				amount: publish.amount.map(|amount| Compact::from(amount)),
+				stackable_amount: publish.amount.map(|amount| Compact::from(amount)),
 			};
 
 			assert_eq!(
@@ -514,7 +514,7 @@ mod mint_tests {
 				created_at: current_block_number,
 				custom_data: None,
 				expiring_at: None,
-				amount: mint_non_unique.amount.map(|amount| Compact::from(amount)),
+				stackable_amount: mint_non_unique.amount.map(|amount| Compact::from(amount)),
 				metadata: BTreeMap::new(),
 			};
 
@@ -598,7 +598,7 @@ mod mint_tests {
 					_ => panic!(),
 				},
 				expiring_at: None,
-				amount: mint_unique.amount.map(|amount| Compact::from(amount)),
+				stackable_amount: mint_unique.amount.map(|amount| Compact::from(amount)),
 				metadata: BTreeMap::new(),
 			};
 
@@ -842,7 +842,7 @@ mod buy_tests {
 				created_at: current_block_number,
 				custom_data: None,
 				expiring_at: None, // newly created Fragment Instance doesn't have an expiration date - confirm with @sinkingsugar
-				amount: buy_non_unique.publish.amount.map(|amount| Compact::from(amount)),
+				stackable_amount: buy_non_unique.publish.amount.map(|amount| Compact::from(amount)),
 				metadata: BTreeMap::new(),
 			};
 
@@ -962,7 +962,7 @@ mod buy_tests {
 					_ => panic!(),
 				},
 				expiring_at: None,
-				amount: buy_unique.publish.amount.map(|amount| Compact::from(amount)),
+				stackable_amount: buy_unique.publish.amount.map(|amount| Compact::from(amount)),
 				metadata: BTreeMap::new(),
 			};
 

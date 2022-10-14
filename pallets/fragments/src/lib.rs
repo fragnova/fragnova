@@ -172,7 +172,7 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 	/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)
 	///
 	/// These **allowed set of actions of the Fragment Instance** ***may change***
-	/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
+	/// when the **Fragment Instance is given to another account ID** (see the `give()` extrinsic).
 	pub permissions: FragmentPerms,
 	// Notes from Giovanni:
 	//
@@ -215,7 +215,7 @@ pub struct FragmentInstance<TBlockNum> {
 	pub expiring_at: Option<TBlockNum>,
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** that are **left** in the **stack of stackable items**
-	pub amount: Option<Compact<Unit>>,
+	pub stack_amount: Option<Compact<Unit>>,
 	/// TODO: Documentation
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to an **Index of the Hash of the aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Compact<u64>>,
@@ -239,8 +239,21 @@ pub struct PublishingData<TBlockNum> {
 	/// Block number that the sale ends at (*optional*)
 	pub expiration: Option<TBlockNum>,
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
-	/// the **number of items** to **top up** in the **stack of stackable items** // EMERICK
-	pub amount: Option<Compact<Unit>>,
+	/// the **number of items** to **top up** in the **stack of stackable items**
+	pub stack_amount: Option<Compact<Unit>>,
+}
+
+pub struct NormalSecondarySale {
+	pub price: Compact<u128>,
+}
+pub struct AuctionSecondarySale  {
+	pub starting_price: Comapct<u128>,
+	pub current_price: Compact<u128>,
+	pub timeout: Compact<u128>,
+}
+pub enum SecondarySaleType {
+	Normal(NormalSecondarySale),
+	Auction(AuctionSecondarySale),
 }
 
 /// **Enum** indicating whether to
@@ -259,6 +272,7 @@ pub enum FragmentBuyOptions {
 
 #[frame_support::pallet]
 pub mod pallet {
+	use std::hash::Hash;
 	use super::*;
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
@@ -304,6 +318,10 @@ pub mod pallet {
 	pub type Publishing<T: Config> =
 		StorageMap<_, Identity, Hash128, PublishingData<T::BlockNumber>>;
 
+	#[pallet::storage]
+	pub type Definition2SecondarySales<T: Config> =
+		StorageMap<_, Identity, Hash128, Vec<(T::AccountId, Compact<Unit>, Compact<Unit>, FragmentPerms, SecondarySaleType)>>;
+
 	/// **StorageMap** that maps a **Fragment Definition ID**
 	/// to the
 	/// **total number of unique Edition IDs** found in the
@@ -317,9 +335,8 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type CopiesCount<T: Config> = StorageMap<_, Identity, (Hash128, Unit), Compact<Unit>>;
 
-	/// **StorageNMap** that maps the **Fragment Definition ID of a Fragment Instance,
-	/// the Fragment Edition ID of the aforementioned Fragment Instance and
-	/// the Copy ID of the aforementioned Fragment Instance**
+	/// **StorageNMap** that maps a
+	/// **Fragment Instance's Fragment Definition ID, Edition ID and Copy ID**
 	/// to a
 	/// ***`FragmentInstance`* struct**
 	///
@@ -797,7 +814,7 @@ pub mod pallet {
 			price: u128,
 			quantity: Option<Unit>,
 			expires: Option<T::BlockNumber>,
-			amount: Option<Unit>,
+			stack_amount: Option<Unit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -847,7 +864,7 @@ pub mod pallet {
 					price: Compact(price),
 					units_left: quantity.map(|x| Compact(x)),
 					expiration: expires,
-					amount: amount.map(|x| Compact(x)),
+					stack_amount: stack_amount.map(|x| Compact(x)),
 				},
 			);
 
@@ -924,7 +941,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
 			options: FragmentBuyOptions,
-			amount: Option<Unit>,
+			stack_amount: Option<Unit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -962,7 +979,7 @@ pub mod pallet {
 				quantity,
 				current_block_number,
 				None, // Block Number the Fragment(s) expire at (optional)
-				amount.map(|x| Compact(x)),
+				stack_amount.map(|x| Compact(x)),
 			)
 		}
 
@@ -1022,39 +1039,7 @@ pub mod pallet {
 
 			let price = price.saturating_mul(quantity as u128); // `price` = `price` * `quantity`
 
-			if let Some(currency) = fragment_data.metadata.currency {
-				let minimum_balance_needed_to_exist =
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(currency);
-				let price_balance: <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::Balance =
-					price.saturated_into();
-
-				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who) >=
-						price_balance + minimum_balance_needed_to_exist,
-					Error::<T>::InsufficientBalance
-				);
-				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault) +
-						price_balance >= minimum_balance_needed_to_exist,
-					Error::<T>::ReceiverBelowMinimumBalance
-				);
-			} else {
-				let minimum_balance_needed_to_exist =
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
-				let price_balance: <pallet_balances::Pallet<T> as Currency<T::AccountId>>::Balance =
-					price.saturated_into();
-
-				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who) >=
-						price_balance + minimum_balance_needed_to_exist,
-					Error::<T>::InsufficientBalance
-				);
-				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault) +
-						price_balance >= minimum_balance_needed_to_exist,
-					Error::<T>::ReceiverBelowMinimumBalance
-				);
-			}
+			Self::check_transfer(&who, &vault, price, fragment_data.metadata.currency)?;
 
 			// ! Writing
 
@@ -1066,32 +1051,78 @@ pub mod pallet {
 				quantity,
 				current_block_number,
 				None, // Block Number that the Fragment Instance will expire at (optional)
-				sale.amount,
+				sale.stack_amount,
 			)?;
 
-			if let Some(currency) = fragment_data.metadata.currency {
-				<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
-					// transfer `price` units of `currency` from `who` to `vault`
-					currency,
-					&who,
-					&vault,
-					price.saturated_into(),
-					true, // The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
-				)
-				.map_err(|_| Error::<T>::InsufficientBalance)?;
-			} else {
-				pallet_balances::Pallet::<T>::do_transfer(
-					// transfer `price` units of NOVA from `who` to `vault`
-					&who,
-					&vault,
-					price.saturated_into(),
-					ExistenceRequirement::KeepAlive,
-				)
-				.map_err(|_| Error::<T>::InsufficientBalance)?;
-			}
+			Self::transfer(&who, &vault, price, fragment_data.metadata.currency)?;
 
 			Ok(())
 		}
+
+		#[pallet::weight(50_000)]
+		pub fn resell(
+			origin: OriginFor<T>,
+			definition_hash: Hash128,
+			edition_id: Unit,
+			copy_id: Unit,
+			secondary_sale_type: SecondarySaleType
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let instances = <Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
+			ensure!(instances.contains(&(Compact(edition_id), Compact(copy_id))), Error::<T>::NoPermission);
+
+			let mut instance_struct = <Fragments<T>>::get((definition_hash, edition, copy))
+				.ok_or(Error::<T>::NotFound)?;
+
+			// first of all make sure the item can be transferred
+			ensure!(
+				(instance_struct.permissions & FragmentPerms::TRANSFER) == FragmentPerms::TRANSFER,
+				Error::<T>::NoPermission
+			);
+
+			let perms = if let Some(new_perms) = new_permissions {
+				// ensure we only allow more restrictive permissions
+				Self::ensure_new_perms_are_not_more_permissive(item_data.permissions, new_perms)?;
+				new_perms
+			} else {
+				item_data.permissions
+			};
+
+			Definition2SecondarySales::<T>::append(definition_hash, (who, Compact(edition_id), Compact(copy_id), perms, secondary_sale_type));
+		}
+
+		#[pallet::weight(50_000)]
+		pub fn secondary_buy(
+			origin: OriginFor<T>,
+			definition_hash: Hash128,
+			edition_id: Unit,
+			copy_id: Unit,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let vec_secondary_sales = Definition2SecondarySales::<T>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
+
+			let (owner, _edition_id, _copy_id, secondary_sale_type) = vec_secondary_sales.into_iter().find(
+				|owner, e, c, _sst| Compact(edition_id) == e && Compact(copy_id) == c
+			).ok_or(Error::<T>::NotFound)?;
+
+			let currency = Definitions::<T>::get(definition_hash).ok_or(Error::<T>::SystematicFailure)?.metadata.currency;
+
+			match secondary_sale_type {
+				SecondarySaleType::Normal(normal) => {
+					Self::check_transfer(&who, &owner, normal.price.into(), currency)?;
+					Self::transfer(&who, &owner, normal.price.into(), currency)?;
+				}
+				SecondarySaleType::Auction(auction) => {
+					// TODO: Auction Logic
+					return Err(Error::<T>::SystematicFailure.into());
+				}
+			};
+
+
+		}
+
 
 		/// Give the **Fragment Instance whose Fragment Definition ID is `definition_hash`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
 		///
@@ -1105,7 +1136,7 @@ pub mod pallet {
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `definition_hash` - Fragment Definition ID of the Fragment Instance to give
-		/// * `edition` - Edition ID of the Fragment Insance to give
+		/// * `edition` - Edition ID of the Fragment Instance to give
 		/// * `copy` - Copy ID of the Fragment instance to give
 		/// * `to` - **Account ID** to give the Fragment instance to
 		///
@@ -1118,7 +1149,10 @@ pub mod pallet {
 		///
 		/// * `expiration` (*optional*) - Block number that the duplicated Fragment Instance expires at.
 		/// If the Fragment Instance was not duplicated, this parameter is irrelevant.
-		#[pallet::weight(50_000)]
+		#[pallet::weight(
+		<T as Config>::WeightInfo::benchmark_give_instance_that_has_copy_perms()
+		.max(<T as Config>::WeightInfo::benchmark_give_instance_that_does_not_have_copy_perms())
+		)] // Since both weight functions return a static value, we should not be doing a `max()` and just manually choose the one with a greater weight!
 		pub fn give(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1158,24 +1192,7 @@ pub mod pallet {
 
 			let perms = if let Some(new_perms) = new_permissions {
 				// ensure we only allow more restrictive permissions
-				if (item_data.permissions & FragmentPerms::EDIT) != FragmentPerms::EDIT {
-					ensure!(
-						(new_perms & FragmentPerms::EDIT) != FragmentPerms::EDIT,
-						Error::<T>::NoPermission
-					);
-				}
-				if (item_data.permissions & FragmentPerms::COPY) != FragmentPerms::COPY {
-					ensure!(
-						(new_perms & FragmentPerms::COPY) != FragmentPerms::COPY,
-						Error::<T>::NoPermission
-					);
-				}
-				if (item_data.permissions & FragmentPerms::TRANSFER) != FragmentPerms::TRANSFER {
-					ensure!(
-						(new_perms & FragmentPerms::TRANSFER) != FragmentPerms::TRANSFER,
-						Error::<T>::NoPermission
-					);
-				}
+				Self::ensure_new_perms_are_not_more_permissive(item_data.permissions, new_perms)?;
 				new_perms
 			} else {
 				item_data.permissions
@@ -1237,44 +1254,7 @@ pub mod pallet {
 				});
 			} else {
 				// we will remove from this account to give to new account
-				<Owners<T>>::mutate(definition_hash, who.clone(), |ids| {
-					if let Some(ids) = ids {
-						ids.retain(|cid| *cid != (Compact(edition), Compact(copy)))
-					}
-				});
-
-				<Inventory<T>>::mutate(who.clone(), definition_hash, |ids| {
-					if let Some(ids) = ids {
-						ids.retain(|cid| *cid != (Compact(edition), Compact(copy)))
-					}
-				});
-
-				Self::deposit_event(Event::InventoryRemoved {
-					account_id: who.clone(),
-					definition_hash,
-					fragment_id: (edition, copy),
-				});
-
-				<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition), Compact(copy)));
-
-				<Inventory<T>>::append(
-					to.clone(),
-					definition_hash,
-					(Compact(edition), Compact(copy)),
-				);
-
-				Self::deposit_event(Event::InventoryAdded {
-					account_id: to,
-					definition_hash,
-					fragment_id: (edition, copy),
-				});
-
-				// finally fix permissions that might have changed
-				<Fragments<T>>::mutate((definition_hash, edition, copy), |item_data| {
-					if let Some(item_data) = item_data {
-						item_data.permissions = perms;
-					}
-				});
+				Self::transfer_ownership_of_instance(who, to, definition_hash, edition, copy, perms);
 			}
 
 			Ok(())
@@ -1417,7 +1397,7 @@ pub mod pallet {
 			quantity: u64,
 			current_block_number: T::BlockNumber,
 			expiring_at: Option<T::BlockNumber>,
-			amount: Option<Compact<Unit>>,
+			stack_amount: Option<Compact<Unit>>,
 		) -> DispatchResult {
 			use frame_support::ensure;
 
@@ -1501,7 +1481,7 @@ pub mod pallet {
 								created_at: current_block_number,
 								custom_data: data_hash,
 								expiring_at,
-								amount,
+								stack_amount,
 								metadata: BTreeMap::new(),
 							},
 						);
@@ -1537,6 +1517,157 @@ pub mod pallet {
 			});
 
 			Ok(())
+		}
+
+
+		pub fn check_transfer(
+			from: &T::AccountId,
+			to: &T::AccountId,
+			amount: u128,
+			currency: Option<T::AssetId>
+		) -> DispatchResult {
+			if let Some(currency) = currency {
+				let minimum_balance_needed_to_exist =
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(currency);
+				let price_balance: <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::Balance =
+					amount.saturated_into();
+
+				ensure!(
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, from) >=
+						price_balance + minimum_balance_needed_to_exist,
+					Error::<T>::InsufficientBalance
+				);
+				ensure!(
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, to) +
+						price_balance >= minimum_balance_needed_to_exist,
+					Error::<T>::ReceiverBelowMinimumBalance
+				);
+			} else {
+				let minimum_balance_needed_to_exist =
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
+				let price_balance: <pallet_balances::Pallet<T> as Currency<T::AccountId>>::Balance =
+					amount.saturated_into();
+
+				ensure!(
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(from) >=
+						price_balance + minimum_balance_needed_to_exist,
+					Error::<T>::InsufficientBalance
+				);
+				ensure!(
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(to) +
+						price_balance >= minimum_balance_needed_to_exist,
+					Error::<T>::ReceiverBelowMinimumBalance
+				);
+			}
+
+			Ok(())
+		}
+
+
+		pub fn transfer(
+			from: &T::AccountId,
+			to: &T::AccountId,
+			amount: u128,
+			currency: Option<T::AssetId>
+		) -> DispatchResult {
+			if let Some(currency) = currency {
+				<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
+					// transfer `amount` units of `currency` from `who` to `vault`
+					currency,
+					from,
+					to,
+					amount.saturated_into(),
+					true, // The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
+				)
+					.map_err(|_| Error::<T>::InsufficientBalance)?;
+			} else {
+				pallet_balances::Pallet::<T>::do_transfer(
+					// transfer `amount` units of NOVA from `who` to `vault`
+					from,
+					to,
+					amount.saturated_into(),
+					ExistenceRequirement::KeepAlive,
+				)
+					.map_err(|_| Error::<T>::InsufficientBalance)?;
+			}
+
+			Ok(())
+		}
+
+		pub fn ensure_new_perms_are_not_more_permissive(
+			current_perms: FragmentPerms,
+			new_perms: FragmentPerms,
+		) -> DispatchResult {
+			if (current_perms & FragmentPerms::EDIT) != FragmentPerms::EDIT {
+				ensure!(
+						(new_perms & FragmentPerms::EDIT) != FragmentPerms::EDIT,
+						Error::<T>::NoPermission
+					);
+			}
+			if (current_perms & FragmentPerms::COPY) != FragmentPerms::COPY {
+				ensure!(
+						(new_perms & FragmentPerms::COPY) != FragmentPerms::COPY,
+						Error::<T>::NoPermission
+					);
+			}
+			if (current_perms & FragmentPerms::TRANSFER) != FragmentPerms::TRANSFER {
+				ensure!(
+						(new_perms & FragmentPerms::TRANSFER) != FragmentPerms::TRANSFER,
+						Error::<T>::NoPermission
+					);
+			}
+
+			Ok(())
+		}
+
+		pub fn transfer_ownership_of_instance(
+			from: T::AccountId,
+			to: T::AccountId,
+			definition_hash: Hash128,
+			edition_id: Unit,
+			copy_id: Unit,
+			perms: FragmentPerms
+		) {
+			// we will remove from this account to give to new account
+			<Owners<T>>::mutate(definition_hash, from.clone(), |ids| {
+				if let Some(ids) = ids {
+					ids.retain(|cid| *cid != (Compact(edition_id), Compact(copy_id)))
+				}
+			});
+
+			<Inventory<T>>::mutate(from.clone(), definition_hash, |ids| {
+				if let Some(ids) = ids {
+					ids.retain(|cid| *cid != (Compact(edition_id), Compact(copy_id)))
+				}
+			});
+
+			Self::deposit_event(Event::InventoryRemoved {
+				account_id: from.clone(),
+				definition_hash,
+				fragment_id: (edition_id, copy_id),
+			});
+
+			<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition_id), Compact(copy_id)));
+
+			<Inventory<T>>::append(
+				to.clone(),
+				definition_hash,
+				(Compact(edition_id), Compact(copy_id)),
+			);
+
+			Self::deposit_event(Event::InventoryAdded {
+				account_id: to,
+				definition_hash,
+				fragment_id: (edition_id, copy_id),
+			});
+
+			// finally fix permissions that might have changed
+			<Fragments<T>>::mutate((definition_hash, edition_id, copy_id), |item_data| {
+				if let Some(item_data) = item_data {
+					item_data.permissions = perms;
+				}
+			});
+
 		}
 	}
 
@@ -1638,6 +1769,19 @@ pub mod pallet {
 		// }
 
 		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
+		///
+		/// The returned JSON string has the following format:
+		///
+		/// {
+		/// 	<definition-hash>: {
+		///			"name": <definition-name>,
+		///			"owner": <definition-owner>,
+		///			"metadata": {
+		///				<metadata-key>: <data-hash>,
+		/// 			...
+		///			},
+		/// 	...
+		/// }
 		pub fn get_definitions(
 			params: GetDefinitionsParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
@@ -1743,6 +1887,18 @@ pub mod pallet {
 		}
 
 		/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
+		///
+		/// The returned JSON string has the following format:
+		///
+		/// {
+		/// 	"<edition-id>.<copy-id>": {
+		///			"name": <metadata-name>,
+		///			"metadata": {
+		///				<metadata-key>: <data-hash>,
+		/// 			...
+		///			},
+		/// 	...
+		/// }
 		pub fn get_instances(
 			params: GetInstancesParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
