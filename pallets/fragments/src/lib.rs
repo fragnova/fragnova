@@ -243,17 +243,27 @@ pub struct PublishingData<TBlockNum> {
 	pub stack_amount: Option<Compact<Unit>>,
 }
 
-pub struct NormalSecondarySale {
-	pub price: Compact<u128>,
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub enum SecondarySaleType<TBlockNum> {
+	/// Normal (Price)
+	Normal(u128),
+	/// Auction (Starting Price, Current Price, Timeout)
+	Auction(Compact<u128>, Compact<u128>, TBlockNum),
 }
-pub struct AuctionSecondarySale  {
-	pub starting_price: Comapct<u128>,
-	pub current_price: Compact<u128>,
-	pub timeout: Compact<u128>,
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub struct SecondarySaleData<TAccountId, TBlockNum> {
+	pub edition_id: Compact<Unit>,
+	pub copy_id: Compact<Unit>,
+	pub owner: TAccountId,
+	pub new_permissions: Option<FragmentPerms>,
+	pub expiration: Option<TBlockNum>,
+	pub secondary_sale_type: SecondarySaleType<TBlockNum>,
 }
-pub enum SecondarySaleType {
-	Normal(NormalSecondarySale),
-	Auction(AuctionSecondarySale),
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub enum SecondarySaleBuyOptions {
+	Normal,
+	/// Auction (Current Price)
+	Auction(Compact<u128>),
 }
 
 /// **Enum** indicating whether to
@@ -272,7 +282,6 @@ pub enum FragmentBuyOptions {
 
 #[frame_support::pallet]
 pub mod pallet {
-	use std::hash::Hash;
 	use super::*;
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
@@ -320,7 +329,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type Definition2SecondarySales<T: Config> =
-		StorageMap<_, Identity, Hash128, Vec<(T::AccountId, Compact<Unit>, Compact<Unit>, FragmentPerms, SecondarySaleType)>>;
+		StorageMap<_, Identity, Hash128, Vec<SecondarySaleData<T::AccountId, T::BlockNumber>>>;
 
 	/// **StorageMap** that maps a **Fragment Definition ID**
 	/// to the
@@ -1039,7 +1048,7 @@ pub mod pallet {
 
 			let price = price.saturating_mul(quantity as u128); // `price` = `price` * `quantity`
 
-			Self::check_transfer(&who, &vault, price, fragment_data.metadata.currency)?;
+			Self::can_transfer_currency(&who, &vault, price, fragment_data.metadata.currency)?;
 
 			// ! Writing
 
@@ -1054,75 +1063,10 @@ pub mod pallet {
 				sale.stack_amount,
 			)?;
 
-			Self::transfer(&who, &vault, price, fragment_data.metadata.currency)?;
+			Self::transfer_currency(&who, &vault, price, fragment_data.metadata.currency)?;
 
 			Ok(())
 		}
-
-		#[pallet::weight(50_000)]
-		pub fn resell(
-			origin: OriginFor<T>,
-			definition_hash: Hash128,
-			edition_id: Unit,
-			copy_id: Unit,
-			secondary_sale_type: SecondarySaleType
-		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-
-			let instances = <Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
-			ensure!(instances.contains(&(Compact(edition_id), Compact(copy_id))), Error::<T>::NoPermission);
-
-			let mut instance_struct = <Fragments<T>>::get((definition_hash, edition, copy))
-				.ok_or(Error::<T>::NotFound)?;
-
-			// first of all make sure the item can be transferred
-			ensure!(
-				(instance_struct.permissions & FragmentPerms::TRANSFER) == FragmentPerms::TRANSFER,
-				Error::<T>::NoPermission
-			);
-
-			let perms = if let Some(new_perms) = new_permissions {
-				// ensure we only allow more restrictive permissions
-				Self::ensure_new_perms_are_not_more_permissive(item_data.permissions, new_perms)?;
-				new_perms
-			} else {
-				item_data.permissions
-			};
-
-			Definition2SecondarySales::<T>::append(definition_hash, (who, Compact(edition_id), Compact(copy_id), perms, secondary_sale_type));
-		}
-
-		#[pallet::weight(50_000)]
-		pub fn secondary_buy(
-			origin: OriginFor<T>,
-			definition_hash: Hash128,
-			edition_id: Unit,
-			copy_id: Unit,
-		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-
-			let vec_secondary_sales = Definition2SecondarySales::<T>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
-
-			let (owner, _edition_id, _copy_id, secondary_sale_type) = vec_secondary_sales.into_iter().find(
-				|owner, e, c, _sst| Compact(edition_id) == e && Compact(copy_id) == c
-			).ok_or(Error::<T>::NotFound)?;
-
-			let currency = Definitions::<T>::get(definition_hash).ok_or(Error::<T>::SystematicFailure)?.metadata.currency;
-
-			match secondary_sale_type {
-				SecondarySaleType::Normal(normal) => {
-					Self::check_transfer(&who, &owner, normal.price.into(), currency)?;
-					Self::transfer(&who, &owner, normal.price.into(), currency)?;
-				}
-				SecondarySaleType::Auction(auction) => {
-					// TODO: Auction Logic
-					return Err(Error::<T>::SystematicFailure.into());
-				}
-			};
-
-
-		}
-
 
 		/// Give the **Fragment Instance whose Fragment Definition ID is `definition_hash`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
 		///
@@ -1156,106 +1100,20 @@ pub mod pallet {
 		pub fn give(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
-			edition: Unit,
-			copy: Unit,
+			edition_id: Unit,
+			copy_id: Unit,
 			to: <T::Lookup as StaticLookup>::Source,
 			new_permissions: Option<FragmentPerms>,
 			expiration: Option<T::BlockNumber>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
-
-			let mut item_data = <Fragments<T>>::get((definition_hash, edition, copy))
-				.ok_or(Error::<T>::NotFound)?;
-
-			// no go if will expire this block
-			if let Some(item_expiration) = item_data.expiring_at {
-				ensure!(current_block_number < item_expiration, Error::<T>::NotFound);
-			}
-
-			if let Some(expiration) = expiration {
-				ensure!(current_block_number < expiration, Error::<T>::ParamsNotValid);
-			}
-
-			// Only the owner of this fragment can transfer it
-			let ids =
-				<Inventory<T>>::get(who.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
-
-			ensure!(ids.contains(&(Compact(edition), Compact(copy))), Error::<T>::NoPermission);
-
-			// first of all make sure the item can be transferred
-			ensure!(
-				(item_data.permissions & FragmentPerms::TRANSFER) == FragmentPerms::TRANSFER,
-				Error::<T>::NoPermission
-			);
-
-			let perms = if let Some(new_perms) = new_permissions {
-				// ensure we only allow more restrictive permissions
-				Self::ensure_new_perms_are_not_more_permissive(item_data.permissions, new_perms)?;
-				new_perms
-			} else {
-				item_data.permissions
-			};
+			Self::can_transfer_instance(&who, &definition_hash, edition_id, copy_id, new_permissions, expiration)?;
 
 			let to = T::Lookup::lookup(to)?;
 
 			// now we take two different paths if item can be copied or not
-			if (item_data.permissions & FragmentPerms::COPY) == FragmentPerms::COPY {
-				// we will copy the item to the new account
-				item_data.permissions = perms;
-
-				let copy: u64 = <CopiesCount<T>>::get((definition_hash, edition))
-					.ok_or(Error::<T>::NotFound)?
-					.into();
-
-				let copy = copy + 1;
-
-				<CopiesCount<T>>::insert((definition_hash, edition), Compact(copy));
-
-				<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition), Compact(copy)));
-
-				<Inventory<T>>::append(
-					to.clone(),
-					definition_hash,
-					(Compact(edition), Compact(copy)),
-				);
-
-				// handle expiration
-				if let Some(expiring_at) = item_data.expiring_at {
-					let expiration = if let Some(expiration) = expiration {
-						if expiration < expiring_at {
-							item_data.expiring_at = Some(expiration);
-							expiration
-						} else {
-							expiring_at
-						}
-					} else {
-						expiring_at
-					};
-					<Expirations<T>>::append(
-						expiration,
-						(definition_hash, Compact(edition), Compact(copy)),
-					);
-				} else if let Some(expiration) = expiration {
-					item_data.expiring_at = Some(expiration);
-					<Expirations<T>>::append(
-						expiration,
-						(definition_hash, Compact(edition), Compact(copy)),
-					);
-				}
-
-				<Fragments<T>>::insert((definition_hash, edition, copy), item_data);
-
-				Self::deposit_event(Event::InventoryAdded {
-					account_id: to,
-					definition_hash,
-					fragment_id: (edition, copy),
-				});
-			} else {
-				// we will remove from this account to give to new account
-				Self::transfer_ownership_of_instance(who, to, definition_hash, edition, copy, perms);
-			}
+			Self::transfer_instance(&who, &to, &definition_hash, edition_id, copy_id, new_permissions, expiration)?;
 
 			Ok(())
 		}
@@ -1296,6 +1154,104 @@ pub mod pallet {
 
 			// TODO Make owner pay for deposit actually!
 			// TODO setup proxy
+
+			Ok(())
+		}
+
+
+		#[pallet::weight(50_000)]
+		pub fn resell(
+			origin: OriginFor<T>,
+			definition_hash: Hash128,
+			edition_id: Unit,
+			copy_id: Unit,
+			new_permissions: Option<FragmentPerms>,
+			expiration: Option<T::BlockNumber>,
+			secondary_sale_type: SecondarySaleType<T::BlockNumber>
+		) -> DispatchResult {
+
+			let who = ensure_signed(origin)?;
+
+			if let Some(secondary_sales) = <Definition2SecondarySales<T>>::get(&definition_hash) {
+				ensure!(
+					!secondary_sales.into_iter().any(
+						|secondary_sale_data|
+						Compact(edition_id) == secondary_sale_data.edition_id
+						&&
+						Compact(copy_id) == secondary_sale_data.copy_id
+					),
+					Error::<T>::SaleAlreadyOpen
+				);
+			}
+
+			Self::can_transfer_instance(&who, &definition_hash, edition_id, copy_id, new_permissions, expiration)?;
+
+			// ! Writing
+
+			Definition2SecondarySales::<T>::append(
+				definition_hash,
+				SecondarySaleData {
+					edition_id: Compact(edition_id),
+					copy_id: Compact(copy_id),
+					owner: who,
+					new_permissions,
+					expiration,
+					secondary_sale_type
+				}
+			);
+
+			Ok(())
+		}
+
+		#[pallet::weight(50_000)]
+		pub fn secondary_buy(
+			origin: OriginFor<T>,
+			definition_hash: Hash128,
+			edition_id: Unit,
+			copy_id: Unit,
+			_options: SecondarySaleBuyOptions
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let secondary_sales = Definition2SecondarySales::<T>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
+
+			let secondary_sale_data = secondary_sales.into_iter().find(
+				|secondary_sale_data|
+					Compact(edition_id) == secondary_sale_data.edition_id
+						&&
+						Compact(copy_id) == secondary_sale_data.copy_id
+			).ok_or(Error::<T>::NotFound)?;
+
+			let currency = Definitions::<T>::get(definition_hash).ok_or(Error::<T>::SystematicFailure)?.metadata.currency;
+
+			match secondary_sale_data.secondary_sale_type {
+				SecondarySaleType::Normal(price) => {
+					Self::can_transfer_currency(&who, &secondary_sale_data.owner, price, currency)?;
+					Self::transfer_currency(&who, &secondary_sale_data.owner, price, currency)?;
+					Self::transfer_instance(
+						&secondary_sale_data.owner,
+						&who,
+						&definition_hash,
+						secondary_sale_data.edition_id.into(),
+						secondary_sale_data.copy_id.into(),
+						secondary_sale_data.new_permissions,
+						secondary_sale_data.expiration
+					)?;
+
+					// remove secondary sale data from `Definition2SecondarySales`
+					<Definition2SecondarySales<T>>::mutate(definition_hash, |secondary_sales| {
+						if let Some(secondary_sales) = secondary_sales {
+							secondary_sales.retain(|ssd|
+								ssd.edition_id != secondary_sale_data.edition_id && ssd.copy_id != secondary_sale_data.edition_id
+							);
+						}
+					});
+				}
+				SecondarySaleType::Auction(_starting_price, _current_price, _timeout) => {
+					// TODO: Auction Logic
+					return Err(Error::<T>::SystematicFailure.into());
+				}
+			};
 
 			Ok(())
 		}
@@ -1520,7 +1476,7 @@ pub mod pallet {
 		}
 
 
-		pub fn check_transfer(
+		pub fn can_transfer_currency(
 			from: &T::AccountId,
 			to: &T::AccountId,
 			amount: u128,
@@ -1564,7 +1520,7 @@ pub mod pallet {
 		}
 
 
-		pub fn transfer(
+		pub fn transfer_currency(
 			from: &T::AccountId,
 			to: &T::AccountId,
 			amount: u128,
@@ -1594,79 +1550,182 @@ pub mod pallet {
 			Ok(())
 		}
 
-		pub fn ensure_new_perms_are_not_more_permissive(
-			current_perms: FragmentPerms,
-			new_perms: FragmentPerms,
+		pub fn can_transfer_instance(
+			from: &T::AccountId,
+			definition_hash: &Hash128,
+			edition_id: Unit,
+			copy_id: Unit,
+			new_permissions: Option<FragmentPerms>,
+			expiration: Option<T::BlockNumber>,
 		) -> DispatchResult {
-			if (current_perms & FragmentPerms::EDIT) != FragmentPerms::EDIT {
-				ensure!(
+
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			let item_data = <Fragments<T>>::get((definition_hash, edition_id, copy_id))
+				.ok_or(Error::<T>::NotFound)?;
+
+			// no go if will expire this block
+			if let Some(item_expiration) = item_data.expiring_at {
+				ensure!(current_block_number < item_expiration, Error::<T>::NotFound);
+			}
+
+			if let Some(expiration) = expiration {
+				ensure!(current_block_number < expiration, Error::<T>::ParamsNotValid);
+			}
+
+			// Only the owner of this fragment can transfer it
+			let ids =
+				<Inventory<T>>::get(from.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
+
+			ensure!(ids.contains(&(Compact(edition_id), Compact(copy_id))), Error::<T>::NoPermission);
+
+			// first of all make sure the item can be transferred
+			ensure!(
+				(item_data.permissions & FragmentPerms::TRANSFER) == FragmentPerms::TRANSFER,
+				Error::<T>::NoPermission
+			);
+
+			if let Some(new_perms) = new_permissions {
+				// ensure we only allow more restrictive permissions
+				if (item_data.permissions & FragmentPerms::EDIT) != FragmentPerms::EDIT {
+					ensure!(
 						(new_perms & FragmentPerms::EDIT) != FragmentPerms::EDIT,
 						Error::<T>::NoPermission
 					);
-			}
-			if (current_perms & FragmentPerms::COPY) != FragmentPerms::COPY {
-				ensure!(
+				}
+				if (item_data.permissions & FragmentPerms::COPY) != FragmentPerms::COPY {
+					ensure!(
 						(new_perms & FragmentPerms::COPY) != FragmentPerms::COPY,
 						Error::<T>::NoPermission
 					);
-			}
-			if (current_perms & FragmentPerms::TRANSFER) != FragmentPerms::TRANSFER {
-				ensure!(
+				}
+				if (item_data.permissions & FragmentPerms::TRANSFER) != FragmentPerms::TRANSFER {
+					ensure!(
 						(new_perms & FragmentPerms::TRANSFER) != FragmentPerms::TRANSFER,
 						Error::<T>::NoPermission
 					);
+				}
 			}
 
 			Ok(())
+
 		}
 
-		pub fn transfer_ownership_of_instance(
-			from: T::AccountId,
-			to: T::AccountId,
-			definition_hash: Hash128,
+		pub fn transfer_instance(
+			from: &T::AccountId,
+			to: &T::AccountId,
+			definition_hash: &Hash128,
 			edition_id: Unit,
 			copy_id: Unit,
-			perms: FragmentPerms
-		) {
-			// we will remove from this account to give to new account
-			<Owners<T>>::mutate(definition_hash, from.clone(), |ids| {
-				if let Some(ids) = ids {
-					ids.retain(|cid| *cid != (Compact(edition_id), Compact(copy_id)))
+			new_permissions: Option<FragmentPerms>,
+			expiration: Option<T::BlockNumber>,
+		) -> DispatchResult {
+
+			let mut item_data = <Fragments<T>>::get((definition_hash, edition_id, copy_id))
+				.ok_or(Error::<T>::NotFound)?;
+
+			let perms = if let Some(new_perms) = new_permissions {
+				// ensure we only allow more restrictive permissions
+				new_perms
+			} else {
+				item_data.permissions
+			};
+
+			// now we take two different paths if item can be copied or not
+			if (item_data.permissions & FragmentPerms::COPY) == FragmentPerms::COPY {
+				// we will copy the item to the new account
+				item_data.permissions = perms;
+
+				let copy: u64 = <CopiesCount<T>>::get((definition_hash, edition_id))
+					.ok_or(Error::<T>::NotFound)?
+					.into();
+
+				let copy = copy + 1;
+
+				<CopiesCount<T>>::insert((definition_hash, edition_id), Compact(copy));
+
+				<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition_id), Compact(copy)));
+
+				<Inventory<T>>::append(
+					to.clone(),
+					definition_hash,
+					(Compact(edition_id), Compact(copy)),
+				);
+
+				// handle expiration
+				if let Some(expiring_at) = item_data.expiring_at {
+					let expiration = if let Some(expiration) = expiration {
+						if expiration < expiring_at {
+							item_data.expiring_at = Some(expiration);
+							expiration
+						} else {
+							expiring_at
+						}
+					} else {
+						expiring_at
+					};
+					<Expirations<T>>::append(
+						expiration,
+						(definition_hash, Compact(edition_id), Compact(copy)),
+					);
+				} else if let Some(expiration) = expiration {
+					item_data.expiring_at = Some(expiration);
+					<Expirations<T>>::append(
+						expiration,
+						(definition_hash, Compact(edition_id), Compact(copy)),
+					);
 				}
-			});
 
-			<Inventory<T>>::mutate(from.clone(), definition_hash, |ids| {
-				if let Some(ids) = ids {
-					ids.retain(|cid| *cid != (Compact(edition_id), Compact(copy_id)))
-				}
-			});
+				<Fragments<T>>::insert((definition_hash, edition_id, copy), item_data);
 
-			Self::deposit_event(Event::InventoryRemoved {
-				account_id: from.clone(),
-				definition_hash,
-				fragment_id: (edition_id, copy_id),
-			});
+				Self::deposit_event(Event::InventoryAdded {
+					account_id: to.clone(),
+					definition_hash: *definition_hash,
+					fragment_id: (edition_id, copy),
+				});
+			} else {
+				// we will remove from this account to give to new account
+				<Owners<T>>::mutate(definition_hash, from.clone(), |ids| {
+					if let Some(ids) = ids {
+						ids.retain(|cid| *cid != (Compact(edition_id), Compact(copy_id)))
+					}
+				});
 
-			<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition_id), Compact(copy_id)));
+				<Inventory<T>>::mutate(from.clone(), definition_hash, |ids| {
+					if let Some(ids) = ids {
+						ids.retain(|cid| *cid != (Compact(edition_id), Compact(copy_id)))
+					}
+				});
 
-			<Inventory<T>>::append(
-				to.clone(),
-				definition_hash,
-				(Compact(edition_id), Compact(copy_id)),
-			);
+				Self::deposit_event(Event::InventoryRemoved {
+					account_id: from.clone(),
+					definition_hash: *definition_hash,
+					fragment_id: (edition_id, copy_id),
+				});
 
-			Self::deposit_event(Event::InventoryAdded {
-				account_id: to,
-				definition_hash,
-				fragment_id: (edition_id, copy_id),
-			});
+				<Owners<T>>::append(definition_hash, to.clone(), (Compact(edition_id), Compact(copy_id)));
 
-			// finally fix permissions that might have changed
-			<Fragments<T>>::mutate((definition_hash, edition_id, copy_id), |item_data| {
-				if let Some(item_data) = item_data {
-					item_data.permissions = perms;
-				}
-			});
+				<Inventory<T>>::append(
+					to.clone(),
+					definition_hash,
+					(Compact(edition_id), Compact(copy_id)),
+				);
+
+				Self::deposit_event(Event::InventoryAdded {
+					account_id: to.clone(),
+					definition_hash: *definition_hash,
+					fragment_id: (edition_id, copy_id),
+				});
+
+				// finally fix permissions that might have changed
+				<Fragments<T>>::mutate((definition_hash, edition_id, copy_id), |item_data| {
+					if let Some(item_data) = item_data {
+						item_data.permissions = perms;
+					}
+				});
+			}
+
+			Ok(())
 
 		}
 	}

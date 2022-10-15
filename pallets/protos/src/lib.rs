@@ -653,8 +653,8 @@ pub mod pallet {
 			// WRITING STATE FROM NOW
 
 			// remove proto from old owner
-			<ProtosByOwner<T>>::mutate(proto.owner, |proto_by_owner| {
-				if let Some(list) = proto_by_owner {
+			<ProtosByOwner<T>>::mutate(proto.owner, |protos_by_owner| {
+				if let Some(list) = protos_by_owner {
 					list.retain(|current_hash| proto_hash != *current_hash);
 				}
 			});
