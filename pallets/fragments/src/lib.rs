@@ -244,26 +244,24 @@ pub struct PublishingData<TBlockNum> {
 }
 
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub enum SecondarySaleType<TBlockNum> {
+pub enum SecondarySaleType {
 	/// Normal (Price)
 	Normal(u128),
-	/// Auction (Starting Price, Current Price, Timeout)
-	Auction(Compact<u128>, Compact<u128>, TBlockNum),
+	// /// Auction (Starting Price, Current Price, Timeout)
+	// Auction(Compact<u128>, Compact<u128>, TBlockNum),
 }
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct SecondarySaleData<TAccountId, TBlockNum> {
-	pub edition_id: Compact<Unit>,
-	pub copy_id: Compact<Unit>,
 	pub owner: TAccountId,
 	pub new_permissions: Option<FragmentPerms>,
 	pub expiration: Option<TBlockNum>,
-	pub secondary_sale_type: SecondarySaleType<TBlockNum>,
+	pub secondary_sale_type: SecondarySaleType,
 }
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum SecondarySaleBuyOptions {
 	Normal,
-	/// Auction (Current Price)
-	Auction(Compact<u128>),
+	// /// Auction (Bid Price)
+	// Auction(Compact<u128>),
 }
 
 /// **Enum** indicating whether to
@@ -328,8 +326,18 @@ pub mod pallet {
 		StorageMap<_, Identity, Hash128, PublishingData<T::BlockNumber>>;
 
 	#[pallet::storage]
-	pub type Definition2SecondarySales<T: Config> =
-		StorageMap<_, Identity, Hash128, Vec<SecondarySaleData<T::AccountId, T::BlockNumber>>>;
+	pub type Definition2SecondarySales<T: Config> = StorageNMap<
+		_,
+		(
+			// Definition Hash
+			storage::Key<Identity, Hash128>,
+			// Edition ID
+			storage::Key<Identity, Unit>,
+			// Copy ID
+			storage::Key<Identity, Unit>,
+		),
+		SecondarySaleData<T::AccountId, T::BlockNumber>,
+	>;
 
 	/// **StorageMap** that maps a **Fragment Definition ID**
 	/// to the
@@ -1167,32 +1175,23 @@ pub mod pallet {
 			copy_id: Unit,
 			new_permissions: Option<FragmentPerms>,
 			expiration: Option<T::BlockNumber>,
-			secondary_sale_type: SecondarySaleType<T::BlockNumber>
+			secondary_sale_type: SecondarySaleType
 		) -> DispatchResult {
 
 			let who = ensure_signed(origin)?;
 
-			if let Some(secondary_sales) = <Definition2SecondarySales<T>>::get(&definition_hash) {
-				ensure!(
-					!secondary_sales.into_iter().any(
-						|secondary_sale_data|
-						Compact(edition_id) == secondary_sale_data.edition_id
-						&&
-						Compact(copy_id) == secondary_sale_data.copy_id
-					),
-					Error::<T>::SaleAlreadyOpen
-				);
-			}
+			ensure!(
+				!<Definition2SecondarySales<T>>::contains_key((definition_hash, edition_id, copy_id)),
+				Error::<T>::SaleAlreadyOpen
+			);
 
 			Self::can_transfer_instance(&who, &definition_hash, edition_id, copy_id, new_permissions, expiration)?;
 
 			// ! Writing
 
-			Definition2SecondarySales::<T>::append(
-				definition_hash,
+			Definition2SecondarySales::<T>::insert(
+				(definition_hash, edition_id, copy_id),
 				SecondarySaleData {
-					edition_id: Compact(edition_id),
-					copy_id: Compact(copy_id),
 					owner: who,
 					new_permissions,
 					expiration,
@@ -1213,43 +1212,30 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			let secondary_sales = Definition2SecondarySales::<T>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
-
-			let secondary_sale_data = secondary_sales.into_iter().find(
-				|secondary_sale_data|
-					Compact(edition_id) == secondary_sale_data.edition_id
-						&&
-						Compact(copy_id) == secondary_sale_data.copy_id
-			).ok_or(Error::<T>::NotFound)?;
+			let secondary_sale_data = Definition2SecondarySales::<T>::get((definition_hash, edition_id, copy_id))
+				.ok_or(Error::<T>::NotFound)?;
 
 			let currency = Definitions::<T>::get(definition_hash).ok_or(Error::<T>::SystematicFailure)?.metadata.currency;
 
 			match secondary_sale_data.secondary_sale_type {
 				SecondarySaleType::Normal(price) => {
 					Self::can_transfer_currency(&who, &secondary_sale_data.owner, price, currency)?;
+
+					// ! Writing
+
 					Self::transfer_currency(&who, &secondary_sale_data.owner, price, currency)?;
 					Self::transfer_instance(
 						&secondary_sale_data.owner,
 						&who,
 						&definition_hash,
-						secondary_sale_data.edition_id.into(),
-						secondary_sale_data.copy_id.into(),
+						edition_id,
+						copy_id,
 						secondary_sale_data.new_permissions,
 						secondary_sale_data.expiration
 					)?;
 
 					// remove secondary sale data from `Definition2SecondarySales`
-					<Definition2SecondarySales<T>>::mutate(definition_hash, |secondary_sales| {
-						if let Some(secondary_sales) = secondary_sales {
-							secondary_sales.retain(|ssd|
-								ssd.edition_id != secondary_sale_data.edition_id && ssd.copy_id != secondary_sale_data.edition_id
-							);
-						}
-					});
-				}
-				SecondarySaleType::Auction(_starting_price, _current_price, _timeout) => {
-					// TODO: Auction Logic
-					return Err(Error::<T>::SystematicFailure.into());
+					Definition2SecondarySales::<T>::remove((definition_hash, edition_id, copy_id));
 				}
 			};
 
