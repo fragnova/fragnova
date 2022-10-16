@@ -2100,6 +2100,11 @@ mod create_account_tests {
 	}
 }
 
+mod secondary_buy_tests {
+	use super::*;
+
+}
+
 mod get_definitions_tests {
 	use super::*;
 
