@@ -21,7 +21,7 @@ jobs:
 
       - name: Install the Necessary Packages
         run: |
-          sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl
+          sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler libprotobuf-dev
 
       - name: Install Rustup
         run: |
