@@ -15,7 +15,7 @@ pub use link_tests::link_;
 
 fn apply_percent(amount: u128, percent: u128) -> u128 {
 	if amount == 0 {
-		return 0
+		return 0;
 	}
 	amount * percent / 100
 }
@@ -46,8 +46,8 @@ mod link_tests {
 				link.get_recovered_ethereum_account_id()
 			);
 			assert!(
-				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap() ==
-					link.clamor_account_id
+				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap()
+					== link.clamor_account_id
 			);
 
 			let event = <frame_system::Pallet<Test>>::events()
@@ -401,14 +401,13 @@ mod internal_lock_update_tests {
 				}
 			);
 			let initial_nova_amount =
-				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
-					get_usd_equivalent_amount() *
-					get_oracle_price();
-			let initial_tickets_amount = apply_percent(
-				lock.data.amount.clone().as_u128(),
-				get_initial_percentage_tickets(),
-			) * get_usd_equivalent_amount() *
-				get_oracle_price();
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
+					* get_usd_equivalent_amount()
+					* get_oracle_price();
+			let initial_tickets_amount =
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_tickets())
+					* get_usd_equivalent_amount()
+					* get_oracle_price();
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
@@ -460,8 +459,9 @@ mod internal_lock_update_tests {
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(
-						apply_percent(lock.data.amount.as_u128(), get_initial_percentage_nova()) *
-							get_usd_equivalent_amount() * get_oracle_price()
+						apply_percent(lock.data.amount.as_u128(), get_initial_percentage_nova())
+							* get_usd_equivalent_amount()
+							* get_oracle_price()
 					)
 				})
 			);
@@ -474,8 +474,9 @@ mod internal_lock_update_tests {
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_assets::Config>::Balance,
 					>(
-						apply_percent(lock.data.amount.as_u128(), get_initial_percentage_tickets()) *
-							get_usd_equivalent_amount() * get_oracle_price()
+						apply_percent(lock.data.amount.as_u128(), get_initial_percentage_tickets())
+							* get_usd_equivalent_amount()
+							* get_oracle_price()
 					)
 				})
 			);
@@ -510,14 +511,13 @@ mod internal_lock_update_tests {
 				&link.clamor_account_id,
 			);
 			let initial_nova_amount =
-				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
-					get_usd_equivalent_amount() *
-					get_oracle_price();
-			let initial_tickets_amount = apply_percent(
-				lock.data.amount.clone().as_u128(),
-				get_initial_percentage_tickets(),
-			) * get_usd_equivalent_amount() *
-				get_oracle_price();
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
+					* get_usd_equivalent_amount()
+					* get_oracle_price();
+			let initial_tickets_amount =
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_tickets())
+					* get_usd_equivalent_amount()
+					* get_oracle_price();
 			assert_eq!(U256::from(minted), U256::from(initial_tickets_amount));
 
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
@@ -548,14 +548,13 @@ mod internal_lock_update_tests {
 			);
 
 			let initial_nova_amount =
-				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
-					get_usd_equivalent_amount() *
-					get_oracle_price();
-			let initial_tickets_amount = apply_percent(
-				lock.data.amount.clone().as_u128(),
-				get_initial_percentage_tickets(),
-			) * get_usd_equivalent_amount() *
-				get_oracle_price();
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
+					* get_usd_equivalent_amount()
+					* get_oracle_price();
+			let initial_tickets_amount =
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_tickets())
+					* get_usd_equivalent_amount()
+					* get_oracle_price();
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&lock.data.sender).unwrap(),
@@ -685,13 +684,13 @@ mod internal_lock_update_tests {
 			let initial_nova_amount = apply_percent(
 				unlock.lock.data.amount.clone().as_u128(),
 				get_initial_percentage_nova(),
-			) * get_usd_equivalent_amount() *
-				get_oracle_price();
+			) * get_usd_equivalent_amount()
+				* get_oracle_price();
 			let initial_tickets_amount = apply_percent(
 				unlock.lock.data.amount.clone().as_u128(),
 				get_initial_percentage_tickets(),
-			) * get_usd_equivalent_amount() *
-				get_oracle_price();
+			) * get_usd_equivalent_amount()
+				* get_oracle_price();
 
 			assert_eq!(
 				<EthReservedTickets<Test>>::get(&unlock.lock.data.sender).unwrap(),
@@ -772,21 +771,21 @@ mod withdraw_tests {
 
 	pub fn get_initial_amounts(lock: &Lock) -> (u128, u128) {
 		let initial_nova_amount =
-			apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
-				get_usd_equivalent_amount() *
-				get_oracle_price();
+			apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
+				* get_usd_equivalent_amount()
+				* get_oracle_price();
 
 		let initial_tickets_amount =
-			apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_tickets()) *
-				get_usd_equivalent_amount() *
-				get_oracle_price();
+			apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_tickets())
+				* get_usd_equivalent_amount()
+				* get_oracle_price();
 
 		(initial_nova_amount, initial_tickets_amount)
 	}
 
 	pub fn expected_nova_amount(week_num: u64, lock_period: u64, data_amount: u128) -> u128 {
-		let nova_per_week = apply_percent(data_amount, 100 - get_initial_percentage_nova()) /
-			u128::try_from(lock_period).unwrap();
+		let nova_per_week = apply_percent(data_amount, 100 - get_initial_percentage_nova())
+			/ u128::try_from(lock_period).unwrap();
 		let expected_amount = nova_per_week
 			* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
 			* u128::try_from(week_num).unwrap()
@@ -795,8 +794,8 @@ mod withdraw_tests {
 	}
 
 	pub fn expected_tickets_amount(week_num: u64, lock_period: u64, data_amount: u128) -> u128 {
-		let tickets_per_week = apply_percent(data_amount, 100 - get_initial_percentage_tickets()) /
-			u128::try_from(lock_period).unwrap();
+		let tickets_per_week = apply_percent(data_amount, 100 - get_initial_percentage_tickets())
+			/ u128::try_from(lock_period).unwrap();
 		let expected_amount = tickets_per_week
 			* get_usd_equivalent_amount() // tickets per week and 1 FRAG = 100 Tickets. 20% of 100 / 4 weeks
 			* u128::try_from(week_num).unwrap()
@@ -1217,9 +1216,9 @@ mod withdraw_tests {
 
 			assert_eq!(
 				tickets_balance_after_1st_withdraw as u128,
-				expected_amount +
-					expected_amount2 + initial_tickets_amount.clone() +
-					initial_tickets_amount2.clone(),
+				expected_amount
+					+ expected_amount2 + initial_tickets_amount.clone()
+					+ initial_tickets_amount2.clone(),
 			);
 
 			let expected_amount = expected_nova_amount(
@@ -1237,9 +1236,9 @@ mod withdraw_tests {
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(
 				nova_new_balance as u128,
-				expected_amount +
-					expected_amount2 + initial_nova_amount.clone() +
-					initial_nova_amount2.clone()
+				expected_amount
+					+ expected_amount2 + initial_nova_amount.clone()
+					+ initial_nova_amount2.clone()
 			);
 
 			let next_week = (60 * 60 * 24 * 7 * lock_period_in_weeks as u64) / 6;
@@ -1264,9 +1263,9 @@ mod withdraw_tests {
 			);
 			assert_eq!(
 				tickets_balance as u128,
-				expected_amount +
-					expected_amount2 + initial_tickets_amount.clone() +
-					initial_tickets_amount2.clone(),
+				expected_amount
+					+ expected_amount2 + initial_tickets_amount.clone()
+					+ initial_tickets_amount2.clone(),
 			);
 
 			let expected_amount = expected_nova_amount(
@@ -1283,9 +1282,9 @@ mod withdraw_tests {
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(
 				nova_new_balance as u128,
-				expected_amount +
-					expected_amount2 + initial_nova_amount.clone() +
-					initial_nova_amount2.clone()
+				expected_amount
+					+ expected_amount2 + initial_nova_amount.clone()
+					+ initial_nova_amount2.clone()
 			);
 		});
 	}

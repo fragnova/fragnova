@@ -828,14 +828,14 @@ pub mod pallet {
 					<EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 				if left == 0 {
-					return Err(Error::<T>::MaxSupplyReached.into())
+					return Err(Error::<T>::MaxSupplyReached.into());
 				}
 				if let Some(quantity) = quantity {
 					let quantity: Unit = quantity.into();
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached); // Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				} else {
 					// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
-					return Err(Error::<T>::ParamsNotValid.into())
+					return Err(Error::<T>::ParamsNotValid.into());
 				}
 			}
 
@@ -1029,13 +1029,13 @@ pub mod pallet {
 					price.saturated_into();
 
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who) >=
-						price_balance + minimum_balance_needed_to_exist,
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who)
+						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault) +
-						price_balance >= minimum_balance_needed_to_exist,
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault)
+						+ price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			} else {
@@ -1045,13 +1045,13 @@ pub mod pallet {
 					price.saturated_into();
 
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who) >=
-						price_balance + minimum_balance_needed_to_exist,
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who)
+						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault) +
-						price_balance >= minimum_balance_needed_to_exist,
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault)
+						+ price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			}
@@ -1360,7 +1360,7 @@ pub mod pallet {
 							});
 
 							// fragments are unique so we are done here
-							break
+							break;
 						}
 					}
 				}
@@ -1435,7 +1435,7 @@ pub mod pallet {
 			let (data_hash, data_len) = match options {
 				FragmentBuyOptions::UniqueData(data) => {
 					if fragment_data.unique.is_none() || quantity != 1 {
-						return Err(Error::<T>::ParamsNotValid.into())
+						return Err(Error::<T>::ParamsNotValid.into());
 					}
 
 					let data_hash = blake2_256(&data);
@@ -1449,7 +1449,7 @@ pub mod pallet {
 				},
 				FragmentBuyOptions::Quantity(_) => {
 					if fragment_data.unique.is_some() {
-						return Err(Error::<T>::ParamsNotValid.into())
+						return Err(Error::<T>::ParamsNotValid.into());
 					}
 
 					(None, None)
@@ -1463,7 +1463,7 @@ pub mod pallet {
 				// if limited amount let's reduce the amount of units left
 				if let Some(units_left) = sale.units_left {
 					if quantity > units_left.into() {
-						return Err(Error::<T>::PublishedQuantityReached.into())
+						return Err(Error::<T>::PublishedQuantityReached.into());
 					} else {
 						<Publishing<T>>::mutate(&*definition_hash, |sale| {
 							if let Some(sale) = sale {
@@ -1480,7 +1480,7 @@ pub mod pallet {
 					let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 					if quantity > left {
 						// Ensure the function parameter `quantity` is smaller than or equal to `left`
-						return Err(Error::<T>::MaxSupplyReached.into())
+						return Err(Error::<T>::MaxSupplyReached.into());
 					}
 				}
 			}

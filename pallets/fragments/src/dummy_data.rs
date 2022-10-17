@@ -239,8 +239,9 @@ impl DummyData {
 		let give_copy_perms = Give {
 			mint: Mint {
 				definition: Definition {
-					permissions: FragmentPerms::EDIT |
-						FragmentPerms::TRANSFER | FragmentPerms::COPY, // copy perms
+					permissions: FragmentPerms::EDIT
+						| FragmentPerms::TRANSFER
+						| FragmentPerms::COPY, // copy perms
 					..mint_unique.definition.clone()
 				},
 				..mint_unique.clone()
