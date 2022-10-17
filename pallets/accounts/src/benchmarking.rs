@@ -4,7 +4,6 @@
 
 use super::*;
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
-use frame_support::traits::tokens::AssetId;
 use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
 use sp_io::hashing::keccak_256;
@@ -143,7 +142,7 @@ benchmarks! {
 		let data = EthLockUpdate::<T::Public> {
 			public: sp_core::ed25519::Public([7u8; 32]).into(),
 			amount: U256::from(100),
-			lock_period: u64::try_from(1).unwrap(),
+			lock_period: 1,
 			sender: get_ethereum_public_key(&ethereum_secret_key_struct),
 			signature: sign(
 				&libsecp256k1::Message::parse(
@@ -186,7 +185,7 @@ benchmarks! {
 			Event::<T>::Locked {
 				eth_key: get_ethereum_public_key(&ethereum_secret_key_struct),
 				balance: TryInto::<u128>::try_into(data.amount).unwrap().saturated_into::<<T as pallet_assets::Config>::Balance>(),
-				lock_period: u64::try_from(data.lock_period).unwrap(),
+				lock_period: data.lock_period,
 			}.into()
 		);
 		let block_number = data.block_number.clone().saturated_into::<<T as frame_system::Config>::BlockNumber>();
@@ -195,7 +194,7 @@ benchmarks! {
 				EthLock {
 					amount: TryInto::<u128>::try_into(data.amount).unwrap().saturated_into::<<T as pallet_assets::Config>::Balance>(),
 					block_number: block_number,
-					lock_period: u64::try_from(1).unwrap(),
+					lock_period: 1,
 					last_withdraw: 0,
 				}
 			);
