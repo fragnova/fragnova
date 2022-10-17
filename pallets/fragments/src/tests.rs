@@ -4,13 +4,12 @@ use crate as pallet_fragments;
 use crate::mock;
 
 use crate::*;
-
 use crate::dummy_data::*;
-
 use crate::mock::*;
 
 use frame_support::{assert_noop, assert_ok};
 use protos::permissions::FragmentPerms;
+use itertools::Itertools;
 
 use copied_from_pallet_protos::upload;
 mod copied_from_pallet_protos {
@@ -1570,115 +1569,76 @@ mod give_tests {
 	}
 
 	#[test]
-	fn give_should_work_if_the_new_permissions_are_more_or_equally_restrictive() {
-		use itertools::Itertools;
+	fn give_should_not_work_if_the_new_permissions_are_less_restrictive() {
 
-		let all_perms_except_transfer = vec![FragmentPerms::EDIT, FragmentPerms::COPY];
+		let vec_all_perms = vec![FragmentPerms::EDIT, FragmentPerms::TRANSFER, FragmentPerms::COPY];
 		assert_eq!(
-			all_perms_except_transfer
-				.clone()
-				.into_iter()
-				.fold(FragmentPerms::TRANSFER, |acc, x| acc | x),
+			vec_all_perms.iter().fold(FragmentPerms::NONE, |acc, &x| acc | x),
 			FragmentPerms::ALL
 		);
+		let vec_all_perms_excl_transfer = vec_all_perms.clone().into_iter().filter(
+			|&x| x != FragmentPerms::TRANSFER
+		).collect::<Vec<FragmentPerms>>();
 
-		for num_combos in 0..=all_perms_except_transfer.len() {
-			for perms in all_perms_except_transfer.clone().into_iter().combinations(num_combos) {
-				let mut perms = perms.clone();
-				perms.push(FragmentPerms::TRANSFER); // TRANSFER must be included, since we want to give it
+		for len_combo in 0..vec_all_perms_excl_transfer.len() {
 
-				for num_combos in 0..=perms.len() {
-					for new_permissions_parameter in
-						perms.clone().into_iter().combinations(num_combos)
+			for vec_perms_excl_transfer in vec_all_perms_excl_transfer.clone().into_iter().combinations(len_combo) {
+				let vec_perms = [vec_perms_excl_transfer, vec![FragmentPerms::TRANSFER]].concat(); // TRANSFER must be included, since we want to give it
+
+				let vec_possible_additional_perms = vec_all_perms
+					.clone()
+					.into_iter()
+					.filter(|x| !vec_perms.contains(x))
+					.collect::<Vec<FragmentPerms>>();
+
+				// Less Restrictive
+				for len_combo in 1..=vec_possible_additional_perms.len() {
+					for vec_new_perms in
+						vec_possible_additional_perms.clone().into_iter().combinations(len_combo)
 					{
+						let vec_new_permissions_parameter = [vec_perms.clone(), vec_new_perms.clone()].concat();
+
 						new_test_ext().execute_with(|| {
 							let dd = DummyData::new();
-
 							let mut give = dd.give_no_copy_perms;
-
-							give.mint.definition.permissions = perms
-								.clone()
-								.into_iter()
-								.fold(FragmentPerms::NONE, |acc, x| acc | x);
-
+							give.mint.definition.permissions = vec_perms
+								.iter()
+								.fold(FragmentPerms::NONE, |acc, &x| acc | x);
+							give.new_permissions = Some(
+								vec_new_permissions_parameter
+									.iter()
+									.fold(FragmentPerms::NONE, |acc, &x| acc | x),
+							);
 							assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
 							assert_ok!(create(dd.account_id, &give.mint.definition));
 							assert_ok!(mint_(dd.account_id, &give.mint));
-
-							give.new_permissions = Some(
-								new_permissions_parameter
-									.into_iter()
-									.fold(FragmentPerms::NONE, |acc, x| acc | x),
-							);
-
-							// println!(
-							// 	"current permissions are: {:?}, new_permissions are: {:?}",
-							// 	give.mint.definition.permissions,
-							// 	give.new_permissions.clone()
-							// );
-
-							assert_ok!(give_(dd.account_id, &give));
+							// Should Not Work
+							assert_noop!(give_(dd.account_id, &give), Error::<Test>::NoPermission);
 						});
 					}
 				}
-			}
-		}
-	}
 
-	#[test]
-	fn give_should_not_work_if_the_new_permissions_are_less_restrictive() {
-		use itertools::Itertools;
-
-		let all_perms = vec![FragmentPerms::EDIT, FragmentPerms::TRANSFER, FragmentPerms::COPY];
-		assert_eq!(
-			all_perms.clone().into_iter().fold(FragmentPerms::NONE, |acc, x| acc | x),
-			FragmentPerms::ALL
-		);
-		let all_perms_except_transfer = vec![FragmentPerms::EDIT, FragmentPerms::COPY];
-		assert_eq!(
-			all_perms_except_transfer
-				.clone()
-				.into_iter()
-				.fold(FragmentPerms::TRANSFER, |acc, x| acc | x),
-			FragmentPerms::ALL
-		);
-
-		for num_combos in 0..all_perms_except_transfer.len() {
-			for perms in all_perms_except_transfer.clone().into_iter().combinations(num_combos) {
-				let mut perms = perms.clone();
-				perms.push(FragmentPerms::TRANSFER); // TRANSFER must be included, since we want to give it
-
-				let mut possible_additional_perms = all_perms.clone();
-				possible_additional_perms.retain(|x| !perms.contains(x));
-
-				for num_combos in 1..=possible_additional_perms.len() {
-					for new_perms in
-						possible_additional_perms.clone().into_iter().combinations(num_combos)
+				// Equally or More Restrictive
+				for len_combo in 0..=vec_perms.len() {
+					for vec_new_permissions_parameter in
+					vec_perms.clone().into_iter().combinations(len_combo)
 					{
-						let mut new_permissions_parameter = new_perms;
-						new_permissions_parameter.extend(perms.clone());
-
 						new_test_ext().execute_with(|| {
 							let dd = DummyData::new();
-
 							let mut give = dd.give_no_copy_perms;
-
-							give.mint.definition.permissions = perms
-								.clone()
-								.into_iter()
-								.fold(FragmentPerms::NONE, |acc, x| acc | x);
-
+							give.mint.definition.permissions = vec_perms
+								.iter()
+								.fold(FragmentPerms::NONE, |acc, &x| acc | x);
+							give.new_permissions = Some(
+								vec_new_permissions_parameter
+									.iter()
+									.fold(FragmentPerms::NONE, |acc, &x| acc | x),
+							);
 							assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
 							assert_ok!(create(dd.account_id, &give.mint.definition));
 							assert_ok!(mint_(dd.account_id, &give.mint));
-
-							give.new_permissions = Some(
-								new_permissions_parameter
-									.into_iter()
-									.fold(FragmentPerms::NONE, |acc, x| acc | x),
-							);
-
-							assert_noop!(give_(dd.account_id, &give), Error::<Test>::NoPermission);
+							// Should Work
+							assert_ok!(give_(dd.account_id, &give));
 						});
 					}
 				}
