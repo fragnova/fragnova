@@ -18,7 +18,7 @@ mod link_tests {
 	use crate::FragUsage;
 
 	pub fn link_(link: &Link) -> DispatchResult {
-		Accounts::link(RuntimeOrigin::signed(link.clamor_account_id), link.link_signature.clone())
+		Accounts::link(Origin::signed(link.clamor_account_id), link.link_signature.clone())
 	}
 
 	#[test]
@@ -47,7 +47,7 @@ mod link_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::RuntimeEvent::from(pallet_accounts::Event::Linked {
+				mock::Event::from(pallet_accounts::Event::Linked {
 					sender: link.clamor_account_id,
 					eth_key: link.get_recovered_ethereum_account_id()
 				})
@@ -130,7 +130,7 @@ mod unlink_tests {
 			assert_ok!(link_(&link));
 
 			assert_ok!(Accounts::unlink(
-				RuntimeOrigin::signed(link.clamor_account_id),
+				Origin::signed(link.clamor_account_id),
 				link.get_recovered_ethereum_account_id()
 			));
 
@@ -150,7 +150,7 @@ mod unlink_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::RuntimeEvent::from(pallet_accounts::Event::Unlinked {
+				mock::Event::from(pallet_accounts::Event::Unlinked {
 					sender: link.clamor_account_id,
 					eth_key: link.get_recovered_ethereum_account_id(),
 				})
@@ -166,7 +166,7 @@ mod unlink_tests {
 
 			assert_noop!(
 				Accounts::unlink(
-					RuntimeOrigin::signed(link.clamor_account_id),
+					Origin::signed(link.clamor_account_id),
 					link.get_recovered_ethereum_account_id()
 				),
 				Error::<Test>::AccountNotLinked
@@ -189,7 +189,7 @@ mod unlink_tests {
 
 			assert_noop!(
 				Accounts::unlink(
-					RuntimeOrigin::signed(link.clamor_account_id),
+					Origin::signed(link.clamor_account_id),
 					link_second.get_recovered_ethereum_account_id()
 				),
 				Error::<Test>::DifferentAccountLinked
@@ -332,7 +332,7 @@ mod sync_frag_locks_tests {
 			let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
 			assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
 
-			if let RuntimeCall::Accounts(crate::Call::internal_lock_update { data, signature }) = tx.call {
+			if let Call::Accounts(crate::Call::internal_lock_update { data, signature }) = tx.call {
 				assert_eq!(data, expected_data);
 
 				let signature_valid =
@@ -358,7 +358,7 @@ mod internal_lock_update_tests {
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
 		Accounts::internal_lock_update(
-			RuntimeOrigin::none(),
+			Origin::none(),
 			lock.data.clone(),
 			sp_core::ed25519::Signature([69u8; 64]), // this can be anything and it will still work
 		)
@@ -366,7 +366,7 @@ mod internal_lock_update_tests {
 
 	fn unlock_(unlock: &Unlock) -> DispatchResult {
 		Accounts::internal_lock_update(
-			RuntimeOrigin::none(),
+			Origin::none(),
 			unlock.data.clone(),
 			sp_core::ed25519::Signature([69u8; 64]), // this can be anything
 		)
@@ -412,7 +412,7 @@ mod internal_lock_update_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::RuntimeEvent::from(pallet_accounts::Event::Locked {
+				mock::Event::from(pallet_accounts::Event::Locked {
 					eth_key: lock.data.sender,
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
@@ -525,7 +525,7 @@ mod internal_lock_update_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::RuntimeEvent::from(pallet_accounts::Event::Unlocked {
+				mock::Event::from(pallet_accounts::Event::Unlocked {
 					eth_key: unlock.data.sender,
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
@@ -566,7 +566,7 @@ mod internal_lock_update_tests {
 				.clone();
 			assert_eq!(
 				event,
-				mock::RuntimeEvent::from(pallet_accounts::Event::Unlinked {
+				mock::Event::from(pallet_accounts::Event::Unlinked {
 					sender: link.clamor_account_id,
 					eth_key: link.get_recovered_ethereum_account_id()
 				})

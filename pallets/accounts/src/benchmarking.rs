@@ -53,7 +53,7 @@ fn get_ethereum_public_key(
 	H160::from_slice(&ethereum_account_id)
 }
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 

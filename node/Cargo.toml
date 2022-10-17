@@ -18,7 +18,7 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [build-dependencies.substrate-build-script-utils]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '3.0.0'
 
 [dependencies.clamor-runtime]
@@ -36,155 +36,155 @@ serde_json = { version = '1.0.79', default-features = false, features = ['alloc'
 
 [dependencies.frame-benchmarking]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.frame-benchmarking-cli]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.pallet-transaction-payment-rpc]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sc-basic-authorship]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sc-cli]
 features = ['wasmtime']
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sc-client-api]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sc-consensus]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sc-consensus-aura]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sc-executor]
 features = ['wasmtime']
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sc-finality-grandpa]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sc-keystore]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sc-rpc]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sc-rpc-api]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sc-service]
 features = ['wasmtime']
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sc-telemetry]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sc-transaction-pool]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sc-transaction-pool-api]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sp-api]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sp-block-builder]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sp-blockchain]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sp-keystore]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.12.0'
 
 [dependencies.sp-consensus]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sp-consensus-aura]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '0.10.0-dev'
 
 [dependencies.sp-core]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '6.0.0'
 
 [dependencies.sp-finality-grandpa]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.sp-runtime]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '6.0.0'
 
 [dependencies.sp-runtime-interface]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '6.0.0'
 
 [dependencies.sp-timestamp]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.substrate-frame-rpc-system]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.pallet-contracts-rpc]
 git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.9.30'
+tag = 'fragnova-v0.9.29-2'
 version = '4.0.0-dev'
 
 [dependencies.pallet-protos-rpc]
@@ -197,8 +197,4 @@ version = '0.0.1'
 
 [features]
 default = []
-runtime-benchmarks = [
-	"clamor-runtime/runtime-benchmarks",
-	"frame-benchmarking/runtime-benchmarks",
-	"frame-benchmarking-cli/runtime-benchmarks",
-]
+runtime-benchmarks = ['clamor-runtime/runtime-benchmarks']

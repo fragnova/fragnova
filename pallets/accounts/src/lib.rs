@@ -196,7 +196,7 @@ pub mod pallet {
 		+ pallet_timestamp::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// Weight functions needed for pallet_accounts.
 		type WeightInfo: WeightInfo;
