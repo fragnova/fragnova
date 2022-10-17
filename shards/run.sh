@@ -5,8 +5,8 @@ apt-get install -y wget
 
 cd /data/shards
 
-wget -q https://dist.ipfs.io/go-ipfs/v0.10.0/go-ipfs_v0.10.0_linux-amd64.tar.gz
-tar -xvzf go-ipfs_v0.10.0_linux-amd64.tar.gz
+wget -q https://dist.ipfs.tech/kubo/v0.16.0/kubo_v0.16.0_linux-amd64.tar.gz
+tar -xvzf kubo_v0.16.0_linux-amd64.tar.gz
 export PATH=$PATH:/data/shards/go-ipfs
 
 ipfs init
