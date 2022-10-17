@@ -93,7 +93,7 @@ pub struct Publish {
 
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** to **top up** in the **stack of stackable items**
-	pub amount: Option<u64>,
+	pub stack_amount: Option<u64>,
 }
 
 #[derive(Clone)]
@@ -118,6 +118,7 @@ pub struct Buy {
 	pub buy_options: FragmentBuyOptions,
 }
 
+#[derive(Clone)]
 pub struct Give {
 	pub mint: Mint,
 	pub edition_id: u64,
@@ -156,6 +157,7 @@ pub struct DummyData {
 
 	pub account_id: sp_core::ed25519::Public,
 	pub account_id_second: sp_core::ed25519::Public,
+	pub account_id_third: sp_core::ed25519::Public,
 }
 
 impl DummyData {
@@ -182,7 +184,7 @@ impl DummyData {
 			price: 2,
 			quantity: None,
 			expires: None,
-			amount: None,
+			stack_amount: None,
 		};
 		let publish_with_max_supply = Publish {
 			definition: Definition {
@@ -275,6 +277,7 @@ impl DummyData {
 
 			account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([2u8; 32]),
+			account_id_third: sp_core::ed25519::Public::from_raw([3u8; 32]),
 		}
 	}
 }
