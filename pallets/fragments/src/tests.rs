@@ -319,27 +319,6 @@ mod publish_tests {
 	}
 
 	#[test]
-	fn publish_should_work_if_the_quantity_to_publish_is_lesser_than_or_equal_to_the_max_supply_of_the_fragment_definition(
-	) {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let publish_with_max_supply = dd.publish_with_max_supply;
-
-			assert_ok!(upload(dd.account_id, &publish_with_max_supply.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &publish_with_max_supply.definition));
-
-			assert_ok!(publish_(
-				dd.account_id,
-				&Publish {
-					quantity: publish_with_max_supply.definition.max_supply,
-					..publish_with_max_supply
-				}
-			));
-		});
-	}
-
-	#[test]
 	fn publish_should_not_work_if_the_quantity_to_publish_is_greater_than_the_max_supply_of_the_fragment_definition(
 	) {
 		new_test_ext().execute_with(|| {
@@ -358,11 +337,18 @@ mod publish_tests {
 							.definition
 							.max_supply
 							.map(|max_supply| max_supply + 1),
-						..publish_with_max_supply
+						..publish_with_max_supply.clone()
 					}
 				),
 				Error::<Test>::MaxSupplyReached
 			);
+			assert_ok!(publish_(
+				dd.account_id,
+				&Publish {
+					quantity: publish_with_max_supply.definition.max_supply,
+					..publish_with_max_supply
+				}
+			));
 		});
 	}
 
@@ -675,12 +661,11 @@ mod mint_tests {
 						buy_options: FragmentBuyOptions::Quantity(
 							mint.definition.max_supply.unwrap() + 1
 						),
-						..mint
+						..mint.clone()
 					}
 				),
 				Error::<Test>::MaxSupplyReached
 			);
-
 			assert_ok!(mint_(
 				dd.account_id,
 				&Mint {
@@ -1588,11 +1573,6 @@ mod give_tests {
 	fn give_should_work_if_the_new_permissions_are_more_or_equally_restrictive() {
 		use itertools::Itertools;
 
-		let all_perms = vec![FragmentPerms::EDIT, FragmentPerms::TRANSFER, FragmentPerms::COPY];
-		assert_eq!(
-			all_perms.clone().into_iter().fold(FragmentPerms::NONE, |acc, x| acc | x),
-			FragmentPerms::ALL
-		);
 		let all_perms_except_transfer = vec![FragmentPerms::EDIT, FragmentPerms::COPY];
 		assert_eq!(
 			all_perms_except_transfer
@@ -1903,6 +1883,9 @@ mod create_account_tests {
 }
 
 mod resell_tests {
+	use super::*;
+}
+mod secondary_buy_tests {
 	use super::*;
 }
 
