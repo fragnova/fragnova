@@ -1844,9 +1844,63 @@ mod create_account_tests {
 
 mod resell_tests {
 	use super::*;
+
+	#[test]
+	fn resell_should_work() {
+
+	}
+
+	#[test]
+	fn resell_should_not_work_if_definition_does_not_exist() {
+
+	}
+
+	#[test]
+	fn resell_should_not_work_if_instance_does_not_exist() {
+
+	}
+
+	#[test]
+	fn resell_should_not_work_if_the_instance_is_already_on_sale() {
+
+	}
+
 }
+
+mod unresell_tests {
+	#[test]
+	fn unresell_should_work() {
+
+	}
+
+	#[test]
+	fn unresell_should_not_work_if_user_does_not_own_instance() {
+
+	}
+
+	#[test]
+	fn unresell_should_not_work_if_instance_not_on_sale() {
+
+	}
+}
+
 mod secondary_buy_tests {
 	use super::*;
+
+	#[test]
+	fn secondary_buy_should_work() {
+
+	}
+
+	#[test]
+	fn secondary_buy_should_not_work_if_sale_does_not_exist() {
+
+	}
+
+	#[test]
+	fn secondary_buy_should_not_work_if_options_param_does_not_match_sale_type() {
+
+	}
 }
 
 mod get_definitions_tests {

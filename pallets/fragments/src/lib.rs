@@ -1203,12 +1203,34 @@ pub mod pallet {
 		}
 
 		#[pallet::weight(50_000)]
+		pub fn unresell(
+			origin: OriginFor<T>,
+			definition_hash: Hash128,
+			edition_id: Unit,
+			copy_id: Unit,
+		) -> DispatchResult {
+
+			let who = ensure_signed(origin)?;
+
+			ensure!(
+				who == <Definition2SecondarySales<T>>::get((definition_hash, edition_id, copy_id)).ok_or(Error::<T>::NotFound)?.owner,
+				Error::<T>::NoPermission
+			);
+
+			// ! Writing
+
+			Definition2SecondarySales::<T>::remove((definition_hash, edition_id, copy_id));
+
+			Ok(())
+		}
+
+		#[pallet::weight(50_000)]
 		pub fn secondary_buy(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
 			edition_id: Unit,
 			copy_id: Unit,
-			_options: SecondarySaleBuyOptions
+			options: SecondarySaleBuyOptions
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -1217,8 +1239,8 @@ pub mod pallet {
 
 			let currency = Definitions::<T>::get(definition_hash).ok_or(Error::<T>::SystematicFailure)?.metadata.currency;
 
-			match secondary_sale_data.secondary_sale_type {
-				SecondarySaleType::Normal(price) => {
+			match (secondary_sale_data.secondary_sale_type, options) {
+				(SecondarySaleType::Normal(price), SecondarySaleBuyOptions::Normal) => {
 					Self::can_transfer_currency(&who, &secondary_sale_data.owner, price, currency)?;
 
 					// ! Writing
@@ -1237,6 +1259,7 @@ pub mod pallet {
 					// remove secondary sale data from `Definition2SecondarySales`
 					Definition2SecondarySales::<T>::remove((definition_hash, edition_id, copy_id));
 				}
+				_ => return Err(Error::<T>::ParamsNotValid.into()),
 			};
 
 			Ok(())
