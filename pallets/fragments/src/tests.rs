@@ -1902,7 +1902,7 @@ mod create_account_tests {
 	}
 }
 
-mod secondary_buy_tests {
+mod resell_tests {
 	use super::*;
 }
 
