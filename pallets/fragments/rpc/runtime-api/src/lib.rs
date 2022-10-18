@@ -36,6 +36,6 @@ sp_api::decl_runtime_apis! {
 		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
 
 		/// Query the owner of a Fragment Instance. The return type is a String
-		fn get_instance_owner(params: GetInstanceOwnerParams) -> Result<Vec<u8>, Vec<u8>>;
+		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
 	}
 }

@@ -39,7 +39,7 @@ pub trait FragmentsRpc<BlockHash, AccountId> {
 	#[method(name = "getInstanceOwner")]
 	fn get_instance_owner(
 		&self,
-		params: GetInstanceOwnerParams,
+		params: GetInstanceOwnerParams<String>,
 		at: Option<BlockHash>,
 	) -> RpcResult<String>;
 }
@@ -140,7 +140,7 @@ where
 	/// Query the owner of a Fragment Instance. The return type is a String
 	fn get_instance_owner(
 		&self,
-		params: GetInstanceOwnerParams,
+		params: GetInstanceOwnerParams<String>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<String> {
 		let api = self.client.runtime_api();
@@ -148,7 +148,13 @@ where
 		// If the block hash is not supplied in `at`, use the best block's hash
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-		let result_outer = api.get_instance_owner(&at, params).map(|bytes| {
+		let params_no_std = GetInstanceOwnerParams::<Vec<u8>> {
+			definition_hash: params.definition_hash.into_bytes(),
+			edition_id: params.edition_id,
+			copy_id: params.copy_id,
+		};
+
+		let result_outer = api.get_instance_owner(&at, params_no_std).map(|bytes| {
 			bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default())
 		});
 

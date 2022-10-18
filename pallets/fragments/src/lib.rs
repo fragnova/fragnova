@@ -145,9 +145,9 @@ impl<TAccountId, TString: Default> Default for GetInstancesParams<TAccountId, TS
 /// **Data Type** used to **Query the owner of a Fragment Instance**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct GetInstanceOwnerParams {
+pub struct GetInstanceOwnerParams<TString> {
 	/// Fragment Definition/Collection that the Fragment Instance is in
-	pub definition_hash: Hash128,
+	pub definition_hash: TString,
 	/// Edition ID of the Fragment Instance
 	pub edition_id: Unit,
 	/// Copy ID of the Fragment Instance
@@ -1839,14 +1839,19 @@ pub mod pallet {
 
 		/// Query the owner of a Fragment Instance. The return type is a String
 		pub fn get_instance_owner(
-			params: GetInstanceOwnerParams
+			params: GetInstanceOwnerParams<Vec<u8>>
 		) -> Result<Vec<u8>, Vec<u8>> {
 
-			if params.copy_id > CopiesCount::<T>::get((params.definition_hash, params.edition_id)).unwrap_or(Compact(0)).into() {
+			let definition_hash: Hash128 = hex::decode(params.definition_hash)
+				.map_err(|_| "Failed to convert string to u8 slice")?
+				.try_into()
+				.map_err(|_| "Failed to convert u8 slice to Hash128")?;
+
+			if params.copy_id > CopiesCount::<T>::get((definition_hash, params.edition_id)).unwrap_or(Compact(0)).into() {
 				return Err("Instance not found".into());
 			}
 
-			let owner = Owners::<T>::iter_prefix(params.definition_hash)
+			let owner = Owners::<T>::iter_prefix(definition_hash)
 				.find(|(_owner, vec_instances)|
 					vec_instances.iter().any(
 						|(edition_id, copy_id)|

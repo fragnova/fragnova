@@ -173,7 +173,7 @@ const connectToLocalNode = async () => {
         only_return_first_copies: "bool",
       },
       GetInstanceOwnerParams: {
-        definition_hash: "Hash128",
+        definition_hash: 'String', // "Hash128", // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
         edition_id: "Unit",
         copy_id: "Unit",
       },
