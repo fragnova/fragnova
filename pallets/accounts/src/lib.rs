@@ -142,7 +142,6 @@ pub struct EthLockUpdate<TPublic> {
 	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
 	pub amount: U256,
 	/// If the event was `Lock`, it represents the lock period of the FRAG token.
-	/// If the event was `Unlock`, it is 999.
 	pub lock_period: u8,
 	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
