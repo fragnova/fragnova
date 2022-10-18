@@ -7,6 +7,8 @@ use crate::*;
 use crate::dummy_data::*;
 use crate::mock::*;
 
+use crate::Event as FragmentsEvent;
+
 use frame_support::{assert_noop, assert_ok};
 use protos::permissions::FragmentPerms;
 use itertools::Itertools;
@@ -66,7 +68,31 @@ mod create_tests {
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 			assert_ok!(create(dd.account_id, &definition));
 
-			// TODO - what does `T::Currency::reserve()` do in the `create` extrinsic
+			let minimum_balance = <Balances as fungible::Inspect<
+				<Test as frame_system::Config>::AccountId,
+			>>::minimum_balance();
+			System::assert_has_event(
+				frame_system::Event::NewAccount {
+					account: definition.get_vault_account_id(),
+				}.into()
+			);
+			System::assert_has_event(
+				pallet_balances::Event::Endowed {
+					account: definition.get_vault_account_id(),
+					free_balance: minimum_balance,
+				}.into()
+			);
+			System::assert_has_event(
+				pallet_balances::Event::Deposit {
+					who: definition.get_vault_account_id(),
+					amount: minimum_balance,
+				}.into()
+			);
+			System::assert_last_event(
+				FragmentsEvent::DefinitionCreated {
+					definition_hash: definition.get_definition_id()
+				}.into()
+			);
 
 			let correct_definition_struct = FragmentDefinition {
 				proto_hash: definition.proto_fragment.get_proto_hash(),
@@ -78,46 +104,14 @@ mod create_tests {
 				created_at: current_block_number,
 				custom_metadata: BTreeMap::new(),
 			};
-
 			assert_eq!(
 				<Definitions<Test>>::get(&definition.get_definition_id()).unwrap(),
 				correct_definition_struct
 			);
-
 			assert!(<Proto2Fragments<Test>>::get(&definition.proto_fragment.get_proto_hash())
 				.unwrap()
 				.contains(&definition.get_definition_id()));
 
-			let minimum_balance = <Balances as Currency<
-				<Test as frame_system::Config>::AccountId,
-			>>::minimum_balance();
-
-			assert_eq!(
-				System::events()[System::events().len() - 4].event,
-				mock::Event::from(pallet_balances::Event::Deposit {
-					who: definition.get_vault_account_id(),
-					amount: minimum_balance
-				})
-			);
-			assert_eq!(
-				System::events()[System::events().len() - 3].event,
-				mock::Event::from(frame_system::Event::NewAccount {
-					account: definition.get_vault_account_id()
-				})
-			);
-			assert_eq!(
-				System::events()[System::events().len() - 2].event,
-				mock::Event::from(pallet_balances::Event::Endowed {
-					account: definition.get_vault_account_id(),
-					free_balance: minimum_balance
-				})
-			);
-			assert_eq!(
-				System::events()[System::events().len() - 1].event,
-				mock::Event::from(pallet_fragments::Event::DefinitionCreated {
-					definition_hash: definition.get_definition_id()
-				})
-			);
 		});
 	}
 
@@ -234,28 +228,23 @@ mod publish_tests {
 
 			assert_ok!(publish_(dd.account_id, &publish));
 
+			System::assert_last_event(
+				FragmentsEvent::Publishing {
+					definition_hash: publish.definition.get_definition_id()
+				}.into()
+			);
+
 			let correct_publishing_data_struct = PublishingData {
 				price: Compact::from(publish.price),
 				units_left: publish.quantity.map(|quantity| Compact::from(quantity)),
 				expiration: publish.expires,
 				stack_amount: publish.stack_amount.map(|amount| Compact::from(amount)),
 			};
-
 			assert_eq!(
 				<Publishing<Test>>::get(&publish.definition.get_definition_id()).unwrap(),
 				correct_publishing_data_struct
 			);
 
-			let event = System::events()
-				.pop()
-				.expect("Expected at least one EventRecord to be found")
-				.event;
-			assert_eq!(
-				event,
-				mock::Event::from(pallet_fragments::Event::Publishing {
-					definition_hash: publish.definition.get_definition_id()
-				})
-			);
 		});
 	}
 
@@ -382,21 +371,17 @@ mod unpublish_tests {
 
 			assert_ok!(unpublish_(dd.account_id, &publish.definition));
 
+			System::assert_last_event(
+				FragmentsEvent::Unpublishing {
+					definition_hash: publish.definition.get_definition_id()
+				}.into()
+			);
+
 			assert_eq!(
 				<Publishing<Test>>::contains_key(&publish.definition.get_definition_id()),
 				false
 			);
 
-			let event = System::events()
-				.pop()
-				.expect("Expected at least one EventRecord to be found")
-				.event;
-			assert_eq!(
-				event,
-				mock::Event::from(pallet_fragments::Event::Unpublishing {
-					definition_hash: publish.definition.get_definition_id()
-				})
-			);
 		});
 	}
 
@@ -496,6 +481,15 @@ mod mint_tests {
 			};
 
 			for edition_id in 1..=quantity {
+
+				System::assert_has_event(
+					FragmentsEvent::InventoryAdded {
+						account_id: dd.account_id,
+						definition_hash: mint_non_unique.definition.get_definition_id(),
+						fragment_id: (edition_id, 1)
+					}.into()
+				);
+
 				assert_eq!(
 					<Fragments<Test>>::get((
 						mint_non_unique.definition.get_definition_id(),
@@ -505,7 +499,6 @@ mod mint_tests {
 					.unwrap(),
 					correct_fragment_instance_struct
 				);
-
 				assert_eq!(
 					<CopiesCount<Test>>::get((
 						mint_non_unique.definition.get_definition_id(),
@@ -514,30 +507,18 @@ mod mint_tests {
 					.unwrap(),
 					Compact(1)
 				);
-
 				assert!(<Inventory<Test>>::get(
 					dd.account_id,
 					mint_non_unique.definition.get_definition_id()
 				)
 				.unwrap()
 				.contains(&(Compact(edition_id), Compact(1))));
-
 				assert!(<Owners<Test>>::get(
 					mint_non_unique.definition.get_definition_id(),
 					dd.account_id
 				)
 				.unwrap()
 				.contains(&(Compact(edition_id), Compact(1))));
-
-				let event = System::events()[5 + (edition_id - 1) as usize].event.clone(); // we do `5 +` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events)
-				assert_eq!(
-					event,
-					mock::Event::from(pallet_fragments::Event::InventoryAdded {
-						account_id: dd.account_id,
-						definition_hash: mint_non_unique.definition.get_definition_id(),
-						fragment_id: (edition_id, 1)
-					})
-				);
 			}
 
 			assert_eq!(
@@ -562,6 +543,14 @@ mod mint_tests {
 
 			assert_ok!(mint_(dd.account_id, &mint_unique));
 
+			System::assert_last_event(
+				FragmentsEvent::InventoryAdded {
+					account_id: dd.account_id,
+					definition_hash: mint_unique.definition.get_definition_id(),
+					fragment_id: (1, 1)
+				}.into()
+			);
+
 			let correct_fragment_instance_struct = FragmentInstance {
 				permissions: mint_unique.definition.permissions,
 				created_at: current_block_number,
@@ -573,38 +562,23 @@ mod mint_tests {
 				stack_amount: mint_unique.amount.map(|amount| Compact::from(amount)),
 				metadata: BTreeMap::new(),
 			};
-
 			assert_eq!(
 				<Fragments<Test>>::get((mint_unique.definition.get_definition_id(), 1, 1)).unwrap(),
 				correct_fragment_instance_struct
 			);
-
 			assert_eq!(
 				<CopiesCount<Test>>::get((mint_unique.definition.get_definition_id(), 1)).unwrap(),
 				Compact(1)
 			);
-
 			assert!(<Inventory<Test>>::get(
 				dd.account_id,
 				mint_unique.definition.get_definition_id()
 			)
 			.unwrap()
 			.contains(&(Compact(1), Compact(1))));
-
 			assert!(<Owners<Test>>::get(mint_unique.definition.get_definition_id(), dd.account_id)
 				.unwrap()
 				.contains(&(Compact(1), Compact(1))));
-
-			let event = System::events()[5 as usize].event.clone(); // we write `5` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events)
-			assert_eq!(
-				event,
-				mock::Event::from(pallet_fragments::Event::InventoryAdded {
-					account_id: dd.account_id,
-					definition_hash: mint_unique.definition.get_definition_id(),
-					fragment_id: (1, 1)
-				})
-			);
-
 			assert_eq!(
 				<EditionsCount<Test>>::get(mint_unique.definition.get_definition_id()).unwrap(),
 				Compact(1)
@@ -765,6 +739,12 @@ mod buy_tests {
 		)
 	}
 
+	fn publish_definition(signer: <Test as frame_system::Config>::AccountId, buy: &Buy) {
+		assert_ok!(upload(signer, &buy.publish.definition.proto_fragment));
+		assert_ok!(create(signer, &buy.publish.definition));
+		assert_ok!(publish_(signer, &buy.publish));
+	}
+
 	#[test]
 	fn buy_should_work_if_fragment_definition_is_not_unique() {
 		new_test_ext().execute_with(|| {
@@ -774,36 +754,49 @@ mod buy_tests {
 
 			let buy_non_unique = dd.buy_non_unique;
 
-			assert_ok!(upload(dd.account_id, &buy_non_unique.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy_non_unique.publish.definition));
-
-			assert_ok!(publish_(dd.account_id, &buy_non_unique.publish));
+			publish_definition(dd.account_id, &buy_non_unique);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy_non_unique.buy_options {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <Balances as Currency<
+			let minimum_balance = <Balances as fungible::Inspect<
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_second,
 				buy_non_unique.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			);
 
 			assert_ok!(buy_(dd.account_id_second, &buy_non_unique));
 
-			let correct_fragment_instance_struct = FragmentInstance {
-				permissions: buy_non_unique.publish.definition.permissions,
-				created_at: current_block_number,
-				custom_data: None,
-				expiring_at: None, // newly created Fragment Instance doesn't have an expiration date - confirm with @sinkingsugar
-				stack_amount: buy_non_unique.publish.stack_amount.map(|amount| Compact::from(amount)),
-				metadata: BTreeMap::new(),
-			};
+			System::assert_has_event(
+				pallet_balances::Event::Transfer {
+					from: dd.account_id_second,
+					to: buy_non_unique.publish.definition.get_vault_account_id(),
+					amount: buy_non_unique.publish.price.saturating_mul(quantity as u128),
+				}.into()
+			);
 
 			for edition_id in 1..=quantity {
+				System::assert_has_event(
+					FragmentsEvent::InventoryAdded {
+						account_id: dd.account_id_second,
+						definition_hash: buy_non_unique.publish.definition.get_definition_id(),
+						fragment_id: (edition_id, 1)
+					}.into()
+				);
+
+				// This `correct_fragment_instance_struct` is the same for every iteration btw!
+				let correct_fragment_instance_struct = FragmentInstance {
+					permissions: buy_non_unique.publish.definition.permissions,
+					created_at: current_block_number,
+					custom_data: None,
+					expiring_at: None, // newly created Fragment Instance doesn't have an expiration date - confirm with @sinkingsugar
+					stack_amount: buy_non_unique.publish.stack_amount.map(|amount| Compact::from(amount)),
+					metadata: BTreeMap::new(),
+				};
 				assert_eq!(
 					<Fragments<Test>>::get((
 						buy_non_unique.publish.definition.get_definition_id(),
@@ -813,7 +806,6 @@ mod buy_tests {
 					.unwrap(),
 					correct_fragment_instance_struct
 				);
-
 				assert_eq!(
 					<CopiesCount<Test>>::get((
 						buy_non_unique.publish.definition.get_definition_id(),
@@ -822,7 +814,6 @@ mod buy_tests {
 					.unwrap(),
 					Compact(1)
 				);
-
 				assert!(<Inventory<Test>>::get(
 					dd.account_id_second,
 					buy_non_unique.publish.definition.get_definition_id()
@@ -836,47 +827,12 @@ mod buy_tests {
 				)
 				.unwrap()
 				.contains(&(Compact(edition_id), Compact(1))));
-
-				assert_eq!(
-					System::events()[9 + (edition_id - 1) as usize].event.clone(), // we do `9 +` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
-					mock::Event::from(pallet_fragments::Event::InventoryAdded {
-						account_id: dd.account_id_second,
-						definition_hash: buy_non_unique.publish.definition.get_definition_id(),
-						fragment_id: (edition_id, 1)
-					})
-				);
 			}
 
 			assert_eq!(
 				<EditionsCount<Test>>::get(buy_non_unique.publish.definition.get_definition_id())
 					.unwrap(),
 				Compact(quantity)
-			);
-
-			// assert_eq!(
-			// 	System::events()[System::events().len() - 3].event,
-			// 	mock::Event::from(
-			// 		frame_system::Event::NewAccount {
-			// 			account: buy_non_unique.publish.definition.get_vault_account_id(),
-			// 		}
-			// 	)
-			// );
-			// assert_eq!(
-			// 	System::events()[System::events().len() - 2].event,
-			// 	mock::Event::from(
-			// 		pallet_balances::Event::Endowed {
-			// 			account: buy_non_unique.publish.definition.get_vault_account_id(),
-			// 			free_balance: buy_non_unique.publish.price.saturating_mul(quantity as u128),
-			// 		}
-			// 	)
-			// );
-			assert_eq!(
-				System::events()[System::events().len() - 1].event,
-				mock::Event::from(pallet_balances::Event::Transfer {
-					from: dd.account_id_second,
-					to: buy_non_unique.publish.definition.get_vault_account_id(),
-					amount: buy_non_unique.publish.price.saturating_mul(quantity as u128),
-				})
 			);
 		});
 	}
@@ -891,25 +847,37 @@ mod buy_tests {
 
 			let buy_unique = dd.buy_unique;
 
-			assert_ok!(upload(dd.account_id, &buy_unique.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy_unique.publish.definition));
-
-			assert_ok!(publish_(dd.account_id, &buy_unique.publish));
+			publish_definition(dd.account_id, &buy_unique);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy_unique.buy_options {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <Balances as Currency<
+			let minimum_balance = <Balances as fungible::Inspect<
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_second,
 				buy_unique.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			);
 
 			assert_ok!(buy_(dd.account_id_second, &buy_unique));
+
+			System::assert_has_event(
+				FragmentsEvent::InventoryAdded {
+					account_id: dd.account_id_second,
+					definition_hash: buy_unique.publish.definition.get_definition_id(),
+					fragment_id: (1, 1)
+				}.into()
+			);
+			System::assert_has_event(
+				pallet_balances::Event::Transfer {
+					from: dd.account_id_second,
+					to: buy_unique.publish.definition.get_vault_account_id(),
+					amount: buy_unique.publish.price.saturating_mul(quantity as u128),
+				}.into()
+			);
 
 			let correct_fragment_instance_struct = FragmentInstance {
 				permissions: buy_unique.publish.definition.permissions,
@@ -922,19 +890,11 @@ mod buy_tests {
 				stack_amount: buy_unique.publish.stack_amount.map(|amount| Compact::from(amount)),
 				metadata: BTreeMap::new(),
 			};
-
 			assert_eq!(
 				<Fragments<Test>>::get((buy_unique.publish.definition.get_definition_id(), 1, 1))
 					.unwrap(),
 				correct_fragment_instance_struct
 			);
-
-			assert_eq!(
-				<CopiesCount<Test>>::get((buy_unique.publish.definition.get_definition_id(), 1))
-					.unwrap(),
-				Compact(1)
-			);
-
 			assert!(<Inventory<Test>>::get(
 				dd.account_id_second,
 				buy_unique.publish.definition.get_definition_id()
@@ -948,49 +908,17 @@ mod buy_tests {
 			)
 			.unwrap()
 			.contains(&(Compact(1), Compact(1))));
-
-			assert_eq!(
-				System::events()[9 as usize].event.clone(), // we write `9` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
-				mock::Event::from(pallet_fragments::Event::InventoryAdded {
-					account_id: dd.account_id_second,
-					definition_hash: buy_unique.publish.definition.get_definition_id(),
-					fragment_id: (1, 1)
-				})
-			);
-
 			assert_eq!(
 				<EditionsCount<Test>>::get(buy_unique.publish.definition.get_definition_id())
 					.unwrap(),
 				Compact(1)
 			);
-
-			println!("les events are: {:#?}", System::events());
-
-			// assert_eq!(
-			// 	System::events()[System::events().len() - 3].event,
-			// 	mock::Event::from(
-			// 		frame_system::Event::NewAccount {
-			// 			account: buy_unique.publish.definition.get_vault_account_id(),
-			// 		}
-			// 	)
-			// );
-			// assert_eq!(
-			// 	System::events()[System::events().len() - 2].event,
-			// 	mock::Event::from(
-			// 		pallet_balances::Event::Endowed {
-			// 			account: buy_unique.publish.definition.get_vault_account_id(),
-			// 			free_balance: buy_unique.publish.price.saturating_mul(quantity as u128),
-			// 		}
-			// 	)
-			// );
 			assert_eq!(
-				System::events()[System::events().len() - 1].event,
-				mock::Event::from(pallet_balances::Event::Transfer {
-					from: dd.account_id_second,
-					to: buy_unique.publish.definition.get_vault_account_id(),
-					amount: buy_unique.publish.price.saturating_mul(quantity as u128),
-				})
+				<CopiesCount<Test>>::get((buy_unique.publish.definition.get_definition_id(), 1))
+					.unwrap(),
+				Compact(1)
 			);
+
 		});
 	}
 
@@ -1015,26 +943,24 @@ mod buy_tests {
 
 			let buy = dd.buy_non_unique;
 
-			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy.publish.definition));
-			assert_ok!(publish_(dd.account_id, &buy.publish));
+			publish_definition(dd.account_id, &buy);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <Balances as Currency<
+			let minimum_balance = <Balances as fungible::Inspect<
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
 
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1,
 			);
 			assert_noop!(buy_(dd.account_id_second, &buy), Error::<Test>::InsufficientBalance);
 
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_third,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			);
@@ -1061,9 +987,7 @@ mod buy_tests {
 				true
 			));
 
-			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy.publish.definition));
-			assert_ok!(publish_(dd.account_id, &buy.publish));
+			publish_definition(dd.account_id, &buy);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
@@ -1090,6 +1014,7 @@ mod buy_tests {
 		});
 	}
 
+	#[ignore = "will the definition vault's account ever fall below minimum balance?"]
 	#[test]
 	fn buy_should_work_if_the_definition_vault_id_will_have_a_minimum_balance_of_the_asset_after_transaction(
 	) {
@@ -1114,9 +1039,8 @@ mod buy_tests {
 				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
 				true
 			));
-			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy.publish.definition));
-			assert_ok!(publish_(dd.account_id, &buy.publish));
+
+			publish_definition(dd.account_id, &buy);
 
 			assert_ok!(Assets::mint(
 				Origin::signed(dd.account_id),
@@ -1129,6 +1053,7 @@ mod buy_tests {
 		});
 	}
 
+	#[ignore = "will the definition vault's account ever fall below minimum balance?"]
 	#[test]
 	fn buy_should_not_work_if_the_definition_vault_id_will_not_have_a_minimum_balance_of_the_asset_after_transaction(
 	) {
@@ -1154,9 +1079,7 @@ mod buy_tests {
 				true
 			));
 
-			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy.publish.definition));
-			assert_ok!(publish_(dd.account_id, &buy.publish));
+			publish_definition(dd.account_id, &buy);
 
 			assert_ok!(Assets::mint(
 				Origin::signed(dd.account_id),
@@ -1183,11 +1106,9 @@ mod buy_tests {
 			assert!(buy.publish.definition.unique.is_none()); // we use non-unique because we can create multiple instances in a single extrinsic call (basically we're lazy)
 			assert!(buy.publish.quantity.is_some()); // published quantity exists exists
 
-			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy.publish.definition));
-			assert_ok!(publish_(dd.account_id, &buy.publish));
+			publish_definition(dd.account_id, &buy);
 
-			let minimum_balance = <Balances as Currency<
+			let minimum_balance = <Balances as fungible::Inspect<
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
 
@@ -1196,7 +1117,7 @@ mod buy_tests {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			);
@@ -1215,16 +1136,14 @@ mod buy_tests {
 
 			let buy_non_unique = dd.buy_non_unique; // fragment definition is not unique
 
-			assert_ok!(upload(dd.account_id, &buy_non_unique.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy_non_unique.publish.definition));
-			assert_ok!(publish_(dd.account_id, &buy_non_unique.publish));
+			publish_definition(dd.account_id, &buy_non_unique);
 
 			// We deposit (Price * 1) + `minimum_balance`
 			// because that's all we need to deposit if our options parameter is unique
-			let minimum_balance = <Balances as Currency<
+			let minimum_balance = <Balances as fungible::Inspect<
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_second,
 				buy_non_unique.publish.price.saturating_mul(1 as u128) + minimum_balance,
 			);
@@ -1251,16 +1170,14 @@ mod buy_tests {
 
 			let buy_unique = dd.buy_unique; // fragment definition is unique
 
-			assert_ok!(upload(dd.account_id, &buy_unique.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy_unique.publish.definition));
-			assert_ok!(publish_(dd.account_id, &buy_unique.publish));
+			publish_definition(dd.account_id, &buy_unique);
 
 			// Since our options parameter is `FragmentBuyOptions::Quantity(123)`,
 			// we deposit (Price * 123) + `minimum_balance`
-			let minimum_balance = <Balances as Currency<
+			let minimum_balance = <Balances as fungible::Inspect<
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_second,
 				buy_unique.publish.price.saturating_mul(123 as u128) + minimum_balance,
 			);
@@ -1289,19 +1206,17 @@ mod buy_tests {
 
 			assert!(buy.publish.expires.is_some()); // sale must have an expiration
 
-			assert_ok!(upload(dd.account_id, &buy.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy.publish.definition));
-			assert_ok!(publish_(dd.account_id, &buy.publish));
+			publish_definition(dd.account_id, &buy);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
 				_ => 1u64,
 			};
-			let minimum_balance = <Balances as Currency<
+			let minimum_balance = <Balances as fungible::Inspect<
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			);
@@ -1320,16 +1235,14 @@ mod buy_tests {
 
 			let buy_unique = dd.buy_unique;
 
-			assert_ok!(upload(dd.account_id, &buy_unique.publish.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &buy_unique.publish.definition));
-			assert_ok!(publish_(dd.account_id, &buy_unique.publish));
+			publish_definition(dd.account_id, &buy_unique);
 
 			// We deposit (Price * 1) + `minimum_balance`
 			// because that's all we need to deposit if our options parameter is unique
-			let minimum_balance = <Balances as Currency<
+			let minimum_balance = <Balances as fungible::Inspect<
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_second,
 				buy_unique.publish.price.saturating_mul(1 as u128) + minimum_balance,
 			);
@@ -1338,10 +1251,10 @@ mod buy_tests {
 
 			// We deposit (Price * 1) + `minimum_balance`
 			// because that's all we need to deposit if our options parameter is unique
-			let minimum_balance = <Balances as Currency<
+			let minimum_balance = <Balances as fungible::Inspect<
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
-			_ = <Balances as Currency<<Test as frame_system::Config>::AccountId>>::deposit_creating(
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_second,
 				buy_unique.publish.price.saturating_mul(1 as u128) + minimum_balance,
 			);
@@ -1361,7 +1274,7 @@ mod buy_tests {
 	}
 }
 
-use give_tests::give_;
+use give_tests::{give_, mint_give_instance};
 mod give_tests {
 	use super::*;
 
@@ -1381,6 +1294,15 @@ mod give_tests {
 		)
 	}
 
+	pub fn mint_give_instance(
+		signer: <Test as frame_system::Config>::AccountId,
+		give: &Give
+	) {
+		assert_ok!(upload(signer, &give.mint.definition.proto_fragment));
+		assert_ok!(create(signer, &give.mint.definition));
+		assert_ok!(mint_(signer, &give.mint));
+	}
+
 	#[test]
 	fn give_should_work_if_the_fragment_instance_does_not_have_copy_permissions() {
 		new_test_ext().execute_with(|| {
@@ -1388,11 +1310,23 @@ mod give_tests {
 
 			let give = dd.give_no_copy_perms;
 
-			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &give.mint.definition));
-			assert_ok!(mint_(dd.account_id, &give.mint));
-
+			mint_give_instance(dd.account_id, &give);
 			assert_ok!(give_(dd.account_id, &give));
+
+			System::assert_has_event(
+				FragmentsEvent::InventoryRemoved {
+					account_id: dd.account_id,
+					definition_hash: give.mint.definition.get_definition_id(),
+					fragment_id: (give.edition_id, give.copy_id),
+				}.into()
+			);
+			System::assert_has_event(
+				FragmentsEvent::InventoryAdded {
+					account_id: give.to,
+					definition_hash: give.mint.definition.get_definition_id(),
+					fragment_id: (give.edition_id, give.copy_id),
+				}.into()
+			);
 
 			assert_eq!(
 				<Owners<Test>>::get(give.mint.definition.get_definition_id(), dd.account_id)
@@ -1431,32 +1365,6 @@ mod give_tests {
 				give.new_permissions.unwrap()
 			);
 
-			let event = System::events()
-				.get(System::events().len() - 2)
-				.expect("Expected at least two EventRecords to be found")
-				.event
-				.clone();
-			assert_eq!(
-				event,
-				mock::Event::from(pallet_fragments::Event::InventoryRemoved {
-					account_id: dd.account_id,
-					definition_hash: give.mint.definition.get_definition_id(),
-					fragment_id: (give.edition_id, give.copy_id)
-				})
-			);
-
-			let event = System::events()
-				.pop()
-				.expect("Expected at least one EventRecord to be found")
-				.event;
-			assert_eq!(
-				event,
-				mock::Event::from(pallet_fragments::Event::InventoryAdded {
-					account_id: give.to,
-					definition_hash: give.mint.definition.get_definition_id(),
-					fragment_id: (give.edition_id, give.copy_id)
-				})
-			);
 		});
 	}
 
@@ -1467,11 +1375,16 @@ mod give_tests {
 
 			let give = dd.give_copy_perms;
 
-			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &give.mint.definition));
-			assert_ok!(mint_(dd.account_id, &give.mint));
-
+			mint_give_instance(dd.account_id, &give);
 			assert_ok!(give_(dd.account_id, &give));
+
+			System::assert_last_event(
+				FragmentsEvent::InventoryAdded {
+					account_id: give.to,
+					definition_hash: give.mint.definition.get_definition_id(),
+					fragment_id: (give.edition_id, give.copy_id + 1),
+				}.into()
+			);
 
 			assert_eq!(
 				<Owners<Test>>::get(give.mint.definition.get_definition_id(), dd.account_id)
@@ -1535,18 +1448,6 @@ mod give_tests {
 				Compact(give.copy_id + 1)
 			)));
 
-			let event = System::events()
-				.pop()
-				.expect("Expected at least one EventRecord to be found")
-				.event;
-			assert_eq!(
-				event,
-				mock::Event::from(pallet_fragments::Event::InventoryAdded {
-					account_id: give.to,
-					definition_hash: give.mint.definition.get_definition_id(),
-					fragment_id: (give.edition_id, give.copy_id + 1)
-				})
-			);
 		});
 	}
 
@@ -1557,13 +1458,11 @@ mod give_tests {
 
 			let give = dd.give_no_copy_perms;
 
-			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &give.mint.definition));
-			assert_ok!(mint_(dd.account_id, &give.mint));
+			mint_give_instance(dd.account_id, &give);
 
 			assert_noop!(
 				give_(dd.account_id_second, &give),
-				Error::<Test>::NotFound // should this be the error that is thrown @sinkingsugar. It doesn't sound appropriate
+				Error::<Test>::NoPermission
 			);
 		});
 	}
@@ -1609,10 +1508,8 @@ mod give_tests {
 									.iter()
 									.fold(FragmentPerms::NONE, |acc, &x| acc | x),
 							);
-							assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
-							assert_ok!(create(dd.account_id, &give.mint.definition));
-							assert_ok!(mint_(dd.account_id, &give.mint));
 							// Should Not Work
+							mint_give_instance(dd.account_id, &give);
 							assert_noop!(give_(dd.account_id, &give), Error::<Test>::NoPermission);
 						});
 					}
@@ -1634,10 +1531,8 @@ mod give_tests {
 									.iter()
 									.fold(FragmentPerms::NONE, |acc, &x| acc | x),
 							);
-							assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
-							assert_ok!(create(dd.account_id, &give.mint.definition));
-							assert_ok!(mint_(dd.account_id, &give.mint));
 							// Should Work
+							mint_give_instance(dd.account_id, &give);
 							assert_ok!(give_(dd.account_id, &give));
 						});
 					}
@@ -1655,10 +1550,7 @@ mod give_tests {
 
 			give.mint.definition.permissions = FragmentPerms::ALL - FragmentPerms::TRANSFER; // does not have transfer permission
 
-			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &give.mint.definition));
-			assert_ok!(mint_(dd.account_id, &give.mint));
-
+			mint_give_instance(dd.account_id, &give);
 			assert_noop!(give_(dd.account_id, &give), Error::<Test>::NoPermission);
 		});
 	}
@@ -1670,22 +1562,21 @@ mod give_tests {
 
 			let mut give = dd.give_copy_perms;
 			assert!(give.expiration.is_some());
-			give.new_permissions = Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the duplicated instance can also be used to create duplicates
-			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &give.mint.definition));
-			assert_ok!(mint_(dd.account_id, &give.mint));
+			give.new_permissions = Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the copied instance can also be used to create copies
+			mint_give_instance(dd.account_id, &give);
 			assert_ok!(give_(dd.account_id, &give));
 
-			let give_second_time = Give {
+
+			let give_again = Give {
 				copy_id: give.copy_id + 1,
 				to: dd.account_id_second,
 				..give.clone()
 			};
 
 			run_to_block(give.expiration.unwrap() - 1);
-			assert_ok!(give_(give.to, &give_second_time));
+			assert_ok!(give_(give.to, &give_again));
 			run_to_block(give.expiration.unwrap());
-			assert_noop!(give_(give.to, &give_second_time), Error::<Test>::NotFound);
+			assert_noop!(give_(give.to, &give_again), Error::<Test>::NotFound);
 		});
 	}
 
@@ -1697,9 +1588,8 @@ mod give_tests {
 			let current_block_number = System::block_number();
 
 			let give = dd.give_copy_perms;
-			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &give.mint.definition));
-			assert_ok!(mint_(dd.account_id, &give.mint));
+
+			mint_give_instance(dd.account_id, &give);
 
 			assert_noop!(
 				give_(
@@ -1724,18 +1614,16 @@ mod give_tests {
 	}
 
 	#[test]
-	fn give_should_not_change_the_expiration_of_the_duplicated_fragment_instance_if_the_expiration_parameter_is_greater_than_it(
+	fn give_should_not_change_the_expiration_of_the_copied_fragment_instance_if_the_expiration_parameter_is_greater_than_it(
 	) {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
 			let mut give = dd.give_copy_perms;
 			assert!(give.expiration.is_some());
-			give.new_permissions = Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the duplicated instance can also be used to create duplicates
+			give.new_permissions = Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the copied instance can also be used to create copies
 
-			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &give.mint.definition));
-			assert_ok!(mint_(dd.account_id, &give.mint));
+			mint_give_instance(dd.account_id, &give);
 			assert_ok!(give_(dd.account_id, &give));
 
 			assert_ok!(
@@ -1842,65 +1730,769 @@ mod create_account_tests {
 	}
 }
 
+use resell_tests::resell_;
 mod resell_tests {
 	use super::*;
 
+	pub fn resell_(
+		signer: <Test as frame_system::Config>::AccountId,
+		resell: &Resell
+	) -> DispatchResult {
+		FragmentsPallet::resell(
+			Origin::signed(signer),
+			resell.mint.definition.get_definition_id(),
+			resell.edition_id,
+			resell.copy_id,
+			resell.new_permissions,
+			resell.expiration,
+			resell.secondary_sale_type.clone()
+		)
+	}
+
+	pub fn mint_resell_instance(
+		signer: <Test as frame_system::Config>::AccountId,
+		resell: &Resell
+	) {
+
+		assert_ok!(upload(signer, &resell.mint.definition.proto_fragment));
+		assert_ok!(create(signer, &resell.mint.definition));
+		assert_ok!(mint_(signer, &resell.mint));
+	}
+
 	#[test]
 	fn resell_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let resell = dd.resell_normal;
+			mint_resell_instance(dd.account_id, &resell);
+			assert_ok!(resell_(dd.account_id, &resell));
 
+			System::assert_last_event(
+				FragmentsEvent::Resell {
+					definition_hash: resell.mint.definition.get_definition_id(),
+					fragment_id: (resell.edition_id, resell.copy_id),
+				}.into()
+			);
+
+			assert!(
+				Definition2SecondarySales::<Test>::get((resell.mint.definition.get_definition_id(), resell.edition_id, resell.copy_id)).unwrap()
+					==
+					SecondarySaleData {
+						owner: dd.account_id,
+						new_permissions: resell.new_permissions,
+						expiration: resell.expiration,
+						secondary_sale_type: resell.secondary_sale_type,
+					}
+			);
+
+		});
 	}
 
 	#[test]
-	fn resell_should_not_work_if_definition_does_not_exist() {
+	fn resell_should_not_work_if_user_does_not_own_instance() {
 
-	}
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
 
-	#[test]
-	fn resell_should_not_work_if_instance_does_not_exist() {
+			let resell = dd.resell_normal;
 
+			mint_resell_instance(dd.account_id, &resell);
+
+			assert_noop!(resell_(dd.account_id_second, &resell), Error::<Test>::NoPermission);
+
+		});
 	}
 
 	#[test]
 	fn resell_should_not_work_if_the_instance_is_already_on_sale() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let resell = dd.resell_normal;
+			mint_resell_instance(dd.account_id, &resell);
+			assert_ok!(resell_(dd.account_id, &resell));
+			assert_noop!(resell_(dd.account_id, &resell), Error::<Test>::SaleAlreadyOpen);
+		});
+	}
 
+
+	#[test]
+	fn resell_should_not_work_if_the_new_permissions_are_less_restrictive() {
+
+		let vec_all_perms = vec![FragmentPerms::EDIT, FragmentPerms::TRANSFER, FragmentPerms::COPY];
+		assert_eq!(
+			vec_all_perms.iter().fold(FragmentPerms::NONE, |acc, &x| acc | x),
+			FragmentPerms::ALL
+		);
+		let vec_all_perms_excl_transfer = vec_all_perms.clone().into_iter().filter(
+			|&x| x != FragmentPerms::TRANSFER
+		).collect::<Vec<FragmentPerms>>();
+
+		for len_combo in 0..vec_all_perms_excl_transfer.len() {
+
+			for vec_perms_excl_transfer in vec_all_perms_excl_transfer.clone().into_iter().combinations(len_combo) {
+				let vec_perms = [vec_perms_excl_transfer, vec![FragmentPerms::TRANSFER]].concat(); // TRANSFER must be included, since we want to give it
+
+				let vec_possible_additional_perms = vec_all_perms
+					.clone()
+					.into_iter()
+					.filter(|x| !vec_perms.contains(x))
+					.collect::<Vec<FragmentPerms>>();
+
+				// Less Restrictive
+				for len_combo in 1..=vec_possible_additional_perms.len() {
+					for vec_new_perms in
+					vec_possible_additional_perms.clone().into_iter().combinations(len_combo)
+					{
+						let vec_new_permissions_parameter = [vec_perms.clone(), vec_new_perms.clone()].concat();
+
+						new_test_ext().execute_with(|| {
+							let dd = DummyData::new();
+							let mut resell = dd.resell_normal;
+							resell.mint.definition.permissions = vec_perms
+								.iter()
+								.fold(FragmentPerms::NONE, |acc, &x| acc | x);
+							resell.new_permissions = Some(
+								vec_new_permissions_parameter
+									.iter()
+									.fold(FragmentPerms::NONE, |acc, &x| acc | x),
+							);
+							// Should Not Work
+							mint_resell_instance(dd.account_id, &resell);
+							assert_noop!(resell_(dd.account_id, &resell), Error::<Test>::NoPermission);
+						});
+					}
+				}
+
+				// Equally or More Restrictive
+				for len_combo in 0..=vec_perms.len() {
+					for vec_new_permissions_parameter in
+					vec_perms.clone().into_iter().combinations(len_combo)
+					{
+						new_test_ext().execute_with(|| {
+							let dd = DummyData::new();
+							let mut resell = dd.resell_normal;
+							resell.mint.definition.permissions = vec_perms
+								.iter()
+								.fold(FragmentPerms::NONE, |acc, &x| acc | x);
+							resell.new_permissions = Some(
+								vec_new_permissions_parameter
+									.iter()
+									.fold(FragmentPerms::NONE, |acc, &x| acc | x),
+							);
+							// Should Work
+							mint_resell_instance(dd.account_id, &resell);
+							assert_ok!(resell_(dd.account_id, &resell));
+						});
+					}
+				}
+			}
+		}
+	}
+
+	#[test]
+	fn resell_should_not_work_if_the_fragment_instance_does_not_have_the_transfer_permission() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let mut resell = dd.resell_normal;
+			resell.mint.definition.permissions = FragmentPerms::ALL - FragmentPerms::TRANSFER; // does not have transfer permission
+			mint_resell_instance(dd.account_id, &resell);
+			assert_noop!(resell_(dd.account_id, &resell), Error::<Test>::NoPermission);
+		});
+	}
+
+	#[test]
+	fn resell_should_not_work_if_the_fragment_instance_expires_before_or_at_the_current_block_number() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let mut give = dd.give_copy_perms;
+			assert!(give.expiration.is_some());
+			give.new_permissions = Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the copied instance can also be used to create copies
+			mint_give_instance(dd.account_id, &give);
+
+			// Should Work if Instance Has Not Expired
+			assert_ok!(give_(dd.account_id, &give));
+			let resell = Resell {
+				mint: give.mint.clone(),
+				edition_id: give.edition_id,
+				copy_id: give.copy_id + 1,
+				new_permissions: None,
+				expiration: None,
+				secondary_sale_type: SecondarySaleType::Normal(7),
+			};
+			run_to_block(give.expiration.unwrap() - 1);
+			assert_ok!(resell_(give.to, &resell));
+
+			// Should Not Work if Instance Has Expired
+			assert_ok!(give_(dd.account_id, &give));
+			let resell = Resell {
+				mint: give.mint,
+				edition_id: give.edition_id,
+				copy_id: give.copy_id + 2,
+				new_permissions: None,
+				expiration: None,
+				secondary_sale_type: SecondarySaleType::Normal(7),
+			};
+			run_to_block(give.expiration.unwrap());
+			assert_noop!(resell_(give.to, &resell), Error::<Test>::NotFound);
+		});
+	}
+
+	#[test]
+	fn resell_should_not_work_if_the_expiration_parameter_is_lesser_than_or_equal_to_the_current_block_number() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let current_block_number = System::block_number();
+
+			let resell = dd.resell_normal;
+
+			mint_resell_instance(dd.account_id, &resell);
+
+			assert_noop!(
+				resell_(
+					dd.account_id,
+					&Resell {
+						expiration: Some(current_block_number),
+						..resell.clone()
+					}
+				),
+				Error::<Test>::ParamsNotValid
+			);
+			assert_ok!(
+				resell_(
+					dd.account_id,
+					&Resell {
+						expiration: Some(current_block_number + 1),
+						..resell
+					}
+				)
+			);
+		});
+	}
+
+	#[test]
+	fn resell_should_not_change_the_expiration_of_the_copied_fragment_instance_if_the_expiration_parameter_is_greater_than_it(
+	) {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let mut give = dd.give_copy_perms;
+			assert!(give.expiration.is_some());
+			give.new_permissions = Some(FragmentPerms::TRANSFER | FragmentPerms::COPY); // ensure that the copied instance can also be used to create copies
+
+			assert_ok!(upload(dd.account_id, &give.mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &give.mint.definition));
+			assert_ok!(mint_(dd.account_id, &give.mint));
+			assert_ok!(give_(dd.account_id, &give));
+
+			assert_ok!(
+				give_(
+					give.to,
+					&Give {
+						copy_id: give.copy_id + 1,
+						to: dd.account_id_second,
+						expiration: Some(give.expiration.unwrap() - 1),
+						..give.clone()
+					}
+				)
+			);
+			assert!(
+				!<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(
+					&(
+						give.mint.definition.get_definition_id(),
+						Compact(give.edition_id),
+						Compact(give.copy_id + 2)
+					)
+				)
+			);
+			assert!(
+				<Expirations<Test>>::get(give.expiration.unwrap() - 1).unwrap().contains(
+					&(
+						give.mint.definition.get_definition_id(),
+						Compact(give.edition_id),
+						Compact(give.copy_id + 2)
+					)
+				)
+			);
+
+			assert_ok!(
+				give_(
+					give.to,
+					&Give {
+						copy_id: give.copy_id + 1,
+						to: dd.account_id_second,
+						expiration: Some(give.expiration.unwrap() + 1),
+						..give.clone()
+					}
+				)
+			);
+			assert!(!<Expirations<Test>>::contains_key(give.expiration.unwrap() + 1));
+			assert!(
+				<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(
+					&(
+						give.mint.definition.get_definition_id(),
+						Compact(give.edition_id),
+						Compact(give.copy_id + 3)
+					)
+				)
+			);
+		});
 	}
 
 }
 
 mod unresell_tests {
+	use super::*;
+
+	pub fn unresell_(
+		signer: <Test as frame_system::Config>::AccountId,
+		unresell: &Unresell
+	) -> DispatchResult {
+		FragmentsPallet::unresell(
+			Origin::signed(signer),
+			unresell.resell.mint.definition.get_definition_id(),
+			unresell.resell.edition_id,
+			unresell.resell.copy_id,
+		)
+	}
+
+	pub fn resell_instance(
+		signer: <Test as frame_system::Config>::AccountId,
+		unresell: &Unresell
+	) {
+		assert_ok!(upload(signer, &unresell.resell.mint.definition.proto_fragment));
+		assert_ok!(create(signer, &unresell.resell.mint.definition));
+		assert_ok!(mint_(signer, &unresell.resell.mint));
+		assert_ok!(resell_(signer, &unresell.resell));
+	}
+
+
+
 	#[test]
 	fn unresell_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
 
+			let unresell = dd.unresell;
+
+			resell_instance(dd.account_id, &unresell);
+			assert_ok!(unresell_(dd.account_id, &unresell));
+
+			System::assert_last_event(
+				FragmentsEvent::Unresell {
+					definition_hash: unresell.resell.mint.definition.get_definition_id(),
+					fragment_id: (unresell.resell.edition_id, unresell.resell.copy_id),
+				}.into()
+			);
+
+			assert!(
+				!Definition2SecondarySales::<Test>::contains_key((unresell.resell.mint.definition.get_definition_id(), unresell.resell.edition_id, unresell.resell.copy_id))
+			);
+		});
 	}
 
 	#[test]
-	fn unresell_should_not_work_if_user_does_not_own_instance() {
+	fn unresell_should_not_work_if_user_does_not_own_the_instance() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
 
+			let unresell = dd.unresell;
+
+			resell_instance(dd.account_id, &unresell);
+
+			assert_noop!(unresell_(dd.account_id_second, &unresell), Error::<Test>::NoPermission);
+		});
 	}
 
 	#[test]
 	fn unresell_should_not_work_if_instance_not_on_sale() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
 
+			let unresell = dd.unresell;
+
+			assert_ok!(upload(dd.account_id, &unresell.resell.mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &unresell.resell.mint.definition));
+			assert_ok!(mint_(dd.account_id, &unresell.resell.mint));
+
+			assert_noop!(unresell_(dd.account_id, &unresell), Error::<Test>::NotFound);
+		});
 	}
 }
 
 mod secondary_buy_tests {
 	use super::*;
 
-	#[test]
-	fn secondary_buy_should_work() {
+	pub fn secondary_buy_(
+		signer: <Test as frame_system::Config>::AccountId,
+		secondary_buy: &SecondaryBuy
+	) -> DispatchResult {
+		FragmentsPallet::secondary_buy(
+			Origin::signed(signer),
+			secondary_buy.resell.mint.definition.get_definition_id(),
+			secondary_buy.resell.edition_id,
+			secondary_buy.resell.copy_id,
+			secondary_buy.options.clone()
+		)
+	}
 
+	pub fn resell_instance(
+		signer: <Test as frame_system::Config>::AccountId,
+		secondary_buy: &SecondaryBuy
+	) {
+		assert_ok!(upload(signer, &secondary_buy.resell.mint.definition.proto_fragment));
+		assert_ok!(create(signer, &secondary_buy.resell.mint.definition));
+		assert_ok!(mint_(signer, &secondary_buy.resell.mint));
+		assert_ok!(resell_(signer, &secondary_buy.resell));
 	}
 
 	#[test]
-	fn secondary_buy_should_not_work_if_sale_does_not_exist() {
+	fn secondary_buy_should_work_if_the_fragment_instance_does_not_have_copy_permissions() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
 
+			let secondary_buy = dd.secondary_buy_no_copy_perms;
+
+			resell_instance(dd.account_id, &secondary_buy);
+
+			let price = match secondary_buy.resell.secondary_sale_type {
+				SecondarySaleType::Normal(price) => price,
+			};
+			let minimum_balance = <Balances as fungible::Inspect<
+				<Test as frame_system::Config>::AccountId,
+			>>::minimum_balance();
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
+				&dd.account_id_second,
+				price + minimum_balance,
+			);
+
+			assert_ok!(secondary_buy_(dd.account_id_second, &secondary_buy));
+
+			System::assert_has_event(
+				FragmentsEvent::InventoryRemoved {
+					account_id: dd.account_id,
+					definition_hash: secondary_buy.resell.mint.definition.get_definition_id(),
+					fragment_id: (secondary_buy.resell.edition_id, secondary_buy.resell.copy_id),
+				}.into()
+			);
+			System::assert_has_event(
+				FragmentsEvent::InventoryAdded {
+					account_id: dd.account_id_second,
+					definition_hash: secondary_buy.resell.mint.definition.get_definition_id(),
+					fragment_id: (secondary_buy.resell.edition_id, secondary_buy.resell.copy_id),
+				}.into()
+			);
+			System::assert_has_event(
+				pallet_balances::Event::Transfer {
+					from: dd.account_id_second,
+					to: dd.account_id,
+					amount: price,
+				}.into()
+			);
+
+			assert_eq!(
+				<Owners<Test>>::get(secondary_buy.resell.mint.definition.get_definition_id(), dd.account_id)
+					.unwrap()
+					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				false
+			);
+			assert_eq!(
+				<Inventory<Test>>::get(dd.account_id, secondary_buy.resell.mint.definition.get_definition_id())
+					.unwrap()
+					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				false
+			);
+
+			assert_eq!(
+				<Owners<Test>>::get(secondary_buy.resell.mint.definition.get_definition_id(), dd.account_id_second)
+					.unwrap()
+					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				true
+			);
+			assert_eq!(
+				<Inventory<Test>>::get(dd.account_id_second, secondary_buy.resell.mint.definition.get_definition_id())
+					.unwrap()
+					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				true
+			);
+
+			assert_eq!(
+				<Fragments<Test>>::get((
+					secondary_buy.resell.mint.definition.get_definition_id(),
+					secondary_buy.resell.edition_id,
+					secondary_buy.resell.copy_id
+				))
+					.unwrap()
+					.permissions,
+				secondary_buy.resell.new_permissions.unwrap()
+			);
+		});
 	}
 
+	#[test]
+	fn secondary_buy_should_work_if_the_fragment_instance_has_copy_permissions() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let secondary_buy = dd.secondary_buy_copy_perms;
+
+			resell_instance(dd.account_id, &secondary_buy);
+
+			let price = match secondary_buy.resell.secondary_sale_type {
+				SecondarySaleType::Normal(price) => price,
+			};
+			let minimum_balance = <Balances as fungible::Inspect<
+				<Test as frame_system::Config>::AccountId,
+			>>::minimum_balance();
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
+				&dd.account_id_second,
+				price + minimum_balance,
+			);
+
+			assert_ok!(secondary_buy_(dd.account_id_second, &secondary_buy));
+
+			System::assert_has_event(
+				FragmentsEvent::InventoryAdded {
+					account_id: dd.account_id_second,
+					definition_hash: secondary_buy.resell.mint.definition.get_definition_id(),
+					fragment_id: (secondary_buy.resell.edition_id, secondary_buy.resell.copy_id + 1),
+				}.into()
+			);
+			System::assert_has_event(
+				pallet_balances::Event::Transfer {
+					from: dd.account_id_second,
+					to: dd.account_id,
+					amount: price,
+				}.into()
+			);
+
+			assert_eq!(
+				<Owners<Test>>::get(secondary_buy.resell.mint.definition.get_definition_id(), dd.account_id)
+					.unwrap()
+					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				true
+			);
+			assert_eq!(
+				<Inventory<Test>>::get(dd.account_id, secondary_buy.resell.mint.definition.get_definition_id())
+					.unwrap()
+					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				true
+			);
+
+			assert_eq!(
+				<Owners<Test>>::get(secondary_buy.resell.mint.definition.get_definition_id(), dd.account_id_second)
+					.unwrap()
+					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id + 1))),
+				true
+			);
+			assert_eq!(
+				<Inventory<Test>>::get(dd.account_id_second, secondary_buy.resell.mint.definition.get_definition_id())
+					.unwrap()
+					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id + 1))),
+				true
+			);
+
+			assert_eq!(
+				<CopiesCount<Test>>::get((
+					secondary_buy.resell.mint.definition.get_definition_id(),
+					secondary_buy.resell.edition_id
+				))
+					.unwrap(),
+				Compact(2)
+			);
+
+			assert_eq!(
+				<Fragments<Test>>::get((
+					secondary_buy.resell.mint.definition.get_definition_id(),
+					secondary_buy.resell.edition_id,
+					secondary_buy.resell.copy_id + 1
+				))
+					.unwrap()
+					.permissions,
+				secondary_buy.resell.new_permissions.unwrap()
+			);
+			assert_eq!(
+				<Fragments<Test>>::get((
+					secondary_buy.resell.mint.definition.get_definition_id(),
+					secondary_buy.resell.edition_id,
+					secondary_buy.resell.copy_id + 1
+				))
+					.unwrap()
+					.expiring_at,
+				secondary_buy.resell.expiration
+			);
+
+			assert!(<Expirations<Test>>::get(&secondary_buy.resell.expiration.unwrap()).unwrap().contains(&(
+				secondary_buy.resell.mint.definition.get_definition_id(),
+				Compact(secondary_buy.resell.edition_id),
+				Compact(secondary_buy.resell.copy_id + 1)
+			)));
+		});
+	}
+
+
+	#[ignore = "Currently there is only one sale type. So we can't test this"]
 	#[test]
 	fn secondary_buy_should_not_work_if_options_param_does_not_match_sale_type() {
-
+		new_test_ext().execute_with(|| {
+			todo!("Currently there is only one sale type. So we can't test this");
+		});
 	}
+
+
+	#[test]
+	fn secondary_buy_should_not_work_if_user_has_insufficient_balance_in_pallet_balances() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let secondary_buy = dd.secondary_buy;
+
+			resell_instance(dd.account_id, &secondary_buy);
+
+			let price = match secondary_buy.resell.secondary_sale_type {
+				SecondarySaleType::Normal(price) => price,
+			};
+			let minimum_balance = <Balances as fungible::Inspect<
+				<Test as frame_system::Config>::AccountId,
+			>>::minimum_balance();
+
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
+				&dd.account_id_second,
+				price + minimum_balance - 1,
+			);
+			assert_noop!(secondary_buy_(dd.account_id_second, &secondary_buy), Error::<Test>::InsufficientBalance);
+
+			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
+				&dd.account_id_third,
+				price + minimum_balance,
+			);
+			assert_ok!(secondary_buy_(dd.account_id_third, &secondary_buy));
+
+		});
+	}
+
+	#[test]
+	fn secondary_buy_should_not_work_if_user_has_insufficient_balance_in_pallet_assets() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let mut secondary_buy = dd.secondary_buy;
+			secondary_buy.resell.mint.definition.metadata.currency = Some(0);
+
+			let minimum_balance = 1;
+			assert_ok!(Assets::force_create(
+				Origin::root(),
+				secondary_buy.resell.mint.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
+				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+				true
+			));
+
+			resell_instance(dd.account_id, &secondary_buy);
+
+			let price = match secondary_buy.resell.secondary_sale_type {
+				SecondarySaleType::Normal(price) => price,
+			};
+
+			assert_ok!(Assets::mint(
+				Origin::signed(dd.account_id),
+				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
+				dd.account_id_second,
+				price + minimum_balance - 1,
+			));
+			assert_noop!(secondary_buy_(dd.account_id_second, &secondary_buy), Error::<Test>::InsufficientBalance);
+
+			assert_ok!(Assets::mint(
+				Origin::signed(dd.account_id),
+				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
+				dd.account_id_third,
+				price + minimum_balance,
+			));
+			assert_ok!(secondary_buy_(dd.account_id_third, &secondary_buy));
+
+		});
+	}
+
+	#[ignore = "will the definition vault's account ever fall below minimum balance?"]
+	#[test]
+	fn secondary_buy_should_work_if_the_definition_vault_id_will_have_a_minimum_balance_of_the_asset_after_transaction(
+	) {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let mut secondary_buy = dd.secondary_buy;
+			secondary_buy.resell.mint.definition.metadata.currency = Some(0);
+
+			let price = match secondary_buy.resell.secondary_sale_type {
+				SecondarySaleType::Normal(price) => price,
+			};
+
+			let minimum_balance = price;
+			assert_ok!(Assets::force_create(
+				Origin::root(),
+				secondary_buy.resell.mint.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
+				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+				true
+			));
+
+			resell_instance(dd.account_id, &secondary_buy);
+
+			assert_ok!(Assets::mint(
+				Origin::signed(dd.account_id),
+				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
+				dd.account_id_second,
+				price + minimum_balance,
+			));
+
+			assert_ok!(secondary_buy_(dd.account_id_second, &secondary_buy));
+		});
+	}
+
+	#[ignore = "will the definition vault's account ever fall below minimum balance?"]
+	#[test]
+	fn secondary_buy_should_not_work_if_the_definition_vault_id_will_not_have_a_minimum_balance_of_the_asset_after_transaction(
+	) {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let mut secondary_buy = dd.secondary_buy;
+			secondary_buy.resell.mint.definition.metadata.currency = Some(0);
+
+			let price = match secondary_buy.resell.secondary_sale_type {
+				SecondarySaleType::Normal(price) => price,
+			};
+
+			let minimum_balance = price + 1;
+			assert_ok!(Assets::force_create(
+				Origin::root(),
+				secondary_buy.resell.mint.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
+				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
+				true
+			));
+
+			resell_instance(dd.account_id, &secondary_buy);
+
+			assert_ok!(Assets::mint(
+				Origin::signed(dd.account_id),
+				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
+				dd.account_id_second,
+				price + minimum_balance,
+			));
+
+			assert_noop!(
+				secondary_buy_(dd.account_id_second, &secondary_buy),
+				Error::<Test>::ReceiverBelowMinimumBalance
+			);
+		});
+	}
+
 }
 
 mod get_definitions_tests {

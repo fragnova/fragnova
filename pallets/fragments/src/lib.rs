@@ -62,10 +62,12 @@ use protos::permissions::FragmentPerms;
 use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::StaticLookup;
 
-use frame_support::traits::{
-	tokens::fungibles::{Inspect, Transfer},
-	Currency, ExistenceRequirement,
+use frame_support::traits::tokens::{
+	fungible,
+	fungibles,
+	ExistenceRequirement,
 };
+
 use sp_runtime::SaturatedConversion;
 
 use scale_info::prelude::{
@@ -486,7 +488,21 @@ pub mod pallet {
 			fragment_id: (Unit, Unit),
 		},
 		/// Fragment Expiration event
-		Expired { account_id: T::AccountId, definition_hash: Hash128, fragment_id: (Unit, Unit) },
+		Expired {
+			account_id: T::AccountId,
+			definition_hash: Hash128,
+			fragment_id: (Unit, Unit),
+		},
+		/// Resell Instance
+		Resell {
+			definition_hash: Hash128,
+			fragment_id: (Unit, Unit),
+		},
+		/// Unresell Instance
+		Unresell {
+			definition_hash: Hash128,
+			fragment_id: (Unit, Unit),
+		},
 	}
 
 	// Errors inform users that something went wrong.
@@ -602,12 +618,23 @@ pub mod pallet {
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
 			let vault = Self::get_vault_id(hash);
-			let min_balance =
-				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
-			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
-				&vault,
-				min_balance,
-			);
+
+			if let Some(currency) = metadata.currency {
+				let minimum_balance =
+					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::minimum_balance(currency);
+				<pallet_assets::Pallet<T> as fungibles::Mutate<T::AccountId>>::mint_into(
+					currency,
+					&vault,
+					minimum_balance,
+				)?;
+			} else {
+				let minimum_balance =
+					<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
+				<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+					&vault,
+					minimum_balance,
+				)?;
+			}
 
 			let fragment_data = FragmentDefinition {
 				proto_hash,
@@ -1153,11 +1180,11 @@ pub mod pallet {
 			// create an account for a specific fragment
 			// we need an existential amount deposit to be able to create the vault account
 			let frag_account = Self::get_fragment_account_id(definition_hash, edition, copy);
-			let min_balance =
-				<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
-			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::deposit_creating(
+			let minimum_balance =
+				<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
+			let _ = <pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
 				&frag_account,
-				min_balance,
+				minimum_balance,
 			);
 
 			// TODO Make owner pay for deposit actually!
@@ -1199,6 +1226,8 @@ pub mod pallet {
 				}
 			);
 
+			Self::deposit_event(Event::Resell { definition_hash, fragment_id: (edition_id, copy_id) });
+
 			Ok(())
 		}
 
@@ -1220,6 +1249,8 @@ pub mod pallet {
 			// ! Writing
 
 			Definition2SecondarySales::<T>::remove((definition_hash, edition_id, copy_id));
+
+			Self::deposit_event(Event::Unresell { definition_hash, fragment_id: (edition_id, copy_id) });
 
 			Ok(())
 		}
@@ -1493,33 +1524,33 @@ pub mod pallet {
 		) -> DispatchResult {
 			if let Some(currency) = currency {
 				let minimum_balance_needed_to_exist =
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::minimum_balance(currency);
-				let price_balance: <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::Balance =
+					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::minimum_balance(currency);
+				let price_balance: <pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::Balance =
 					amount.saturated_into();
 
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, from) >=
+					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::balance(currency, from) >=
 						price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, to) +
+					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::balance(currency, to) +
 						price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			} else {
 				let minimum_balance_needed_to_exist =
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance();
-				let price_balance: <pallet_balances::Pallet<T> as Currency<T::AccountId>>::Balance =
+					<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
+				let price_balance: <pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::Balance =
 					amount.saturated_into();
 
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(from) >=
+					pallet_balances::Pallet::<T>::free_balance(from) >=
 						price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(to) +
+					pallet_balances::Pallet::<T>::free_balance(to) +
 						price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
@@ -1528,7 +1559,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-
 		pub fn transfer_currency(
 			from: &T::AccountId,
 			to: &T::AccountId,
@@ -1536,8 +1566,8 @@ pub mod pallet {
 			currency: Option<T::AssetId>
 		) -> DispatchResult {
 			if let Some(currency) = currency {
-				<pallet_assets::Pallet<T> as Transfer<T::AccountId>>::transfer(
-					// transfer `amount` units of `currency` from `who` to `vault`
+				<pallet_assets::Pallet<T> as fungibles::Transfer<T::AccountId>>::transfer(
+					// transfer `amount` units of `currency` from `from` to `to`
 					currency,
 					from,
 					to,
@@ -1547,7 +1577,7 @@ pub mod pallet {
 					.map_err(|_| Error::<T>::InsufficientBalance)?;
 			} else {
 				pallet_balances::Pallet::<T>::do_transfer(
-					// transfer `amount` units of NOVA from `who` to `vault`
+					// transfer `amount` units of NOVA from `from` to `to`
 					from,
 					to,
 					amount.saturated_into(),
@@ -1584,7 +1614,7 @@ pub mod pallet {
 
 			// Only the owner of this fragment can transfer it
 			let ids =
-				<Inventory<T>>::get(from.clone(), definition_hash).ok_or(Error::<T>::NotFound)?;
+				<Inventory<T>>::get(from.clone(), definition_hash).ok_or(Error::<T>::NoPermission)?;
 
 			ensure!(ids.contains(&(Compact(edition_id), Compact(copy_id))), Error::<T>::NoPermission);
 

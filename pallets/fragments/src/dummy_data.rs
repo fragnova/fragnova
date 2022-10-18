@@ -121,8 +121,8 @@ pub struct Buy {
 #[derive(Clone)]
 pub struct Give {
 	pub mint: Mint,
-	pub edition_id: u64,
-	pub copy_id: u64,
+	pub edition_id: Unit,
+	pub copy_id: Unit,
 	pub to: sp_core::ed25519::Public,
 	pub new_permissions: Option<FragmentPerms>,
 	pub expiration: Option<u64>,
@@ -131,8 +131,27 @@ pub struct Give {
 pub struct CreateAccount {
 	// Creates Account for a Fragment Instance
 	pub mint: Mint,
-	pub edition_id: u64,
-	pub copy_id: u64,
+	pub edition_id: Unit,
+	pub copy_id: Unit,
+}
+
+#[derive(Clone)]
+pub struct Resell {
+	pub mint: Mint,
+	pub edition_id: Unit,
+	pub copy_id: Unit,
+	pub new_permissions: Option<FragmentPerms>,
+	pub expiration: Option<u64>,
+	pub secondary_sale_type: SecondarySaleType,
+}
+#[derive(Clone)]
+pub struct Unresell {
+	pub resell: Resell
+}
+#[derive(Clone)]
+pub struct SecondaryBuy {
+	pub resell: Resell,
+	pub options: SecondarySaleBuyOptions
 }
 
 /// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
@@ -154,6 +173,14 @@ pub struct DummyData {
 	pub give_copy_perms: Give,
 
 	pub create_account: CreateAccount,
+
+	pub resell_normal: Resell,
+
+	pub unresell: Unresell,
+
+	pub secondary_buy: SecondaryBuy,
+	pub secondary_buy_no_copy_perms: SecondaryBuy,
+	pub secondary_buy_copy_perms: SecondaryBuy,
 
 	pub account_id: sp_core::ed25519::Public,
 	pub account_id_second: sp_core::ed25519::Public,
@@ -227,7 +254,7 @@ impl DummyData {
 		let give_no_copy_perms = Give {
 			mint: Mint {
 				definition: Definition {
-					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER, // no copy perms
+					permissions: FragmentPerms::TRANSFER, // no copy perms
 					..mint_unique.definition.clone()
 				},
 				..mint_unique.clone()
@@ -241,8 +268,7 @@ impl DummyData {
 		let give_copy_perms = Give {
 			mint: Mint {
 				definition: Definition {
-					permissions: FragmentPerms::EDIT |
-						FragmentPerms::TRANSFER | FragmentPerms::COPY, // copy perms
+					permissions: FragmentPerms::TRANSFER | FragmentPerms::COPY, // copy perms
 					..mint_unique.definition.clone()
 				},
 				..mint_unique.clone()
@@ -255,6 +281,35 @@ impl DummyData {
 		};
 
 		let create_account = CreateAccount { mint: mint_unique.clone(), edition_id: 1, copy_id: 1 };
+
+		let resell_normal = Resell {
+			mint: mint_unique.clone(),
+			edition_id: 1,
+			copy_id: 1,
+			new_permissions: Some(FragmentPerms::NONE),
+			expiration: Some(999),
+			secondary_sale_type: SecondarySaleType::Normal(777),
+		};
+
+		let unresell = Unresell {
+			resell: resell_normal.clone(),
+		};
+
+		let secondary_buy = SecondaryBuy {
+			resell: resell_normal.clone(),
+			options: SecondarySaleBuyOptions::Normal,
+		};
+
+		let secondary_buy_no_copy_perms = {
+			let mut secondary_buy = secondary_buy.clone();
+			secondary_buy.resell.mint.definition.permissions = FragmentPerms::TRANSFER; // no copy perms
+			secondary_buy
+		};
+		let secondary_buy_copy_perms = {
+			let mut secondary_buy = secondary_buy.clone();
+			secondary_buy.resell.mint.definition.permissions = FragmentPerms::TRANSFER | FragmentPerms::COPY; // no copy perms
+			secondary_buy
+		};
 
 		Self {
 			definition,
@@ -270,10 +325,18 @@ impl DummyData {
 			buy_unique,
 			buy_non_unique_with_limited_published_quantity,
 
-			give_copy_perms,
 			give_no_copy_perms,
+			give_copy_perms,
 
 			create_account,
+
+			resell_normal,
+
+			unresell,
+
+			secondary_buy,
+			secondary_buy_no_copy_perms,
+			secondary_buy_copy_perms,
 
 			account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([2u8; 32]),
