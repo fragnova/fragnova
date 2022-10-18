@@ -1,0 +1,15 @@
+coverage:
+  status:
+    project:
+      default: off
+      pallets: 
+        flags:
+          - pallets
+    patch: off
+    changes: off
+        
+
+flags:
+  pallets:
+    paths:
+      - pallets/*/src/lib.rs

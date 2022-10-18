@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_protos;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Compact;
@@ -205,7 +207,7 @@ mod upload_tests {
 
 			let proto_with_refs = ProtoFragment {
 				references: vec![stake.proto_fragment.get_proto_hash()],
-				..dd.proto_fragment
+				..dd.proto_fragment_second
 			};
 
 			assert_noop!(
@@ -216,686 +218,6 @@ mod upload_tests {
 	}
 }
 
-mod get_protos_tests {
-	use super::*;
-	use protos::categories::{ShardsFormat, ShardsScriptInfo};
-	use upload_tests::upload;
-
-	#[test]
-	fn get_protos_should_not_work_if_owner_not_exists() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			let proto = dd.proto_fragment_third;
-			let proto_text = dd.proto_fragment_second;
-
-			assert_ok!(upload(dd.account_id, &proto));
-			assert_ok!(upload(dd.account_id_second, &proto_text));
-
-			// SEARCH
-			let params = GetProtosParams {
-				desc: true,
-				from: 10u64,
-				limit: 20u64,
-				metadata_keys: Vec::new(),
-				owner: Some(sp_core::ed25519::Public::from_raw([13u8; 32])), /* different from
-				                                                              * account_id */
-				return_owners: false,
-				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result: Result<Vec<u8>, Vec<u8>> = ProtosPallet::get_protos(params);
-			assert_eq!(result.err(), Some("Owner not found".as_bytes().to_vec()));
-		});
-	}
-
-	#[test]
-	fn get_protos_by_category_other_than_trait_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			let proto = dd.proto_fragment;
-			let proto_trait = dd.proto_fragment_fourth;
-
-			assert_ok!(upload(dd.account_id, &proto));
-			assert_ok!(upload(dd.account_id, &proto_trait));
-
-			// SEARCH
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: Some(dd.account_id),
-				return_owners: true,
-				categories: vec![Categories::Text(TextCategories::Plain)],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_exactly_same_trait_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			let proto = dd.proto_fragment_third;
-
-			assert_ok!(upload(dd.account_id, &proto));
-
-			// SEARCH
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: Some(dd.account_id),
-				return_owners: true,
-				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_trait_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			let proto = dd.proto_fragment_third;
-
-			assert_ok!(upload(dd.account_id, &proto));
-
-			// SEARCH
-			// This is searching a Proto using the same Trait name.
-			// Note that Trait description is different from the trait uploaded.
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: Some(dd.account_id),
-				return_owners: true,
-				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_trait_name_with_multiple_protos_stored_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto1 = dd.proto_fragment_third;
-			let proto2 = dd.proto_fragment_fourth;
-
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id, &proto2));
-
-			// SEARCH
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Trait(Some(twox_64(&proto2.data)))],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto2.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto2.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_searching_by_multiple_categories_same_owner_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto1 = dd.proto_fragment_third;
-			let proto_text = dd.proto_fragment_second;
-			let proto_shard_script = dd.proto_shard_script;
-
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id, &proto_text));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [4u8; 8];
-			let shard_script_num_2: [u8; 8] = [5u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 10,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![
-					Categories::Trait(Some(twox_64(&proto1.data))),
-					Categories::Shards(shard_script),
-					Categories::Text(TextCategories::Plain),
-				],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto1.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let proto_hash_2 = proto_shard_script.get_proto_hash();
-			let encoded2 = hex::encode(&proto_hash_2);
-
-			let proto_hash_text = proto_text.get_proto_hash();
-			let encoded3 = hex::encode(&proto_hash_text);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto1.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}, encoded2: {
-				"tickets": Some(proto_shard_script.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}, encoded3: {
-				"tickets": Some(proto_text.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_filter_shards_by_implementing_requiring() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto_shard_script = dd.proto_shard_script;
-			let proto_shard_script_3 = dd.proto_shard_script_3;			
-			let proto_shard_script_binary = dd.proto_shard_script_4;			
-
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-			assert_ok!(upload(dd.account_id, &proto_shard_script_3));
-			// This below has the same implementing and requiring of script_3, but different format (Binary)
-			assert_ok!(upload(dd.account_id, &proto_shard_script_binary));
-
-			// SEARCH
-			let shard_script_num_4: [u8; 8] = [1u8; 8];
-			let shard_script_num_5: [u8; 8] = [7u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_4],
-				implementing: vec![shard_script_num_5],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 10,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![
-					Categories::Shards(shard_script),
-				],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto_shard_script_3.get_proto_hash();
-			let encoded2 = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded2: {
-				"tickets": Some(proto_shard_script_3.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_searching_by_multiple_categories_different_owner_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto1 = dd.proto_fragment_third;
-			let proto_text = dd.proto_fragment_second;
-			let proto_shard_script = dd.proto_shard_script;
-
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id_second, &proto_text));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [4u8; 8];
-			let shard_script_num_2: [u8; 8] = [5u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 10,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![
-					Categories::Trait(Some(twox_64(&proto1.data))),
-					Categories::Shards(shard_script),
-					Categories::Text(TextCategories::Plain),
-				],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto1.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let proto_hash_2 = proto_shard_script.get_proto_hash();
-			let encoded2 = hex::encode(&proto_hash_2);
-
-			let proto_hash_text = proto_text.get_proto_hash();
-			let encoded3 = hex::encode(&proto_hash_text);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto1.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}, encoded2: {
-				"tickets": Some(proto_shard_script.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}, encoded3: {
-				"tickets": Some(proto_text.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id_second)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_trait_should_return_two_protos() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			let proto = dd.proto_fragment_fourth;
-			let proto2 = dd.proto_fragment_fifth;
-			// Upload twice the same Proto
-			assert_ok!(upload(dd.account_id, &proto));
-			assert_ok!(upload(dd.account_id, &proto2));
-
-			// SEARCH
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![
-					Categories::Trait(Some(twox_64(&proto.data))),
-					Categories::Trait(Some(twox_64(&proto2.data))),
-				],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-			let proto2_hash = proto2.get_proto_hash();
-			let encoded2 = hex::encode(&proto2_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				}}, encoded2: {
-					"tickets": Some(proto2.include_cost),
-					"owner": {
-						"type": "internal",
-						"value": hex::encode(dd.account_id)
-					},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_shards_script_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto1 = dd.proto_fragment_third;
-			let proto_shard_script = dd.proto_shard_script;
-
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [4u8; 8];
-			let shard_script_num_2: [u8; 8] = [5u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Shards(shard_script)],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto_shard_script.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto_shard_script.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_shards_finds_nothing() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto1 = dd.proto_fragment_third;
-			let proto_shard_script = dd.proto_shard_script;
-
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [99u8; 8];
-			let shard_script_num_2: [u8; 8] = [99u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Shards(shard_script)],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let json_expected = json!({}).to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_partial_implementing_shards_script_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			let proto1 = dd.proto_fragment_third;
-			let proto_shard_script = dd.proto_shard_script_2;
-
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [0u8; 8];
-			let shard_script_num_2: [u8; 8] = [5u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Shards(shard_script)],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto_shard_script.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto_shard_script.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_generic_format() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			let proto_shard_script = dd.proto_shard_script_2;
-
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [0u8; 8];
-			let shard_script_num_2: [u8; 8] = [0u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Shards(shard_script)],
-				tags: Vec::new(),
-				exclude_tags: false,
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto_shard_script.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"tickets": Some(proto_shard_script.include_cost),
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-}
 mod patch_tests {
 	use super::*;
 
@@ -1053,10 +375,10 @@ mod patch_tests {
 			assert_ok!(lock_(&stake.lock));
 			assert_ok!(link_(&stake.lock.link));
 
-			assert_ok!(upload(stake.lock.link.clamor_account_id, &dd.proto_fragment));
+			assert_ok!(upload(stake.lock.link.clamor_account_id, &dd.proto_fragment_second));
 
 			let patch_with_refs = Patch {
-				proto_fragment: dd.proto_fragment,
+				proto_fragment: dd.proto_fragment_second,
 				include_cost: None,
 				new_references: vec![stake.proto_fragment.get_proto_hash()],
 				new_data: b"<insert anything here>".to_vec(),
@@ -1153,8 +475,8 @@ mod transfer_tests {
 			assert!(
 				<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
 					.unwrap()
-					.contains(&proto.get_proto_hash())
-					== false
+					.contains(&proto.get_proto_hash()) ==
+					false
 			);
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second))
 				.unwrap()
@@ -1286,7 +608,7 @@ mod stake_tests {
 	pub fn stake_(
 		signer: <Test as frame_system::Config>::AccountId,
 		proto: &ProtoFragment,
-		stake_amount: &u64,
+		stake_amount: &<Test as pallet_assets::Config>::Balance,
 	) -> DispatchResult {
 		ProtosPallet::curate(Origin::signed(signer), proto.get_proto_hash(), stake_amount.clone())
 	}
@@ -1384,8 +706,8 @@ mod stake_tests {
 			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
 				stake.lock.link.get_recovered_ethereum_account_id(),
 			)
-			.unwrap()
-			.amount;
+				.unwrap()
+				.amount;
 			let frag_staked =
 				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
 					.unwrap_or_default();
@@ -1412,8 +734,8 @@ mod stake_tests {
 			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
 				stake.lock.link.get_recovered_ethereum_account_id(),
 			)
-			.unwrap()
-			.amount;
+				.unwrap()
+				.amount;
 			let frag_staked =
 				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
 					.unwrap_or_default();
@@ -1425,4 +747,849 @@ mod stake_tests {
 			);
 		});
 	}
+}
+
+mod ban_tests {
+
+	use super::*;
+
+	pub fn ban(proto: &ProtoFragment) -> DispatchResult {
+		ProtosPallet::ban(Origin::root(), proto.get_proto_hash())
+	}
+
+	#[test]
+	fn ban_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment;
+			assert_ok!(upload(dd.account_id, &proto));
+			assert_ok!(ban(&proto));
+			assert!(!<ProtosByCategory<Test>>::get(&proto.category)
+				.unwrap_or_default()
+				.contains(&proto.get_proto_hash()));
+			assert!(!<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
+				.unwrap_or_default()
+				.contains(&proto.get_proto_hash()));
+		});
+	}
+
+	#[test]
+	fn ban_should_not_work_if_proto_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment;
+			assert_noop!(ban(&proto), Error::<Test>::ProtoNotFound);
+		});
+	}
+
+	#[test]
+	fn ban_should_not_work_if_caller_is_not_root() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment;
+			assert_ok!(upload(dd.account_id, &proto));
+			assert_noop!(
+				ProtosPallet::ban(Origin::signed(dd.account_id), proto.get_proto_hash()),
+				sp_runtime::DispatchError::BadOrigin
+			);
+		});
+	}
+}
+
+
+mod get_protos_tests {
+	use super::*;
+	use protos::categories::{ShardsFormat, ShardsScriptInfo};
+	use upload_tests::upload;
+
+	#[test]
+	fn get_protos_should_not_work_if_owner_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment_third;
+			let proto_text = dd.proto_fragment_second;
+
+			assert_ok!(upload(dd.account_id, &proto));
+			assert_ok!(upload(dd.account_id_second, &proto_text));
+
+			// SEARCH
+			let params = GetProtosParams {
+				desc: true,
+				from: 10u64,
+				limit: 20u64,
+				metadata_keys: Vec::new(),
+				owner: Some(sp_core::ed25519::Public::from_raw([13u8; 32])), /* different from
+				                                                              * account_id */
+				return_owners: false,
+				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result: Result<Vec<u8>, Vec<u8>> = ProtosPallet::get_protos(params);
+			assert_eq!(result.err(), Some("Owner not found".as_bytes().to_vec()));
+		});
+	}
+
+	#[test]
+	fn get_protos_by_category_other_than_trait_should_work() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment;
+			let proto_trait = dd.proto_fragment_fourth;
+
+			assert_ok!(upload(dd.account_id, &proto));
+			assert_ok!(upload(dd.account_id, &proto_trait));
+
+			// SEARCH
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: Some(dd.account_id),
+				return_owners: true,
+				categories: vec![Categories::Text(TextCategories::Plain)],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_by_exactly_same_trait_should_work() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment_third;
+
+			assert_ok!(upload(dd.account_id, &proto));
+
+			// SEARCH
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: Some(dd.account_id),
+				return_owners: true,
+				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_by_trait_should_work() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment_third;
+
+			assert_ok!(upload(dd.account_id, &proto));
+
+			// SEARCH
+			// This is searching a Proto using the same Trait name.
+			// Note that Trait description is different from the trait uploaded.
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: Some(dd.account_id),
+				return_owners: true,
+				categories: vec![Categories::Trait(Some(twox_64(&proto.data)))],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_by_trait_name_with_multiple_protos_stored_should_work() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			// Two protos with different trait names
+			let proto1 = dd.proto_fragment_third;
+			let proto2 = dd.proto_fragment_fourth;
+
+			assert_ok!(upload(dd.account_id, &proto1));
+			assert_ok!(upload(dd.account_id, &proto2));
+
+			// SEARCH
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![Categories::Trait(Some(twox_64(&proto2.data)))],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto2.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto2.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_searching_by_multiple_categories_same_owner_should_work() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			// Two protos with different trait names
+			let proto1 = dd.proto_fragment_third;
+			let proto_text = dd.proto_fragment_second;
+			let proto_shard_script = dd.proto_shard_script;
+
+			assert_ok!(upload(dd.account_id, &proto1));
+			assert_ok!(upload(dd.account_id, &proto_text));
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+
+			// SEARCH
+			let shard_script_num_1: [u8; 8] = [4u8; 8];
+			let shard_script_num_2: [u8; 8] = [5u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_1],
+				implementing: vec![shard_script_num_2],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 10,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![
+					Categories::Trait(Some(twox_64(&proto1.data))),
+					Categories::Shards(shard_script),
+					Categories::Text(TextCategories::Plain),
+				],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto1.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let proto_hash_2 = proto_shard_script.get_proto_hash();
+			let encoded2 = hex::encode(&proto_hash_2);
+
+			let proto_hash_text = proto_text.get_proto_hash();
+			let encoded3 = hex::encode(&proto_hash_text);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto1.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}, encoded2: {
+				"tickets": Some(proto_shard_script.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}, encoded3: {
+				"tickets": Some(proto_text.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_filter_shards_by_implementing_requiring() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			// Two protos with different trait names
+			let proto_shard_script = dd.proto_shard_script;
+			let proto_shard_script_3 = dd.proto_shard_script_3;
+			let proto_shard_script_binary = dd.proto_shard_script_4;
+
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+			assert_ok!(upload(dd.account_id, &proto_shard_script_3));
+			// This below has the same implementing and requiring of script_3, but different format (Binary)
+			assert_ok!(upload(dd.account_id, &proto_shard_script_binary));
+
+			// SEARCH
+			let shard_script_num_4: [u8; 8] = [1u8; 8];
+			let shard_script_num_5: [u8; 8] = [7u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_4],
+				implementing: vec![shard_script_num_5],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 10,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![Categories::Shards(shard_script)],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto_shard_script_3.get_proto_hash();
+			let encoded2 = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded2: {
+				"tickets": Some(proto_shard_script_3.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_searching_by_multiple_categories_different_owner_should_work() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			// Two protos with different trait names
+			let proto1 = dd.proto_fragment_third;
+			let proto_text = dd.proto_fragment_second;
+			let proto_shard_script = dd.proto_shard_script;
+
+			assert_ok!(upload(dd.account_id, &proto1));
+			assert_ok!(upload(dd.account_id_second, &proto_text));
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+
+			// SEARCH
+			let shard_script_num_1: [u8; 8] = [4u8; 8];
+			let shard_script_num_2: [u8; 8] = [5u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_1],
+				implementing: vec![shard_script_num_2],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 10,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![
+					Categories::Trait(Some(twox_64(&proto1.data))),
+					Categories::Shards(shard_script),
+					Categories::Text(TextCategories::Plain),
+				],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto1.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let proto_hash_2 = proto_shard_script.get_proto_hash();
+			let encoded2 = hex::encode(&proto_hash_2);
+
+			let proto_hash_text = proto_text.get_proto_hash();
+			let encoded3 = hex::encode(&proto_hash_text);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto1.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}, encoded2: {
+				"tickets": Some(proto_shard_script.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}, encoded3: {
+				"tickets": Some(proto_text.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id_second)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_by_trait_should_return_two_protos() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			let proto = dd.proto_fragment_fourth;
+			let proto2 = dd.proto_fragment_fifth;
+			// Upload twice the same Proto
+			assert_ok!(upload(dd.account_id, &proto));
+			assert_ok!(upload(dd.account_id, &proto2));
+
+			// SEARCH
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![
+					Categories::Trait(Some(twox_64(&proto.data))),
+					Categories::Trait(Some(twox_64(&proto2.data))),
+				],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+			let proto2_hash = proto2.get_proto_hash();
+			let encoded2 = hex::encode(&proto2_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				}}, encoded2: {
+					"tickets": Some(proto2.include_cost),
+					"owner": {
+						"type": "internal",
+						"value": hex::encode(dd.account_id)
+					},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_by_shards_script_should_work() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			// Two protos with different trait names
+			let proto1 = dd.proto_fragment_third;
+			let proto_shard_script = dd.proto_shard_script;
+
+			assert_ok!(upload(dd.account_id, &proto1));
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+
+			// SEARCH
+			let shard_script_num_1: [u8; 8] = [4u8; 8];
+			let shard_script_num_2: [u8; 8] = [5u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_1],
+				implementing: vec![shard_script_num_2],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![Categories::Shards(shard_script)],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto_shard_script.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto_shard_script.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_by_shards_finds_nothing() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			// Two protos with different trait names
+			let proto1 = dd.proto_fragment_third;
+			let proto_shard_script = dd.proto_shard_script;
+
+			assert_ok!(upload(dd.account_id, &proto1));
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+
+			// SEARCH
+			let shard_script_num_1: [u8; 8] = [99u8; 8];
+			let shard_script_num_2: [u8; 8] = [99u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_1],
+				implementing: vec![shard_script_num_2],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![Categories::Shards(shard_script)],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let json_expected = json!({}).to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_by_partial_implementing_shards_script_should_work() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			let proto1 = dd.proto_fragment_third;
+			let proto_shard_script = dd.proto_shard_script_2;
+
+			assert_ok!(upload(dd.account_id, &proto1));
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+
+			// SEARCH
+			let shard_script_num_1: [u8; 8] = [0u8; 8];
+			let shard_script_num_2: [u8; 8] = [5u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_1],
+				implementing: vec![shard_script_num_2],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![Categories::Shards(shard_script)],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto_shard_script.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto_shard_script.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_by_generic_format() {
+		new_test_ext().execute_with(|| {
+			// UPLOAD
+			let dd = DummyData::new();
+			let proto_shard_script = dd.proto_shard_script_2;
+
+			assert_ok!(upload(dd.account_id, &proto_shard_script));
+
+			// SEARCH
+			let shard_script_num_1: [u8; 8] = [0u8; 8];
+			let shard_script_num_2: [u8; 8] = [0u8; 8];
+			let shard_script = ShardsScriptInfo {
+				format: ShardsFormat::Edn,
+				requiring: vec![shard_script_num_1],
+				implementing: vec![shard_script_num_2],
+			};
+			let params = GetProtosParams {
+				desc: true,
+				from: 0,
+				limit: 2,
+				metadata_keys: Vec::new(),
+				owner: None,
+				return_owners: true,
+				categories: vec![Categories::Shards(shard_script)],
+				tags: Vec::new(),
+				exclude_tags: Vec::new(),
+				available: Some(true),
+			};
+
+			let result = ProtosPallet::get_protos(params).ok().unwrap();
+			let result_string = std::str::from_utf8(&result).unwrap();
+
+			let proto_hash = proto_shard_script.get_proto_hash();
+			let encoded = hex::encode(&proto_hash);
+
+			let json_expected = json!({
+				encoded: {
+				"tickets": Some(proto_shard_script.include_cost),
+				"owner": {
+					"type": "internal",
+					"value": hex::encode(dd.account_id)
+				},
+			}})
+				.to_string();
+
+			assert_eq!(result_string, json_expected);
+		});
+	}
+
+	#[test]
+	fn get_protos_should_exclude_tags() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let mut proto = dd.proto_fragment;
+			let mut proto_second = dd.proto_fragment_second;
+
+			proto.tags = vec![b"2D".to_vec()];
+			proto_second.tags = vec![b"NSFW".to_vec()];
+
+			assert_ok!(upload(dd.account_id, &proto));
+			assert_ok!(upload(dd.account_id, &proto_second));
+
+			assert_eq!(
+				serde_json::from_slice::<Value>(
+					&ProtosPallet::get_protos(GetProtosParams {
+						limit: u64::MAX,
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
+				json!({
+					hex::encode(proto.get_proto_hash()): {},
+					hex::encode(proto_second.get_proto_hash()): {},
+				})
+			);
+
+			assert_eq!(
+				serde_json::from_slice::<Value>(
+					&ProtosPallet::get_protos(GetProtosParams {
+						limit: u64::MAX,
+						exclude_tags: proto_second.tags, // exclude tags!
+						..Default::default()
+					}).unwrap()
+				).unwrap(),
+				json!({
+					hex::encode(proto.get_proto_hash()): {},
+				})
+			);
+
+		});
+	}
+}
+
+mod get_genealogy_tests {
+	use super::*;
+
+	#[test]
+	fn get_genealogy_should_work_when_get_ancestors_is_true() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let proto = dd.proto_fragment;
+			assert_ok!(upload(dd.account_id, &proto));
+
+			let mut proto_second = dd.proto_fragment_second;
+			proto_second.references = vec![proto.get_proto_hash()];
+			assert_ok!(upload(dd.account_id, &proto_second));
+
+			let mut proto_third = dd.proto_fragment_third;
+			proto_third.references = vec![proto_second.get_proto_hash()];
+			assert_ok!(upload(dd.account_id, &proto_third));
+
+			assert_eq!(
+				serde_json::from_slice::<Value>(
+					&ProtosPallet::get_genealogy(GetGenealogyParams {
+						proto_hash: hex::encode(proto_third.get_proto_hash()).into_bytes(),
+						get_ancestors: true,
+					}).unwrap()
+				).unwrap(),
+				json!({
+					hex::encode(proto_third.get_proto_hash()): [
+						hex::encode(proto_second.get_proto_hash())
+					],
+					hex::encode(proto_second.get_proto_hash()): [
+						hex::encode(proto.get_proto_hash())
+					],
+					hex::encode(proto.get_proto_hash()): [],
+				})
+			);
+		});
+	}
+
+	#[test]
+	fn get_genealogy_should_work_when_get_ancestors_is_false() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let proto = dd.proto_fragment;
+			assert_ok!(upload(dd.account_id, &proto));
+
+			let mut proto_second = dd.proto_fragment_second;
+			proto_second.references = vec![proto.get_proto_hash()];
+			assert_ok!(upload(dd.account_id, &proto_second));
+
+			let mut proto_third = dd.proto_fragment_third;
+			proto_third.references = vec![proto_second.get_proto_hash()];
+			assert_ok!(upload(dd.account_id, &proto_third));
+
+			assert_eq!(
+				serde_json::from_slice::<Value>(
+					&ProtosPallet::get_genealogy(GetGenealogyParams {
+						proto_hash: hex::encode(proto.get_proto_hash()).into_bytes(),
+						get_ancestors: false,
+					}).unwrap()
+				).unwrap(),
+				json!({
+					hex::encode(proto.get_proto_hash()): [
+						hex::encode(proto_second.get_proto_hash())
+					],
+					hex::encode(proto_second.get_proto_hash()): [
+						hex::encode(proto_third.get_proto_hash())
+					],
+					hex::encode(proto_third.get_proto_hash()): [],
+				})
+			);
+		});
+	}
+
 }

@@ -3,7 +3,7 @@ use crate::*;
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, ConstU64},
+	traits::{ConstU32, ConstU64, ConstU128},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system;
@@ -18,6 +18,13 @@ use sp_runtime::testing::{Header, TestXt};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+
+/// Balance of an account.
+pub type Balance = u128;
+
+pub const MILLICENTS: Balance = 1_000_000_000;
+pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
+pub const DOLLARS: Balance = 100 * CENTS;
 
 // Construct a mock runtime environment.
 frame_support::construct_runtime!(
@@ -60,7 +67,6 @@ parameter_types! {
 	pub StorageBytesMultiplier: u64 = 10;
 	pub const IsTransferable: bool = false;
 }
-
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
@@ -79,7 +85,7 @@ impl frame_system::Config for Test {
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = pallet_balances::AccountData<u64>;
+	type AccountData = pallet_balances::AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -126,10 +132,11 @@ impl pallet_randomness_collective_flip::Config for Test {}
 /// mock runtimes ease the mental overhead of comprehensive, conscientious testers.
 /// Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
 impl pallet_balances::Config for Test {
-	type Balance = u64;
+	type Balance = Balance;
 	type DustRemoval = ();
 	type Event = Event;
-	type ExistentialDeposit = ConstU64<1>;
+	/// The minimum amount required to keep an account open.
+	type ExistentialDeposit = ConstU128<500>;
 	type AccountStore = System;
 	type WeightInfo = ();
 	type MaxLocks = ();
@@ -148,18 +155,25 @@ impl pallet_accounts::Config for Test {
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
+parameter_types! {
+	pub const AssetDeposit: Balance = 100 * DOLLARS;
+	pub const ApprovalDeposit: Balance = 1 * DOLLARS;
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 10 * DOLLARS;
+	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
+}
 impl pallet_assets::Config for Test {
 	type Event = Event;
-	type Balance = u64;
-	type AssetId = u32;
-	type Currency = ();
+	type Balance = Balance;
+	type AssetId = u64;
+	type Currency = Balances;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
-	type AssetDeposit = ConstU32<1>;
-	type AssetAccountDeposit = ConstU32<10>;
-	type MetadataDepositBase = ConstU32<1>;
-	type MetadataDepositPerByte = ConstU32<1>;
-	type ApprovalDeposit = ConstU32<1>;
-	type StringLimit = ConstU32<50>;
+	type AssetDeposit = AssetDeposit;
+	type AssetAccountDeposit = ConstU128<DOLLARS>;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type ApprovalDeposit = ApprovalDeposit;
+	type StringLimit = StringLimit;
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();

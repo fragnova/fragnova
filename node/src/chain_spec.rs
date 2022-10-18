@@ -12,16 +12,18 @@
 //!
 //! Source: https://docs.substrate.io/build/chain-spec/
 
+// The imports from `clamor_runtime` that follow the pattern "<Pallet>Config" are the <Pallet>'s `GenesisConfig` struct
+// See for more info: https://docs.substrate.io/reference/how-to-guides/basics/configure-genesis-state/
 use clamor_runtime::{
 	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
 	GenesisConfig, GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_service::ChainType;
+use serde_json;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{ecdsa, ed25519, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use serde_json;
 
 /// TODO: Documentation
 pub type UploadId = ecdsa::Public;
@@ -82,9 +84,9 @@ fn chain_spec_properties() -> serde_json::map::Map<String, serde_json::Value> {
 		"tokenDecimals": 12,
 		"tokenSymbol": "NOVA"
 	})
-		.as_object()
-		.expect("Map given; qed")
-		.clone()
+	.as_object()
+	.expect("Map given; qed")
+	.clone()
 }
 
 /// Returns the `ChainSpec` struct used when for starting/joining a Clamor Development Network
