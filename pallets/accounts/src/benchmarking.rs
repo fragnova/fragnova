@@ -169,13 +169,8 @@ benchmarks! {
 		let signature: T::Signature = sp_core::ed25519::Signature([69u8; 64]).into(); // this can be anything and it will still work
 	}: internal_lock_update(RawOrigin::None, data.clone(), signature)
 	verify {
-		assert_last_event::<T>(
-			Event::<T>::Locked {
-				eth_key: get_ethereum_public_key(&ethereum_secret_key_struct),
-				balance: TryInto::<u128>::try_into(data.amount).unwrap().saturated_into::<<T as pallet_assets::Config>::Balance>(),
-				lock_period: data.lock_period,
-			}.into()
-		);
+		let events = <frame_system::Pallet<T>>::events();
+		assert_eq!(events.len(), 3);
 		let block_number = data.block_number.clone().saturated_into::<<T as frame_system::Config>::BlockNumber>();
 		assert_eq!(
 				<EthLockedFrag<T>>::get(&data.sender, block_number).unwrap(),

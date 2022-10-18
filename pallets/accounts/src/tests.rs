@@ -389,6 +389,20 @@ mod internal_lock_update_tests {
 
 			assert_ok!(lock_(&lock));
 
+			let mut events = <frame_system::Pallet<Test>>::events();
+			assert_eq!(events.clone().len(), 3);
+			let event = events.pop().expect("Expected at least one EventRecord to be found").event;
+			assert_eq!(
+				event,
+				mock::Event::from(pallet_accounts::Event::Locked {
+					eth_key: lock.data.sender.clone(),
+					balance: SaturatedConversion::saturated_into::<
+						<Test as pallet_assets::Config>::Balance,
+					>(lock.data.amount),
+					lock_period: lock.data.lock_period.clone()
+				})
+			);
+
 			assert_eq!(
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block_number).unwrap(),
 				EthLock {
