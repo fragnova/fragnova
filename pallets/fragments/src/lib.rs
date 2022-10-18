@@ -264,7 +264,7 @@ pub struct SecondarySaleData<TAccountId, TBlockNum> {
 /// Enum indicating the different ways that one can purchase a Fragment Instance
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum SecondarySaleBuyOptions {
-	// Normal Purchase: Purchase the Fragment Instance based on the fixed-price that was defined by its seller
+	/// Normal Purchase: Purchase the Fragment Instance based on the fixed-price that was defined by its seller
 	Normal,
 	// Auction (Bid Price)
 	// Auction(Compact<u128>),
