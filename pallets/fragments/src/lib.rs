@@ -253,11 +253,16 @@ pub enum SecondarySaleType {
 	// /// Auction (Starting Price, Current Price, Timeout)
 	// Auction(Compact<u128>, Compact<u128>, TBlockNum),
 }
+/// Struct representing the **Details of a Fragment Instance that is put on sale**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct SecondarySaleData<TAccountId, TBlockNum> {
+	/// Current Owner of the Fragment Instance
 	pub owner: TAccountId,
+	/// New Permissions of the Fragment Instance after it is sold
 	pub new_permissions: Option<FragmentPerms>,
+	/// Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this field is practically irrelevant.
 	pub expiration: Option<TBlockNum>,
+	/// Type of Sale
 	pub secondary_sale_type: SecondarySaleType,
 }
 
@@ -329,6 +334,10 @@ pub mod pallet {
 	pub type Publishing<T: Config> =
 		StorageMap<_, Identity, Hash128, PublishingData<T::BlockNumber>>;
 
+	/// **StorageNMap** that maps a
+	/// **Fragment Instance's Fragment Definition ID, Edition ID and Copy ID**
+	/// to a
+	/// ***`SecondarySaleData`* struct**
 	#[pallet::storage]
 	pub type Definition2SecondarySales<T: Config> = StorageNMap<
 		_,
@@ -1121,7 +1130,7 @@ pub mod pallet {
 		/// * `copy` - Copy ID of the Fragment instance
 		/// * `to` - **Account ID** to give the Fragment instance
 		/// * `new_permissions` (*optional*) - The permitted set of actions that the account that is given the Fragment instance can do with it. Note: `new_permissions` must be a subset of the current `permissions` field of the Fragment Instance.
-		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is irrelevant.
+		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is practically irrelevant.
 		#[pallet::weight(
 		<T as Config>::WeightInfo::benchmark_give_instance_that_has_copy_perms()
 		.max(<T as Config>::WeightInfo::benchmark_give_instance_that_does_not_have_copy_perms())
@@ -1201,7 +1210,7 @@ pub mod pallet {
 		/// * `copy` - Copy ID of the Fragment instance
 		/// * `to` - **Account ID** to give the Fragment instance
 		/// * `new_permissions` (*optional*) - The permitted set of actions that the account that is given the Fragment instance can do with it. Note: `new_permissions` must be a subset of the current `permissions` field of the Fragment Instance.
-		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is irrelevant.
+		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is practically irrelevant.
 		/// * `secondary_sale_type` - Type of Sale
 		#[pallet::weight(50_000)]
 		pub fn resell(
@@ -1541,7 +1550,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-
+		/// Whether `amount` amount of token `currency` can be transferred from `from` to `to`
 		pub fn can_transfer_currency(
 			from: &T::AccountId,
 			to: &T::AccountId,
@@ -1585,6 +1594,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Transfer `amount` amount of token `currency` from `from` to `to`
 		pub fn transfer_currency(
 			from: &T::AccountId,
 			to: &T::AccountId,
@@ -1615,6 +1625,14 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Whether a Fragment Instance can be transferred
+		///
+		/// * `from` - Clamor Account ID to transfer the Fragment Instance from
+		/// * `definition_hash` - Fragment Definition of the Fragment Instance
+		/// * `edition_id` - Edition ID of the Fragment Instance
+		/// * `copy_id` - Copy ID of the Fragment Instance
+		/// * `new_permissions` - New Permissions of the Fragment Instance after it is sold
+		/// * `expiration` -  Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this field is practically irrelevant.
 		pub fn can_transfer_instance(
 			from: &T::AccountId,
 			definition_hash: &Hash128,
@@ -1676,6 +1694,15 @@ pub mod pallet {
 
 		}
 
+		/// Transfer a Fragment Instance from `from` to `to`
+		///
+		/// * `from` - Clamor Account ID to transfer the Fragment Instance from
+		/// * `to` - Clamor Account ID to transfer the Fragment Instance to
+		/// * `definition_hash` - Fragment Definition of the Fragment Instance
+		/// * `edition_id` - Edition ID of the Fragment Instance
+		/// * `copy_id` - Copy ID of the Fragment Instance
+		/// * `new_permissions` - New Permissions of the Fragment Instance after it is sold
+		/// * `expiration` -  Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this field is practically irrelevant.
 		pub fn transfer_instance(
 			from: &T::AccountId,
 			to: &T::AccountId,
