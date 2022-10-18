@@ -245,9 +245,10 @@ pub struct PublishingData<TBlockNum> {
 	pub stack_amount: Option<Compact<Unit>>,
 }
 
+/// Enum indicating the different ways to put a Fragment Instance on sale.
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum SecondarySaleType {
-	/// Normal (Price)
+	/// Put the Fragment Instance on sale with with a fixed price (where the fixed price is specified in the associated `u128` value of this enum variant)
 	Normal(u128),
 	// /// Auction (Starting Price, Current Price, Timeout)
 	// Auction(Compact<u128>, Compact<u128>, TBlockNum),
@@ -259,24 +260,25 @@ pub struct SecondarySaleData<TAccountId, TBlockNum> {
 	pub expiration: Option<TBlockNum>,
 	pub secondary_sale_type: SecondarySaleType,
 }
+
+/// Enum indicating the different ways that one can purchase a Fragment Instance
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum SecondarySaleBuyOptions {
+	// Normal Purchase: Purchase the Fragment Instance based on the fixed-price that was defined by its seller
 	Normal,
-	// /// Auction (Bid Price)
+	// Auction (Bid Price)
 	// Auction(Compact<u128>),
 }
 
 /// **Enum** indicating whether to
 /// **create one Fragment Instance with custom data attached to it**
 /// or whether to
-/// **create multiple Fragment Instances (with no custom data attached)**
+/// **create multiple Fragment Instances (with no custom data attached to them)**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub enum FragmentBuyOptions {
-	/// Create create *"x"* Number of Fragment Instances to create,
-	/// where *"x"* is the associated `u64` value inside the enum variant
+	/// Create multiple Fragment Instances (where the number of Fragment Instances to create is specified in the associated `u64` value of this enum variant)
 	Quantity(u64),
-	/// Create a single Fragment Instance with custom data *"x"* attached to it,
-	/// where *"x"* is the assosicated `Vec<u8>` value inside the enum variant
+	/// Create a single Fragment Instance with some custom data attached to it (where the custom data is specified in the associated `Vec<u8>` value of this enum variant)
 	UniqueData(Vec<u8>),
 }
 
@@ -1103,10 +1105,10 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Give the **Fragment Instance whose Fragment Definition ID is `definition_hash`, whose Edition ID is `edition` and whose Copy ID is `copy`** to **`to`**.
+		/// Give a **Fragment Instance** to **`to`**.
 		///
-		/// If the **current permitted actions of the Fragment Instance** allows for it to be duplicated (i.e if it has the permission **FragmentPerms::COPY**),
-		/// then it is duplicated and the duplicate's ownership is assigned to `to`.
+		/// If the **current permitted actions of the Fragment Instance** allows for it to be copied (i.e if it has the permission **FragmentPerms::COPY**),
+		/// then it is copied and the copy's ownership is assigned to `to`.
 		/// Otherwise, its ownership is transferred from `origin` to `to`.
 		///
 		/// Note: **Only** the **Fragment Instance's owner** is **allowed** to give the Fragment Instance
@@ -1114,20 +1116,12 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
-		/// * `definition_hash` - Fragment Definition ID of the Fragment Instance to give
-		/// * `edition` - Edition ID of the Fragment Instance to give
-		/// * `copy` - Copy ID of the Fragment instance to give
-		/// * `to` - **Account ID** to give the Fragment instance to
-		///
-		/// * `new_permissions` (*optional*) - The permitted set of actions (encapsulated in a `FragmentPerms` bitflag enum)
-		/// that the account that is given the Fragment instance can do with it.
-		///
-		/// Note: `new_permissions` must be a subset of the current `permissions` field of the Fragment Instance;
-		/// therefore, the `new_permissions` can only be more restrictive (than the current `permissions` field of the Fragment Instance),
-		/// never more permissive
-		///
-		/// * `expiration` (*optional*) - Block number that the duplicated Fragment Instance expires at.
-		/// If the Fragment Instance was not duplicated, this parameter is irrelevant.
+		/// * `definition_hash` - Fragment Definition ID of the Fragment Instance
+		/// * `edition` - Edition ID of the Fragment Instance
+		/// * `copy` - Copy ID of the Fragment instance
+		/// * `to` - **Account ID** to give the Fragment instance
+		/// * `new_permissions` (*optional*) - The permitted set of actions that the account that is given the Fragment instance can do with it. Note: `new_permissions` must be a subset of the current `permissions` field of the Fragment Instance.
+		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is irrelevant.
 		#[pallet::weight(
 		<T as Config>::WeightInfo::benchmark_give_instance_that_has_copy_perms()
 		.max(<T as Config>::WeightInfo::benchmark_give_instance_that_does_not_have_copy_perms())
@@ -1194,6 +1188,21 @@ pub mod pallet {
 		}
 
 
+		/// Put a Fragment Instance on sale.
+		///
+		///
+		/// Note: **Only** the **Fragment Instance's owner** is **allowed** to call this extrinsic
+		///
+		/// # Arguments
+		///
+		/// * `origin` - **Origin** of the **extrinsic function**
+		/// * `definition_hash` - Fragment Definition ID of the Fragment Instance
+		/// * `edition` - Edition ID of the Fragment Instance
+		/// * `copy` - Copy ID of the Fragment instance
+		/// * `to` - **Account ID** to give the Fragment instance
+		/// * `new_permissions` (*optional*) - The permitted set of actions that the account that is given the Fragment instance can do with it. Note: `new_permissions` must be a subset of the current `permissions` field of the Fragment Instance.
+		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is irrelevant.
+		/// * `secondary_sale_type` - Type of Sale
 		#[pallet::weight(50_000)]
 		pub fn resell(
 			origin: OriginFor<T>,
@@ -1231,6 +1240,14 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// End the sale of a Fragment Instance that is currently on sale.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - **Origin** of the **extrinsic function**
+		/// * `definition_hash` - Fragment Definition ID of the Fragment Instance
+		/// * `edition` - Edition ID of the Fragment Instance
+		/// * `copy` - Copy ID of the Fragment instance
 		#[pallet::weight(50_000)]
 		pub fn unresell(
 			origin: OriginFor<T>,
@@ -1255,6 +1272,15 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Buy an existing Fragment Instance that is on sale.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - **Origin** of the **extrinsic function**
+		/// * `definition_hash` - Fragment Definition ID of the Fragment Instance
+		/// * `edition` - Edition ID of the Fragment Instance
+		/// * `copy` - Copy ID of the Fragment instance
+		/// * `options` - Enum indicating how to buy the instance
 		#[pallet::weight(50_000)]
 		pub fn secondary_buy(
 			origin: OriginFor<T>,
