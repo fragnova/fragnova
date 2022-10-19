@@ -1,0 +1,86 @@
+(deftrait Fragnova-Account :private-key "//Alice")
+(load-file "fragnova.edn")
+
+(def UPLOAD-CALL-DATA-EXCL-DATA-PARAM "0x0b00000000000000") ; encoded call data that defines a call to `protos.upload()` with certain hardcoded parameters. See: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws.fragnova.network#/extrinsics/decode/0x0b0000000000000000
+
+(defwire upload-proto
+
+  (ExpectBytes) .proto-data
+
+  UPLOAD-CALL-DATA-EXCL-DATA-PARAM (HexToBytes) >= .call-data
+  .proto-data >> .seq .seq (Substrate.Encode [nil]) (AppendTo .call-data)
+
+  .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of protos.upload() is")
+
+  .proto-data (Hash.Blake2-256)  (ToHex) (Log "Uploaded Proto With Proto Hash")
+
+)
+
+
+(defwire convert-blake256-hash-to-ipfs-cid
+
+  (ExpectBytes) .proto-hash
+
+  "0x0155a0e40220" (HexToBytes) (PrependTo .proto-hash)
+  .proto-hash (ToBase58) >= .ipfs-cid
+  "z" (PrependTo .ipfs-cid)
+  .ipfs-cid (Log "IPFS CID")
+  )
+
+(defwire get-clamor-p2p-addresses
+
+  {"id" 1 "jsonrpc" "2.0" "method" "system_localListenAddresses" "params" []} (ToJson) (Http.Post RPC-SERVER) ; `system_localListenAddresses` return the string representation of the addresses we listen on, including the trailing /p2p/.
+  (FromJson) (ExpectTable) (Take "result")
+  (ExpectStringSeq) (Log "Clamor is listening to the following P2P addresses")
+)
+
+(defwire connect-to-clamor-p2p-addresses
+
+  (ExpectStringSeq) .clamor-p2p-addresses
+
+  ; Q: What is IPFS Swarm?
+  ; A: 'ipfs swarm' is a tool to manipulate the network swarm. The swarm is the component that opens, listens for, and maintains connections to other ipfs peers in the internet.
+
+  .clamor-p2p-addresses
+  (ForEach
+   (->
+    (Log "connecting to p2p address")
+    = .p2p-address
+    "" (Process.Run :Executable "ipfs" :Arguments ["swarm" "peering" "add" .p2p-address])
+    )
+  )
+
+  (Maybe (-> "" (Process.Run "ipfs" ["repo" "gc"]))) ;  `ipfs repo gc` - Performs a garbage collection sweep on the IPFS Repo.
+
+  ; not ideal but we need to wait transaction is done and CI can be slow
+  (Pause 5.0)
+
+
+)
+
+(defwire call-ipfs-block-get
+  (ExpectString) .proto-hash-cid
+
+  (Msg "Downloading IPFS block")
+
+  "" (Process.Run "ipfs" ["block" "get" .proto-hash-cid] :Timeout 120) (StringToBytes) ; `ipfs block` - Interact with raw IPFS blocks. A block is identified by a Multihash passed with a valid CID.
+
+)
+
+(defwire main
+  (Setup
+   (get Fragnova-Node :setup)
+  )
+
+  "Proto-Indo-European" (ToBytes) = .proto-data
+  (Do upload-proto) = .proto-hash
+  (Do convert-blake256-hash-to-ipfs-cid) = .proto-hash-cid
+  (Do get-clamor-p2p-addresses) = .clamor-p2p-addresses
+  (Do connect-to-clamor-p2p-addresses)
+  (Do call-ipfs-block-get) (Is .proto-data) (Assert.Is true)
+
+)
+
+(defmesh root)
+(schedule root main)
+(run root 0.1)
