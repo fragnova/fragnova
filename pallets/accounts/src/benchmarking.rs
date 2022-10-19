@@ -173,10 +173,10 @@ benchmarks! {
 		assert_eq!(events.len(), 3);
 		let block_number = data.block_number.clone().saturated_into::<<T as frame_system::Config>::BlockNumber>();
 		assert_eq!(
-				<EthLockedFrag<T>>::get(&data.sender, block_number).unwrap(),
+				<EthLockedFrag<T>>::get(&data.sender, 7).unwrap(),
 				EthLock {
 					amount: TryInto::<u128>::try_into(data.amount).unwrap().saturated_into::<<T as pallet_assets::Config>::Balance>(),
-					block_number: block_number,
+					block_number: 7,
 					lock_period: 1,
 					last_withdraw: 0,
 				}

@@ -1357,8 +1357,8 @@ pub mod pallet {
 			let sec = match lock_period {
 				0 => 2,  // 2 weeksu64
 				1 => 4,  // 1 month
-				2 => 12, // 3 months
-				3 => 24, // 6 months
+				2 => 13, // 3 months
+				3 => 26, // 6 months
 				4 => 52, // 1 year
 				_ => return Err(Error::<T>::LockPeriodOutOfRange),
 			};
