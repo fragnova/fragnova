@@ -36,8 +36,15 @@ const connectToLocalNode = async () => {
             { name: "params", type: "GetInstancesParams" },
             { name: "at", type: "BlockHash", isOptional: true }
           ]
-        }
-      }
+        },
+        getInstanceOwner: {
+          description: "Query the owner of a Fragment Instance. The return type is a String", type: "String",
+          params: [
+            { name: "params", type: "GetInstanceOwnerParams" },
+            { name: "at", type: "BlockHash", isOptional: true }
+          ]
+        },
+      },
     },
 
     types: {
@@ -165,7 +172,12 @@ const connectToLocalNode = async () => {
         owner: "Option<AccountId>",
         only_return_first_copies: "bool",
       },
-
+      GetInstanceOwnerParams: {
+        definition_hash: 'String', // "Hash128", // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
+        edition_id: "Unit",
+        copy_id: "Unit",
+      },
+      "Unit": "u64",
 
     }
   });

@@ -66,7 +66,7 @@ use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
 use pallet_protos::{GetProtosParams, GetGenealogyParams};
-use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
+use pallet_fragments::{GetDefinitionsParams, GetInstancesParams, GetInstanceOwnerParams};
 
 pub use pallet_contracts::Schedule;
 
@@ -998,11 +998,17 @@ impl_runtime_apis! {
 
 	/// TODO: Documentation
 	impl pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi<Block, AccountId> for Runtime {
+		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Fragments::get_definitions(params)
 		}
+		/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
 		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Fragments::get_instances(params)
+		}
+		/// Query the owner of a Fragment Instance. The return type is a String
+		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+			Fragments::get_instance_owner(params)
 		}
 	}
 
