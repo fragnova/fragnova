@@ -1088,6 +1088,12 @@
 <span id="1088">1088</span>
 <span id="1089">1089</span>
 <span id="1090">1090</span>
+<span id="1091">1091</span>
+<span id="1092">1092</span>
+<span id="1093">1093</span>
+<span id="1094">1094</span>
+<span id="1095">1095</span>
+<span id="1096">1096</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -1156,7 +1162,7 @@
 <span class="kw">use </span>sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
 <span class="kw">use </span>pallet_protos::{GetProtosParams, GetGenealogyParams};
-<span class="kw">use </span>pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
+<span class="kw">use </span>pallet_fragments::{GetDefinitionsParams, GetInstancesParams, GetInstanceOwnerParams};
 
 <span class="kw">pub use </span>pallet_contracts::Schedule;
 
@@ -2088,11 +2094,17 @@
 
 	<span class="doccomment">/// TODO: Documentation
 	</span><span class="kw">impl </span>pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi&lt;Block, AccountId&gt; <span class="kw">for </span>Runtime {
-		<span class="kw">fn </span>get_definitions(params: GetDefinitionsParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
+		<span class="doccomment">/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
+		</span><span class="kw">fn </span>get_definitions(params: GetDefinitionsParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
 			Fragments::get_definitions(params)
 		}
-		<span class="kw">fn </span>get_instances(params: GetInstancesParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
+		<span class="doccomment">/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
+		</span><span class="kw">fn </span>get_instances(params: GetInstancesParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
 			Fragments::get_instances(params)
+		}
+		<span class="doccomment">/// Query the owner of a Fragment Instance. The return type is a String
+		</span><span class="kw">fn </span>get_instance_owner(params: GetInstanceOwnerParams&lt;Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
+			Fragments::get_instance_owner(params)
 		}
 	}
 
@@ -2179,4 +2191,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (b8b5caee0 2022-10-16)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a24a020e6 2022-10-18)" ></div></body></html>
