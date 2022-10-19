@@ -2329,7 +2329,7 @@ mod get_instance_owner_tests {
 
 			assert_eq!(
 				FragmentsPallet::get_instance_owner(GetInstanceOwnerParams {
-					definition_hash: mint.definition.get_definition_id(),
+					definition_hash: hex::encode(mint.definition.get_definition_id()).into(),
 					edition_id: 1,
 					copy_id: 1,
 				}).unwrap(),
@@ -2349,7 +2349,7 @@ mod get_instance_owner_tests {
 
 			assert_eq!(
 				FragmentsPallet::get_instance_owner(GetInstanceOwnerParams {
-					definition_hash: mint.definition.get_definition_id(),
+					definition_hash: hex::encode(mint.definition.get_definition_id()).into(),
 					edition_id: 1,
 					copy_id: 1,
 				}),
