@@ -7,7 +7,7 @@ cd /data/shards
 
 wget -q https://dist.ipfs.tech/kubo/v0.16.0/kubo_v0.16.0_linux-amd64.tar.gz &&
 tar -xvzf kubo_v0.16.0_linux-amd64.tar.gz &&
-export PATH=$PATH:/data/shards/go-ipfs &&
+export PATH=$PATH:/data/shards/kubo &&
 
 # Initializes ipfs configuration files and generates a new keypair. (https://docs.ipfs.tech/how-to/command-line-quick-start/#initialize-the-repository)
 ipfs init &&
