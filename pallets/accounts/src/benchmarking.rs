@@ -171,18 +171,6 @@ benchmarks! {
 	verify {
 		let events = <frame_system::Pallet<T>>::events();
 		assert_eq!(events.len(), 3);
-		assert_eq!(
-				<EthReservedTickets<T>>::get(&data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<<T as pallet_assets::Config>::Balance>(
-					TryInto::<u128>::try_into(800).unwrap() // 80 (80%) * 1 USD/FRAG * 100 (100 Tickets = 1 FRAG)
-				)
-			);
-		assert_eq!(
-				<EthReservedNova<T>>::get(&data.sender).unwrap(),
-				SaturatedConversion::saturated_into::<<T as pallet_balances::Config>::Balance>(
-					TryInto::<u128>::try_into(200).unwrap()  // 20 (20%) * 1 USD/FRAG * 100 (100 NOVA = 1 FRAG)
-				)
-			);
 	}
 
 	sponsor_account {
