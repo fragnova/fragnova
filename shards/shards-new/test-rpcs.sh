@@ -4,6 +4,7 @@ ROOT=`pwd`
 echo "ROOT is $ROOT"
 
 cd $ROOT/shards/shards-new &&
+echo "ls is:"
 ls &&
 
 # we use this Docker container: https://hub.docker.com/r/chainblocks/shards

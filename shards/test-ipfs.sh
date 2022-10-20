@@ -9,6 +9,8 @@ export PATH=$PATH:`pwd`/kubo &&
 
 # GO TO "shards" FOLDER
 cd shards &&
+echo "ls is:"
+ls &&
 
 # RUN IPFS
 ipfs init && # Initializes ipfs configuration files and generates a new keypair. (https://docs.ipfs.tech/how-to/command-line-quick-start/#initialize-the-repository)
