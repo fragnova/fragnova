@@ -16,5 +16,5 @@ ipfs config profile apply test && # we are using the "test" profile, which "Redu
 ipfs daemon & # The daemon will start listening on ports on the network, which are documented in (and can be modified through) 'ipfs config Addresses'
 sleep 5 &&
 
-# RUN COMMAND `shards /गृह/run-test-ipfs.edn` IN DOCKER CONTAINER
-docker run --rm --user root --network host --volume `pwd`:/गृह chainblocks/shards shards /गृह/run-test-ipfs.edn  # we use this Docker container: https://hub.docker.com/r/chainblocks/shards
+# RUN COMMAND `shards /HOME/run-test-ipfs.edn` IN DOCKER CONTAINER
+docker run --rm --user root --network host --volume `pwd`:/HOME chainblocks/shards shards /HOME/run-test-ipfs.edn  # we use this Docker container: https://hub.docker.com/r/chainblocks/shards
