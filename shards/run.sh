@@ -1,13 +1,13 @@
 #/bin/bash
 
 apt-get update
-apt-get install -y wget
+sudo apt-get install -y wget
 
 cd /data/shards
 
 wget -q https://dist.ipfs.tech/kubo/v0.16.0/kubo_v0.16.0_linux-amd64.tar.gz &&
 tar -xvzf kubo_v0.16.0_linux-amd64.tar.gz &&
-export PATH=$PATH:/data/shards/go-ipfs &&
+export PATH=$PATH:/data/shards/kubo &&
 
 # Initializes ipfs configuration files and generates a new keypair. (https://docs.ipfs.tech/how-to/command-line-quick-start/#initialize-the-repository)
 ipfs init &&
@@ -18,4 +18,5 @@ ipfs daemon &
 sleep 5 &&
 
 # we use this Docker container: https://hub.docker.com/r/chainblocks/shards
-docker run --rm --user root --network host -v `pwd`:/la-casa chainblocks/shards shards /la-casa/shards-new/run-test-ipfs.edn  #shards test-protos-ipfs.edn
+#docker run --rm --user root --network host -v `pwd`:/la-casa chainblocks/shards shards /la-casa/shards-new/run-test-ipfs.edn  #shards test-protos-ipfs.edn
+shards shards-new/run-test-ipfs.edn
