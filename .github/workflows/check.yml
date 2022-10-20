@@ -56,7 +56,7 @@ jobs:
       - name: Check if a Proto-Fragment's Data is Downloadable via IPFS
         run: |
           RUST_LOG=bitswap=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing 1 --rpc-methods=Unsafe --ipfs-server &
-          docker run --rm --user root --network host --volume ${{ github.workspace }}:/DUMMY-FOLDER chainblocks/shards sh /DUMMY-FOLDER/shards/test-ipfs.sh
+          docker run --rm --user root --network host --volume ${{ github.workspace }}:/DUMMY-FOLDER chainblocks/shards sh /DUMMY-FOLDER/test-ipfs.sh
           kill %1
 
       - name: Check if Tests Pass and Push to Codecov.io

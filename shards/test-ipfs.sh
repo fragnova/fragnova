@@ -3,7 +3,7 @@ set -e
 
 # INSTALL IPFS
 apt-get update
-sudo apt-get install -y wget
+apt-get install -y wget
 wget -q https://dist.ipfs.tech/kubo/v0.16.0/kubo_v0.16.0_linux-amd64.tar.gz
 tar -xvzf kubo_v0.16.0_linux-amd64.tar.gz
 export PATH=$PATH:`pwd`/kubo
@@ -15,4 +15,4 @@ ipfs daemon & # The daemon will start listening on ports on the network, which a
 sleep 5
 
 # RUN SHARDS SCRIPT "run-test-ipfs.edn"
-shards /DUMMY-FOLDER/run-test-ipfs.edn  # we use this Docker container: https://hub.docker.com/r/chainblocks/shards
+shards /DUMMY-FOLDER/shards/run-test-ipfs.edn  # we use this Docker container: https://hub.docker.com/r/chainblocks/shards
