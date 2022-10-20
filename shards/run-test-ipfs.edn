@@ -80,7 +80,7 @@
   ; not ideal but we need to wait transaction is done and CI can be slow
   (Pause 5.0)
 
-  (Do call-ipfs-block-get) (Log "ipfs block is") (Is .proto-data) (Assert.Is true)
+  (Do call-ipfs-block-get) (Log "ipfs block is")  (Is .proto-data) (Assert.Is true)
 
 )
 
