@@ -18,4 +18,4 @@ ipfs daemon &
 sleep 5 &&
 
 # we use this Docker container: https://hub.docker.com/r/chainblocks/shards
-docker run --rm --user root --network host -v `pwd`:/lacasadepapel chainblocks/shards shards /lacasadepapel/run-test-ipfs.edn  #shards shards-new/run-test-ipfs.edn
+docker run --rm --user root --network host -v `pwd`:/la-casa chainblocks/shards shards /la-casa/run-test-ipfs.edn  #shards shards-new/run-test-ipfs.edn
