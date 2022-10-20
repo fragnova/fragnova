@@ -3,14 +3,14 @@
 ROOT=`pwd`
 echo "ROOT is $ROOT"
 
+cd $ROOT/shards &&
+
 apt-get update
 sudo apt-get install -y wget
 
-cd $ROOT/shards &&
-
 wget -q https://dist.ipfs.tech/kubo/v0.16.0/kubo_v0.16.0_linux-amd64.tar.gz &&
 tar -xvzf kubo_v0.16.0_linux-amd64.tar.gz &&
-export PATH=$PATH:/data/shards/kubo &&
+export PATH=$PATH:`pwd`/kubo &&
 
 # Initializes ipfs configuration files and generates a new keypair. (https://docs.ipfs.tech/how-to/command-line-quick-start/#initialize-the-repository)
 ipfs init &&
@@ -21,4 +21,4 @@ ipfs daemon &
 sleep 5 &&
 
 # we use this Docker container: https://hub.docker.com/r/chainblocks/shards
-docker run --rm --user root --network host -v `pwd`:/lacasadepapel chainblocks/shards shards /lacasadepapel/run-test-ipfs.edn  #shards shards-new/run-test-ipfs.edn
+docker run --rm --user root --network host --volume `pwd`:/lacasadepapel chainblocks/shards shards /lacasadepapel/run-test-ipfs.edn  #shards shards-new/run-test-ipfs.edn
