@@ -1,9 +1,12 @@
 #!/bin/bash
 
+ROOT=`pwd`
+echo "ROOT is $ROOT"
+
 apt-get update
 sudo apt-get install -y wget
 
-cd /data/shards
+cd $ROOT/shards &&
 
 wget -q https://dist.ipfs.tech/kubo/v0.16.0/kubo_v0.16.0_linux-amd64.tar.gz &&
 tar -xvzf kubo_v0.16.0_linux-amd64.tar.gz &&
