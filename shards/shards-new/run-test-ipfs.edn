@@ -5,27 +5,28 @@
 
 (defwire upload-proto
 
-  (ExpectBytes) .proto-data
+  .proto-data (ExpectBytes)
 
   UPLOAD-CALL-DATA-EXCL-DATA-PARAM (HexToBytes) >= .call-data
   .proto-data >> .seq .seq (Substrate.Encode [nil]) (AppendTo .call-data)
 
   .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of protos.upload() is")
 
-  .proto-data (Hash.Blake2-256)  (ToHex) (Log "Uploaded Proto With Proto Hash")
+  .proto-data (Hash.Blake2-256) (| (ToHex) (Log "Uploaded Proto With Proto Hash"))
 
 )
 
 
 (defwire convert-blake256-hash-to-ipfs-cid
 
-  (ExpectBytes) .proto-hash
+  .proto-hash (ExpectBytes) >= .proto-hash-duplicate
 
-  "0x0155a0e40220" (HexToBytes) (PrependTo .proto-hash)
-  .proto-hash (ToBase58) >= .ipfs-cid
+  "0x0155a0e40220" (HexToBytes) (PrependTo .proto-hash-duplicate)
+  .proto-hash-duplicate (ToBase58) >= .ipfs-cid
   "z" (PrependTo .ipfs-cid)
   .ipfs-cid (Log "IPFS CID")
-  )
+
+)
 
 (defwire get-clamor-p2p-addresses
 
@@ -36,7 +37,7 @@
 
 (defwire connect-to-clamor-p2p-addresses
 
-  (ExpectStringSeq) .clamor-p2p-addresses
+  .clamor-p2p-addresses (ExpectStringSeq)
 
   ; Q: What is IPFS Swarm?
   ; A: 'ipfs swarm' is a tool to manipulate the network swarm. The swarm is the component that opens, listens for, and maintains connections to other ipfs peers in the internet.
@@ -46,24 +47,22 @@
    (->
     (Log "connecting to p2p address")
     = .p2p-address
-    "" (Process.Run :Executable "ipfs" :Arguments ["swarm" "peering" "add" .p2p-address])
-    )
+    ["swarm" "peering" "add" .p2p-address] = .ipfs-args
+    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args)
+   )
   )
 
-  (Maybe (-> "" (Process.Run "ipfs" ["repo" "gc"]))) ;  `ipfs repo gc` - Performs a garbage collection sweep on the IPFS Repo.
-
-  ; not ideal but we need to wait transaction is done and CI can be slow
-  (Pause 5.0)
-
+  (Maybe (-> "" (Process.Run :Executable "ipfs" :Arguments ["repo" "gc"]) nil)) ;  `ipfs repo gc` - Performs a garbage collection sweep on the IPFS Repo.
 
 )
 
 (defwire call-ipfs-block-get
-  (ExpectString) .proto-hash-cid
+  .proto-hash-cid (ExpectString)
 
   (Msg "Downloading IPFS block")
 
-  "" (Process.Run "ipfs" ["block" "get" .proto-hash-cid] :Timeout 120) (StringToBytes) ; `ipfs block` - Interact with raw IPFS blocks. A block is identified by a Multihash passed with a valid CID.
+  ["block" "get" .proto-hash-cid] = .ipfs-args
+  "" (Process.Run "ipfs" :Arguments .ipfs-args :Timeout 120) (StringToBytes) ; `ipfs block` - Interact with raw IPFS blocks. A block is identified by a Multihash passed with a valid CID.
 
 )
 
@@ -77,7 +76,11 @@
   (Do convert-blake256-hash-to-ipfs-cid) = .proto-hash-cid
   (Do get-clamor-p2p-addresses) = .clamor-p2p-addresses
   (Do connect-to-clamor-p2p-addresses)
-  (Do call-ipfs-block-get) (Is .proto-data) (Assert.Is true)
+
+  ; not ideal but we need to wait transaction is done and CI can be slow
+  (Pause 5.0)
+
+  (Do call-ipfs-block-get) (Log "ipfs block is") (Is .proto-data) (Assert.Is true)
 
 )
 
