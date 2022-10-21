@@ -280,7 +280,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_protos::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_fragments.
 		type WeightInfo: WeightInfo;
 	}
@@ -846,7 +846,7 @@ pub mod pallet {
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached); // Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				} else {
 					// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
-					return Err(Error::<T>::ParamsNotValid.into())
+					return Err(Error::<T>::ParamsNotValid.into());
 				}
 			}
 
@@ -1040,13 +1040,13 @@ pub mod pallet {
 					price.saturated_into();
 
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who) >=
-						price_balance + minimum_balance_needed_to_exist,
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who)
+						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault) +
-						price_balance >= minimum_balance_needed_to_exist,
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault)
+						+ price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			} else {
@@ -1056,13 +1056,13 @@ pub mod pallet {
 					price.saturated_into();
 
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who) >=
-						price_balance + minimum_balance_needed_to_exist,
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who)
+						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault) +
-						price_balance >= minimum_balance_needed_to_exist,
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault)
+						+ price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			}
@@ -1371,7 +1371,7 @@ pub mod pallet {
 							});
 
 							// fragments are unique so we are done here
-							break
+							break;
 						}
 					}
 				}
@@ -1446,7 +1446,7 @@ pub mod pallet {
 			let (data_hash, data_len) = match options {
 				FragmentBuyOptions::UniqueData(data) => {
 					if fragment_data.unique.is_none() || quantity != 1 {
-						return Err(Error::<T>::ParamsNotValid.into())
+						return Err(Error::<T>::ParamsNotValid.into());
 					}
 
 					let data_hash = blake2_256(&data);
@@ -1460,7 +1460,7 @@ pub mod pallet {
 				},
 				FragmentBuyOptions::Quantity(_) => {
 					if fragment_data.unique.is_some() {
-						return Err(Error::<T>::ParamsNotValid.into())
+						return Err(Error::<T>::ParamsNotValid.into());
 					}
 
 					(None, None)
@@ -1474,7 +1474,7 @@ pub mod pallet {
 				// if limited amount let's reduce the amount of units left
 				if let Some(units_left) = sale.units_left {
 					if quantity > units_left.into() {
-						return Err(Error::<T>::PublishedQuantityReached.into())
+						return Err(Error::<T>::PublishedQuantityReached.into());
 					} else {
 						<Publishing<T>>::mutate(&*definition_hash, |sale| {
 							if let Some(sale) = sale {
@@ -1491,7 +1491,7 @@ pub mod pallet {
 					let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 					if quantity > left {
 						// Ensure the function parameter `quantity` is smaller than or equal to `left`
-						return Err(Error::<T>::MaxSupplyReached.into())
+						return Err(Error::<T>::MaxSupplyReached.into());
 					}
 				}
 			}
@@ -1836,28 +1836,32 @@ pub mod pallet {
 			Ok(result.into_bytes())
 		}
 
-
 		/// Query the owner of a Fragment Instance. The return type is a String
 		pub fn get_instance_owner(
-			params: GetInstanceOwnerParams<Vec<u8>>
+			params: GetInstanceOwnerParams<Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
-
 			let definition_hash: Hash128 = hex::decode(params.definition_hash)
 				.map_err(|_| "Failed to convert string to u8 slice")?
 				.try_into()
 				.map_err(|_| "Failed to convert u8 slice to Hash128")?;
 
-			if params.copy_id > CopiesCount::<T>::get((definition_hash, params.edition_id)).unwrap_or(Compact(0)).into() {
+			if params.copy_id
+				> CopiesCount::<T>::get((definition_hash, params.edition_id))
+					.unwrap_or(Compact(0))
+					.into()
+			{
 				return Err("Instance not found".into());
 			}
 
 			let owner = Owners::<T>::iter_prefix(definition_hash)
-				.find(|(_owner, vec_instances)|
-					vec_instances.iter().any(
-						|(edition_id, copy_id)|
-							Compact(params.edition_id) == *edition_id && Compact(params.copy_id) == *copy_id
-					)
-				).ok_or("Owner not found (this should never happen)")?.0;
+				.find(|(_owner, vec_instances)| {
+					vec_instances.iter().any(|(edition_id, copy_id)| {
+						Compact(params.edition_id) == *edition_id
+							&& Compact(params.copy_id) == *copy_id
+					})
+				})
+				.ok_or("Owner not found (this should never happen)")?
+				.0;
 
 			Ok(hex::encode(owner).into_bytes())
 		}

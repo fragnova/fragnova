@@ -8,7 +8,7 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
-use pallet_fragments::{GetDefinitionsParams, GetInstancesParams, GetInstanceOwnerParams};
+use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -92,9 +92,9 @@ where
 			return_owners: params.return_owners,
 		};
 
-		let result_outer = api.get_definitions(&at, params_no_std).map(|bytes| {
-			bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default())
-		});
+		let result_outer = api
+			.get_definitions(&at, params_no_std)
+			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
 			Ok(result_outer) => match result_outer {
@@ -125,9 +125,9 @@ where
 			only_return_first_copies: params.only_return_first_copies,
 		};
 
-		let result_outer = api.get_instances(&at, params_no_std).map(|bytes| {
-			bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default())
-		});
+		let result_outer = api
+			.get_instances(&at, params_no_std)
+			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
 			Ok(result_outer) => match result_outer {
@@ -154,9 +154,9 @@ where
 			copy_id: params.copy_id,
 		};
 
-		let result_outer = api.get_instance_owner(&at, params_no_std).map(|bytes| {
-			bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default())
-		});
+		let result_outer = api
+			.get_instance_owner(&at, params_no_std)
+			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 
 		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
