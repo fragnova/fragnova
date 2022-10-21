@@ -8,7 +8,7 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
-use pallet_protos::{GetProtosParams, GetGenealogyParams};
+use pallet_protos::{GetGenealogyParams, GetProtosParams};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -52,7 +52,8 @@ impl<C, P> ProtosRpcServerImpl<C, P> {
 }
 
 #[async_trait]
-impl<C, Block, AccountId> ProtosRpcServer<<Block as BlockT>::Hash, AccountId> for ProtosRpcServerImpl<C, Block>
+impl<C, Block, AccountId> ProtosRpcServer<<Block as BlockT>::Hash, AccountId>
+	for ProtosRpcServerImpl<C, Block>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static,
@@ -122,7 +123,6 @@ where
 				Ok(result) => Ok(result),
 			},
 		}
-
 	}
 }
 

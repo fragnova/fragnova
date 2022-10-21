@@ -23,7 +23,7 @@ mod copied_from_pallet_protos {
 		proto: &ProtoFragment,
 	) -> DispatchResult {
 		Protos::upload(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			proto.references.clone(),
 			proto.category.clone(),
 			proto.tags.clone(),
@@ -46,7 +46,7 @@ mod create_tests {
 		definition: &Definition,
 	) -> DispatchResult {
 		FragmentsPallet::create(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			definition.proto_fragment.get_proto_hash(),
 			definition.metadata.clone(),
 			definition.permissions,
@@ -95,27 +95,27 @@ mod create_tests {
 
 			assert_eq!(
 				System::events()[System::events().len() - 4].event,
-				mock::Event::from(pallet_balances::Event::Deposit {
+				mock::RuntimeEvent::from(pallet_balances::Event::Deposit {
 					who: definition.get_vault_account_id(),
 					amount: minimum_balance
 				})
 			);
 			assert_eq!(
 				System::events()[System::events().len() - 3].event,
-				mock::Event::from(frame_system::Event::NewAccount {
+				mock::RuntimeEvent::from(frame_system::Event::NewAccount {
 					account: definition.get_vault_account_id()
 				})
 			);
 			assert_eq!(
 				System::events()[System::events().len() - 2].event,
-				mock::Event::from(pallet_balances::Event::Endowed {
+				mock::RuntimeEvent::from(pallet_balances::Event::Endowed {
 					account: definition.get_vault_account_id(),
 					free_balance: minimum_balance
 				})
 			);
 			assert_eq!(
 				System::events()[System::events().len() - 1].event,
-				mock::Event::from(pallet_fragments::Event::DefinitionCreated {
+				mock::RuntimeEvent::from(pallet_fragments::Event::DefinitionCreated {
 					definition_hash: definition.get_definition_id()
 				})
 			);
@@ -199,12 +199,12 @@ mod create_tests {
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
-				true, // Whether this asset needs users to have an existential deposit to hold this asset
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				69, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
-				true // Whether the asset is transferable or not
+				true  // Whether the asset is transferable or not
 			));
 
 			assert_ok!(create(dd.account_id, &definition));
@@ -227,7 +227,7 @@ mod publish_tests {
 		publish: &Publish,
 	) -> DispatchResult {
 		FragmentsPallet::publish(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			publish.definition.get_definition_id(),
 			publish.price,
 			publish.quantity,
@@ -266,7 +266,7 @@ mod publish_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_fragments::Event::Publishing {
+				mock::RuntimeEvent::from(pallet_fragments::Event::Publishing {
 					definition_hash: publish.definition.get_definition_id()
 				})
 			);
@@ -394,7 +394,7 @@ mod unpublish_tests {
 		signer: <Test as frame_system::Config>::AccountId,
 		definition: &Definition,
 	) -> DispatchResult {
-		FragmentsPallet::unpublish(Origin::signed(signer), definition.get_definition_id())
+		FragmentsPallet::unpublish(RuntimeOrigin::signed(signer), definition.get_definition_id())
 	}
 
 	#[test]
@@ -421,7 +421,7 @@ mod unpublish_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_fragments::Event::Unpublishing {
+				mock::RuntimeEvent::from(pallet_fragments::Event::Unpublishing {
 					definition_hash: publish.definition.get_definition_id()
 				})
 			);
@@ -488,7 +488,7 @@ mod mint_tests {
 
 	pub fn mint_(signer: <Test as frame_system::Config>::AccountId, mint: &Mint) -> DispatchResult {
 		FragmentsPallet::mint(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			mint.definition.get_definition_id(),
 			mint.buy_options.clone(),
 			mint.amount.clone(),
@@ -560,7 +560,7 @@ mod mint_tests {
 				let event = System::events()[5 + (edition_id - 1) as usize].event.clone(); // we do `5 +` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events)
 				assert_eq!(
 					event,
-					mock::Event::from(pallet_fragments::Event::InventoryAdded {
+					mock::RuntimeEvent::from(pallet_fragments::Event::InventoryAdded {
 						account_id: dd.account_id,
 						definition_hash: mint_non_unique.definition.get_definition_id(),
 						fragment_id: (edition_id, 1)
@@ -626,7 +626,7 @@ mod mint_tests {
 			let event = System::events()[5 as usize].event.clone(); // we write `5` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events)
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_fragments::Event::InventoryAdded {
+				mock::RuntimeEvent::from(pallet_fragments::Event::InventoryAdded {
 					account_id: dd.account_id,
 					definition_hash: mint_unique.definition.get_definition_id(),
 					fragment_id: (1, 1)
@@ -802,7 +802,7 @@ mod buy_tests {
 
 	fn buy_(signer: <Test as frame_system::Config>::AccountId, buy: &Buy) -> DispatchResult {
 		FragmentsPallet::buy(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			buy.publish.definition.get_definition_id(),
 			buy.buy_options.clone(),
 		)
@@ -882,7 +882,7 @@ mod buy_tests {
 
 				assert_eq!(
 					System::events()[9 + (edition_id - 1) as usize].event.clone(), // we do `9 +` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
-					mock::Event::from(pallet_fragments::Event::InventoryAdded {
+					mock::RuntimeEvent::from(pallet_fragments::Event::InventoryAdded {
 						account_id: dd.account_id_second,
 						definition_hash: buy_non_unique.publish.definition.get_definition_id(),
 						fragment_id: (edition_id, 1)
@@ -915,7 +915,7 @@ mod buy_tests {
 			// );
 			assert_eq!(
 				System::events()[System::events().len() - 1].event,
-				mock::Event::from(pallet_balances::Event::Transfer {
+				mock::RuntimeEvent::from(pallet_balances::Event::Transfer {
 					from: dd.account_id_second,
 					to: buy_non_unique.publish.definition.get_vault_account_id(),
 					amount: buy_non_unique.publish.price.saturating_mul(quantity as u128),
@@ -994,7 +994,7 @@ mod buy_tests {
 
 			assert_eq!(
 				System::events()[9 as usize].event.clone(), // we write `9` because events were also emitted when we did `upload()` and `create()` (note: `create()` emits 4 events) and `publish()` and `deposite_creating()` (note: `deposit_creating()` emits 3 events)
-				mock::Event::from(pallet_fragments::Event::InventoryAdded {
+				mock::RuntimeEvent::from(pallet_fragments::Event::InventoryAdded {
 					account_id: dd.account_id_second,
 					definition_hash: buy_unique.publish.definition.get_definition_id(),
 					fragment_id: (1, 1)
@@ -1028,7 +1028,7 @@ mod buy_tests {
 			// );
 			assert_eq!(
 				System::events()[System::events().len() - 1].event,
-				mock::Event::from(pallet_balances::Event::Transfer {
+				mock::RuntimeEvent::from(pallet_balances::Event::Transfer {
 					from: dd.account_id_second,
 					to: buy_unique.publish.definition.get_vault_account_id(),
 					amount: buy_unique.publish.price.saturating_mul(quantity as u128),
@@ -1117,7 +1117,7 @@ mod buy_tests {
 
 			let minimum_balance = 1;
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1135,7 +1135,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
@@ -1156,7 +1156,7 @@ mod buy_tests {
 
 			let minimum_balance = 1;
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1174,7 +1174,7 @@ mod buy_tests {
 				_ => 1u64,
 			};
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1,
@@ -1202,7 +1202,7 @@ mod buy_tests {
 
 			let minimum_balance = buy.publish.price.saturating_mul(quantity as u128); // vault ID wil have minimum balance after `buy()` transaction
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1215,7 +1215,7 @@ mod buy_tests {
 			assert_ok!(publish_(dd.account_id, &buy.publish));
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
@@ -1243,7 +1243,7 @@ mod buy_tests {
 
 			let minimum_balance = buy.publish.price.saturating_mul(quantity as u128) + 1; // vault ID wil not have minimum balance after `buy()` transaction
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1256,7 +1256,7 @@ mod buy_tests {
 			assert_ok!(publish_(dd.account_id, &buy.publish));
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
@@ -1533,7 +1533,7 @@ mod give_tests {
 		give: &Give,
 	) -> DispatchResult {
 		FragmentsPallet::give(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			give.mint.definition.get_definition_id(),
 			give.edition_id,
 			give.copy_id,
@@ -1600,7 +1600,7 @@ mod give_tests {
 				.clone();
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_fragments::Event::InventoryRemoved {
+				mock::RuntimeEvent::from(pallet_fragments::Event::InventoryRemoved {
 					account_id: dd.account_id,
 					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id)
@@ -1613,7 +1613,7 @@ mod give_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_fragments::Event::InventoryAdded {
+				mock::RuntimeEvent::from(pallet_fragments::Event::InventoryAdded {
 					account_id: give.to,
 					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id)
@@ -1703,7 +1703,7 @@ mod give_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_fragments::Event::InventoryAdded {
+				mock::RuntimeEvent::from(pallet_fragments::Event::InventoryAdded {
 					account_id: give.to,
 					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id + 1)
@@ -2059,7 +2059,7 @@ mod create_account_tests {
 		create_account: &CreateAccount,
 	) -> DispatchResult {
 		FragmentsPallet::create_account(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			create_account.mint.definition.get_definition_id(),
 			create_account.edition_id,
 			create_account.copy_id,
@@ -2314,7 +2314,6 @@ mod get_instances_tests {
 	}
 }
 
-
 mod get_instance_owner_tests {
 	use super::*;
 
@@ -2332,10 +2331,10 @@ mod get_instance_owner_tests {
 					definition_hash: hex::encode(mint.definition.get_definition_id()).into(),
 					edition_id: 1,
 					copy_id: 1,
-				}).unwrap(),
+				})
+				.unwrap(),
 				hex::encode(dd.account_id).into_bytes()
 			);
-
 		});
 	}
 

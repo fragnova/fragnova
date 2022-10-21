@@ -14,9 +14,9 @@ use sp_core::crypto::UncheckedFrom;
 use sp_io::hashing::blake2_128;
 
 use crate::Pallet as Fragments;
-use pallet_protos::Pallet as Protos;
 use pallet_assets::Pallet as Assets;
 use pallet_balances::Pallet as Balances;
+use pallet_protos::Pallet as Protos;
 
 const SEED: u32 = 0;
 
@@ -24,10 +24,10 @@ const MAX_DATA_LENGTH: u32 = 1_000_000; // 1 MegaByte
 const MAX_METADATA_NAME_LENGTH: u32 = 100;
 const MAX_QUANTITY_TO_MINT: u32 = 100;
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
-fn assert_has_event<T: Config>(generic_event: <T as Config>::Event) {
+fn assert_has_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_has_event(generic_event.into());
 }
 

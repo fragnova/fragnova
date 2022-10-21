@@ -17,7 +17,7 @@
 
 use codec::Codec;
 
-use pallet_fragments::{GetDefinitionsParams, GetInstancesParams, GetInstanceOwnerParams};
+use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 use sp_std::vec::Vec;
 
 // Declares given traits as runtime apis
