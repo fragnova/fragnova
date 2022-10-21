@@ -1088,12 +1088,6 @@
 <span id="1088">1088</span>
 <span id="1089">1089</span>
 <span id="1090">1090</span>
-<span id="1091">1091</span>
-<span id="1092">1092</span>
-<span id="1093">1093</span>
-<span id="1094">1094</span>
-<span id="1095">1095</span>
-<span id="1096">1096</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -1113,7 +1107,7 @@
 
 <span class="kw">use </span>frame_support::{
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
-	weights::DispatchClass,
+	dispatch::DispatchClass,
 };
 <span class="kw">use </span>frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -1161,8 +1155,8 @@
 <span class="kw">use </span>codec::Encode;
 <span class="kw">use </span>sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-<span class="kw">use </span>pallet_protos::{GetProtosParams, GetGenealogyParams};
-<span class="kw">use </span>pallet_fragments::{GetDefinitionsParams, GetInstancesParams, GetInstanceOwnerParams};
+<span class="kw">use </span>pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
+<span class="kw">use </span>pallet_protos::{GetGenealogyParams, GetProtosParams};
 
 <span class="kw">pub use </span>pallet_contracts::Schedule;
 
@@ -1190,10 +1184,11 @@
 </span><span class="kw">pub type </span>Hash = sp_core::H256;
 
 <span class="doccomment">/// Unchecked extrinsic type as expected by this runtime.
-</span><span class="kw">pub type </span>UncheckedExtrinsic = generic::UncheckedExtrinsic&lt;Address, Call, Signature, SignedExtra&gt;;
+</span><span class="kw">pub type </span>UncheckedExtrinsic =
+	generic::UncheckedExtrinsic&lt;Address, RuntimeCall, Signature, SignedExtra&gt;;
 
 <span class="doccomment">/// The payload being signed in transactions.
-</span><span class="kw">pub type </span>SignedPayload = generic::SignedPayload&lt;Call, SignedExtra&gt;;
+</span><span class="kw">pub type </span>SignedPayload = generic::SignedPayload&lt;RuntimeCall, SignedExtra&gt;;
 
 <span class="doccomment">/// Related to Index pallet
 </span><span class="kw">pub type </span>AccountIndex = u64;
@@ -1348,7 +1343,7 @@
 	<span class="doccomment">/// The identifier used to distinguish between accounts.
 	</span><span class="kw">type </span>AccountId = AccountId;
 	<span class="doccomment">/// The aggregated dispatch type that is available for extrinsics.
-	</span><span class="kw">type </span>Call = Call;
+	</span><span class="kw">type </span>RuntimeCall = RuntimeCall;
 	<span class="doccomment">/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	</span><span class="kw">type </span>Lookup = Indices;
 	<span class="doccomment">/// The index type for storing how many extrinsics an account has signed.
@@ -1362,9 +1357,9 @@
 	<span class="doccomment">/// The header type.
 	</span><span class="kw">type </span>Header = generic::Header&lt;BlockNumber, BlakeTwo256&gt;;
 	<span class="doccomment">/// The ubiquitous event type.
-	</span><span class="kw">type </span>Event = Event;
+	</span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="doccomment">/// The ubiquitous origin type.
-	</span><span class="kw">type </span>Origin = Origin;
+	</span><span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
 	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	</span><span class="kw">type </span>BlockHashCount = BlockHashCount;
 	<span class="doccomment">/// The weight of database operations that the runtime can invoke.
@@ -1404,8 +1399,7 @@
 }
 
 <span class="kw">impl </span>pallet_grandpa::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>Call = Call;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 
 	<span class="kw">type </span>KeyOwnerProofSystem = ();
 
@@ -1453,7 +1447,7 @@
 	<span class="doccomment">/// The type for recording an account&#39;s balance.
 	</span><span class="kw">type </span>Balance = Balance;
 	<span class="doccomment">/// The ubiquitous event type.
-	</span><span class="kw">type </span>Event = Event;
+	</span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>DustRemoval = ();
 	<span class="kw">type </span>ExistentialDeposit = ExistentialDeposit;
 	<span class="kw">type </span>AccountStore = System;
@@ -1505,7 +1499,7 @@
 }
 
 <span class="kw">impl </span>pallet_transaction_payment::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>OnChargeTransaction = CurrencyAdapter&lt;Balances, ()&gt;;
 	<span class="kw">type </span>OperationalFeeMultiplier = OperationalFeeMultiplier;
 	<span class="kw">type </span>WeightToFee = IdentityFee&lt;Balance&gt;;
@@ -1514,12 +1508,12 @@
 }
 
 <span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>Call = Call;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>RuntimeCall = RuntimeCall;
 }
 
 <span class="kw">impl </span>pallet_fragments::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>WeightInfo = ();
 }
 
@@ -1530,7 +1524,7 @@
 }
 
 <span class="kw">impl </span>pallet_accounts::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>WeightInfo = ();
 	<span class="kw">type </span>EthChainId = ConstU64&lt;<span class="number">5</span>&gt;; <span class="comment">// goerli
 	</span><span class="kw">type </span>EthFragContract = Runtime;
@@ -1545,7 +1539,7 @@
 }
 
 <span class="kw">impl </span>pallet_protos::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>WeightInfo = ();
 	<span class="kw">type </span>StorageBytesMultiplier = StorageBytesMultiplier;
 	<span class="kw">type </span>CurationExpiration = ConstU64&lt;<span class="number">100800</span>&gt;; <span class="comment">// one week
@@ -1553,14 +1547,14 @@
 }
 
 <span class="kw">impl </span>pallet_detach::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>WeightInfo = ();
 	<span class="kw">type </span>AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
 <span class="kw">impl </span>pallet_multisig::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>Call = Call;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>RuntimeCall = RuntimeCall;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>DepositBase = ConstU128&lt;<span class="number">1</span>&gt;;
 	<span class="kw">type </span>DepositFactor = ConstU128&lt;<span class="number">1</span>&gt;;
@@ -1569,8 +1563,8 @@
 }
 
 <span class="kw">impl </span>pallet_proxy::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>Call = Call;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>RuntimeCall = RuntimeCall;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>ProxyType = ();
 	<span class="kw">type </span>ProxyDepositBase = ConstU128&lt;<span class="number">1</span>&gt;;
@@ -1593,7 +1587,7 @@
 }
 
 <span class="kw">impl </span>pallet_identity::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>Slashed = ();
 	<span class="kw">type </span>BasicDeposit = ConstU128&lt;<span class="number">10</span>&gt;;
@@ -1608,8 +1602,8 @@
 }
 
 <span class="kw">impl </span>pallet_utility::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>Call = Call;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>RuntimeCall = RuntimeCall;
 	<span class="kw">type </span>PalletsOrigin = OriginCaller;
 	<span class="kw">type </span>WeightInfo = ();
 }
@@ -1629,9 +1623,9 @@
 /// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 </span><span class="kw">impl</span>&lt;LocalCall&gt; frame_system::offchain::SendTransactionTypes&lt;LocalCall&gt; <span class="kw">for </span>Runtime
 <span class="kw">where
-	</span>Call: From&lt;LocalCall&gt;,
+	</span>RuntimeCall: From&lt;LocalCall&gt;,
 {
-	<span class="kw">type </span>OverarchingCall = Call;
+	<span class="kw">type </span>OverarchingCall = RuntimeCall;
 	<span class="kw">type </span>Extrinsic = UncheckedExtrinsic;
 }
 
@@ -1639,7 +1633,7 @@
 /// to implement the CreateSignedTransaction trait, you also need to implement that trait for the runtime.
 </span><span class="kw">impl</span>&lt;LocalCall&gt; frame_system::offchain::CreateSignedTransaction&lt;LocalCall&gt; <span class="kw">for </span>Runtime
 <span class="kw">where
-	</span>Call: From&lt;LocalCall&gt;,
+	</span>RuntimeCall: From&lt;LocalCall&gt;,
 {
 	<span class="doccomment">/// The code seems long, but what it tries to do is really:
 	/// 	- Create and prepare extra of SignedExtra type, and put various checkers in-place.
@@ -1650,11 +1644,11 @@
 	///
 	/// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	</span><span class="kw">fn </span>create_transaction&lt;C: frame_system::offchain::AppCrypto&lt;<span class="self">Self</span>::Public, <span class="self">Self</span>::Signature&gt;&gt;(
-		call: Call,
+		call: RuntimeCall,
 		public: &lt;Signature <span class="kw">as </span>Verify&gt;::Signer,
 		account: AccountId,
 		nonce: Index,
-	) -&gt; <span class="prelude-ty">Option</span>&lt;(Call, &lt;UncheckedExtrinsic <span class="kw">as </span>ExtrinsicT&gt;::SignaturePayload)&gt; {
+	) -&gt; <span class="prelude-ty">Option</span>&lt;(RuntimeCall, &lt;UncheckedExtrinsic <span class="kw">as </span>ExtrinsicT&gt;::SignaturePayload)&gt; {
 		<span class="kw">let </span>tip = <span class="number">0</span>;
 		<span class="comment">// take the biggest period possible.
 		</span><span class="kw">let </span>period =
@@ -1690,8 +1684,8 @@
 	<span class="kw">type </span>Time = Timestamp;
 	<span class="kw">type </span>Randomness = RandomnessCollectiveFlip;
 	<span class="kw">type </span>Currency = Balances;
-	<span class="kw">type </span>Event = Event;
-	<span class="kw">type </span>Call = Call;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>RuntimeCall = RuntimeCall;
 	<span class="doccomment">/// The safest default is to allow no calls at all.
 	///
 	/// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -1711,7 +1705,6 @@
 	<span class="kw">type </span>AddressGenerator = pallet_contracts::DefaultAddressGenerator;
 	<span class="kw">type </span>ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight&lt;RuntimeBlockWeights&gt;;
 	<span class="kw">type </span>MaxCodeLen = ConstU32&lt;{ <span class="number">128 </span>* <span class="number">1024 </span>}&gt;;
-	<span class="kw">type </span>RelaxedMaxCodeLen = ConstU32&lt;{ <span class="number">256 </span>* <span class="number">1024 </span>}&gt;;
 	<span class="kw">type </span>MaxStorageKeyLen = ConstU32&lt;<span class="number">128</span>&gt;;
 }
 
@@ -1724,7 +1717,7 @@
 	<span class="kw">type </span>AccountIndex = AccountIndex;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>Deposit = IndexDeposit;
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>WeightInfo = pallet_indices::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
@@ -1743,7 +1736,7 @@
 }
 
 <span class="kw">impl </span>pallet_assets::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>Event = Event;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>Balance = Balance;
 	<span class="kw">type </span>AssetId = u64;
 	<span class="kw">type </span>Currency = Balances;
@@ -1915,12 +1908,12 @@
 				<span class="comment">// We want to prevent polluting blocks with a lot of useless invalid data.
 				// TODO perform quick and preliminary data validation
 				</span><span class="attribute">#[allow(unused_variables)]
-				</span>Call::Protos(ProtosCall::upload{<span class="kw-2">ref </span>data, <span class="kw-2">ref </span>category, <span class="kw-2">ref </span>tags, ..}) =&gt; {
+				</span>RuntimeCall::Protos(ProtosCall::upload{<span class="kw-2">ref </span>data, <span class="kw-2">ref </span>category, <span class="kw-2">ref </span>tags, ..}) =&gt; {
 					<span class="comment">// TODO
 				</span>},
 				<span class="attribute">#[allow(unused_variables)]
-				</span>Call::Protos(ProtosCall::patch{<span class="kw-2">ref </span>data, ..}) |
-				Call::Protos(ProtosCall::set_metadata{<span class="kw-2">ref </span>data, ..}) =&gt; {
+				</span>RuntimeCall::Protos(ProtosCall::patch{<span class="kw-2">ref </span>data, ..}) |
+				RuntimeCall::Protos(ProtosCall::set_metadata{<span class="kw-2">ref </span>data, ..}) =&gt; {
 					<span class="comment">// TODO
 					// if let Err(_) = &lt;pallet_protos::Pallet&lt;Runtime&gt;&gt;::ensure_valid_auth(auth) {
 					// 	return InvalidTransaction::BadProof.into();
@@ -2118,13 +2111,11 @@
 		) {
 			<span class="kw">use </span>frame_benchmarking::{list_benchmark, baseline, Benchmarking, BenchmarkList};
 			<span class="kw">use </span>frame_support::traits::StorageInfoTrait;
-			<span class="kw">use </span>frame_system_benchmarking::Pallet <span class="kw">as </span>SystemBench;
 			<span class="kw">use </span>baseline::Pallet <span class="kw">as </span>BaselineBench;
 
 			<span class="kw">let </span><span class="kw-2">mut </span>list = Vec::&lt;BenchmarkList&gt;::new();
 
 			<span class="macro">list_benchmark!</span>(list, extra, frame_benchmarking, BaselineBench::&lt;Runtime&gt;);
-			<span class="macro">list_benchmark!</span>(list, extra, frame_system, SystemBench::&lt;Runtime&gt;);
 			<span class="macro">list_benchmark!</span>(list, extra, pallet_balances, Balances);
 			<span class="macro">list_benchmark!</span>(list, extra, pallet_timestamp, Timestamp);
 			<span class="macro">list_benchmark!</span>(list, extra, pallet_assets, Assets);
@@ -2149,7 +2140,6 @@
 		) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;frame_benchmarking::BenchmarkBatch&gt;, sp_runtime::RuntimeString&gt; {
 			<span class="kw">use </span>frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
-			<span class="kw">use </span>frame_system_benchmarking::Pallet <span class="kw">as </span>SystemBench;
 			<span class="kw">use </span>baseline::Pallet <span class="kw">as </span>BaselineBench;
 
 			<span class="kw">impl </span>frame_system_benchmarking::Config <span class="kw">for </span>Runtime {}
@@ -2172,8 +2162,6 @@
 			<span class="kw">let </span>params = (<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>whitelist);
 
 			<span class="macro">add_benchmark!</span>(params, batches, frame_benchmarking, BaselineBench::&lt;Runtime&gt;);
-			<span class="macro">add_benchmark!</span>(params, batches, frame_system, SystemBench::&lt;Runtime&gt;);
-			<span class="macro">add_benchmark!</span>(params, batches, pallet_balances, Balances);
 			<span class="macro">add_benchmark!</span>(params, batches, pallet_timestamp, Timestamp);
 			<span class="macro">add_benchmark!</span>(params, batches, pallet_assets, Assets);
 			<span class="macro">add_benchmark!</span>(params, batches, pallet_multisig, Multisig);
@@ -2191,4 +2179,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a24a020e6 2022-10-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor_runtime" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (dcb376115 2022-10-20)" ></div></body></html>

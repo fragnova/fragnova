@@ -1450,6 +1450,12 @@
 <span id="1450">1450</span>
 <span id="1451">1451</span>
 <span id="1452">1452</span>
+<span id="1453">1453</span>
+<span id="1454">1454</span>
+<span id="1455">1455</span>
+<span id="1456">1456</span>
+<span id="1457">1457</span>
+<span id="1458">1458</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1488,7 +1494,11 @@
 	hashing::{blake2_256, twox_64},
 	transaction_index,
 };
-<span class="kw">use </span>sp_std::{collections::{btree_map::BTreeMap, vec_deque::VecDeque}, vec, vec::Vec};
+<span class="kw">use </span>sp_std::{
+	collections::{btree_map::BTreeMap, vec_deque::VecDeque},
+	vec,
+	vec::Vec,
+};
 
 <span class="kw">pub use </span>weights::WeightInfo;
 
@@ -1551,7 +1561,7 @@
 	</span><span class="kw">pub </span>tags: Vec&lt;TString&gt;,
 	<span class="doccomment">/// The returned Proto-Fragments must not have any tag that is specified in the `exclude_tags` field
 	</span><span class="kw">pub </span>exclude_tags: Vec&lt;TString&gt;,
-  <span class="doccomment">/// Whether the Proto-Fragments should be available or not
+	<span class="doccomment">/// Whether the Proto-Fragments should be available or not
 	</span><span class="kw">pub </span>available: <span class="prelude-ty">Option</span>&lt;bool&gt;,
 }
 <span class="attribute">#[cfg(test)]
@@ -1660,7 +1670,7 @@
 		+ pallet_contracts::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
-		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 		<span class="doccomment">/// Weight functions needed for pallet_protos.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 
@@ -2367,8 +2377,8 @@
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(owner) = owner {
 						<span class="kw">if </span>owner == <span class="kw-2">*</span>who {
 							<span class="comment">// owner can include freely
-							</span><span class="kw">continue
-						</span>}
+							</span><span class="kw">continue</span>;
+						}
 					}
 
 					<span class="kw">let </span>license = proto.license;
@@ -2385,7 +2395,7 @@
 								</span><span class="macro">ensure!</span>(curation.<span class="number">0 </span>&gt;= amount, Error::&lt;T&gt;::NotEnoughTickets);
 							} <span class="kw">else </span>{
 								<span class="comment">// Curation not found
-								</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::CurationNotFound.into())
+								</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::CurationNotFound.into());
 							}
 						},
 						UsageLicense::Contract(contract_address) =&gt; {
@@ -2410,19 +2420,19 @@
 								<span class="kw">let </span>allowed = bool::decode(<span class="kw-2">&amp;mut &amp;</span>res.data.<span class="number">0</span>[..]);
 								<span class="kw">if let </span><span class="prelude-val">Ok</span>(allowed) = allowed {
 									<span class="kw">if </span>!allowed {
-										<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into())
+										<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
 									}
 								} <span class="kw">else </span>{
-									<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into())
+									<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
 								}
 							} <span class="kw">else </span>{
-								<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into())
+								<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
 							}
 						},
 					}
 				} <span class="kw">else </span>{
 					<span class="comment">// Proto not found
-					</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ReferenceNotFound.into())
+					</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ReferenceNotFound.into());
 				}
 			}
 			<span class="prelude-val">Ok</span>(())
@@ -2438,16 +2448,16 @@
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(struct_proto) = &lt;Protos&lt;T&gt;&gt;::get(proto_id) {
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(avail) = avail {
 					<span class="kw">if </span>avail &amp;&amp; struct_proto.license == UsageLicense::Closed {
-						<span class="kw">return </span><span class="bool-val">false
-					</span>} <span class="kw">else if </span>!avail &amp;&amp; struct_proto.license != UsageLicense::Closed {
-						<span class="kw">return </span><span class="bool-val">false
-					</span>}
+						<span class="kw">return </span><span class="bool-val">false</span>;
+					} <span class="kw">else if </span>!avail &amp;&amp; struct_proto.license != UsageLicense::Closed {
+						<span class="kw">return </span><span class="bool-val">false</span>;
+					}
 				}
 
 				<span class="kw">if </span>categories.len() == <span class="number">0 </span>{
-					<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, <span class="kw-2">&amp;</span>struct_proto, exclude_tags)
+					<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, <span class="kw-2">&amp;</span>struct_proto, exclude_tags);
 				} <span class="kw">else </span>{
-					<span class="kw">return </span><span class="self">Self</span>::filter_category(tags, <span class="kw-2">&amp;</span>struct_proto, categories, exclude_tags)
+					<span class="kw">return </span><span class="self">Self</span>::filter_category(tags, <span class="kw-2">&amp;</span>struct_proto, categories, exclude_tags);
 				}
 			} <span class="kw">else </span>{
 				<span class="bool-val">false
@@ -2485,40 +2495,41 @@
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							</span><span class="kw">if </span>!implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								<span class="kw">if </span>param_script_info.format == stored_script_info.format {
-									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags)
+									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
 								} <span class="kw">else </span>{
-									<span class="kw">return </span><span class="bool-val">false
-								</span>}
+									<span class="kw">return </span><span class="bool-val">false</span>;
+								}
 							}
 							<span class="comment">// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
-								param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
-								param_script_info.format == stored_script_info.format
+							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec)
+								&amp;&amp; param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec)
+								&amp;&amp; param_script_info.format == stored_script_info.format
 							{
-								<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags)
+								<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
 							} <span class="kw">else </span>{
-								<span class="kw">return </span><span class="bool-val">false
-							</span>}
+								<span class="kw">return </span><span class="bool-val">false</span>;
+							}
 						} <span class="kw">else </span>{
 							<span class="comment">// it should never go here
-							</span><span class="kw">return </span><span class="bool-val">false
-						</span>}
+							</span><span class="kw">return </span><span class="bool-val">false</span>;
+						}
 					},
-					<span class="kw">_ </span>=&gt;
+					<span class="kw">_ </span>=&gt; {
 						<span class="kw">if </span><span class="kw-2">*</span>cat == <span class="kw-2">&amp;</span>struct_proto.category {
-							<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags)
+							<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
 						} <span class="kw">else </span>{
-							<span class="kw">return </span><span class="bool-val">false
-						</span>},
+							<span class="kw">return </span><span class="bool-val">false</span>;
+						}
+					},
 				})
 				.collect();
 
 			<span class="kw">if </span>found.is_empty() {
-				<span class="kw">return </span><span class="bool-val">false
-			</span>} <span class="kw">else </span>{
-				<span class="kw">return </span><span class="bool-val">true
-			</span>}
+				<span class="kw">return </span><span class="bool-val">false</span>;
+			} <span class="kw">else </span>{
+				<span class="kw">return </span><span class="bool-val">true</span>;
+			}
 		}
 
 		<span class="doccomment">/// Whether `struct_proto` has all the tags `tags`
@@ -2577,38 +2588,39 @@
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							</span><span class="kw">if </span>!implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								<span class="kw">if </span>param_script_info.format == stored_script_info.format {
-									<span class="kw">return </span><span class="bool-val">true
-								</span>} <span class="kw">else </span>{
-									<span class="kw">return </span><span class="bool-val">false
-								</span>}
+									<span class="kw">return </span><span class="bool-val">true</span>;
+								} <span class="kw">else </span>{
+									<span class="kw">return </span><span class="bool-val">false</span>;
+								}
 							}
 							<span class="comment">// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
-								param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
-								param_script_info.format == stored_script_info.format
+							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec)
+								&amp;&amp; param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec)
+								&amp;&amp; param_script_info.format == stored_script_info.format
 							{
-								<span class="kw">return </span><span class="bool-val">true
-							</span>} <span class="kw">else if </span>!(<span class="kw-2">&amp;</span>cat == <span class="kw-2">&amp;</span>category) {
-								<span class="kw">return </span><span class="bool-val">false
-							</span>} <span class="kw">else </span>{
-								<span class="kw">return </span><span class="bool-val">false
-							</span>}
+								<span class="kw">return </span><span class="bool-val">true</span>;
+							} <span class="kw">else if </span>!(<span class="kw-2">&amp;</span>cat == <span class="kw-2">&amp;</span>category) {
+								<span class="kw">return </span><span class="bool-val">false</span>;
+							} <span class="kw">else </span>{
+								<span class="kw">return </span><span class="bool-val">false</span>;
+							}
 						} <span class="kw">else </span>{
-							<span class="kw">return </span><span class="bool-val">false
-						</span>}
+							<span class="kw">return </span><span class="bool-val">false</span>;
+						}
 					},
 					<span class="comment">// for all other types of Categories
-					</span><span class="kw">_ </span>=&gt;
+					</span><span class="kw">_ </span>=&gt; {
 						<span class="kw">if </span>!(<span class="kw-2">&amp;</span>cat == <span class="kw-2">&amp;</span>category) {
-							<span class="kw">return </span><span class="bool-val">false
-						</span>} <span class="kw">else </span>{
-							<span class="kw">return </span><span class="bool-val">true
-						</span>},
+							<span class="kw">return </span><span class="bool-val">false</span>;
+						} <span class="kw">else </span>{
+							<span class="kw">return </span><span class="bool-val">true</span>;
+						}
+					},
 				})
 				.collect();
 
-			<span class="kw">return </span>found
+			<span class="kw">return </span>found;
 		}
 
 		<span class="doccomment">/// Converts a `ProtoOwner` struct into a JSON
@@ -2714,7 +2726,7 @@
 								<span class="kw-2">&amp;</span>params.tags,
 								<span class="kw-2">&amp;</span>params.categories,
 								params.available,
-								<span class="kw-2">&amp;</span>params.exclude_tags
+								<span class="kw-2">&amp;</span>params.exclude_tags,
 							)
 						})
 						.skip(params.from <span class="kw">as </span>usize)
@@ -2730,7 +2742,7 @@
 								<span class="kw-2">&amp;</span>params.tags,
 								<span class="kw-2">&amp;</span>params.categories,
 								params.available,
-								<span class="kw-2">&amp;</span>params.exclude_tags
+								<span class="kw-2">&amp;</span>params.exclude_tags,
 							)
 						})
 						.skip(params.from <span class="kw">as </span>usize)
@@ -2752,8 +2764,8 @@
 						<span class="comment">// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						</span><span class="kw">if </span>found.is_empty() {
-							<span class="kw">continue
-						</span>}
+							<span class="kw">continue</span>;
+						}
 					}
 					<span class="comment">// Found the category.
 					// Now collect all the protos linked to the category type in input
@@ -2770,7 +2782,7 @@
 										<span class="kw-2">&amp;</span>params.tags,
 										<span class="kw-2">&amp;</span>params.categories,
 										params.available,
-										<span class="kw-2">&amp;</span>params.exclude_tags
+										<span class="kw-2">&amp;</span>params.exclude_tags,
 									)
 								})
 								.collect()
@@ -2784,7 +2796,7 @@
 										<span class="kw-2">&amp;</span>params.tags,
 										<span class="kw-2">&amp;</span>params.categories,
 										params.available,
-										<span class="kw-2">&amp;</span>params.exclude_tags
+										<span class="kw-2">&amp;</span>params.exclude_tags,
 									)
 								})
 								.collect()
@@ -2857,7 +2869,6 @@
 		///
 		/// * `params` - A ***GetGenealogyParams* struct**
 		</span><span class="kw">pub fn </span>get_genealogy(params: GetGenealogyParams&lt;Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
-
 			<span class="kw">let </span>proto_hash: Hash256 = hex::decode(params.proto_hash)
 				.map_err(|<span class="kw">_</span>| <span class="string">&quot;Failed to convert string to u8 slice&quot;</span>)<span class="question-mark">?
 				</span>.try_into()
@@ -2872,11 +2883,15 @@
 			visited.insert(proto_hash, <span class="bool-val">true</span>);
 
 			<span class="kw">while let </span><span class="prelude-val">Some</span>(proto) = queue.pop_front() {
-
 				<span class="kw">let </span>neighbors = <span class="kw">if </span>params.get_ancestors {
-					<span class="kw">let </span>proto_struct = &lt;Protos&lt;T&gt;&gt;::get(proto).ok_or(<span class="string">&quot;Proto Hash Does Not Exist!&quot;</span>)<span class="question-mark">?</span>;
+					<span class="kw">let </span>proto_struct =
+						&lt;Protos&lt;T&gt;&gt;::get(proto).ok_or(<span class="string">&quot;Proto Hash Does Not Exist!&quot;</span>)<span class="question-mark">?</span>;
 					<span class="kw">let </span><span class="kw-2">mut </span>parents = proto_struct.references;
-					<span class="kw">let </span><span class="kw-2">mut </span>references_from_patches = proto_struct.patches.into_iter().flat_map(|pp: ProtoPatch&lt;<span class="kw">_</span>&gt;| pp.references).collect::&lt;Vec&lt;Hash256&gt;&gt;();
+					<span class="kw">let </span><span class="kw-2">mut </span>references_from_patches = proto_struct
+						.patches
+						.into_iter()
+						.flat_map(|pp: ProtoPatch&lt;<span class="kw">_</span>&gt;| pp.references)
+						.collect::&lt;Vec&lt;Hash256&gt;&gt;();
 					parents.append(<span class="kw-2">&amp;mut </span>references_from_patches);
 					parents
 				} <span class="kw">else </span>{
@@ -2884,7 +2899,8 @@
 					children
 				};
 
-				adjacency_list.insert(hex::encode(proto), neighbors.iter().map(|p| hex::encode(p)).collect());
+				adjacency_list
+					.insert(hex::encode(proto), neighbors.iter().map(|p| hex::encode(p)).collect());
 
 				<span class="kw">for </span>neighbor <span class="kw">in </span>neighbors.into_iter() {
 					<span class="kw">if </span>!visited.contains_key(<span class="kw-2">&amp;</span>neighbor) {
@@ -2895,12 +2911,8 @@
 			}
 
 			<span class="prelude-val">Ok</span>(<span class="macro">json!</span>(adjacency_list).to_string().into_bytes())
-
 		}
-
-
 	}
-
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a24a020e6 2022-10-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (dcb376115 2022-10-20)" ></div></body></html>

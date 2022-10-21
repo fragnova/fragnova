@@ -144,7 +144,7 @@
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
-<span class="kw">use </span>pallet_protos::{GetProtosParams, GetGenealogyParams};
+<span class="kw">use </span>pallet_protos::{GetGenealogyParams, GetProtosParams};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
@@ -188,7 +188,8 @@
 }
 
 <span class="attribute">#[async_trait]
-</span><span class="kw">impl</span>&lt;C, Block, AccountId&gt; ProtosRpcServer&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash, AccountId&gt; <span class="kw">for </span>ProtosRpcServerImpl&lt;C, Block&gt;
+</span><span class="kw">impl</span>&lt;C, Block, AccountId&gt; ProtosRpcServer&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash, AccountId&gt;
+	<span class="kw">for </span>ProtosRpcServerImpl&lt;C, Block&gt;
 <span class="kw">where
 	</span>Block: BlockT,
 	C: Send + Sync + <span class="lifetime">&#39;static</span>,
@@ -258,7 +259,6 @@
 				<span class="prelude-val">Ok</span>(result) =&gt; <span class="prelude-val">Ok</span>(result),
 			},
 		}
-
 	}
 }
 
@@ -271,4 +271,4 @@
 	.into()
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a24a020e6 2022-10-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (dcb376115 2022-10-20)" ></div></body></html>

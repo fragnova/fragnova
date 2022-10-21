@@ -186,7 +186,7 @@
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
-<span class="kw">use </span>pallet_fragments::{GetDefinitionsParams, GetInstancesParams, GetInstanceOwnerParams};
+<span class="kw">use </span>pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
@@ -270,9 +270,9 @@
 			return_owners: params.return_owners,
 		};
 
-		<span class="kw">let </span>result_outer = api.get_definitions(<span class="kw-2">&amp;</span>at, params_no_std).map(|bytes| {
-			bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default())
-		});
+		<span class="kw">let </span>result_outer = api
+			.get_definitions(<span class="kw-2">&amp;</span>at, params_no_std)
+			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		<span class="kw">match </span>result_outer {
 			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
 			<span class="prelude-val">Ok</span>(result_outer) =&gt; <span class="kw">match </span>result_outer {
@@ -303,9 +303,9 @@
 			only_return_first_copies: params.only_return_first_copies,
 		};
 
-		<span class="kw">let </span>result_outer = api.get_instances(<span class="kw-2">&amp;</span>at, params_no_std).map(|bytes| {
-			bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default())
-		});
+		<span class="kw">let </span>result_outer = api
+			.get_instances(<span class="kw-2">&amp;</span>at, params_no_std)
+			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		<span class="kw">match </span>result_outer {
 			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
 			<span class="prelude-val">Ok</span>(result_outer) =&gt; <span class="kw">match </span>result_outer {
@@ -332,9 +332,9 @@
 			copy_id: params.copy_id,
 		};
 
-		<span class="kw">let </span>result_outer = api.get_instance_owner(<span class="kw-2">&amp;</span>at, params_no_std).map(|bytes| {
-			bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default())
-		});
+		<span class="kw">let </span>result_outer = api
+			.get_instance_owner(<span class="kw-2">&amp;</span>at, params_no_std)
+			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 
 		<span class="kw">match </span>result_outer {
 			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
@@ -355,4 +355,4 @@
 	.into()
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a24a020e6 2022-10-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_fragments_rpc" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (dcb376115 2022-10-20)" ></div></body></html>

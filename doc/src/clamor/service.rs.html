@@ -372,11 +372,6 @@
 <span id="372">372</span>
 <span id="373">373</span>
 <span id="374">374</span>
-<span id="375">375</span>
-<span id="376">376</span>
-<span id="377">377</span>
-<span id="378">378</span>
-<span id="379">379</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 //!
 //! service.rs: This file defines the implementation of the node. Take note of the libraries that this file imports and the names of the functions it invokes.
@@ -388,7 +383,7 @@
 // ```
 
 </span><span class="kw">use </span>clamor_runtime::{<span class="self">self</span>, opaque::Block, RuntimeApi};
-<span class="kw">use </span>sc_client_api::{BlockBackend, ExecutorProvider};
+<span class="kw">use </span>sc_client_api::BlockBackend;
 <span class="kw">use </span>sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 <span class="kw">pub use </span>sc_executor::NativeElseWasmExecutor;
 <span class="kw">use </span>sc_finality_grandpa::SharedVoterState;
@@ -452,7 +447,7 @@
 	<span class="comment">// sp_core::crypto::set_default_ss58_version(93u16.into());
 
 	</span><span class="kw">if </span>config.keystore_remote.is_some() {
-		<span class="kw">return </span><span class="prelude-val">Err</span>(ServiceError::Other(<span class="macro">format!</span>(<span class="string">&quot;Remote Keystores are not supported.&quot;</span>)))
+		<span class="kw">return </span><span class="prelude-val">Err</span>(ServiceError::Other(<span class="macro">format!</span>(<span class="string">&quot;Remote Keystores are not supported.&quot;</span>)));
 	}
 
 	<span class="kw">let </span>telemetry = config
@@ -506,7 +501,7 @@
 	<span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>import_queue =
-		sc_consensus_aura::import_queue::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(ImportQueueParams {
+		sc_consensus_aura::import_queue::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(ImportQueueParams {
 			block_import: grandpa_block_import.clone(),
 			justification_import: <span class="prelude-val">Some</span>(Box::new(grandpa_block_import.clone())),
 			client: client.clone(),
@@ -519,12 +514,9 @@
 						slot_duration,
 					);
 
-				<span class="prelude-val">Ok</span>((timestamp, slot))
+				<span class="prelude-val">Ok</span>((slot, timestamp))
 			},
 			spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
-			can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
-				client.executor().clone(),
-			),
 			registry: config.prometheus_registry(),
 			check_for_equivocation: Default::default(),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
@@ -568,11 +560,12 @@
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(url) = <span class="kw-2">&amp;</span>config.keystore_remote {
 		<span class="kw">match </span>remote_keystore(url) {
 			<span class="prelude-val">Ok</span>(k) =&gt; keystore_container.set_remote_keystore(k),
-			<span class="prelude-val">Err</span>(e) =&gt;
+			<span class="prelude-val">Err</span>(e) =&gt; {
 				<span class="kw">return </span><span class="prelude-val">Err</span>(ServiceError::Other(<span class="macro">format!</span>(
 					<span class="string">&quot;Error hooking up remote keystore for {}: {}&quot;</span>,
 					url, e
-				))),
+				)))
+			},
 		};
 	}
 
@@ -591,7 +584,7 @@
 		Vec::default(),
 	));
 
-	<span class="kw">let </span>(network, system_rpc_tx, network_starter) =
+	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: <span class="kw-2">&amp;</span>config,
 			client: client.clone(),
@@ -641,6 +634,7 @@
 		rpc_builder: rpc_extensions_builder,
 		backend,
 		system_rpc_tx,
+		tx_handler_controller,
 		config,
 		telemetry: telemetry.as_mut(),
 	})<span class="question-mark">?</span>;
@@ -654,12 +648,9 @@
 			telemetry.as_ref().map(|x| x.handle()),
 		);
 
-		<span class="kw">let </span>can_author_with =
-			sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
-
 		<span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>aura = sc_consensus_aura::start_aura::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+		<span class="kw">let </span>aura = sc_consensus_aura::start_aura::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
 			StartAuraParams {
 				slot_duration,
 				client: client.clone(),
@@ -675,12 +666,11 @@
 							slot_duration,
 						);
 
-					<span class="prelude-val">Ok</span>((timestamp, slot))
+					<span class="prelude-val">Ok</span>((slot, timestamp))
 				},
 				force_authoring,
 				backoff_authoring_blocks,
 				keystore: keystore_container.sync_keystore(),
-				can_author_with,
 				sync_oracle: network.clone(),
 				justification_sync_link: network.clone(),
 				block_proposal_slot_portion: SlotProportion::new(<span class="number">2f32 </span>/ <span class="number">3f32</span>),
@@ -757,4 +747,4 @@
 	<span class="prelude-val">Ok</span>(task_manager)
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a24a020e6 2022-10-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (dcb376115 2022-10-20)" ></div></body></html>
