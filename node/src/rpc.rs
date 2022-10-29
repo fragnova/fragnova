@@ -57,7 +57,7 @@ where
 {
 	use pallet_contracts_rpc::{Contracts, ContractsApiServer};
 	use pallet_fragments_rpc::{FragmentsRpcServer, FragmentsRpcServerImpl};
-	use pallet_protos_rpc::{Protos, ProtosApiServer};
+	use pallet_protos_rpc::{ProtosRpcServer, ProtosRpcServerImpl};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_rpc::dev::{Dev, DevApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
@@ -74,7 +74,7 @@ where
 
 	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
-	io.merge(Protos::new(client.clone()).into_rpc())?;
+	io.merge(ProtosRpcServerImpl::new(client.clone()).into_rpc())?;
 
 	io.merge(FragmentsRpcServerImpl::new(client).into_rpc())?;
 

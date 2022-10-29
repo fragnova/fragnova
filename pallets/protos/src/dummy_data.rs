@@ -81,12 +81,6 @@ pub struct Stake {
 	pub lock: Lock,
 }
 
-impl Stake {
-	pub fn get_stake_amount(&self) -> u128 {
-		self.proto_fragment.include_cost.unwrap().into()
-	}
-}
-
 /// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
 pub struct DummyData {
 	pub proto_fragment: ProtoFragment,

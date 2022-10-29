@@ -1,41 +1,66 @@
 const { ApiPromise, WsProvider } = require("@polkadot/api");
 
-const { Text } = require("@polkadot/types")
-
 const connectToLocalNode = async () => {
   const wsProvider = new WsProvider("ws://127.0.0.1:9944");
 
-  api = await ApiPromise.create({
+  const api = await ApiPromise.create({
     provider: wsProvider,
     rpc: {
       protos: {
         getProtos: {
-          description: "This is the description", type: "String",
+          description: "Query and Return Proto-Fragment(s) based on `params`. The return type is a JSON string", type: "String",
           params: [
             { name: "params", type: "GetProtosParams" },
+            { name: "at", type: "BlockHash", isOptional: true }
+          ]
+        },
+        getGenealogy: {
+          description: "Query the Genealogy of a Proto-Fragment based on `params`. The return type is a JSON string that represents an Adjacency List.", type: "String",
+          params: [
+            { name: "params", type: "GetGenealogyParams" },
             { name: "at", type: "BlockHash", isOptional: true }
           ]
         },
       },
       fragments: {
         getDefinitions: {
-          description: "C'est le description", type: "String",
+          description: "Query and Return Fragment Definition(s) based on `params`", type: "String",
           params: [
             { name: "params", type: "GetDefinitionsParams" },
             { name: "at", type: "BlockHash", isOptional: true }
           ]
         },
         getInstances: {
-          description: "这是描述", type: "String",
+          description: "Query and Return Fragment Instance(s) based on `params`", type: "String",
           params: [
             { name: "params", type: "GetInstancesParams" },
             { name: "at", type: "BlockHash", isOptional: true }
           ]
-        }
-      }
+        },
+        getInstanceOwner: {
+          description: "Query the owner of a Fragment Instance. The return type is a String", type: "String",
+          params: [
+            { name: "params", type: "GetInstanceOwnerParams" },
+            { name: "at", type: "BlockHash", isOptional: true }
+          ]
+        },
+      },
     },
 
     types: {
+      Categories: {
+        _enum: {
+          "text": "TextCategories",
+          "trait": "Option<ShardsTrait>",
+          "shards": "ShardsScriptInfo",
+          "audio": "AudioCategories",
+          "texture": "TextureCategories",
+          "vector": "VectorCategories",
+          "video": "VideoCategories",
+          "model": "ModelCategories",
+          "binary": "BinaryCategories",
+        }
+      },
       AudioCategories: {
         _enum: [
           "oggFile",
@@ -92,21 +117,26 @@ const connectToLocalNode = async () => {
           "binary",
         ]
       },
-      Categories: {
+
+      UsageLicense: {
         _enum: {
-          "text": "TextCategories",
-          "trait": "Option<ShardsTrait>",
-          "shards": "ShardsScriptInfo",
-          "audio": "AudioCategories",
-          "texture": "TextureCategories",
-          "vector": "VectorCategories",
-          "video": "VideoCategories",
-          "model": "ModelCategories",
-          "binary": "BinaryCategories",
+          "Closed": null,
+          "Open": null,
+          "Tickets": "Compact<u64>",
+          "Contract": "AccountId",
         }
       },
+
       BlockHash: "Hash",
       Hash128: "[u8; 16]",
+
+      FragmentMetadata: {
+        name: "Vec<u8>",
+        currency: "Option<AssetId>",
+      },
+      UniqueOptions: {
+        mutable: "bool",
+      },
 
       GetProtosParams: {
         desc: 'bool',
@@ -120,6 +150,10 @@ const connectToLocalNode = async () => {
         exclude_tags: 'Vec<String>',
         available: 'Option<bool>',
       },
+      GetGenealogyParams: {
+        proto_hash: "String",
+        get_ancestors: "bool",
+      },
 
       GetDefinitionsParams: {
         desc: "bool",
@@ -129,7 +163,6 @@ const connectToLocalNode = async () => {
         owner: "Option<AccountId>",
         return_owners: "bool",
       },
-
       GetInstancesParams: {
         desc: "bool",
         from: "u64",
@@ -139,27 +172,19 @@ const connectToLocalNode = async () => {
         owner: "Option<AccountId>",
         only_return_first_copies: "bool",
       },
-
+      GetInstanceOwnerParams: {
+        definition_hash: 'String', // "Hash128", // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
+        edition_id: "Unit",
+        copy_id: "Unit",
+      },
+      "Unit": "u64",
 
     }
   });
 
-  return api
-
+  return api;
 
 };
-
-
-
-// (async () => {
-//     const api = await connectToLocalNode();
-//     const params = api.createType("GetProtosParams", {categories: ["Code"], owner: "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy", limit: 10, from: 0, desc: true,
-//         metadata_keys: ["A", "A"], return_owners: true});
-//     let string_json = await api.rpc.protos.getProtos(params)
-//     console.log("string_json is", string_json)
-// })()
-
-
 
 module.exports.connectToLocalNode = connectToLocalNode;
 

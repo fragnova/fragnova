@@ -8,7 +8,7 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
-use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
+use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -33,6 +33,13 @@ pub trait FragmentsRpc<BlockHash, AccountId> {
 	fn get_instances(
 		&self,
 		params: GetInstancesParams<AccountId, String>,
+		at: Option<BlockHash>,
+	) -> RpcResult<String>;
+	/// Query the owner of a Fragment Instance. The return type is a String
+	#[method(name = "getInstanceOwner")]
+	fn get_instance_owner(
+		&self,
+		params: GetInstanceOwnerParams<String>,
 		at: Option<BlockHash>,
 	) -> RpcResult<String>;
 }
@@ -85,9 +92,9 @@ where
 			return_owners: params.return_owners,
 		};
 
-		let result_outer = api.get_definitions(&at, params_no_std).map(|list_bytes| {
-			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
-		});
+		let result_outer = api
+			.get_definitions(&at, params_no_std)
+			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
 			Ok(result_outer) => match result_outer {
@@ -118,9 +125,39 @@ where
 			only_return_first_copies: params.only_return_first_copies,
 		};
 
-		let result_outer = api.get_instances(&at, params_no_std).map(|list_bytes| {
-			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
-		});
+		let result_outer = api
+			.get_instances(&at, params_no_std)
+			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
+		match result_outer {
+			Err(e) => Err(runtime_error_into_rpc_err(e)),
+			Ok(result_outer) => match result_outer {
+				Err(e) => Err(runtime_error_into_rpc_err(e)),
+				Ok(result_inner) => Ok(result_inner),
+			},
+		}
+	}
+
+	/// Query the owner of a Fragment Instance. The return type is a String
+	fn get_instance_owner(
+		&self,
+		params: GetInstanceOwnerParams<String>,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> RpcResult<String> {
+		let api = self.client.runtime_api();
+
+		// If the block hash is not supplied in `at`, use the best block's hash
+		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+		let params_no_std = GetInstanceOwnerParams::<Vec<u8>> {
+			definition_hash: params.definition_hash.into_bytes(),
+			edition_id: params.edition_id,
+			copy_id: params.copy_id,
+		};
+
+		let result_outer = api
+			.get_instance_owner(&at, params_no_std)
+			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
+
 		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
 			Ok(result_outer) => match result_outer {
