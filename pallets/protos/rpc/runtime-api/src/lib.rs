@@ -17,7 +17,7 @@
 
 use codec::Codec;
 
-use pallet_protos::{GetProtosParams, GetGenealogyParams};
+use pallet_protos::{GetGenealogyParams, GetProtosParams};
 use sp_std::vec::Vec;
 
 // Declares given traits as runtime apis

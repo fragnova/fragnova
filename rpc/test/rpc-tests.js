@@ -213,4 +213,12 @@ describe("RPCs", () => {
     });
   });
 
+  describe("fragments.getInstanceOwner()", () => {
+    it("should return FI owner", async () => {
+      const params = api.createType("GetInstanceOwnerParams", {definition_hash: definitionHash, edition_id: 1, copy_id: 1});
+      const result = await api.rpc.fragments.getInstanceOwner(params);
+      assert.equal(result, protoOwner);
+    });
+  });
+
 });

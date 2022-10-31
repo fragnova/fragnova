@@ -4,16 +4,12 @@
 
 use super::*;
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
-use frame_system::RawOrigin;
-use frame_support::traits::Get;
-use sp_runtime::SaturatedConversion;
-use sp_std::{
-	collections::btree_set::BTreeSet
-};
-use sp_io::{
-	hashing::keccak_256,
-};
 use frame_support::traits::Currency;
+use frame_support::traits::Get;
+use frame_system::RawOrigin;
+use sp_io::hashing::keccak_256;
+use sp_runtime::SaturatedConversion;
+use sp_std::collections::btree_set::BTreeSet;
 
 use crate::Pallet as Accounts;
 
@@ -21,12 +17,10 @@ const SEED: u32 = 0;
 
 fn sign(
 	message_struct: &libsecp256k1::Message,
-	ethereum_secret_key_struct: &libsecp256k1::SecretKey
+	ethereum_secret_key_struct: &libsecp256k1::SecretKey,
 ) -> ecdsa::Signature {
-	let (signature_struct, recovery_id_struct) = libsecp256k1::sign(
-		message_struct,
-		&ethereum_secret_key_struct
-	);
+	let (signature_struct, recovery_id_struct) =
+		libsecp256k1::sign(message_struct, &ethereum_secret_key_struct);
 	let signature = ecdsa::Signature({
 		let mut sixty_five_bit_signature: [u8; 65] = [0; 65];
 		let (one, two) = sixty_five_bit_signature.split_at_mut(signature_struct.serialize().len());
@@ -36,13 +30,9 @@ fn sign(
 	});
 
 	return signature;
-
 }
 
-fn get_ethereum_public_key(
-	secret_key_struct: &libsecp256k1::SecretKey
-) -> H160 {
-
+fn get_ethereum_public_key(secret_key_struct: &libsecp256k1::SecretKey) -> H160 {
 	let public_key_struct = libsecp256k1::PublicKey::from_secret_key(secret_key_struct);
 
 	let uncompressed_public_key = public_key_struct.serialize();
@@ -53,7 +43,7 @@ fn get_ethereum_public_key(
 	H160::from_slice(&ethereum_account_id)
 }
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::Event) {
+fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
