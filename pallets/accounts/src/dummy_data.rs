@@ -77,7 +77,7 @@ pub fn create_lock_signature(
 	message.extend_from_slice(&ethereum_account_id.0[..]);
 	message.extend_from_slice(&get_ethereum_chain_id().to_be_bytes());
 	message.extend_from_slice(&Into::<[u8; 32]>::into(lock_amount.clone()));
-	message.extend_from_slice(&Into::<[u8; 16]>::into(U128::from(lock_period.clone())));
+	message.extend_from_slice(&Into::<[u8; 32]>::into(U256::from(lock_period.clone())));
 
 	let hashed_message = keccak_256(&message);
 

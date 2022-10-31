@@ -579,7 +579,7 @@ pub mod pallet {
 			let amount: [u8; 32] = data.amount.into();
 			message.extend_from_slice(&amount[..]); // Add amount to message
 			if data.lock {
-				let lock_period: [u8; 16] = U128::from(data.lock_period.clone()).into();
+				let lock_period: [u8; 32] = U256::from(data.lock_period.clone()).into();
 				message.extend_from_slice(&lock_period[..]); // Add amount to message
 			}
 
@@ -1037,7 +1037,7 @@ pub mod pallet {
 				let data =
 					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?; // Convert the hexadecimal `data` from hexadecimal to binary (i.e raw bits)
 				let data = ethabi::decode(
-					&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(256)],
+					&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(8)],
 					&data,
 				) // First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
 				.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
@@ -1099,7 +1099,6 @@ pub mod pallet {
 							// `account` is an account `Signer::<T, T::AuthorityId>::any_account()`
 							public: account.public.clone(), // 问Gio what is account.public and why is it supposed to be in FragKey
 							amount,
-							// TODO magari meglio levarlo da mezzo sto lock period in case of unlock?
 							lock_period,
 							sender,
 							signature: eth_signature.clone(),
