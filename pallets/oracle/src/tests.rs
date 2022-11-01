@@ -126,9 +126,8 @@ fn test_pub() -> sp_core::sr25519::Public {
 
 fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {
 	let geth_url = Some(String::from("https://www.dummywebsite.com/"));
-	let oracle_address = Some(String::from("0xABCdE12345FGXY3234"));
 
-	sp_clamor::init(geth_url, oracle_address);
+	sp_clamor::init(geth_url);
 
 	// example of response taken from ETH/BTC in mainnet
 	/*
@@ -146,7 +145,9 @@ fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {
 				"method": "eth_call", // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_call
 				"params": [
 					{
-					"to": String::from_utf8(sp_clamor::clamor::get_oracle_address().unwrap()).unwrap(),
+					"to": <
+						<Test as pallet_oracle::Config>::OracleContract as pallet_oracle::OracleContract
+					>::get_contract(),
 					// first 4 bytes of keccak_256(latestRoundData()) function, padded - Use https://emn178.github.io/online-tools/keccak_256.html
 					"data": "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
 					},
@@ -164,10 +165,10 @@ fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {
 								ethabi::encode(
 									&[ Token::Tuple(vec![
 											Token::Uint(U256::from(123)), //roundId: The round ID.
-											Token::Int(U256::from(10000)), //answer: The price.
+											Token::Int(U256::from(10000000)), //answer: The price.
 											Token::Uint(U256::from(1667)), // startedAt: Timestamp of when the round started.
-											Token::Uint(U256::from(1667)),// updatedAt: Timestamp of when the round was updated
-											Token::Uint(U256::from(123)),// answeredInRound: The round ID of the round in which the answer was computed.
+											Token::Uint(U256::from(1668)),// updatedAt: Timestamp of when the round was updated
+											Token::Uint(U256::from(124)),// answeredInRound: The round ID of the round in which the answer was computed.
 											])
 									]
 								),
@@ -242,10 +243,10 @@ fn fetch_price_from_oracle_should_work() {
 
 		let expected_data = OraclePrice {
 			round_id: U256::from(123),
-			price: U256::from(10000),
+			price: U256::from(10000000),
 			started_at: U256::from(1667),
-			updated_at: U256::from(1667),
-			answered_in_round: U256::from(123),
+			updated_at: U256::from(1668),
+			answered_in_round: U256::from(124),
 			block_number: System::block_number(),
 			public: <Test as SigningTypes>::Public::from(ed25519_public_key),
 		};
@@ -275,14 +276,14 @@ fn fetch_price_from_oracle_should_work() {
 }
 
 #[test]
-fn fetch() {
+fn fetch_from_oracle_should_work() {
 	new_test_ext().execute_with(|| {
 		let expected_data = OraclePrice {
 			round_id: U256::from(123),
-			price: U256::from(10000),
+			price: U256::from(10000000),
 			started_at: U256::from(1667),
-			updated_at: U256::from(1667),
-			answered_in_round: U256::from(123),
+			updated_at: U256::from(1668),
+			answered_in_round: U256::from(124),
 			block_number: System::block_number(),
 			public: sp_core::ed25519::Public([69u8; 32]),
 		};

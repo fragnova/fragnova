@@ -36,7 +36,6 @@ mod details {
 
 	lazy_static! {
 		pub static ref GETH_URL: Mutex<Option<Vec<u8>>> = Mutex::new(None);
-		pub static ref ORACLE_ADDRESS: Mutex<Option<Vec<u8>>> = Mutex::new(None);
 	}
 
 	// lazy_static! {
@@ -75,16 +74,6 @@ mod details {
 		if let Some(geth_url) = GETH_URL.lock().unwrap().as_ref() {
 			// well, we are doing an allocation every time we call this function here...
 			Some(geth_url.clone())
-		} else {
-			None
-		}
-	}
-
-	/// Get the address of the Oracle smart contract
-	pub fn _get_oracle_address() -> Option<Vec<u8>> {
-		if let Some(oracle_address) = ORACLE_ADDRESS.lock().unwrap().as_ref() {
-			// well, we are doing an allocation every time we call this function here...
-			Some(oracle_address.clone())
 		} else {
 			None
 		}
@@ -143,22 +132,13 @@ pub trait Clamor {
 	fn get_geth_url() -> Option<Vec<u8>> {
 		details::_get_geth_url()
 	}
-
-	/// Get the address of the Oracle smart contract in use
-	fn get_oracle_address() -> Option<Vec<u8>> {
-		details::_get_oracle_address()
-	}
 }
 
 /// Set the Fragnova-owned Geth Node's URL
 #[cfg(feature = "std")]
-pub fn init(geth_url: Option<String>, oracle_address: Option<String>) {
+pub fn init(geth_url: Option<String>) {
 	if let Some(geth_url) = geth_url {
 		*details::GETH_URL.lock().unwrap() = Some(geth_url.into_bytes());
-	}
-
-	if let Some(oracle_address) = oracle_address {
-		*details::ORACLE_ADDRESS.lock().unwrap() = Some(oracle_address.into_bytes());
 	}
 
 	// use chainblocks::{cbl_env, shlog};

@@ -11,9 +11,6 @@ pub struct Cli {
 
 	#[clap(short, long)]
 	pub geth_url: Option<String>,
-
-	#[clap(short, long)]
-	pub oracle_address: Option<String>,
 }
 
 /// Possible subcommands of the main binary (i.e of the binary `/target/debug/clamor`).

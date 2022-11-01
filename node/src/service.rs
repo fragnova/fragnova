@@ -171,7 +171,6 @@ fn remote_keystore(_url: &String) -> Result<Arc<LocalKeystore>, &'static str> {
 pub fn new_full(
 	mut config: Configuration,
 	geth_url: Option<String>,
-	oracle_address: Option<String>,
 ) -> Result<TaskManager, ServiceError> {
 	let sc_service::PartialComponents {
 		client,
@@ -356,7 +355,7 @@ pub fn new_full(
 		);
 	}
 
-	sp_clamor::init(geth_url, oracle_address);
+	sp_clamor::init(geth_url);
 
 	// add some test keys when needed
 	if chain_type == sc_service::ChainType::Development {

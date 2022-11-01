@@ -64,9 +64,8 @@ pub mod crypto {
 	}
 }
 
-/// **Traits** of the **ETH / USD Chainlink contract** on the **Ethereum (Goerli) network**
+/// **Traits** of the **Chainlink contract** on the **Ethereum (Goerli) network**
 pub trait OracleContract {
-	/// **Return** the **contract address** of the **ETH / USD Chainlink contract**
 	fn get_contract() -> &'static str {
 		"0xABCD"
 	}
@@ -84,12 +83,14 @@ use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 pub mod pallet {
 	use super::*;
 	use ethabi::ethereum_types::H256;
-	use ethabi::ParamType;
+	use ethabi::{ParamType, Token};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use sp_core::{ed25519, U256};
 	use sp_core::offchain::Timestamp;
 	use sp_runtime::MultiSigner;
+	use sp_runtime::traits::ValidateUnsigned;
+	use sp_runtime::transaction_validity::TransactionSource;
 
 	const FETCH_TIMEOUT_PERIOD: u64 = 3000; // in milli-seconds
 
@@ -265,7 +266,7 @@ pub mod pallet {
 			<Price<T>>::put(latest_price);
 
 			Self::deposit_event(Event::NewPrice { price: latest_price, block_number });
-			Ok(().into())
+			Ok(())
 		}
 	}
 
@@ -307,12 +308,7 @@ pub mod pallet {
 				return;
 			};
 
-			let oracle_address = if let Some(address) = sp_clamor::clamor::get_oracle_address() {
-				String::from_utf8(address).unwrap()
-			} else {
-				log::debug!("Oracle address not set, skipping fetch price from oracle.");
-				return; // It is fine to have a node not syncing with eth
-			};
+			let oracle_address = T::OracleContract::get_contract();
 
 			if let Err(e) = Self::fetch_price(block_number, &oracle_address, &geth_uri) {
 				log::error!("Failed to fetch price from oracle with error: {}", e);
@@ -342,7 +338,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let wait= Timestamp::from_unix_millis(FETCH_TIMEOUT_PERIOD);
+			let wait = Timestamp::from_unix_millis(FETCH_TIMEOUT_PERIOD);
 			let response_body = http_json_post(&geth_uri, req.as_bytes(), Some(wait));
 			let response_body = if let Ok(response) = response_body {
 				response
@@ -368,9 +364,9 @@ pub mod pallet {
 					ParamType::Uint(80),  // uint80 answeredInRound
 				])],
 				&data,
-			)
-			.map_err(|_| "Invalid response")?;
-			let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid data")?;
+			).map_err(|_| "Invalid response")?;
+
+			let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid tuple")?;
 			let round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
 			let price = tuple[1].clone().into_int().ok_or_else(|| "Invalid token")?;
 			let started_at = tuple[2].clone().into_uint().ok_or_else(|| "Invalid startedAt")?;
@@ -378,7 +374,18 @@ pub mod pallet {
 			let answered_in_round =
 				tuple[4].clone().into_uint().ok_or_else(|| "Invalid answeredInRound")?;
 
-			ensure!(!price.is_zero(), "Price from oracle is zero");
+			/*
+			The following data validations have been inspired by:
+			- https://github.com/code-423n4/2021-08-notional-findings/issues/92
+			- https://github.com/code-423n4/2022-02-hubble-findings/issues/123
+			- https://ethereum.stackexchange.com/questions/133890/chainlink-latestrounddata-security-fresh-data-check-usage
+			and other similar reports: https://github.com/search?q=latestrounddata+validation&type=issues
+			*/
+			ensure!(round_id.gt(&U256::from(0)), "Price from oracle is 0");
+			ensure!(price > U256::from(0), "Price from oracle is <= 0");
+			ensure!(!updated_at.is_zero(), "UpdateAt = 0. Incomplete round.");
+			ensure!(!answered_in_round.is_zero(), "AnsweredInRound from oracle is 0");
+			ensure!(answered_in_round.ge(&round_id), "Stale price");
 
 			log::trace!("New price: {}", price);
 

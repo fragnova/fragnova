@@ -206,9 +206,8 @@ mod sync_frag_locks_tests {
 		lock: Lock,
 	) -> u64 {
 		let geth_url = Some(String::from("https://www.dummywebsite.com/"));
-		let oracle_address = Some(String::from("0xABCdE12345FGXY3234"));
 
-		sp_clamor::init(geth_url, oracle_address);
+		sp_clamor::init(geth_url);
 
 		let latest_block_number = lock
 			.data
