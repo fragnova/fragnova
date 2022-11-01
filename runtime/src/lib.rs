@@ -16,8 +16,8 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
-	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 	dispatch::DispatchClass,
+	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -443,6 +443,20 @@ impl pallet_accounts::Config for Runtime {
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 }
 
+impl pallet_oracle::OracleContract for Runtime {
+	fn get_contract() -> &'static str {
+		// https://docs.chain.link/docs/data-feeds/price-feeds/addresses/
+		"0x547a514d5e3769680Ce22B2361c10Ea13619e8a9" // the contract address determines the network (mainnet, testnet)
+	}
+}
+
+impl pallet_oracle::Config for Runtime {
+	type AuthorityId = pallet_oracle::crypto::FragAuthId;
+	type RuntimeEvent = RuntimeEvent;
+	type OracleContract = Runtime; // the contract address determines the network to connect (mainnet, goerli, etc.)
+	type Threshold = ConstU64<1>;
+}
+
 parameter_types! {
 	/// Asset ID of the fungible asset "TICKET"
 	pub const TicketsAssetId: u64 = 1337;
@@ -720,6 +734,7 @@ construct_runtime!(
 		Identity: pallet_identity,
 		Utility: pallet_utility,
 		Accounts: pallet_accounts,
+		Oracle: pallet_oracle,
 	}
 );
 

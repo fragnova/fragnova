@@ -787,7 +787,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri, req.as_bytes()); // Get the latest block number of the Ethereum Blockchain
+			let response_body = http_json_post(geth_uri, req.as_bytes(), None); // Get the latest block number of the Ethereum Blockchain
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -836,7 +836,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri, req.as_bytes()); // Make HTTP POST request with `req` to URL `get_uri`
+			let response_body = http_json_post(geth_uri, req.as_bytes(), None); // Make HTTP POST request with `req` to URL `get_uri`
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {

@@ -6,21 +6,14 @@
 
 use codec::{Decode, Encode};
 use frame_support::traits::Get;
-use frame_system::{
-	self as system,
-	offchain::{
-		AppCrypto, CreateSignedTransaction, SendUnsignedTransaction,
-		SignedPayload, Signer, SigningTypes,
-	},
+use frame_system::offchain::{
+	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
+	SigningTypes,
 };
-use sp_core::crypto::KeyTypeId;
-use sp_clamor::http_json_post;
 use serde_json::{json, Value};
-use sp_runtime::{
-	transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction},
-	RuntimeDebug,
-};
-use sp_std::vec::Vec;
+use sp_clamor::http_json_post;
+use sp_core::crypto::KeyTypeId;
+use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction};
 
 #[cfg(test)]
 pub mod tests;
@@ -47,49 +40,52 @@ pub mod crypto {
 
 	impl frame_system::offchain::AppCrypto<MultiSigner, MultiSignature> for FragAuthId {
 		type RuntimeAppPublic = Public;
-		type GenericSignature = sp_core::ed25519::Signature;
 		type GenericPublic = sp_core::ed25519::Public;
+		type GenericSignature = sp_core::ed25519::Signature;
 	}
 
 	// implemented for mock runtime in test
 	impl frame_system::offchain::AppCrypto<<Ed25519Signature as Verify>::Signer, Ed25519Signature>
-	for FragAuthId
+		for FragAuthId
 	{
 		type RuntimeAppPublic = Public;
-		type GenericSignature = sp_core::ed25519::Signature;
 		type GenericPublic = sp_core::ed25519::Public;
+		type GenericSignature = sp_core::ed25519::Signature;
 	}
 }
 
 /// **Traits** of the **ETH / USD Chainlink contract** on the **Ethereum (Goerli) network**
-pub trait ChainLinkContract {
+pub trait OracleContract {
 	/// **Return** the **contract address** of the **ETH / USD Chainlink contract**
 	fn get_contract() -> &'static str {
-		// https://docs.chain.link/docs/data-feeds/price-feeds/addresses/
-		"0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e"
+		"0xABCD"
 	}
 }
 
-impl ChainLinkContract for () {}
+impl OracleContract for () {}
 
 pub use pallet::*;
 
+use scale_info::prelude::string::String;
+use sp_io::hashing::blake2_256;
+use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
+
 #[frame_support::pallet]
 pub mod pallet {
-	use std::collections::BTreeSet;
-	use ethabi::ParamType;
 	use super::*;
+	use ethabi::ethereum_types::H256;
+	use ethabi::ParamType;
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use sp_core::ed25519;
+	use sp_core::{ed25519, U256};
+	use sp_core::offchain::Timestamp;
 	use sp_runtime::MultiSigner;
+
+	const FETCH_TIMEOUT_PERIOD: u64 = 3000; // in milli-seconds
 
 	/// This pallet's configuration trait
 	#[pallet::config]
-	pub trait Config:
-		CreateSignedTransaction<Call<Self>>
-		+ frame_system::Config
-	{
+	pub trait Config: CreateSignedTransaction<Call<Self>> + frame_system::Config {
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 
@@ -97,11 +93,11 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// **Traits** of the **ETH / USD Chainlink contract** on the **Ethereum (Goerli) network*
-		type ChainLinkContract: ChainLinkContract;
+		type OracleContract: OracleContract;
 
-		/// Maximum number of prices.
+		/// Number of votes needed to do something (问Gio)
 		#[pallet::constant]
-		type MaxPrices: Get<u32>;
+		type Threshold: Get<u64>;
 	}
 
 	/// The Genesis Configuration for the Pallet.
@@ -119,7 +115,7 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: SigningTypes> SignedPayload<T> for PricePayload<T::Public, T::BlockNumber> {
+	impl<T: SigningTypes> SignedPayload<T> for OraclePrice<T::Public, T::BlockNumber> {
 		fn public(&self) -> T::Public {
 			self.public.clone()
 		}
@@ -131,18 +127,32 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	/// Struct used to hold price data.
-	#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, scale_info::TypeInfo)]
-	pub struct PricePayload<Public, BlockNumber> {
-		block_number: BlockNumber,
-		price: u32,
-		public: Public
+	#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
+	pub struct OraclePrice<TPublic, TBlockNumber> {
+		pub round_id: U256,
+		pub price: U256,
+		pub started_at: U256,
+		pub updated_at: U256,
+		pub answered_in_round: U256,
+		pub block_number: TBlockNumber,
+		pub public: TPublic,
 	}
 
-	/// A bounded sized vector of recently submitted prices.
-	/// This is used to calculate average price.
+	/// Storage use for the latest price received from the oracle.
 	#[pallet::storage]
 	#[pallet::getter(fn prices)]
-	pub(super) type Prices<T: Config> = StorageValue<_, BoundedVec<u32, T::MaxPrices>, ValueQuery>;
+	pub(super) type Price<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+	/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**.
+	/// The key for this map is:
+	/// `blake2_256(encoded(<Amount of FRAG token that was locked/unlocked, Signature written by the owner of the FRAG token on a determinstic message,
+	/// 					Whether it was locked or unlocked, Ethereum Block Number where it was locked/unlocked>))`
+	#[pallet::storage]
+	pub type EVMLinkVoting<T: Config> = StorageMap<_, Identity, H256, u64>;
+
+	/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a boolean indicating whether voting on the aforementioned event has ended**.
+	#[pallet::storage]
+	pub type EVMLinkVotingClosed<T: Config> = StorageMap<_, Identity, H256, T::BlockNumber>;
 
 	/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
@@ -153,18 +163,13 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: T::BlockNumber) {
-
-			let res = Self::fetch_price_from_oracle(block_number);
-			if let Err(e) = res {
-				log::error!("Error: {}", e);
-			}
+			Self::fetch_price_from_oracle(block_number);
 		}
 	}
 
 	/// A public part of the pallet.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-
 		/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
@@ -201,15 +206,47 @@ pub mod pallet {
 		#[pallet::weight(10000)] // TODO
 		pub fn store_price(
 			origin: OriginFor<T>,
-			price_payload: PricePayload<T::Public, T::BlockNumber>,
+			oracle_price: OraclePrice<T::Public, T::BlockNumber>,
 			_signature: T::Signature,
-		) -> DispatchResultWithPostInfo {
+		) -> DispatchResult {
 			// This ensures that the function can only be called via unsigned transaction.
 			ensure_none(origin)?;
 
-			// TODO: regenerate the same Ethereum message received
+			log::debug!("Store price: {:?}", oracle_price);
 
-			Self::add_price(price_payload.block_number, price_payload.price);
+			let data_hash: H256 = oracle_price.using_encoded(blake2_256).into();
+
+			let latest_price: u32 =
+				oracle_price.price.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+			let block_number = oracle_price.block_number;
+
+			// voting
+			let threshold = T::Threshold::get();
+			if threshold > 1 {
+				// 问Gio
+				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
+				if let Some(current_votes) = current_votes {
+					// Number of votes for the key `data_hash` in EVMLinkVoting
+					if current_votes + 1u64 < threshold {
+						// Current Votes has not passed the threshold
+						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
+						return Ok(());
+					} else {
+						// Current votes passes the threshold, let's remove the record
+						<EVMLinkVoting<T>>::remove(&data_hash);
+					}
+				} else {
+					// If key `data_hash` doesn't exist in EVMLinkVoting
+					<EVMLinkVoting<T>>::insert(&data_hash, 1);
+					return Ok(());
+				}
+			}
+
+			log::trace!("Store new price: {}", latest_price);
+
+			<Price<T>>::put(latest_price);
+
+			Self::deposit_event(Event::NewPrice { price: latest_price, block_number });
 			Ok(().into())
 		}
 	}
@@ -219,7 +256,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event generated when new price is accepted to contribute to the average.
+		/// Event generated when new price is accepted.
 		NewPrice { price: u32, block_number: T::BlockNumber },
 	}
 
@@ -228,11 +265,10 @@ pub mod pallet {
 		/// Error with connection with Geth client.
 		GethConnectionError,
 		/// Systematic failure - those errors should not happen.
-		SystematicFailure
+		SystematicFailure,
 	}
 
 	impl<T: Config> Pallet<T> {
-
 		fn initialize_keys(keys: &[ed25519::Public]) {
 			if !keys.is_empty() {
 				assert!(<FragKeys<T>>::get().is_empty(), "FragKeys are already initialized!");
@@ -245,27 +281,30 @@ pub mod pallet {
 		}
 
 		/// A helper function to fetch the price, sign payload and send an unsigned transaction
-		pub fn fetch_price_from_oracle(block_number: T::BlockNumber) -> Result<(), &'static str> {
-
+		pub fn fetch_price_from_oracle(block_number: T::BlockNumber) {
 			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
 			} else {
-				return Err("Connection error with Geth.")
+				log::debug!("Geth URL not set, skipping fetch price from oracle.");
+				return;
 			};
 
+			let oracle_address = if let Some(address) = sp_clamor::clamor::get_oracle_address() {
+				String::from_utf8(address).unwrap()
+			} else {
+				log::debug!("Oracle address not set, skipping fetch price from oracle.");
+				return; // It is fine to have a node not syncing with eth
+			};
 
-			let contract = T::ChainLinkContract::get_contract();
-			if let Err(e) = Self::fetch_price(block_number, &contract, &geth_uri) {
+			if let Err(e) = Self::fetch_price(block_number, &oracle_address, &geth_uri) {
 				log::error!("Failed to fetch price from oracle with error: {}", e);
-				return Err(e)
 			}
-			Ok(())
 		}
 
 		fn fetch_price(
 			block_number: T::BlockNumber,
 			contract: &str,
-			geth_uri: &str
+			geth_uri: &str,
 		) -> Result<(), &'static str> {
 			let req = json!({
 				"jsonrpc": "2.0",
@@ -273,22 +312,24 @@ pub mod pallet {
 				"params": [
 					{
 					"to": contract,
-					// first 4 bytes of keccak_256(latestRoundData()) function, padded - Use https://emn178.github.io/online-tools/keccak_256.html
-					"data": "feaf968c0000000000000000000000000000000000000000000000000000000000000000",
+						// call `latestRoundData()` function from ChainLink Feed Price contract
+					// `data` is first 4 bytes of `keccak_256(latestRoundData())`, padded - Use https://emn178.github.io/online-tools/keccak_256.html
+					"data": "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
 					},
 					"latest"
 				],
-				 "id": "5", //goerli
+				 "id": 5, //goerli
 			});
 
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(&geth_uri, req.as_bytes()); // Get the latest block number of the Ethereum Blockchain
+			let wait= Timestamp::from_unix_millis(FETCH_TIMEOUT_PERIOD);
+			let response_body = http_json_post(&geth_uri, req.as_bytes(), Some(wait));
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth")
+				return Err("Failed to get response from Ethereum.");
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -298,85 +339,50 @@ pub mod pallet {
 				serde_json::from_str(&response).map_err(|_| "Invalid response - json parse")?;
 			let result = v["result"].as_str().ok_or("Invalid response - no result")?; // Get the latest block number of the Ethereum Blockchain
 			let data = hex::decode(&result[2..]).map_err(|_| "Invalid response - invalid data")?;
+			log::trace!("data: {:?}", data);
 			let data = ethabi::decode(
 				//https://docs.chain.link/docs/data-feeds/price-feeds/api-reference/#latestrounddata
 				&[ParamType::Tuple(vec![
-					ParamType::Uint(80), // uint80 roundId
-					ParamType::Int(256), // int256 answer
+					ParamType::Uint(80),  // uint80 roundId
+					ParamType::Int(256),  // int256 answer
 					ParamType::Uint(256), // uint256 startedAt
 					ParamType::Uint(256), // uint256 updatedAt
-					ParamType::Uint(80), // uint80 answeredInRound
-
+					ParamType::Uint(80),  // uint80 answeredInRound
 				])],
-				&data).map_err(|_| "Invalid response")?;
-			let new_price = data[1].clone().into_int().ok_or_else(|| "Invalid price").unwrap().as_u32();
-			log::trace!("New price: {}", new_price);
+				&data,
+			)
+			.map_err(|_| "Invalid response")?;
+			let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid data")?;
+			let round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
+			let price = tuple[1].clone().into_int().ok_or_else(|| "Invalid token")?;
+			let started_at = tuple[2].clone().into_uint().ok_or_else(|| "Invalid startedAt")?;
+			let updated_at = tuple[3].clone().into_uint().ok_or_else(|| "Invalid updatedAt")?;
+			let answered_in_round =
+				tuple[4].clone().into_uint().ok_or_else(|| "Invalid answeredInRound")?;
+
+			ensure!(!price.is_zero(), "Price from oracle is zero");
+
+			log::trace!("New price: {}", price);
 
 			// -- Sign using any account
-			let (_, result) = Signer::<T, T::AuthorityId>::any_account()
+			Signer::<T, T::AuthorityId>::any_account()
 				.send_unsigned_transaction(
-					|account| PricePayload {
+					|account| OraclePrice {
+						round_id,
+						price,
+						started_at,
+						updated_at,
+						answered_in_round,
 						block_number,
-						price: new_price.into(),
-						public: account.public.clone()
+						public: account.public.clone(),
 					},
-					|payload, signature| Call::store_price {
-						price_payload: payload,
-						signature,
-					},
+					|payload, signature| Call::store_price { oracle_price: payload, signature },
 				)
-				.ok_or("No local accounts accounts available.")?;
-			result.map_err(|()| "Unable to submit transaction")?;
+				.ok_or_else(|| "Failed to sign transaction")?
+				.1
+				.map_err(|_| "Failed to send transaction")?;
 
 			Ok(())
-		}
-
-		/// Add new price to the list.
-		fn add_price(block_number: T::BlockNumber, price: u32) {
-			log::info!("Adding to the average: {}", price);
-			<Prices<T>>::mutate(|prices| {
-				if prices.try_push(price).is_err() {
-					prices[(price % T::MaxPrices::get()) as usize] = price; // insert into the bounded size vector
-				}
-			});
-
-			let average = Self::average_price()
-				.expect("The average is not empty, because it was just mutated; qed");
-			log::info!("Current average price is: {}", average);
-
-			// here we are raising the NewPrice event
-			Self::deposit_event(Event::NewPrice { price, block_number });
-		}
-
-		/// Calculate current average price.
-		fn average_price() -> Option<u32> {
-			let prices = <Prices<T>>::get();
-			if prices.is_empty() {
-				None
-			} else {
-				Some(prices.iter().fold(0_u32, |a, b| a.saturating_add(*b)) / prices.len() as u32)
-			}
-		}
-
-		fn validate_transaction_parameters(
-			block_number: &T::BlockNumber,
-			new_price: &u32,
-		) -> TransactionValidity {
-			// Let's make sure to reject transactions from the future.
-			let current_block = <system::Pallet<T>>::block_number();
-			if &current_block < block_number {
-				return InvalidTransaction::Future.into()
-			}
-
-			ValidTransaction::with_tag_prefix("PriceFromOracleUpdate")
-				.and_provides(new_price)
-				// The transaction is only valid for next 5 blocks. After that it's
-				// going to be revalidated by the pool.
-				// TODO do we need this longevity? It could be useful since the price from Oracle is valid only for few hours
-				//.longevity(5)
-				// TODO or false? Price is of interest for all nodes in the network..
-				.propagate(true)
-				.build()
 		}
 	}
 
@@ -391,46 +397,51 @@ pub mod pallet {
 		/// are being whitelisted and marked as valid.
 		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
-			if let Call::store_price { price_payload: ref payload, ref signature } = call {
-
+			if let Call::store_price { ref oracle_price, ref signature } = call {
 				// ensure it's a local transaction sent by an offchain worker
 				match source {
 					TransactionSource::InBlock | TransactionSource::Local => {},
 					_ => {
 						log::debug!("Not a local transaction");
 						// Return TransactionValidityError˘ if the call is not allowed.
-						return InvalidTransaction::Call.into()
+						return InvalidTransaction::Call.into();
 					},
 				}
 
 				// check public is valid
 				let valid_keys = <FragKeys<T>>::get();
 				log::debug!("Valid keys: {:?}", valid_keys);
-				// I'm sure there is a way to do this without serialization but I can't spend so
-				// much time fighting with rust
-				let pub_key = payload.public.encode();
+				let pub_key = oracle_price.public.encode();
 				let pub_key: ed25519::Public = {
 					if let Ok(MultiSigner::Ed25519(pub_key)) =
-					<MultiSigner>::decode(&mut &pub_key[..])
+						<MultiSigner>::decode(&mut &pub_key[..])
 					{
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into() // // 问Gio
+						return InvalidTransaction::BadSigner.into(); // // 问Gio
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
 					// return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadSigner.into()
+					return InvalidTransaction::BadSigner.into();
 				}
 
 				let signature_valid =
-					SignedPayload::<T>::verify::<T::AuthorityId>(payload, signature.clone());
+					SignedPayload::<T>::verify::<T::AuthorityId>(oracle_price, signature.clone());
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into()
+					return InvalidTransaction::BadProof.into();
 				}
-				Self::validate_transaction_parameters(&payload.block_number, &payload.price)
+				log::debug!("Sending store_price extrinsic");
+				ValidTransaction::with_tag_prefix("PriceFromOracleUpdate")
+					.and_provides(oracle_price.price)
+					// The transaction is only valid for next 5 blocks. After that it's
+					// going to be revalidated by the pool.
+					// TODO param to consider. It could be useful since the price from Oracle is valid only for few hours
+					//.longevity(5)
+					.propagate(false)
+					.build()
 			} else {
 				InvalidTransaction::Call.into()
 			}

@@ -21,6 +21,7 @@ ethabi = { version = "17.0.0", default-features = false }
 ethabi-contract = { version = "11.0.0", default-features = false }
 ethabi-derive = { version = "14.0.0", default-features = false }
 libsecp256k1 = {version = "0.7.0", default-features = false}
+parking_lot = "0.12.1"
 
 [dependencies.frame-support]
 default-features = false

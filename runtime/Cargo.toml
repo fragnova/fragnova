@@ -220,6 +220,11 @@ default-features = false
 path = '../pallets/detach'
 version = '0.0.1'
 
+[dependencies.pallet-oracle]
+default-features = false
+path = '../pallets/oracle'
+version = '0.0.1'
+
 [dependencies.pallet-indices]
 default-features = false
 git = 'https://github.com/fragcolor-xyz/substrate.git'
@@ -335,5 +340,6 @@ std = [
     "pallet-proxy/std",
     "pallet-identity/std",
     "pallet-utility/std",
+    "pallet-oracle/std",
     "protos/std"
 ]

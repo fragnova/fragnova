@@ -1,18 +1,25 @@
 use crate as pallet_oracle;
 use crate::*;
 use codec::Decode;
+use ethabi::Token;
+use frame_support::dispatch::DispatchResult;
+use frame_support::inherent::BlockT;
 use frame_support::{
 	assert_ok, parameter_types,
 	traits::{ConstU32, ConstU64},
 };
+use parking_lot::RwLock;
+use sp_core::offchain::testing::{OffchainState, PoolState};
+use sp_core::offchain::OffchainDbExt;
 use sp_core::{
-	offchain::{testing, OffchainWorkerExt, TransactionPoolExt},
 	ed25519::Signature,
-	H256,
+	offchain::{testing, OffchainWorkerExt, TransactionPoolExt},
+	H256, U256,
 };
 use std::sync::Arc;
 
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
+use sp_runtime::offchain::storage::StorageValueRef;
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
@@ -79,10 +86,10 @@ impl frame_system::offchain::SigningTypes for Test {
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
 where
-RuntimeCall: From<LocalCall>,
+	RuntimeCall: From<LocalCall>,
 {
-	type OverarchingCall = RuntimeCall;
 	type Extrinsic = Extrinsic;
+	type OverarchingCall = RuntimeCall;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
@@ -102,14 +109,14 @@ where
 impl Config for Test {
 	type AuthorityId = crypto::FragAuthId;
 	type RuntimeEvent = RuntimeEvent;
-	type ChainLinkContract = Test;
-	type MaxPrices = ConstU32<64>;
+	type OracleContract = Test;
+	type Threshold = ConstU64<1>;
 }
 
-impl ChainLinkContract for Test {
+impl OracleContract for Test {
 	fn get_contract() -> &'static str {
 		// https://docs.chain.link/docs/data-feeds/price-feeds/addresses/
-		"0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e"
+		"0x547a514d5e3769680Ce22B2361c10Ea13619e8a9" // AAVE / USD on mainnet (this is just for testing purposes)
 	}
 }
 
@@ -117,76 +124,189 @@ fn test_pub() -> sp_core::sr25519::Public {
 	sp_core::sr25519::Public::from_raw([1u8; 32])
 }
 
-/*#[test] #[ignore]
-fn should_make_http_call_and_parse_result() {
-	let (offchain, state) = testing::TestOffchainExt::new();
-	let mut t = sp_io::TestExternalities::default();
-	t.register_extension(OffchainWorkerExt::new(offchain));
+fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {
+	let geth_url = Some(String::from("https://www.dummywebsite.com/"));
+	let oracle_address = Some(String::from("0xABCdE12345FGXY3234"));
 
-	price_oracle_response(&mut state.write());
+	sp_clamor::init(geth_url, oracle_address);
 
-	let current_block_number = System::block_number();
-
-	t.execute_with(|| {
-		// when
-		let price = Oracle::fetch_price_from_oracle(current_block_number).unwrap();
-		// then
-		//assert_eq!(price, 15523);
-	});
-}
-
-#[test]#[ignore]
-fn knows_how_to_mock_several_http_calls() {
-	let (offchain, state) = testing::TestOffchainExt::new();
-	let mut t = sp_io::TestExternalities::default();
-	t.register_extension(OffchainWorkerExt::new(offchain));
-	let current_block_number = System::block_number();
-
-	{
-		let mut state = state.write();
-		state.expect_request(testing::PendingRequest {
-			method: "GET".into(),
-			uri: "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD".into(),
-			response: Some(br#"{"USD": 1}"#.to_vec()),
-			sent: true,
-			..Default::default()
-		});
-
-	}
-
-	t.execute_with(|| {
-		let price1 = Oracle::fetch_price_from_oracle(current_block_number).unwrap();
-		let price2 = Oracle::fetch_price_from_oracle(current_block_number).unwrap();
-		let price3 = Oracle::fetch_price_from_oracle(current_block_number).unwrap();
-
-		assert_eq!(price1, 100);
-		assert_eq!(price2, 200);
-		assert_eq!(price3, 300);
-	})
-}
-
-fn price_oracle_response(state: &mut testing::OffchainState) {
+	// example of response taken from ETH/BTC in mainnet
+	/*
+	curl --url https://mainnet.infura.io/v3/48a1226dccb4437f9f89005e62140779 -X POST -H "Content-Type: application/json" \
+		-d '{"jsonrpc": 2,"method": "eth_call","params": [{"to": "0xAc559F25B1619171CbC396a50854A3240b6A4e99","data": "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000"},"latest"],"id":1}'
+		{"jsonrpc":"2.0","id":1,
+		"result":"0x00000000000000000000000000000000000000000000000100000000000025a20000000000000000000000000000000000000000000000000000000000762157000000000000000000000000
+	*/
 	state.expect_request(testing::PendingRequest {
-		method: "GET".into(),
-		uri: "https://min-api.cryptocompare.com/data/price?fsym=BTC&tsyms=USD".into(),
-		response: Some(br#"{"USD": 155.23}"#.to_vec()),
+		method: String::from("POST"),
+		uri: String::from_utf8(sp_clamor::clamor::get_geth_url().unwrap()).unwrap(),
+		headers: vec![(String::from("Content-Type"), String::from("application/json"))],
+		body: json!({
+				"jsonrpc": "2.0",
+				"method": "eth_call", // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_call
+				"params": [
+					{
+					"to": String::from_utf8(sp_clamor::clamor::get_oracle_address().unwrap()).unwrap(),
+					// first 4 bytes of keccak_256(latestRoundData()) function, padded - Use https://emn178.github.io/online-tools/keccak_256.html
+					"data": "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+					},
+					"latest"
+				],
+				 "id": 5, //goerli
+			})
+			.to_string()
+			.into_bytes(),
+		response: Some(
+			json!({
+					"id": 5,
+					"jsonrpc": "2.0",
+					"result": format!("0x{}", hex::encode(
+								ethabi::encode(
+									&[ Token::Tuple(vec![
+											Token::Uint(U256::from(123)), //roundId: The round ID.
+											Token::Int(U256::from(10000)), //answer: The price.
+											Token::Uint(U256::from(1667)), // startedAt: Timestamp of when the round started.
+											Token::Uint(U256::from(1667)),// updatedAt: Timestamp of when the round was updated
+											Token::Uint(U256::from(123)),// answeredInRound: The round ID of the round in which the answer was computed.
+											])
+									]
+								),
+							))
+				})
+				.to_string()
+				.into_bytes(),
+		),
 		sent: true,
 		..Default::default()
 	});
-}*/
-/*
-#[test]#[ignore]
-fn parse_price_works() {
-	let test_data = vec![
-		("{\"USD\":6536.92}", Some(653692)),
-		("{\"USD\":65.92}", Some(6592)),
-		("{\"USD\":6536.924565}", Some(653692)),
-		("{\"USD\":6536}", Some(653600)),
-		("{\"USD2\":6536}", None),
-		("{\"USD\":\"6432\"}", None),
-	];
+}
 
-	for (json, expected) in test_data {
-		assert_eq!(expected, Example::parse_price(json));
-	}
-}*/
+pub fn new_test_ext_with_ocw() -> (
+	sp_io::TestExternalities,
+	Arc<RwLock<PoolState>>,
+	Arc<RwLock<OffchainState>>,
+	sp_core::ed25519::Public,
+) {
+	const PHRASE: &str =
+		"news slush supreme milk chapter athlete soap sausage put clutch what kitten";
+
+	let (offchain, offchain_state) = testing::TestOffchainExt::new();
+	let (pool, pool_state) = testing::TestTransactionPoolExt::new();
+
+	let keystore = KeyStore::new();
+
+	SyncCryptoStore::ed25519_generate_new(
+		&keystore,
+		<crate::crypto::Public as RuntimeAppPublic>::ID,
+		Some(&format!("{}", PHRASE)),
+	)
+	.unwrap();
+
+	let ed25519_public_key =
+		SyncCryptoStore::ed25519_public_keys(&keystore, crate::crypto::Public::ID)
+			.get(0)
+			.unwrap()
+			.clone();
+
+	let mut t = sp_io::TestExternalities::default();
+	t.register_extension(OffchainDbExt::new(offchain.clone()));
+	t.register_extension(OffchainWorkerExt::new(offchain));
+	t.register_extension(TransactionPoolExt::new(pool));
+	t.register_extension(KeystoreExt(Arc::new(keystore)));
+
+	t.execute_with(|| System::set_block_number(1));
+	(t, pool_state, offchain_state, ed25519_public_key)
+}
+
+pub fn store_price_(
+	oracle_price: OraclePrice<
+		<Test as SigningTypes>::Public,
+		<Test as frame_system::Config>::BlockNumber,
+	>,
+) -> DispatchResult {
+	Oracle::store_price(
+		RuntimeOrigin::none(),
+		oracle_price,
+		sp_core::ed25519::Signature([69u8; 64]), // this can be anything
+	)
+}
+
+#[test]
+fn fetch_price_from_oracle_should_work() {
+	let (mut t, pool_state, offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
+
+	hardcode_expected_request_and_response(&mut offchain_state.write());
+
+	t.execute_with(|| {
+		Oracle::fetch_price_from_oracle(1);
+
+		let expected_data = OraclePrice {
+			round_id: U256::from(123),
+			price: U256::from(10000),
+			started_at: U256::from(1667),
+			updated_at: U256::from(1667),
+			answered_in_round: U256::from(123),
+			block_number: System::block_number(),
+			public: <Test as SigningTypes>::Public::from(ed25519_public_key),
+		};
+
+		let tx = pool_state.write().transactions.pop().unwrap();
+		let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
+		assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
+
+		if let RuntimeCall::Oracle(crate::Call::store_price { oracle_price, signature }) = tx.call {
+			assert_eq!(oracle_price.round_id, expected_data.round_id);
+			assert_eq!(oracle_price.price, expected_data.price);
+			assert_eq!(oracle_price.started_at, expected_data.started_at);
+			assert_eq!(oracle_price.updated_at, expected_data.updated_at);
+			assert_eq!(oracle_price.answered_in_round, expected_data.answered_in_round);
+			assert_eq!(oracle_price.block_number, expected_data.block_number);
+			assert_eq!(oracle_price.public, expected_data.public);
+
+			let signature_valid =
+				<OraclePrice<
+					<Test as SigningTypes>::Public,
+					<Test as frame_system::Config>::BlockNumber,
+				> as SignedPayload<Test>>::verify::<crypto::FragAuthId>(&oracle_price, signature); // Notice in `pallet_accounts` that `EthLockUpdate<T::Public>` implements the trait `SignedPayload`
+
+			assert!(signature_valid); // If `signature_valid` is true, it means `payload` and `signature` recovered the public address `data.public`
+		}
+	});
+}
+
+#[test]
+fn fetch() {
+	new_test_ext().execute_with(|| {
+		let expected_data = OraclePrice {
+			round_id: U256::from(123),
+			price: U256::from(10000),
+			started_at: U256::from(1667),
+			updated_at: U256::from(1667),
+			answered_in_round: U256::from(123),
+			block_number: System::block_number(),
+			public: sp_core::ed25519::Public([69u8; 32]),
+		};
+
+		assert_ok!(store_price_(expected_data.clone()));
+		let event = <frame_system::Pallet<Test>>::events()
+			.pop()
+			.expect("Expected one EventRecord to be found")
+			.event;
+
+		let price: u32 = expected_data.clone().price.try_into().unwrap();
+		let block_number = expected_data.clone().block_number;
+
+		assert_eq!(event, RuntimeEvent::from(Event::NewPrice { price, block_number }));
+		assert_eq!(<Price<Test>>::get(), price);
+	});
+}
+
+pub fn new_test_ext() -> sp_io::TestExternalities {
+	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+	let mut ext = sp_io::TestExternalities::new(t);
+
+	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
+
+	ext
+}
