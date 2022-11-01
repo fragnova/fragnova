@@ -17,8 +17,18 @@ use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, 
 
 #[cfg(test)]
 pub mod tests;
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
+/// Defines application identifier for crypto keys of this module.
+///
+/// Every module that deals with signatures needs to declare its unique identifier for
+/// its crypto keys.
+/// When offchain worker is signing transactions it's going to request keys of type
+/// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
+/// The keys can be inserted manually via RPC (see `author_insertKey`).
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"orac");
 
+/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
+/// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
+/// the types with this pallet-specific identifier.
 pub mod crypto {
 	use super::KEY_TYPE;
 	use sp_core::ed25519::Signature as Ed25519Signature;
@@ -126,15 +136,23 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// Struct used to hold price data.
+	/// Struct used to hold price data received from the Chainlink Price Feed smart contract.
+	/// Please refer to https://docs.chain.link/docs/data-feeds/price-feeds/api-reference/#latestrounddata.
 	#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
 	pub struct OraclePrice<TPublic, TBlockNumber> {
+		/// The round ID
 		pub round_id: U256,
+		/// The price
 		pub price: U256,
+		/// Timestamp of when the round started
 		pub started_at: U256,
+		/// Timestamp of when the round was updated
 		pub updated_at: U256,
+		/// The round ID of the round in which the answer was computed
 		pub answered_in_round: U256,
+		/// The block number on Clamor when this price was fetched from the oracle
 		pub block_number: TBlockNumber,
+		/// Clamor Public Account Address (the account address should be in FragKey, otherwise it fails)
 		pub public: TPublic,
 	}
 
