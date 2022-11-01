@@ -66,6 +66,7 @@ pub mod crypto {
 
 /// **Traits** of the **Chainlink contract** on the **Ethereum (Goerli) network**
 pub trait OracleContract {
+        /// Get the contract address.
 	fn get_contract() -> &'static str {
 		"0xABCD"
 	}
