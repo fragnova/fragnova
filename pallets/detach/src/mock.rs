@@ -1,12 +1,27 @@
 pub use crate as pallet_detach;
 use crate::*;
-use frame_support::{pallet_prelude::ConstU32, parameter_types};
-use frame_system as system;
-use sp_core::{ed25519::Signature, H256};
+use frame_support::{
+	parameter_types,
+	traits::{ ConstU32},
+};
+use frame_system;
+use sp_core::{
+	ed25519::Signature,
+	H256,
+	offchain::{
+		testing::{self, TestOffchainExt, OffchainState, PoolState},
+		OffchainDbExt, OffchainWorkerExt, TransactionPoolExt,
+	},
+};
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
+	RuntimeAppPublic,
 };
+
+use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
+use std::sync::Arc;
+use parking_lot::RwLock;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -19,17 +34,26 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
+		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
+// When to use:
+//
+// To declare parameter types for a pallet's relevant associated types during runtime construction.
+//
+// What it does:
+//
+// The macro replaces each parameter specified into a struct type with a get() function returning its specified value.
+// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
+//
+// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
 }
-
-impl system::Config for Test {
+impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -65,16 +89,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-where
-	RuntimeCall: From<LocalCall>,
+	where
+		RuntimeCall: From<LocalCall>,
 {
 	type OverarchingCall = RuntimeCall;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-where
-	RuntimeCall: From<LocalCall>,
+	where
+		RuntimeCall: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: RuntimeCall,
@@ -102,4 +126,52 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
 
 	ext
+}
+
+
+pub fn new_test_ext_with_ocw() -> (
+	sp_io::TestExternalities,
+	Arc<RwLock<PoolState>>,
+	Arc<RwLock<OffchainState>>,
+	sp_core::ed25519::Public,
+) {
+	const PHRASE: &str =
+		"news slush supreme milk chapter athlete soap sausage put clutch what kitten";
+
+	let (offchain, offchain_state) = testing::TestOffchainExt::new();
+	let (pool, pool_state) = testing::TestTransactionPoolExt::new();
+
+	let keystore = KeyStore::new();
+
+	SyncCryptoStore::ed25519_generate_new(
+		&keystore,
+		<crate::crypto::Public as RuntimeAppPublic>::ID,
+		Some(&format!("{}", PHRASE)),
+	)
+		.unwrap();
+
+	let ed25519_public_key =
+		SyncCryptoStore::ed25519_public_keys(&keystore, crate::crypto::Public::ID)
+			.get(0)
+			.unwrap()
+			.clone();
+
+	let mut t = sp_io::TestExternalities::default();
+	t.register_extension(OffchainDbExt::new(offchain.clone()));
+	t.register_extension(OffchainWorkerExt::new(offchain));
+	t.register_extension(TransactionPoolExt::new(pool));
+	t.register_extension(KeystoreExt(Arc::new(keystore)));
+
+	// Karan Da Kiya Hua
+
+	t.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
+
+	(t, pool_state, offchain_state, ed25519_public_key) // copied from https://github.com/JoshOrndorff/recipes/blob/master/pallets/ocw-demo/src/tests.rs
+}
+
+// Copied from "frame/merkle-mountain-range/src/tests.rs"
+pub fn register_offchain_ext(ext: &mut sp_io::TestExternalities) {
+	let (offchain, _offchain_state) = TestOffchainExt::with_offchain_db(ext.offchain_db());
+	ext.register_extension(OffchainDbExt::new(offchain.clone()));
+	ext.register_extension(OffchainWorkerExt::new(offchain));
 }

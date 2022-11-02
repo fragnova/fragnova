@@ -237,7 +237,7 @@ mod patch_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
-			let block_number = System::block_number(); //@sinkingsugar
+			let block_number = System::block_number();
 
 			let patch = dd.patch;
 
@@ -391,58 +391,10 @@ mod patch_tests {
 		});
 	}
 
-	// #[test]
-	// fn patch_should_not_work_if_detached() {
-	// 	let keystore = KeyStore::new();
-	// 	let mut t = new_test_ext();
-
-	// 	t.register_extension(KeystoreExt(Arc::new(keystore)));
-	// 	t.execute_with(|| {
-	// 		let pair = sp_core::ed25519::Pair::from_string("//Alice", None).unwrap();
-	// 		let data = DATA.as_bytes().to_vec();
-	// 		initial_upload();
-
-	// 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
-	// 		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
-
-	// 		<EthereumAuthorities<Test>>::mutate(|authorities| {
-	// 			authorities.insert(keys.get(0).unwrap().clone());
-	// 		});
-	// 		assert_ok!(ProtosPallet::detach(
-	// 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-	// 			PROTO_HASH,
-	// 			SupportedChains::EthereumMainnet,
-	// 			pair.to_raw_vec()
-	// 		));
-
-	// 		let detach_data = DetachInternalData {
-	// 			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
-	// 			hash: PROTO_HASH,
-	// 			remote_signature: vec![],
-	// 			target_account: vec![],
-	// 			target_chain: SupportedChains::EthereumGoerli,
-	// 			nonce: 1,
-	// 		};
-
-	// 		assert_ok!(Detach::internal_finalize_detach(
-	// 			Origin::none(),
-	// 			detach_data,
-	// 			pair.sign(DATA.as_bytes())
-	// 		));
-
-	// 		assert_noop!(
-	// 			ProtosPallet::patch_(
-	// 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-	// 				PROTO_HASH,
-	// 				Some(Compact(123)),
-	// 				vec![],
-	// 				data,
-	// 			),
-	// 			Error::<Test>::Detached
-	// 		);
-
-	// 	});
-	// }
+	#[test]
+	fn patch_should_not_work_if_proto_is_detached() {
+		todo!()
+	}
 }
 
 mod transfer_tests {
@@ -600,6 +552,87 @@ mod set_metadata_tests {
 			assert_noop!(set_metadata(dd.account_id, &metadata), Error::<Test>::ProtoNotFound);
 		});
 	}
+}
+
+mod detach_tests {
+	use super::*;
+
+	pub fn detach_(
+		signer: <Test as frame_system::Config>::AccountId,
+		detach: &Detach,
+	) -> DispatchResult {
+		ProtosPallet::detach(
+			RuntimeOrigin::signed(signer),
+			detach.proto_fragment.get_proto_hash(),
+			detach.target_chain,
+			detach.target_account.clone()
+		)
+	}
+
+	#[test]
+	fn detach_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
+			assert_ok!(detach_(dd.account_id, &detach));
+
+			assert_eq!(
+				pallet_detach::DetachRequests::<Test>::get(),
+				vec![
+					pallet_detach::DetachRequest {
+						hash: pallet_detach::DetachHash::Proto(detach.proto_fragment.get_proto_hash()),
+						target_chain: detach.target_chain,
+						target_account: detach.target_account,
+					},
+				]
+			);
+
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_user_does_not_own_the_proto() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
+			assert_noop!(detach_(dd.account_id_second, &detach), Error::<Test>::Unauthorized);
+		});
+	}
+	#[test]
+	fn detach_should_not_work_if_the_proto_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::ProtoNotFound);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_the_proto_was_already_detached() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
+			assert_ok!(detach_(dd.account_id, &detach));
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::Detached);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_proto_is_owned_by_external_asset() {
+		todo!("I have no idea how the enum `LinkedAssset` even works right now!");
+	}
+
 }
 
 mod stake_tests {

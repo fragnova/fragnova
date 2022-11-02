@@ -379,7 +379,7 @@ mod internal_lock_update_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
-			let current_block_number = System::block_number(); //@sinkingsugar
+			let current_block_number = System::block_number();
 
 			let lock = dd.lock;
 
@@ -492,7 +492,7 @@ mod internal_lock_update_tests {
 			let dd = DummyData::new();
 			let unlock = dd.unlock;
 
-			let current_block_number = System::block_number(); //@sinkingsugar
+			let current_block_number = System::block_number();
 
 			assert_ok!(lock_(&unlock.lock));
 

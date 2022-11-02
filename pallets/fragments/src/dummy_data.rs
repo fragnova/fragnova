@@ -1,5 +1,7 @@
 use crate::*;
 
+use pallet_detach::SupportedChains;
+
 // pub use pallet_protos::dummy_data::ProtoFragment;
 pub use copied_from_pallet_protos::ProtoFragment;
 
@@ -134,6 +136,12 @@ pub struct CreateAccount {
 	pub copy_id: u64,
 }
 
+pub struct Detach {
+	pub definition: Definition,
+	pub target_chain: SupportedChains,
+	pub target_account: Vec<u8>,
+}
+
 /// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
 pub struct DummyData {
 	pub definition: Definition,
@@ -153,6 +161,8 @@ pub struct DummyData {
 	pub give_copy_perms: Give,
 
 	pub create_account: CreateAccount,
+
+	pub detach: Detach,
 
 	pub account_id: sp_core::ed25519::Public,
 	pub account_id_second: sp_core::ed25519::Public,
@@ -255,6 +265,12 @@ impl DummyData {
 
 		let create_account = CreateAccount { mint: mint_unique.clone(), edition_id: 1, copy_id: 1 };
 
+		let detach = Detach {
+			definition: definition.clone(),
+			target_chain: SupportedChains::EthereumMainnet,
+			target_account: [7u8; 20].to_vec(),
+		};
+
 		Self {
 			definition,
 
@@ -273,6 +289,8 @@ impl DummyData {
 			give_no_copy_perms,
 
 			create_account,
+
+			detach,
 
 			account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([2u8; 32]),

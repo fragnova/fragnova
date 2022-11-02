@@ -16,6 +16,7 @@ use sp_clamor::{Hash256, CID_PREFIX};
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
 use protos::traits::{RecordInfo, Trait, VariableType, VariableTypeInfo};
+use pallet_detach::SupportedChains;
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
@@ -80,11 +81,16 @@ pub struct Stake {
 	pub proto_fragment: ProtoFragment,
 	pub lock: Lock,
 }
-
 impl Stake {
 	pub fn get_stake_amount(&self) -> u128 {
 		self.proto_fragment.include_cost.unwrap().into()
 	}
+}
+
+pub struct Detach {
+	pub proto_fragment: ProtoFragment,
+	pub target_chain: SupportedChains,
+	pub target_account: Vec<u8>,
 }
 
 /// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
@@ -100,6 +106,7 @@ pub struct DummyData {
 	pub proto_shard_script_4: ProtoFragment,
 	pub patch: Patch,
 	pub metadata: Metadata,
+	pub detach: Detach,
 	pub stake: Stake,
 	pub account_id: sp_core::ed25519::Public,
 	pub account_id_second: sp_core::ed25519::Public,
@@ -265,6 +272,12 @@ impl DummyData {
 			data: b"{\"name\": \"ram\"}".to_vec(),
 		};
 
+		let detach = Detach {
+			proto_fragment: proto.clone(),
+			target_chain: SupportedChains::EthereumMainnet,
+			target_account: [7u8; 20].to_vec(),
+		};
+
 		let stake = Stake {
 			proto_fragment: proto.clone(),
 			lock: Lock {
@@ -306,6 +319,7 @@ impl DummyData {
 			proto_shard_script_4,
 			patch,
 			metadata,
+			detach,
 			stake,
 			account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([2u8; 32]),

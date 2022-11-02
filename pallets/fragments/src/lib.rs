@@ -273,8 +273,8 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
-	use pallet_detach::DetachedHashes;
 	use pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
+	use pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachedHashes, SupportedChains};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -432,10 +432,10 @@ pub mod pallet {
 		/// New definition created by account, definition hash
 		DefinitionCreated { definition_hash: Hash128 },
 		/// A Fragment Definition metadata has changed
-		DefinitionMetadataChanged { fragment_hash: Hash128, metadata_key: Vec<u8> },
+		DefinitionMetadataChanged { definition_hash: Hash128, metadata_key: Vec<u8> },
 		/// A Fragment Instance metadata has changed
 		InstanceMetadataChanged {
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			edition_id: Unit,
 			copy_id: Unit,
 			metadata_key: Vec<u8>,
@@ -554,7 +554,7 @@ pub mod pallet {
 
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Only proto owner can create a fragment definition from proto
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // proto must not have been detached
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)), Error::<T>::Detached); // proto must not have been detached
 
 			ensure!(metadata.name.len() > 0, Error::<T>::MetadataNameIsEmpty);
 
@@ -604,21 +604,21 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// **Alters** the **custom metadata** of a **Fragment Definition** (whose ID is `fragment_hash`) by **adding or modifying a key-value pair** (`metadata_key.clone`,`blake2_256(&data.encode())`)
+		/// **Alters** the **custom metadata** of a **Fragment Definition** (whose ID is `definition_hash`) by **adding or modifying a key-value pair** (`metadata_key.clone`,`blake2_256(&data.encode())`)
 		/// to the **BTreeMap field `custom_metadata`** of the **existing Fragment Definition's Struct Instance**.
 		/// Furthermore, this function also indexes `data` in the Blockchain's Database and stores it in the IPFS
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic / dispatchable function
-		/// * `fragment_hash` - **ID of the Fragment Definition**
+		/// * `definition_hash` - **ID of the Fragment Definition**
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
 		#[pallet::weight(50_000)]
 		pub fn set_definition_metadata(
 			origin: OriginFor<T>,
 			// fragment hash we want to update
-			fragment_hash: Hash128,
+			definition_hash: Hash128,
 			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
 			metadata_key: Vec<u8>,
 			// data we want to update last because of the way we store blocks (storage chain)
@@ -627,7 +627,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			let proto_hash =
-				<Definitions<T>>::get(fragment_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `fragment_hash`
+				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `fragment_hash`
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 			let proto_owner: T::AccountId = match proto.owner {
@@ -637,8 +637,8 @@ pub mod pallet {
 			}?;
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Ensure `who` is `proto_owner`
 
-			// TO REVIEW
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
+			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
 
 			let data_hash = blake2_256(&data);
 
@@ -663,7 +663,7 @@ pub mod pallet {
 				}
 			};
 
-			<Definitions<T>>::mutate(&fragment_hash, |definition| {
+			<Definitions<T>>::mutate(&definition_hash, |definition| {
 				let definition = definition.as_mut().unwrap();
 				// update custom metadata
 				definition.custom_metadata.insert(metadata_key_index, data_hash);
@@ -674,13 +674,13 @@ pub mod pallet {
 
 			// also emit event
 			Self::deposit_event(Event::DefinitionMetadataChanged {
-				fragment_hash,
+				definition_hash,
 				metadata_key: metadata_key.clone(),
 			});
 
 			log::debug!(
 				"Added metadata to fragment definition: {:x?} with key: {:x?}",
-				fragment_hash,
+				definition_hash,
 				metadata_key
 			);
 
@@ -771,7 +771,7 @@ pub mod pallet {
 
 			// also emit event
 			Self::deposit_event(Event::InstanceMetadataChanged {
-				fragment_hash: definition_hash,
+				definition_hash: definition_hash,
 				edition_id,
 				copy_id,
 				metadata_key: metadata_key.clone(),
@@ -825,8 +825,8 @@ pub mod pallet {
 
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Ensure `who` is `proto_owner`
 
-			// TO REVIEW
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
+			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
 
 			ensure!(!<Publishing<T>>::contains_key(&definition_hash), Error::<T>::SaleAlreadyOpen); // Ensure `definition_hash` isn't already published
 
@@ -893,10 +893,11 @@ pub mod pallet {
 
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Ensure `who` is `proto_owner`
 
-			// TO REVIEW
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
-
 			ensure!(<Publishing<T>>::contains_key(&definition_hash), Error::<T>::NotFound); // Ensure `definition_hash` is currently published
+
+			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
+			// TO REVIEW - This check might be redundant since a definition could not have been detached if it was on-sale
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
 
 			// ! Writing
 
@@ -954,8 +955,8 @@ pub mod pallet {
 
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Ensure `who` is `proto_owner`
 
-			// TO REVIEW
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
+			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
 
 			let quantity = match options {
 				// Number of fragment instances to mint
@@ -1009,6 +1010,9 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
 
 			let sale = <Publishing<T>>::get(&definition_hash).ok_or(Error::<T>::NotFound)?; // if Fragment Definition `definition_hash` is not published (i.e on sale), you cannot buy it
 			if let Some(expiration) = sale.expiration {
@@ -1327,6 +1331,52 @@ pub mod pallet {
 
 			// TODO Make owner pay for deposit actually!
 			// TODO setup proxy
+
+			Ok(())
+		}
+
+		/// Request to detach a **Fragment** from **Clamor**.
+		///
+		/// Note: The Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
+		///
+		/// Note: **Once the Fragment is detached**, an **event is emitted that includes a signature**.
+		/// This signature can then be used to attach the Proto-Fragment to an External Blockchain `target_chain`.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the extrinsic function
+		/// * `definition_hash` - **ID of the Fragment Definition** to **detach**
+		/// * `target_chain` - **External Blockchain** to attach the Proto-Fragment into
+		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
+		///   to assign ownership of the Proto-Fragment to
+		#[pallet::weight(25_000)] // TODO - weight
+		pub fn detach(
+			origin: OriginFor<T>,
+			definition_hash: Hash128,
+			target_chain: SupportedChains,
+			target_account: Vec<u8>, // an eth address or so
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let proto_hash =
+				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?.proto_hash;
+			let proto: Proto<T::AccountId, T::BlockNumber> =
+				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+
+			match proto.owner {
+				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::NoPermission),
+				// We don't allow detaching external assets
+				ProtoOwner::ExternalAsset(_ext_asset) => return Err(Error::<T>::NoPermission.into()),
+			};
+
+			// Definition should not be on sale when you detach it
+			ensure!(!<Publishing<T>>::contains_key(&definition_hash), Error::<T>::NoPermission);
+
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
+
+			<DetachRequests<T>>::mutate(|requests| {
+				requests.push(DetachRequest { hash: DetachHash::Definition(definition_hash), target_chain, target_account });
+			});
 
 			Ok(())
 		}

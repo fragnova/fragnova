@@ -2,11 +2,8 @@
 
 use crate as pallet_fragments;
 use crate::mock;
-
 use crate::*;
-
 use crate::dummy_data::*;
-
 use crate::mock::*;
 
 use frame_support::{assert_noop, assert_ok};
@@ -2098,6 +2095,119 @@ mod create_account_tests {
 			);
 		});
 	}
+}
+
+mod detach_tests {
+	use frame_support::dispatch::Pays::No;
+	use super::*;
+
+	pub fn detach_(
+		signer: <Test as frame_system::Config>::AccountId,
+		detach: &Detach,
+	) -> DispatchResult {
+		FragmentsPallet::detach(
+			RuntimeOrigin::signed(signer),
+			detach.definition.get_definition_id(),
+			detach.target_chain,
+			detach.target_account.clone()
+		)
+	}
+
+	#[test]
+	fn detach_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			assert_ok!(upload(dd.account_id, &detach.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &detach.definition));
+			assert_ok!(detach_(dd.account_id, &detach));
+
+			assert_eq!(
+				pallet_detach::DetachRequests::<Test>::get(),
+				vec![
+					pallet_detach::DetachRequest {
+						hash: pallet_detach::DetachHash::Definition(detach.definition.get_definition_id()),
+						target_chain: detach.target_chain,
+						target_account: detach.target_account,
+					},
+				]
+			);
+
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_user_does_not_own_the_definition() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			assert_ok!(upload(dd.account_id, &detach.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &detach.definition));
+			assert_noop!(detach_(dd.account_id_second, &detach), Error::<Test>::NoPermission);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_the_definition_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NotFound);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_the_definition_was_already_detached() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			assert_ok!(upload(dd.account_id, &detach.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &detach.definition));
+			assert_ok!(detach_(dd.account_id, &detach));
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::Detached);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_the_definition_is_currently_published() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			assert_ok!(upload(dd.account_id, &detach.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &detach.definition));
+
+			assert_ok!(
+				publish_(
+					dd.account_id,
+					&Publish {
+						definition: detach.definition.clone(),
+						price: 7u128,
+						quantity: None,
+						expires: None,
+						amount: None,
+					}
+				)
+			);
+
+			assert_noop!(detach_(dd.account_id_second, &detach), Error::<Test>::NoPermission);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_definition_is_owned_by_external_asset() {
+		todo!("I have no idea how the enum `LinkedAssset` even works right now!");
+	}
+
 }
 
 mod get_definitions_tests {

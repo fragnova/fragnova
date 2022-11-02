@@ -1,5 +1,6 @@
 (def seed (first *command-line-args*))
 
+; Deterministically computes an ECSDA private key from an ED25519 private key's signature
 (defwire generate
   seed
   (| (Sr25519.PublicKey)
@@ -12,7 +13,7 @@
      (| (ToHex) (Log "ECDSA public"))
      (| (Substrate.AccountId true) (Log "ECDSA AccountID")))
 
-  "fragments-frag-ecdsa-keys" (StringToBytes) >= .gen-message 
+  "fragments-frag-ecdsa-keys" (StringToBytes) >= .gen-message
   .gen-ed-pub-key (AppendTo .gen-message)
   .gen-message (Ed25519.Sign seed)
   (Hash.Keccak-256) = .ecdsa-priv (ECDSA.PublicKey)

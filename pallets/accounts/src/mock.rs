@@ -6,6 +6,8 @@ use frame_support::{
 	traits::{ConstU128, ConstU32, ConstU64},
 };
 
+use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
+use std::sync::Arc;
 use parking_lot::RwLock;
 
 use sp_core::{
@@ -16,10 +18,6 @@ use sp_core::{
 	},
 	H256,
 };
-
-use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
-
-use std::sync::Arc;
 
 use sp_runtime::{
 	testing::{Header, TestXt},
