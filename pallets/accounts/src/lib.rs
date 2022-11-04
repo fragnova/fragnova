@@ -86,7 +86,6 @@ pub mod crypto {
 }
 
 use codec::{Decode, Encode};
-use ethabi::ethereum_types::U128;
 pub use pallet::*;
 
 use sp_io::{

@@ -155,7 +155,7 @@ benchmarks! {
 									&get_ethereum_public_key(&ethereum_secret_key_struct).0[..],
 									&T::EthChainId::get().to_be_bytes(),
 									&Into::<[u8; 32]>::into(U256::from(100u32)), // same as `data.amount`
-									&Into::<[u8; 16]>::into(U128::from(1u32)) // same as `data.lock_period`
+									&Into::<[u8; 32]>::into(U256::from(1u32)) // same as `data.lock_period`
 								].concat()
 							)[..]
 						].concat()
