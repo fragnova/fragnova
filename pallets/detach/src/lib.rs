@@ -28,7 +28,7 @@ use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, U256};
 /// When offchain worker is signing transactions it's going to request keys of type
 /// `KeyTypeId` from the keystore and use the ones it finds to sign the transaction.
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
-pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"frag");
+pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"deta");
 
 /// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
 /// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
@@ -73,22 +73,25 @@ pub mod crypto {
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, Compact};
 use sp_io::{crypto as Crypto, hashing::keccak_256, offchain_index};
 use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
-use sp_clamor::{Hash128, Hash256};
+use sp_clamor::{Hash128, Hash256, InstanceUnit};
 
 use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
 	SigningTypes,
 };
 
+/// Enum representing a Proto-Fragment or a Fragment Instance that the User wants to detach from the Clamor Blockchain
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum DetachHash {
+	/// A Proto-Fragment (identified by its Hash)
 	Proto(Hash256),
-	Definition(Hash128),
+	/// A Fragment Instance (identified as a tuple of its Fragment Definition Hash, its Edition ID and its Copy ID)
+	Instance(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>),
 }
 
 /// **Possible Blockchains** into which a **Proto-Fragment** can be **detached**
@@ -102,31 +105,36 @@ pub enum SupportedChains {
 	EthereumGoerli,
 }
 
-/// **Struct** that represents a **request to detach a Proto-Fragment**
+/// **Struct** that represents a **request to detach a "detachable thing" (e.g a Proto-Fragment or a Fragment Instance)** from the Clamor Blockchain
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct DetachRequest {
-	/// **ID of the Proto-Fragment**
+	/// ID of the "detachable thing"
 	pub hash: DetachHash,
-	/// **External Blockchain** to **send** the **Proto-Fragment** to
+	/// **External Blockchain** in which the "detachable thing" can be attached into, after the "detachable thing" is detached
 	pub target_chain: SupportedChains,
-	/// **Account Address** on the `target_chain` to send the `Proto-Fragment` to
+	/// Public Account Address in the External Blockchain to transfer the ownership of the "detachable thing" to
 	pub target_account: Vec<u8>, // an eth address or so
 }
 
-/// **Struct** that **represents** a **"signed request" to detach a **Proto-Fragment** (which will be signed by the field `public`)
+/// Payload represents information about a "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) that will be detached
+///
+/// Note: This Payload that will be attached to the unsigned transaction `Call::internal_finalize_detach` which will be sent on-chain
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct DetachInternalData<TPublic> {
 	/// Public key that is expected to have a matching key in the keystore, which should be used to sign the payload
+	///
+	/// See this struct's implementation of `SignedPayload` for more information.
 	pub public: TPublic,
-	/// Proto-Fragment Hash or Fragment Hash
+	/// ID of the "detachable thing"
 	pub hash: DetachHash,
-	/// External Blockchain to transfer the Proto-Fragment to
+	/// **External Blockchain** in which the "detachable thing" can be attached into, after the "detachable thing" is detached
 	pub target_chain: SupportedChains,
-	/// Public Account Address of the External Blockchain to transfer the Proto-Fragment to
+	/// Public Account Address in the External Blockchain to transfer the ownership of the "detachable thing" to
 	pub target_account: Vec<u8>, // an eth address or so
-	/// Signature that is signed by an `EthereumAuthority` on the payload
+	/// Signature obtained by signing the detach request using a Fragnova-authorized account.
+	/// After the "detachable thing" is detached, this signature can be presented to the External Blockchain to attach the "detached thing" to the External Blockchain.
 	pub remote_signature: Vec<u8>,
-	/// The number of signed detaches done by the `target_account` (whether successful or unsuccessful)
+	/// Number of times the the `target_account` on the `target_chain` was specified as the new owner when a "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) was detached.
 	pub nonce: u64,
 }
 
@@ -141,16 +149,17 @@ impl<T: SigningTypes> SignedPayload<T> for DetachInternalData<T::Public> {
 	}
 }
 
-/// **Struct** that **contains information** about a **detached Proto-Fragment**
+/// **Struct** that **contains information** about **a "detached thing"** (e.g **a detached Proto-Fragment** or a **detached Fragment Instance**) that was detached from the Clamor Blockchain
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub struct ExportData {
-	/// **Blockchain** the **Proto-Fragment** was **detached onto**
+	/// **External Blockchain** the **"detached thing"** can be **attached to**
 	chain: SupportedChains,
-	/// Account Address (on the blockchain `SupportedChain`) that the Proto-Fragment was transferred into
+	/// Public Account Address (in the blockchain `chain`) to assign ownership of the "detached thing" to
 	owner: Vec<u8>,
-	/// For now we don't allow to re-attach but in the future we will,
-	/// this nonce is in 1:1 relationship with the remote chain,
-	/// so that e.g. if we detach on ethereum the message cannot be repeated and needs to go 1:1 with clamor (INCDT)
+	// For now we don't allow to re-attach but in the future we will,
+	// this nonce is in 1:1 relationship with the remote chain,
+	// so that e.g. if we detach on ethereum the message cannot be repeated and needs to go 1:1 with clamor
+	/// Detach-Nonce of the Public Account Address  `owner` (in the external blockchain `chain`) when the "detached thing" was detached
 	nonce: u64,
 }
 
@@ -160,6 +169,7 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use sp_core::ed25519::Public;
+	use crate::Error::TargetAccountLengthIsIncorrect;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -199,16 +209,18 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
-	/// **StorageValue** that equals a **list of detach requests**
+	/// **StorageValue** that equals the **list of detach requests**
 	#[pallet::storage]
 	pub type DetachRequests<T: Config> = StorageValue<_, Vec<DetachRequest>, ValueQuery>;
 
-	/// **StorageDoubleMap** that maps an **account address on an external blockchain and the external blockchain itself** to a **nonce**
+	/// **StorageDoubleMap** that maps an **account address on an external blockchain and the external blockchain**
+	/// to a **nonce**.
+	/// This nonce indicates the number of times the account address was specified as the new owner when a "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) was detached.
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
 		StorageDoubleMap<_, Twox64Concat, Vec<u8>, Twox64Concat, SupportedChains, u64>;
 
-	/// **StorageMap** that maps a **detached Proto-Fragment's Hash or a detached Fragment's Hash** to an ***ExportData* enum (this enum contains information about the detachment)**
+	/// **StorageMap** that maps a **detached Proto-Fragment or a detached Fragment Instance** to an ***ExportData* enum (this enum contains information about the detachment)**
 	#[pallet::storage]
 	pub type DetachedHashes<T: Config> = StorageMap<_, Identity, DetachHash, ExportData>;
 
@@ -223,13 +235,15 @@ pub mod pallet {
 	// to present to external chains to detach onto
 	/// **StorageValue** that equals the **set of Ed25519 Public keys** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
-	/// Note: Only the Sudo User can edit `FragKeys`
+	/// Note: Only the Sudo User can edit `DetachKeys`
 	#[pallet::storage]
-	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
+	pub type DetachKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// A Proto-Fragment or a Fragment Instance was detached
 		Detached { hash: DetachHash, remote_signature: Vec<u8> },
 	}
 
@@ -242,6 +256,8 @@ pub mod pallet {
 		NoValidator,
 		/// Failed to sign message
 		SigningFailed,
+		// Length of the Target Account in the Target Blockchain Does Not Adhere to the Target Blockchain's Specification
+		TargetAccountLengthIsIncorrect,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -282,7 +298,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// **Add** an **Ed25519 public key** to `FragKeys`
+		/// **Add** an **Ed25519 public key** to `DetachKeys`
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		#[pallet::weight(T::WeightInfo::add_eth_auth())]
@@ -291,14 +307,14 @@ pub mod pallet {
 
 			log::debug!("New key: {:?}", public);
 
-			<FragKeys<T>>::mutate(|validators| {
+			<DetachKeys<T>>::mutate(|validators| {
 				validators.insert(public);
 			});
 
 			Ok(())
 		}
 
-		/// **Remove** an **Ed25519 public key** from `FragKeys`
+		/// **Remove** an **Ed25519 public key** from `DetachKeys`
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		#[pallet::weight(T::WeightInfo::del_eth_auth())]
@@ -307,7 +323,7 @@ pub mod pallet {
 
 			log::debug!("Removed key: {:?}", public);
 
-			<FragKeys<T>>::mutate(|validators| {
+			<DetachKeys<T>>::mutate(|validators| {
 				validators.remove(&public);
 			});
 
@@ -349,7 +365,7 @@ pub mod pallet {
 	/// Define some logic that should be executed regularly in some context, for e.g. `on_initialize`.
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		/// During the block finalization phase, the **list** in **DetachRequests** is **stored in the Offchain DB** under the **key "fragments-detach-requests"**.
+		/// During the block finalization phase, the **list** in **DetachRequests** is **stored in the Offchain DB** under the **key "detach-requests"**.
 		/// After which, **DetachRequests** is **cleared**.
 		///
 		/// Note: `on_finalize` is executed at the end of block after all extrinsic are dispatched.
@@ -360,7 +376,7 @@ pub mod pallet {
 				log::debug!("Got {} detach requests", requests.len());
 				// Write a key value pair to the Offchain DB database in a buffered fashion.
 				// Source: https://paritytech.github.io/substrate/master/sp_io/offchain_index/fn.set.html#
-				offchain_index::set(b"fragments-detach-requests", &requests.encode());
+				offchain_index::set(b"detach-requests", &requests.encode());
 			}
 		}
 
@@ -393,6 +409,10 @@ pub mod pallet {
 		/// Whitelist and mark as valid the call `Call::internal_finalize_detach` only if:
 		/// 1. The signer that signed the signed payload of the call is in `FragKeys`
 		/// 2. The signature of the call can be verified against the signed payload of the call
+		///
+		/// Important Developer Note: Currently in this function, we are "force type casting" the signer that signed the payload of `Call:internal_finalize_detach`
+		/// from `T::Public` to a `MultiSigner`.
+		/// This is not ideal since we should not be making any assumptions about `T::Public`.
 		///
 		/// Footnote:
 		///
@@ -429,11 +449,9 @@ pub mod pallet {
 				};
 				log::debug!("Public key: {:?}", signer);
 
-				// check if signer is valid
-				let valid_keys = <FragKeys<T>>::get();
-				log::debug!("Valid keys: {:?}", valid_keys);
-				// signer must be in `FragKeys`
-				if !valid_keys.contains(&signer) {
+				log::debug!("Valid keys: {:?}", <DetachKeys<T>>::get());
+				// signer must be in `DetachKeys`
+				if !<DetachKeys<T>>::get().contains(&signer) {
 					return InvalidTransaction::BadSigner.into();
 				}
 
@@ -492,12 +510,12 @@ pub mod pallet {
 			}
 		}
 
-		/// Set the initial set of Ed25519 public keys in `FragKeys`
+		/// Set the initial set of Ed25519 public keys in `DetachKeys`
 		fn initialize_keys(keys: &[ed25519::Public]) {
 			if !keys.is_empty() {
-				assert!(<FragKeys<T>>::get().is_empty(), "FragKeys are already initialized!");
+				assert!(<DetachKeys<T>>::get().is_empty(), "DetachKeys are already initialized!");
 				for key in keys {
-					<FragKeys<T>>::mutate(|keys| {
+					<DetachKeys<T>>::mutate(|keys| {
 						keys.insert(*key);
 					});
 				}
@@ -505,19 +523,19 @@ pub mod pallet {
 		}
 
 
-		/// Adds newly-found Ed25519 keys to the persistent local storage under the key `b"fragments-frag-ecdsa-keys"`.
+		/// Adds newly-found Ed25519 keys to the persistent local storage under the key `b"detach-ecdsa-keys"`.
 		/// Furthermore, for each newly-found Ed25519 key - an ECDSA key is deterministically computed (using the Ed25519 key) which is then added to the keystore under the key id `KEY_TYPE`.
 		fn add_newly_found_ed25519_and_ecdsa_keys() {
-			// Get a storage value reference (i.e `StorageValueRef`) of the key `b"fragments-frag-ecdsa-keys"` in the persistent local storage
+			// Get a storage value reference (i.e `StorageValueRef`) of the key `b"detach-ecdsa-keys"` in the persistent local storage
 			let storage_ref =
-				StorageValueRef::persistent(b"fragments-frag-ecdsa-keys");
+				StorageValueRef::persistent(b"detach-ecdsa-keys");
 			let mut persisted_ed25119_keys =
 				Self::get_ed25519_keys_from_storage_value_reference(&storage_ref);
 
 			// doing it like this cos mutate was insane...
 			let mut edited = false;
 
-			// Add Ed25519 keys that are not currently in the persistent local storage (under the key `b"fragments-frag-ecdsa-keys"`) to the persistent local storage.
+			// Add Ed25519 keys that are not currently in the persistent local storage (under the key `b"detach-ecdsa-keys"`) to the persistent local storage.
 			// Furthermore - for each Ed25519 key that's currently not in the persistent local storage, deterministically compute an ECDSA key and add it to the keystore under key id `KEY_TYPE`.
 			//
 			// Footnote:
@@ -547,21 +565,78 @@ pub mod pallet {
 			}
 		}
 
-		/// Signs the list of detach requests using an authority in `EthereumAuthorities`.
+		/// Returns a Tuple of the following things:
+		/// 1. A **Signature** obtained by **signing the detach request `request` using a Fragnova-authorized account**.
+		///
+		/// Note: Since it was signed by a Fragnova-authorized account, this signature can be presented to the External Blockchain `requests.target_chain`
+		/// to attach the "detached thing" (e.g a detached Proto-Fragment or a detached Fragment Instance) to the External Blockchain.
+		///
+		/// 2. The Detach-Nonce of the detach request's target account. (See `DetachNonces` for more information).
+		fn get_detach_signature_and_detach_nonce(request: &DetachRequest) -> Result<(Vec<u8>, u64), Error<T>> {
+			match request.target_chain {
+				SupportedChains::EthereumMainnet
+				| SupportedChains::EthereumRinkeby
+				| SupportedChains::EthereumGoerli => {
+
+					Self::add_newly_found_ed25519_and_ecdsa_keys();
+
+					// `sp_io::crypto::ecdsa_public_keys` returns all ecdsa public keys for the given key id from the keystore. (in our case the key id is `KEY_TYPE`).
+					// Source: https://docs.rs/sp-io/latest/sp_io/crypto/fn.ecdsa_public_keys.html
+					let ecdsa_keys = Crypto::ecdsa_public_keys(KEY_TYPE);
+					log::debug!("ecdsa local keys {:x?}", ecdsa_keys);
+
+					// make sure the local key is in the global authorities set!
+					let ethereum_authority = ecdsa_keys
+						.iter()
+						.find(|k| <EthereumAuthorities<T>>::get().contains(k)).ok_or(Error::<T>::NoValidator)?;
+
+					let nonce =
+						<DetachNonces<T>>::get(&request.target_account, request.target_chain).unwrap_or_default().checked_add(1).unwrap();
+					let mut chain_id_be: [u8; 32] = [0u8; 32]; // "be" stands for big-endian
+					match request.target_chain {
+						SupportedChains::EthereumMainnet => U256::from(1),
+						SupportedChains::EthereumRinkeby => U256::from(4),
+						SupportedChains::EthereumGoerli => U256::from(5),
+					}.to_big_endian(&mut chain_id_be);
+
+					let payload = [
+						// REVIEW - `request.hash` is a `DetachHash` enum. Do we want that? @sinkingsugar
+						&request.hash.encode()[..],
+						&chain_id_be,
+						&TryInto::<[u8; 20]>::try_into(request.target_account.clone()).map_err(|_| Error::<T>::TargetAccountLengthIsIncorrect)?,
+						&nonce.to_be_bytes(), // "be" stands for big-endian
+					].concat();
+					log::debug!(
+						"payload: {:x?}, len: {}",
+						payload,
+						payload.len()
+					);
+
+					// Get the Ethereum specific signature of the payload
+					let signature = Self::eth_sign_payload(&ethereum_authority, &payload).ok_or(Error::<T>::SigningFailed)?;
+
+					Ok((signature.0.to_vec(), nonce))
+				},
+			}
+
+		}
+
+		/// Signs the list of detach requests using a Fragnova-authorized account.
 		/// Then, for each of the signed detach requests - send an unsigned transaction on-chain
 		/// that will cause an event to be emitted which will contain the detach request's signature.
-		/// This signature can be then used in the target chain to attach the Proto-Fragment to the target chain.
+		/// This signature can be then used in the target chain to attach the "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) to the target chain.
 		///
-		/// The format of each detach request (which is then signed) is as follows:
+		/// The format of each detach request (which is then signed by a Fragnova-authorized account) is as follows:
 		/// keccak_256(<Proto-Fragment Hash> ‖ <Target Chain ID> ‖ <Public Account Address in Target Chain to assign ownership of Proto-Fragment to> ‖ <Detach Nonce of Public Account Address in Target Chain (see `DetachNonces`)>)
-		/// Note 2: On the Target Chain, the "attach nonce" needs to be exactly the same as the detach nonce here
-		fn process_detach_requests() {
+		///
+		/// Note: On the Target Chain, the "attach nonce" needs to be exactly the same as the detach nonce here.
+		pub fn process_detach_requests() {
 
 			const FAILED: () = ();
 
 			/*
-			Use `StorageValueRef::persistent(b"fragments-detach-requests")`
-			to get a reference to the storage value that's under the key `b"fragments-detach-requests"` in the persistent local storage.
+			Use `StorageValueRef::persistent(b"detach-requests")`
+			to get a reference to the storage value that's under the key `b"detach-requests"` in the persistent local storage.
 			and use `StorageValueRef::mutate()`
 			to set that storage value to a new value.
 
@@ -571,7 +646,7 @@ pub mod pallet {
 			Reference: https://paritytech.github.io/substrate/master/sp_runtime/offchain/storage/struct.StorageValueRef.html#method.mutate)
 			 */
 			let _ =
-				StorageValueRef::persistent(b"fragments-detach-requests")
+				StorageValueRef::persistent(b"detach-requests")
 					.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| {
 
 						let requests = requests.map_err(|_| FAILED)?.ok_or(FAILED)?;
@@ -579,57 +654,7 @@ pub mod pallet {
 						log::debug!("Got {} detach requests", requests.len());
 						for request in requests { // Iterate through the list of detach requests
 
-							let tuple_signature_nonce = match request.target_chain {
-								SupportedChains::EthereumMainnet
-								| SupportedChains::EthereumRinkeby
-								| SupportedChains::EthereumGoerli => {
-
-									Self::add_newly_found_ed25519_and_ecdsa_keys();
-
-									// `sp_io::crypto::ecdsa_public_keys` returns all ecdsa public keys for the given key id from the keystore. (in our case the key id is `KEY_TYPE`).
-									// Source: https://docs.rs/sp-io/latest/sp_io/crypto/fn.ecdsa_public_keys.html
-									let ecdsa_keys = Crypto::ecdsa_public_keys(KEY_TYPE);
-									log::debug!("ecdsa local keys {:x?}", ecdsa_keys);
-
-									// make sure the local key is in the global authorities set!
-									if let Some(ecdsa_key) = ecdsa_keys
-										.iter()
-										.find(|k| <EthereumAuthorities<T>>::get().contains(k)) {
-
-										let nonce =
-											<DetachNonces<T>>::get(&request.target_account, request.target_chain).unwrap_or_default().checked_add(1).unwrap();
-										let mut chain_id_be: [u8; 32] = [0u8; 32]; // "be" stands for big-endian
-										match request.target_chain {
-											SupportedChains::EthereumMainnet => U256::from(1),
-											SupportedChains::EthereumRinkeby => U256::from(4),
-											SupportedChains::EthereumGoerli => U256::from(5),
-										}.to_big_endian(&mut chain_id_be);
-
-										let payload = [
-											// REVIEW - `request.hash` is a `DetachHash` enum. Do we want that? @sinkingsugar
-											&request.hash.encode()[..],
-											&chain_id_be,
-											&TryInto::<[u8; 20]>::try_into(request.target_account.clone()).map_err(|_| FAILED)?,
-											&nonce.to_be_bytes(), // "be" stands for big-endian
-										].concat();
-										log::debug!(
-											"payload: {:x?}, len: {}",
-											payload,
-											payload.len()
-										);
-
-										// Get the Ethereum specific signature of the payload
-										if let Some(signature) = Self::eth_sign_payload(&ecdsa_key, &payload) {
-											Ok((signature.0.to_vec(), nonce))
-										} else {
-											Err(Error::<T>::SigningFailed)
-										}
-
-									} else {
-										Err(Error::<T>::NoValidator)
-									}
-								},
-							};
+							let tuple_signature_nonce = Self::get_detach_signature_and_detach_nonce(&request);
 
 							match tuple_signature_nonce {
 								Err(e) => {
@@ -695,9 +720,9 @@ pub mod pallet {
 		/// The ECDSA Seed is then returned as a UTF-8 encoded hexadecimal.
 		fn generate_ecdsa_seed_from_ed25519_key(ed25519_key: &Public) -> Result<Vec<u8>, ()> {
 			const FAILED: () = ();
-			let mut msg = b"fragments-frag-ecdsa-keys".to_vec();
+			let mut msg = b"detach-ecdsa-keys".to_vec();
 			msg.append(&mut ed25519_key.to_vec());
-			// Sign the fixed message `b"fragments-frag-ecdsa-keys" ‖ ed25519_key` using Ed25519 key `ed25519_key`
+			// Sign the fixed message `b"detach-ecdsa-keys" ‖ ed25519_key` using Ed25519 key `ed25519_key`
 			let signature = Crypto::ed25519_sign(KEY_TYPE, ed25519_key, &msg).unwrap();
 			let ecdsa_seed = keccak_256(&signature.0[..]);
 

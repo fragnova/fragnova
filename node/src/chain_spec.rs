@@ -48,7 +48,7 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 /// Deterministically compute a ECDSA public key from an Ed25519 Account's seed.
 pub fn get_from_seed_to_eth(seed: &str) -> ecdsa::Public {
 	let pair = ed25519::Pair::from_string(&format!("//{}", seed), None).unwrap();
-	let mut message = b"fragments-frag-ecdsa-keys".to_vec();
+	let mut message = b"detach-ecdsa-keys".to_vec();
 	message.append(&mut pair.public().to_vec()); // salt it with the public key
 	let signature = pair.sign(&message);
 	let hash = sp_core::keccak_256(&signature.0[..]);

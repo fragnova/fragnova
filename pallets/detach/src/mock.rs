@@ -6,7 +6,7 @@ use frame_support::{
 };
 use frame_system;
 use sp_core::{
-	ed25519::Signature,
+	// ed25519::Signature,
 	H256,
 	offchain::{
 		testing::{self, TestOffchainExt, OffchainState, PoolState},
@@ -17,6 +17,7 @@ use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
 	RuntimeAppPublic,
+	MultiSignature,
 };
 
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
@@ -25,6 +26,10 @@ use parking_lot::RwLock;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
+
+// We need to make the `Signature` is `MultiSignature` since `<pallet_detach::pallet::Pallet<T> as ValidateUnsigned>::validate_unsigned()` expects the signer of the payload to be a `MultiSigner` (see `<pallet_detach::pallet::Pallet<T> as ValidateUnsigned>::validate_unsigned()` to understand more)
+pub type Signature = MultiSignature;
+type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
@@ -64,7 +69,7 @@ impl frame_system::Config for Test {
 	type BlockNumber = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = sp_core::ed25519::Public;
+	type AccountId = AccountId; // type AccountId = sp_core::ed25519::Public;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
@@ -80,14 +85,12 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<2>;
 }
 
-pub type Extrinsic = TestXt<RuntimeCall, ()>;
-type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
-
 impl frame_system::offchain::SigningTypes for Test {
 	type Public = <Signature as Verify>::Signer;
 	type Signature = Signature;
 }
 
+pub type Extrinsic = TestXt<RuntimeCall, ()>;
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
 	where
 		RuntimeCall: From<LocalCall>,
@@ -95,7 +98,6 @@ impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
 	type OverarchingCall = RuntimeCall;
 	type Extrinsic = Extrinsic;
 }
-
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
 	where
 		RuntimeCall: From<LocalCall>,
@@ -145,10 +147,16 @@ pub fn new_test_ext_with_ocw() -> (
 
 	SyncCryptoStore::ed25519_generate_new(
 		&keystore,
-		<crate::crypto::Public as RuntimeAppPublic>::ID,
+		KEY_TYPE,
 		Some(&format!("{}", PHRASE)),
 	)
 		.unwrap();
+
+	// Since the struct `KeyStore` stores cryptographic keys as bytes, it doesn't know whether it stored it stored an Ed25519 key or a ECDSA key or a Sr25519 key.
+	// That's why all these print statements will not be empty, even though we only called `SyncCryptoStore::ed25519_generate_new()` above.
+	// println!("ed25519 keys are: {:?}", SyncCryptoStore::ed25519_public_keys(&keystore, KEY_TYPE));
+	// println!("ecdsa keys are: {:?}", SyncCryptoStore::ecdsa_public_keys(&keystore, KEY_TYPE));
+	// println!("sr25519 keys are: {:?}", SyncCryptoStore::sr25519_public_keys(&keystore, KEY_TYPE));
 
 	let ed25519_public_key =
 		SyncCryptoStore::ed25519_public_keys(&keystore, crate::crypto::Public::ID)

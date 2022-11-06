@@ -45,7 +45,7 @@ mod weights;
 
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
-use sp_clamor::{Hash128, Hash256};
+use sp_clamor::{Hash128, Hash256, InstanceUnit};
 use sp_core::crypto::UncheckedFrom;
 use sp_io::{
 	hashing::{blake2_128, blake2_256},
@@ -73,9 +73,6 @@ use scale_info::prelude::{
 	string::{String, ToString},
 };
 use serde_json::{json, Map, Value};
-
-/// Type used to represent an Instance's Edition ID and an Instance's Copy ID
-type Unit = u64;
 
 /// **Data Type** used to **Query and Filter for Fragment Definitions**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
@@ -149,9 +146,9 @@ pub struct GetInstanceOwnerParams<TString> {
 	/// Fragment Definition/Collection that the Fragment Instance is in
 	pub definition_hash: TString,
 	/// Edition ID of the Fragment Instance
-	pub edition_id: Unit,
+	pub edition_id: InstanceUnit,
 	/// Copy ID of the Fragment Instance
-	pub copy_id: Unit,
+	pub copy_id: InstanceUnit,
 }
 
 /// **Struct** of a **Fragment Definition's Metadata**
@@ -191,7 +188,7 @@ pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 	/// Whether the **Fragment Definition** is **mutable**
 	pub unique: Option<UniqueOptions>,
 	/// If scarce, the max supply of the Fragment
-	pub max_supply: Option<Compact<Unit>>,
+	pub max_supply: Option<Compact<InstanceUnit>>,
 	/// The creator of this class
 	pub creator: TAccountId,
 	/// The block number when the item was created
@@ -226,7 +223,7 @@ pub struct FragmentInstance<TBlockNum> {
 	pub expiring_at: Option<TBlockNum>,
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** that are **left** in the **stack of stackable items**
-	pub amount: Option<Compact<Unit>>,
+	pub amount: Option<Compact<InstanceUnit>>,
 	/// TODO: Documentation
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to an **Index of the Hash of the aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Compact<u64>>,
@@ -246,12 +243,12 @@ pub struct PublishingData<TBlockNum> {
 	/// **Fee** that is **needed to be paid** to create a **single Fragment Instance** from the **Fragment Definition**
 	pub price: Compact<u128>,
 	/// **Amount of Fragment Instances** that **can be bought**
-	pub units_left: Option<Compact<Unit>>,
+	pub units_left: Option<Compact<InstanceUnit>>,
 	/// Block number that the sale ends at (*optional*)
 	pub expiration: Option<TBlockNum>,
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** to **top up** in the **stack of stackable items** // EMERICK
-	pub amount: Option<Compact<Unit>>,
+	pub amount: Option<Compact<InstanceUnit>>,
 }
 
 /// **Enum** indicating whether to
@@ -320,13 +317,13 @@ pub mod pallet {
 	/// **total number of unique Edition IDs** found in the
 	/// **Fragment Instances that have the aforementioned Fragment Definition ID**
 	#[pallet::storage]
-	pub type EditionsCount<T: Config> = StorageMap<_, Identity, Hash128, Compact<Unit>>;
+	pub type EditionsCount<T: Config> = StorageMap<_, Identity, Hash128, Compact<InstanceUnit>>;
 
 	/// **StorageMap** that maps a **tuple that contains a Fragment Definition ID and an Edition ID**
 	/// to the
 	/// **total number of Fragment Instances that have the Fragment Definition ID and the Edition ID**
 	#[pallet::storage]
-	pub type CopiesCount<T: Config> = StorageMap<_, Identity, (Hash128, Unit), Compact<Unit>>;
+	pub type CopiesCount<T: Config> = StorageMap<_, Identity, (Hash128, InstanceUnit), Compact<InstanceUnit>>;
 
 	/// **StorageNMap** that maps the **Fragment Definition ID of a Fragment Instance,
 	/// the Fragment Edition ID of the aforementioned Fragment Instance and
@@ -347,9 +344,9 @@ pub mod pallet {
 		(
 			storage::Key<Identity, Hash128>,
 			// Editions
-			storage::Key<Identity, Unit>,
+			storage::Key<Identity, InstanceUnit>,
 			// Copies
-			storage::Key<Identity, Unit>,
+			storage::Key<Identity, InstanceUnit>,
 		),
 		FragmentInstance<T::BlockNumber>,
 	>;
@@ -363,7 +360,7 @@ pub mod pallet {
 		Hash128, // Fragment Definition ID
 		Identity,
 		Hash256, // Unique Data's Hash
-		Unit,    // Edition ID
+		InstanceUnit,    // Edition ID
 	>;
 
 	/// StorageDoubleMap that maps a **Fragment Definition and a Clamor Account ID**
@@ -382,7 +379,7 @@ pub mod pallet {
 		Hash128,
 		Twox64Concat,
 		T::AccountId,
-		Vec<(Compact<Unit>, Compact<Unit>)>,
+		Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)>,
 	>;
 
 	/// StorageDoubleMap that maps a **Clamor Account ID and a Fragment Definition**
@@ -401,7 +398,7 @@ pub mod pallet {
 		T::AccountId,
 		Identity,
 		Hash128,
-		Vec<(Compact<Unit>, Compact<Unit>)>,
+		Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)>,
 	>;
 
 	/// StorageMap that maps the **Block Number**
@@ -415,7 +412,7 @@ pub mod pallet {
 	///  Fragment Instances can expire, we process expirations every `on_finalize`
 	#[pallet::storage]
 	pub type Expirations<T: Config> =
-		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(Hash128, Compact<Unit>, Compact<Unit>)>>;
+		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>)>>;
 
 	/// **StorageMap** that maps a **Fragment Definition ID and a Number** to a **Data Hash**
 	#[pallet::storage]
@@ -436,8 +433,8 @@ pub mod pallet {
 		/// A Fragment Instance metadata has changed
 		InstanceMetadataChanged {
 			definition_hash: Hash128,
-			edition_id: Unit,
-			copy_id: Unit,
+			edition_id: InstanceUnit,
+			copy_id: InstanceUnit,
 			metadata_key: Vec<u8>,
 		},
 		/// Fragment sale has been opened
@@ -448,22 +445,22 @@ pub mod pallet {
 		InventoryAdded {
 			account_id: T::AccountId,
 			definition_hash: Hash128,
-			fragment_id: (Unit, Unit),
+			fragment_id: (InstanceUnit, InstanceUnit),
 		},
 		/// Inventory item has removed added from account
 		InventoryRemoved {
 			account_id: T::AccountId,
 			definition_hash: Hash128,
-			fragment_id: (Unit, Unit),
+			fragment_id: (InstanceUnit, InstanceUnit),
 		},
 		/// Inventory has been updated
 		InventoryUpdated {
 			account_id: T::AccountId,
 			definition_hash: Hash128,
-			fragment_id: (Unit, Unit),
+			fragment_id: (InstanceUnit, InstanceUnit),
 		},
 		/// Fragment Expiration event
-		Expired { account_id: T::AccountId, definition_hash: Hash128, fragment_id: (Unit, Unit) },
+		Expired { account_id: T::AccountId, definition_hash: Hash128, fragment_id: (InstanceUnit, InstanceUnit) },
 	}
 
 	// Errors inform users that something went wrong.
@@ -475,6 +472,8 @@ pub mod pallet {
 		ProtoOwnerNotFound,
 		/// No Permission
 		NoPermission,
+		/// Detach Request Already Submitted
+		DetachRequestAlreadyExists,
 		/// Already detached
 		Detached,
 		/// Already exist
@@ -540,7 +539,7 @@ pub mod pallet {
 			metadata: FragmentMetadata<T::AssetId>,
 			permissions: FragmentPerms,
 			unique: Option<UniqueOptions>,
-			max_supply: Option<Unit>,
+			max_supply: Option<InstanceUnit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			let proto: Proto<T::AccountId, T::BlockNumber> =
@@ -637,8 +636,8 @@ pub mod pallet {
 			}?;
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Ensure `who` is `proto_owner`
 
-			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
-			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
+			// TO REVIEW
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
 
 			let data_hash = blake2_256(&data);
 
@@ -703,14 +702,16 @@ pub mod pallet {
 		pub fn set_instance_metadata(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
-			edition_id: Unit,
-			copy_id: Unit,
+			edition_id: InstanceUnit,
+			copy_id: InstanceUnit,
 			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
 			metadata_key: Vec<u8>,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Instance(definition_hash, Compact(edition_id), Compact(copy_id))), Error::<T>::Detached);
 
 			let instance_struct = <Fragments<T>>::get((definition_hash, edition_id, copy_id))
 				.ok_or(Error::<T>::NotFound)?;
@@ -806,9 +807,9 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
 			price: u128,
-			quantity: Option<Unit>,
+			quantity: Option<InstanceUnit>,
 			expires: Option<T::BlockNumber>,
-			amount: Option<Unit>,
+			amount: Option<InstanceUnit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -825,8 +826,8 @@ pub mod pallet {
 
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Ensure `who` is `proto_owner`
 
-			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
-			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
+			// TO REVIEW
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
 
 			ensure!(!<Publishing<T>>::contains_key(&definition_hash), Error::<T>::SaleAlreadyOpen); // Ensure `definition_hash` isn't already published
 
@@ -834,15 +835,15 @@ pub mod pallet {
 				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?; // Get `FragmentDefinition` struct from `definition_hash`
 
 			if let Some(max_supply) = fragment_data.max_supply {
-				let max: Unit = max_supply.into();
-				let existing: Unit =
+				let max: InstanceUnit = max_supply.into();
+				let existing: InstanceUnit =
 					<EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 				if left == 0 {
 					return Err(Error::<T>::MaxSupplyReached.into());
 				}
 				if let Some(quantity) = quantity {
-					let quantity: Unit = quantity.into();
+					let quantity: InstanceUnit = quantity.into();
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached); // Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				} else {
 					// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
@@ -893,11 +894,10 @@ pub mod pallet {
 
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Ensure `who` is `proto_owner`
 
-			ensure!(<Publishing<T>>::contains_key(&definition_hash), Error::<T>::NotFound); // Ensure `definition_hash` is currently published
+			// TO REVIEW
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
 
-			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
-			// TO REVIEW - This check might be redundant since a definition could not have been detached if it was on-sale
-			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
+			ensure!(<Publishing<T>>::contains_key(&definition_hash), Error::<T>::NotFound); // Ensure `definition_hash` is currently published
 
 			// ! Writing
 
@@ -936,7 +936,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
 			options: FragmentBuyOptions,
-			amount: Option<Unit>,
+			amount: Option<InstanceUnit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -955,8 +955,8 @@ pub mod pallet {
 
 			ensure!(who == proto_owner, Error::<T>::NoPermission); // Ensure `who` is `proto_owner`
 
-			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
-			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
+			// TO REVIEW
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)), Error::<T>::Detached); // Ensure `proto_hash` isn't detached
 
 			let quantity = match options {
 				// Number of fragment instances to mint
@@ -1010,9 +1010,6 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
-
-			// TO REVIEW - should we also check if `proto_hash` was detached, @sinkingsugar???
-			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
 
 			let sale = <Publishing<T>>::get(&definition_hash).ok_or(Error::<T>::NotFound)?; // if Fragment Definition `definition_hash` is not published (i.e on sale), you cannot buy it
 			if let Some(expiration) = sale.expiration {
@@ -1137,13 +1134,16 @@ pub mod pallet {
 		pub fn give(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
-			edition: Unit,
-			copy: Unit,
+			edition: InstanceUnit,
+			copy: InstanceUnit,
 			to: <T::Lookup as StaticLookup>::Source,
 			new_permissions: Option<FragmentPerms>,
 			expiration: Option<T::BlockNumber>,
 		) -> DispatchResult {
+
 			let who = ensure_signed(origin)?;
+
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Instance(definition_hash, Compact(edition), Compact(copy))), Error::<T>::Detached);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
@@ -1308,8 +1308,8 @@ pub mod pallet {
 		pub fn create_account(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
-			edition: Unit,
-			copy: Unit,
+			edition: InstanceUnit,
+			copy: InstanceUnit,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -1353,29 +1353,38 @@ pub mod pallet {
 		pub fn detach(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
+			edition_id: InstanceUnit,
+			copy_id: InstanceUnit,
 			target_chain: SupportedChains,
 			target_account: Vec<u8>, // an eth address or so
 		) -> DispatchResult {
+
 			let who = ensure_signed(origin)?;
 
-			let proto_hash =
-				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?.proto_hash;
-			let proto: Proto<T::AccountId, T::BlockNumber> =
-				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
-			match proto.owner {
-				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::NoPermission),
-				// We don't allow detaching external assets
-				ProtoOwner::ExternalAsset(_ext_asset) => return Err(Error::<T>::NoPermission.into()),
-			};
+			// owner must own instance
+			let owned_instances = <Inventory<T>>::get(who, definition_hash).ok_or(Error::<T>::NoPermission)?;
+			ensure!(
+				owned_instances.contains(&(Compact(edition_id), Compact(copy_id))),
+				Error::<T>::NoPermission
+			);
 
-			// Definition should not be on sale when you detach it
-			ensure!(!<Publishing<T>>::contains_key(&definition_hash), Error::<T>::NoPermission);
+			// REVIEW - no go if will expire this block
+			let instance = <Fragments<T>>::get((definition_hash, edition_id, copy_id))
+				.ok_or(Error::<T>::NotFound)?;
+			if let Some(expiring_at) = instance.expiring_at {
+				ensure!(current_block_number < expiring_at, Error::<T>::NotFound);
+			}
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Definition(definition_hash)), Error::<T>::Detached);
+			let detach_hash = DetachHash::Instance(definition_hash, Compact(edition_id), Compact(copy_id));
+			let detach_request = DetachRequest { hash: detach_hash.clone(), target_chain, target_account};
+
+			ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash),Error::<T>::Detached);
+			ensure!(!<DetachRequests<T>>::get().contains(&detach_request), Error::<T>::DetachRequestAlreadyExists);
 
 			<DetachRequests<T>>::mutate(|requests| {
-				requests.push(DetachRequest { hash: DetachHash::Definition(definition_hash), target_chain, target_account });
+				requests.push(detach_request);
 			});
 
 			Ok(())
@@ -1444,8 +1453,8 @@ pub mod pallet {
 		/// This Account ID is determinstically computed using the Fragment Definition ID `class_hash`, the Edition ID `edition` and the Copy ID `copy`
 		pub fn get_fragment_account_id(
 			definition_hash: Hash128,
-			edition: Unit,
-			copy: Unit,
+			edition: InstanceUnit,
+			copy: InstanceUnit,
 		) -> T::AccountId {
 			let hash = blake2_256(
 				&[&b"fragments-account"[..], &definition_hash, &edition.encode(), &copy.encode()]
@@ -1478,7 +1487,7 @@ pub mod pallet {
 			quantity: u64,
 			current_block_number: T::BlockNumber,
 			expiring_at: Option<T::BlockNumber>,
-			amount: Option<Compact<Unit>>,
+			amount: Option<Compact<InstanceUnit>>,
 		) -> DispatchResult {
 			use frame_support::ensure;
 
@@ -1517,7 +1526,7 @@ pub mod pallet {
 				},
 			};
 
-			let existing: Unit =
+			let existing: InstanceUnit =
 				<EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 
 			if let Some(sale) = sale {
@@ -1528,7 +1537,7 @@ pub mod pallet {
 					} else {
 						<Publishing<T>>::mutate(&*definition_hash, |sale| {
 							if let Some(sale) = sale {
-								let left: Unit = units_left.into();
+								let left: InstanceUnit = units_left.into();
 								sale.units_left = Some(Compact(left - quantity));
 							}
 						});
@@ -1537,7 +1546,7 @@ pub mod pallet {
 			} else {
 				// We still don't wanna go over supply limit
 				if let Some(max_supply) = fragment_data.max_supply {
-					let max: Unit = max_supply.into();
+					let max: InstanceUnit = max_supply.into();
 					let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 					if quantity > left {
 						// Ensure the function parameter `quantity` is smaller than or equal to `left`
@@ -1750,16 +1759,16 @@ pub mod pallet {
 					.try_into()
 					.or(Err("Failed to convert `definition_id` to Hash128"))?;
 
-				let num_instances: Unit =
+				let num_instances: InstanceUnit =
 					if let Some(editions) = <EditionsCount<T>>::get(array_definition_id) {
-						let editions: Unit = editions.into();
+						let editions: InstanceUnit = editions.into();
 						(1..=editions)
-							.map(|edition_id| -> Result<Unit, _> {
+							.map(|edition_id| -> Result<InstanceUnit, _> {
 								<CopiesCount<T>>::get((array_definition_id, edition_id))
-									.map(Into::<Unit>::into)
+									.map(Into::<InstanceUnit>::into)
 									.ok_or("Number of Copies not found for an existing edition")
 							})
-							.sum::<Result<Unit, _>>()?
+							.sum::<Result<InstanceUnit, _>>()?
 					} else {
 						0
 					};
@@ -1822,7 +1831,7 @@ pub mod pallet {
 					.unwrap_or_default()
 					.into_iter()
 					.map(|(c1, c2)| (c1.into(), c2.into()))
-					.collect::<Vec<(Unit, Unit)>>()
+					.collect::<Vec<(InstanceUnit, InstanceUnit)>>()
 			} else {
 				(1..=editions)
 					.map(|edition_id| -> Result<_, _> {
@@ -1842,7 +1851,7 @@ pub mod pallet {
 							.map(|copy_id| (edition_id, copy_id))
 							.collect::<Vec<(u64, u64)>>()
 					})
-					.collect::<Vec<(Unit, Unit)>>()
+					.collect::<Vec<(InstanceUnit, InstanceUnit)>>()
 			};
 
 			list_tuple_edition_id_copy_id

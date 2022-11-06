@@ -13,7 +13,7 @@
      (| (ToHex) (Log "ECDSA public"))
      (| (Substrate.AccountId true) (Log "ECDSA AccountID")))
 
-  "fragments-frag-ecdsa-keys" (StringToBytes) >= .gen-message
+  "detach-ecdsa-keys" (StringToBytes) >= .gen-message
   .gen-ed-pub-key (AppendTo .gen-message)
   .gen-message (Ed25519.Sign seed)
   (Hash.Keccak-256) = .ecdsa-priv (ECDSA.PublicKey)

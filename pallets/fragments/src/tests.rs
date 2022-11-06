@@ -1513,11 +1513,6 @@ mod buy_tests {
 		});
 	}
 
-	#[test]
-	#[ignore]
-	fn buy_should_not_work_if_proto_is_detached() {
-		todo!()
-	}
 }
 
 use give_tests::give_;
@@ -2046,6 +2041,12 @@ mod give_tests {
 			)));
 		});
 	}
+
+	#[test]
+	#[ignore]
+	fn give_should_not_work_if_the_instance_is_detached() {
+		todo!()
+	}
 }
 
 mod create_account_tests {
@@ -2098,7 +2099,6 @@ mod create_account_tests {
 }
 
 mod detach_tests {
-	use frame_support::dispatch::Pays::No;
 	use super::*;
 
 	pub fn detach_(
@@ -2107,10 +2107,21 @@ mod detach_tests {
 	) -> DispatchResult {
 		FragmentsPallet::detach(
 			RuntimeOrigin::signed(signer),
-			detach.definition.get_definition_id(),
+			detach.mint.definition.get_definition_id(),
+			detach.edition_id,
+			detach.copy_id,
 			detach.target_chain,
 			detach.target_account.clone()
 		)
+	}
+
+	pub fn mint_detach_instance(
+		signer: <Test as frame_system::Config>::AccountId,
+		detach: &Detach
+	) {
+		assert_ok!(upload(signer, &detach.mint.definition.proto_fragment));
+		assert_ok!(create(signer, &detach.mint.definition));
+		assert_ok!(mint_(signer, &detach.mint));
 	}
 
 	#[test]
@@ -2120,15 +2131,19 @@ mod detach_tests {
 
 			let detach = dd.detach;
 
-			assert_ok!(upload(dd.account_id, &detach.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &detach.definition));
+			mint_detach_instance(dd.account_id, &detach);
 			assert_ok!(detach_(dd.account_id, &detach));
+
 
 			assert_eq!(
 				pallet_detach::DetachRequests::<Test>::get(),
 				vec![
 					pallet_detach::DetachRequest {
-						hash: pallet_detach::DetachHash::Definition(detach.definition.get_definition_id()),
+						hash: pallet_detach::DetachHash::Instance(
+							detach.mint.definition.get_definition_id(),
+							Compact(detach.edition_id),
+							Compact(detach.copy_id),
+						),
 						target_chain: detach.target_chain,
 						target_account: detach.target_account,
 					},
@@ -2139,73 +2154,40 @@ mod detach_tests {
 	}
 
 	#[test]
-	fn detach_should_not_work_if_user_does_not_own_the_definition() {
+	fn detach_should_not_work_if_user_does_not_own_the_instance() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
 			let detach = dd.detach;
 
-			assert_ok!(upload(dd.account_id, &detach.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &detach.definition));
+			mint_detach_instance(dd.account_id, &detach);
 			assert_noop!(detach_(dd.account_id_second, &detach), Error::<Test>::NoPermission);
 		});
 	}
 
 	#[test]
-	fn detach_should_not_work_if_the_definition_does_not_exist() {
+	fn detach_should_not_work_if_the_instance_does_not_exist() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
 			let detach = dd.detach;
 
-			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NotFound);
+			// REVIEW - error name
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NoPermission);
 		});
 	}
 
 	#[test]
-	fn detach_should_not_work_if_the_definition_was_already_detached() {
+	fn detach_should_not_work_if_the_detach_request_already_exists() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
 			let detach = dd.detach;
 
-			assert_ok!(upload(dd.account_id, &detach.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &detach.definition));
+			mint_detach_instance(dd.account_id, &detach);
 			assert_ok!(detach_(dd.account_id, &detach));
-			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::Detached);
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::DetachRequestAlreadyExists);
 		});
-	}
-
-	#[test]
-	fn detach_should_not_work_if_the_definition_is_currently_published() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let detach = dd.detach;
-
-			assert_ok!(upload(dd.account_id, &detach.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &detach.definition));
-
-			assert_ok!(
-				publish_(
-					dd.account_id,
-					&Publish {
-						definition: detach.definition.clone(),
-						price: 7u128,
-						quantity: None,
-						expires: None,
-						amount: None,
-					}
-				)
-			);
-
-			assert_noop!(detach_(dd.account_id_second, &detach), Error::<Test>::NoPermission);
-		});
-	}
-
-	#[test]
-	fn detach_should_not_work_if_definition_is_owned_by_external_asset() {
-		todo!("I have no idea how the enum `LinkedAssset` even works right now!");
 	}
 
 }

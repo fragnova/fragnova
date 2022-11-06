@@ -392,6 +392,7 @@ mod patch_tests {
 	}
 
 	#[test]
+	#[ignore]
 	fn patch_should_not_work_if_proto_is_detached() {
 		todo!()
 	}
@@ -477,6 +478,12 @@ mod transfer_tests {
 			);
 		});
 	}
+
+	#[test]
+	#[ignore]
+	fn transfer_should_not_work_if_proto_is_detached() {
+		todo!()
+	}
 }
 
 mod set_metadata_tests {
@@ -552,6 +559,12 @@ mod set_metadata_tests {
 			assert_noop!(set_metadata(dd.account_id, &metadata), Error::<Test>::ProtoNotFound);
 		});
 	}
+
+	#[test]
+	#[ignore]
+	fn set_metadata_should_not_work_if_proto_is_detached() {
+		todo!()
+	}
 }
 
 mod detach_tests {
@@ -616,7 +629,7 @@ mod detach_tests {
 	}
 
 	#[test]
-	fn detach_should_not_work_if_the_proto_was_already_detached() {
+	fn detach_should_not_work_if_the_detach_request_already_exists() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -624,11 +637,13 @@ mod detach_tests {
 
 			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
 			assert_ok!(detach_(dd.account_id, &detach));
-			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::Detached);
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::DetachRequestAlreadyExists);
 		});
 	}
 
+	// TODO
 	#[test]
+	#[ignore = "I have no idea how the enum `LinkedAssset` even works right now!"]
 	fn detach_should_not_work_if_proto_is_owned_by_external_asset() {
 		todo!("I have no idea how the enum `LinkedAssset` even works right now!");
 	}

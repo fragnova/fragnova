@@ -137,7 +137,9 @@ pub struct CreateAccount {
 }
 
 pub struct Detach {
-	pub definition: Definition,
+	pub mint: Mint,
+	pub edition_id: u64,
+	pub copy_id: u64,
 	pub target_chain: SupportedChains,
 	pub target_account: Vec<u8>,
 }
@@ -266,7 +268,9 @@ impl DummyData {
 		let create_account = CreateAccount { mint: mint_unique.clone(), edition_id: 1, copy_id: 1 };
 
 		let detach = Detach {
-			definition: definition.clone(),
+			mint: mint_unique.clone(),
+			edition_id: 1,
+			copy_id: 1,
 			target_chain: SupportedChains::EthereumMainnet,
 			target_account: [7u8; 20].to_vec(),
 		};

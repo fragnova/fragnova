@@ -340,6 +340,8 @@ pub mod pallet {
 		ProtoNotFound,
 		/// Proto already uploaded
 		ProtoExists,
+		/// Detach Request Already Submitted
+		DetachRequestAlreadyExists,
 		/// Already detached
 		Detached,
 		/// Not the owner of the proto
@@ -796,10 +798,14 @@ pub mod pallet {
 				},
 			};
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)), Error::<T>::Detached);
+			let detach_hash = DetachHash::Proto(proto_hash);
+			let detach_request = DetachRequest { hash: detach_hash.clone(), target_chain, target_account };
+
+			ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
+			ensure!(!<DetachRequests<T>>::get().contains(&detach_request), Error::<T>::DetachRequestAlreadyExists);
 
 			<DetachRequests<T>>::mutate(|requests| {
-				requests.push(DetachRequest { hash: DetachHash::Proto(proto_hash), target_chain, target_account });
+				requests.push(detach_request);
 			});
 
 			Ok(())
