@@ -43,7 +43,6 @@ pub fn get_usd_equivalent_amount() -> u128 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;
 	let usd_equivalent_amount = <Test as Config>::USDEquivalentAmount::get();
-	assert_eq!(usd_equivalent_amount, 100);
 	usd_equivalent_amount
 }
 
@@ -69,45 +68,99 @@ pub fn create_lock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 	lock_amount: U256,
 	lock_period: u8,
+	sender: H160,
+	contract: &String,
 ) -> sp_core::ecdsa::Signature {
-	let ethereum_account_id =
-		get_ethereum_account_id_from_ecdsa_public_struct(&ethereum_account_pair.public());
 
-	let mut message = b"FragLock".to_vec();
-	message.extend_from_slice(&ethereum_account_id.0[..]);
-	message.extend_from_slice(&get_ethereum_chain_id().to_be_bytes());
-	message.extend_from_slice(&Into::<[u8; 32]>::into(lock_amount.clone()));
-	message.extend_from_slice(&Into::<[u8; 32]>::into(U256::from(lock_period.clone())));
+	let message = b"FragLock".to_vec();
+	let message: Vec<u8> = [&[0x19, 0x01],
+		// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+		&keccak_256(
+			// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+			&ethabi::encode(
+				&vec![
+					Token::Uint(
+						U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+					),
+					Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+					Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+					Token::Uint(U256::from(get_ethereum_chain_id())),
+					Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(contract).unwrap()).unwrap())),
+				]
+			)
+		)[..],
+		// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+		&keccak_256(
+			// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+			&ethabi::encode(
+				&vec![
+					// This is the `typeHash`
+					Token::Uint(
+						U256::from(keccak_256(b"Msg(string name,address sender,uint256 amount,uint8 lock_period)"))
+					),
+					// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
+					Token::Uint(U256::from(keccak_256(&message))),
+					Token::Address(H160::from(sender)),
+					Token::Uint(U256::from(lock_amount)),
+					Token::Uint(U256::from(lock_period)),
+				]
+			)
+		)[..]
+	].concat();
+
+	// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
+	let message = [b"\x19Ethereum Signed Message:\n32", &keccak_256(&message)[..]].concat();
 
 	let hashed_message = keccak_256(&message);
-
-	// Ethereum Signature is produced by signing a keccak256 hash with the following format:
-	// "\x19Ethereum Signed Message\n" + len(msg) + msg
-	// Note: `msg` is the hashed message
-	let hashed_message =
-		keccak_256(&[b"\x19Ethereum Signed Message:\n32", &hashed_message[..]].concat());
 
 	ethereum_account_pair.sign_prehashed(&hashed_message)
 }
 pub fn create_unlock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 	unlock_amount: U256,
+	sender: H160,
+	contract: &String,
 ) -> sp_core::ecdsa::Signature {
-	let ethereum_account_id =
-		get_ethereum_account_id_from_ecdsa_public_struct(&ethereum_account_pair.public());
 
-	let mut message = b"FragUnlock".to_vec();
-	message.extend_from_slice(&ethereum_account_id.0[..]);
-	message.extend_from_slice(&get_ethereum_chain_id().to_be_bytes());
-	message.extend_from_slice(&Into::<[u8; 32]>::into(unlock_amount.clone()));
+	let message = b"FragUnlock".to_vec();
+	let message: Vec<u8> = [&[0x19, 0x01],
+		// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+		&keccak_256(
+			// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+			&ethabi::encode(
+				&vec![
+					Token::Uint(
+						U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+					),
+					Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+					Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+					Token::Uint(U256::from(get_ethereum_chain_id())),
+					Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(contract).unwrap()).unwrap())),
+				]
+			)
+		)[..],
+		// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+		&keccak_256(
+			// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+			&ethabi::encode(
+				&vec![
+					// This is the `typeHash`
+					Token::Uint(
+						U256::from(keccak_256(b"Msg(string name,address sender,uint256 amount,uint8 lock_period)"))
+					),
+					// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
+					Token::Uint(U256::from(keccak_256(&message))),
+					Token::Address(H160::from(sender)),
+					Token::Uint(U256::from(unlock_amount)),
+				]
+			)
+		)[..]
+	].concat();
+
+	// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
+	let message = [b"\x19Ethereum Signed Message:\n32", &keccak_256(&message)[..]].concat();
 
 	let hashed_message = keccak_256(&message);
-
-	// Ethereum Signature is produced by signing a keccak256 hash with the following format:
-	// "\x19Ethereum Signed Message\n" + len(msg) + msg
-	// Note: `msg` is the hashed message
-	let hashed_message =
-		keccak_256(&[b"\x19Ethereum Signed Message:\n32", &hashed_message[..]].concat());
 
 	ethereum_account_pair.sign_prehashed(&hashed_message)
 }
@@ -195,6 +248,8 @@ impl DummyData {
 			),
 		};
 
+		let contracts = vec![String::from("8a819F380ff18240B5c11010285dF63419bdb2d5")];
+		let contract = &contracts[0];
 		let lock = Lock {
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([69u8; 32]),
@@ -207,6 +262,10 @@ impl DummyData {
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 					U256::from(100u32),
 					1,
+					get_ethereum_account_id_from_ecdsa_public_struct(
+						&sp_core::ecdsa::Pair::from_seed(&[3u8; 32]).public(),
+					),
+					contract,
 				),
 				lock: true, // yes, please lock it!
 				block_number: 69,
@@ -233,6 +292,10 @@ impl DummyData {
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 					U256::from(1000u32),
 					3,
+					get_ethereum_account_id_from_ecdsa_public_struct(
+						&sp_core::ecdsa::Pair::from_seed(&[3u8; 32]).public(),
+					),
+					contract,
 				),
 				lock: true, // yes, please lock it!
 				block_number: 69,
@@ -260,6 +323,10 @@ impl DummyData {
 						sp_core::ecdsa::Pair::from_seed(&[4u8; 32]),
 						U256::from(69u32),
 						255,
+						get_ethereum_account_id_from_ecdsa_public_struct(
+							&sp_core::ecdsa::Pair::from_seed(&[4u8; 32]).public(),
+						),
+						contract,
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
@@ -276,13 +343,17 @@ impl DummyData {
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([69u8; 32]),
 				amount: U256::from(0u32), // when unlocking, amount must be 0u32
-				lock_period: 255, // can be whatever. It is not considered in case of unlock.
+				lock_period: 255,         // can be whatever. It is not considered in case of unlock.
 				sender: get_ethereum_account_id_from_ecdsa_public_struct(
 					&sp_core::ecdsa::Pair::from_seed(&[4u8; 32]).public(),
 				),
 				signature: create_unlock_signature(
 					sp_core::ecdsa::Pair::from_seed(&[4u8; 32]),
 					U256::from(0u32), // when unlocking, amount must be 0u32
+					get_ethereum_account_id_from_ecdsa_public_struct(
+						&sp_core::ecdsa::Pair::from_seed(&[4u8; 32]).public(),
+					),
+					contract,
 				),
 				lock: false, // yes, please unlock it!
 				block_number: 69 + 69,

@@ -620,6 +620,8 @@ mod internal_lock_update_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
+			let contracts = <Test as Config>::EthFragContract::get_partner_contracts();
+			let contract = &contracts[0];
 			let mut lock = dd.lock;
 			lock.data.amount = U256::from(0u32);
 			lock.data.lock_period = 1;
@@ -627,6 +629,8 @@ mod internal_lock_update_tests {
 				lock.ethereum_account_pair.clone(),
 				lock.data.amount.clone(),
 				lock.data.lock_period.clone(),
+				lock.data.sender.clone(),
+				contract,
 			);
 
 			assert_noop!(lock_(&lock), Error::<Test>::SystematicFailure);
@@ -752,7 +756,8 @@ mod internal_lock_update_tests {
 				event,
 				mock::RuntimeEvent::from(pallet_accounts::Event::Unlocked {
 					eth_key: unlock.data.sender,
-					balance: SaturatedConversion::saturated_into::<<Test as pallet_assets::Config>::Balance,
+					balance: SaturatedConversion::saturated_into::<
+						<Test as pallet_assets::Config>::Balance,
 					>(0)
 				})
 			);
@@ -763,11 +768,15 @@ mod internal_lock_update_tests {
 	fn unlock_should_not_work_if_unlocked_amount_is_greater_than_zero() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
+			let contracts = <Test as Config>::EthFragContract::get_partner_contracts();
+			let contract = &contracts[0];
 			let mut unlock = dd.unlock;
 			unlock.data.amount = U256::from(69u32); // greater than zero
 			unlock.data.signature = create_unlock_signature(
 				unlock.lock.ethereum_account_pair.clone(),
 				U256::from(69u32),
+				unlock.lock.data.sender,
+				contract,
 			);
 
 			assert_ok!(lock_(&unlock.lock));
@@ -867,8 +876,11 @@ mod withdraw_tests {
 				expected_amount + initial_tickets_amount
 			);
 
-			let expected_amount =
-				expected_nova_amount(week_num.into(), lock_period_in_weeks.into(), data_amount.clone());
+			let expected_amount = expected_nova_amount(
+				week_num.into(),
+				lock_period_in_weeks.into(),
+				data_amount.clone(),
+			);
 			let nova_new_balance =
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);

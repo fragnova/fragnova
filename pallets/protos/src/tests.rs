@@ -1151,9 +1151,9 @@ mod get_genealogy_tests {
 						proto_hash: hex::encode(proto_third.get_proto_hash()).into_bytes(),
 						get_ancestors: true,
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					hex::encode(proto_third.get_proto_hash()): [
 						hex::encode(proto_second.get_proto_hash())

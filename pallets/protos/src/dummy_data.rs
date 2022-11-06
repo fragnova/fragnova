@@ -259,6 +259,8 @@ impl DummyData {
 			data: b"{\"name\": \"ram\"}".to_vec(),
 		};
 
+		let contracts = vec![String::from("8a819F380ff18240B5c11010285dF63419bdb2d5")];
+		let contract = &contracts[0];
 		let stake = Stake {
 			proto_fragment: proto.clone(),
 			lock: Lock {
@@ -273,6 +275,10 @@ impl DummyData {
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 						U256::from(69u32),
 						1,
+						get_ethereum_account_id_from_ecdsa_public_struct(
+							&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]).public(),
+						),
+						contract,
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,

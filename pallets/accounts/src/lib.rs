@@ -108,7 +108,7 @@ use scale_info::prelude::{format, string::String};
 
 use serde_json::{json, Value};
 
-use ethabi::ParamType;
+use ethabi::{ParamType, Token};
 
 use frame_support::traits::{tokens::fungibles::Mutate, ReservableCurrency};
 
@@ -572,20 +572,51 @@ pub mod pallet {
 			);
 
 			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature, period)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
-			let mut message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
-			message.extend_from_slice(&data.sender.0[..]); // Add data.sender.0 ("msg.sender" in Solidity) to message
-			message.extend_from_slice(&T::EthChainId::get().to_be_bytes()); // Add EthChainId ("block.chainid" in Solidity) to message
-			let amount: [u8; 32] = data.amount.into();
-			message.extend_from_slice(&amount[..]); // Add amount to message
+			let message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
+			let contract = T::EthFragContract::get_partner_contracts();
+			let contract = &contract[0];
+			let mut hash_struct = vec![
+				// This is the `typeHash`
+				Token::Uint(U256::from(keccak_256(
+					b"Msg(string name,address sender,uint256 amount,uint8 lock_period)",
+				))),
+				// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
+				Token::Uint(U256::from(keccak_256(&message))),
+				Token::Address(H160::from(data.sender)),
+				Token::Uint(U256::from(data.amount)),
+			];
 			if data.lock {
-				let lock_period: [u8; 32] = U256::from(data.lock_period.clone()).into();
-				message.extend_from_slice(&lock_period[..]); // Add amount to message
+				hash_struct.push(Token::Uint(U256::from(data.lock_period)));
 			}
+			let message: Vec<u8> = [&[0x19, 0x01],
+				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&vec![
+							Token::Uint(
+								U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+							),
+							Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(T::EthChainId::get())),
+							Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(contract).unwrap()).unwrap())),
+						]
+					)
+				)[..],
+				// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&hash_struct
+					)
+				)[..]
+			].concat();
 
-			let message_hash = keccak_256(&message); // This should be
-
-			let message = [b"\x19Ethereum Signed Message:\n32", &message_hash[..]].concat();
+			// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
+			let message = [b"\x19Ethereum Signed Message:\n32", &keccak_256(&message)[..]].concat();
 			let message_hash = keccak_256(&message);
+			log::trace!("eip-712 message: {}", hex::encode(&message_hash));
 
 			let signature = data.signature;
 			let sender = data.sender.clone();
@@ -860,7 +891,7 @@ pub mod pallet {
 		/// are being whitelisted and marked as valid.
 		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
-			if let Call::internal_lock_update { ref data, ref signature } = call {
+			if let Call::internal_lock_update { ref data, ref signature, .. } = call {
 				// ensure it's a local transaction sent by an offchain worker
 				match source {
 					TransactionSource::InBlock | TransactionSource::Local => {},
@@ -1085,7 +1116,6 @@ pub mod pallet {
 				}
 
 				let lock_period = u8::try_from(lock_period).unwrap();
-
 				// `send_unsigned_transaction` is returning a type of `Option<(Account<T>, Result<(), ()>)>`.
 				//   The returned result means:
 				//   - `None`: no account is available for sending transaction
@@ -1285,7 +1315,8 @@ pub mod pallet {
 					tickets_amount = tickets_amount.saturating_add(tickets_amount_to_mint);
 					nova_amount = nova_amount.saturating_add(nova_amount_to_deposit);
 
-					let nova_old_balance = pallet_balances::Pallet::<T>::free_balance(&account.clone());
+					let nova_old_balance =
+						pallet_balances::Pallet::<T>::free_balance(&account.clone());
 					ensure!(
 					nova_old_balance + nova_amount >=
 						<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
