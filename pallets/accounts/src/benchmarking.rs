@@ -135,7 +135,7 @@ benchmarks! {
 		)
 	}
 
-	internal_lock_update {
+/*	internal_lock_update {
 		// let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
 		let ethereum_secret_key_struct: libsecp256k1::SecretKey = libsecp256k1::SecretKey::parse(&[7u8; 32]).unwrap();
 
@@ -171,7 +171,7 @@ benchmarks! {
 	verify {
 		let events = <frame_system::Pallet<T>>::events();
 		assert_eq!(events.len(), 3);
-	}
+	}*/
 
 	sponsor_account {
 		let caller: T::AccountId = whitelisted_caller();

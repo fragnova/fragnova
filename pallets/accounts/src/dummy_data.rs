@@ -73,6 +73,7 @@ pub fn create_lock_signature(
 ) -> sp_core::ecdsa::Signature {
 
 	let message = b"FragLock".to_vec();
+	let lock_amount: [u8; 32] = lock_amount.into();
 	let message: Vec<u8> = [&[0x19, 0x01],
 		// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
 		&keccak_256(
@@ -123,6 +124,7 @@ pub fn create_unlock_signature(
 ) -> sp_core::ecdsa::Signature {
 
 	let message = b"FragUnlock".to_vec();
+	let unlock_amount: [u8; 32] = unlock_amount.into();
 	let message: Vec<u8> = [&[0x19, 0x01],
 		// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
 		&keccak_256(
@@ -135,7 +137,7 @@ pub fn create_unlock_signature(
 					Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 					Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 					Token::Uint(U256::from(get_ethereum_chain_id())),
-					Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(contract).unwrap()).unwrap())),
+					Token::Address(contract.parse::<H160>().expect("failed to parse address")),
 				]
 			)
 		)[..],

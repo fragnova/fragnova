@@ -575,6 +575,8 @@ pub mod pallet {
 			let message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
 			let contract = T::EthFragContract::get_partner_contracts();
 			let contract = &contract[0];
+			let amount: [u8; 32] = data.amount.into();
+
 			let mut hash_struct = vec![
 				// This is the `typeHash`
 				Token::Uint(U256::from(keccak_256(
@@ -583,38 +585,15 @@ pub mod pallet {
 				// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
 				Token::Uint(U256::from(keccak_256(&message))),
 				Token::Address(H160::from(data.sender)),
-				Token::Uint(U256::from(data.amount)),
+				Token::Uint(U256::from(amount)),
 			];
 			if data.lock {
 				hash_struct.push(Token::Uint(U256::from(data.lock_period)));
 			}
-			let message: Vec<u8> = [&[0x19, 0x01],
-				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
-				&keccak_256(
-					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
-					&ethabi::encode(
-						&vec![
-							Token::Uint(
-								U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
-							),
-							Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
-							Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
-							Token::Uint(U256::from(T::EthChainId::get())),
-							Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(contract).unwrap()).unwrap())),
-						]
-					)
-				)[..],
-				// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
-				&keccak_256(
-					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
-					&ethabi::encode(
-						&hash_struct
-					)
-				)[..]
-			].concat();
+			let message = Self::get_eip712_hash(&contract, &hash_struct);
 
 			// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
-			let message = [b"\x19Ethereum Signed Message:\n32", &keccak_256(&message)[..]].concat();
+
 			let message_hash = keccak_256(&message);
 			log::trace!("eip-712 message: {}", hex::encode(&message_hash));
 
@@ -1392,6 +1371,36 @@ pub mod pallet {
 				_ => return Err(Error::<T>::LockPeriodOutOfRange),
 			};
 			Ok(sec)
+		}
+
+		pub fn get_eip712_hash(contract: &&String, hash_struct: &Vec<Token>) -> Vec<u8> {
+			let message: Vec<u8> = [&[0x19, 0x01],
+				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&vec![
+							Token::Uint(
+								U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+							),
+							Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(T::EthChainId::get())),
+							Token::Address(contract.parse::<H160>().expect("failed to parse address")),
+						]
+					)
+				)[..],
+				// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&hash_struct
+					)
+				)[..]
+			].concat();
+			let message = [b"\x19Ethereum Signed Message:\n32", &keccak_256(&message)[..]].concat();
+
+			message
 		}
 	}
 }

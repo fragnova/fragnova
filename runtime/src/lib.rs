@@ -429,7 +429,7 @@ impl pallet_fragments::Config for Runtime {
 
 impl pallet_accounts::EthFragContract for Runtime {
 	fn get_partner_contracts() -> Vec<String> {
-		vec![String::from("0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac")]
+		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
 	}
 }
 
