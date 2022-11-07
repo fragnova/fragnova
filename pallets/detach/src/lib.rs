@@ -256,7 +256,7 @@ pub mod pallet {
 		NoValidator,
 		/// Failed to sign message
 		SigningFailed,
-		// Length of the Target Account in the Target Blockchain Does Not Adhere to the Target Blockchain's Specification
+		/// Length of the Target Account in the Target Blockchain Does Not Adhere to the Target Blockchain's Specification
 		TargetAccountLengthIsIncorrect,
 	}
 
