@@ -839,6 +839,7 @@ dependencies = [
  "pallet-assets",
  "pallet-aura",
  "pallet-balances",
+ "pallet-clusters",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
@@ -4201,6 +4202,20 @@ dependencies = [
  "scale-info 2.2.0",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-clusters"
+version = "0.0.1"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec 3.2.1",
+ "scale-info 2.2.0",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
 ]
 
 [[package]]

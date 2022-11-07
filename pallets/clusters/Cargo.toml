@@ -1,0 +1,37 @@
+[package]
+authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
+description = 'Clusters pallet.'
+edition = '2021'
+license = 'BUSL-1.1'
+name = 'pallet-clusters'
+readme = 'README.md'
+version = '0.0.1'
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
+	"derive",
+] }
+scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
+frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
+frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
+frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
+
+[dev-dependencies]
+sp-core = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
+sp-io = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
+sp-runtime = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+	"frame-benchmarking?/std",
+	"frame-support/std",
+	"frame-system/std",
+	"scale-info/std",
+]
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+try-runtime = ["frame-support/try-runtime"]
