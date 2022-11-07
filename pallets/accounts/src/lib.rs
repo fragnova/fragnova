@@ -1,4 +1,4 @@
-//! This pallet `frag` performs logic related to FRAG Token
+//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term "lock" refers to the *"effective transfer"* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
 //!
@@ -8,6 +8,7 @@
 //!
 //! IMPORTANT: locking != staking
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate core;
@@ -118,7 +119,7 @@ use frame_support::traits::ReservableCurrency;
 /// TODO: Documentation
 pub type DiscordID = u64;
 
-/// TODO: Documentation
+/// Enum that indicates the different types of External Account IDs that can be "used as an account" on the Clamor Blockchain
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum ExternalID {
 	/// TODO: Documentation
@@ -191,15 +192,17 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		frame_system::Config
+		// This trait is meant to be implemented by the runtime and is responsible for
+		// constructing a payload to be signed and contained within the extrinsic.
 		+ CreateSignedTransaction<Call<Self>>
 		+ pallet_balances::Config
 		+ pallet_proxy::Config
 		+ pallet_timestamp::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// Weight functions needed for pallet_protos.
+		/// Weight functions needed for pallet_accounts.
 		type WeightInfo: WeightInfo;
 
 		/// The Ethereum Chain ID that the Fragnova-owned Ethereum Smart Contract is deployed on.
@@ -207,7 +210,8 @@ pub mod pallet {
 		#[pallet::constant]
 		type EthChainId: Get<u64>;
 
-		/// The **number of confirmations required** to consider a **transaction** on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
+		/// The **number of confirmations required** to consider a **transaction**
+		/// on the **Ethereum Blockchain** ***final*** (https://www.youtube.com/watch?v=gP5zcHD8tJU)
 		#[pallet::constant]
 		type EthConfirmations: Get<u64>;
 
@@ -281,11 +285,13 @@ pub mod pallet {
 	// to present to external chains to detach onto
 	/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
-	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit `this list
+	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
-	/// The map between external accounts and the local accounts that are linked to them. (Discord, Telegram, etc)
+	/// StorageMap that maps an **External Account ID** to an
+	/// **`AccountInfo` struct that contains
+	/// the External Account ID's linked Clamor Account ID, amongst other things**.
 	#[pallet::storage]
 	pub type ExternalID2Account<T: Config> =
 		StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
@@ -345,7 +351,7 @@ pub mod pallet {
 		/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_key())]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -361,7 +367,7 @@ pub mod pallet {
 		/// Remove a Clamor Account ID from `FragKeys`
 
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::del_key())]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -385,7 +391,7 @@ pub mod pallet {
 		/// `signature`).
 		///
 		/// After linking, also emit an event indicating that the two accounts were linked.
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::link())]
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -473,7 +479,7 @@ pub mod pallet {
 
 		// TODO
 		/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::unlink())]
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			Self::unlink_account(sender, account)
@@ -482,7 +488,7 @@ pub mod pallet {
 		/// Update 'data'
 		///
 		/// TODO
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::internal_lock_update())]
 		pub fn internal_lock_update(
 			origin: OriginFor<T>,
 			data: EthLockUpdate<T::Public>,
@@ -553,7 +559,7 @@ pub mod pallet {
 					if current_votes + 1u64 < threshold {
 						// Current Votes has not passed the threshold
 						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
-						return Ok(())
+						return Ok(());
 					} else {
 						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
 						// we are good to go, but let's remove the record
@@ -562,7 +568,7 @@ pub mod pallet {
 				} else {
 					// If key `data_hash` doesn't exist in EVMLinkVoting
 					<EVMLinkVoting<T>>::insert(&data_hash, 1);
-					return Ok(())
+					return Ok(());
 				}
 			}
 
@@ -622,8 +628,9 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// TODO
-		#[pallet::weight(25_000)] // TODO - weight
+		/// Allow the External Account ID `external_id` to be used as a proxy
+		/// for the Clamor Account ID `origin`
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::sponsor_account())]
 		pub fn sponsor_account(origin: OriginFor<T>, external_id: ExternalID) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -675,7 +682,7 @@ pub mod pallet {
 		}
 
 		/// Add a sponsor account to the list of sponsors able to sponsor external accounts.
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_sponsor())]
 		pub fn add_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -689,7 +696,7 @@ pub mod pallet {
 		}
 
 		/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.
-		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::remove_sponsor())]
 		pub fn remove_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -745,7 +752,7 @@ pub mod pallet {
 					_ => {
 						log::debug!("Not a local transaction");
 						// Return TransactionValidityError˘ if the call is not allowed.
-						return InvalidTransaction::Call.into()
+						return InvalidTransaction::Call.into();
 					},
 				}
 
@@ -762,13 +769,13 @@ pub mod pallet {
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into() // // 问Gio
+						return InvalidTransaction::BadSigner.into(); // // 问Gio
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
 					// return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadSigner.into()
+					return InvalidTransaction::BadSigner.into();
 				}
 
 				// most expensive bit last
@@ -778,7 +785,7 @@ pub mod pallet {
 																	   // The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadProof.into()
+					return InvalidTransaction::BadProof.into();
 				}
 
 				log::debug!("Sending frag lock update extrinsic");
@@ -842,7 +849,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth")
+				return Err("Failed to get response from geth");
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -891,7 +898,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth")
+				return Err("Failed to get response from geth");
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -1010,7 +1017,7 @@ pub mod pallet {
 				String::from_utf8(geth).unwrap()
 			} else {
 				log::debug!("No geth url found, skipping sync");
-				return // It is fine to have a node not syncing with eth
+				return; // It is fine to have a node not syncing with eth
 			};
 
 			let contracts = T::EthFragContract::get_partner_contracts();
@@ -1026,10 +1033,10 @@ pub mod pallet {
 		/// account address `account`**
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
 			if <EVMLinks<T>>::get(sender.clone()).ok_or(Error::<T>::AccountNotLinked)? != account {
-				return Err(Error::<T>::DifferentAccountLinked.into())
+				return Err(Error::<T>::DifferentAccountLinked.into());
 			}
 			if <EVMLinksReverse<T>>::get(account).ok_or(Error::<T>::AccountNotLinked)? != sender {
-				return Err(Error::<T>::DifferentAccountLinked.into())
+				return Err(Error::<T>::DifferentAccountLinked.into());
 			}
 
 			<EVMLinks<T>>::remove(sender.clone());

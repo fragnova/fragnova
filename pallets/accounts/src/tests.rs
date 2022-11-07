@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_accounts;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Encode;
@@ -16,7 +18,7 @@ mod link_tests {
 	use crate::FragUsage;
 
 	pub fn link_(link: &Link) -> DispatchResult {
-		Accounts::link(Origin::signed(link.clamor_account_id), link.link_signature.clone())
+		Accounts::link(RuntimeOrigin::signed(link.clamor_account_id), link.link_signature.clone())
 	}
 
 	#[test]
@@ -45,7 +47,7 @@ mod link_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Linked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Linked {
 					sender: link.clamor_account_id,
 					eth_key: link.get_ethereum_public_address_of_signer()
 				})
@@ -141,7 +143,7 @@ mod unlink_tests {
 					false
 			);
 
-			assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);
+			assert_eq!(<FragUsage<Test>>::contains_key(&link.clamor_account_id), false);
 
 			assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
 
@@ -151,7 +153,7 @@ mod unlink_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Unlinked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Unlinked {
 					sender: link.clamor_account_id,
 					eth_key: link.get_ethereum_public_address_of_signer(),
 				})
@@ -367,7 +369,7 @@ mod internal_lock_update_tests {
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
 		Accounts::internal_lock_update(
-			Origin::none(),
+			RuntimeOrigin::none(),
 			lock.data.clone(),
 			sp_core::ed25519::Signature([69u8; 64]), // this can be anything and it will still work
 		)
@@ -375,7 +377,7 @@ mod internal_lock_update_tests {
 
 	fn unlock_(unlock: &Unlock) -> DispatchResult {
 		Accounts::internal_lock_update(
-			Origin::none(),
+			RuntimeOrigin::none(),
 			unlock.data.clone(),
 			sp_core::ed25519::Signature([69u8; 64]), // this can be anything
 		)
@@ -421,7 +423,7 @@ mod internal_lock_update_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Locked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Locked {
 					eth_key: lock.data.sender,
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
@@ -534,7 +536,7 @@ mod internal_lock_update_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Unlocked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Unlocked {
 					eth_key: unlock.data.sender,
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
@@ -579,7 +581,7 @@ mod internal_lock_update_tests {
 				.clone();
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Unlinked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Unlinked {
 					sender: link.clamor_account_id,
 					eth_key: link.get_ethereum_public_address_of_signer()
 				})

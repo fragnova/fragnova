@@ -1,9 +1,10 @@
 //! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
-//!
+//!/**/
 //! A Proto-Fragment is a digital asset that can be used to build a game or application
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -35,7 +36,11 @@ use sp_io::{
 	hashing::{blake2_256, twox_64},
 	transaction_index,
 };
-use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
+use sp_std::{
+	collections::{btree_map::BTreeMap, vec_deque::VecDeque},
+	vec,
+	vec::Vec,
+};
 
 pub use weights::WeightInfo;
 
@@ -96,10 +101,37 @@ pub struct GetProtosParams<TAccountId, TString> {
 	pub categories: Vec<Categories>,
 	/// List of tags to filter by
 	pub tags: Vec<TString>,
-	/// The returned Proto-Fragments must not have any tag that is specified in the `tags` field
-	pub exclude_tags: bool,
+	/// The returned Proto-Fragments must not have any tag that is specified in the `exclude_tags` field
+	pub exclude_tags: Vec<TString>,
 	/// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
+}
+#[cfg(test)]
+impl<TAccountId, TString> Default for GetProtosParams<TAccountId, TString> {
+	fn default() -> Self {
+		Self {
+			desc: Default::default(),
+			from: Default::default(),
+			limit: Default::default(),
+			metadata_keys: Default::default(),
+			owner: None,
+			return_owners: Default::default(),
+			categories: Default::default(),
+			tags: Default::default(),
+			exclude_tags: Default::default(),
+			available: Default::default(),
+		}
+	}
+}
+
+/// **Data Type** used to **Query the Genealogy of a Proto-Fragment**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GetGenealogyParams<TString> {
+	/// The Proto-Fragment whose Genealogy will be retrieved
+	pub proto_hash: TString,
+	/// Whether to retrieve the ancestors of the Proto-Fragment. If `false`, the descendants are retrieved instead
+	pub get_ancestors: bool,
 }
 
 /// **Struct** of a **Proto-Fragment Patch**
@@ -180,7 +212,7 @@ pub mod pallet {
 		+ pallet_contracts::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
 
@@ -228,6 +260,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type Protos<T: Config> =
 		StorageMap<_, Identity, Hash256, Proto<T::AccountId, T::BlockNumber>>;
+
+	/// **StorageMap** that maps a **Proto-Fragment** to a **list of other Proto-Fragments that reference the Proto-Fragment**
+	#[pallet::storage]
+	pub type ProtosByParent<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash256>>;
 
 	/// **StorageMap** that maps a **variant of the *Category* enum** to a **list of Proto-Fragment
 	/// hashes (that have the aforementioned variant)**
@@ -341,9 +377,9 @@ pub mod pallet {
 		/// * `linked_asset` (*optional*) - An **asset that is linked with the Proto-Fragment** (e.g
 		///   an ERC-721 Contract)
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
-		///   **Proto-Fragment** *<u>can't be included</u>* into **other protos**
+		///   **Proto-Fragment** *<u>can't be included</u>* into **other Proto-Fragments**
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -430,7 +466,7 @@ pub mod pallet {
 				license,
 				creator: who.clone(),
 				owner: owner.clone(),
-				references,
+				references: references.clone(),
 				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
@@ -440,9 +476,15 @@ pub mod pallet {
 			// store proto
 			<Protos<T>>::insert(proto_hash, proto);
 
+			// store by parent
+			for reference in references.into_iter() {
+				<ProtosByParent<T>>::append(reference, proto_hash);
+			}
+
 			// store by category
 			<ProtosByCategory<T>>::append(category, proto_hash);
 
+			// store by owner
 			<ProtosByOwner<T>>::append(owner, proto_hash);
 
 			// index immutable data for IPFS discovery
@@ -473,7 +515,8 @@ pub mod pallet {
 		///   **patch**
 		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment's current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len() as u32,
+		tags.as_ref().map(|tags| tags.len() as u32).unwrap_or_default(), data.len() as u32))]
 		pub fn patch(
 			origin: OriginFor<T>,
 			// proto hash we want to patch
@@ -524,7 +567,7 @@ pub mod pallet {
 					proto.patches.push(ProtoPatch {
 						block: current_block_number,
 						data_hash,
-						references: new_references,
+						references: new_references.clone(),
 					});
 					// index mutable data for IPFS discovery as well
 					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
@@ -558,6 +601,10 @@ pub mod pallet {
 					proto.tags = tags;
 				}
 			});
+
+			for new_reference in new_references.into_iter() {
+				<ProtosByParent<T>>::append(new_reference, proto_hash);
+			}
 
 			let cid = [&CID_PREFIX[..], &data_hash[..]].concat();
 			let cid = cid.to_base58();
@@ -647,7 +694,7 @@ pub mod pallet {
 		///   `metadata` of the existing Proto-Fragment's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
 		///   in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch() + Weight::from_ref_time(data.len() as u64 * <T as pallet::Config>::StorageBytesMultiplier::get()))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata(metadata_key.len() as u32, data.len() as u32))]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			// proto hash we want to update
@@ -872,7 +919,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue
+							continue;
 						}
 					}
 
@@ -890,7 +937,7 @@ pub mod pallet {
 								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
 							} else {
 								// Curation not found
-								return Err(Error::<T>::CurationNotFound.into())
+								return Err(Error::<T>::CurationNotFound.into());
 							}
 						},
 						UsageLicense::Contract(contract_address) => {
@@ -915,19 +962,19 @@ pub mod pallet {
 								let allowed = bool::decode(&mut &res.data.0[..]);
 								if let Ok(allowed) = allowed {
 									if !allowed {
-										return Err(Error::<T>::Unauthorized.into())
+										return Err(Error::<T>::Unauthorized.into());
 									}
 								} else {
-									return Err(Error::<T>::Unauthorized.into())
+									return Err(Error::<T>::Unauthorized.into());
 								}
 							} else {
-								return Err(Error::<T>::Unauthorized.into())
+								return Err(Error::<T>::Unauthorized.into());
 							}
 						},
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into())
+					return Err(Error::<T>::ReferenceNotFound.into());
 				}
 			}
 			Ok(())
@@ -938,21 +985,21 @@ pub mod pallet {
 			tags: &[Vec<u8>],
 			categories: &[Categories],
 			avail: Option<bool>,
-			exclude_tags: bool,
+			exclude_tags: &[Vec<u8>],
 		) -> bool {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.license == UsageLicense::Closed {
-						return false
+						return false;
 					} else if !avail && struct_proto.license != UsageLicense::Closed {
-						return false
+						return false;
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto, exclude_tags)
+					return Self::filter_tags(tags, &struct_proto, exclude_tags);
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories, exclude_tags)
+					return Self::filter_category(tags, &struct_proto, categories, exclude_tags);
 				}
 			} else {
 				false
@@ -964,7 +1011,7 @@ pub mod pallet {
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
 			categories: &[Categories],
-			exclude_tags: bool,
+			exclude_tags: &[Vec<u8>],
 		) -> bool {
 			let found: Vec<_> = categories
 				.into_iter()
@@ -990,39 +1037,40 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto, exclude_tags)
+									return Self::filter_tags(tags, struct_proto, exclude_tags);
 								} else {
-									return false
+									return false;
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec) &&
-								param_script_info.requiring.contains(&zero_vec) &&
-								param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec)
+								&& param_script_info.requiring.contains(&zero_vec)
+								&& param_script_info.format == stored_script_info.format
 							{
-								return Self::filter_tags(tags, struct_proto, exclude_tags)
+								return Self::filter_tags(tags, struct_proto, exclude_tags);
 							} else {
-								return false
+								return false;
 							}
 						} else {
 							// it should never go here
-							return false
+							return false;
 						}
 					},
-					_ =>
+					_ => {
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto, exclude_tags)
+							return Self::filter_tags(tags, struct_proto, exclude_tags);
 						} else {
-							return false
-						},
+							return false;
+						}
+					},
 				})
 				.collect();
 
 			if found.is_empty() {
-				return false
+				return false;
 			} else {
-				return true
+				return true;
 			}
 		}
 
@@ -1030,24 +1078,26 @@ pub mod pallet {
 		fn filter_tags(
 			tags: &[Vec<u8>],
 			struct_proto: &Proto<T::AccountId, T::BlockNumber>,
-			exclude_tags: bool,
+			exclude_tags: &[Vec<u8>],
 		) -> bool {
-			if tags.len() == 0 {
-				true
-			} else {
-				tags.into_iter().all(|tag| {
-					let tag_idx = <Tags<T>>::get(tag);
-					if let Some(tag_idx) = tag_idx {
-						if struct_proto.tags.contains(&Compact::from(tag_idx)) {
-							!exclude_tags
-						} else {
-							exclude_tags
-						}
-					} else {
-						false
-					}
-				})
-			}
+			// empty iterator returns `false` for `Iterator::any()`
+			let proto_has_any_unwanted_tag = exclude_tags.into_iter().any(|tag| {
+				if let Some(tag_idx) = <Tags<T>>::get(tag) {
+					struct_proto.tags.contains(&Compact::from(tag_idx))
+				} else {
+					false
+				}
+			});
+			// empty iterator returns `true` for `Iterator::all()`
+			let proto_has_all_wanted_tags = tags.into_iter().all(|tag| {
+				if let Some(tag_idx) = <Tags<T>>::get(tag) {
+					struct_proto.tags.contains(&Compact::from(tag_idx))
+				} else {
+					false
+				}
+			});
+
+			proto_has_all_wanted_tags && !proto_has_any_unwanted_tag
 		}
 
 		fn get_list_of_matching_categories(
@@ -1080,38 +1130,39 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return true
+									return true;
 								} else {
-									return false
+									return false;
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec) &&
-								param_script_info.requiring.contains(&zero_vec) &&
-								param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec)
+								&& param_script_info.requiring.contains(&zero_vec)
+								&& param_script_info.format == stored_script_info.format
 							{
-								return true
+								return true;
 							} else if !(&cat == &category) {
-								return false
+								return false;
 							} else {
-								return false
+								return false;
 							}
 						} else {
-							return false
+							return false;
 						}
 					},
 					// for all other types of Categories
-					_ =>
+					_ => {
 						if !(&cat == &category) {
-							return false
+							return false;
 						} else {
-							return true
-						},
+							return true;
+						}
+					},
 				})
 				.collect();
 
-			return found
+			return found;
 		}
 
 		/// Converts a `ProtoOwner` struct into a JSON
@@ -1217,7 +1268,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
-								params.exclude_tags,
+								&params.exclude_tags,
 							)
 						})
 						.skip(params.from as usize)
@@ -1233,7 +1284,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
-								params.exclude_tags,
+								&params.exclude_tags,
 							)
 						})
 						.skip(params.from as usize)
@@ -1255,7 +1306,7 @@ pub mod pallet {
 						// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						if found.is_empty() {
-							continue
+							continue;
 						}
 					}
 					// Found the category.
@@ -1273,7 +1324,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										params.exclude_tags,
+										&params.exclude_tags,
 									)
 								})
 								.collect()
@@ -1287,7 +1338,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										params.exclude_tags,
+										&params.exclude_tags,
 									)
 								})
 								.collect()
@@ -1351,6 +1402,57 @@ pub mod pallet {
 			}
 
 			Ok(map)
+		}
+
+		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**. The **return
+		/// type** is a **JSON string** that represents an Adjacency List.
+		///
+		/// # Arguments
+		///
+		/// * `params` - A ***GetGenealogyParams* struct**
+		pub fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+			let proto_hash: Hash256 = hex::decode(params.proto_hash)
+				.map_err(|_| "Failed to convert string to u8 slice")?
+				.try_into()
+				.map_err(|_| "Failed to convert u8 slice to Hash256")?;
+
+			let mut adjacency_list = BTreeMap::<String, Vec<String>>::new();
+
+			let mut queue = VecDeque::<Hash256>::new();
+			queue.push_back(proto_hash);
+
+			let mut visited = BTreeMap::<Hash256, bool>::new();
+			visited.insert(proto_hash, true);
+
+			while let Some(proto) = queue.pop_front() {
+				let neighbors = if params.get_ancestors {
+					let proto_struct =
+						<Protos<T>>::get(proto).ok_or("Proto Hash Does Not Exist!")?;
+					let mut parents = proto_struct.references;
+					let mut references_from_patches = proto_struct
+						.patches
+						.into_iter()
+						.flat_map(|pp: ProtoPatch<_>| pp.references)
+						.collect::<Vec<Hash256>>();
+					parents.append(&mut references_from_patches);
+					parents
+				} else {
+					let children = <ProtosByParent<T>>::get(proto).unwrap_or_default();
+					children
+				};
+
+				adjacency_list
+					.insert(hex::encode(proto), neighbors.iter().map(|p| hex::encode(p)).collect());
+
+				for neighbor in neighbors.into_iter() {
+					if !visited.contains_key(&neighbor) {
+						visited.insert(neighbor, true);
+						queue.push_back(neighbor);
+					}
+				}
+			}
+
+			Ok(json!(adjacency_list).to_string().into_bytes())
 		}
 	}
 }

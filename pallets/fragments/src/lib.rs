@@ -25,6 +25,7 @@
 //!
 //! The Copy ID allows us to distinguish a Fragment Instance that has the same Fragment Definition ID and the same Edition ID.
 
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -73,6 +74,7 @@ use scale_info::prelude::{
 };
 use serde_json::{json, Map, Value};
 
+/// Type used to represent an Instance's Edition ID and an Instance's Copy ID
 type Unit = u64;
 
 /// **Data Type** used to **Query and Filter for Fragment Definitions**
@@ -107,7 +109,6 @@ impl<TAccountId, TString> Default for GetDefinitionsParams<TAccountId, TString> 
 		}
 	}
 }
-
 /// **Data Type** used to **Query and Filter for Fragment Instances**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -140,6 +141,17 @@ impl<TAccountId, TString: Default> Default for GetInstancesParams<TAccountId, TS
 			only_return_first_copies: Default::default(),
 		}
 	}
+}
+/// **Data Type** used to **Query the owner of a Fragment Instance**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GetInstanceOwnerParams<TString> {
+	/// Fragment Definition/Collection that the Fragment Instance is in
+	pub definition_hash: TString,
+	/// Edition ID of the Fragment Instance
+	pub edition_id: Unit,
+	/// Copy ID of the Fragment Instance
+	pub copy_id: Unit,
 }
 
 /// **Struct** of a **Fragment Definition's Metadata**
@@ -268,7 +280,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_protos::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_fragments.
 		type WeightInfo: WeightInfo;
 	}
@@ -521,7 +533,7 @@ pub mod pallet {
 		/// * `unique` (*optional*) - **Whether** the **Fragment Definiton** is **unique**
 		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)**
 		/// that **can be created** using the **Fragment Definition**
-		#[pallet::weight(<T as Config>::WeightInfo::create())]
+		#[pallet::weight(<T as Config>::WeightInfo::create(metadata.name.len() as u32))]
 		pub fn create(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
@@ -789,7 +801,7 @@ pub mod pallet {
 		/// * `expires` (*optional*) - **Block number** that the sale ends at (*optional*)
 		/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// the **number of items** to **top up** in the **stack of stackable items**
-		#[pallet::weight(50_000)]
+		#[pallet::weight(<T as Config>::WeightInfo::publish())]
 		pub fn publish(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -826,15 +838,15 @@ pub mod pallet {
 				let existing: Unit =
 					<EditionsCount<T>>::get(&definition_hash).unwrap_or(Compact(0)).into();
 				let left = max.saturating_sub(existing); // `left` = `max` - `existing`
+				if left == 0 {
+					return Err(Error::<T>::MaxSupplyReached.into());
+				}
 				if let Some(quantity) = quantity {
 					let quantity: Unit = quantity.into();
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached); // Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				} else {
 					// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
-					return Err(Error::<T>::ParamsNotValid.into())
-				}
-				if left == 0 {
-					return Err(Error::<T>::MaxSupplyReached.into())
+					return Err(Error::<T>::ParamsNotValid.into());
 				}
 			}
 
@@ -864,7 +876,7 @@ pub mod pallet {
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `definition_hash` - **ID** of the **Fragment Definition** to take off sale
-		#[pallet::weight(50_000)]
+		#[pallet::weight(<T as Config>::WeightInfo::unpublish())]
 		pub fn unpublish(origin: OriginFor<T>, definition_hash: Hash128) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -913,7 +925,12 @@ pub mod pallet {
 		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
 		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// `amount` is the **number of items** to **top up** in the **stack of stackable items**
-		#[pallet::weight(50_000)]
+		///
+		/// TODO - `*q as u32` might cause problems if q is too big (since q is u64)!!!
+		#[pallet::weight(match options {
+			FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(*q as u32),
+			FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
+		})]
 		pub fn mint(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -942,7 +959,7 @@ pub mod pallet {
 
 			let quantity = match options {
 				// Number of fragment instances to mint
-				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
+				FragmentBuyOptions::Quantity(quantity) => u64::from(quantity),
 				_ => 1u64,
 			};
 
@@ -978,7 +995,12 @@ pub mod pallet {
 		/// * `options` - **Enum** indicating whether to
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
-		#[pallet::weight(50_000)]
+		///
+		/// TODO - `*=q as u32` might cause problems if q is too big (since q is u64)!!!
+		#[pallet::weight(match options {
+			FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::buy_definition_that_has_non_unique_capability(*q as u32),
+			FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::buy_definition_that_has_unique_capability(d.len() as u32)
+		})]
 		pub fn buy(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1018,13 +1040,13 @@ pub mod pallet {
 					price.saturated_into();
 
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who) >=
-						price_balance + minimum_balance_needed_to_exist,
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &who)
+						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault) +
-						price_balance >= minimum_balance_needed_to_exist,
+					<pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(currency, &vault)
+						+ price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			} else {
@@ -1034,13 +1056,13 @@ pub mod pallet {
 					price.saturated_into();
 
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who) >=
-						price_balance + minimum_balance_needed_to_exist,
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&who)
+						>= price_balance + minimum_balance_needed_to_exist,
 					Error::<T>::InsufficientBalance
 				);
 				ensure!(
-					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault) +
-						price_balance >= minimum_balance_needed_to_exist,
+					<pallet_balances::Pallet<T> as Currency<T::AccountId>>::free_balance(&vault)
+						+ price_balance >= minimum_balance_needed_to_exist,
 					Error::<T>::ReceiverBelowMinimumBalance
 				);
 			}
@@ -1086,7 +1108,7 @@ pub mod pallet {
 		///
 		/// If the **current permitted actions of the Fragment Instance** allows for it to be duplicated (i.e if it has the permission **FragmentPerms::COPY**),
 		/// then it is duplicated and the duplicate's ownership is assigned to `to`.
-		/// Otherwise, its ownernship is transferred from `origin` to `to`.
+		/// Otherwise, its ownership is transferred from `origin` to `to`.
 		///
 		/// Note: **Only** the **Fragment Instance's owner** is **allowed** to give the Fragment Instance
 		///
@@ -1349,7 +1371,7 @@ pub mod pallet {
 							});
 
 							// fragments are unique so we are done here
-							break
+							break;
 						}
 					}
 				}
@@ -1360,7 +1382,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// **Get** the **Account ID** of the Fragment Definition `definition_hash`**
 		///
-		/// This Account ID is determinstically computed using the Fragment Definition `class_hash`
+		/// This Account ID is determinstically computed using the Fragment Definition `definition_hash`
 		pub fn get_vault_id(definition_hash: Hash128) -> T::AccountId {
 			let hash = blake2_256(&[&b"fragments-vault"[..], &definition_hash].concat());
 			T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
@@ -1424,7 +1446,7 @@ pub mod pallet {
 			let (data_hash, data_len) = match options {
 				FragmentBuyOptions::UniqueData(data) => {
 					if fragment_data.unique.is_none() || quantity != 1 {
-						return Err(Error::<T>::ParamsNotValid.into())
+						return Err(Error::<T>::ParamsNotValid.into());
 					}
 
 					let data_hash = blake2_256(&data);
@@ -1438,7 +1460,7 @@ pub mod pallet {
 				},
 				FragmentBuyOptions::Quantity(_) => {
 					if fragment_data.unique.is_some() {
-						return Err(Error::<T>::ParamsNotValid.into())
+						return Err(Error::<T>::ParamsNotValid.into());
 					}
 
 					(None, None)
@@ -1452,7 +1474,7 @@ pub mod pallet {
 				// if limited amount let's reduce the amount of units left
 				if let Some(units_left) = sale.units_left {
 					if quantity > units_left.into() {
-						return Err(Error::<T>::PublishedQuantityReached.into())
+						return Err(Error::<T>::PublishedQuantityReached.into());
 					} else {
 						<Publishing<T>>::mutate(&*definition_hash, |sale| {
 							if let Some(sale) = sale {
@@ -1469,7 +1491,7 @@ pub mod pallet {
 					let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 					if quantity > left {
 						// Ensure the function parameter `quantity` is smaller than or equal to `left`
-						return Err(Error::<T>::MaxSupplyReached.into())
+						return Err(Error::<T>::MaxSupplyReached.into());
 					}
 				}
 			}
@@ -1626,7 +1648,7 @@ pub mod pallet {
 		// 	Ok(result.into_bytes())
 		// }
 
-		/// **Query** and **Return** **Fragmnent Definition(s)** based on **`params`**
+		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		pub fn get_definitions(
 			params: GetDefinitionsParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
@@ -1685,7 +1707,7 @@ pub mod pallet {
 							.map(|edition_id| -> Result<Unit, _> {
 								<CopiesCount<T>>::get((array_definition_id, edition_id))
 									.map(Into::<Unit>::into)
-									.ok_or("No. of Copies not found for an Existing Edition!")
+									.ok_or("Number of Copies not found for an existing edition")
 							})
 							.sum::<Result<Unit, _>>()?
 					} else {
@@ -1731,7 +1753,7 @@ pub mod pallet {
 			Ok(result.into_bytes())
 		}
 
-		/// **Query** and **Return** **Fragmnent Instance(s)** based on **`params`**
+		/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
 		pub fn get_instances(
 			params: GetInstancesParams<T::AccountId, Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
@@ -1782,7 +1804,7 @@ pub mod pallet {
 
 					let instance_struct =
 						<Fragments<T>>::get((definition_hash, edition_id, copy_id))
-							.ok_or("Instance Not Found!")?;
+							.ok_or("Instance not found")?;
 
 					if !params.metadata_keys.is_empty() {
 						let metadata = instance_struct
@@ -1791,7 +1813,7 @@ pub mod pallet {
 							.map(|(metadata_key_index, data_hash_index)| {
 								let data_hash =
 									<DataHashMap<T>>::get(definition_hash, data_hash_index)
-										.ok_or::<Vec<u8>>("Data Hash Not Found!".into())?;
+										.ok_or::<Vec<u8>>("Data hash not found".into())?;
 								Ok((metadata_key_index.clone(), data_hash))
 							})
 							.collect::<Result<BTreeMap<Compact<u64>, Hash256>, Vec<u8>>>()?;
@@ -1812,6 +1834,36 @@ pub mod pallet {
 			let result = json!(map).to_string();
 
 			Ok(result.into_bytes())
+		}
+
+		/// Query the owner of a Fragment Instance. The return type is a String
+		pub fn get_instance_owner(
+			params: GetInstanceOwnerParams<Vec<u8>>,
+		) -> Result<Vec<u8>, Vec<u8>> {
+			let definition_hash: Hash128 = hex::decode(params.definition_hash)
+				.map_err(|_| "Failed to convert string to u8 slice")?
+				.try_into()
+				.map_err(|_| "Failed to convert u8 slice to Hash128")?;
+
+			if params.copy_id
+				> CopiesCount::<T>::get((definition_hash, params.edition_id))
+					.unwrap_or(Compact(0))
+					.into()
+			{
+				return Err("Instance not found".into());
+			}
+
+			let owner = Owners::<T>::iter_prefix(definition_hash)
+				.find(|(_owner, vec_instances)| {
+					vec_instances.iter().any(|(edition_id, copy_id)| {
+						Compact(params.edition_id) == *edition_id
+							&& Compact(params.copy_id) == *copy_id
+					})
+				})
+				.ok_or("Owner not found (this should never happen)")?
+				.0;
+
+			Ok(hex::encode(owner).into_bytes())
 		}
 	}
 }

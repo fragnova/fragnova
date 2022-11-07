@@ -6,6 +6,7 @@
 // Some of the Substrate Macros in this file throw missing_docs warnings.
 // That's why we allow this file to have missing_docs.
 #![allow(missing_docs)]
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
@@ -16,7 +17,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
-	weights::DispatchClass,
+	dispatch::DispatchClass,
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -64,8 +65,8 @@ use scale_info::prelude::string::String;
 use codec::Encode;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
-use pallet_fragments::{GetDefinitionsParams, GetInstancesParams};
-use pallet_protos::GetProtosParams;
+use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
+use pallet_protos::{GetGenealogyParams, GetProtosParams};
 
 pub use pallet_contracts::Schedule;
 
@@ -93,10 +94,11 @@ pub type Index = u32;
 pub type Hash = sp_core::H256;
 
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
 /// The payload being signed in transactions.
-pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
+pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
 
 /// Related to Index pallet
 pub type AccountIndex = u64;
@@ -218,6 +220,7 @@ parameter_types! {
 	pub RuntimeBlockLength: BlockLength = BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 
+	/// TODO: Documentation
 	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
 		.base_block(BlockExecutionWeight::get())
 		.for_class(DispatchClass::all(), |weights| {
@@ -250,7 +253,7 @@ impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The aggregated dispatch type that is available for extrinsics.
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = Indices;
 	/// The index type for storing how many extrinsics an account has signed.
@@ -264,9 +267,9 @@ impl frame_system::Config for Runtime {
 	/// The header type.
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// The ubiquitous event type.
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	/// The weight of database operations that the runtime can invoke.
@@ -306,8 +309,7 @@ impl pallet_aura::Config for Runtime {
 }
 
 impl pallet_grandpa::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
 
 	type KeyOwnerProofSystem = ();
 
@@ -344,6 +346,7 @@ parameter_types! {
 	/// The maximum number of locks that should exist on an account.
 	/// Not strictly enforced, but used for weight estimation.
 	pub const MaxLocks: u32 = 50;
+	/// TODO: Documentation
 	pub const IsTransferable: bool = false;
 }
 
@@ -354,7 +357,7 @@ impl pallet_balances::Config for Runtime {
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// The ubiquitous event type.
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
@@ -406,7 +409,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = IdentityFee<Balance>;
@@ -415,12 +418,12 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 impl pallet_sudo::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 }
 
 impl pallet_fragments::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
@@ -431,7 +434,7 @@ impl pallet_accounts::EthFragContract for Runtime {
 }
 
 impl pallet_accounts::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = Runtime;
@@ -441,11 +444,12 @@ impl pallet_accounts::Config for Runtime {
 }
 
 parameter_types! {
+	/// Asset ID of the fungible asset "TICKET"
 	pub const TicketsAssetId: u64 = 1337;
 }
 
 impl pallet_protos::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
 	type CurationExpiration = ConstU64<100800>; // one week
@@ -453,14 +457,14 @@ impl pallet_protos::Config for Runtime {
 }
 
 impl pallet_detach::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
 impl pallet_multisig::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type DepositBase = ConstU128<1>;
 	type DepositFactor = ConstU128<1>;
@@ -469,8 +473,8 @@ impl pallet_multisig::Config for Runtime {
 }
 
 impl pallet_proxy::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type ProxyType = ();
 	type ProxyDepositBase = ConstU128<1>;
@@ -493,7 +497,7 @@ parameter_types! {
 }
 
 impl pallet_identity::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type Slashed = ();
 	type BasicDeposit = ConstU128<10>;
@@ -508,8 +512,8 @@ impl pallet_identity::Config for Runtime {
 }
 
 impl pallet_utility::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = ();
 }
@@ -529,9 +533,9 @@ impl frame_system::offchain::SigningTypes for Runtime {
 /// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Runtime
 where
-	Call: From<LocalCall>,
+	RuntimeCall: From<LocalCall>,
 {
-	type OverarchingCall = Call;
+	type OverarchingCall = RuntimeCall;
 	type Extrinsic = UncheckedExtrinsic;
 }
 
@@ -539,7 +543,7 @@ where
 /// to implement the CreateSignedTransaction trait, you also need to implement that trait for the runtime.
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
 where
-	Call: From<LocalCall>,
+	RuntimeCall: From<LocalCall>,
 {
 	/// The code seems long, but what it tries to do is really:
 	/// 	- Create and prepare extra of SignedExtra type, and put various checkers in-place.
@@ -550,11 +554,11 @@ where
 	///
 	/// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-		call: Call,
+		call: RuntimeCall,
 		public: <Signature as Verify>::Signer,
 		account: AccountId,
 		nonce: Index,
-	) -> Option<(Call, <UncheckedExtrinsic as ExtrinsicT>::SignaturePayload)> {
+	) -> Option<(RuntimeCall, <UncheckedExtrinsic as ExtrinsicT>::SignaturePayload)> {
 		let tip = 0;
 		// take the biggest period possible.
 		let period =
@@ -590,8 +594,8 @@ impl pallet_contracts::Config for Runtime {
 	type Time = Timestamp;
 	type Randomness = RandomnessCollectiveFlip;
 	type Currency = Balances;
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	/// The safest default is to allow no calls at all.
 	///
 	/// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -611,7 +615,6 @@ impl pallet_contracts::Config for Runtime {
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
 	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<RuntimeBlockWeights>;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
-	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
 }
 
@@ -624,7 +627,7 @@ impl pallet_indices::Config for Runtime {
 	type AccountIndex = AccountIndex;
 	type Currency = Balances;
 	type Deposit = IndexDeposit;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_indices::weights::SubstrateWeight<Runtime>;
 }
 
@@ -643,7 +646,7 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = u64;
 	type Currency = Balances;
@@ -669,7 +672,7 @@ impl pallet_assets::Config for Runtime {
 // - `:`: colon separator
 // - `path::to::pallet`: identifiers separated by colons which declare the path to a pallet definition.
 // - `::{ Part1, Part2<T>, .. }` (optional if the pallet was declared with a `frame_support::pallet:` macro): **Comma separated parts declared with their generic**.
-
+//
 // 	**If** a **pallet is **declared with `frame_support::pallet` macro** then the **parts can be automatically derived if not explicitly provided**.
 //  We provide support for the following module parts in a pallet:
 //
@@ -815,12 +818,12 @@ impl_runtime_apis! {
 				// We want to prevent polluting blocks with a lot of useless invalid data.
 				// TODO perform quick and preliminary data validation
 				#[allow(unused_variables)]
-				Call::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
+				RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
 					// TODO
 				},
 				#[allow(unused_variables)]
-				Call::Protos(ProtosCall::patch{ref data, ..}) |
-				Call::Protos(ProtosCall::set_metadata{ref data, ..}) => {
+				RuntimeCall::Protos(ProtosCall::patch{ref data, ..}) |
+				RuntimeCall::Protos(ProtosCall::set_metadata{ref data, ..}) => {
 					// TODO
 					// if let Err(_) = <pallet_protos::Pallet<Runtime>>::ensure_valid_auth(auth) {
 					// 	return InvalidTransaction::BadProof.into();
@@ -981,20 +984,30 @@ impl_runtime_apis! {
 	}
 
 	/// TODO: Documentation
-	impl pallet_protos_rpc_runtime_api::ProtosApi<Block, AccountId> for Runtime {
-		/// TODO: Documentation
+	impl pallet_protos_rpc_runtime_api::ProtosRuntimeApi<Block, AccountId> for Runtime {
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Protos::get_protos(params)
+		}
+		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
+		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+			Protos::get_genealogy(params)
 		}
 	}
 
 	/// TODO: Documentation
 	impl pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi<Block, AccountId> for Runtime {
+		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Fragments::get_definitions(params)
 		}
+		/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
 		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Fragments::get_instances(params)
+		}
+		/// Query the owner of a Fragment Instance. The return type is a String
+		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+			Fragments::get_instance_owner(params)
 		}
 	}
 
@@ -1008,24 +1021,23 @@ impl_runtime_apis! {
 		) {
 			use frame_benchmarking::{list_benchmark, baseline, Benchmarking, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
-			use frame_system_benchmarking::Pallet as SystemBench;
 			use baseline::Pallet as BaselineBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
 			list_benchmark!(list, extra, frame_benchmarking, BaselineBench::<Runtime>);
-			list_benchmark!(list, extra, frame_system, SystemBench::<Runtime>);
 			list_benchmark!(list, extra, pallet_balances, Balances);
 			list_benchmark!(list, extra, pallet_timestamp, Timestamp);
-			// list_benchmark!(list, extra, pallet_accounts, Accounts);
-			list_benchmark!(list, extra, pallet_protos, Protos);
 			list_benchmark!(list, extra, pallet_assets, Assets);
-			list_benchmark!(list, extra, pallet_fragments, Fragments);
-			list_benchmark!(list, extra, pallet_detach, Detach);
 			list_benchmark!(list, extra, pallet_multisig, Multisig);
 			list_benchmark!(list, extra, pallet_proxy, Proxy);
 			list_benchmark!(list, extra, pallet_identity, Identity);
 			list_benchmark!(list, extra, pallet_utility, Utility);
+
+			list_benchmark!(list, extra, pallet_accounts, Accounts);
+			list_benchmark!(list, extra, pallet_detach, Detach);
+			list_benchmark!(list, extra, pallet_fragments, Fragments);
+			list_benchmark!(list, extra, pallet_protos, Protos);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1038,7 +1050,6 @@ impl_runtime_apis! {
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
 			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
 
-			use frame_system_benchmarking::Pallet as SystemBench;
 			use baseline::Pallet as BaselineBench;
 
 			impl frame_system_benchmarking::Config for Runtime {}
@@ -1061,18 +1072,17 @@ impl_runtime_apis! {
 			let params = (&config, &whitelist);
 
 			add_benchmark!(params, batches, frame_benchmarking, BaselineBench::<Runtime>);
-			add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
-			add_benchmark!(params, batches, pallet_balances, Balances);
 			add_benchmark!(params, batches, pallet_timestamp, Timestamp);
-			// add_benchmark!(params, batches, pallet_accounts, Accounts);
-			add_benchmark!(params, batches, pallet_protos, Protos);
 			add_benchmark!(params, batches, pallet_assets, Assets);
-			add_benchmark!(params, batches, pallet_fragments, Fragments);
-			add_benchmark!(params, batches, pallet_detach, Detach);
 			add_benchmark!(params, batches, pallet_multisig, Multisig);
 			add_benchmark!(params, batches, pallet_proxy, Proxy);
 			add_benchmark!(params, batches, pallet_identity, Identity);
 			add_benchmark!(params, batches, pallet_utility, Utility);
+
+			add_benchmark!(params, batches, pallet_accounts, Accounts);
+			add_benchmark!(params, batches, pallet_detach, Detach);
+			add_benchmark!(params, batches, pallet_fragments, Fragments);
+			add_benchmark!(params, batches, pallet_protos, Protos);
 
 			Ok(batches)
 		}
