@@ -1373,6 +1373,7 @@ pub mod pallet {
 			Ok(sec)
 		}
 
+		/// Build and return a hash from a EPIP-712 compliant structure
 		pub fn get_eip712_hash(contract: &String, hash_struct: &Vec<Token>) -> Vec<u8> {
 			let message: Vec<u8> = [&[0x19, 0x01],
 				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
