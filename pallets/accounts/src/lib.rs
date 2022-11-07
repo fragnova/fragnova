@@ -590,7 +590,7 @@ pub mod pallet {
 			if data.lock {
 				hash_struct.push(Token::Uint(U256::from(data.lock_period)));
 			}
-			let message = Self::get_eip712_hash(&contract, &hash_struct);
+			let message = Self::get_eip712_hash(contract, &hash_struct);
 
 			// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
 
@@ -1373,7 +1373,7 @@ pub mod pallet {
 			Ok(sec)
 		}
 
-		pub fn get_eip712_hash(contract: &&String, hash_struct: &Vec<Token>) -> Vec<u8> {
+		pub fn get_eip712_hash(contract: &String, hash_struct: &Vec<Token>) -> Vec<u8> {
 			let message: Vec<u8> = [&[0x19, 0x01],
 				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
 				&keccak_256(
