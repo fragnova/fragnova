@@ -38,7 +38,7 @@ const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f862014
 /// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
 
-const LINK_VERIFYING_CONTRACT: &str = "F5A0Af5a0AF5a0AF5a0af5A0Af5A0AF5a0AF5A0A";
+const LINK_VERIFYING_CONTRACT: &str = "f5a0af5a0af5a0af5a0af5a0af5a0af5a0af5a0a";
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
 
@@ -396,21 +396,17 @@ pub mod pallet {
 			let sender = ensure_signed(origin)?;
 
 			let genesis_hash = <frame_system::Pallet<T>>::block_hash(T::BlockNumber::zero());
-			let genesis_hash_string = hex::encode(genesis_hash);
+			let genesis_hash_string = format!("0x{}", hex::encode(genesis_hash));
 
-			let sender_string = hex::encode(sender.encode());
+			// REVIEW - should we use `sender.encode()` or should we trait bound `T::AccountId` with `AsRef<[u8]>`?
+			let sender_string = format!("0x{}", hex::encode(sender.encode()));
 
 			// Metamask signTypedData_v4 - https://jsfiddle.net/4mwu2g80/43/
-			// We emulate JS JSON.stringify behavior here basically...
-			// let message = format!(r#"{{"domain":{{"name":"Fragnova Network","version":"1","chainId":{},"verifyingContract":"0xF5A0Af5a0AF5a0AF5a0af5A0Af5A0AF5a0AF5A0A"}},"message":{{"fragnovaGenesis":"{}","op":"link","sender":"{}"}},"primaryType":"Msg","types":{{"EIP712Domain":[{{"name":"name","type":"string"}},{{"name":"version","type":"string"}},{{"name":"chainId","type":"uint256"}},{{"name":"verifyingContract","type":"address"}}],"Msg":[{{"name":"fragnovaGenesis","type":"string"}},{{"name":"op","type":"string"}},{{"name":"sender","type":"string"}}]}}}}"#, T::EthChainId::get(), genesis_hash, sender_string);
-
-			// TODO, THE ABOVE IS WRONG.
-			// We need to follow https://eips.ethereum.org/EIPS/eip-712 spec.. which is convoluted...
 
 			// We encode the message using the following encoding function:
 			// encode(domainSeparator : 𝔹²⁵⁶, message : 𝕊) = "\x19\x01" ‖ domainSeparator ‖ hashStruct(message).
 			// See: https://eips.ethereum.org/EIPS/eip-712#specification-1
-			let message: Vec<u8> = [
+			let encoded_message: Vec<u8> = [
 				&[0x19, 0x01],
 				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
 				&keccak_256(
@@ -445,23 +441,12 @@ pub mod pallet {
 				)[..]
 			].concat();
 
-			log::trace!("message: {}", hex::encode(&message));
+			log::trace!("encoded message: {}", hex::encode(&encoded_message));
 
-			// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
-			let message = [
-				b"\x19Ethereum Signed Message:\n32",
-				&keccak_256(&message)[..],
-			].concat();
-
-			let message_hash = keccak_256(&message);
-
-			let recovered = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
+			let ecdsa_public_key = Crypto::secp256k1_ecdsa_recover(&signature.0, &keccak_256(&encoded_message))
 				.map_err(|_| Error::<T>::VerificationFailed)?;
 
-			let eth_key = keccak_256(&recovered[..]);
-			// let eth_key = keccak_256(&eth_key[1..]);
-			let eth_key = &eth_key[12..];
-			let eth_key = H160::from_slice(&eth_key[..]);
+			let eth_key = H160::from_slice(&keccak_256(&ecdsa_public_key[..])[12..]);
 
 			ensure!(!<EVMLinks<T>>::contains_key(&sender), Error::<T>::AccountAlreadyLinked);
 			ensure!(!<EVMLinksReverse<T>>::contains_key(eth_key), Error::<T>::AccountAlreadyLinked);
