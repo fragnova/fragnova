@@ -109,9 +109,6 @@ pub fn create_lock_signature(
 		)[..]
 	].concat();
 
-	// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
-	let message = [b"\x19Ethereum Signed Message:\n32", &keccak_256(&message)[..]].concat();
-
 	let hashed_message = keccak_256(&message);
 
 	ethereum_account_pair.sign_prehashed(&hashed_message)
@@ -158,9 +155,6 @@ pub fn create_unlock_signature(
 			)
 		)[..]
 	].concat();
-
-	// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
-	let message = [b"\x19Ethereum Signed Message:\n32", &keccak_256(&message)[..]].concat();
 
 	let hashed_message = keccak_256(&message);
 

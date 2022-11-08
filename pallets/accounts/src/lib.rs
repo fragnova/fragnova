@@ -592,8 +592,6 @@ pub mod pallet {
 			}
 			let message = Self::get_eip712_hash(contract, &hash_struct);
 
-			// let message = format!("\x19Ethereum Signed Message:\n{}{}", message.len(), message);
-
 			let message_hash = keccak_256(&message);
 			log::trace!("eip-712 message: {}", hex::encode(&message_hash));
 
@@ -1399,7 +1397,6 @@ pub mod pallet {
 					)
 				)[..]
 			].concat();
-			let message = [b"\x19Ethereum Signed Message:\n32", &keccak_256(&message)[..]].concat();
 
 			message
 		}
