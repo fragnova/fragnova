@@ -16,6 +16,9 @@ cd "$GITHUB_WORKSPACE"
 git config user.name "$BOT_NAME"
 git config user.email "$BOT_EMAIL"
 
+sudo apt update
+sudo apt install -y protobuf-compiler
+
 cargo doc --no-deps # saves doc in $DOC_FOLDER_MAIN_BRANCH
 
 git fetch

@@ -496,7 +496,7 @@ mod mint_tests {
 						edition_id,
 						1
 					))
-					.unwrap(),
+						.unwrap(),
 					correct_fragment_instance_struct
 				);
 				assert_eq!(
@@ -504,21 +504,21 @@ mod mint_tests {
 						mint_non_unique.definition.get_definition_id(),
 						edition_id
 					))
-					.unwrap(),
+						.unwrap(),
 					Compact(1)
 				);
 				assert!(<Inventory<Test>>::get(
 					dd.account_id,
 					mint_non_unique.definition.get_definition_id()
 				)
-				.unwrap()
-				.contains(&(Compact(edition_id), Compact(1))));
+					.unwrap()
+					.contains(&(Compact(edition_id), Compact(1))));
 				assert!(<Owners<Test>>::get(
 					mint_non_unique.definition.get_definition_id(),
 					dd.account_id
 				)
-				.unwrap()
-				.contains(&(Compact(edition_id), Compact(1))));
+					.unwrap()
+					.contains(&(Compact(edition_id), Compact(1))));
 			}
 
 			assert_eq!(
@@ -574,8 +574,8 @@ mod mint_tests {
 				dd.account_id,
 				mint_unique.definition.get_definition_id()
 			)
-			.unwrap()
-			.contains(&(Compact(1), Compact(1))));
+				.unwrap()
+				.contains(&(Compact(1), Compact(1))));
 			assert!(<Owners<Test>>::get(mint_unique.definition.get_definition_id(), dd.account_id)
 				.unwrap()
 				.contains(&(Compact(1), Compact(1))));
@@ -803,7 +803,7 @@ mod buy_tests {
 						edition_id,
 						1
 					))
-					.unwrap(),
+						.unwrap(),
 					correct_fragment_instance_struct
 				);
 				assert_eq!(
@@ -811,22 +811,22 @@ mod buy_tests {
 						buy_non_unique.publish.definition.get_definition_id(),
 						edition_id
 					))
-					.unwrap(),
+						.unwrap(),
 					Compact(1)
 				);
 				assert!(<Inventory<Test>>::get(
 					dd.account_id_second,
 					buy_non_unique.publish.definition.get_definition_id()
 				)
-				.unwrap()
-				.contains(&(Compact(edition_id), Compact(1))));
+					.unwrap()
+					.contains(&(Compact(edition_id), Compact(1))));
 
 				assert!(<Owners<Test>>::get(
 					buy_non_unique.publish.definition.get_definition_id(),
 					dd.account_id_second
 				)
-				.unwrap()
-				.contains(&(Compact(edition_id), Compact(1))));
+					.unwrap()
+					.contains(&(Compact(edition_id), Compact(1))));
 			}
 
 			assert_eq!(
@@ -899,15 +899,15 @@ mod buy_tests {
 				dd.account_id_second,
 				buy_unique.publish.definition.get_definition_id()
 			)
-			.unwrap()
-			.contains(&(Compact(1), Compact(1))));
+				.unwrap()
+				.contains(&(Compact(1), Compact(1))));
 
 			assert!(<Owners<Test>>::get(
 				buy_unique.publish.definition.get_definition_id(),
 				dd.account_id_second
 			)
-			.unwrap()
-			.contains(&(Compact(1), Compact(1))));
+				.unwrap()
+				.contains(&(Compact(1), Compact(1))));
 			assert_eq!(
 				<EditionsCount<Test>>::get(buy_unique.publish.definition.get_definition_id())
 					.unwrap(),
@@ -1360,8 +1360,8 @@ mod give_tests {
 					give.edition_id,
 					give.copy_id
 				))
-				.unwrap()
-				.permissions,
+					.unwrap()
+					.permissions,
 				give.new_permissions.unwrap()
 			);
 
@@ -1417,7 +1417,7 @@ mod give_tests {
 					give.mint.definition.get_definition_id(),
 					give.edition_id
 				))
-				.unwrap(),
+					.unwrap(),
 				Compact(2)
 			);
 
@@ -1427,8 +1427,8 @@ mod give_tests {
 					give.edition_id,
 					give.copy_id + 1
 				))
-				.unwrap()
-				.permissions,
+					.unwrap()
+					.permissions,
 				give.new_permissions.unwrap()
 			);
 			assert_eq!(
@@ -1437,8 +1437,8 @@ mod give_tests {
 					give.edition_id,
 					give.copy_id + 1
 				))
-				.unwrap()
-				.expiring_at,
+					.unwrap()
+					.expiring_at,
 				give.expiration
 			);
 
@@ -1493,7 +1493,7 @@ mod give_tests {
 				// Less Restrictive
 				for len_combo in 1..=vec_possible_additional_perms.len() {
 					for vec_new_perms in
-						vec_possible_additional_perms.clone().into_iter().combinations(len_combo)
+					vec_possible_additional_perms.clone().into_iter().combinations(len_combo)
 					{
 						let vec_new_permissions_parameter = [vec_perms.clone(), vec_new_perms.clone()].concat();
 
@@ -2515,9 +2515,9 @@ mod get_definitions_tests {
 						return_owners: true,
 						..Default::default()
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
 						"name": String::from_utf8(definition.metadata.name).unwrap(),
@@ -2548,9 +2548,9 @@ mod get_definitions_tests {
 						return_owners: true,
 						..Default::default()
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
 						"name": String::from_utf8(definition.metadata.name).unwrap(),
@@ -2612,9 +2612,9 @@ mod get_instances_tests {
 						limit: u64::MAX,
 						..Default::default()
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!(correct_map_instances)
 			)
 		});
@@ -2639,9 +2639,9 @@ mod get_instances_tests {
 						only_return_first_copies: true,
 						..Default::default()
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!({
 					"1.1": {},
 				})
@@ -2668,9 +2668,9 @@ mod get_instances_tests {
 						only_return_first_copies: false,
 						..Default::default()
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!({
 					"1.1": {},
 					"1.2": {},
@@ -2698,12 +2698,56 @@ mod get_instances_tests {
 						owner: Some(give.to),
 						..Default::default()
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!({
 					format!("{}.{}", give.edition_id, give.copy_id): {}
 				})
+			);
+		});
+	}
+}
+
+mod get_instance_owner_tests {
+	use super::*;
+
+	#[test]
+	fn get_instance_owner_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let mint = dd.mint_non_unique;
+			assert_ok!(upload(dd.account_id, &mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &mint.definition));
+			assert_ok!(mint_(dd.account_id, &mint));
+
+			assert_eq!(
+				FragmentsPallet::get_instance_owner(GetInstanceOwnerParams {
+					definition_hash: hex::encode(mint.definition.get_definition_id()).into(),
+					edition_id: 1,
+					copy_id: 1,
+				})
+				.unwrap(),
+				hex::encode(dd.account_id).into_bytes()
+			);
+		});
+	}
+
+	#[test]
+	fn get_instance_owner_should_not_work_if_instance_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let mint = dd.mint_non_unique;
+			assert_ok!(upload(dd.account_id, &mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &mint.definition));
+
+			assert_eq!(
+				FragmentsPallet::get_instance_owner(GetInstanceOwnerParams {
+					definition_hash: hex::encode(mint.definition.get_definition_id()).into(),
+					edition_id: 1,
+					copy_id: 1,
+				}),
+				Err("Instance not found".into())
 			);
 		});
 	}

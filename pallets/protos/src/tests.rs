@@ -16,14 +16,14 @@ mod copied_from_pallet_accounts {
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
 		Accounts::internal_lock_update(
-			Origin::none(),
+			RuntimeOrigin::none(),
 			lock.data.clone(),
 			sp_core::ed25519::Signature([69u8; 64]), // this can be anything and it will still work
 		)
 	}
 
 	pub fn link_(link: &Link) -> DispatchResult {
-		Accounts::link(Origin::signed(link.clamor_account_id), link.link_signature.clone())
+		Accounts::link(RuntimeOrigin::signed(link.clamor_account_id), link.link_signature.clone())
 	}
 }
 
@@ -35,7 +35,7 @@ mod upload_tests {
 		proto: &ProtoFragment,
 	) -> DispatchResult {
 		ProtosPallet::upload(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			proto.references.clone(),
 			proto.category.clone(),
 			proto.tags.clone(),
@@ -114,7 +114,7 @@ mod upload_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_protos::Event::Uploaded {
+				mock::RuntimeEvent::from(pallet_protos::Event::Uploaded {
 					proto_hash: proto.get_proto_hash(),
 					cid: proto.get_proto_cid()
 				})
@@ -223,7 +223,7 @@ mod patch_tests {
 
 	fn patch_(signer: <Test as frame_system::Config>::AccountId, patch: &Patch) -> DispatchResult {
 		ProtosPallet::patch(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			patch.proto_fragment.clone().get_proto_hash(),
 			patch.include_cost.map(|cost| UsageLicense::Tickets(Compact::from(cost))),
 			patch.new_references.clone(),
@@ -264,7 +264,7 @@ mod patch_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_protos::Event::Patched {
+				mock::RuntimeEvent::from(pallet_protos::Event::Patched {
 					proto_hash: patch.proto_fragment.get_proto_hash(),
 					cid: patch.get_data_cid()
 				})
@@ -453,7 +453,7 @@ mod transfer_tests {
 		proto: &ProtoFragment,
 		new_owner: <Test as frame_system::Config>::AccountId,
 	) -> DispatchResult {
-		ProtosPallet::transfer(Origin::signed(signer), proto.get_proto_hash(), new_owner)
+		ProtosPallet::transfer(RuntimeOrigin::signed(signer), proto.get_proto_hash(), new_owner)
 	}
 
 	#[test]
@@ -472,11 +472,11 @@ mod transfer_tests {
 				ProtoOwner::User(dd.account_id_second)
 			);
 
-			assert!(
+			assert_eq!(
 				<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id))
 					.unwrap()
-					.contains(&proto.get_proto_hash()) ==
-					false
+					.contains(&proto.get_proto_hash()),
+				false
 			);
 			assert!(<ProtosByOwner<Test>>::get(ProtoOwner::User(dd.account_id_second))
 				.unwrap()
@@ -488,7 +488,7 @@ mod transfer_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_protos::Event::Transferred {
+				mock::RuntimeEvent::from(pallet_protos::Event::Transferred {
 					proto_hash: proto.get_proto_hash(),
 					owner_id: dd.account_id_second
 				})
@@ -535,7 +535,7 @@ mod set_metadata_tests {
 		metadata: &Metadata,
 	) -> DispatchResult {
 		ProtosPallet::set_metadata(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			metadata.proto_fragment.get_proto_hash(),
 			metadata.metadata_key.clone(),
 			metadata.data.clone(),
@@ -571,7 +571,7 @@ mod set_metadata_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_protos::Event::MetadataChanged {
+				mock::RuntimeEvent::from(pallet_protos::Event::MetadataChanged {
 					proto_hash: metadata.proto_fragment.get_proto_hash(),
 					cid: metadata.metadata_key.clone()
 				})
@@ -610,7 +610,11 @@ mod stake_tests {
 		proto: &ProtoFragment,
 		stake_amount: &<Test as pallet_assets::Config>::Balance,
 	) -> DispatchResult {
-		ProtosPallet::curate(Origin::signed(signer), proto.get_proto_hash(), stake_amount.clone())
+		ProtosPallet::curate(
+			RuntimeOrigin::signed(signer),
+			proto.get_proto_hash(),
+			stake_amount.clone(),
+		)
 	}
 
 	// TODO
@@ -658,7 +662,7 @@ mod stake_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_protos::Event::Staked {
+				mock::RuntimeEvent::from(pallet_protos::Event::Staked {
 					proto_hash: stake.proto_fragment.get_proto_hash(),
 					account_id: dd.account_id,
 					balance: stake.get_stake_amount()
@@ -706,8 +710,8 @@ mod stake_tests {
 			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
 				stake.lock.link.get_recovered_ethereum_account_id(),
 			)
-				.unwrap()
-				.amount;
+			.unwrap()
+			.amount;
 			let frag_staked =
 				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
 					.unwrap_or_default();
@@ -734,8 +738,8 @@ mod stake_tests {
 			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
 				stake.lock.link.get_recovered_ethereum_account_id(),
 			)
-				.unwrap()
-				.amount;
+			.unwrap()
+			.amount;
 			let frag_staked =
 				<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
 					.unwrap_or_default();
@@ -754,7 +758,7 @@ mod ban_tests {
 	use super::*;
 
 	pub fn ban(proto: &ProtoFragment) -> DispatchResult {
-		ProtosPallet::ban(Origin::root(), proto.get_proto_hash())
+		ProtosPallet::ban(RuntimeOrigin::root(), proto.get_proto_hash())
 	}
 
 	#[test]
@@ -789,13 +793,12 @@ mod ban_tests {
 			let proto = dd.proto_fragment;
 			assert_ok!(upload(dd.account_id, &proto));
 			assert_noop!(
-				ProtosPallet::ban(Origin::signed(dd.account_id), proto.get_proto_hash()),
+				ProtosPallet::ban(RuntimeOrigin::signed(dd.account_id), proto.get_proto_hash()),
 				sp_runtime::DispatchError::BadOrigin
 			);
 		});
 	}
 }
-
 
 mod get_protos_tests {
 	use super::*;
@@ -872,7 +875,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -915,7 +918,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -960,7 +963,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1006,7 +1009,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1083,7 +1086,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1139,7 +1142,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1216,7 +1219,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id_second)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1271,7 +1274,7 @@ mod get_protos_tests {
 						"value": hex::encode(dd.account_id)
 					},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1324,7 +1327,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1418,7 +1421,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1468,7 +1471,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1492,8 +1495,10 @@ mod get_protos_tests {
 					&ProtosPallet::get_protos(GetProtosParams {
 						limit: u64::MAX,
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): {},
 					hex::encode(proto_second.get_proto_hash()): {},
@@ -1506,13 +1511,14 @@ mod get_protos_tests {
 						limit: u64::MAX,
 						exclude_tags: proto_second.tags, // exclude tags!
 						..Default::default()
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): {},
 				})
 			);
-
 		});
 	}
 }
@@ -1541,8 +1547,10 @@ mod get_genealogy_tests {
 					&ProtosPallet::get_genealogy(GetGenealogyParams {
 						proto_hash: hex::encode(proto_third.get_proto_hash()).into_bytes(),
 						get_ancestors: true,
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					hex::encode(proto_third.get_proto_hash()): [
 						hex::encode(proto_second.get_proto_hash())
@@ -1577,8 +1585,10 @@ mod get_genealogy_tests {
 					&ProtosPallet::get_genealogy(GetGenealogyParams {
 						proto_hash: hex::encode(proto.get_proto_hash()).into_bytes(),
 						get_ancestors: false,
-					}).unwrap()
-				).unwrap(),
+					})
+					.unwrap()
+				)
+				.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): [
 						hex::encode(proto_second.get_proto_hash())
@@ -1591,5 +1601,4 @@ mod get_genealogy_tests {
 			);
 		});
 	}
-
 }

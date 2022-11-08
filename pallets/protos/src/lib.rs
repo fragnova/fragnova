@@ -36,7 +36,11 @@ use sp_io::{
 	hashing::{blake2_256, twox_64},
 	transaction_index,
 };
-use sp_std::{collections::{btree_map::BTreeMap, vec_deque::VecDeque}, vec, vec::Vec};
+use sp_std::{
+	collections::{btree_map::BTreeMap, vec_deque::VecDeque},
+	vec,
+	vec::Vec,
+};
 
 pub use weights::WeightInfo;
 
@@ -99,7 +103,7 @@ pub struct GetProtosParams<TAccountId, TString> {
 	pub tags: Vec<TString>,
 	/// The returned Proto-Fragments must not have any tag that is specified in the `exclude_tags` field
 	pub exclude_tags: Vec<TString>,
-  /// Whether the Proto-Fragments should be available or not
+	/// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
 }
 #[cfg(test)]
@@ -208,7 +212,7 @@ pub mod pallet {
 		+ pallet_contracts::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
 
@@ -915,7 +919,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue
+							continue;
 						}
 					}
 
@@ -933,7 +937,7 @@ pub mod pallet {
 								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
 							} else {
 								// Curation not found
-								return Err(Error::<T>::CurationNotFound.into())
+								return Err(Error::<T>::CurationNotFound.into());
 							}
 						},
 						UsageLicense::Contract(contract_address) => {
@@ -958,19 +962,19 @@ pub mod pallet {
 								let allowed = bool::decode(&mut &res.data.0[..]);
 								if let Ok(allowed) = allowed {
 									if !allowed {
-										return Err(Error::<T>::Unauthorized.into())
+										return Err(Error::<T>::Unauthorized.into());
 									}
 								} else {
-									return Err(Error::<T>::Unauthorized.into())
+									return Err(Error::<T>::Unauthorized.into());
 								}
 							} else {
-								return Err(Error::<T>::Unauthorized.into())
+								return Err(Error::<T>::Unauthorized.into());
 							}
 						},
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into())
+					return Err(Error::<T>::ReferenceNotFound.into());
 				}
 			}
 			Ok(())
@@ -986,16 +990,16 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.license == UsageLicense::Closed {
-						return false
+						return false;
 					} else if !avail && struct_proto.license != UsageLicense::Closed {
-						return false
+						return false;
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto, exclude_tags)
+					return Self::filter_tags(tags, &struct_proto, exclude_tags);
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories, exclude_tags)
+					return Self::filter_category(tags, &struct_proto, categories, exclude_tags);
 				}
 			} else {
 				false
@@ -1033,39 +1037,40 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto, exclude_tags)
+									return Self::filter_tags(tags, struct_proto, exclude_tags);
 								} else {
-									return false
+									return false;
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec) &&
-								param_script_info.requiring.contains(&zero_vec) &&
-								param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec)
+								&& param_script_info.requiring.contains(&zero_vec)
+								&& param_script_info.format == stored_script_info.format
 							{
-								return Self::filter_tags(tags, struct_proto, exclude_tags)
+								return Self::filter_tags(tags, struct_proto, exclude_tags);
 							} else {
-								return false
+								return false;
 							}
 						} else {
 							// it should never go here
-							return false
+							return false;
 						}
 					},
-					_ =>
+					_ => {
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto, exclude_tags)
+							return Self::filter_tags(tags, struct_proto, exclude_tags);
 						} else {
-							return false
-						},
+							return false;
+						}
+					},
 				})
 				.collect();
 
 			if found.is_empty() {
-				return false
+				return false;
 			} else {
-				return true
+				return true;
 			}
 		}
 
@@ -1125,38 +1130,39 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return true
+									return true;
 								} else {
-									return false
+									return false;
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec) &&
-								param_script_info.requiring.contains(&zero_vec) &&
-								param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec)
+								&& param_script_info.requiring.contains(&zero_vec)
+								&& param_script_info.format == stored_script_info.format
 							{
-								return true
+								return true;
 							} else if !(&cat == &category) {
-								return false
+								return false;
 							} else {
-								return false
+								return false;
 							}
 						} else {
-							return false
+							return false;
 						}
 					},
 					// for all other types of Categories
-					_ =>
+					_ => {
 						if !(&cat == &category) {
-							return false
+							return false;
 						} else {
-							return true
-						},
+							return true;
+						}
+					},
 				})
 				.collect();
 
-			return found
+			return found;
 		}
 
 		/// Converts a `ProtoOwner` struct into a JSON
@@ -1262,7 +1268,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
-								&params.exclude_tags
+								&params.exclude_tags,
 							)
 						})
 						.skip(params.from as usize)
@@ -1278,7 +1284,7 @@ pub mod pallet {
 								&params.tags,
 								&params.categories,
 								params.available,
-								&params.exclude_tags
+								&params.exclude_tags,
 							)
 						})
 						.skip(params.from as usize)
@@ -1300,7 +1306,7 @@ pub mod pallet {
 						// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						if found.is_empty() {
-							continue
+							continue;
 						}
 					}
 					// Found the category.
@@ -1318,7 +1324,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										&params.exclude_tags
+										&params.exclude_tags,
 									)
 								})
 								.collect()
@@ -1332,7 +1338,7 @@ pub mod pallet {
 										&params.tags,
 										&params.categories,
 										params.available,
-										&params.exclude_tags
+										&params.exclude_tags,
 									)
 								})
 								.collect()
@@ -1405,7 +1411,6 @@ pub mod pallet {
 		///
 		/// * `params` - A ***GetGenealogyParams* struct**
 		pub fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-
 			let proto_hash: Hash256 = hex::decode(params.proto_hash)
 				.map_err(|_| "Failed to convert string to u8 slice")?
 				.try_into()
@@ -1420,11 +1425,15 @@ pub mod pallet {
 			visited.insert(proto_hash, true);
 
 			while let Some(proto) = queue.pop_front() {
-
 				let neighbors = if params.get_ancestors {
-					let proto_struct = <Protos<T>>::get(proto).ok_or("Proto Hash Does Not Exist!")?;
+					let proto_struct =
+						<Protos<T>>::get(proto).ok_or("Proto Hash Does Not Exist!")?;
 					let mut parents = proto_struct.references;
-					let mut references_from_patches = proto_struct.patches.into_iter().flat_map(|pp: ProtoPatch<_>| pp.references).collect::<Vec<Hash256>>();
+					let mut references_from_patches = proto_struct
+						.patches
+						.into_iter()
+						.flat_map(|pp: ProtoPatch<_>| pp.references)
+						.collect::<Vec<Hash256>>();
 					parents.append(&mut references_from_patches);
 					parents
 				} else {
@@ -1432,7 +1441,8 @@ pub mod pallet {
 					children
 				};
 
-				adjacency_list.insert(hex::encode(proto), neighbors.iter().map(|p| hex::encode(p)).collect());
+				adjacency_list
+					.insert(hex::encode(proto), neighbors.iter().map(|p| hex::encode(p)).collect());
 
 				for neighbor in neighbors.into_iter() {
 					if !visited.contains_key(&neighbor) {
@@ -1443,10 +1453,6 @@ pub mod pallet {
 			}
 
 			Ok(json!(adjacency_list).to_string().into_bytes())
-
 		}
-
-
 	}
-
 }

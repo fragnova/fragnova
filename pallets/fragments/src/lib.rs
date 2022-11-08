@@ -76,6 +76,7 @@ use scale_info::prelude::{
 };
 use serde_json::{json, Map, Value};
 
+/// Type used to represent an Instance's Edition ID and an Instance's Copy ID
 type Unit = u64;
 
 /// **Data Type** used to **Query and Filter for Fragment Definitions**
@@ -143,6 +144,18 @@ impl<TAccountId, TString: Default> Default for GetInstancesParams<TAccountId, TS
 			only_return_first_copies: Default::default(),
 		}
 	}
+}
+
+/// **Data Type** used to **Query the owner of a Fragment Instance**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct GetInstanceOwnerParams<TString> {
+	/// Fragment Definition/Collection that the Fragment Instance is in
+	pub definition_hash: TString,
+	/// Edition ID of the Fragment Instance
+	pub edition_id: Unit,
+	/// Copy ID of the Fragment Instance
+	pub copy_id: Unit,
 }
 
 /// **Struct** of a **Fragment Definition's Metadata**
@@ -299,7 +312,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_protos::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_fragments.
 		type WeightInfo: WeightInfo;
 	}
@@ -332,7 +345,7 @@ pub mod pallet {
 	/// ***PublishingData* struct (of the aforementioned Fragment Definition)**
 	#[pallet::storage]
 	pub type Publishing<T: Config> =
-		StorageMap<_, Identity, Hash128, PublishingData<T::BlockNumber>>;
+	StorageMap<_, Identity, Hash128, PublishingData<T::BlockNumber>>;
 
 	/// **StorageNMap** that maps a
 	/// **Fragment Instance's Fragment Definition ID, Edition ID and Copy ID**
@@ -451,12 +464,12 @@ pub mod pallet {
 	///  Fragment Instances can expire, we process expirations every `on_finalize`
 	#[pallet::storage]
 	pub type Expirations<T: Config> =
-		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(Hash128, Compact<Unit>, Compact<Unit>)>>;
+	StorageMap<_, Twox64Concat, T::BlockNumber, Vec<(Hash128, Compact<Unit>, Compact<Unit>)>>;
 
 	/// **StorageMap** that maps a **Fragment Definition ID and a Number** to a **Data Hash**
 	#[pallet::storage]
 	pub type DataHashMap<T: Config> =
-		StorageDoubleMap<_, Identity, Hash128, Identity, Compact<u64>, Hash256>;
+	StorageDoubleMap<_, Identity, Hash128, Identity, Compact<u64>, Hash256>;
 	/// **StorageMap** that maps a **Fragment Definition ID** to the **total number of "Numbers" (see `DataHashMap` to understand what "Numbers" means) that fall under it**
 	#[pallet::storage]
 	pub type DataHashMapIndex<T: Config> = StorageMap<_, Identity, Hash128, u64>;
@@ -907,7 +920,7 @@ pub mod pallet {
 					ensure!(quantity <= left, Error::<T>::MaxSupplyReached); // Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				} else {
 					// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
-					return Err(Error::<T>::ParamsNotValid.into())
+					return Err(Error::<T>::ParamsNotValid.into());
 				}
 			}
 
@@ -989,8 +1002,8 @@ pub mod pallet {
 		///
 		/// TODO - `*q as u32` might cause problems if q is too big (since q is u64)!!!
 		#[pallet::weight(match options {
-			FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(*q as u32),
-			FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
+		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(*q as u32),
+		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
 		})]
 		pub fn mint(
 			origin: OriginFor<T>,
@@ -1059,8 +1072,8 @@ pub mod pallet {
 		///
 		/// TODO - `*=q as u32` might cause problems if q is too big (since q is u64)!!!
 		#[pallet::weight(match options {
-			FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::buy_definition_that_has_non_unique_capability(*q as u32),
-			FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::buy_definition_that_has_unique_capability(d.len() as u32)
+		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::buy_definition_that_has_non_unique_capability(*q as u32),
+		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::buy_definition_that_has_unique_capability(d.len() as u32)
 		})]
 		pub fn buy(
 			origin: OriginFor<T>,
@@ -1371,7 +1384,7 @@ pub mod pallet {
 							});
 
 							// fragments are unique so we are done here
-							break
+							break;
 						}
 					}
 				}
@@ -1446,7 +1459,7 @@ pub mod pallet {
 			let (data_hash, data_len) = match options {
 				FragmentBuyOptions::UniqueData(data) => {
 					if fragment_data.unique.is_none() || quantity != 1 {
-						return Err(Error::<T>::ParamsNotValid.into())
+						return Err(Error::<T>::ParamsNotValid.into());
 					}
 
 					let data_hash = blake2_256(&data);
@@ -1460,7 +1473,7 @@ pub mod pallet {
 				},
 				FragmentBuyOptions::Quantity(_) => {
 					if fragment_data.unique.is_some() {
-						return Err(Error::<T>::ParamsNotValid.into())
+						return Err(Error::<T>::ParamsNotValid.into());
 					}
 
 					(None, None)
@@ -1474,7 +1487,7 @@ pub mod pallet {
 				// if limited amount let's reduce the amount of units left
 				if let Some(units_left) = sale.units_left {
 					if quantity > units_left.into() {
-						return Err(Error::<T>::PublishedQuantityReached.into())
+						return Err(Error::<T>::PublishedQuantityReached.into());
 					} else {
 						<Publishing<T>>::mutate(&*definition_hash, |sale| {
 							if let Some(sale) = sale {
@@ -1491,7 +1504,7 @@ pub mod pallet {
 					let left = max.saturating_sub(existing); // `left` = `max` - `existing`
 					if quantity > left {
 						// Ensure the function parameter `quantity` is smaller than or equal to `left`
-						return Err(Error::<T>::MaxSupplyReached.into())
+						return Err(Error::<T>::MaxSupplyReached.into());
 					}
 				}
 			}
@@ -1824,8 +1837,8 @@ pub mod pallet {
 
 	/// Implementation Block of `Pallet` specifically for RPC-related functions
 	impl<T: Config> Pallet<T>
-	where
-		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
+		where
+			T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 	{
 		// pub fn get_definitions_old(params: GetDefinitionsParams<T::AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 		//
@@ -1991,7 +2004,7 @@ pub mod pallet {
 							.map(|edition_id| -> Result<Unit, _> {
 								<CopiesCount<T>>::get((array_definition_id, edition_id))
 									.map(Into::<Unit>::into)
-									.ok_or("No. of Copies not found for an Existing Edition!")
+									.ok_or("Number of Copies not found for an existing edition")
 							})
 							.sum::<Result<Unit, _>>()?
 					} else {
@@ -2100,7 +2113,7 @@ pub mod pallet {
 
 					let instance_struct =
 						<Fragments<T>>::get((definition_hash, edition_id, copy_id))
-							.ok_or("Instance Not Found!")?;
+							.ok_or("Instance not found")?;
 
 					if !params.metadata_keys.is_empty() {
 						let metadata = instance_struct
@@ -2109,7 +2122,7 @@ pub mod pallet {
 							.map(|(metadata_key_index, data_hash_index)| {
 								let data_hash =
 									<DataHashMap<T>>::get(definition_hash, data_hash_index)
-										.ok_or::<Vec<u8>>("Data Hash Not Found!".into())?;
+										.ok_or::<Vec<u8>>("Data hash not found".into())?;
 								Ok((metadata_key_index.clone(), data_hash))
 							})
 							.collect::<Result<BTreeMap<Compact<u64>, Hash256>, Vec<u8>>>()?;
@@ -2130,6 +2143,36 @@ pub mod pallet {
 			let result = json!(map).to_string();
 
 			Ok(result.into_bytes())
+		}
+
+		/// Query the owner of a Fragment Instance. The return type is a String
+		pub fn get_instance_owner(
+			params: GetInstanceOwnerParams<Vec<u8>>,
+		) -> Result<Vec<u8>, Vec<u8>> {
+			let definition_hash: Hash128 = hex::decode(params.definition_hash)
+				.map_err(|_| "Failed to convert string to u8 slice")?
+				.try_into()
+				.map_err(|_| "Failed to convert u8 slice to Hash128")?;
+
+			if params.copy_id
+				> CopiesCount::<T>::get((definition_hash, params.edition_id))
+					.unwrap_or(Compact(0))
+					.into()
+			{
+				return Err("Instance not found".into());
+			}
+
+			let owner = Owners::<T>::iter_prefix(definition_hash)
+				.find(|(_owner, vec_instances)| {
+					vec_instances.iter().any(|(edition_id, copy_id)| {
+						Compact(params.edition_id) == *edition_id
+							&& Compact(params.copy_id) == *copy_id
+					})
+				})
+				.ok_or("Owner not found (this should never happen)")?
+				.0;
+
+			Ok(hex::encode(owner).into_bytes())
 		}
 	}
 }

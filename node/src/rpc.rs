@@ -56,8 +56,8 @@ where
 	P: TransactionPool + 'static,
 {
 	use pallet_contracts_rpc::{Contracts, ContractsApiServer};
-	use pallet_protos_rpc::{ProtosRpcServer, ProtosRpcServerImpl};
 	use pallet_fragments_rpc::{FragmentsRpcServer, FragmentsRpcServerImpl};
+	use pallet_protos_rpc::{ProtosRpcServer, ProtosRpcServerImpl};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_rpc::dev::{Dev, DevApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
