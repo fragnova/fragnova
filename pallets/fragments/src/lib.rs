@@ -1258,7 +1258,7 @@ pub mod pallet {
 		/// * `edition` - Edition ID of the Fragment Instance
 		/// * `copy` - Copy ID of the Fragment instance
 		#[pallet::weight(50_000)]
-		pub fn unresell(
+		pub fn stop_reselling(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
 			edition_id: Unit,
