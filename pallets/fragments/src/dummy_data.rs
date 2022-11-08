@@ -145,7 +145,7 @@ pub struct Resell {
 	pub secondary_sale_type: SecondarySaleType,
 }
 #[derive(Clone)]
-pub struct Unresell {
+pub struct EndResale {
 	pub resell: Resell
 }
 #[derive(Clone)]
@@ -176,7 +176,7 @@ pub struct DummyData {
 
 	pub resell_normal: Resell,
 
-	pub unresell: Unresell,
+	pub end_resale: EndResale,
 
 	pub secondary_buy: SecondaryBuy,
 	pub secondary_buy_no_copy_perms: SecondaryBuy,
@@ -291,7 +291,7 @@ impl DummyData {
 			secondary_sale_type: SecondarySaleType::Normal(777),
 		};
 
-		let unresell = Unresell {
+		let end_resale = EndResale {
 			resell: resell_normal.clone(),
 		};
 
@@ -332,7 +332,7 @@ impl DummyData {
 
 			resell_normal,
 
-			unresell,
+			end_resale,
 
 			secondary_buy,
 			secondary_buy_no_copy_perms,

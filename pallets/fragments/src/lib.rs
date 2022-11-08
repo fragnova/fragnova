@@ -522,8 +522,8 @@ pub mod pallet {
 			definition_hash: Hash128,
 			fragment_id: (Unit, Unit),
 		},
-		/// Unresell Instance
-		Unresell {
+		/// End Resale of Instance
+		EndResale {
 			definition_hash: Hash128,
 			fragment_id: (Unit, Unit),
 		},
@@ -1271,7 +1271,7 @@ pub mod pallet {
 		/// * `edition` - Edition ID of the Fragment Instance
 		/// * `copy` - Copy ID of the Fragment instance
 		#[pallet::weight(50_000)]
-		pub fn stop_reselling(
+		pub fn end_resale(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
 			edition_id: Unit,
@@ -1289,7 +1289,7 @@ pub mod pallet {
 
 			Definition2SecondarySales::<T>::remove((definition_hash, edition_id, copy_id));
 
-			Self::deposit_event(Event::Unresell { definition_hash, fragment_id: (edition_id, copy_id) });
+			Self::deposit_event(Event::EndResale { definition_hash, fragment_id: (edition_id, copy_id) });
 
 			Ok(())
 		}

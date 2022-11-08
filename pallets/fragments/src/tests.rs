@@ -24,7 +24,7 @@ mod copied_from_pallet_protos {
 		proto: &ProtoFragment,
 	) -> DispatchResult {
 		Protos::upload(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			proto.references.clone(),
 			proto.category.clone(),
 			proto.tags.clone(),
@@ -47,7 +47,7 @@ mod create_tests {
 		definition: &Definition,
 	) -> DispatchResult {
 		FragmentsPallet::create(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			definition.proto_fragment.get_proto_hash(),
 			definition.metadata.clone(),
 			definition.permissions,
@@ -179,7 +179,7 @@ mod create_tests {
 			assert_noop!(create(dd.account_id, &definition), Error::<Test>::CurrencyNotFound);
 
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true, // Whether this asset needs users to have an existential deposit to hold this asset
@@ -207,7 +207,7 @@ mod publish_tests {
 		publish: &Publish,
 	) -> DispatchResult {
 		FragmentsPallet::publish(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			publish.definition.get_definition_id(),
 			publish.price,
 			publish.quantity,
@@ -355,7 +355,7 @@ mod unpublish_tests {
 		signer: <Test as frame_system::Config>::AccountId,
 		definition: &Definition,
 	) -> DispatchResult {
-		FragmentsPallet::unpublish(Origin::signed(signer), definition.get_definition_id())
+		FragmentsPallet::unpublish(RuntimeOrigin::signed(signer), definition.get_definition_id())
 	}
 
 	#[test]
@@ -445,7 +445,7 @@ mod mint_tests {
 
 	pub fn mint_(signer: <Test as frame_system::Config>::AccountId, mint: &Mint) -> DispatchResult {
 		FragmentsPallet::mint(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			mint.definition.get_definition_id(),
 			mint.buy_options.clone(),
 			mint.amount.clone(),
@@ -733,7 +733,7 @@ mod buy_tests {
 
 	fn buy_(signer: <Test as frame_system::Config>::AccountId, buy: &Buy) -> DispatchResult {
 		FragmentsPallet::buy(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			buy.publish.definition.get_definition_id(),
 			buy.buy_options.clone(),
 		)
@@ -979,7 +979,7 @@ mod buy_tests {
 
 			let minimum_balance = 1;
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -996,7 +996,7 @@ mod buy_tests {
 			};
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1,
@@ -1004,7 +1004,7 @@ mod buy_tests {
 			assert_noop!(buy_(dd.account_id_second, &buy), Error::<Test>::InsufficientBalance);
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_third,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
@@ -1032,7 +1032,7 @@ mod buy_tests {
 
 			let minimum_balance = buy.publish.price.saturating_mul(quantity as u128); // vault ID wil have minimum balance after `buy()` transaction
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1043,7 +1043,7 @@ mod buy_tests {
 			publish_definition(dd.account_id, &buy);
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
@@ -1071,7 +1071,7 @@ mod buy_tests {
 
 			let minimum_balance = buy.publish.price.saturating_mul(quantity as u128) + 1; // vault ID wil not have minimum balance after `buy()` transaction
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -1082,7 +1082,7 @@ mod buy_tests {
 			publish_definition(dd.account_id, &buy);
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				buy.publish.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
@@ -1284,7 +1284,7 @@ mod give_tests {
 		give: &Give,
 	) -> DispatchResult {
 		FragmentsPallet::give(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			give.mint.definition.get_definition_id(),
 			give.edition_id,
 			give.copy_id,
@@ -1689,7 +1689,7 @@ mod create_account_tests {
 		create_account: &CreateAccount,
 	) -> DispatchResult {
 		FragmentsPallet::create_account(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			create_account.mint.definition.get_definition_id(),
 			create_account.edition_id,
 			create_account.copy_id,
@@ -1739,7 +1739,7 @@ mod resell_tests {
 		resell: &Resell
 	) -> DispatchResult {
 		FragmentsPallet::resell(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			resell.mint.definition.get_definition_id(),
 			resell.edition_id,
 			resell.copy_id,
@@ -2043,81 +2043,81 @@ mod resell_tests {
 
 }
 
-mod unresell_tests {
+mod end_resale_tests {
 	use super::*;
 
-	pub fn unresell_(
+	pub fn end_resale_(
 		signer: <Test as frame_system::Config>::AccountId,
-		unresell: &Unresell
+		end_resale: &EndResale
 	) -> DispatchResult {
-		FragmentsPallet::unresell(
-			Origin::signed(signer),
-			unresell.resell.mint.definition.get_definition_id(),
-			unresell.resell.edition_id,
-			unresell.resell.copy_id,
+		FragmentsPallet::end_resale(
+			RuntimeOrigin::signed(signer),
+			end_resale.resell.mint.definition.get_definition_id(),
+			end_resale.resell.edition_id,
+			end_resale.resell.copy_id,
 		)
 	}
 
 	pub fn resell_instance(
 		signer: <Test as frame_system::Config>::AccountId,
-		unresell: &Unresell
+		end_resale: &EndResale
 	) {
-		assert_ok!(upload(signer, &unresell.resell.mint.definition.proto_fragment));
-		assert_ok!(create(signer, &unresell.resell.mint.definition));
-		assert_ok!(mint_(signer, &unresell.resell.mint));
-		assert_ok!(resell_(signer, &unresell.resell));
+		assert_ok!(upload(signer, &end_resale.resell.mint.definition.proto_fragment));
+		assert_ok!(create(signer, &end_resale.resell.mint.definition));
+		assert_ok!(mint_(signer, &end_resale.resell.mint));
+		assert_ok!(resell_(signer, &end_resale.resell));
 	}
 
 
 
 	#[test]
-	fn unresell_should_work() {
+	fn end_resale_should_work() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
-			let unresell = dd.unresell;
+			let end_resale = dd.end_resale;
 
-			resell_instance(dd.account_id, &unresell);
-			assert_ok!(unresell_(dd.account_id, &unresell));
+			resell_instance(dd.account_id, &end_resale);
+			assert_ok!(end_resale_(dd.account_id, &end_resale));
 
 			System::assert_last_event(
-				FragmentsEvent::Unresell {
-					definition_hash: unresell.resell.mint.definition.get_definition_id(),
-					fragment_id: (unresell.resell.edition_id, unresell.resell.copy_id),
+				FragmentsEvent::EndResale {
+					definition_hash: end_resale.resell.mint.definition.get_definition_id(),
+					fragment_id: (end_resale.resell.edition_id, end_resale.resell.copy_id),
 				}.into()
 			);
 
 			assert!(
-				!Definition2SecondarySales::<Test>::contains_key((unresell.resell.mint.definition.get_definition_id(), unresell.resell.edition_id, unresell.resell.copy_id))
+				!Definition2SecondarySales::<Test>::contains_key((end_resale.resell.mint.definition.get_definition_id(), end_resale.resell.edition_id, end_resale.resell.copy_id))
 			);
 		});
 	}
 
 	#[test]
-	fn unresell_should_not_work_if_user_does_not_own_the_instance() {
+	fn end_resale_should_not_work_if_user_does_not_own_the_instance() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
-			let unresell = dd.unresell;
+			let end_resale = dd.end_resale;
 
-			resell_instance(dd.account_id, &unresell);
+			resell_instance(dd.account_id, &end_resale);
 
-			assert_noop!(unresell_(dd.account_id_second, &unresell), Error::<Test>::NoPermission);
+			assert_noop!(end_resale_(dd.account_id_second, &end_resale), Error::<Test>::NoPermission);
 		});
 	}
 
 	#[test]
-	fn unresell_should_not_work_if_instance_not_on_sale() {
+	fn end_resale_should_not_work_if_instance_not_on_sale() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
-			let unresell = dd.unresell;
+			let end_resale = dd.end_resale;
 
-			assert_ok!(upload(dd.account_id, &unresell.resell.mint.definition.proto_fragment));
-			assert_ok!(create(dd.account_id, &unresell.resell.mint.definition));
-			assert_ok!(mint_(dd.account_id, &unresell.resell.mint));
+			assert_ok!(upload(dd.account_id, &end_resale.resell.mint.definition.proto_fragment));
+			assert_ok!(create(dd.account_id, &end_resale.resell.mint.definition));
+			assert_ok!(mint_(dd.account_id, &end_resale.resell.mint));
 
-			assert_noop!(unresell_(dd.account_id, &unresell), Error::<Test>::NotFound);
+			assert_noop!(end_resale_(dd.account_id, &end_resale), Error::<Test>::NotFound);
 		});
 	}
 }
@@ -2130,7 +2130,7 @@ mod secondary_buy_tests {
 		secondary_buy: &SecondaryBuy
 	) -> DispatchResult {
 		FragmentsPallet::secondary_buy(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			secondary_buy.resell.mint.definition.get_definition_id(),
 			secondary_buy.resell.edition_id,
 			secondary_buy.resell.copy_id,
@@ -2383,7 +2383,7 @@ mod secondary_buy_tests {
 
 			let minimum_balance = 1;
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				secondary_buy.resell.mint.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -2398,7 +2398,7 @@ mod secondary_buy_tests {
 			};
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				price + minimum_balance - 1,
@@ -2406,7 +2406,7 @@ mod secondary_buy_tests {
 			assert_noop!(secondary_buy_(dd.account_id_second, &secondary_buy), Error::<Test>::InsufficientBalance);
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
 				dd.account_id_third,
 				price + minimum_balance,
@@ -2432,7 +2432,7 @@ mod secondary_buy_tests {
 
 			let minimum_balance = price;
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				secondary_buy.resell.mint.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -2443,7 +2443,7 @@ mod secondary_buy_tests {
 			resell_instance(dd.account_id, &secondary_buy);
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				price + minimum_balance,
@@ -2469,7 +2469,7 @@ mod secondary_buy_tests {
 
 			let minimum_balance = price + 1;
 			assert_ok!(Assets::force_create(
-				Origin::root(),
+				RuntimeOrigin::root(),
 				secondary_buy.resell.mint.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
@@ -2480,7 +2480,7 @@ mod secondary_buy_tests {
 			resell_instance(dd.account_id, &secondary_buy);
 
 			assert_ok!(Assets::mint(
-				Origin::signed(dd.account_id),
+				RuntimeOrigin::signed(dd.account_id),
 				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
 				dd.account_id_second,
 				price + minimum_balance,
