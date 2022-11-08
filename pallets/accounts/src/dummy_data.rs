@@ -37,10 +37,10 @@ pub fn create_link_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 ) -> sp_core::ecdsa::Signature {
 
-	let sender_string = hex::encode(clamor_account_id);
-	let genesis_hash_string = hex::encode(get_genesis_hash());
+	let sender_string = format!("0x{}", hex::encode(clamor_account_id));
+	let genesis_hash_string = format!("0x{}", hex::encode(get_genesis_hash()));
 
-	let message: Vec<u8> = [
+	let encoded_message: Vec<u8> = [
 		&[0x19, 0x01],
 		// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
 		&keccak_256(
@@ -53,7 +53,7 @@ pub fn create_link_signature(
 					Token::Uint(U256::from(keccak_256(b"Fragnova Network"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 					Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 					Token::Uint(U256::from(get_ethereum_chain_id())),
-					Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode("F5A0Af5a0AF5a0AF5a0af5A0Af5A0AF5a0AF5A0A").unwrap()).unwrap())),
+					Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(LINK_VERIFYING_CONTRACT).unwrap()).unwrap())),
 				]
 			)
 		)[..],
@@ -75,14 +75,7 @@ pub fn create_link_signature(
 		)[..]
 	].concat();
 
-	let message = [
-		b"\x19Ethereum Signed Message:\n32",
-		&keccak_256(&message)[..],
-	].concat();
-
-	let hashed_message = keccak_256(&message);
-
-	ethereum_account_pair.sign_prehashed(&hashed_message)
+	ethereum_account_pair.sign_prehashed(&keccak_256(&encoded_message))
 }
 
 pub fn create_lock_signature(
