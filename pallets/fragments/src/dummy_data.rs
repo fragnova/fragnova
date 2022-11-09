@@ -123,8 +123,8 @@ pub struct Buy {
 #[derive(Clone)]
 pub struct Give {
 	pub mint: Mint,
-	pub edition_id: Unit,
-	pub copy_id: Unit,
+	pub edition_id: InstanceUnit,
+	pub copy_id: InstanceUnit,
 	pub to: sp_core::ed25519::Public,
 	pub new_permissions: Option<FragmentPerms>,
 	pub expiration: Option<u64>,
@@ -133,15 +133,15 @@ pub struct Give {
 pub struct CreateAccount {
 	// Creates Account for a Fragment Instance
 	pub mint: Mint,
-	pub edition_id: Unit,
-	pub copy_id: Unit,
+	pub edition_id: InstanceUnit,
+	pub copy_id: InstanceUnit,
 }
 
 #[derive(Clone)]
 pub struct Resell {
 	pub mint: Mint,
-	pub edition_id: Unit,
-	pub copy_id: Unit,
+	pub edition_id: InstanceUnit,
+	pub copy_id: InstanceUnit,
 	pub new_permissions: Option<FragmentPerms>,
 	pub expiration: Option<u64>,
 	pub secondary_sale_type: SecondarySaleType,
