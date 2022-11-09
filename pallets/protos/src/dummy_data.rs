@@ -1,3 +1,5 @@
+use std::str::FromStr;
+use ethabi::ethereum_types::Address;
 use crate::*;
 
 pub use pallet_accounts::dummy_data::{
@@ -259,8 +261,8 @@ impl DummyData {
 			data: b"{\"name\": \"ram\"}".to_vec(),
 		};
 
-		let contracts = vec![String::from("8a819F380ff18240B5c11010285dF63419bdb2d5")];
-		let contract = &contracts[0];
+		let contracts = vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")];
+		let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
 		let stake = Stake {
 			proto_fragment: proto.clone(),
 			lock: Lock {

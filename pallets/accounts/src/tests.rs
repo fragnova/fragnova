@@ -362,6 +362,9 @@ mod sync_frag_locks_tests {
 }
 
 mod internal_lock_update_tests {
+	use core::str::FromStr;
+	use ethabi::Address;
+	use sp_core::keccak_256;
 	use super::*;
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
@@ -378,6 +381,58 @@ mod internal_lock_update_tests {
 			unlock.data.clone(),
 			sp_core::ed25519::Signature([69u8; 64]), // this can be anything
 		)
+	}
+
+	#[test]
+	fn test_eip_(){
+		new_test_ext().execute_with(|| {
+			let message = b"FragLock".to_vec();
+			let contract ="0x3AEEE3a4952C7d27917eA9dF70669cf5a7bD20df";
+			let sender = "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1";
+			let contract = Address::from_str(&contract[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
+			let sender = Address::from_str(&sender[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
+			let lock_amount = U256::from(1000);
+			let lock_period = U256::from(0);
+			//let lock_amount: [u8; 32] = lock_amount.into();
+			let message: Vec<u8> = [&[0x19, 0x01],
+				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&vec![
+							Token::Uint(
+								U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+							),
+							Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(5)),
+							Token::Address(contract),
+						]
+					)
+				)[..],
+				// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&vec![
+							// This is the `typeHash`
+							Token::Uint(
+								U256::from(keccak_256(b"Msg(string name,address sender,uint256 amount,uint8 lock_period)"))
+							),
+							// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
+							Token::Uint(U256::from(keccak_256(&message))),
+							Token::Address(sender),
+							Token::Uint(U256::from(lock_amount)),
+							Token::Uint(U256::from(lock_period)),
+						]
+					)
+				)[..]
+			].concat();
+
+			let hashed_message = keccak_256(&message);
+			// hash taken from JS unit tests in hasten-contracts where the same EIP-712 typed message is composed with these same data
+			assert_eq!("22fcb86fdede97797990263fa68e980fb61c8c4edfcee544b96a721ace81edbb", hex::encode(hashed_message));
+		});
 	}
 
 	#[test]
@@ -621,7 +676,7 @@ mod internal_lock_update_tests {
 			let dd = DummyData::new();
 
 			let contracts = <Test as Config>::EthFragContract::get_partner_contracts();
-			let contract = &contracts[0];
+			let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
 			let mut lock = dd.lock;
 			lock.data.amount = U256::from(0u32);
 			lock.data.lock_period = 1;
@@ -769,7 +824,7 @@ mod internal_lock_update_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 			let contracts = <Test as Config>::EthFragContract::get_partner_contracts();
-			let contract = &contracts[0];
+			let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
 			let mut unlock = dd.unlock;
 			unlock.data.amount = U256::from(69u32); // greater than zero
 			unlock.data.signature = create_unlock_signature(

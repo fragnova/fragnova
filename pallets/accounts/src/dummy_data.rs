@@ -1,6 +1,8 @@
+use std::str::FromStr;
 use crate::*;
 
 use codec::Encode;
+use ethabi::ethereum_types::Address;
 
 use sp_core::{
 	ecdsa,
@@ -69,11 +71,10 @@ pub fn create_lock_signature(
 	lock_amount: U256,
 	lock_period: u8,
 	sender: H160,
-	contract: &String,
+	contract: H160,
 ) -> sp_core::ecdsa::Signature {
 
 	let message = b"FragLock".to_vec();
-	let lock_amount: [u8; 32] = lock_amount.into();
 	let message: Vec<u8> = [&[0x19, 0x01],
 		// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
 		&keccak_256(
@@ -86,7 +87,7 @@ pub fn create_lock_signature(
 					Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 					Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 					Token::Uint(U256::from(get_ethereum_chain_id())),
-					Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(contract).unwrap()).unwrap())),
+					Token::Address(H160::from(contract)),
 				]
 			)
 		)[..],
@@ -102,7 +103,7 @@ pub fn create_lock_signature(
 					// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
 					Token::Uint(U256::from(keccak_256(&message))),
 					Token::Address(H160::from(sender)),
-					Token::Uint(U256::from(lock_amount)),
+					Token::Uint(lock_amount),
 					Token::Uint(U256::from(lock_period)),
 				]
 			)
@@ -117,11 +118,10 @@ pub fn create_unlock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 	unlock_amount: U256,
 	sender: H160,
-	contract: &String,
+	contract: H160,
 ) -> sp_core::ecdsa::Signature {
 
 	let message = b"FragUnlock".to_vec();
-	let unlock_amount: [u8; 32] = unlock_amount.into();
 	let message: Vec<u8> = [&[0x19, 0x01],
 		// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
 		&keccak_256(
@@ -134,7 +134,7 @@ pub fn create_unlock_signature(
 					Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 					Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 					Token::Uint(U256::from(get_ethereum_chain_id())),
-					Token::Address(contract.parse::<H160>().expect("failed to parse address")),
+					Token::Address(H160::from(contract)),
 				]
 			)
 		)[..],
@@ -244,8 +244,8 @@ impl DummyData {
 			),
 		};
 
-		let contracts = vec![String::from("8a819F380ff18240B5c11010285dF63419bdb2d5")];
-		let contract = &contracts[0];
+		let contracts = vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")];
+		let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
 		let lock = Lock {
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([69u8; 32]),

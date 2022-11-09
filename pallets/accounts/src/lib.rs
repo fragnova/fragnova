@@ -182,6 +182,8 @@ pub struct AccountInfo<TAccountID, TMoment> {
 
 #[frame_support::pallet]
 pub mod pallet {
+	use core::str::FromStr;
+	use ethabi::Address;
 	use super::*;
 	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
 	use frame_support::{
@@ -574,8 +576,8 @@ pub mod pallet {
 			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature, period)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
 			let message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
 			let contract = T::EthFragContract::get_partner_contracts();
-			let contract = &contract[0];
-			let amount: [u8; 32] = data.amount.into();
+			let contract = contract[0].as_str();
+			let contract = Address::from_str(&contract[2..]).map_err(|_| "Invalid response - invalid sender")?;
 
 			let mut hash_struct = vec![
 				// This is the `typeHash`
@@ -585,7 +587,7 @@ pub mod pallet {
 				// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
 				Token::Uint(U256::from(keccak_256(&message))),
 				Token::Address(H160::from(data.sender)),
-				Token::Uint(U256::from(amount)),
+				Token::Uint(U256::from(data.amount)),
 			];
 			if data.lock {
 				hash_struct.push(Token::Uint(U256::from(data.lock_period)));
@@ -1372,7 +1374,7 @@ pub mod pallet {
 		}
 
 		/// Build and return a hash from a EPIP-712 compliant structure
-		pub fn get_eip712_hash(contract: &String, hash_struct: &Vec<Token>) -> Vec<u8> {
+		pub fn get_eip712_hash(contract: Address, hash_struct: &Vec<Token>) -> Vec<u8> {
 			let message: Vec<u8> = [&[0x19, 0x01],
 				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
 				&keccak_256(
@@ -1385,7 +1387,7 @@ pub mod pallet {
 							Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 							Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
 							Token::Uint(U256::from(T::EthChainId::get())),
-							Token::Address(contract.parse::<H160>().expect("failed to parse address")),
+							Token::Address(contract),
 						]
 					)
 				)[..],

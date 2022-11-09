@@ -161,7 +161,7 @@ impl pallet_assets::Config for Test {
 
 impl pallet_accounts::EthFragContract for Test {
 	fn get_partner_contracts() -> Vec<String> {
-		vec![String::from("8a819F380ff18240B5c11010285dF63419bdb2d5")]
+		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
 	}
 }
 
