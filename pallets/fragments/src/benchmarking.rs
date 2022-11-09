@@ -310,10 +310,10 @@ benchmarks! {
 			None,
 			None
 		)?;
-		_ = <Balances::<T> as Currency<T::AccountId>>::deposit_creating(
+		_ = <Balances::<T> as fungible::Mutate<T::AccountId>>::mint_into(
 			&caller.clone(),
 			<T as pallet_balances::Config>::Balance::from(price.saturating_mul(q))
-			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
+			+ <Balances::<T> as fungible::Inspect<T::AccountId>>::minimum_balance(),
 		);
 
 		let options = FragmentBuyOptions::Quantity(q.into());
@@ -377,10 +377,10 @@ benchmarks! {
 			None
 		)?;
 
-		_ = <Balances::<T> as Currency<T::AccountId>>::deposit_creating(
+		_ = <Balances::<T> as fungible::Mutate<T::AccountId>>::mint_into(
 			&caller,
 			<T as pallet_balances::Config>::Balance::from(price)
-			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
+			+ <Balances::<T> as fungible::Inspect<T::AccountId>>::minimum_balance(),
 		);
 
 		let options = FragmentBuyOptions::UniqueData(vec![7u8; d as usize]);
