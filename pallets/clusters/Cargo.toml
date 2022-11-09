@@ -11,15 +11,15 @@ version = '0.0.1'
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = [
-	"derive",
-] }
+codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
+log = { version = "0.4.14", default-features = false }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
 frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
 frame-system = { version = "4.0.0-dev", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
-
-[dev-dependencies]
+sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
+sp-std = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = "fragnova-v0.9.30", default-features = false }
+serde = { version = "1.0.136", features = ["derive"], optional = true }
 sp-core = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
 sp-io = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
 sp-runtime = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
@@ -27,11 +27,16 @@ sp-runtime = { version = "6.0.0", default-features = false, git = "https://githu
 [features]
 default = ["std"]
 std = [
+	"serde",
 	"codec/std",
-	"frame-benchmarking?/std",
+	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
-	"scale-info/std",
+	"sp-std/std",
+	"sp-io/std",
+	"sp-core/std",
+	'sp-runtime/std',
+	'log/std',
 ]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]

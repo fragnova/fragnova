@@ -16,8 +16,8 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
-	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 	dispatch::DispatchClass,
+	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 };
 use frame_system::{
 	limits::{BlockLength, BlockWeights},

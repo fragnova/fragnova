@@ -1,9 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://docs.substrate.io/reference/frame-pallets/>
+use codec::{Compact, Decode, Encode};
 pub use pallet::*;
+use sp_clamor::Hash256;
+use sp_std::{vec, vec::Vec};
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 #[cfg(test)]
 mod mock;
@@ -11,16 +14,56 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod dummy_data;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+/// The **settings** of a **Role**
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct RoleSettings {
+	pub name: Vec<u8>,
+	pub data: Vec<u8>,
+}
+
+/// **Struct** of a **Member** belonging to a **Role** in 1..N **Clusters**
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct Member<TAccountId> {
+	pub cluster: Vec<Cluster<TAccountId>>,
+	pub role: Vec<Role<TAccountId>>,
+	pub data: Vec<u8>,
+}
+
+/// **Struct** of **Role** belonging to a **Cluster**
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct Role<TAccountId> {
+	pub owner: TAccountId,
+	pub name: Vec<u8>,
+	pub settings: Vec<RoleSettings>,
+}
+
+/// **Struct** of a **Cluster**
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct Cluster<TAccountId> {
+	pub owner: TAccountId,
+	pub name: Vec<u8>,
+}
+
 #[frame_support::pallet]
 pub mod pallet {
+	use super::*;
+	use crate::{Cluster, Role, RoleSettings};
+	use frame_support::log;
 	use frame_support::pallet_prelude::*;
+	use frame_support::sp_runtime::traits::Zero;
 	use frame_system::pallet_prelude::*;
+	use sp_clamor::Hash256;
+	use sp_io::hashing::blake2_256;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -30,73 +73,90 @@ pub mod pallet {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
-	// The pallet's runtime storage items.
-	// https://docs.substrate.io/main-docs/build/runtime-storage/
+	/// **StorageMap** that maps a **Cluster** with its ID.
 	#[pallet::storage]
-	#[pallet::getter(fn something)]
-	// Learn more about declaring storage items:
-	// https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
+	pub type Clusters<T: Config> = StorageMap<_, Identity, Hash256, Cluster<T::AccountId>>;
 
-	// Pallets use events to inform users when important changes are made.
-	// https://docs.substrate.io/main-docs/build/events-errors/
+	/// **StorageMap** that maps a **AccountId** with a list of **Cluster** owned by the account.
+	#[pallet::storage]
+	pub type ClustersToOwner<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
+
+	/// **StorageMap** that maps a **Cluster** with the list of **Roles** belonging to the cluster.
+	#[pallet::storage]
+	pub type ClusterRoles<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash256>>;
+
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [something, who]
-		SomethingStored(u32, T::AccountId),
+		ClusterCreated { cluster_hash: Hash256 },
+		RoleCreated { role_hash: Hash256 },
 	}
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Error names should be descriptive.
-		NoneValue,
-		/// Errors should have helpful documentation associated with them.
-		StorageOverflow,
+		/// The cluster already exists.
+		ClusterExists,
+		/// The role in the cluster already exists.
+		RoleExists,
+		/// Technical error not categorized.
+		SystematicFailure,
+		/// The owner is not correct.
+		OwnerNotCorrect,
 	}
 
-	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
-	// These functions materialize as "extrinsics", which are often compared to transactions.
-	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// An example dispatchable that takes a singles value as a parameter, writes the value to
-		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
+		/// Create a Cluster
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
-			// Check that the extrinsic was signed and get the signer.
-			// This function will return an error if the extrinsic is not signed.
-			// https://docs.substrate.io/main-docs/build/origins/
+		pub fn create_cluster(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+			ensure!(!name.len().is_zero(), Error::<T>::SystematicFailure);
 
-			// Update storage.
-			<Something<T>>::put(something);
+			let cluster_hash = blake2_256(&name);
 
-			// Emit an event.
-			Self::deposit_event(Event::SomethingStored(something, who));
-			// Return a successful DispatchResultWithPostInfo
+			ensure!(!<Clusters<T>>::contains_key(&cluster_hash), Error::<T>::ClusterExists);
+
+			let cluster = Cluster { owner: who.clone(), name };
+
+			<Clusters<T>>::insert(cluster_hash, cluster);
+			<ClustersToOwner<T>>::append(who.clone(), &cluster_hash);
+
+			Self::deposit_event(Event::ClusterCreated { cluster_hash });
+			log::trace!("Cluster created: {:?}", cluster_hash.clone());
+
 			Ok(())
 		}
 
-		/// An example dispatchable that may throw a custom error.
-		#[pallet::weight(10_000 + T::DbWeight::get().reads_writes(1,1).ref_time())]
-		pub fn cause_error(origin: OriginFor<T>) -> DispatchResult {
-			let _who = ensure_signed(origin)?;
+		/// Create a Role
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn create_role(
+			origin: OriginFor<T>,
+			cluster: Vec<u8>,
+			name: Vec<u8>,
+			settings: RoleSettings,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
 
-			// Read a value from storage.
-			match <Something<T>>::get() {
-				// Return an error if the value has not been set.
-				None => return Err(Error::<T>::NoneValue.into()),
-				Some(old) => {
-					// Increment the value read from storage; will error in the event of overflow.
-					let new = old.checked_add(1).ok_or(Error::<T>::StorageOverflow)?;
-					// Update the value in storage with the incremented result.
-					<Something<T>>::put(new);
-					Ok(())
-				},
-			}
+			// not putting the settings in the hash because that would allow roles with same name, but different settings.
+			let role_hash = blake2_256(&[name.clone(), cluster.clone()].concat());
+			let cluster_hash = blake2_256(&cluster.clone());
+			let result = <ClusterRoles<T>>::get(&cluster_hash).unwrap_or_default();
+			ensure!(!result.contains(&role_hash), Error::<T>::RoleExists);
+
+			let role = Role {
+				owner: who.clone(),
+				name,
+				settings: vec![settings]
+			};
+
+			<ClusterRoles<T>>::append(cluster_hash, role_hash);
+
+			Self::deposit_event(Event::RoleCreated { role_hash });
+			log::trace!("Role created: {:?}", role_hash);
+
+			Ok(())
 		}
 	}
 }
