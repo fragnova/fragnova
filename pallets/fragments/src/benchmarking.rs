@@ -63,10 +63,10 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = FragmentMetadata {
+		let metadata = DefinitionMetadata {
 			name: vec![7u8; n as usize],
-			// By making currency Some, we enter an extra if-statement and also do an extra DB read operation
-			currency: Some(T::AssetId::default()),
+			// By making currency `Currency::Custom`, we enter an extra if-statement and also do an extra DB read operation
+			currency: Currency::Custom(T::AssetId::default()),
 		};
 		let permissions: FragmentPerms = FragmentPerms::EDIT | FragmentPerms::TRANSFER;
 		let unique: Option<UniqueOptions> = Some(UniqueOptions { mutable: false});
@@ -95,9 +95,9 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = FragmentMetadata {
+		let metadata = DefinitionMetadata {
 			name: b"Je suis un Nom".to_vec(),
-			currency: None,
+			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -138,9 +138,9 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = FragmentMetadata {
+		let metadata = DefinitionMetadata {
 			name: b"Je suis un Nom".to_vec(),
-			currency: None,
+			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -183,9 +183,9 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = FragmentMetadata {
+		let metadata = DefinitionMetadata {
 			name: b"Je suis un Nom".to_vec(),
-			currency: None,
+			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -233,9 +233,9 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = FragmentMetadata {
+		let metadata = DefinitionMetadata {
 			name: b"Je suis un Nom".to_vec(),
-			currency: None,
+			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -282,9 +282,9 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = FragmentMetadata {
+		let metadata = DefinitionMetadata {
 			name: b"Je suis un Nom".to_vec(),
-			currency: None,
+			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(definition_owner.clone()).into(),
@@ -348,9 +348,9 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = FragmentMetadata {
+		let metadata = DefinitionMetadata {
 			name: b"Je suis un Nom".to_vec(),
-			currency: None,
+			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(definition_owner.clone()).into(),
@@ -412,9 +412,9 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = FragmentMetadata {
+		let metadata = DefinitionMetadata {
 			name: b"Je suis un Nom".to_vec(),
-			currency: None,
+			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -477,9 +477,9 @@ benchmarks! {
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = FragmentMetadata {
+		let metadata = DefinitionMetadata {
 			name: b"Je suis un Nom".to_vec(),
-			currency: None,
+			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),

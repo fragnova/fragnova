@@ -6,7 +6,7 @@
 //!
 //! A Fragment Definition is created using a Proto-Fragment (see pallet `protos`).
 //! A Fragment Definition's ID can be determinstically computed using its Proto-Fragment hash and
-//! its metadata struct `FragmentMetadata`.
+//! its metadata struct `DefinitionMetadata`.
 //!
 //! A Fragment Definition is essentially a digital asset that can be used to enhance the user experience in a game or application,
 //! like an in-game item or user account. A Fragment has its own storage, metadata and digital life on its own.
@@ -158,14 +158,22 @@ pub struct GetInstanceOwnerParams<TString> {
 	pub copy_id: Unit,
 }
 
+/// Enum can be used to represent a currency that exists on the Clamor Blockchain
+#[derive(Encode, Decode, Copy, Clone, scale_info::TypeInfo, Debug, PartialEq)] // REVIEW - should it implement the trait `Copy`?
+pub enum Currency<TFungibleAsset> {
+	/// Clamor's Native Currency (i.e NOVA token)
+	Native,
+	/// A Custom Currency
+	Custom(TFungibleAsset),
+}
+
 /// **Struct** of a **Fragment Definition's Metadata**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentMetadata<TFungibleAsset> {
+pub struct DefinitionMetadata<TFungibleAsset> {
 	/// **Name** of the **Fragment Definition**
 	pub name: Vec<u8>,
-	/// **Currency** that the **buyer** of a **Fragment Instance that is created from the Fragment Definition** must **pay in**.
-	/// If this field is `None`, the currency the buyer must pay in is NOVA.
-	pub currency: Option<TFungibleAsset>,
+	/// **Currency** that must be used to buy **any and all Fragment Instances created from the Fragment Definition**
+	pub currency: Currency<TFungibleAsset>,
 }
 
 /// TODO
@@ -181,8 +189,8 @@ pub struct UniqueOptions {
 pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
 	/// **Proto-Fragment used** to **create** the **Fragment**
 	pub proto_hash: Hash256,
-	/// ***FragmentMetadata* Struct** (the **struct** contains the **Fragment's name**, among other things)
-	pub metadata: FragmentMetadata<TFungibleAsset>,
+	/// ***DefinitionMetadata* Struct** (the **struct** contains the **Fragment Definition's name**, among other things)
+	pub metadata: DefinitionMetadata<TFungibleAsset>,
 	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to
 	/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)
 	///
@@ -329,7 +337,7 @@ pub mod pallet {
 	pub type Proto2Fragments<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash128>>;
 
 	// fragment-hash to fragment-data
-	/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `FragmentMetadata`)**
+	/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `DefinitionMetadata`)**
 	/// to a
 	/// ***FragmentDefinition* struct**
 	#[pallet::storage]
@@ -600,7 +608,7 @@ pub mod pallet {
 		pub fn create(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
-			metadata: FragmentMetadata<T::AssetId>,
+			metadata: DefinitionMetadata<T::AssetId>,
 			permissions: FragmentPerms,
 			unique: Option<UniqueOptions>,
 			max_supply: Option<Unit>,
@@ -628,7 +636,7 @@ pub mod pallet {
 
 			ensure!(!<Definitions<T>>::contains_key(&hash), Error::<T>::AlreadyExist); // If fragment already exists, throw error
 
-			if let Some(currency) = metadata.currency {
+			if let Currency::Custom(currency) = metadata.currency {
 				ensure!(
 					pallet_assets::Pallet::<T>::maybe_total_supply(currency).is_some(),
 					Error::<T>::CurrencyNotFound
@@ -643,22 +651,25 @@ pub mod pallet {
 			// we need an existential amount deposit to be able to create the vault account
 			let vault = Self::get_vault_id(hash);
 
-			if let Some(currency) = metadata.currency {
-				let minimum_balance =
-					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::minimum_balance(currency);
-				<pallet_assets::Pallet<T> as fungibles::Mutate<T::AccountId>>::mint_into(
-					currency,
-					&vault,
-					minimum_balance,
-				)?;
-			} else {
-				let minimum_balance =
-					<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
-				<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
-					&vault,
-					minimum_balance,
-				)?;
-			}
+			match metadata.currency {
+				Currency::Native => {
+					let minimum_balance =
+						<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
+					<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+						&vault,
+						minimum_balance,
+					)?;
+				},
+				Currency::Custom(currency) => {
+					let minimum_balance =
+						<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::minimum_balance(currency);
+					<pallet_assets::Pallet<T> as fungibles::Mutate<T::AccountId>>::mint_into(
+						currency,
+						&vault,
+						minimum_balance,
+					)?;
+				}
+			};
 
 			let fragment_data = FragmentDefinition {
 				proto_hash,
@@ -1568,40 +1579,44 @@ pub mod pallet {
 			from: &T::AccountId,
 			to: &T::AccountId,
 			amount: u128,
-			currency: Option<T::AssetId>
+			currency: Currency<T::AssetId>
 		) -> DispatchResult {
-			if let Some(currency) = currency {
-				let minimum_balance_needed_to_exist =
-					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::minimum_balance(currency);
-				let price_balance: <pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::Balance =
-					amount.saturated_into();
 
-				ensure!(
-					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::balance(currency, from) >=
-						price_balance + minimum_balance_needed_to_exist,
-					Error::<T>::InsufficientBalance
-				);
-				ensure!(
-					<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::balance(currency, to) +
-						price_balance >= minimum_balance_needed_to_exist,
-					Error::<T>::ReceiverBelowMinimumBalance
-				);
-			} else {
-				let minimum_balance_needed_to_exist =
-					<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
-				let price_balance: <pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::Balance =
-					amount.saturated_into();
+			match currency {
+				Currency::Custom(currency) => {
+					let minimum_balance_needed_to_exist =
+						<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::minimum_balance(currency);
+					let price_balance: <pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::Balance =
+						amount.saturated_into();
 
-				ensure!(
-					pallet_balances::Pallet::<T>::free_balance(from) >=
-						price_balance + minimum_balance_needed_to_exist,
-					Error::<T>::InsufficientBalance
-				);
-				ensure!(
-					pallet_balances::Pallet::<T>::free_balance(to) +
-						price_balance >= minimum_balance_needed_to_exist,
-					Error::<T>::ReceiverBelowMinimumBalance
-				);
+					ensure!(
+						<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::balance(currency, from) >=
+							price_balance + minimum_balance_needed_to_exist,
+						Error::<T>::InsufficientBalance
+					);
+					ensure!(
+						<pallet_assets::Pallet<T> as fungibles::Inspect<T::AccountId>>::balance(currency, to) +
+							price_balance >= minimum_balance_needed_to_exist,
+						Error::<T>::ReceiverBelowMinimumBalance
+					);
+				},
+				Currency::Native => {
+					let minimum_balance_needed_to_exist =
+						<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
+					let price_balance: <pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::Balance =
+						amount.saturated_into();
+
+					ensure!(
+						pallet_balances::Pallet::<T>::free_balance(from) >=
+							price_balance + minimum_balance_needed_to_exist,
+						Error::<T>::InsufficientBalance
+					);
+					ensure!(
+						pallet_balances::Pallet::<T>::free_balance(to) +
+							price_balance >= minimum_balance_needed_to_exist,
+						Error::<T>::ReceiverBelowMinimumBalance
+					);
+				}
 			}
 
 			Ok(())
@@ -1612,27 +1627,31 @@ pub mod pallet {
 			from: &T::AccountId,
 			to: &T::AccountId,
 			amount: u128,
-			currency: Option<T::AssetId>
+			currency: Currency<T::AssetId>
 		) -> DispatchResult {
-			if let Some(currency) = currency {
-				<pallet_assets::Pallet<T> as fungibles::Transfer<T::AccountId>>::transfer(
-					// transfer `amount` units of `currency` from `from` to `to`
-					currency,
-					from,
-					to,
-					amount.saturated_into(),
-					true, // The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
-				)
-					.map_err(|_| Error::<T>::InsufficientBalance)?;
-			} else {
-				pallet_balances::Pallet::<T>::do_transfer(
-					// transfer `amount` units of NOVA from `from` to `to`
-					from,
-					to,
-					amount.saturated_into(),
-					ExistenceRequirement::KeepAlive,
-				)
-					.map_err(|_| Error::<T>::InsufficientBalance)?;
+
+			match currency {
+				Currency::Custom(currency) => {
+					<pallet_assets::Pallet<T> as fungibles::Transfer<T::AccountId>>::transfer(
+						// transfer `amount` units of `currency` from `from` to `to`
+						currency,
+						from,
+						to,
+						amount.saturated_into(),
+						true, // The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
+					)
+						.map_err(|_| Error::<T>::InsufficientBalance)?;
+				},
+				Currency::Native => {
+					pallet_balances::Pallet::<T>::do_transfer(
+						// transfer `amount` units of NOVA from `from` to `to`
+						from,
+						to,
+						amount.saturated_into(),
+						ExistenceRequirement::KeepAlive,
+					)
+						.map_err(|_| Error::<T>::InsufficientBalance)?;
+				}
 			}
 
 			Ok(())
