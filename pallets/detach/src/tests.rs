@@ -30,7 +30,7 @@ mod process_detach_requests_tests {
 					b"\x19Ethereum Signed Message:\n32",
 					&keccak_256(
 						&[
-							&detach_request.hash.encode()[..],
+							&detach_request.hash.get_signable_hash()[..],
 							&chain_id_be[..],
 							&detach_request.target_account.clone()[..],
 							&nonce.to_be_bytes()

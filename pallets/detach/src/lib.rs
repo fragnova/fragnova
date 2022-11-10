@@ -93,6 +93,17 @@ pub enum DetachHash {
 	/// A Fragment Instance (identified as a tuple of its Fragment Definition Hash, its Edition ID and its Copy ID)
 	Instance(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>),
 }
+impl DetachHash {
+
+	fn get_signable_hash(&self) -> Vec<u8> {
+		match self {
+			Self::Proto(proto_hash) => [b"Proto-Fragment", &proto_hash[..]].concat(),
+			Self::Instance(definition_hash, Compact(edition_id), Compact(copy_id)) => {
+				[b"Fragment Instance", &definition_hash[..], &edition_id.to_be_bytes(), &copy_id.to_be_bytes()].concat()
+			}
+		}
+	}
+}
 
 /// **Possible Blockchains** into which a **Proto-Fragment** can be **detached**
 #[derive(Encode, Decode, Copy, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -169,7 +180,6 @@ pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 	use sp_core::ed25519::Public;
-	use crate::Error::TargetAccountLengthIsIncorrect;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -600,8 +610,7 @@ pub mod pallet {
 					}.to_big_endian(&mut chain_id_be);
 
 					let payload = [
-						// REVIEW - `request.hash` is a `DetachHash` enum. Do we want that? @sinkingsugar
-						&request.hash.encode()[..],
+						&request.hash.get_signable_hash()[..],
 						&chain_id_be,
 						&TryInto::<[u8; 20]>::try_into(request.target_account.clone()).map_err(|_| Error::<T>::TargetAccountLengthIsIncorrect)?,
 						&nonce.to_be_bytes(), // "be" stands for big-endian
