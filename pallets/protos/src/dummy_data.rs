@@ -1,7 +1,7 @@
 use crate::*;
 
 pub use pallet_accounts::dummy_data::{
-	create_link_signature, create_lock_signature, get_ethereum_account_id_from_ecdsa_public_struct,
+	create_link_signature, create_lock_signature, get_ethereum_public_address,
 	Link, Lock,
 };
 
@@ -272,8 +272,8 @@ impl DummyData {
 					public: sp_core::ed25519::Public([69u8; 32]),
 					amount: U256::from(69u32),
 					locktime: U256::from(1234567890),
-					sender: get_ethereum_account_id_from_ecdsa_public_struct(
-						&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]).public(),
+					sender: get_ethereum_public_address(
+						&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 					),
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
@@ -289,8 +289,9 @@ impl DummyData {
 						sp_core::ed25519::Public::from_raw([3u8; 32]),
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 					),
+					_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 				},
-				ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
+				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 			},
 		};
 

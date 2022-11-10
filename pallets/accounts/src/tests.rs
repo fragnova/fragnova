@@ -7,7 +7,7 @@ use ethabi::Token;
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::TypedGet};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 use serde_json::json;
-use sp_core::{offchain::testing, H256};
+use sp_core::{offchain::testing, H256, Pair};
 use sp_runtime::{offchain::storage::StorageValueRef, SaturatedConversion};
 
 pub use internal_lock_update_tests::lock_;
@@ -30,13 +30,13 @@ mod link_tests {
 
 			assert_ok!(link_(&link));
 
-			assert_eq!(
-				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap(),
-				link.get_recovered_ethereum_account_id()
+			assert!(
+				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap() ==
+					link.get_ethereum_public_address_of_signer()
 			);
 			assert!(
-				<EVMLinksReverse<Test>>::get(&link.get_recovered_ethereum_account_id()).unwrap()
-					== link.clamor_account_id
+				<EVMLinksReverse<Test>>::get(&link.get_ethereum_public_address_of_signer()).unwrap() ==
+					link.clamor_account_id
 			);
 
 			assert!(<FragUsage<Test>>::get(&link.clamor_account_id).unwrap() == 0);
@@ -49,7 +49,7 @@ mod link_tests {
 				event,
 				mock::RuntimeEvent::from(pallet_accounts::Event::Linked {
 					sender: link.clamor_account_id,
-					eth_key: link.get_recovered_ethereum_account_id()
+					eth_key: link.get_ethereum_public_address_of_signer()
 				})
 			);
 		});
@@ -79,8 +79,9 @@ mod link_tests {
 				clamor_account_id: link.clamor_account_id,
 				link_signature: create_link_signature(
 					link.clamor_account_id,
-					dd.ethereum_account_pair,
+					dd.ethereum_account_pair.clone(),
 				),
+				_ethereum_account_pair: dd.ethereum_account_pair,
 			};
 
 			assert_noop!(
@@ -101,6 +102,7 @@ mod link_tests {
 					dd.account_id,
 					dd.ethereum_account_pair.clone(),
 				),
+				_ethereum_account_pair: dd.ethereum_account_pair.clone(),
 			};
 
 			assert_ok!(link_(&link));
@@ -111,6 +113,7 @@ mod link_tests {
 					dd.account_id_second,
 					dd.ethereum_account_pair.clone(),
 				),
+				_ethereum_account_pair: dd.ethereum_account_pair,
 			};
 
 			assert_noop!(link_(&link_diff_clamor_account_id), Error::<Test>::AccountAlreadyLinked);
@@ -131,13 +134,13 @@ mod unlink_tests {
 
 			assert_ok!(Accounts::unlink(
 				RuntimeOrigin::signed(link.clamor_account_id),
-				link.get_recovered_ethereum_account_id()
+				link.get_ethereum_public_address_of_signer()
 			));
 
-			assert_eq!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id), false);
-			assert_eq!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id()),
-				false
+			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
+			assert!(
+				<EVMLinksReverse<Test>>::contains_key(&link.get_ethereum_public_address_of_signer()) ==
+					false
 			);
 
 			assert_eq!(<FragUsage<Test>>::contains_key(&link.clamor_account_id), false);
@@ -152,7 +155,7 @@ mod unlink_tests {
 				event,
 				mock::RuntimeEvent::from(pallet_accounts::Event::Unlinked {
 					sender: link.clamor_account_id,
-					eth_key: link.get_recovered_ethereum_account_id(),
+					eth_key: link.get_ethereum_public_address_of_signer(),
 				})
 			);
 		});
@@ -167,7 +170,7 @@ mod unlink_tests {
 			assert_noop!(
 				Accounts::unlink(
 					RuntimeOrigin::signed(link.clamor_account_id),
-					link.get_recovered_ethereum_account_id()
+					link.get_ethereum_public_address_of_signer()
 				),
 				Error::<Test>::AccountNotLinked
 			);
@@ -190,7 +193,7 @@ mod unlink_tests {
 			assert_noop!(
 				Accounts::unlink(
 					RuntimeOrigin::signed(link.clamor_account_id),
-					link_second.get_recovered_ethereum_account_id()
+					link_second.get_ethereum_public_address_of_signer()
 				),
 				Error::<Test>::DifferentAccountLinked
 			);
@@ -198,23 +201,21 @@ mod unlink_tests {
 	}
 }
 
-mod sync_frag_locks_tests {
+mod sync_partner_contracts_tests {
 	use super::*;
 
 	fn hardcode_expected_request_and_response(
 		state: &mut testing::OffchainState,
-		lock: Lock,
+		eth_lock_update_struct: EthLockUpdate<sp_core::ed25519::Public>,
 	) -> u64 {
 		let geth_url = Some(String::from("https://www.dummywebsite.com/"));
 
 		sp_clamor::init(geth_url);
 
-		let latest_block_number = lock
-			.data
-			.block_number // ensure that `lock.block_number` exists by making `latest_block_number` greater than or equal to it
+		let latest_block_number = eth_lock_update_struct
+			.block_number // ensure that `eth_lock_update_struct.block_number` exists by making `latest_block_number` greater than or equal to it
 			.saturating_add(<Test as pallet_accounts::Config>::EthConfirmations::get())
-			.saturating_add(69)
-			.saturating_add(1234567890);
+			.saturating_add(69);
 
 		state.expect_request(testing::PendingRequest {
 			method: String::from("POST"),
@@ -251,7 +252,7 @@ mod sync_frag_locks_tests {
 			body: json!({
 				"jsonrpc": "2.0",
 				"method": "eth_getLogs", // i.e get the event logs of the smart contract (more info: https://docs.alchemy.com/alchemy/guides/eth_getlogs#what-are-logs)
-				"id": "0", // WHY IS THIS A STRING @sinkingsugar  MOLTO IMPORTANTE!
+				"id": "0", // WHY IS THIS A STRING @sinkingsugar !
 				"params": [{
 					"fromBlock": format!("0x{:x}", from_block),
 					"toBlock": format!("0x{:x}", to_block), // Give us the event logs that were emitted (if any) from the block number `from_block` to the block number `to_block`, inclusive
@@ -277,18 +278,18 @@ mod sync_frag_locks_tests {
 							>::get_partner_contracts()[0],
 							"topics": [
 								pallet_accounts::LOCK_EVENT,
-								format!("0x{}", hex::encode(ethabi::encode(&[Token::Address(lock.data.sender)])))
+								format!("0x{}", hex::encode(ethabi::encode(&[Token::Address(eth_lock_update_struct.sender)])))
 							],
 							"data": format!("0x{}", hex::encode(
 								ethabi::encode(
 									&[
-										Token::Bytes(lock.data.signature.0.to_vec()),
-										Token::Uint(lock.data.amount),
-										Token::Uint(lock.data.locktime)
+										Token::Bytes(eth_lock_update_struct.signature.0.to_vec()),
+										Token::Uint(eth_lock_update_struct.amount),
+										Token::Uint(eth_lock_update_struct.locktime)
 									]
 								),
 							)),
-							"blockNumber": format!("0x{:x}", lock.data.block_number),
+							"blockNumber": format!("0x{:x}", eth_lock_update_struct.block_number),
 
 							// Following key-values were blindly copied from https://docs.alchemy.com/alchemy/apis/ethereum/eth-getlogs (since they won't aren't even looked at in the function `sync_frag_locks`):
 							// So they are all wrong
@@ -311,31 +312,39 @@ mod sync_frag_locks_tests {
 	}
 
 	#[test]
-	fn sync_frag_locks_should_work() {
+	fn sync_partner_contracts_should_work() {
 		let (mut t, pool_state, offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
 
-		let dd = DummyData::new();
-		let lock = dd.lock;
-
-		let to_block =
-			hardcode_expected_request_and_response(&mut offchain_state.write(), lock.clone());
-
-		let expected_data = EthLockUpdate {
+		let expected_eth_lock_update_struct = EthLockUpdate {
 			public: <Test as SigningTypes>::Public::from(ed25519_public_key),
-			..lock.data
+			amount: U256::from(69u32),
+			locktime: U256::from(1234567890),
+			sender: get_ethereum_public_address(
+				&sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
+			),
+			signature: create_lock_signature(
+				sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
+				U256::from(69u32),
+				U256::from(1234567890),
+			),
+			lock: true, // yes, please lock it!
+			block_number: 69,
 		};
 
+		let to_block =
+			hardcode_expected_request_and_response(&mut offchain_state.write(), expected_eth_lock_update_struct.clone());
+
 		t.execute_with(|| {
-			Accounts::sync_partner_contracts(1);
+			Accounts::sync_partner_contracts(
+				1 // Clamor Block Number
+			);
 
 			let tx = pool_state.write().transactions.pop().unwrap();
 			let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
 			assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
 
-			if let RuntimeCall::Accounts(crate::Call::internal_lock_update { data, signature }) =
-				tx.call
-			{
-				assert_eq!(data, expected_data);
+			if let RuntimeCall::Accounts(crate::Call::internal_lock_update { data, signature }) = tx.call {
+				assert_eq!(data, expected_eth_lock_update_struct);
 
 				let signature_valid =
 					<EthLockUpdate<<Test as SigningTypes>::Public> as SignedPayload<Test>>::verify::<
@@ -436,7 +445,7 @@ mod internal_lock_update_tests {
 			lock.data.amount = U256::from(0u32);
 			lock.data.locktime = U256::from(1234567890);
 			lock.data.signature = create_lock_signature(
-				lock.ethereum_account_pair.clone(),
+				lock._ethereum_account_pair.clone(),
 				lock.data.amount.clone(),
 				lock.data.locktime.clone(),
 			);
@@ -548,13 +557,17 @@ mod internal_lock_update_tests {
 
 			assert_ok!(link_(&link));
 
+			println!("After linking: {:?}", <EVMLinks<Test>>::get(&link.clamor_account_id));
+
 			assert_ok!(lock_(&lock));
 			assert_ok!(unlock_(&unlock));
 
+			println!("After unlocking: {:?}", <EVMLinks<Test>>::get(&link.clamor_account_id));
+
 			assert!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id) == false);
 			assert!(
-				<EVMLinksReverse<Test>>::contains_key(&link.get_recovered_ethereum_account_id())
-					== false
+				<EVMLinksReverse<Test>>::contains_key(&link.get_ethereum_public_address_of_signer()) ==
+					false
 			);
 
 			assert!(<FragUsage<Test>>::contains_key(&link.clamor_account_id) == false);
@@ -570,7 +583,7 @@ mod internal_lock_update_tests {
 				event,
 				mock::RuntimeEvent::from(pallet_accounts::Event::Unlinked {
 					sender: link.clamor_account_id,
-					eth_key: link.get_recovered_ethereum_account_id()
+					eth_key: link.get_ethereum_public_address_of_signer()
 				})
 			);
 		});
@@ -583,7 +596,7 @@ mod internal_lock_update_tests {
 			let mut unlock = dd.unlock;
 			unlock.data.amount = U256::from(69u32); // greater than zero
 			unlock.data.signature = create_unlock_signature(
-				unlock.lock.ethereum_account_pair.clone(),
+				unlock.lock._ethereum_account_pair.clone(),
 				U256::from(69u32),
 			);
 

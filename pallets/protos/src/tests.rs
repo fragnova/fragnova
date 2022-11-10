@@ -708,7 +708,7 @@ mod stake_tests {
 			assert_ok!(link_(&stake.lock.link));
 
 			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
-				stake.lock.link.get_recovered_ethereum_account_id(),
+                stake.lock.link.get_ethereum_public_address_of_signer(),
 			)
 			.unwrap()
 			.amount;
@@ -736,7 +736,7 @@ mod stake_tests {
 			assert_ok!(link_(&stake.lock.link));
 
 			let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
-				stake.lock.link.get_recovered_ethereum_account_id(),
+                stake.lock.link.get_ethereum_public_address_of_signer(),
 			)
 			.unwrap()
 			.amount;

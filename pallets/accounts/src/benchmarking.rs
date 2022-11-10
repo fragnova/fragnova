@@ -85,13 +85,37 @@ benchmarks! {
 
 		// let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
 		let ethereum_secret_key_struct: libsecp256k1::SecretKey = libsecp256k1::SecretKey::parse(&[7u8; 32]).unwrap();
-
+		let genesis_hash_string = format!("0x{}", hex::encode(<frame_system::Pallet<T>>::block_hash(T::BlockNumber::zero())));
+		let sender_string = format!("0x{}", hex::encode(caller.encode()));
 		let signature: ecdsa::Signature = sign(
 			&libsecp256k1::Message::parse(
 				&keccak_256(&[
-					&b"EVM2Fragnova"[..],
-					&T::EthChainId::get().to_be_bytes(),
-					&caller.encode()
+					&[0x19, 0x01],
+					&keccak_256(
+						&ethabi::encode(
+							&vec![
+								Token::Uint(
+									U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+								),
+								Token::Uint(U256::from(keccak_256(b"Fragnova Network"))),
+								Token::Uint(U256::from(keccak_256(b"1"))),
+								Token::Uint(U256::from(T::EthChainId::get())),
+								Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(LINK_VERIFYING_CONTRACT).unwrap()).unwrap())),
+							]
+						)
+					)[..],
+					&keccak_256(
+						&ethabi::encode(
+							&vec![
+								Token::Uint(
+									U256::from(keccak_256(b"Msg(string fragnovaGenesis,string op,string sender)"))
+								),
+								Token::Uint(U256::from(keccak_256(&genesis_hash_string.into_bytes()))),
+								Token::Uint(U256::from(keccak_256(b"link"))),
+								Token::Uint(U256::from(keccak_256(&sender_string.into_bytes()))),
+							]
+						)
+					)[..]
 				].concat())
 			),
 			&ethereum_secret_key_struct
@@ -112,14 +136,39 @@ benchmarks! {
 
 		// let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
 		let ethereum_secret_key_struct: libsecp256k1::SecretKey = libsecp256k1::SecretKey::parse(&[7u8; 32]).unwrap();
+		let genesis_hash_string = format!("0x{}", hex::encode(<frame_system::Pallet<T>>::block_hash(T::BlockNumber::zero())));
+		let sender_string = format!("0x{}", hex::encode(caller.encode()));
 		Accounts::<T>::link(
 			RawOrigin::Signed(caller.clone()).into(),
 			sign(
 				&libsecp256k1::Message::parse(
 					&keccak_256(&[
-						&b"EVM2Fragnova"[..],
-						&T::EthChainId::get().to_be_bytes(),
-						&caller.encode()
+						&[0x19, 0x01],
+						&keccak_256(
+							&ethabi::encode(
+								&vec![
+									Token::Uint(
+										U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+									),
+									Token::Uint(U256::from(keccak_256(b"Fragnova Network"))),
+									Token::Uint(U256::from(keccak_256(b"1"))),
+									Token::Uint(U256::from(T::EthChainId::get())),
+									Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(LINK_VERIFYING_CONTRACT).unwrap()).unwrap())),
+								]
+							)
+						)[..],
+						&keccak_256(
+							&ethabi::encode(
+								&vec![
+									Token::Uint(
+										U256::from(keccak_256(b"Msg(string fragnovaGenesis,string op,string sender)"))
+									),
+									Token::Uint(U256::from(keccak_256(&genesis_hash_string.into_bytes()))),
+									Token::Uint(U256::from(keccak_256(b"link"))),
+									Token::Uint(U256::from(keccak_256(&sender_string.into_bytes()))),
+								]
+							)
+						)[..]
 					].concat())
 				),
 				&ethereum_secret_key_struct

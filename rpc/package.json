@@ -4,7 +4,9 @@
   },
   "dependencies": {
     "@polkadot/api": "^9.5.1",
-    "@polkadot/util-crypto": "^10.1.10"
+    "@polkadot/util-crypto": "^10.1.10",
+    "web3": "^1.8.0",
+    "@metamask/eth-sig-util": "^5.0.0"
   },
   "devDependencies": {
     "chai": "^4.3.6",

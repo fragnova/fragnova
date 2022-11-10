@@ -136,7 +136,7 @@ base58 = { version = "0.2.0", default-features = false }
 # pallet-frag = {path = '../frag'}
 
 [dev-dependencies]
-pallet-accounts = {path = '../accounts', default-features = false, features=['compile-dummy-data']}
+pallet-accounts = {path = '../accounts', default-features = false, features=['build-dummy-data']}
 
 [features]
 default = ['std']
