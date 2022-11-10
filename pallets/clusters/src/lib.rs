@@ -35,7 +35,7 @@ pub struct Member<TAccountId> {
 	pub data: Vec<u8>,
 }
 
-/// **Struct** of **Role** belonging to a **Cluster**
+/// **Struct** of **Role** belonging to a **Cluster**.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct Role<TAccountId> {
 	pub owner: TAccountId,
@@ -54,9 +54,7 @@ pub struct Cluster<TAccountId> {
 pub mod pallet {
 	use super::*;
 	use crate::{Cluster, Role, RoleSettings};
-	use frame_support::log;
-	use frame_support::pallet_prelude::*;
-	use frame_support::sp_runtime::traits::Zero;
+	use frame_support::{log, pallet_prelude::*, sp_runtime::traits::Zero};
 	use frame_system::pallet_prelude::*;
 	use sp_clamor::Hash256;
 	use sp_io::hashing::blake2_256;
@@ -74,12 +72,18 @@ pub mod pallet {
 	}
 
 	/// **StorageMap** that maps a **Cluster** with its ID.
+	/// The storage key is the name of the cluster, which implies that there cannot be two clusters
+	/// with the same name.
 	#[pallet::storage]
 	pub type Clusters<T: Config> = StorageMap<_, Identity, Hash256, Cluster<T::AccountId>>;
 
 	/// **StorageMap** that maps a **AccountId** with a list of **Cluster** owned by the account.
 	#[pallet::storage]
 	pub type ClustersToOwner<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
+
+	/// **StorageMap** that maps a **Role** with its ID.
+	#[pallet::storage]
+	pub type Roles<T: Config> = StorageMap<_, Twox64Concat, Hash256, Role<T::AccountId>>;
 
 	/// **StorageMap** that maps a **Cluster** with the list of **Roles** belonging to the cluster.
 	#[pallet::storage]
@@ -98,9 +102,17 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The cluster already exists.
 		ClusterExists,
+		/// Cluster not found
+		ClusterNotFound,
 		/// The role in the cluster already exists.
 		RoleExists,
-		/// Technical error not categorized.
+		/// Element not found
+		RoleNotFound,
+		/// Missing permission to perform an operation
+		NoPermission,
+		/// Invalid inputs
+		InvalidInputs,
+		/// Technical error not categorized
 		SystematicFailure,
 		/// The owner is not correct.
 		OwnerNotCorrect,
@@ -108,7 +120,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Create a Cluster
+		/// Create a Cluster.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn create_cluster(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -129,32 +141,63 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Create a Role
+		/// Create a Role and assign it to an existing cluster specified by name.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn create_role(
 			origin: OriginFor<T>,
-			cluster: Vec<u8>,
-			name: Vec<u8>,
+			cluster_name: Vec<u8>,
+			role_name: Vec<u8>,
 			settings: RoleSettings,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			// not putting the settings in the hash because that would allow roles with same name, but different settings.
-			let role_hash = blake2_256(&[name.clone(), cluster.clone()].concat());
-			let cluster_hash = blake2_256(&cluster.clone());
-			let result = <ClusterRoles<T>>::get(&cluster_hash).unwrap_or_default();
-			ensure!(!result.contains(&role_hash), Error::<T>::RoleExists);
+			let role_hash = blake2_256(&[role_name.clone(), cluster_name.clone()].concat());
+			let cluster_hash = blake2_256(&cluster_name.clone());
 
-			let role = Role {
-				owner: who.clone(),
-				name,
-				settings: vec![settings]
-			};
+			let existing_roles = <ClusterRoles<T>>::get(&cluster_hash)
+				.ok_or(|| Error::<T>::SystematicFailure)
+				.unwrap_or_default();
+			ensure!(!existing_roles.contains(&role_hash), Error::<T>::RoleExists);
 
+			let role = Role { owner: who.clone(), name: role_name, settings: vec![settings] };
+
+			<Roles<T>>::insert(role_hash, role);
+			// assign the role to the specified cluster
 			<ClusterRoles<T>>::append(cluster_hash, role_hash);
 
 			Self::deposit_event(Event::RoleCreated { role_hash });
 			log::trace!("Role created: {:?}", role_hash);
+
+			Ok(())
+		}
+
+		/// Edit a role.
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn edit_role(
+			origin: OriginFor<T>,
+			role_hash: Hash256,
+			new_cluster: Option<Vec<u8>>,
+			new_settings: Option<RoleSettings>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let stored_role: Role<T::AccountId> =
+				<Roles<T>>::get(role_hash).ok_or(Error::<T>::RoleNotFound)?;
+			ensure!(who == stored_role.owner, Error::<T>::NoPermission);
+
+			if new_cluster.is_none() && new_settings.is_none() {
+				return Err(Error::<T>::InvalidInputs.into());
+			}
+
+			if let Some(cluster) = new_cluster {
+				let new_cluster_hash = blake2_256(&cluster);
+				ensure!(!<Clusters<T>>::get(new_cluster_hash).is_none(), Error::<T>::ClusterNotFound);
+			}
+
+			if let Some(settings) = new_settings {
+				//TODO
+			}
 
 			Ok(())
 		}
