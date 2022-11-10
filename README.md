@@ -46,7 +46,7 @@ To run all the unit tests:
 cargo test
 ```
 ## Run the rpc tests in Javascript
-To run the Javascript rpc tests, which calls the APIs provided by Clamor and are located in `/clamor/rpc/test/protosTest.js` you need to:
+To run the Javascript rpc tests, which calls the APIs provided by Clamor and are located in `/clamor/rpc/test/rpc-tests.js` you need to:
 1. run the local node (described [above](#run-a-local-node))
 2. upload some test data into the node (described [below](#usage))
 3. `cd /rpc && npm install && npm test`
@@ -116,6 +116,3 @@ Now run again in a more restrictive environment, also including rpc/bootstrap kn
 ```
 ./target/release/clamor --node-key-file p2p-node.key --chain testnet-raw.json --ipfs-server --validator --enable-offchain-indexing 1 --bootnodes /ip4/20.225.200.219/tcp/30337/ws/p2p/12D3KooWQoQhtVUT8j2hV7dXrFpf3pp4Q5FT7c3GdAf2wiKACjD6 --port 30337
 ```
-
-## License
-Clamor is licensed under the terms of the [BUSL-1.1](https://spdx.org/licenses/BUSL-1.1.html) license.
