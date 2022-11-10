@@ -809,9 +809,19 @@ impl_runtime_apis! {
 		}
 	}
 
-	/// TODO: Documentation
+	/// The `TaggedTransactionQueue` runtime api trait for interfering with the transaction queue.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_transaction_pool/runtime_api/trait.TaggedTransactionQueue.html#
 	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
-		/// TODO: Documentation
+		/// Validate the transaction.
+		///
+		/// This method is invoked by the transaction pool to learn details about given transaction.
+		/// The implementation should make sure to verify the correctness of the transaction
+		/// against current state. The given `block_hash` corresponds to the hash of the block
+		/// that is used as current state.
+		///
+		/// Note that this call may be performed by the pool multiple times and transactions
+		/// might be verified in any possible order.
 		fn validate_transaction(
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
