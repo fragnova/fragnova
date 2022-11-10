@@ -20,18 +20,16 @@ mod dummy_data;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+/// **Struct** of a **Member** belonging to a **Role** in 1..N **Clusters**
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct Member {
+	pub data: Vec<u8>,
+}
+
 /// The **settings** of a **Role**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct RoleSettings {
 	pub name: Vec<u8>,
-	pub data: Vec<u8>,
-}
-
-/// **Struct** of a **Member** belonging to a **Role** in 1..N **Clusters**
-#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct Member<TAccountId> {
-	pub cluster: Vec<Cluster<TAccountId>>,
-	pub role: Vec<Role<TAccountId>>,
 	pub data: Vec<u8>,
 }
 
@@ -41,6 +39,12 @@ pub struct Role<TAccountId> {
 	pub owner: TAccountId,
 	pub name: Vec<u8>,
 	pub settings: Vec<RoleSettings>,
+}
+
+/// **Struct** of **Rule** belonging to a **Role**.
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct Rule {
+	pub name: Vec<u8>,
 }
 
 /// **Struct** of a **Cluster**
@@ -89,12 +93,17 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ClusterRoles<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash256>>;
 
+	/// **StorageMap** that maps a **Cluster** with the list of **Members** belonging to the cluster.
+	#[pallet::storage]
+	pub type ClusterMembers<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash256>>;
+
 	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		ClusterCreated { cluster_hash: Hash256 },
 		RoleCreated { role_hash: Hash256 },
+		RoleEdited { role_hash: Hash256 },
 	}
 
 	// Errors inform users that something went wrong.
@@ -120,7 +129,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Create a Cluster.
+		/// Create a **Cluster**.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn create_cluster(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -141,7 +150,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Create a Role and assign it to an existing cluster specified by name.
+		/// Create a **Role** and assign it to an existing **Cluster** specified by name.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn create_role(
 			origin: OriginFor<T>,
@@ -172,32 +181,59 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Edit a role.
+		/// Edit a **Role**.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn edit_role(
 			origin: OriginFor<T>,
-			role_hash: Hash256,
-			new_cluster: Option<Vec<u8>>,
-			new_settings: Option<RoleSettings>,
+			role: Hash256,
+			cluster: Vec<u8>,
+			new_settings: RoleSettings,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			let stored_role: Role<T::AccountId> =
-				<Roles<T>>::get(role_hash).ok_or(Error::<T>::RoleNotFound)?;
-			ensure!(who == stored_role.owner, Error::<T>::NoPermission);
+			sp_std::if_std! {
+				// This code is only being compiled and executed when the `std` feature is enabled.
+				println!("new settings");
+			}
 
-			if new_cluster.is_none() && new_settings.is_none() {
+			if new_settings.data.is_empty() || new_settings.name.is_empty() {
 				return Err(Error::<T>::InvalidInputs.into());
 			}
 
-			if let Some(cluster) = new_cluster {
-				let new_cluster_hash = blake2_256(&cluster);
-				ensure!(!<Clusters<T>>::get(new_cluster_hash).is_none(), Error::<T>::ClusterNotFound);
-			}
+			let stored_role: Role<T::AccountId> =
+				<Roles<T>>::get(role).ok_or(Error::<T>::RoleNotFound)?;
+			ensure!(who == stored_role.owner, Error::<T>::NoPermission);
 
-			if let Some(settings) = new_settings {
-				//TODO
-			}
+			let cluster_hash = blake2_256(&cluster);
+
+			let existing_roles = <ClusterRoles<T>>::get(&cluster_hash)
+				.ok_or(|| Error::<T>::SystematicFailure)
+				.unwrap_or_default();
+			ensure!(existing_roles.contains(&role), Error::<T>::RoleNotFound);
+
+			<Roles<T>>::mutate(&role, |role| {
+				let role = role.as_mut().unwrap();
+				role.settings = vec![new_settings];
+			});
+
+			Self::deposit_event(Event::RoleEdited { role_hash: role });
+			log::trace!("Role edited: {:?}", role);
+
+			Ok(())
+		}
+
+		/// Create a **Rule** and assign it to an existing **Role**.
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn add_member(
+			origin: OriginFor<T>,
+			cluster_name: Vec<u8>,
+			role_name: Vec<u8>,
+			member_data: Vec<u8>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+
+
 
 			Ok(())
 		}

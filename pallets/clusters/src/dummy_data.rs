@@ -13,8 +13,6 @@ pub struct DummyRole {
 }
 
 pub struct DummyMember {
-	pub cluster: Vec<DummyCluster>,
-	pub role: Vec<DummyRole>,
 	pub data: Vec<u8>,
 }
 
@@ -30,8 +28,8 @@ pub struct DummyData {
 
 impl DummyData {
 	pub fn new() -> Self {
-		let role_settings = RoleSettings { name: b"Setting One".to_vec(), data: Vec::new() };
-		let role_settings_2 = RoleSettings { name: b"Setting Two".to_vec(), data: Vec::new() };
+		let role_settings = RoleSettings { name: b"Setting One".to_vec(), data: b"Data One".to_vec() };
+		let role_settings_2 = RoleSettings { name: b"Setting Two".to_vec(), data: b"Data Two".to_vec() };
 
 		let role = DummyRole {
 			owner: Public::from_raw([1u8; 32]),
@@ -42,7 +40,7 @@ impl DummyData {
 		let cluster =
 			DummyCluster { owner: Public::from_raw([1u8; 32]), name: b"ClusterName".to_vec() };
 
-		let member = DummyMember { cluster: Vec::new(), role: Vec::new(), data: Vec::new() };
+		let member = DummyMember { data: Vec::new() };
 
 		Self {
 			cluster,
