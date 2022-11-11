@@ -45,22 +45,6 @@ mod upload_tests {
 
 			let proto_struct = <Protos<Test>>::get(proto.get_proto_hash()).unwrap();
 
-			// I am using `match` to ensure that this test case fails if a new field is ever added
-			// to the `Proto` struct match proto_struct {
-			// 	Proto {
-			// 		block: 1,
-			// 		patches: Vec::new(),
-			// 		include_cost: proto.include_cost.map(|cost| Compact::from(cost)),
-			// 		creator: dd.account_id,
-			// 		owner: dd.account_id,
-			// 		references: proto.references,
-			// 		category: proto.category,
-			// 		tags: proto.tags,
-			// 		metadata: BTreeMap::new(),
-			// 	} => (),
-			// 	// _ => println!("Time to panic!!! Mayday"),
-			// }
-
 			let correct_proto_struct = Proto {
 				block: block_number,
 				patches: Vec::new(),
@@ -190,59 +174,6 @@ mod patch_tests {
 			assert_noop!(patch_(dd.account_id, &patch), Error::<Test>::ProtoNotFound);
 		});
 	}
-
-	// #[test]
-	// fn patch_should_not_work_if_detached() {
-	// 	let keystore = KeyStore::new();
-	// 	let mut t = new_test_ext();
-
-	// 	t.register_extension(KeystoreExt(Arc::new(keystore)));
-	// 	t.execute_with(|| {
-	// 		let pair = sp_core::ed25519::Pair::from_string("//Alice", None).unwrap();
-	// 		let data = DATA.as_bytes().to_vec();
-	// 		initial_upload();
-
-	// 		sp_io::crypto::ecdsa_generate(KEY_TYPE, None);
-	// 		let keys = sp_io::crypto::ecdsa_public_keys(KEY_TYPE);
-
-	// 		<EthereumAuthorities<Test>>::mutate(|authorities| {
-	// 			authorities.insert(keys.get(0).unwrap().clone());
-	// 		});
-	// 		assert_ok!(ProtosPallet::detach(
-	// 			Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-	// 			PROTO_HASH,
-	// 			SupportedChains::EthereumMainnet,
-	// 			pair.to_raw_vec()
-	// 		));
-
-	// 		let detach_data = DetachInternalData {
-	// 			public: sp_core::ed25519::Public::from_raw(PUBLIC1),
-	// 			hash: PROTO_HASH,
-	// 			remote_signature: vec![],
-	// 			target_account: vec![],
-	// 			target_chain: SupportedChains::EthereumGoerli,
-	// 			nonce: 1,
-	// 		};
-
-	// 		assert_ok!(Detach::internal_finalize_detach(
-	// 			Origin::none(),
-	// 			detach_data,
-	// 			pair.sign(DATA.as_bytes())
-	// 		));
-
-	// 		assert_noop!(
-	// 			ProtosPallet::patch_(
-	// 				Origin::signed(sp_core::ed25519::Public::from_raw(PUBLIC1)),
-	// 				PROTO_HASH,
-	// 				Some(Compact(123)),
-	// 				vec![],
-	// 				data,
-	// 			),
-	// 			Error::<Test>::Detached
-	// 		);
-
-	// 	});
-	// }
 }
 
 mod transfer_tests {

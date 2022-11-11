@@ -36,6 +36,8 @@ const LOCK_EVENT: &str = "0xb9416cbc88978dc45c762d25315c5781c5270bd47c1c3879ddb4
 /// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
 
+const LINK_VERIFYING_CONTRACT: &str = "f5a0af5a0af5a0af5a0af5a0af5a0af5a0af5a0a";
+
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
 
 /// Defines application identifier for crypto keys of this module.
@@ -92,7 +94,7 @@ use sp_io::{
 	crypto as Crypto,
 	hashing::{blake2_256, keccak_256},
 };
-use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
+use sp_runtime::{offchain::storage::StorageValueRef, traits::Zero, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use frame_system::offchain::{
@@ -126,7 +128,7 @@ pub enum ExternalID {
 pub trait EthFragContract {
 	/// **Return** the **contract address** of the **FRAG Token Smart Contract**
 	fn get_partner_contracts() -> Vec<String> {
-		vec![String::from("0xBADF00D")]
+		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
 	}
 }
 
@@ -458,18 +460,57 @@ pub mod pallet {
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			// the idea is to prove to this chain that the sender knows the private key of the external address
-			let mut message = b"EVM2Fragnova".to_vec();
-			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
-			message.extend_from_slice(&sender.encode());
-			let message_hash = keccak_256(&message);
+			let genesis_hash = <frame_system::Pallet<T>>::block_hash(T::BlockNumber::zero());
+			let genesis_hash_string = format!("0x{}", hex::encode(genesis_hash));
 
-			let recovered = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
-				.map_err(|_| Error::<T>::VerificationFailed)?; // Verify the `signature` for the message keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)
+			let sender_string = format!("0x{}", hex::encode(sender.encode()));
 
-			let eth_key = keccak_256(&recovered[..]);
-			let eth_key = &eth_key[12..];
-			let eth_key = H160::from_slice(&eth_key[..]);
+			// Metamask signTypedData_v4 - https://jsfiddle.net/4mwu2g80/43/
+
+			// We encode the message using the following encoding function:
+			// encode(domainSeparator : 𝔹²⁵⁶, message : 𝕊) = "\x19\x01" ‖ domainSeparator ‖ hashStruct(message).
+			// See: https://eips.ethereum.org/EIPS/eip-712#specification-1
+			let encoded_message: Vec<u8> = [
+				&[0x19, 0x01],
+				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&vec![
+							Token::Uint(
+								U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+							),
+							Token::Uint(U256::from(keccak_256(b"Fragnova Network"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(T::EthChainId::get())),
+							Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(LINK_VERIFYING_CONTRACT).unwrap()).unwrap())),
+						]
+					)
+				)[..],
+				// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&vec![
+							// This is the `typeHash`
+							Token::Uint(
+								U256::from(keccak_256(b"Msg(string fragnovaGenesis,string op,string sender)"))
+							),
+							// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
+							Token::Uint(U256::from(keccak_256(&genesis_hash_string.into_bytes()))),
+							Token::Uint(U256::from(keccak_256(b"link"))),
+							Token::Uint(U256::from(keccak_256(&sender_string.into_bytes()))),
+						]
+					)
+				)[..]
+			].concat();
+
+			log::trace!("encoded message: {}", hex::encode(&encoded_message));
+
+			let ecdsa_public_key = Crypto::secp256k1_ecdsa_recover(&signature.0, &keccak_256(&encoded_message))
+				.map_err(|_| Error::<T>::VerificationFailed)?;
+
+			let eth_key = H160::from_slice(&keccak_256(&ecdsa_public_key[..])[12..]);
 
 			ensure!(!<EVMLinks<T>>::contains_key(&sender), Error::<T>::AccountAlreadyLinked);
 			ensure!(!<EVMLinksReverse<T>>::contains_key(eth_key), Error::<T>::AccountAlreadyLinked);
@@ -742,6 +783,7 @@ pub mod pallet {
 
 			// also record link hash
 			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
+
 
 			Ok(())
 		}
@@ -1048,7 +1090,7 @@ pub mod pallet {
 				let data = ethabi::decode(
 					&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(8)],
 					&data,
-				) // First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+				) // First parameter is a signature, the second parameter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
 				.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
 				let locked = match topic {
 					// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
