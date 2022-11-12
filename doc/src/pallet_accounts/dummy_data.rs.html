@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/accounts/src/dummy_data.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>dummy_data.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_accounts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_accounts/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/accounts/src/dummy_data.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>dummy_data.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_accounts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_accounts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_accounts/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -246,9 +246,8 @@
 <span id="246">246</span>
 <span id="247">247</span>
 <span id="248">248</span>
+<span id="249">249</span>
 </pre><pre class="rust"><code><span class="kw">use crate</span>::<span class="kw-2">*</span>;
-
-<span class="kw">use </span>codec::Encode;
 
 <span class="kw">use </span>sp_core::{
 	ecdsa,
@@ -264,23 +263,68 @@
 	<span class="kw">use </span>frame_support::traits::TypedGet;
 	&lt;Test <span class="kw">as </span><span class="kw">crate</span>::Config&gt;::EthChainId::get()
 }
-
-<span class="attribute">#[cfg(not(test))]
+<span class="comment">// (If pallet_accounts::dummy_data is being built in another pallet)
+</span><span class="attribute">#[cfg(not(test))]
 </span><span class="kw">fn </span>get_ethereum_chain_id() -&gt; u64 {
 	<span class="number">5
 </span>}
+
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">fn </span>get_genesis_hash() -&gt; sp_core::H256 {
+	<span class="kw">use </span><span class="kw">crate</span>::mock::Test;
+	&lt;frame_system::Pallet&lt;Test&gt;&gt;::block_hash(&lt;Test <span class="kw">as </span>frame_system::Config&gt;::BlockNumber::zero())
+}
+<span class="comment">// (If pallet_accounts::dummy_data is being built in another pallet)
+</span><span class="attribute">#[cfg(not(test))]
+</span><span class="kw">fn </span>get_genesis_hash() -&gt; sp_core::H256 {
+	<span class="comment">// I don&#39;t what to return if the build-dummy-data flag is enabled!
+	</span>H256([<span class="number">0u8</span>; <span class="number">32</span>])
+}
 
 <span class="kw">pub fn </span>create_link_signature(
 	clamor_account_id: sp_core::ed25519::Public,
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 ) -&gt; sp_core::ecdsa::Signature {
-	<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;EVM2Fragnova&quot;</span>.to_vec();
-	message.extend_from_slice(<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes());
-	message.extend_from_slice(<span class="kw-2">&amp;</span>clamor_account_id.encode());
 
-	<span class="kw">let </span>hashed_message = keccak_256(<span class="kw-2">&amp;</span>message);
+	<span class="kw">let </span>sender_string = <span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(clamor_account_id));
+	<span class="kw">let </span>genesis_hash_string = <span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(get_genesis_hash()));
 
-	ethereum_account_pair.sign_prehashed(<span class="kw-2">&amp;</span>hashed_message)
+	<span class="kw">let </span>encoded_message: Vec&lt;u8&gt; = [
+		<span class="kw-2">&amp;</span>[<span class="number">0x19</span>, <span class="number">0x01</span>],
+		<span class="comment">// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+		</span><span class="kw-2">&amp;</span>keccak_256(
+			<span class="comment">// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+			</span><span class="kw-2">&amp;</span>ethabi::encode(
+				<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+					Token::Uint(
+						U256::from(keccak_256(<span class="string">b&quot;EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)&quot;</span>))
+					),
+					Token::Uint(U256::from(keccak_256(<span class="string">b&quot;Fragnova Network&quot;</span>))), <span class="comment">// The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+					</span>Token::Uint(U256::from(keccak_256(<span class="string">b&quot;1&quot;</span>))), <span class="comment">// The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+					</span>Token::Uint(U256::from(get_ethereum_chain_id())),
+					Token::Address(H160::from(TryInto::&lt;[u8; <span class="number">20</span>]&gt;::try_into(hex::decode(LINK_VERIFYING_CONTRACT).unwrap()).unwrap())),
+				]
+			)
+		)[..],
+		<span class="comment">// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+		</span><span class="kw-2">&amp;</span>keccak_256(
+			<span class="comment">// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+			</span><span class="kw-2">&amp;</span>ethabi::encode(
+				<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+					<span class="comment">// This is the `typeHash`
+					</span>Token::Uint(
+						U256::from(keccak_256(<span class="string">b&quot;Msg(string fragnovaGenesis,string op,string sender)&quot;</span>))
+					),
+					<span class="comment">// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
+					</span>Token::Uint(U256::from(keccak_256(<span class="kw-2">&amp;</span>genesis_hash_string.into_bytes()))),
+					Token::Uint(U256::from(keccak_256(<span class="string">b&quot;link&quot;</span>))),
+					Token::Uint(U256::from(keccak_256(<span class="kw-2">&amp;</span>sender_string.into_bytes()))),
+				]
+			)
+		)[..]
+	].concat();
+
+	ethereum_account_pair.sign_prehashed(<span class="kw-2">&amp;</span>keccak_256(<span class="kw-2">&amp;</span>encoded_message))
 }
 
 <span class="kw">pub fn </span>create_lock_signature(
@@ -288,51 +332,50 @@
 	lock_amount: U256,
 	locktime: U256,
 ) -&gt; sp_core::ecdsa::Signature {
-	<span class="kw">let </span>ethereum_account_id =
-		get_ethereum_account_id_from_ecdsa_public_struct(<span class="kw-2">&amp;</span>ethereum_account_pair.public());
-
-	<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;FragLock&quot;</span>.to_vec();
-	message.extend_from_slice(<span class="kw-2">&amp;</span>ethereum_account_id.<span class="number">0</span>[..]);
-	message.extend_from_slice(<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes());
-	message.extend_from_slice(<span class="kw-2">&amp;</span>Into::&lt;[u8; <span class="number">32</span>]&gt;::into(lock_amount.clone()));
-	message.extend_from_slice(<span class="kw-2">&amp;</span>Into::&lt;[u8; <span class="number">32</span>]&gt;::into(locktime.clone()));
-
-	<span class="kw">let </span>hashed_message = keccak_256(<span class="kw-2">&amp;</span>message);
-
-	<span class="comment">// Ethereum Signature is produced by signing a keccak256 hash with the following format:
-	// &quot;\x19Ethereum Signed Message\n&quot; + len(msg) + msg
-	// Note: `msg` is the hashed message
-	</span><span class="kw">let </span>hashed_message =
-		keccak_256(<span class="kw-2">&amp;</span>[<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span>hashed_message[..]].concat());
-
-	ethereum_account_pair.sign_prehashed(<span class="kw-2">&amp;</span>hashed_message)
+	ethereum_account_pair.sign_prehashed(
+		<span class="kw-2">&amp;</span>keccak_256(
+			<span class="kw-2">&amp;</span>[
+				<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>,
+				<span class="kw-2">&amp;</span>keccak_256(
+					<span class="kw-2">&amp;</span>[
+						<span class="kw-2">&amp;</span><span class="string">b&quot;FragLock&quot;</span>[..],
+						<span class="kw-2">&amp;</span>get_ethereum_public_address(<span class="kw-2">&amp;</span>ethereum_account_pair).<span class="number">0</span>[..],
+						<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes(),
+						<span class="kw-2">&amp;</span>Into::&lt;[u8; <span class="number">32</span>]&gt;::into(lock_amount.clone()),
+						<span class="kw-2">&amp;</span>Into::&lt;[u8; <span class="number">32</span>]&gt;::into(locktime.clone())
+					].concat()
+				)[..]
+			].concat()
+		)
+	)
 }
 <span class="kw">pub fn </span>create_unlock_signature(
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 	unlock_amount: U256,
 ) -&gt; sp_core::ecdsa::Signature {
-	<span class="kw">let </span>ethereum_account_id =
-		get_ethereum_account_id_from_ecdsa_public_struct(<span class="kw-2">&amp;</span>ethereum_account_pair.public());
-
-	<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;FragUnlock&quot;</span>.to_vec();
-	message.extend_from_slice(<span class="kw-2">&amp;</span>ethereum_account_id.<span class="number">0</span>[..]);
-	message.extend_from_slice(<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes());
-	message.extend_from_slice(<span class="kw-2">&amp;</span>Into::&lt;[u8; <span class="number">32</span>]&gt;::into(unlock_amount.clone()));
-
-	<span class="kw">let </span>hashed_message = keccak_256(<span class="kw-2">&amp;</span>message);
-
-	<span class="comment">// Ethereum Signature is produced by signing a keccak256 hash with the following format:
-	// &quot;\x19Ethereum Signed Message\n&quot; + len(msg) + msg
-	// Note: `msg` is the hashed message
-	</span><span class="kw">let </span>hashed_message =
-		keccak_256(<span class="kw-2">&amp;</span>[<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>, <span class="kw-2">&amp;</span>hashed_message[..]].concat());
-
-	ethereum_account_pair.sign_prehashed(<span class="kw-2">&amp;</span>hashed_message)
+	ethereum_account_pair.sign_prehashed(
+		<span class="kw-2">&amp;</span>keccak_256(
+			<span class="kw-2">&amp;</span>[
+				<span class="string">b&quot;\x19Ethereum Signed Message:\n32&quot;</span>,
+				<span class="kw-2">&amp;</span>keccak_256(
+					<span class="kw-2">&amp;</span>[
+						<span class="kw-2">&amp;</span><span class="string">b&quot;FragUnlock&quot;</span>[..],
+						<span class="kw-2">&amp;</span>get_ethereum_public_address(<span class="kw-2">&amp;</span>ethereum_account_pair).<span class="number">0</span>[..],
+						<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes(),
+						<span class="kw-2">&amp;</span>Into::&lt;[u8; <span class="number">32</span>]&gt;::into(unlock_amount.clone())
+					].concat()
+				)[..]
+			].concat()
+		)
+	)
 }
 
-<span class="kw">pub fn </span>get_ethereum_account_id_from_ecdsa_public_struct(
-	ecdsa_public_struct: <span class="kw-2">&amp;</span>ecdsa::Public,
+<span class="kw">pub fn </span>get_ethereum_public_address(
+	ecdsa_pair_struct: <span class="kw-2">&amp;</span>ecdsa::Pair,
 ) -&gt; H160 {
+
+	<span class="kw">let </span>ecdsa_public_struct = ecdsa_pair_struct.public();
+
 	<span class="kw">let </span>compressed_public_key = ecdsa_public_struct.<span class="number">0</span>;
 
 	<span class="kw">let </span>uncompressed_public_key =
@@ -349,26 +392,13 @@
 </span><span class="kw">pub struct </span>Link {
 	<span class="kw">pub </span>clamor_account_id: sp_core::ed25519::Public,
 	<span class="kw">pub </span>link_signature: ecdsa::Signature,
+
+	<span class="kw">pub </span>_ethereum_account_pair: sp_core::ecdsa::Pair,
 }
 
 <span class="kw">impl </span>Link {
-	<span class="kw">pub fn </span>get_recovered_ethereum_account_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; H160 {
-		<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;EVM2Fragnova&quot;</span>.to_vec();
-		message.extend_from_slice(<span class="kw-2">&amp;</span>get_ethereum_chain_id().to_be_bytes());
-		message.extend_from_slice(<span class="kw-2">&amp;</span><span class="self">self</span>.clamor_account_id.encode());
-
-		<span class="kw">let </span>hashed_message = keccak_256(<span class="kw-2">&amp;</span>message);
-
-		<span class="kw">let </span>uncompressed_public_key_without_prefix =
-			Crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span><span class="self">self</span>.link_signature.<span class="number">0</span>, <span class="kw-2">&amp;</span>hashed_message)
-				.map_err(|<span class="kw">_</span>| <span class="macro">format!</span>(<span class="string">&quot;Mayday!&quot;</span>))
-				.unwrap();
-
-		<span class="kw">let </span>ethererum_account_id = keccak_256(<span class="kw-2">&amp;</span>uncompressed_public_key_without_prefix[..]);
-		<span class="kw">let </span>ethererum_account_id = <span class="kw-2">&amp;</span>ethererum_account_id[<span class="number">12</span>..];
-		<span class="kw">let </span>ethererum_account_id = H160::from_slice(<span class="kw-2">&amp;</span>ethererum_account_id[..]);
-
-		ethererum_account_id
+	<span class="kw">pub fn </span>get_ethereum_public_address_of_signer(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; H160 {
+		get_ethereum_public_address(<span class="kw-2">&amp;</span><span class="self">self</span>._ethereum_account_pair)
 	}
 }
 
@@ -377,7 +407,7 @@
 	<span class="kw">pub </span>data: EthLockUpdate&lt;sp_core::ed25519::Public&gt;,
 	<span class="kw">pub </span>link: Link,
 
-	<span class="kw">pub </span>ethereum_account_pair: sp_core::ecdsa::Pair,
+	<span class="kw">pub </span>_ethereum_account_pair: sp_core::ecdsa::Pair,
 }
 <span class="kw">pub struct </span>Unlock {
 	<span class="kw">pub </span>lock: Lock,
@@ -403,6 +433,7 @@
 				sp_core::ed25519::Public::from_raw([<span class="number">1u8</span>; <span class="number">32</span>]),
 				sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">1u8</span>; <span class="number">32</span>]),
 			),
+			_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">1u8</span>; <span class="number">32</span>]),
 		};
 
 		<span class="kw">let </span>link_second = Link {
@@ -411,6 +442,7 @@
 				sp_core::ed25519::Public::from_raw([<span class="number">2u8</span>; <span class="number">32</span>]),
 				sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">2u8</span>; <span class="number">32</span>]),
 			),
+			_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">2u8</span>; <span class="number">32</span>]),
 		};
 
 		<span class="kw">let </span>lock = Lock {
@@ -418,66 +450,36 @@
 				public: sp_core::ed25519::Public([<span class="number">69u8</span>; <span class="number">32</span>]),
 				amount: U256::from(<span class="number">69u32</span>),
 				locktime: U256::from(<span class="number">1234567890</span>),
-				sender: get_ethereum_account_id_from_ecdsa_public_struct(
-					<span class="kw-2">&amp;</span>sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]).public(),
+				sender: get_ethereum_public_address(
+					<span class="kw-2">&amp;</span>link._ethereum_account_pair.clone(),
 				),
 				signature: create_lock_signature(
-					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
+					link._ethereum_account_pair.clone(),
 					U256::from(<span class="number">69u32</span>),
 					U256::from(<span class="number">1234567890</span>),
 				),
-				lock: <span class="bool-val">true</span>, <span class="comment">// yes, please lock it!
+				lock: <span class="bool-val">true</span>, <span class="comment">// yes, please LOCK it!
 				</span>block_number: <span class="number">69</span>,
 			},
-			link: Link {
-				clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
-				link_signature: create_link_signature(
-					sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
-					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
-				),
-			},
-			ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
+			link: link.clone(),
+			_ethereum_account_pair: link._ethereum_account_pair.clone(),
 		};
 
 		<span class="kw">let </span>unlock = Unlock {
-			lock: Lock {
-				data: EthLockUpdate {
-					public: sp_core::ed25519::Public([<span class="number">69u8</span>; <span class="number">32</span>]),
-					amount: U256::from(<span class="number">69u32</span>),
-					locktime: U256::from(<span class="number">1234567890</span>),
-					sender: get_ethereum_account_id_from_ecdsa_public_struct(
-						<span class="kw-2">&amp;</span>sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]).public(),
-					),
-					signature: create_lock_signature(
-						sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
-						U256::from(<span class="number">69u32</span>),
-						U256::from(<span class="number">1234567890</span>),
-					),
-					lock: <span class="bool-val">true</span>, <span class="comment">// yes, please lock it!
-					</span>block_number: <span class="number">69</span>,
-				},
-				link: Link {
-					clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">4u8</span>; <span class="number">32</span>]),
-					link_signature: create_link_signature(
-						sp_core::ed25519::Public::from_raw([<span class="number">4u8</span>; <span class="number">32</span>]),
-						sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
-					),
-				},
-				ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
-			},
+			lock: lock.clone(),
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([<span class="number">69u8</span>; <span class="number">32</span>]),
 				amount: U256::from(<span class="number">0u32</span>), <span class="comment">// when unlocking, amount must be 0u32
 				</span>locktime: U256::from(<span class="number">0</span>),  <span class="comment">// can be whatever. It is not considered in case of unlock.
-				</span>sender: get_ethereum_account_id_from_ecdsa_public_struct(
-					<span class="kw-2">&amp;</span>sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]).public(),
+				</span>sender: get_ethereum_public_address(
+					<span class="kw-2">&amp;</span>lock._ethereum_account_pair.clone(),
 				),
 				signature: create_unlock_signature(
-					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
+					lock._ethereum_account_pair.clone(),
 					U256::from(<span class="number">0u32</span>), <span class="comment">// when unlocking, amount must be 0u32
 				</span>),
-				lock: <span class="bool-val">false</span>, <span class="comment">// yes, please unlock it!
-				</span>block_number: <span class="number">69 </span>+ <span class="number">69</span>,
+				lock: <span class="bool-val">false</span>, <span class="comment">// yes, please UNLOCK it!
+				</span>block_number: lock.data.block_number.clone() + <span class="number">69</span>,
 			},
 		};
 
@@ -495,4 +497,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (dcb376115 2022-10-20)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/accounts/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_accounts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_accounts/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/accounts/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_accounts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_accounts/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_accounts/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -995,6 +995,49 @@
 <span id="995">995</span>
 <span id="996">996</span>
 <span id="997">997</span>
+<span id="998">998</span>
+<span id="999">999</span>
+<span id="1000">1000</span>
+<span id="1001">1001</span>
+<span id="1002">1002</span>
+<span id="1003">1003</span>
+<span id="1004">1004</span>
+<span id="1005">1005</span>
+<span id="1006">1006</span>
+<span id="1007">1007</span>
+<span id="1008">1008</span>
+<span id="1009">1009</span>
+<span id="1010">1010</span>
+<span id="1011">1011</span>
+<span id="1012">1012</span>
+<span id="1013">1013</span>
+<span id="1014">1014</span>
+<span id="1015">1015</span>
+<span id="1016">1016</span>
+<span id="1017">1017</span>
+<span id="1018">1018</span>
+<span id="1019">1019</span>
+<span id="1020">1020</span>
+<span id="1021">1021</span>
+<span id="1022">1022</span>
+<span id="1023">1023</span>
+<span id="1024">1024</span>
+<span id="1025">1025</span>
+<span id="1026">1026</span>
+<span id="1027">1027</span>
+<span id="1028">1028</span>
+<span id="1029">1029</span>
+<span id="1030">1030</span>
+<span id="1031">1031</span>
+<span id="1032">1032</span>
+<span id="1033">1033</span>
+<span id="1034">1034</span>
+<span id="1035">1035</span>
+<span id="1036">1036</span>
+<span id="1037">1037</span>
+<span id="1038">1038</span>
+<span id="1039">1039</span>
+<span id="1040">1040</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
@@ -1008,8 +1051,10 @@
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-#[allow(missing_docs)]
-#[cfg(any(test, feature = <span class="string">&quot;compile-dummy-data&quot;</span>))]
+</span><span class="kw">extern crate </span>core;
+
+<span class="attribute">#[allow(missing_docs)]
+#[cfg(any(test, feature = <span class="string">&quot;build-dummy-data&quot;</span>))]
 </span><span class="kw">pub mod </span>dummy_data;
 
 <span class="attribute">#[cfg(test)]
@@ -1032,6 +1077,8 @@
 ///
 /// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 </span><span class="kw">const </span>UNLOCK_EVENT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe&quot;</span>;
+
+<span class="kw">const </span>LINK_VERIFYING_CONTRACT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;f5a0af5a0af5a0af5a0af5a0af5a0af5a0af5a0a&quot;</span>;
 
 <span class="kw">use </span>sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
 
@@ -1089,7 +1136,7 @@
 	crypto <span class="kw">as </span>Crypto,
 	hashing::{blake2_256, keccak_256},
 };
-<span class="kw">use </span>sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
+<span class="kw">use </span>sp_runtime::{offchain::storage::StorageValueRef, traits::Zero, MultiSigner};
 <span class="kw">use </span>sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 <span class="kw">use </span>frame_system::offchain::{
@@ -1105,7 +1152,7 @@
 
 <span class="kw">use </span>serde_json::{json, Value};
 
-<span class="kw">use </span>ethabi::ParamType;
+<span class="kw">use </span>ethabi::{ParamType, Token};
 
 <span class="kw">use </span>frame_support::traits::ReservableCurrency;
 
@@ -1388,18 +1435,58 @@
 		</span><span class="kw">pub fn </span>link(origin: OriginFor&lt;T&gt;, signature: ecdsa::Signature) -&gt; DispatchResult {
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 
-			<span class="comment">// the idea is to prove to this chain that the sender knows the private key of the external address
-			</span><span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;EVM2Fragnova&quot;</span>.to_vec();
-			message.extend_from_slice(<span class="kw-2">&amp;</span>T::EthChainId::get().to_be_bytes());
-			message.extend_from_slice(<span class="kw-2">&amp;</span>sender.encode());
-			<span class="kw">let </span>message_hash = keccak_256(<span class="kw-2">&amp;</span>message);
+			<span class="kw">let </span>genesis_hash = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_hash(T::BlockNumber::zero());
+			<span class="kw">let </span>genesis_hash_string = <span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(genesis_hash));
 
-			<span class="kw">let </span>recovered = Crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>signature.<span class="number">0</span>, <span class="kw-2">&amp;</span>message_hash)
-				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::VerificationFailed)<span class="question-mark">?</span>; <span class="comment">// Verify the `signature` for the message keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)
+			<span class="comment">// REVIEW - should we use `sender.encode()` or should we trait bound `T::AccountId` with `AsRef&lt;[u8]&gt;`?
+			</span><span class="kw">let </span>sender_string = <span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(sender.encode()));
 
-			</span><span class="kw">let </span>eth_key = keccak_256(<span class="kw-2">&amp;</span>recovered[..]);
-			<span class="kw">let </span>eth_key = <span class="kw-2">&amp;</span>eth_key[<span class="number">12</span>..];
-			<span class="kw">let </span>eth_key = H160::from_slice(<span class="kw-2">&amp;</span>eth_key[..]);
+			<span class="comment">// Metamask signTypedData_v4 - https://jsfiddle.net/4mwu2g80/43/
+
+			// We encode the message using the following encoding function:
+			// encode(domainSeparator : 𝔹²⁵⁶, message : 𝕊) = &quot;\x19\x01&quot; ‖ domainSeparator ‖ hashStruct(message).
+			// See: https://eips.ethereum.org/EIPS/eip-712#specification-1
+			</span><span class="kw">let </span>encoded_message: Vec&lt;u8&gt; = [
+				<span class="kw-2">&amp;</span>[<span class="number">0x19</span>, <span class="number">0x01</span>],
+				<span class="comment">// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+				</span><span class="kw-2">&amp;</span>keccak_256(
+					<span class="comment">// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					</span><span class="kw-2">&amp;</span>ethabi::encode(
+						<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+							Token::Uint(
+								U256::from(keccak_256(<span class="string">b&quot;EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)&quot;</span>))
+							),
+							Token::Uint(U256::from(keccak_256(<span class="string">b&quot;Fragnova Network&quot;</span>))), <span class="comment">// The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							</span>Token::Uint(U256::from(keccak_256(<span class="string">b&quot;1&quot;</span>))), <span class="comment">// The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							</span>Token::Uint(U256::from(T::EthChainId::get())),
+							Token::Address(H160::from(TryInto::&lt;[u8; <span class="number">20</span>]&gt;::try_into(hex::decode(LINK_VERIFYING_CONTRACT).unwrap()).unwrap())),
+						]
+					)
+				)[..],
+				<span class="comment">// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+				</span><span class="kw-2">&amp;</span>keccak_256(
+					<span class="comment">// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					</span><span class="kw-2">&amp;</span>ethabi::encode(
+						<span class="kw-2">&amp;</span><span class="macro">vec!</span>[
+							<span class="comment">// This is the `typeHash`
+							</span>Token::Uint(
+								U256::from(keccak_256(<span class="string">b&quot;Msg(string fragnovaGenesis,string op,string sender)&quot;</span>))
+							),
+							<span class="comment">// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
+							</span>Token::Uint(U256::from(keccak_256(<span class="kw-2">&amp;</span>genesis_hash_string.into_bytes()))),
+							Token::Uint(U256::from(keccak_256(<span class="string">b&quot;link&quot;</span>))),
+							Token::Uint(U256::from(keccak_256(<span class="kw-2">&amp;</span>sender_string.into_bytes()))),
+						]
+					)
+				)[..]
+			].concat();
+
+			<span class="macro">log::trace!</span>(<span class="string">&quot;encoded message: {}&quot;</span>, hex::encode(<span class="kw-2">&amp;</span>encoded_message));
+
+			<span class="kw">let </span>ecdsa_public_key = Crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>signature.<span class="number">0</span>, <span class="kw-2">&amp;</span>keccak_256(<span class="kw-2">&amp;</span>encoded_message))
+				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::VerificationFailed)<span class="question-mark">?</span>;
+
+			<span class="kw">let </span>eth_key = H160::from_slice(<span class="kw-2">&amp;</span>keccak_256(<span class="kw-2">&amp;</span>ecdsa_public_key[..])[<span class="number">12</span>..]);
 
 			<span class="macro">ensure!</span>(!&lt;EVMLinks&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>sender), Error::&lt;T&gt;::AccountAlreadyLinked);
 			<span class="macro">ensure!</span>(!&lt;EVMLinksReverse&lt;T&gt;&gt;::contains_key(eth_key), Error::&lt;T&gt;::AccountAlreadyLinked);
@@ -1545,8 +1632,7 @@
 				// ! TODO TEST
 
 				// if we have any link to this account, then force unlinking
-				</span><span class="kw">let </span>linked = &lt;EVMLinksReverse&lt;T&gt;&gt;::get(sender.clone());
-				<span class="kw">if let </span><span class="prelude-val">Some</span>(linked) = linked {
+				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(linked) = &lt;EVMLinksReverse&lt;T&gt;&gt;::get(sender.clone()) {
 					<span class="self">Self</span>::unlink_account(linked, sender.clone())<span class="question-mark">?</span>; <span class="comment">// Unlink Ethereum Account `sender` and Clamor Account `linked`
 				</span>}
 
@@ -1862,7 +1948,7 @@
 				</span><span class="kw">let </span>data = ethabi::decode(
 					<span class="kw-2">&amp;</span>[ParamType::Bytes, ParamType::Uint(<span class="number">256</span>), ParamType::Uint(<span class="number">256</span>)],
 					<span class="kw-2">&amp;</span>data,
-				) <span class="comment">// First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+				) <span class="comment">// First parameter is a signature, the second parameter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
 				</span>.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid eth data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `data` is the decoded list of the params of the event log `topic`
 				</span><span class="kw">let </span>locked = <span class="kw">match </span>topic {
 					<span class="comment">// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
@@ -1993,4 +2079,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (dcb376115 2022-10-20)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_accounts" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>
