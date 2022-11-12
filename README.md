@@ -15,9 +15,9 @@ The Rustdocs can be read at: https://fragcolor-xyz.github.io/clamor/
 
 ## Requirements
 
-Before you start, ensure you've [set up your development environment](https://docs.substrate.io/install/) and [installed Rust](https://docs.fragcolor.xyz/contribute/code/getting-started/#install-setup-rust).
+Before you start, ensure you've [set up your development environment](https://docs.substrate.io/install/) and [installed Rust](https://www.rust-lang.org/tools/install).
 
-*NOTE - The following instructions are for developing Clamor on Linux (also on WSL) /Mac since Substrate does not yet have a reliable [native Windows support](https://www.rust-lang.org/tools/install).*
+*NOTE - The following instructions are for developing Clamor on Linux (also on WSL) /Mac since Substrate does not yet have a reliable [native Windows support](https://docs.substrate.io/v3/getting-started/windows-users/).*
 ## Build
 ### Update system packages
 
