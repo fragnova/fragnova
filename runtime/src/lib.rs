@@ -65,13 +65,30 @@ pub use sp_runtime::{Perbill, Permill};
 
 use scale_info::prelude::string::String;
 
-use codec::Encode;
+use codec::{Encode, Decode};
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
 use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 use pallet_protos::{GetGenealogyParams, GetProtosParams};
 
 pub use pallet_contracts::Schedule;
+
+// IMPORTS BELOW ARE USED IN `validate_transaction`
+use protos::traits::Trait;
+use protos::categories::{
+	Categories,
+	AudioCategories,
+	BinaryCategories,
+	ModelCategories,
+	ShardsFormat,
+	ShardsScriptInfo,
+	// ShardsTrait,
+	TextCategories,
+	TextureCategories,
+	VectorCategories,
+	VideoCategories
+};
+// use unic_emoji_char::is_emoji;
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.
@@ -752,6 +769,81 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 >;
 
+#[cfg(feature = "std")]
+fn get_utf8_string(string: &str) -> Result<&str, &str> {
+	Ok(string)
+}
+#[cfg(not(feature = "std"))]
+fn get_utf8_string(string: &Vec<u8>) -> Result<&str, &str> {
+	str::from_utf8(&string[..]).map_err(|_| "Lo siento")
+}
+
+
+fn is_valid(category: &Categories, data: &Vec<u8>) -> bool {
+	match category {
+		Categories::Text(sub_categories) => match sub_categories {
+			TextCategories::Plain => str::from_utf8(data).is_ok(),
+			// REVIEW - does a Json have to be a `serde_json::Map` or can it `serde_json::Value`?
+			TextCategories::Json => serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(&data[..]).is_ok()
+		},
+		Categories::Trait(trait_hash) => match trait_hash { // Non Capisco Cosa Fare Qui!!!
+			Some(_) => false,
+			None => {
+				let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // REVIEW - is `&mut *data` safe?
+					return false;
+				};
+				trait_struct.records.windows(2).all(|window| {
+					let (record_1, record_2) = (&window[0], &window[1]);
+					let (Ok(a1), Ok(a2)) = (get_utf8_string(&record_1.0), get_utf8_string(&record_2.0)) else { // `a1` is short for `attribute_1`, `a2` is short for `attribute_2`
+						return false;
+					};
+
+					let (Some(first_char_a1), Some(first_char_a2)) = (a1.chars().next(), a2.chars().next()) else {
+						return false;
+					};
+
+					(first_char_a1.is_alphabetic() && first_char_a2.is_alphabetic()) // ensure first character is an alphabet
+						&&
+						(a1 == a1.to_lowercase() && a2 == a2.to_lowercase()) // ensure lowercase
+						&&
+						a1 <= a2 // ensure sorted
+						&&
+						a1 != a2 // ensure no duplicates
+				})
+			},
+		},
+		Categories::Shards(shards_script_info_struct) => false,
+		Categories::Audio(sub_categories) => match sub_categories {
+			AudioCategories::OggFile => false, // Non Esiste!!!
+			AudioCategories::Mp3File => false, // Non Esiste!!!
+		},
+		Categories::Texture(sub_categories) => match sub_categories {
+			TextureCategories::PngFile => png_decoder::decode(&data[..]).is_ok(),
+			TextureCategories::JpgFile => false, // Non Esiste!!!
+		},
+		Categories::Vector(sub_categories) => match sub_categories {
+			VectorCategories::SvgFile => false, // Non Esiste!!!
+			VectorCategories::TtfFile => ttf_parser::Face::parse(&data[..], 0).is_ok(),
+		},
+		Categories::Video(sub_categories) => match sub_categories {
+			VideoCategories::MkvFile => false, // Non Esiste!!!
+			VideoCategories::Mp4File => false, // Non Esiste!!!
+		},
+		Categories::Model(sub_categories) => match sub_categories {
+			ModelCategories::GltfFile => false, // Non Esiste!!!
+			ModelCategories::Sdf => false, // Non Esiste!!!
+			ModelCategories::PhysicsCollider => false, // Non Esiste!!!
+		},
+		Categories::Binary(sub_categories) => match sub_categories {
+			BinaryCategories::WasmProgram => wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
+			BinaryCategories::WasmReactor => false, // Non Esiste!!!
+			BinaryCategories::BlendFile => false, // Non Esiste!!!
+			BinaryCategories::OnnxModel => false, // Non Esiste!!!
+		},
+	}
+}
+
+
 // Marks the given trait implementations as runtime apis.
 //
 // For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
@@ -833,57 +925,7 @@ impl_runtime_apis! {
 				#[allow(unused_variables)]
 				RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
 					// TODO
-					use protos::categories::{
-						Categories,
-						AudioCategories,
-						BinaryCategories,
-						ModelCategories,
-						ShardsFormat,
-						ShardsScriptInfo,
-						// ShardsTrait,
-						TextCategories,
-						TextureCategories,
-						VectorCategories,
-						VideoCategories
-					};
-					match category {
-						Categories::Text(sub_categories) => match sub_categories {
-							TextCategories::Plain => str::from_utf8(data).is_ok(),
-							TextCategories::Json => false, // ToJson
-						},
-						Categories::Trait(il_tratto) => match il_tratto { // Non Capisco Cosa Fare Qui!!!
-							Some(shards_trait) => false,
-							None => false,
-						},
-						Categories::Shards(shards_script_info_struct) => false,
-						Categories::Audio(sub_categories) => match sub_categories {
-							AudioCategories::OggFile => false, // Audio.ReadFile
-							AudioCategories::Mp3File => false, // Audio.ReadFile
-						},
-						Categories::Texture(sub_categories) => match sub_categories {
-							TextureCategories::PngFile => false, // Non Esiste!!!
-							TextureCategories::JpgFile => false, // Non Esiste!!!
-						},
-						Categories::Vector(sub_categories) => match sub_categories {
-							VectorCategories::SvgFile => false, // Non Esiste!!!
-							VectorCategories::TtfFile => false, // Non Esiste!!!
-						},
-						Categories::Video(sub_categories) => match sub_categories {
-							VideoCategories::MkvFile => false, // Non Esiste!!!
-							VideoCategories::Mp4File => false, // Non Esiste!!!
-						},
-						Categories::Model(sub_categories) => match sub_categories {
-							ModelCategories::GltfFile => false, // Non Esiste!!!
-							ModelCategories::Sdf => false, // Non Esiste!!!
-							ModelCategories::PhysicsCollider => false, // Non Esiste!!!
-						},
-						Categories::Binary(sub_categories) => match sub_categories {
-							BinaryCategories::WasmProgram => false, // Non Esiste!!!
-							BinaryCategories::WasmReactor => false, // Non Esiste!!!
-							BinaryCategories::BlendFile => false, // Non Esiste!!!
-							BinaryCategories::OnnxModel => false, // Non Esiste!!!
-						},
-					};
+					let is_valid = is_valid(category, data);
 					()
 				},
 				#[allow(unused_variables)]
@@ -895,7 +937,7 @@ impl_runtime_apis! {
 					// }
 				},
 				_ => {},
-			}
+			};
 			// Always run normally anyways
 			Executive::validate_transaction(source, tx, block_hash)
 		}

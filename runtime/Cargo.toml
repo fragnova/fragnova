@@ -274,6 +274,19 @@ log = { version = "0.4.14", default-features = false }
 hex = { version = "0.4.3", default-features = false }
 protos = { version = "0.1.16", default-features = false }
 
+# These use `std`:
+#unic-emoji-char = {version = "0.9.0", default-features = false }
+#jpeg-decoder = { version = "0.3.0", default-features = false }# features = ["nightly_aarch64_neon"] }
+#png = "0.17.7"
+
+# These don't use `std`:
+serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
+png-decoder = "0.1.1"
+ttf-parser = { version = "0.17.1", default-features = false }
+svgtypes = "0.8.2"
+wasmparser-nostd = { version = "0.91.0", default-features = false }
+# rmp3 = { version = "0.3", default-features = false } # Official Idiomatic `no_std` bindings to minimp3 (short for "Minimalistic MP3 decoder single header library") (https://github.com/lieff/minimp3). (minimp3's repo's README mentions this crate btw)
+
 [features]
 default = ['std']
 runtime-benchmarks = [
@@ -296,6 +309,8 @@ runtime-benchmarks = [
     'pallet-utility/runtime-benchmarks',
 ]
 std = [
+	'ttf-parser/std',
+	'wasmparser-nostd/std',
     'codec/std',
     'scale-info/std',
     'frame-executive/std',

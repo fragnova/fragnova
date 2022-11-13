@@ -114,7 +114,7 @@ impl DummyData {
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(867),
-			data: "0x111".as_bytes().to_vec(),
+			data: b"Je suis Data".to_vec(),
 		};
 
 		let proto_second = ProtoFragment {
@@ -123,7 +123,7 @@ impl DummyData {
 			tags: Vec::new(),
 			linked_asset: None,
 			include_cost: Some(2),
-			data: "0x222".as_bytes().to_vec(),
+			data: b"Je suis Data aussi".to_vec(),
 		};
 
 		let records1 = vec![(
