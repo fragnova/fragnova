@@ -1,29 +1,18 @@
 #![cfg(test)]
 
 use crate as pallet_clusters;
-use crate::{mock, mock::*, *};
+use crate::{dummy_data::*, mock, mock::*, *};
 
 use create_tests::{create_cluster_, create_role_, edit_role_};
 use frame_support::{assert_ok, dispatch::DispatchResult};
 use sp_io::hashing::blake2_256;
+use crate::Event as ClusterEvent;
 
 mod create_tests {
 	use super::*;
 	use crate::dummy_data::DummyData;
 	use frame_benchmarking::account;
 	use frame_support::{assert_noop, ensure};
-
-	fn get_role_hash(cluster: Vec<u8>, role: Vec<u8>) -> Hash256 {
-		blake2_256(&[role, cluster].concat())
-	}
-
-	fn get_cluster_hash(name: Vec<u8>) -> Hash256 {
-		blake2_256(&name)
-	}
-
-	fn get_member_hash(cluster: Vec<u8>, role: Vec<u8>, data: Vec<u8>) -> Hash256 {
-		blake2_256(&[cluster, role, data].concat())
-	}
 
 	pub fn create_cluster_(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -49,7 +38,7 @@ mod create_tests {
 	pub fn add_member_(
 		signer: <Test as frame_system::Config>::AccountId,
 		cluster_name: Vec<u8>,
-		role_name: Vec<u8>,
+		role_name: Vec<Vec<u8>>,
 		member_data: Vec<u8>,
 	) -> DispatchResult {
 		ClustersPallet::add_member(
@@ -63,13 +52,13 @@ mod create_tests {
 	pub fn edit_role_(
 		signer: <Test as frame_system::Config>::AccountId,
 		role_hash: Hash256,
-		cluster: Vec<u8>,
+		cluster_hash: Hash256,
 		new_settings: RoleSettings,
 	) -> DispatchResult {
 		ClustersPallet::edit_role(
 			RuntimeOrigin::signed(signer),
 			role_hash.clone(),
-			cluster.clone(),
+			cluster_hash.clone(),
 			new_settings.clone(),
 		)
 	}
@@ -85,16 +74,22 @@ mod create_tests {
 
 			assert!(<Clusters<Test>>::contains_key(&cluster_hash.clone()));
 
-			let cluster = Cluster { owner: account_id, name: cluster_name.clone() };
+			let cluster = Cluster {
+				owner: account_id,
+				name: cluster_name.clone(),
+				roles: vec![],
+				members: vec![],
+			};
 			let result = <Clusters<Test>>::get(&cluster_hash.clone()).unwrap();
-
 			assert_eq!(cluster, result);
 
-			assert_eq!(
-				System::events()[System::events().len() - 1].event,
-				mock::RuntimeEvent::from(Event::ClusterCreated {
+			let clusters = <ClustersByOwner<Test>>::get(account_id).unwrap();
+			assert!(clusters.contains(&cluster_hash));
+
+			System::assert_has_event(
+				ClusterEvent::ClusterCreated {
 					cluster_hash: get_cluster_hash(cluster_name.clone())
-				})
+				}.into()
 			);
 		});
 	}
@@ -121,6 +116,8 @@ mod create_tests {
 			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
+
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster.clone(),
@@ -131,18 +128,24 @@ mod create_tests {
 			let role_hash = blake2_256(&[role.clone(), cluster.clone()].concat());
 			let cluster_hash = blake2_256(&cluster.clone());
 
-			let expected_role =
-				Role { name: role.clone(), owner: account_id.clone(), settings: vec![settings] };
+			let expected_role = Role {
+				name: role.clone(),
+				owner: account_id.clone(),
+				settings,
+				members: vec![],
+				rules: None,
+			};
 
-			let existing_role = <Roles<Test>>::get(role_hash).unwrap();
-			assert_eq!(expected_role, existing_role);
-			assert!(<ClusterRoles<Test>>::get(&cluster_hash).unwrap().contains(&role_hash));
+			let roles_in_cluster = <Clusters<Test>>::get(cluster_hash).unwrap().roles;
+			assert!(roles_in_cluster.contains(&role_hash));
 
-			assert_eq!(
-				System::events()[System::events().len() - 1].event,
-				mock::RuntimeEvent::from(Event::RoleCreated {
+			let stored_role = <Roles<Test>>::get(role_hash).unwrap();
+			assert_eq!(expected_role, stored_role);
+
+			System::assert_has_event(
+				ClusterEvent::RoleCreated {
 					role_hash: get_role_hash(cluster.clone(), role.clone())
-				})
+				}.into()
 			);
 		});
 	}
@@ -156,6 +159,8 @@ mod create_tests {
 			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
+
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster.clone(),
@@ -163,10 +168,14 @@ mod create_tests {
 				settings.clone()
 			));
 
-			let role_hash = blake2_256(&[role.clone(), cluster.clone()].concat());
-			let setting_wrong = RoleSettings {data: b"".to_vec(), name: b"Name".to_vec()};
+			let setting_wrong = RoleSettings { data: b"".to_vec(), name: b"Name".to_vec() };
 			assert_noop!(
-				edit_role_(account_id.clone(), role_hash.clone(), cluster.clone(), setting_wrong),
+				edit_role_(
+					account_id.clone(),
+					get_role_hash(cluster.clone(), role.clone()),
+					get_cluster_hash(cluster.clone()),
+					setting_wrong
+				),
 				Error::<Test>::InvalidInputs
 			);
 		});
@@ -182,6 +191,8 @@ mod create_tests {
 			let account_id = dummy.account_id;
 			let account_id_2 = dummy.account_id_2;
 
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
+
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster.clone(),
@@ -189,12 +200,11 @@ mod create_tests {
 				settings.clone()
 			));
 
-			let role_hash = blake2_256(&[role.clone(), cluster.clone()].concat());
 			assert_noop!(
 				edit_role_(
 					account_id_2.clone(),
-					role_hash.clone(),
-					cluster.clone(),
+					get_role_hash(cluster.clone(), role.clone()),
+					get_cluster_hash(cluster.clone()),
 					settings.clone(),
 				),
 				Error::<Test>::NoPermission
@@ -211,12 +221,16 @@ mod create_tests {
 			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
-			let role_hash = blake2_256(&[role.clone(), cluster.clone()].concat());
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
+
+			// do not create any role
+
+			// assert there is no role
 			assert_noop!(
 				edit_role_(
 					account_id.clone(),
-					role_hash.clone(),
-					cluster.clone(),
+					get_role_hash(cluster.clone(), role.clone()),
+					get_cluster_hash(cluster.clone()),
 					settings.clone()
 				),
 				Error::<Test>::RoleNotFound
@@ -237,6 +251,9 @@ mod create_tests {
 			// create a cluster
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
 
+			let role_hash = get_role_hash(cluster.clone(), role.clone());
+			let cluster_hash = get_cluster_hash(cluster.clone());
+
 			// associate the role to the cluster
 			assert_ok!(create_role_(
 				account_id.clone(),
@@ -245,24 +262,28 @@ mod create_tests {
 				settings.clone()
 			));
 
-			let role_hash = blake2_256(&[role.clone(), cluster.clone()].concat());
 			assert_ok!(edit_role_(
 				account_id.clone(),
 				role_hash.clone(),
-				cluster.clone(),
+				cluster_hash.clone(),
 				new_settings.clone()
 			));
 
-			let expected_role =
-				Role { name: role.clone(), owner: account_id.clone(), settings: vec![new_settings] };
+			let expected_role = Role {
+				name: role.clone(),
+				owner: account_id.clone(),
+				settings: new_settings,
+				members: vec![],
+				rules: None,
+			};
 
 			let existing_role = <Roles<Test>>::get(role_hash).unwrap();
 			assert_eq!(expected_role, existing_role);
-
 		});
 	}
 
-	#[test] #[ignore]
+	#[test]
+	#[ignore]
 	fn add_member_to_cluster_should_work() {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
@@ -276,8 +297,6 @@ mod create_tests {
 
 			//let member_hash = get_member_hash(cluster.clone().name, role.clone().name, member_data.clone());
 			//assert!(<ClusterMembers<Test>>::get(get_cluster_hash(cluster.name)).contains(&member_hash));
-
-
 		});
 	}
 }

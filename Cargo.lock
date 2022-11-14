@@ -4212,6 +4212,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
+ "pallet-balances",
  "parity-scale-codec 3.2.1",
  "scale-info 2.2.0",
  "serde",

@@ -1,8 +1,9 @@
 use crate as pallet_clusters;
 use crate::*;
+use frame_support::parameter_types;
 use frame_support::traits::{ConstU16, ConstU64};
-use frame_system as system;
-use sp_core::H256;
+use frame_system;
+use sp_core::{ConstU128, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -11,6 +12,7 @@ use sp_runtime::{
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
+pub type Balance = u128;
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
 	pub enum Test where
@@ -20,10 +22,17 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system,
 		ClustersPallet: pallet_clusters::{Pallet, Call, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
 
-impl system::Config for Test {
+parameter_types! {
+	pub const BlockHashCount: u64 = 250;
+	pub const SS58Prefix: u8 = 42;
+	pub const IsTransferable: bool = false;
+}
+
+impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -48,6 +57,20 @@ impl system::Config for Test {
 	type SS58Prefix = ConstU16<42>;
 	type OnSetCode = ();
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
+}
+
+impl pallet_balances::Config for Test {
+	type Balance = Balance;
+	type DustRemoval = ();
+	type RuntimeEvent = RuntimeEvent;
+	/// The minimum amount required to keep an account open.
+	type ExistentialDeposit = ConstU128<500>;
+	type AccountStore = System;
+	type WeightInfo = ();
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	type IsTransferable = IsTransferable;
 }
 
 impl pallet_clusters::Config for Test {

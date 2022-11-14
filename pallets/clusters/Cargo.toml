@@ -23,6 +23,7 @@ serde = { version = "1.0.136", features = ["derive"], optional = true }
 sp-core = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
 sp-io = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
 sp-runtime = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
+pallet-balances = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = "fragnova-v0.9.30", default-features = false }
 
 [features]
 default = ["std"]
@@ -37,6 +38,7 @@ std = [
 	"sp-core/std",
 	'sp-runtime/std',
 	'log/std',
+	'pallet-balances/std',
 ]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]

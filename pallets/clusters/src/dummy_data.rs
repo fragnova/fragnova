@@ -1,5 +1,6 @@
 use crate::{mock, mock::*, *};
 use sp_core::ed25519::Public;
+use sp_io::hashing::blake2_256;
 
 pub struct DummyCluster {
 	pub owner: Public,
@@ -26,10 +27,24 @@ pub struct DummyData {
 	pub account_id_2: Public,
 }
 
+pub fn get_role_hash(cluster: Vec<u8>, role: Vec<u8>) -> Hash256 {
+	blake2_256(&[role, cluster].concat())
+}
+
+pub fn get_cluster_hash(name: Vec<u8>) -> Hash256 {
+	blake2_256(&name)
+}
+
+pub fn get_member_hash(cluster: Vec<u8>, role: Vec<u8>, data: Vec<u8>) -> Hash256 {
+	blake2_256(&[cluster, role, data].concat())
+}
+
 impl DummyData {
 	pub fn new() -> Self {
-		let role_settings = RoleSettings { name: b"Setting One".to_vec(), data: b"Data One".to_vec() };
-		let role_settings_2 = RoleSettings { name: b"Setting Two".to_vec(), data: b"Data Two".to_vec() };
+		let role_settings =
+			RoleSettings { name: b"Setting One".to_vec(), data: b"Data One".to_vec() };
+		let role_settings_2 =
+			RoleSettings { name: b"Setting Two".to_vec(), data: b"Data Two".to_vec() };
 
 		let role = DummyRole {
 			owner: Public::from_raw([1u8; 32]),
