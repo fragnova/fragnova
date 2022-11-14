@@ -35,8 +35,7 @@ pub struct RoleSettings {
 
 /// **Struct** of **Role** belonging to a **Cluster**.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct Role<TAccountId> {
-	pub owner: TAccountId,
+pub struct Role {
 	pub name: Vec<u8>,
 	pub settings: RoleSettings,
 	pub members: Vec<ClusterMember>,
@@ -96,7 +95,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Role** with its ID.
 	#[pallet::storage]
-	pub type Roles<T: Config> = StorageMap<_, Twox64Concat, Hash256, Role<T::AccountId>>;
+	pub type Roles<T: Config> = StorageMap<_, Twox64Concat, Hash256, Role>;
 
 	/// **StorageMap** that maps a **Role** with its ID.
 	#[pallet::storage]
@@ -139,7 +138,7 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Create a **Cluster**.
+		/// Create a **Cluster**. A Cluster is stored using its name as key, so there cannot be multiple clusters with the same name.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn create_cluster(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -170,7 +169,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Create a **Role** and assign it to an existing **Cluster** specified by name.
+		/// Create a **Role** and assign it to an existing **Cluster**.
+		/// There cannot be roles with the same name into a cluster.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn create_role(
 			origin: OriginFor<T>,
@@ -192,7 +192,6 @@ pub mod pallet {
 
 			// At creation there are no Members and no Rules assigned to a Role
 			let role = Role {
-				owner: who.clone(),
 				name: role_name,
 				settings,
 				members: vec![],
@@ -239,10 +238,6 @@ pub mod pallet {
 			ensure!(roles_in_cluster.contains(&role_hash), Error::<T>::RoleNotFound);
 			ensure!(<Roles<T>>::contains_key(role_hash), Error::<T>::RoleNotFound);
 
-			let role_owner = <Roles<T>>::get(&role_hash).ok_or(Error::<T>::RoleNotFound)?.owner;
-
-			ensure!(who == role_owner, Error::<T>::NoPermission);
-
 			<Roles<T>>::mutate(&role_hash, |role| {
 				let role = role.as_mut().unwrap();
 				role.settings = new_settings;
@@ -271,10 +266,6 @@ pub mod pallet {
 				<Clusters<T>>::get(&cluster_hash).ok_or(Error::<T>::ClusterNotFound)?.roles;
 			ensure!(roles_in_cluster.contains(&role_hash), Error::<T>::RoleNotFound);
 			ensure!(<Roles<T>>::contains_key(role_hash), Error::<T>::RoleNotFound);
-
-			// only the owner of the role can delete it from the cluster
-			let role_owner = <Roles<T>>::get(&role_hash).ok_or(Error::<T>::RoleNotFound)?.owner;
-			ensure!(who == role_owner, Error::<T>::NoPermission);
 
 			// Remove from Roles storage
 			<Roles<T>>::remove(role_hash);

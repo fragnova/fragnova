@@ -166,7 +166,6 @@ mod create_tests {
 
 			let expected_role = Role {
 				name: role.clone(),
-				owner: account_id.clone(),
 				settings,
 				members: vec![],
 				rules: None,
@@ -214,37 +213,6 @@ mod create_tests {
 					setting_wrong
 				),
 				Error::<Test>::InvalidInputs
-			);
-		});
-	}
-
-	#[test]
-	fn edit_role_without_permissions_fails() {
-		new_test_ext().execute_with(|| {
-			let dummy = DummyData::new();
-			let cluster = dummy.cluster.name;
-			let role = dummy.role.name;
-			let settings = dummy.role_settings;
-			let account_id = dummy.account_id;
-			let account_id_2 = dummy.account_id_2;
-
-			assert_ok!(create_cluster_(account_id, cluster.clone()));
-
-			assert_ok!(create_role_(
-				account_id.clone(),
-				cluster.clone(),
-				role.clone(),
-				settings.clone()
-			));
-
-			assert_noop!(
-				edit_role_(
-					account_id_2.clone(),
-					get_role_hash(cluster.clone(), role.clone()),
-					get_cluster_hash(cluster.clone()),
-					settings.clone(),
-				),
-				Error::<Test>::NoPermission
 			);
 		});
 	}
@@ -346,7 +314,6 @@ mod create_tests {
 
 			let expected_role = Role {
 				name: role.clone(),
-				owner: account_id.clone(),
 				settings: new_settings,
 				members: vec![],
 				rules: None,
