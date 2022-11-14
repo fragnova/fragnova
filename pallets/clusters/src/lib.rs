@@ -90,6 +90,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ClustersByOwner<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
 
+	/// **StorageMap** that maps a **Cluster** hash with a list of **AccountId** associated to it.
+	#[pallet::storage]
+	pub type ClusterAccounts<T: Config> = StorageMap<_, Twox64Concat, Hash256, Vec<T::AccountId>>;
+
 	/// **StorageMap** that maps a **Role** with its ID.
 	#[pallet::storage]
 	pub type Roles<T: Config> = StorageMap<_, Twox64Concat, Hash256, Role<T::AccountId>>;
@@ -105,6 +109,7 @@ pub mod pallet {
 		ClusterCreated { cluster_hash: Hash256 },
 		RoleCreated { role_hash: Hash256 },
 		RoleEdited { role_hash: Hash256 },
+		RoleDeleted { role_hash: Hash256 },
 	}
 
 	// Errors inform users that something went wrong.
@@ -225,7 +230,10 @@ pub mod pallet {
 				return Err(Error::<T>::InvalidInputs.into());
 			}
 
-			let cluster = <Clusters<T>>::get(&cluster_hash).ok_or(|| Error::<T>::SystematicFailure);
+			// only the owner of the cluster can do this operation
+			let cluster = <Clusters<T>>::get(&cluster_hash).ok_or(Error::<T>::SystematicFailure)?;
+			ensure!(who == cluster.owner, Error::<T>::NoPermission);
+
 			let roles_in_cluster =
 				<Clusters<T>>::get(&cluster_hash).ok_or(Error::<T>::ClusterNotFound)?.roles;
 			ensure!(roles_in_cluster.contains(&role_hash), Error::<T>::RoleNotFound);
@@ -246,7 +254,46 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Create a **Rule** and assign it to an existing **Role**.
+		/// Delete a **Role**.
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn delete_role(
+			origin: OriginFor<T>,
+			role_hash: Hash256,
+			cluster_hash: Hash256,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			// only the owner of the cluster can do this operation
+			let cluster = <Clusters<T>>::get(&cluster_hash).ok_or(Error::<T>::SystematicFailure)?;
+			ensure!(who == cluster.owner, Error::<T>::NoPermission);
+
+			let roles_in_cluster =
+				<Clusters<T>>::get(&cluster_hash).ok_or(Error::<T>::ClusterNotFound)?.roles;
+			ensure!(roles_in_cluster.contains(&role_hash), Error::<T>::RoleNotFound);
+			ensure!(<Roles<T>>::contains_key(role_hash), Error::<T>::RoleNotFound);
+
+			// only the owner of the role can delete it from the cluster
+			let role_owner = <Roles<T>>::get(&role_hash).ok_or(Error::<T>::RoleNotFound)?.owner;
+			ensure!(who == role_owner, Error::<T>::NoPermission);
+
+			// Remove from Roles storage
+			<Roles<T>>::remove(role_hash);
+			// Remove association to Cluster
+			<Clusters<T>>::mutate(&cluster_hash, |cluster| {
+				let cluster = cluster.as_mut().unwrap();
+				let index = cluster.roles.iter().position(|x| x == &role_hash);
+				if let Some(index) = index {
+					cluster.roles.remove(index);
+				}
+			});
+
+			Self::deposit_event(Event::RoleDeleted { role_hash });
+			log::trace!("Role deleted: {:?}", role_hash);
+
+			Ok(())
+		}
+
+		/// Create a **Member**, give it a set of existing **Role** and assign it to an existing **Cluster**.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn add_member(
 			origin: OriginFor<T>,
@@ -265,9 +312,7 @@ pub mod pallet {
 
 			for role in roles_name.clone() {
 				let role_hash = blake2_256(&[role.clone(), cluster_name.clone()].concat());
-				let roles_in_cluster =
-					<Clusters<T>>::get(&cluster_hash).ok_or(Error::<T>::ClusterNotFound)?.roles;
-				ensure!(roles_in_cluster.contains(&role_hash), Error::<T>::RoleNotFound);
+				ensure!(cluster.roles.contains(&role_hash), Error::<T>::RoleNotFound);
 				ensure!(<Roles<T>>::contains_key(role_hash), Error::<T>::RoleNotFound);
 			}
 
@@ -285,6 +330,34 @@ pub mod pallet {
 					role.members.push(member.clone());
 				});
 			}
+
+			Ok(())
+		}
+
+		/// Delete a **Member** from an existing **Cluster**.
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		pub fn delete_member(
+			origin: OriginFor<T>,
+			cluster_hash: Hash256,
+			member_hash: Hash256,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			let cluster = <Clusters<T>>::get(cluster_hash).ok_or(Error::<T>::ClusterNotFound)?;
+			ensure!(who == cluster.owner, Error::<T>::NoPermission);
+
+			ensure!(cluster.members.contains(&member_hash), Error::<T>::MemberNotFound);
+
+			// Delete member from storage
+			<Members<T>>::remove(member_hash);
+			// Delete member from Cluster
+			<Clusters<T>>::mutate(&cluster_hash, |cluster| {
+				let cluster = cluster.as_mut().unwrap();
+				let index = cluster.members.iter().position(|x| x == &member_hash);
+				if let Some(index) = index {
+					cluster.members.remove(index);
+				}
+			});
 
 			Ok(())
 		}

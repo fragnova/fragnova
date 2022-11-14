@@ -35,8 +35,13 @@ pub fn get_cluster_hash(name: Vec<u8>) -> Hash256 {
 	blake2_256(&name)
 }
 
-pub fn get_member_hash(cluster: Vec<u8>, role: Vec<u8>, data: Vec<u8>) -> Hash256 {
-	blake2_256(&[cluster, role, data].concat())
+pub fn get_member_hash(cluster: Vec<u8>, data: Vec<u8>) -> Hash256 {
+	blake2_256(&[cluster, data].concat())
+}
+
+pub fn get_vault_account_id(cluster_hash: Hash256) -> sp_core::ed25519::Public {
+	let hash = blake2_256(&[&b"cluster-vault"[..], &cluster_hash].concat());
+	sp_core::ed25519::Public::from_raw(hash)
 }
 
 impl DummyData {

@@ -3,7 +3,7 @@ use crate::*;
 use frame_support::parameter_types;
 use frame_support::traits::{ConstU16, ConstU64};
 use frame_system;
-use sp_core::{ConstU128, H256};
+use sp_core::{ConstU128, ConstU32, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -50,13 +50,13 @@ impl frame_system::Config for Test {
 	type DbWeight = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData =pallet_balances::AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
-	type SS58Prefix = ConstU16<42>;
+	type SS58Prefix = SS58Prefix;
 	type OnSetCode = ();
-	type MaxConsumers = frame_support::traits::ConstU32<16>;
+	type MaxConsumers = ConstU32<2>;
 }
 
 impl pallet_balances::Config for Test {

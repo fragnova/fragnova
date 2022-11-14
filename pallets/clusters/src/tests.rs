@@ -3,15 +3,16 @@
 use crate as pallet_clusters;
 use crate::{dummy_data::*, mock, mock::*, *};
 
+use crate::Event as ClusterEvent;
 use create_tests::{create_cluster_, create_role_, edit_role_};
 use frame_support::{assert_ok, dispatch::DispatchResult};
 use sp_io::hashing::blake2_256;
-use crate::Event as ClusterEvent;
 
 mod create_tests {
 	use super::*;
 	use crate::dummy_data::DummyData;
 	use frame_benchmarking::account;
+	use frame_support::traits::fungible;
 	use frame_support::{assert_noop, ensure};
 
 	pub fn create_cluster_(
@@ -35,16 +36,28 @@ mod create_tests {
 		)
 	}
 
+	pub fn delete_role_(
+		signer: <Test as frame_system::Config>::AccountId,
+		role_hash: Hash256,
+		cluster_hash: Hash256,
+	) -> DispatchResult {
+		ClustersPallet::delete_role(
+			RuntimeOrigin::signed(signer),
+			role_hash.clone(),
+			cluster_hash.clone(),
+		)
+	}
+
 	pub fn add_member_(
 		signer: <Test as frame_system::Config>::AccountId,
 		cluster_name: Vec<u8>,
-		role_name: Vec<Vec<u8>>,
+		roles_name: Vec<Vec<u8>>,
 		member_data: Vec<u8>,
 	) -> DispatchResult {
 		ClustersPallet::add_member(
 			RuntimeOrigin::signed(signer),
 			cluster_name.clone(),
-			role_name.clone(),
+			roles_name.clone(),
 			member_data.clone(),
 		)
 	}
@@ -88,8 +101,31 @@ mod create_tests {
 
 			System::assert_has_event(
 				ClusterEvent::ClusterCreated {
-					cluster_hash: get_cluster_hash(cluster_name.clone())
-				}.into()
+					cluster_hash: get_cluster_hash(cluster_name.clone()),
+				}
+				.into(),
+			);
+
+			let minimum_balance = <Balances as fungible::Inspect<
+				<Test as frame_system::Config>::AccountId,
+			>>::minimum_balance();
+			System::assert_has_event(
+				frame_system::Event::NewAccount { account: get_vault_account_id(cluster_hash) }
+					.into(),
+			);
+			System::assert_has_event(
+				pallet_balances::Event::Endowed {
+					account: get_vault_account_id(cluster_hash),
+					free_balance: minimum_balance,
+				}
+				.into(),
+			);
+			System::assert_has_event(
+				pallet_balances::Event::Deposit {
+					who: get_vault_account_id(cluster_hash),
+					amount: minimum_balance,
+				}
+				.into(),
 			);
 		});
 	}
@@ -144,8 +180,9 @@ mod create_tests {
 
 			System::assert_has_event(
 				ClusterEvent::RoleCreated {
-					role_hash: get_role_hash(cluster.clone(), role.clone())
-				}.into()
+					role_hash: get_role_hash(cluster.clone(), role.clone()),
+				}
+				.into(),
 			);
 		});
 	}
@@ -239,6 +276,44 @@ mod create_tests {
 	}
 
 	#[test]
+	fn delete_a_role_works() {
+		new_test_ext().execute_with(|| {
+			let dummy = DummyData::new();
+			let cluster = dummy.cluster.name;
+			let role = dummy.role.name;
+			let account_id = dummy.account_id;
+			let settings = dummy.role_settings;
+
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
+
+			assert_ok!(create_role_(
+				account_id.clone(),
+				cluster.clone(),
+				role.clone(),
+				settings.clone()
+			));
+
+			let role_hash = blake2_256(&[role.clone(), cluster.clone()].concat());
+			let cluster_hash = blake2_256(&cluster.clone());
+
+			assert_ok!(delete_role_(account_id.clone(), role_hash.clone(), cluster_hash.clone(),));
+
+			let roles_in_cluster = <Clusters<Test>>::get(cluster_hash).unwrap().roles;
+			assert!(!roles_in_cluster.contains(&role_hash));
+
+			let stored_role = <Roles<Test>>::get(role_hash);
+			assert_eq!(None, stored_role);
+
+			System::assert_has_event(
+				ClusterEvent::RoleDeleted {
+					role_hash: get_role_hash(cluster.clone(), role.clone()),
+				}
+				.into(),
+			);
+		});
+	}
+
+	#[test]
 	fn edit_role_works() {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
@@ -283,20 +358,40 @@ mod create_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn add_member_to_cluster_should_work() {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
-			let cluster = dummy.cluster;
-			let role = dummy.role;
+			let cluster = dummy.cluster.name;
+			let role = dummy.role.name;
 			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 			let member_data = dummy.member.data;
 
-			//assert_ok!(add_member_(account_id.clone(), cluster.clone(), role.clone(), member_data.clone()));
+			// create a cluster
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
 
-			//let member_hash = get_member_hash(cluster.clone().name, role.clone().name, member_data.clone());
-			//assert!(<ClusterMembers<Test>>::get(get_cluster_hash(cluster.name)).contains(&member_hash));
+			// create a role for the cluster
+			assert_ok!(create_role_(
+				account_id.clone(),
+				cluster.clone(),
+				role.clone(),
+				settings.clone()
+			));
+
+			// add member into the cluster
+			assert_ok!(add_member_(
+				account_id.clone(),
+				cluster.clone(),
+				vec![role.clone()],
+				member_data.clone()
+			));
+
+			let member_hash = get_member_hash(cluster.clone(), member_data.clone());
+			assert!(<Members<Test>>::contains_key(member_hash));
+			assert!(<Clusters<Test>>::get(get_cluster_hash(cluster))
+				.unwrap()
+				.members
+				.contains(&member_hash));
 		});
 	}
 }
