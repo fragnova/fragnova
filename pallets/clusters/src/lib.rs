@@ -1,3 +1,5 @@
+//! This pallet `clusters` performs logic related to **Clusters**.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Compact, Decode, Encode};
