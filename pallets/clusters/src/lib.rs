@@ -23,6 +23,7 @@ mod benchmarking;
 /// **Struct** of a **Member** belonging to a **Role** in 1..N **Clusters**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct ClusterMember {
+	/// Data associated to a member
 	pub data: Vec<u8>,
 }
 
@@ -201,6 +202,10 @@ pub mod pallet {
 			// but different settings so possibly creating confusion for the end user.
 			let role_hash = blake2_256(&[role_name.clone(), cluster_name.clone()].concat());
 			let cluster_hash = blake2_256(&cluster_name.clone());
+
+			// Check that the caller is the owner of the cluster
+			let cluster = <Clusters<T>>::get(&cluster_hash).ok_or(Error::<T>::SystematicFailure)?;
+			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			ensure!(!<Roles<T>>::contains_key(role_hash), Error::<T>::RoleExists);
 
