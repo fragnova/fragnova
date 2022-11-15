@@ -85,6 +85,10 @@ path = '../detach'
 default-features = false
 path = '../accounts'
 
+[dependencies.pallet-clusters]
+default-features = false
+path = '../clusters'
+
 [dependencies.pallet-balances]
 default-features = false
 git = 'https://github.com/fragcolor-xyz/substrate.git'

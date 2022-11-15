@@ -12,8 +12,7 @@ mod create_tests {
 	use super::*;
 	use crate::dummy_data::DummyData;
 	use frame_benchmarking::account;
-	use frame_support::traits::fungible;
-	use frame_support::{assert_noop, ensure};
+	use frame_support::{assert_noop, ensure, traits::fungible};
 
 	pub fn create_cluster_(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -66,12 +65,14 @@ mod create_tests {
 		signer: <Test as frame_system::Config>::AccountId,
 		role_hash: Hash256,
 		cluster_hash: Hash256,
-		new_settings: RoleSettings,
+		new_members_list: Option<Vec<Hash256>>,
+		new_settings: Option<RoleSettings>,
 	) -> DispatchResult {
 		ClustersPallet::edit_role(
 			RuntimeOrigin::signed(signer),
 			role_hash.clone(),
 			cluster_hash.clone(),
+			new_members_list.clone(),
 			new_settings.clone(),
 		)
 	}
@@ -138,7 +139,7 @@ mod create_tests {
 			let cluster_name = b"".to_vec();
 			assert_noop!(
 				create_cluster_(account_id, cluster_name.clone()),
-				Error::<Test>::SystematicFailure
+				Error::<Test>::InvalidInputs
 			);
 		});
 	}
@@ -164,12 +165,7 @@ mod create_tests {
 			let role_hash = blake2_256(&[role.clone(), cluster.clone()].concat());
 			let cluster_hash = blake2_256(&cluster.clone());
 
-			let expected_role = Role {
-				name: role.clone(),
-				settings,
-				members: vec![],
-				rules: None,
-			};
+			let expected_role = Role { name: role.clone(), settings, members: vec![], rules: None };
 
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_hash).unwrap().roles;
 			assert!(roles_in_cluster.contains(&role_hash));
@@ -210,7 +206,8 @@ mod create_tests {
 					account_id.clone(),
 					get_role_hash(cluster.clone(), role.clone()),
 					get_cluster_hash(cluster.clone()),
-					setting_wrong
+					None,
+					Some(setting_wrong)
 				),
 				Error::<Test>::InvalidInputs
 			);
@@ -236,7 +233,8 @@ mod create_tests {
 					account_id.clone(),
 					get_role_hash(cluster.clone(), role.clone()),
 					get_cluster_hash(cluster.clone()),
-					settings.clone()
+					None,
+					Some(settings.clone()),
 				),
 				Error::<Test>::RoleNotFound
 			);
@@ -309,15 +307,12 @@ mod create_tests {
 				account_id.clone(),
 				role_hash.clone(),
 				cluster_hash.clone(),
-				new_settings.clone()
+				None,
+				Some(new_settings.clone()),
 			));
 
-			let expected_role = Role {
-				name: role.clone(),
-				settings: new_settings,
-				members: vec![],
-				rules: None,
-			};
+			let expected_role =
+				Role { name: role.clone(), settings: new_settings, members: vec![], rules: None };
 
 			let existing_role = <Roles<Test>>::get(role_hash).unwrap();
 			assert_eq!(expected_role, existing_role);

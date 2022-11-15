@@ -201,6 +201,7 @@ pub mod pallet {
 	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	use sp_clamor::CID_PREFIX;
 	use sp_runtime::SaturatedConversion;
+	use pallet_clusters::Cluster;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -210,6 +211,7 @@ pub mod pallet {
 		+ pallet_accounts::Config
 		+ pallet_assets::Config
 		+ pallet_contracts::Config
+		+ pallet_clusters::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -392,6 +394,7 @@ pub mod pallet {
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
 			data: Vec<u8>,
+			cluster: Option<Cluster<T::AccountId>>
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
