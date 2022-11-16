@@ -22,7 +22,7 @@ fn apply_percent(amount: u128, percent: u128) -> u128 {
 
 fn get_oracle_price() -> u128 {
 	1 // Assume the current price of 1 FRAG = 1 USD
-	 // TODO implement Oracle
+	// TODO implement Oracle
 }
 
 mod link_tests {
@@ -235,16 +235,16 @@ mod sync_partner_contracts_tests {
 				"method": "eth_blockNumber",
 				"id": 1u64,
 			})
-			.to_string()
-			.into_bytes(),
+				.to_string()
+				.into_bytes(),
 			response: Some(
 				json!({
 					"id": 69u64,
 					"jsonrpc": "2.0",
 					"result": format!("0x{:x}", latest_block_number),
 				})
-				.to_string()
-				.into_bytes(),
+					.to_string()
+					.into_bytes(),
 			),
 			sent: true,
 			..Default::default()
@@ -274,8 +274,8 @@ mod sync_partner_contracts_tests {
 					],
 				}]
 			})
-			.to_string()
-			.into_bytes(),
+				.to_string()
+				.into_bytes(),
 			response: Some(
 				json!({
 					"id": 69u64,
@@ -310,8 +310,8 @@ mod sync_partner_contracts_tests {
 						},
 					]
 				})
-				.to_string()
-				.into_bytes(),
+					.to_string()
+					.into_bytes(),
 			),
 			sent: true,
 			..Default::default()
@@ -381,7 +381,7 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	fn test_eip_(){
+	fn test_eip_712_hash(){
 		new_test_ext().execute_with(|| {
 			let message = b"FragLock".to_vec();
 			let contract ="0x3AEEE3a4952C7d27917eA9dF70669cf5a7bD20df";

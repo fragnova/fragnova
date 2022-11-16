@@ -408,7 +408,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -451,7 +451,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -496,7 +496,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -542,7 +542,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -619,7 +619,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -675,7 +675,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -752,7 +752,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id_second)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -807,7 +807,7 @@ mod get_protos_tests {
 						"value": hex::encode(dd.account_id)
 					},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -860,7 +860,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -954,7 +954,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1004,7 +1004,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-			.to_string();
+				.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1029,9 +1029,9 @@ mod get_protos_tests {
 						limit: u64::MAX,
 						..Default::default()
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): {},
 					hex::encode(proto_second.get_proto_hash()): {},
@@ -1045,9 +1045,9 @@ mod get_protos_tests {
 						exclude_tags: proto_second.tags, // exclude tags!
 						..Default::default()
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): {},
 				})
@@ -1082,9 +1082,9 @@ mod get_genealogy_tests {
 						proto_hash: hex::encode(proto_third.get_proto_hash()).into_bytes(),
 						get_ancestors: true,
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!({
 					hex::encode(proto_third.get_proto_hash()): [
 						hex::encode(proto_second.get_proto_hash())
@@ -1120,9 +1120,9 @@ mod get_genealogy_tests {
 						proto_hash: hex::encode(proto.get_proto_hash()).into_bytes(),
 						get_ancestors: false,
 					})
-					.unwrap()
+						.unwrap()
 				)
-				.unwrap(),
+					.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): [
 						hex::encode(proto_second.get_proto_hash())

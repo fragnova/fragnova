@@ -79,7 +79,7 @@ pub mod crypto {
 
 	// implemented for mock runtime in test
 	impl frame_system::offchain::AppCrypto<<Ed25519Signature as Verify>::Signer, Ed25519Signature>
-		for FragAuthId
+	for FragAuthId
 	{
 		type RuntimeAppPublic = Public;
 		type GenericSignature = sp_core::ed25519::Signature;
@@ -203,14 +203,14 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config
-		// This trait is meant to be implemented by the runtime and is responsible for
-		// constructing a payload to be signed and contained within the extrinsic.
-		+ CreateSignedTransaction<Call<Self>>
-		+ pallet_balances::Config
-		+ pallet_proxy::Config
-		+ pallet_timestamp::Config
-		+ pallet_assets::Config
+	frame_system::Config
+	// This trait is meant to be implemented by the runtime and is responsible for
+	// constructing a payload to be signed and contained within the extrinsic.
+	+ CreateSignedTransaction<Call<Self>>
+	+ pallet_balances::Config
+	+ pallet_proxy::Config
+	+ pallet_timestamp::Config
+	+ pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -300,12 +300,12 @@ pub mod pallet {
 	/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
 	#[pallet::storage]
 	pub type EthReservedTickets<T: Config> =
-		StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
+	StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
 
 	/// This **StorageMap** maps an Ethereum AccountID to an amount of NOVA received until a Clamor Account ID is not linked.
 	#[pallet::storage]
 	pub type EthReservedNova<T: Config> =
-		StorageMap<_, Identity, H160, <T as pallet_balances::Config>::Balance>;
+	StorageMap<_, Identity, H160, <T as pallet_balances::Config>::Balance>;
 
 	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
@@ -346,7 +346,7 @@ pub mod pallet {
 	/// the External Account ID's linked Clamor Account ID, amongst other things**.
 	#[pallet::storage]
 	pub type ExternalID2Account<T: Config> =
-		StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
+	StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
 
 	/// The authorities able to sponsor accounts and link them to external accounts.
 	#[pallet::storage]
@@ -949,7 +949,7 @@ pub mod pallet {
 				// Check whether a provided signature matches the public key used to sign the payload
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key (if valid)
-																	   // The provided signature does not match the public key used to sign the payload
+				// The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
 					return InvalidTransaction::BadProof.into();
@@ -1091,7 +1091,7 @@ pub mod pallet {
 					&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(8)],
 					&data,
 				) // First parameter is a signature, the second parameter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
-				.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
+					.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
 				let locked = match topic {
 					// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
 					LOCK_EVENT => true,
@@ -1398,7 +1398,7 @@ pub mod pallet {
 		/// Get the price of FRAG from pallet-oracle
 		pub fn get_oracle_price() -> u128 {
 			1 // Assume the current price of 1 FRAG = 1 USD
-			 // TODO implement pallet Oracle
+			// TODO implement pallet Oracle
 		}
 
 		/// Convert the lock period integer retrieved from Ethereum event into the number of weeks.

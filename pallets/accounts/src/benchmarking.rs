@@ -187,7 +187,6 @@ benchmarks! {
 /*	internal_lock_update {
 		// let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
 		let ethereum_secret_key_struct: libsecp256k1::SecretKey = libsecp256k1::SecretKey::parse(&[7u8; 32]).unwrap();
-
 		let data = EthLockUpdate::<T::Public> {
 			public: sp_core::ed25519::Public([7u8; 32]).into(),
 			amount: U256::from(100),
