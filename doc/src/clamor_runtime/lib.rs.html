@@ -1088,6 +1088,9 @@
 <span id="1088">1088</span>
 <span id="1089">1089</span>
 <span id="1090">1090</span>
+<span id="1091">1091</span>
+<span id="1092">1092</span>
+<span id="1093">1093</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -1519,8 +1522,12 @@
 
 <span class="kw">impl </span>pallet_accounts::EthFragContract <span class="kw">for </span>Runtime {
 	<span class="kw">fn </span>get_partner_contracts() -&gt; Vec&lt;String&gt; {
-		<span class="macro">vec!</span>[String::from(<span class="string">&quot;0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac&quot;</span>)]
+		<span class="macro">vec!</span>[String::from(<span class="string">&quot;0x8a819F380ff18240B5c11010285dF63419bdb2d5&quot;</span>)]
 	}
+}
+
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>TicketsAssetId: u64 = <span class="number">1337</span>;
 }
 
 <span class="kw">impl </span>pallet_accounts::Config <span class="kw">for </span>Runtime {
@@ -1531,11 +1538,10 @@
 	<span class="kw">type </span>EthConfirmations = ConstU64&lt;<span class="number">1</span>&gt;;
 	<span class="kw">type </span>Threshold = ConstU64&lt;<span class="number">1</span>&gt;;
 	<span class="kw">type </span>AuthorityId = pallet_accounts::crypto::FragAuthId;
-}
-
-<span class="macro">parameter_types! </span>{
-	<span class="doccomment">/// Asset ID of the fungible asset &quot;TICKET&quot;
-	</span><span class="kw">pub const </span>TicketsAssetId: u64 = <span class="number">1337</span>;
+	<span class="kw">type </span>TicketsAssetId = TicketsAssetId;
+	<span class="kw">type </span>InitialPercentageTickets = ConstU128&lt;<span class="number">80</span>&gt;;
+	<span class="kw">type </span>InitialPercentageNova = ConstU128&lt;<span class="number">20</span>&gt;;
+	<span class="kw">type </span>USDEquivalentAmount = ConstU128&lt;<span class="number">100</span>&gt;;
 }
 
 <span class="kw">impl </span>pallet_protos::Config <span class="kw">for </span>Runtime {

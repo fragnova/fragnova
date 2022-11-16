@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["create_link_signature",""],["create_lock_signature",""],["create_unlock_signature",""],["get_ethereum_public_address",""]],"struct":[["DummyData",""],["Link",""],["Lock",""],["Unlock",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["create_link_signature",""],["create_lock_signature",""],["create_unlock_signature",""],["get_ethereum_account_id_from_ecdsa_public_struct",""],["get_ethereum_public_address",""]],"struct":[["DummyData",""],["Link",""],["Lock",""],["Unlock",""]]};

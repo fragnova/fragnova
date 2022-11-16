@@ -4334,8 +4334,8 @@
 
 			<span class="kw">if </span>params.copy_id
 				&gt; CopiesCount::&lt;T&gt;::get((definition_hash, params.edition_id))
-					.unwrap_or(Compact(<span class="number">0</span>))
-					.into()
+				.unwrap_or(Compact(<span class="number">0</span>))
+				.into()
 			{
 				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Instance not found&quot;</span>.into());
 			}

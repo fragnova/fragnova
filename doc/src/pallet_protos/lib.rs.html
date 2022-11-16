@@ -2283,7 +2283,7 @@
 
 			<span class="comment">// make sure the user has enough tickets
 			</span><span class="kw">let </span>balance = &lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>Inspect&lt;T::AccountId&gt;&gt;::balance(
-				T::TicketsAssetId::get(),
+				&lt;T <span class="kw">as </span>pallet::Config&gt;::TicketsAssetId::get(),
 				<span class="kw-2">&amp;</span>who,
 			);
 			<span class="macro">ensure!</span>(balance &gt;= amount, Error::&lt;T&gt;::InsufficientBalance);
@@ -2294,7 +2294,7 @@
 
 			// Burn tickets from account and record the stake locally
 			</span><span class="kw">let _ </span>= &lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>Mutate&lt;T::AccountId&gt;&gt;::burn_from(
-				T::TicketsAssetId::get(),
+				&lt;T <span class="kw">as </span>pallet::Config&gt;::TicketsAssetId::get(),
 				<span class="kw-2">&amp;</span>who,
 				amount.saturated_into(),
 			)<span class="question-mark">?</span>;
