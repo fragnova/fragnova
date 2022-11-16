@@ -195,7 +195,7 @@ impl pallet_contracts::Config for Test {
 }
 
 parameter_types! {
-	pub const TicketsAssetId: u32 = 1337;
+	pub const TicketsAssetId: u64 = 1337;
 }
 
 impl pallet_protos::Config for Test {
@@ -214,6 +214,10 @@ impl pallet_accounts::Config for Test {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type TicketsAssetId = TicketsAssetId;
+	type InitialPercentageTickets = ConstU128<80>;
+	type InitialPercentageNova = ConstU128<20>;
+	type USDEquivalentAmount = ConstU128<100>;
 }
 
 impl pallet_proxy::Config for Test {

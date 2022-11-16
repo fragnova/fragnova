@@ -19,6 +19,9 @@ use sp_core::{
 
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
 
+use frame_support::traits::GenesisBuild;
+use sp_core::ed25519::Public;
+use sp_io::TestExternalities;
 use std::sync::Arc;
 
 use sp_runtime::{
@@ -158,8 +161,12 @@ impl pallet_assets::Config for Test {
 
 impl pallet_accounts::EthFragContract for Test {
 	fn get_partner_contracts() -> Vec<String> {
-		vec![String::from("0xBADF00D")]
+		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
 	}
+}
+
+parameter_types! {
+	pub const TicketsAssetId: u64 = 1337;
 }
 
 impl pallet_accounts::Config for Test {
@@ -170,6 +177,10 @@ impl pallet_accounts::Config for Test {
 	type EthFragContract = Test;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type TicketsAssetId = TicketsAssetId;
+	type InitialPercentageTickets = ConstU128<80>;
+	type InitialPercentageNova = ConstU128<20>;
+	type USDEquivalentAmount = ConstU128<100>;
 }
 
 impl pallet_proxy::Config for Test {
@@ -195,13 +206,41 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
+fn create_public_key(keystore: &KeyStore) -> Public {
+	const PHRASE: &str =
+		"news slush supreme milk chapter athlete soap sausage put clutch what kitten";
+	SyncCryptoStore::ed25519_generate_new(
+		keystore,
+		<crate::crypto::Public as RuntimeAppPublic>::ID,
+		Some(&format!("{}", PHRASE)),
+	)
+	.unwrap();
+	keystore.ed25519_public_keys(crate::crypto::Public::ID).get(0).unwrap().clone()
+}
+
+pub fn new_test_ext_with_nova() -> sp_io::TestExternalities {
+	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+	let keystore = KeyStore::new();
+	let ed25519_public_key = create_public_key(&keystore);
+	let config: pallet_assets::GenesisConfig<Test> = pallet_assets::GenesisConfig {
+		assets: vec![(1337, ed25519_public_key, true, 1, false)], // Genesis assets: id, owner, is_sufficient, min_balance, is_tradeable
+		metadata: vec![(1337, Vec::from("Fragnova Network Tickets"), Vec::from("TICKET"), 0)], // Genesis metadata: id, name, symbol, decimals
+		accounts: vec![], // Genesis accounts: id, account_id, balance
+	};
+
+	config.assimilate_storage(&mut t).unwrap();
+	let mut ext: TestExternalities = t.into();
+	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
+	ext
+}
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 
 	let mut ext = sp_io::TestExternalities::new(t);
 
 	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
-
 	ext
 }
 
@@ -211,26 +250,11 @@ pub fn new_test_ext_with_ocw() -> (
 	Arc<RwLock<OffchainState>>,
 	sp_core::ed25519::Public,
 ) {
-	const PHRASE: &str =
-		"news slush supreme milk chapter athlete soap sausage put clutch what kitten";
-
 	let (offchain, offchain_state) = testing::TestOffchainExt::new();
 	let (pool, pool_state) = testing::TestTransactionPoolExt::new();
 
 	let keystore = KeyStore::new();
-
-	SyncCryptoStore::ed25519_generate_new(
-		&keystore,
-		<crate::crypto::Public as RuntimeAppPublic>::ID,
-		Some(&format!("{}", PHRASE)),
-	)
-	.unwrap();
-
-	let ed25519_public_key =
-		SyncCryptoStore::ed25519_public_keys(&keystore, crate::crypto::Public::ID)
-			.get(0)
-			.unwrap()
-			.clone();
+	let ed25519_public_key = create_public_key(&keystore);
 
 	let mut t = sp_io::TestExternalities::default();
 	t.register_extension(OffchainDbExt::new(offchain.clone()));
