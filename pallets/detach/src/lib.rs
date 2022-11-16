@@ -97,9 +97,10 @@ impl DetachHash {
 
 	fn get_signable_hash(&self) -> Vec<u8> {
 		match self {
-			Self::Proto(proto_hash) => proto_hash.to_vec(),
-			Self::Instance(definition_hash, Compact(edition_id), Compact(copy_id)) =>
-				[&definition_hash[..], &edition_id.to_be_bytes(), &copy_id.to_be_bytes()].concat()
+			Self::Proto(proto_hash) => [b"Proto-Fragment", &proto_hash[..]].concat(),
+			Self::Instance(definition_hash, Compact(edition_id), Compact(copy_id)) => {
+				[b"Fragment Instance", &definition_hash[..], &edition_id.to_be_bytes(), &copy_id.to_be_bytes()].concat()
+			}
 		}
 	}
 }
