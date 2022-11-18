@@ -4,10 +4,27 @@ use crate as pallet_protos;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Compact;
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
+use stake_tests::stake_;
 use std::collections::BTreeMap;
 use upload_tests::upload;
-
+use copied_from_pallet_accounts::{link_, lock_};
 use protos::categories::TextCategories;
+
+mod copied_from_pallet_accounts {
+	use super::*;
+
+	pub fn lock_(lock: &Lock) -> DispatchResult {
+		Accounts::internal_lock_update(
+			RuntimeOrigin::none(),
+			lock.data.clone(),
+			sp_core::ed25519::Signature([69u8; 64]), // this can be anything and it will still work
+		)
+	}
+
+	pub fn link_(link: &Link) -> DispatchResult {
+		Accounts::link(RuntimeOrigin::signed(link.clamor_account_id), link.link_signature.clone())
+	}
+}
 
 mod upload_tests {
 	use super::*;
@@ -95,6 +112,63 @@ mod upload_tests {
 			let proto = dd.proto_fragment;
 			assert_ok!(upload(dd.account_id, &proto));
 			assert_noop!(upload(dd.account_id, &proto), Error::<Test>::ProtoExists);
+		});
+	}
+
+
+	// TODO
+	#[test]
+	#[ignore]
+	fn upload_should_not_work_if_user_did_not_stake_enough() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let stake = dd.stake;
+
+			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
+
+			assert_ok!(lock_(&stake.lock));
+			assert_ok!(link_(&stake.lock.link));
+
+			assert_ok!(stake_(
+				stake.lock.link.clamor_account_id,
+				&stake.proto_fragment,
+				&(stake.get_stake_amount() - 1),
+			));
+
+			let proto_with_refs = ProtoFragment {
+				references: vec![stake.proto_fragment.get_proto_hash()],
+				..dd.proto_fragment
+			};
+
+			assert_noop!(
+				upload(stake.lock.link.clamor_account_id, &proto_with_refs),
+				Error::<Test>::NotEnoughTickets
+			);
+		});
+	}
+
+	#[test]
+	fn upload_should_not_work_if_user_did_not_stake_() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let stake = dd.stake;
+
+			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
+
+			assert_ok!(lock_(&stake.lock));
+			assert_ok!(link_(&stake.lock.link));
+
+			let proto_with_refs = ProtoFragment {
+				references: vec![stake.proto_fragment.get_proto_hash()],
+				..dd.proto_fragment_second
+			};
+
+			assert_noop!(
+				upload(stake.lock.link.clamor_account_id, &proto_with_refs),
+				Error::<Test>::CurationNotFound
+			);
 		});
 	}
 }
@@ -529,6 +603,165 @@ mod detach_tests {
 		todo!("I have no idea how the enum `LinkedAssset` even works right now!");
 	}
 
+}
+
+mod stake_tests {
+	use super::*;
+
+	pub fn stake_(
+		signer: <Test as frame_system::Config>::AccountId,
+		proto: &ProtoFragment,
+		stake_amount: &<Test as pallet_assets::Config>::Balance,
+	) -> DispatchResult {
+		ProtosPallet::curate(
+			RuntimeOrigin::signed(signer),
+			proto.get_proto_hash(),
+			stake_amount.clone(),
+		)
+	}
+
+	// TODO
+	#[test]
+	#[ignore]
+	fn stake_should_work() {
+		new_test_ext().execute_with(|| {
+			todo!();
+
+			// let dd = DummyData::new();
+			//
+			// let stake = dd.stake;
+			//
+			// assert_ok!(upload(dd.account_id, &stake.proto_fragment));
+			//
+			// let frag_staked =
+			// 	<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
+			// 		.unwrap_or_default();
+			//
+			// let current_block_number = System::block_number(); //@sinkingsugar
+			//
+			// assert_ok!(lock_(&stake.lock));
+			// assert_ok!(link_(&stake.lock.link));
+			// assert_ok!(stake_(
+			// 	stake.lock.link.clamor_account_id,
+			// 	&stake.proto_fragment,
+			// 	&stake.get_stake_amount()
+			// ));
+			//
+			// assert_eq!(
+			// 	<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id).unwrap(),
+			// 	frag_staked.saturating_add(stake.get_stake_amount())
+			// );
+			//
+			// assert_eq!(
+			// 	<ProtoCurations<Test>>::get(stake.proto_fragment.get_proto_hash(), dd.account_id)
+			// 		.unwrap(),
+			// 	(stake.get_stake_amount(), current_block_number)
+			// );
+			// assert!(<AccountCurations<Test>>::get(dd.account_id)
+			// 	.unwrap()
+			// 	.contains(&stake.proto_fragment.get_proto_hash()));
+			//
+			// let event = <frame_system::Pallet<Test>>::events()
+			// 	.pop()
+			// 	.expect("Expected at least one EventRecord to be found")
+			// 	.event;
+			// assert_eq!(
+			// 	event,
+			// 	mock::RuntimeEvent::from(pallet_protos::Event::Staked {
+			// 		proto_hash: stake.proto_fragment.get_proto_hash(),
+			// 		account_id: dd.account_id,
+			// 		balance: stake.get_stake_amount()
+			// 	})
+			// );
+		});
+	}
+
+	// TODO
+	#[test]
+	#[ignore]
+	fn stake_should_not_work_if_proto_not_found() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let stake = dd.stake;
+
+			assert_ok!(lock_(&stake.lock));
+			assert_ok!(link_(&stake.lock.link));
+
+			assert_noop!(
+				stake_(
+					stake.lock.link.clamor_account_id,
+					&stake.proto_fragment,
+					&stake.get_stake_amount()
+				),
+				Error::<Test>::ProtoNotFound
+			);
+		});
+	}
+
+	// TODO
+	#[test]
+	#[ignore]
+	fn stake_should_work_if_user_has_sufficient_balance() {
+		new_test_ext().execute_with(|| {
+
+			todo!();
+
+			// let dd = DummyData::new();
+			//
+			// let stake = dd.stake;
+			//
+			// assert_ok!(upload(dd.account_id, &stake.proto_fragment));
+			//
+			// assert_ok!(lock_(&stake.lock));
+			// assert_ok!(link_(&stake.lock.link));
+			//
+			// let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
+			// 	stake.lock.link.get_ethereum_public_address_of_signer(),
+			// )
+			// 	.unwrap()
+			// 	.amount;
+			// let frag_staked =
+			// 	<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
+			// 		.unwrap_or_default();
+			// let balance = frag_locked - frag_staked;
+			//
+			// assert_ok!(stake_(stake.lock.link.clamor_account_id, &stake.proto_fragment, &balance));
+		});
+	}
+
+	// TODO
+	#[test]
+	#[ignore]
+	fn stake_should_not_work_if_user_does_has_insufficient_balance() {
+		new_test_ext().execute_with(|| {
+
+			todo!();
+
+			// let dd = DummyData::new();
+			//
+			// let stake = dd.stake;
+			//
+			// assert_ok!(upload(dd.account_id, &stake.proto_fragment));
+			//
+			// assert_ok!(lock_(&stake.lock));
+			// assert_ok!(link_(&stake.lock.link));
+			//
+			// let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
+			// 	stake.lock.link.get_ethereum_public_address_of_signer(),
+			// )
+			// 	.unwrap()
+			// 	.amount;
+			// let frag_staked =
+			// 	<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
+			// 		.unwrap_or_default();
+			// let balance = frag_locked - frag_staked;
+			//
+			// assert_noop!(
+			// 	stake_(stake.lock.link.clamor_account_id, &stake.proto_fragment, &(balance - 1)),
+			// 	Error::<Test>::InsufficientBalance
+			// );
+		});
+	}
 }
 
 mod get_protos_tests {
