@@ -4,8 +4,7 @@
 
 use super::*;
 use frame_benchmarking::{account, benchmarks, whitelisted_caller};
-use frame_support::traits::Currency;
-use frame_support::traits::Get;
+use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
 use sp_io::hashing::keccak_256;
 use sp_runtime::SaturatedConversion;
@@ -85,13 +84,37 @@ benchmarks! {
 
 		// let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
 		let ethereum_secret_key_struct: libsecp256k1::SecretKey = libsecp256k1::SecretKey::parse(&[7u8; 32]).unwrap();
-
+		let genesis_hash_string = format!("0x{}", hex::encode(<frame_system::Pallet<T>>::block_hash(T::BlockNumber::zero())));
+		let sender_string = format!("0x{}", hex::encode(caller.encode()));
 		let signature: ecdsa::Signature = sign(
 			&libsecp256k1::Message::parse(
 				&keccak_256(&[
-					&b"EVM2Fragnova"[..],
-					&T::EthChainId::get().to_be_bytes(),
-					&caller.encode()
+					&[0x19, 0x01],
+					&keccak_256(
+						&ethabi::encode(
+							&vec![
+								Token::Uint(
+									U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+								),
+								Token::Uint(U256::from(keccak_256(b"Fragnova Network"))),
+								Token::Uint(U256::from(keccak_256(b"1"))),
+								Token::Uint(U256::from(T::EthChainId::get())),
+								Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(LINK_VERIFYING_CONTRACT).unwrap()).unwrap())),
+							]
+						)
+					)[..],
+					&keccak_256(
+						&ethabi::encode(
+							&vec![
+								Token::Uint(
+									U256::from(keccak_256(b"Msg(string fragnovaGenesis,string op,string sender)"))
+								),
+								Token::Uint(U256::from(keccak_256(&genesis_hash_string.into_bytes()))),
+								Token::Uint(U256::from(keccak_256(b"link"))),
+								Token::Uint(U256::from(keccak_256(&sender_string.into_bytes()))),
+							]
+						)
+					)[..]
 				].concat())
 			),
 			&ethereum_secret_key_struct
@@ -112,14 +135,39 @@ benchmarks! {
 
 		// let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
 		let ethereum_secret_key_struct: libsecp256k1::SecretKey = libsecp256k1::SecretKey::parse(&[7u8; 32]).unwrap();
+		let genesis_hash_string = format!("0x{}", hex::encode(<frame_system::Pallet<T>>::block_hash(T::BlockNumber::zero())));
+		let sender_string = format!("0x{}", hex::encode(caller.encode()));
 		Accounts::<T>::link(
 			RawOrigin::Signed(caller.clone()).into(),
 			sign(
 				&libsecp256k1::Message::parse(
 					&keccak_256(&[
-						&b"EVM2Fragnova"[..],
-						&T::EthChainId::get().to_be_bytes(),
-						&caller.encode()
+						&[0x19, 0x01],
+						&keccak_256(
+							&ethabi::encode(
+								&vec![
+									Token::Uint(
+										U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+									),
+									Token::Uint(U256::from(keccak_256(b"Fragnova Network"))),
+									Token::Uint(U256::from(keccak_256(b"1"))),
+									Token::Uint(U256::from(T::EthChainId::get())),
+									Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(LINK_VERIFYING_CONTRACT).unwrap()).unwrap())),
+								]
+							)
+						)[..],
+						&keccak_256(
+							&ethabi::encode(
+								&vec![
+									Token::Uint(
+										U256::from(keccak_256(b"Msg(string fragnovaGenesis,string op,string sender)"))
+									),
+									Token::Uint(U256::from(keccak_256(&genesis_hash_string.into_bytes()))),
+									Token::Uint(U256::from(keccak_256(b"link"))),
+									Token::Uint(U256::from(keccak_256(&sender_string.into_bytes()))),
+								]
+							)
+						)[..]
 					].concat())
 				),
 				&ethereum_secret_key_struct
@@ -136,14 +184,13 @@ benchmarks! {
 		)
 	}
 
-	internal_lock_update {
+/*	internal_lock_update {
 		// let ethereum_account_pair: ecdsa::Pair = sp_core::ecdsa::Pair::from_seed(&[7u8; 32]);
 		let ethereum_secret_key_struct: libsecp256k1::SecretKey = libsecp256k1::SecretKey::parse(&[7u8; 32]).unwrap();
-
 		let data = EthLockUpdate::<T::Public> {
 			public: sp_core::ed25519::Public([7u8; 32]).into(),
-			amount: U256::from(7),
-			locktime: U256::from(7),
+			amount: U256::from(100),
+			lock_period: 1,
 			sender: get_ethereum_public_key(&ethereum_secret_key_struct),
 			signature: sign(
 				&libsecp256k1::Message::parse(
@@ -155,8 +202,8 @@ benchmarks! {
 									&b"FragLock"[..],
 									&get_ethereum_public_key(&ethereum_secret_key_struct).0[..],
 									&T::EthChainId::get().to_be_bytes(),
-									&Into::<[u8; 32]>::into(U256::from(7u32)), // same as `data.amount`
-									&Into::<[u8; 32]>::into(U256::from(7u32)) // same as `data.locktime`
+									&Into::<[u8; 32]>::into(U256::from(100u32)), // same as `data.amount`
+									&Into::<[u8; 32]>::into(U256::from(1u32)) // same as `data.lock_period`
 								].concat()
 							)[..]
 						].concat()
@@ -170,14 +217,9 @@ benchmarks! {
 		let signature: T::Signature = sp_core::ed25519::Signature([69u8; 64]).into(); // this can be anything and it will still work
 	}: internal_lock_update(RawOrigin::None, data.clone(), signature)
 	verify {
-		assert_last_event::<T>(
-			Event::<T>::Locked {
-				eth_key: get_ethereum_public_key(&ethereum_secret_key_struct),
-				balance: TryInto::<u128>::try_into(data.amount).unwrap().saturated_into::<T::Balance>(),
-				locktime: TryInto::<u128>::try_into(data.locktime).unwrap().saturated_into::<T::Moment>(),
-			}.into()
-		)
-	}
+		let events = <frame_system::Pallet<T>>::events();
+		assert_eq!(events.len(), 3);
+	}*/
 
 	sponsor_account {
 		let caller: T::AccountId = whitelisted_caller();
@@ -187,9 +229,9 @@ benchmarks! {
 			caller.clone()
 		)?;
 
-		_ = T::Currency::deposit_creating(
+		_ = <T as pallet_proxy::Config>::Currency::deposit_creating(
 			&caller.clone(),
-			T::ProxyDepositBase::get() + T::ProxyDepositFactor::get() + T::Currency::minimum_balance(),
+			<T as pallet_proxy::Config>::ProxyDepositBase::get() + <T as pallet_proxy::Config>::ProxyDepositFactor::get() + <T as pallet_proxy::Config>::Currency::minimum_balance(),
 		);
 
 		let external_id = ExternalID::Discord(7u64);

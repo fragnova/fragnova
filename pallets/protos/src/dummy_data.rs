@@ -1,7 +1,9 @@
+use std::str::FromStr;
+use ethabi::ethereum_types::Address;
 use crate::*;
 
 pub use pallet_accounts::dummy_data::{
-	create_link_signature, create_lock_signature, get_ethereum_account_id_from_ecdsa_public_struct,
+	create_link_signature, create_lock_signature, get_ethereum_public_address,
 	Link, Lock,
 };
 
@@ -278,20 +280,26 @@ impl DummyData {
 			target_account: [7u8; 20].to_vec(),
 		};
 
+		let contracts = vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")];
+		let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
 		let stake = Stake {
 			proto_fragment: proto.clone(),
 			lock: Lock {
 				data: pallet_accounts::EthLockUpdate {
 					public: sp_core::ed25519::Public([69u8; 32]),
 					amount: U256::from(69u32),
-					locktime: U256::from(1234567890),
-					sender: get_ethereum_account_id_from_ecdsa_public_struct(
-						&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]).public(),
+					lock_period: 1,
+					sender: get_ethereum_public_address(
+						&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 					),
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 						U256::from(69u32),
-						U256::from(1234567890),
+						1,
+						get_ethereum_public_address(
+							&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
+						),
+						contract,
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
@@ -302,6 +310,7 @@ impl DummyData {
 						sp_core::ed25519::Public::from_raw([3u8; 32]),
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 					),
+					_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 				},
 				ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 			},

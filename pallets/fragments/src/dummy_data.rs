@@ -72,7 +72,7 @@ impl Definition {
 				&self.metadata.name.encode(),
 				&self.metadata.currency.encode(),
 			]
-			.concat(),
+				.concat(),
 		)
 	}
 

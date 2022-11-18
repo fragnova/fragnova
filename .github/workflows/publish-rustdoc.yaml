@@ -11,29 +11,32 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "publish-rustdoc-to-gh-pages"          
+  # This workflow contains a single job called "publish-rustdoc-to-gh-pages"
   publish-rustdoc-to-gh-pages:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
-    
+
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      - uses: actions-rs/toolchain@v1
-        with: 
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          override: true
-        
-      - run: sh ./scripts/update-gh-pages.sh
+      - name: Install Rustup
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup default stable
+          rustup update nightly
+          rustup update stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          sh ./scripts/update-gh-pages.sh
+
         env:
           GITHUB_TOKEN: ${{ secrets.github_token }}
           CARGO_PACKAGE_NAME: "clamor"
           BOT_NAME: "Fragcolor bot"
           BOT_EMAIL: "bot@fragcolor.xyz"
-      
-        
-        
-      
+
+
+
+
