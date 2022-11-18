@@ -1,3 +1,5 @@
+use std::str::FromStr;
+use ethabi::ethereum_types::Address;
 use crate::*;
 
 pub use pallet_accounts::dummy_data::{
@@ -79,12 +81,6 @@ impl Metadata {
 pub struct Stake {
 	pub proto_fragment: ProtoFragment,
 	pub lock: Lock,
-}
-
-impl Stake {
-	pub fn get_stake_amount(&self) -> u128 {
-		self.proto_fragment.include_cost.unwrap().into()
-	}
 }
 
 /// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
@@ -265,20 +261,26 @@ impl DummyData {
 			data: b"{\"name\": \"ram\"}".to_vec(),
 		};
 
+		let contracts = vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")];
+		let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
 		let stake = Stake {
 			proto_fragment: proto.clone(),
 			lock: Lock {
 				data: pallet_accounts::EthLockUpdate {
 					public: sp_core::ed25519::Public([69u8; 32]),
 					amount: U256::from(69u32),
-					locktime: U256::from(1234567890),
+					lock_period: 1,
 					sender: get_ethereum_public_address(
 						&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 					),
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 						U256::from(69u32),
-						U256::from(1234567890),
+						1,
+						get_ethereum_public_address(
+							&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
+						),
+						contract,
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
@@ -291,7 +293,7 @@ impl DummyData {
 					),
 					_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 				},
-				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
+				ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 			},
 		};
 

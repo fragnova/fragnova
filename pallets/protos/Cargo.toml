@@ -133,6 +133,7 @@ serde = { version = "1.0.136", features = ["derive"], optional = true }
 serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
 protos = { version = "0.1.16", default-features = false }
 base58 = { version = "0.2.0", default-features = false }
+ethabi = { version = "17.0.0", default-features = false }
 
 # [dev-dependencies]
 # sp-clamor = { version = '0.1.0', path = '../../primitives/clamor'}
@@ -140,7 +141,7 @@ base58 = { version = "0.2.0", default-features = false }
 # pallet-frag = {path = '../frag'}
 
 [dev-dependencies]
-pallet-accounts = {path = '../accounts', default-features = false, features=['build-dummy-data']}
+pallet-accounts = {path = '../accounts', default-features = false, features=['compile-dummy-data']}
 
 [features]
 default = ['std']

@@ -828,7 +828,7 @@ pub mod pallet {
 
 			// make sure the user has enough tickets
 			let balance = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(
-				T::TicketsAssetId::get(),
+				<T as pallet::Config>::TicketsAssetId::get(),
 				&who,
 			);
 			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
@@ -839,7 +839,7 @@ pub mod pallet {
 
 			// Burn tickets from account and record the stake locally
 			let _ = <pallet_assets::Pallet<T> as Mutate<T::AccountId>>::burn_from(
-				T::TicketsAssetId::get(),
+				<T as pallet::Config>::TicketsAssetId::get(),
 				&who,
 				amount.saturated_into(),
 			)?;

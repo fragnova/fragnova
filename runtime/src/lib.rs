@@ -429,8 +429,12 @@ impl pallet_fragments::Config for Runtime {
 
 impl pallet_accounts::EthFragContract for Runtime {
 	fn get_partner_contracts() -> Vec<String> {
-		vec![String::from("0x34670f29e28b5dc0c47a8cc22d221bf26929f9ac")]
+		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
 	}
+}
+
+parameter_types! {
+	pub const TicketsAssetId: u64 = 1337;
 }
 
 impl pallet_accounts::Config for Runtime {
@@ -441,11 +445,10 @@ impl pallet_accounts::Config for Runtime {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-}
-
-parameter_types! {
-	/// Asset ID of the fungible asset "TICKET"
-	pub const TicketsAssetId: u64 = 1337;
+	type TicketsAssetId = TicketsAssetId;
+	type InitialPercentageTickets = ConstU128<80>;
+	type InitialPercentageNova = ConstU128<20>;
+	type USDEquivalentAmount = ConstU128<100>;
 }
 
 impl pallet_protos::Config for Runtime {

@@ -3,7 +3,7 @@ use crate::*;
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU128, ConstU32, ConstU64},
+	traits::{ConstU32, ConstU64},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system;
@@ -11,7 +11,7 @@ use frame_system;
 use sp_core::{ed25519::Signature, H256};
 
 use sp_runtime::traits::{
-	BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
+	BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
 };
 
 use sp_runtime::testing::{Header, TestXt};
@@ -146,6 +146,10 @@ impl pallet_balances::Config for Test {
 	type IsTransferable = IsTransferable;
 }
 
+parameter_types! {
+	pub const TicketsAssetId: u64 = 1337;
+}
+
 impl pallet_accounts::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -154,6 +158,10 @@ impl pallet_accounts::Config for Test {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type TicketsAssetId = TicketsAssetId;
+	type InitialPercentageTickets = ConstU128<80>;
+	type InitialPercentageNova = ConstU128<20>;
+	type USDEquivalentAmount = ConstU128<100>;
 }
 
 parameter_types! {
@@ -178,10 +186,6 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
-}
-
-parameter_types! {
-	pub const TicketsAssetId: u32 = 1337;
 }
 
 impl pallet_protos::Config for Test {

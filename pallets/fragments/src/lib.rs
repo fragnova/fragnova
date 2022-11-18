@@ -2156,8 +2156,8 @@ pub mod pallet {
 
 			if params.copy_id
 				> CopiesCount::<T>::get((definition_hash, params.edition_id))
-					.unwrap_or(Compact(0))
-					.into()
+				.unwrap_or(Compact(0))
+				.into()
 			{
 				return Err("Instance not found".into());
 			}
