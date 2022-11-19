@@ -1091,6 +1091,93 @@
 <span id="1091">1091</span>
 <span id="1092">1092</span>
 <span id="1093">1093</span>
+<span id="1094">1094</span>
+<span id="1095">1095</span>
+<span id="1096">1096</span>
+<span id="1097">1097</span>
+<span id="1098">1098</span>
+<span id="1099">1099</span>
+<span id="1100">1100</span>
+<span id="1101">1101</span>
+<span id="1102">1102</span>
+<span id="1103">1103</span>
+<span id="1104">1104</span>
+<span id="1105">1105</span>
+<span id="1106">1106</span>
+<span id="1107">1107</span>
+<span id="1108">1108</span>
+<span id="1109">1109</span>
+<span id="1110">1110</span>
+<span id="1111">1111</span>
+<span id="1112">1112</span>
+<span id="1113">1113</span>
+<span id="1114">1114</span>
+<span id="1115">1115</span>
+<span id="1116">1116</span>
+<span id="1117">1117</span>
+<span id="1118">1118</span>
+<span id="1119">1119</span>
+<span id="1120">1120</span>
+<span id="1121">1121</span>
+<span id="1122">1122</span>
+<span id="1123">1123</span>
+<span id="1124">1124</span>
+<span id="1125">1125</span>
+<span id="1126">1126</span>
+<span id="1127">1127</span>
+<span id="1128">1128</span>
+<span id="1129">1129</span>
+<span id="1130">1130</span>
+<span id="1131">1131</span>
+<span id="1132">1132</span>
+<span id="1133">1133</span>
+<span id="1134">1134</span>
+<span id="1135">1135</span>
+<span id="1136">1136</span>
+<span id="1137">1137</span>
+<span id="1138">1138</span>
+<span id="1139">1139</span>
+<span id="1140">1140</span>
+<span id="1141">1141</span>
+<span id="1142">1142</span>
+<span id="1143">1143</span>
+<span id="1144">1144</span>
+<span id="1145">1145</span>
+<span id="1146">1146</span>
+<span id="1147">1147</span>
+<span id="1148">1148</span>
+<span id="1149">1149</span>
+<span id="1150">1150</span>
+<span id="1151">1151</span>
+<span id="1152">1152</span>
+<span id="1153">1153</span>
+<span id="1154">1154</span>
+<span id="1155">1155</span>
+<span id="1156">1156</span>
+<span id="1157">1157</span>
+<span id="1158">1158</span>
+<span id="1159">1159</span>
+<span id="1160">1160</span>
+<span id="1161">1161</span>
+<span id="1162">1162</span>
+<span id="1163">1163</span>
+<span id="1164">1164</span>
+<span id="1165">1165</span>
+<span id="1166">1166</span>
+<span id="1167">1167</span>
+<span id="1168">1168</span>
+<span id="1169">1169</span>
+<span id="1170">1170</span>
+<span id="1171">1171</span>
+<span id="1172">1172</span>
+<span id="1173">1173</span>
+<span id="1174">1174</span>
+<span id="1175">1175</span>
+<span id="1176">1176</span>
+<span id="1177">1177</span>
+<span id="1178">1178</span>
+<span id="1179">1179</span>
+<span id="1180">1180</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -1850,50 +1937,59 @@
 // For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
 </span><span class="macro">impl_runtime_apis! </span>{
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// The `Core` runtime api that every Substrate runtime needs to implement.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_api/trait.Core.html
 	</span><span class="kw">impl </span>sp_api::Core&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Returns the version of the runtime.
 		</span><span class="kw">fn </span>version() -&gt; RuntimeVersion {
 			VERSION
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Execute the given block.
 		</span><span class="kw">fn </span>execute_block(block: Block) {
 			Executive::execute_block(block);
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Initialize a block with the given header.
 		</span><span class="kw">fn </span>initialize_block(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
 			Executive::initialize_block(header)
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// The `Metadata` runtime api that returns the metadata of a runtime.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_api/trait.Metadata.html
 	</span><span class="kw">impl </span>sp_api::Metadata&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Returns the metadata of a runtime.
 		</span><span class="kw">fn </span>metadata() -&gt; OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// The `BlockBuilder` runtime api trait that provides the required functionality for building a block.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_block_builder/trait.BlockBuilder.html#
 	</span><span class="kw">impl </span>sp_block_builder::BlockBuilder&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Apply the given extrinsic.
+		///
+		/// Returns an inclusion outcome which specifies if this extrinsic is included in
+		/// this block or not.
 		</span><span class="kw">fn </span>apply_extrinsic(extrinsic: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic) -&gt; ApplyExtrinsicResult {
 			Executive::apply_extrinsic(extrinsic)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Finish the current block.
 		</span><span class="kw">fn </span>finalize_block() -&gt; &lt;Block <span class="kw">as </span>BlockT&gt;::Header {
 			Executive::finalize_block()
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Generate inherent extrinsics. The inherent data will vary from chain to chain.
 		</span><span class="kw">fn </span>inherent_extrinsics(data: sp_inherents::InherentData) -&gt; Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; {
 			data.create_extrinsics()
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Check that the inherents are valid. The inherent data will vary from chain to chain.
 		</span><span class="kw">fn </span>check_inherents(
 			block: Block,
 			data: sp_inherents::InherentData,
@@ -1902,9 +1998,19 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// The `TaggedTransactionQueue` runtime api trait for interfering with the transaction queue.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_transaction_pool/runtime_api/trait.TaggedTransactionQueue.html#
 	</span><span class="kw">impl </span>sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Validate the transaction.
+		///
+		/// This method is invoked by the transaction pool to learn details about given transaction.
+		/// The implementation should make sure to verify the correctness of the transaction
+		/// against current state. The given `block_hash` corresponds to the hash of the block
+		/// that is used as current state.
+		///
+		/// Note that this call may be performed by the pool multiple times and transactions
+		/// might be verified in any possible order.
 		</span><span class="kw">fn </span>validate_transaction(
 			source: TransactionSource,
 			tx: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
@@ -1932,35 +2038,51 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// The Offchain Worker Runtime API
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_offchain/trait.OffchainWorkerApi.html#
 	</span><span class="kw">impl </span>sp_offchain::OffchainWorkerApi&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Starts the off-chain task for given block header.
 		</span><span class="kw">fn </span>offchain_worker(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
 			Executive::offchain_worker(header)
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// Runtime API necessary for block authorship with aura.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_consensus_aura/trait.AuraApi.html#
 	</span><span class="kw">impl </span>sp_consensus_aura::AuraApi&lt;Block, AuraId&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Returns the slot duration for Aura.
+		///
+		/// Currently, only the value provided by this type at genesis will be used.
 		</span><span class="kw">fn </span>slot_duration() -&gt; sp_consensus_aura::SlotDuration {
 			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Return the current set of authorities.
 		</span><span class="kw">fn </span>authorities() -&gt; Vec&lt;AuraId&gt; {
 			Aura::authorities().into_inner()
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// Session keys runtime api.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_session/trait.SessionKeys.html#
 	</span><span class="kw">impl </span>sp_session::SessionKeys&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Generate a set of session keys with optionally using the given seed.
+		/// The keys should be stored within the keystore exposed via runtime
+		/// externalities.
+		///
+		/// The seed needs to be a valid `utf8` string.
+		///
+		/// Returns the concatenated SCALE encoded public keys.
 		</span><span class="kw">fn </span>generate_session_keys(seed: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;) -&gt; Vec&lt;u8&gt; {
 			opaque::SessionKeys::generate(seed)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Decode the given public session keys.
+		///
+		/// Returns the list of public raw public keys + key type.
 		</span><span class="kw">fn </span>decode_session_keys(
 			encoded: Vec&lt;u8&gt;,
 		) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;(Vec&lt;u8&gt;, KeyTypeId)&gt;&gt; {
@@ -1968,19 +2090,41 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// Runtime APIs for integrating the GRANDPA finality gadget into runtimes.
+	/// This should be implemented on the runtime side.
+	///
+	/// This is primarily used for negotiating authority-set changes for the
+	/// gadget. GRANDPA uses a signaling model of changing authority sets:
+	/// changes should be signaled with a delay of N blocks, and then automatically
+	/// applied in the runtime after those N blocks have passed.
+	///
+	/// The consensus protocol will coordinate the handoff externally.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_finality_grandpa/trait.GrandpaApi.html#
 	</span><span class="kw">impl </span>fg_primitives::GrandpaApi&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Get the current GRANDPA authorities and weights. This should not change except
+		/// for when changes are scheduled and the corresponding delay has passed.
+		///
+		/// When called at block B, it will return the set of authorities that should be
+		/// used to finalize descendants of this block (B+1, B+2, ...). The block B itself
+		/// is finalized by the authorities from block B-1.
 		</span><span class="kw">fn </span>grandpa_authorities() -&gt; GrandpaAuthorityList {
 			Grandpa::grandpa_authorities()
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Get current GRANDPA authority set id.
 		</span><span class="kw">fn </span>current_set_id() -&gt; fg_primitives::SetId {
 			Grandpa::current_set_id()
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Submits an unsigned extrinsic to report an equivocation. The caller
+		/// must provide the equivocation proof and a key ownership proof
+		/// (should be obtained using `generate_key_ownership_proof`). The
+		/// extrinsic will be unsigned and should only be accepted for local
+		/// authorship (not to be broadcast to the network). This method returns
+		/// `None` when creation of the extrinsic fails, e.g. if equivocation
+		/// reporting is disabled for the given runtime (i.e. this method is
+		/// hardcoded to return `None`). Only useful in an offchain context.
 		</span><span class="kw">fn </span>submit_report_equivocation_unsigned_extrinsic(
 			_equivocation_proof: fg_primitives::EquivocationProof&lt;
 				&lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
@@ -1991,7 +2135,17 @@
 			<span class="prelude-val">None
 		</span>}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Generates a proof of key ownership for the given authority in the
+		/// given set. An example usage of this module is coupled with the
+		/// session historical module to prove that a given authority key is
+		/// tied to a given staking identity during a specific session. Proofs
+		/// of key ownership are necessary for submitting equivocation reports.
+		/// NOTE: even though the API takes a `set_id` as parameter the current
+		/// implementations ignore this parameter and instead rely on this
+		/// method being called at the correct block height, i.e. any point at
+		/// which the given set id is live on-chain. Future implementations will
+		/// instead use indexed data through an offchain worker, not requiring
+		/// older states to be available.
 		</span><span class="kw">fn </span>generate_key_ownership_proof(
 			_set_id: fg_primitives::SetId,
 			_authority_id: GrandpaId,
@@ -2003,17 +2157,21 @@
 		</span>}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// The Runtime API to query account nonce (aka transaction index).
+	///
+	/// See: https://paritytech.github.io/substrate/master/frame_system_rpc_runtime_api/trait.AccountNonceApi.html#
 	</span><span class="kw">impl </span>frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Index&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Get current account nonce of given `AccountId`.
 		</span><span class="kw">fn </span>account_nonce(account: AccountId) -&gt; Index {
 			System::account_nonce(account)
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// Runtime API for transaction payment pallet.
+	///
+	/// See: https://paritytech.github.io/substrate/master/pallet_transaction_payment_rpc_runtime_api/trait.TransactionPaymentApi.html#
 	</span><span class="kw">impl </span>pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;Block, Balance&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Query the data that we know about the fee of a given `call`.
 		</span><span class="kw">fn </span>query_info(
 			uxt: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
 			len: u32,
@@ -2021,7 +2179,7 @@
 			TransactionPayment::query_info(uxt, len)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Query the detailed fee of a given `call`.
 		</span><span class="kw">fn </span>query_fee_details(
 			uxt: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
 			len: u32,
@@ -2030,11 +2188,13 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
-		</span><span class="kw">impl </span>pallet_contracts_rpc_runtime_api::ContractsApi&lt;Block, AccountId, Balance, BlockNumber, Hash&gt;
-		<span class="kw">for </span>Runtime
-	{
-		<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// The Runtime API used to dry-run contract interactions.
+	///
+	/// See: https://paritytech.github.io/substrate/master/pallet_contracts/trait.ContractsApi.html#
+	</span><span class="kw">impl </span>pallet_contracts_rpc_runtime_api::ContractsApi&lt;Block, AccountId, Balance, BlockNumber, Hash&gt; <span class="kw">for </span>Runtime {
+		<span class="doccomment">/// Perform a call from a specified account to a given contract.
+		///
+		/// See [`crate::Pallet::bare_call`].
 		</span><span class="kw">fn </span>call(
 			origin: AccountId,
 			dest: AccountId,
@@ -2046,7 +2206,9 @@
 			Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, <span class="bool-val">true</span>)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Instantiate a new contract.
+		///
+		/// See `[crate::Pallet::bare_instantiate]`.
 		</span><span class="kw">fn </span>instantiate(
 			origin: AccountId,
 			value: Balance,
@@ -2060,7 +2222,9 @@
 			Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, <span class="bool-val">true</span>)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Upload new code without instantiating a contract from it.
+		///
+		/// See [`crate::Pallet::bare_upload_code`].
 		</span><span class="kw">fn </span>upload_code(
 			origin: AccountId,
 			code: Vec&lt;u8&gt;,
@@ -2070,7 +2234,11 @@
 			Contracts::bare_upload_code(origin, code, storage_deposit_limit)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Query a given storage key in a given contract.
+		///
+		/// Returns `Ok(Some(Vec&lt;u8&gt;))` if the storage value exists under the given key in the
+		/// specified account and `Ok(None)` if it doesn&#39;t. If the account specified by the address
+		/// doesn&#39;t exist, or doesn&#39;t have a contract then `Err` is returned.
 		</span><span class="kw">fn </span>get_storage(
 			address: AccountId,
 			key: Vec&lt;u8&gt;,
@@ -2079,7 +2247,7 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// Runtime API that allows the Outer Node to communicate with the Runtime&#39;s Pallet-Protos
 	</span><span class="kw">impl </span>pallet_protos_rpc_runtime_api::ProtosRuntimeApi&lt;Block, AccountId&gt; <span class="kw">for </span>Runtime {
 		<span class="doccomment">/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 		</span><span class="kw">fn </span>get_protos(params: GetProtosParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
@@ -2091,7 +2259,7 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// Runtime API that allows the Outer Node to communicate with the Runtime&#39;s Pallet-Fragments
 	</span><span class="kw">impl </span>pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi&lt;Block, AccountId&gt; <span class="kw">for </span>Runtime {
 		<span class="doccomment">/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		</span><span class="kw">fn </span>get_definitions(params: GetDefinitionsParams&lt;AccountId, Vec&lt;u8&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
@@ -2107,10 +2275,16 @@
 		}
 	}
 
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// Runtime api for benchmarking a FRAME runtime.
+	///
+	/// See: https://paritytech.github.io/substrate/master/frame_benchmarking/trait.Benchmark.html#
 	</span><span class="attribute">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 	</span><span class="kw">impl </span>frame_benchmarking::Benchmark&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Get the benchmark metadata available for this runtime.
+		///
+		/// Parameters
+		/// - `extra`: Also list benchmarks marked &quot;extra&quot; which would otherwise not be
+		///            needed for weight calculation.
 		</span><span class="kw">fn </span>benchmark_metadata(extra: bool) -&gt; (
 			Vec&lt;frame_benchmarking::BenchmarkList&gt;,
 			Vec&lt;frame_support::traits::StorageInfo&gt;,
@@ -2140,7 +2314,7 @@
 			<span class="kw">return </span>(list, storage_info)
 		}
 
-		<span class="doccomment">/// TODO: Documentation
+		<span class="doccomment">/// Dispatch the given benchmark.
 		</span><span class="kw">fn </span>dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;frame_benchmarking::BenchmarkBatch&gt;, sp_runtime::RuntimeString&gt; {

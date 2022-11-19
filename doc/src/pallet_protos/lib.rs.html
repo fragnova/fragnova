@@ -1456,6 +1456,12 @@
 <span id="1456">1456</span>
 <span id="1457">1457</span>
 <span id="1458">1458</span>
+<span id="1459">1459</span>
+<span id="1460">1460</span>
+<span id="1461">1461</span>
+<span id="1462">1462</span>
+<span id="1463">1463</span>
+<span id="1464">1464</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1656,9 +1662,9 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
-	<span class="kw">use </span>pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	<span class="kw">use </span>sp_clamor::CID_PREFIX;
 	<span class="kw">use </span>sp_runtime::SaturatedConversion;
+	<span class="kw">use </span>pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachedHashes, SupportedChains};
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
 	</span><span class="attribute">#[pallet::config]
@@ -1798,6 +1804,8 @@
 		</span>ProtoNotFound,
 		<span class="doccomment">/// Proto already uploaded
 		</span>ProtoExists,
+		<span class="doccomment">/// Detach Request Already Submitted
+		</span>DetachRequestAlreadyExists,
 		<span class="doccomment">/// Already detached
 		</span>Detached,
 		<span class="doccomment">/// Not the owner of the proto
@@ -2001,7 +2009,7 @@
 				},
 			};
 
-			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::Detached);
+			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached);
 
 			<span class="kw">let </span>data_hash = blake2_256(<span class="kw-2">&amp;</span>data);
 
@@ -2107,7 +2115,7 @@
 			};
 
 			<span class="comment">// make sure the proto is not detached
-			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::Detached);
+			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached);
 
 			<span class="comment">// collect new owner
 			</span><span class="kw">let </span>new_owner_s = ProtoOwner::User(new_owner.clone());
@@ -2176,7 +2184,7 @@
 				},
 			};
 
-			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::Detached);
+			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached);
 
 			<span class="kw">let </span>data_hash = blake2_256(<span class="kw-2">&amp;</span>data);
 
@@ -2218,20 +2226,20 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// **Detach** a **Proto-Fragment** from **this blockchain** to an **external blockchain**
-		/// by ***initiating*** an **event** that **includes a signature**. (NC) The **owner of this
-		/// Proto-Fragment** can then **attach this Proto-Fragment** to the **external blockchain**
-		/// by **using the aforementioned signature**.
+		<span class="doccomment">/// Request to detach a **Proto-Fragment** from **Clamor**.
 		///
+		/// Note: The Proto-Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
+		///
+		/// Note: **Once the Proto-Fragment is detached**, an **event is emitted that includes a signature**.
+		/// This signature can then be used to attach the Proto-Fragment to an External Blockchain `target_chain`.
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - **Hash of the Proto-Fragment** to **detach**
-		/// * `target_chain` - **External Blockchain** that we **want to attach the **Proto-Fragment
-		///   into**
-		/// * `target_account` - **Public account address** of the **blockchain `target_chain`**
-		///   that we **want to detach the Proto-Fragment into**
+		/// * `proto_hash` - **ID of the Proto-Fragment** to **detach**
+		/// * `target_chain` - **External Blockchain** to attach the Proto-Fragment into
+		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
+		///   to assign ownership of the Proto-Fragment to
 		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::detach())]
 		</span><span class="kw">pub fn </span>detach(
 			origin: OriginFor&lt;T&gt;,
@@ -2254,10 +2262,14 @@
 				},
 			};
 
-			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>proto_hash), Error::&lt;T&gt;::Detached);
+			<span class="kw">let </span>detach_hash = DetachHash::Proto(proto_hash);
+			<span class="kw">let </span>detach_request = DetachRequest { hash: detach_hash.clone(), target_chain, target_account };
+
+			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>detach_hash), Error::&lt;T&gt;::Detached);
+			<span class="macro">ensure!</span>(!&lt;DetachRequests&lt;T&gt;&gt;::get().contains(<span class="kw-2">&amp;</span>detach_request), Error::&lt;T&gt;::DetachRequestAlreadyExists);
 
 			&lt;DetachRequests&lt;T&gt;&gt;::mutate(|requests| {
-				requests.push(DetachRequest { hash: proto_hash, target_chain, target_account });
+				requests.push(detach_request);
 			});
 
 			<span class="prelude-val">Ok</span>(())

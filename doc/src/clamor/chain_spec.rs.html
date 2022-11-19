@@ -315,10 +315,10 @@
 		.public()
 }
 
-<span class="doccomment">/// Generate a crypto pair from seed.
+<span class="doccomment">/// Deterministically compute a ECDSA public key from an Ed25519 Account&#39;s seed.
 </span><span class="kw">pub fn </span>get_from_seed_to_eth(seed: <span class="kw-2">&amp;</span>str) -&gt; ecdsa::Public {
 	<span class="kw">let </span>pair = ed25519::Pair::from_string(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;//{}&quot;</span>, seed), <span class="prelude-val">None</span>).unwrap();
-	<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;fragments-frag-ecdsa-keys&quot;</span>.to_vec();
+	<span class="kw">let </span><span class="kw-2">mut </span>message = <span class="string">b&quot;detach-ecdsa-keys&quot;</span>.to_vec();
 	message.append(<span class="kw-2">&amp;mut </span>pair.public().to_vec()); <span class="comment">// salt it with the public key
 	</span><span class="kw">let </span>signature = pair.sign(<span class="kw-2">&amp;</span>message);
 	<span class="kw">let </span>hash = sp_core::keccak_256(<span class="kw-2">&amp;</span>signature.<span class="number">0</span>[..]);
@@ -337,7 +337,7 @@
 	AccountPublic::from(get_from_seed::&lt;TPublic&gt;(seed)).into_account()
 }
 
-<span class="doccomment">/// Generate an Aura authority key.
+<span class="doccomment">/// Generate an authority key for Aura, Grandpa, Upload, Eth, Detach.
 </span><span class="kw">pub fn </span>authority_keys_from_seed(s: <span class="kw-2">&amp;</span>str) -&gt; (AuraId, GrandpaId, UploadId, EthId, DetachId) {
 	(
 		get_from_seed::&lt;AuraId&gt;(s),

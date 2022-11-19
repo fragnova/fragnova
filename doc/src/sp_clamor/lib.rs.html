@@ -213,6 +213,9 @@
 <span id="213">213</span>
 <span id="214">214</span>
 <span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Helper Functions and Types that are used in other Packages of the this Workspace
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
@@ -233,6 +236,9 @@
 </span><span class="kw">pub type </span>Hash128 = [u8; <span class="number">16</span>];
 <span class="doccomment">/// 64 bytes u8-Array
 </span><span class="kw">pub type </span>Hash64 = [u8; <span class="number">8</span>];
+
+<span class="doccomment">/// Type used to represent an Instance&#39;s Edition ID and an Instance&#39;s Copy ID
+</span><span class="kw">pub type </span>InstanceUnit = u64;
 
 <span class="doccomment">/// The IPFS CID prefix used to use to obtain any data that is stored on the Fragnova Blockchain
 ///
