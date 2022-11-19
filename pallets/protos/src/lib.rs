@@ -198,9 +198,9 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
-	use pallet_detach::{DetachRequest, DetachRequests, DetachedHashes, SupportedChains};
 	use sp_clamor::CID_PREFIX;
 	use sp_runtime::SaturatedConversion;
+	use pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachedHashes, SupportedChains};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -340,6 +340,8 @@ pub mod pallet {
 		ProtoNotFound,
 		/// Proto already uploaded
 		ProtoExists,
+		/// Detach Request Already Submitted
+		DetachRequestAlreadyExists,
 		/// Already detached
 		Detached,
 		/// Not the owner of the proto
@@ -543,7 +545,7 @@ pub mod pallet {
 				},
 			};
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)), Error::<T>::Detached);
 
 			let data_hash = blake2_256(&data);
 
@@ -649,7 +651,7 @@ pub mod pallet {
 			};
 
 			// make sure the proto is not detached
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)), Error::<T>::Detached);
 
 			// collect new owner
 			let new_owner_s = ProtoOwner::User(new_owner.clone());
@@ -718,7 +720,7 @@ pub mod pallet {
 				},
 			};
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
+			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)), Error::<T>::Detached);
 
 			let data_hash = blake2_256(&data);
 
@@ -760,20 +762,20 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// **Detach** a **Proto-Fragment** from **this blockchain** to an **external blockchain**
-		/// by ***initiating*** an **event** that **includes a signature**. (NC) The **owner of this
-		/// Proto-Fragment** can then **attach this Proto-Fragment** to the **external blockchain**
-		/// by **using the aforementioned signature**.
+		/// Request to detach a **Proto-Fragment** from **Clamor**.
 		///
+		/// Note: The Proto-Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
+		///
+		/// Note: **Once the Proto-Fragment is detached**, an **event is emitted that includes a signature**.
+		/// This signature can then be used to attach the Proto-Fragment to an External Blockchain `target_chain`.
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - **Hash of the Proto-Fragment** to **detach**
-		/// * `target_chain` - **External Blockchain** that we **want to attach the **Proto-Fragment
-		///   into**
-		/// * `target_account` - **Public account address** of the **blockchain `target_chain`**
-		///   that we **want to detach the Proto-Fragment into**
+		/// * `proto_hash` - **ID of the Proto-Fragment** to **detach**
+		/// * `target_chain` - **External Blockchain** to attach the Proto-Fragment into
+		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
+		///   to assign ownership of the Proto-Fragment to
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
 		pub fn detach(
 			origin: OriginFor<T>,
@@ -796,10 +798,14 @@ pub mod pallet {
 				},
 			};
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&proto_hash), Error::<T>::Detached);
+			let detach_hash = DetachHash::Proto(proto_hash);
+			let detach_request = DetachRequest { hash: detach_hash.clone(), target_chain, target_account };
+
+			ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
+			ensure!(!<DetachRequests<T>>::get().contains(&detach_request), Error::<T>::DetachRequestAlreadyExists);
 
 			<DetachRequests<T>>::mutate(|requests| {
-				requests.push(DetachRequest { hash: proto_hash, target_chain, target_account });
+				requests.push(detach_request);
 			});
 
 			Ok(())

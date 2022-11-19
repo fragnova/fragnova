@@ -45,10 +45,10 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 		.public()
 }
 
-/// Generate a crypto pair from seed.
+/// Deterministically compute a ECDSA public key from an Ed25519 Account's seed.
 pub fn get_from_seed_to_eth(seed: &str) -> ecdsa::Public {
 	let pair = ed25519::Pair::from_string(&format!("//{}", seed), None).unwrap();
-	let mut message = b"fragments-frag-ecdsa-keys".to_vec();
+	let mut message = b"detach-ecdsa-keys".to_vec();
 	message.append(&mut pair.public().to_vec()); // salt it with the public key
 	let signature = pair.sign(&message);
 	let hash = sp_core::keccak_256(&signature.0[..]);
@@ -67,7 +67,7 @@ where
 	AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-/// Generate an Aura authority key.
+/// Generate an authority key for Aura, Grandpa, Upload, Eth, Detach.
 pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId, UploadId, EthId, DetachId) {
 	(
 		get_from_seed::<AuraId>(s),

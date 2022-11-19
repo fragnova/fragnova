@@ -1679,6 +1679,15 @@ mod give_tests {
 			);
 		});
 	}
+
+
+	#[test]
+	#[ignore]
+	fn give_should_not_work_if_the_instance_is_detached() {
+		todo!()
+	}
+
+
 }
 
 mod create_account_tests {
@@ -2494,6 +2503,102 @@ mod secondary_buy_tests {
 	}
 
 }
+
+
+mod detach_tests {
+	use super::*;
+
+	pub fn detach_(
+		signer: <Test as frame_system::Config>::AccountId,
+		detach: &Detach,
+	) -> DispatchResult {
+		FragmentsPallet::detach(
+			RuntimeOrigin::signed(signer),
+			detach.mint.definition.get_definition_id(),
+			detach.edition_id,
+			detach.copy_id,
+			detach.target_chain,
+			detach.target_account.clone()
+		)
+	}
+
+	pub fn mint_detach_instance(
+		signer: <Test as frame_system::Config>::AccountId,
+		detach: &Detach
+	) {
+		assert_ok!(upload(signer, &detach.mint.definition.proto_fragment));
+		assert_ok!(create(signer, &detach.mint.definition));
+		assert_ok!(mint_(signer, &detach.mint));
+	}
+
+	#[test]
+	fn detach_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			mint_detach_instance(dd.account_id, &detach);
+			assert_ok!(detach_(dd.account_id, &detach));
+
+
+			assert_eq!(
+				pallet_detach::DetachRequests::<Test>::get(),
+				vec![
+					pallet_detach::DetachRequest {
+						hash: pallet_detach::DetachHash::Instance(
+							detach.mint.definition.get_definition_id(),
+							Compact(detach.edition_id),
+							Compact(detach.copy_id),
+						),
+						target_chain: detach.target_chain,
+						target_account: detach.target_account,
+					},
+				]
+			);
+
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_user_does_not_own_the_instance() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			mint_detach_instance(dd.account_id, &detach);
+			assert_noop!(detach_(dd.account_id_second, &detach), Error::<Test>::NoPermission);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_the_instance_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			// REVIEW - error name
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NoPermission);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_the_detach_request_already_exists() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			mint_detach_instance(dd.account_id, &detach);
+			assert_ok!(detach_(dd.account_id, &detach));
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::DetachRequestAlreadyExists);
+		});
+	}
+
+}
+
 
 mod get_definitions_tests {
 	use super::*;
