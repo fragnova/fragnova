@@ -85,6 +85,9 @@ log = { version = "0.4.14", default-features = false }
 sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
 hex = { version = "0.4", default-features = false }
 
+[dev-dependencies]
+parking_lot = "0.12.1" # copied from https://github.com/JoshOrndorff/recipes/blob/master/pallets/ocw-demo/Cargo.toml#L11
+
 [features]
 default = ['std']
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
