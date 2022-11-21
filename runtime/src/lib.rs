@@ -113,13 +113,6 @@ pub type Index = u32;
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 
-/// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
-
-/// The payload being signed in transactions.
-pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
-
 /// Related to Index pallet
 pub type AccountIndex = u64;
 
@@ -218,6 +211,9 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_mul(2);
 
+/// The maximum possible length (in bytes) that a Clamor Block can be
+pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
+
 // When to use:
 //
 // To declare parameter types for a pallet's relevant associated types during runtime construction.
@@ -236,9 +232,14 @@ parameter_types! {
 	/// TODO: Documentation
 	pub const SS58Prefix: u8 = 93;
 
-	/// We allow for 2 seconds of compute with a 6 second average block time.
+	/// `max_with_normal_ratio(max: u32, normal: Perbill)` creates a new `BlockLength` with `max` for `Operational` & `Mandatory` and `normal * max` for `Normal`.
+	///
+	/// Note: `BlockLength` is a struct that specifies the maximum total length (in bytes) each extrinsic class can have in a block.
+	/// The maximum possible length that a block can be is the maximum of these maximums - i.e `MAX(BlockLength::max)`.
+	///
+	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockLength.html#
 	pub RuntimeBlockLength: BlockLength = BlockLength
-		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
 
 	/// TODO: Documentation
 	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
@@ -560,7 +561,7 @@ where
 }
 
 /// Because you configured the Config trait for detach pallet and frag pallet
-/// to implement the CreateSignedTransaction trait, you also need to implement that trait for the runtime.
+/// to implement the `CreateSignedTransaction` trait, you also need to implement that trait for the runtime.
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
 where
 	RuntimeCall: From<LocalCall>,
@@ -716,7 +717,7 @@ construct_runtime!(
 	pub enum Runtime where
 		Block = Block, //  Block is the block type that is used in the runtime
 		NodeBlock = opaque::Block, // NodeBlock is the block type that is used in the node
-		UncheckedExtrinsic = UncheckedExtrinsic
+		UncheckedExtrinsic = UncheckedExtrinsic // UncheckedExtrinsic is the format in which the "outside world" must send an extrinsic to the node
 	{
 		// The System pallet is responsible for accumulating the weight of each block as it gets executed and making sure that it does not exceed the limit.
 		System: frame_system,
@@ -750,16 +751,99 @@ pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// The SignedExtension to the basic transaction logic.
+///
+/// ## What is a Signed Extension?
+///
+/// Substrate provides the concept of **signed extensions** to extend an extrinsic with additional data, provided by the `SignedExtension` trait.
+///
+/// The transaction queue regularly calls signed extensions to keep checking that a transaction is valid before it gets put in the ready queue.
+/// This is a useful safeguard for verifying that transactions won't fail in a block.
+/// They are commonly used to enforce validation logic to protect the transaction pool from spam and replay attacks.
+///
+/// Source: https://docs.substrate.io/reference/transaction-format/
+///
+/// # Footnote
+///
+/// 1. Each element in the tuple implements the trait `SignedExtension`.
+/// 2. This tuple implements the trait `SignedExtension`. See: https://paritytech.github.io/substrate/master/sp_runtime/traits/trait.SignedExtension.html#impl-SignedExtension-for-(TupleElement0%2C%20TupleElement1%2C%20TupleElement2%2C%20TupleElement3%2C%20TupleElement4%2C%20TupleElement5%2C%20TupleElement6)
+///
 pub type SignedExtra = (
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32`,
+	/// the extrinsic will be extended by quanti more bytes?
 	frame_system::CheckSpecVersion<Runtime>,
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32`,
+	/// the extrinsic will be extended by quanti more bytes?
 	frame_system::CheckTxVersion<Runtime>,
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash`,
+	/// the extrinsic will be extended by quanti more bytes?
 	frame_system::CheckGenesis<Runtime>,
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash`,
+	/// the extrinsic will be extended by quanti more bytes?
 	frame_system::CheckEra<Runtime>,
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `()`,
+	/// it will not cause extrinsic to be extended by any bytes.
 	frame_system::CheckNonce<Runtime>,
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `()`,
+	/// it will not cause extrinsic to be extended by any bytes.
 	frame_system::CheckWeight<Runtime>,
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `()`,
+	/// it will not cause extrinsic to be extended by any bytes.
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
-
+/// The **type** (i.e "format") that an **unchecked extrinsic** must have.
+///
+/// # Footnote:
+///
+/// ## Definition of "Unchecked Extrinsic"
+///
+/// An Unchecked Extrinsic is a **signed transaction** that requires some validation check before they can be accepted in the transaction pool.
+/// Any unchecked extrinsic contains the signature for the data being sent plus some extra data.
+///
+/// Source: https://docs.substrate.io/reference/transaction-format/
+///
+/// ## How (signed) transactions are constructed
+///
+/// Substrate defines its transaction formats generically to allow developers to implement custom ways to define valid transactions.
+/// In a runtime built with FRAME however (assuming transaction version 4), a transaction must be constructed by submitting the following encoded data:
+///
+/// `<signing account ID> + <signature> + <additional data>`
+///
+/// When submitting a signed transaction, the signature is constructed by signing:
+/// - The actual call, composed of:
+///   - The index of the pallet.
+///   - The index of the function call in the pallet.
+///   - The parameters required by the function call being targeted.
+/// - Some extra information, verified by the signed extensions of the transaction. Please see https://docs.substrate.io/reference/transaction-format/ for more information on this.
+///
+/// Then, some additional data that's not part of what gets signed is required.
+///
+/// This process can be broken down into the following steps:
+///
+/// 1. Construct the unsigned payload.
+/// 2. Create a signing payload.
+/// 3. Sign the payload.
+/// 4. Serialize the signed payload.
+/// 5. Submit the serialized transaction.
+///
+/// An extrinsic is encoded into the following sequence of bytes just prior to being hex encoded:
+//
+/// `[ 1 ] + [ 2 ] + [ 3 ] + [ 4 ]`
+///
+/// where:
+///
+/// `[1]` contains the compact encoded length in bytes of all of the following data. Learn how compact encoding works using SCALE.
+/// `[2]` is a `u8` containing 1 byte to indicate whether the transaction is signed or unsigned (1 bit), and the encoded transaction version ID (7 bits).
+/// `[3]` if a signature is present, this field contains an account ID, an SR25519 signature and some extra data. If unsigned this field contains 0 bytes.
+/// `[4]` is the encoded call data. This comprises of 1 byte denoting the pallet to call into, 1 byte denoting the call to make in that pallet, and then as many bytes as needed to encode the arguments expected by that call.
+///
+/// Source: https://docs.substrate.io/reference/transaction-format/
+///
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+/// The payload being signed in transactions.
+///
+/// Note: This type is only needed if you want to enable an off-chain worker for the runtime,
+/// since it is only used when implementing the trait `frame_system::offchain::CreateSignedTransaction` for `Runtime`.
+pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
