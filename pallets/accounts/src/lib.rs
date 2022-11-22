@@ -27,14 +27,16 @@ mod benchmarking;
 #[allow(missing_docs)]
 mod weights;
 
-/// keccak256(Lock(address,bytes,uint256)). Try it here: https://emn178.github.io/online-tools/keccak_256.html
+/// keccak256(Lock(address,bytes,uint256,uint8)). Try it here: https://emn178.github.io/online-tools/keccak_256.html
 ///
 /// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
-const LOCK_EVENT: &str = "0x83a932dce34e6748d366fededbe6d22c5c1272c439426f8620148e8215160b3f";
-/// keccak256(Lock(address,bytes,uint256))
+const LOCK_EVENT: &str = "0xb9416cbc88978dc45c762d25315c5781c5270bd47c1c3879ddb4ff478695c83b";
+/// keccak256(Lock(address,bytes,uint256,uint8))
 ///
 /// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
+
+const LINK_VERIFYING_CONTRACT: &str = "f5a0af5a0af5a0af5a0af5a0af5a0af5a0af5a0a";
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
 
@@ -77,7 +79,7 @@ pub mod crypto {
 
 	// implemented for mock runtime in test
 	impl frame_system::offchain::AppCrypto<<Ed25519Signature as Verify>::Signer, Ed25519Signature>
-		for FragAuthId
+	for FragAuthId
 	{
 		type RuntimeAppPublic = Public;
 		type GenericSignature = sp_core::ed25519::Signature;
@@ -92,7 +94,7 @@ use sp_io::{
 	crypto as Crypto,
 	hashing::{blake2_256, keccak_256},
 };
-use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
+use sp_runtime::{offchain::storage::StorageValueRef, traits::Zero, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use frame_system::offchain::{
@@ -108,9 +110,9 @@ use scale_info::prelude::{format, string::String};
 
 use serde_json::{json, Value};
 
-use ethabi::ParamType;
+use ethabi::{ParamType, Token};
 
-use frame_support::traits::ReservableCurrency;
+use frame_support::traits::{tokens::fungibles::Mutate, ReservableCurrency};
 
 /// TODO: Documentation
 pub type DiscordID = u64;
@@ -126,7 +128,7 @@ pub enum ExternalID {
 pub trait EthFragContract {
 	/// **Return** the **contract address** of the **FRAG Token Smart Contract**
 	fn get_partner_contracts() -> Vec<String> {
-		vec![String::from("0xBADF00D")]
+		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
 	}
 }
 
@@ -141,8 +143,7 @@ pub struct EthLockUpdate<TPublic> {
 	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
 	pub amount: U256,
 	/// If the event was `Lock`, it represents the lock period of the FRAG token.
-	/// Owtherwise, if the event was `Unlock`, it is zero.
-	pub locktime: U256,
+	pub lock_period: u8,
 	/// **Ethereum Account Address** that emitted the `Lock` or `Unlock` event when they had called the smart contract function `lock()` or `unlock()` respectively
 	pub sender: H160,
 	/// The lock/unlock signature signed by the Ethereum Account ID
@@ -160,6 +161,10 @@ pub struct EthLock<TBalance, TBlockNum> {
 	pub amount: TBalance,
 	/// Clamor Block Number in which the locked FRAG tokens was "effectively transfered" to the Clamor Blockchain
 	pub block_number: TBlockNum,
+	/// The FRAG lock period chosen by the user on Ethereum and received from the Lock event
+	pub lock_period: u8,
+	/// The week number of the last withdraw. It is zero if the account never withdrawn
+	pub last_withdraw: u128,
 }
 
 impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
@@ -179,21 +184,33 @@ pub struct AccountInfo<TAccountID, TMoment> {
 
 #[frame_support::pallet]
 pub mod pallet {
+	use core::str::FromStr;
+	use ethabi::Address;
 	use super::*;
-	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
+	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
+	use frame_support::{
+		dispatch::DispatchResult,
+		pallet_prelude::*,
+		traits::{fungible, Currency},
+		Twox64Concat,
+	};
 	use frame_system::pallet_prelude::*;
-	use sp_runtime::SaturatedConversion;
+	use sp_runtime::{
+		traits::{CheckedAdd, Saturating, Zero},
+		SaturatedConversion,
+	};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config:
-		frame_system::Config
-		// This trait is meant to be implemented by the runtime and is responsible for
-		// constructing a payload to be signed and contained within the extrinsic.
-		+ CreateSignedTransaction<Call<Self>>
-		+ pallet_balances::Config
-		+ pallet_proxy::Config
-		+ pallet_timestamp::Config
+	frame_system::Config
+	// This trait is meant to be implemented by the runtime and is responsible for
+	// constructing a payload to be signed and contained within the extrinsic.
+	+ CreateSignedTransaction<Call<Self>>
+	+ pallet_balances::Config
+	+ pallet_proxy::Config
+	+ pallet_timestamp::Config
+	+ pallet_assets::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -220,6 +237,22 @@ pub mod pallet {
 
 		/// The identifier type for an offchain worker.
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
+
+		/// Asset ID of the fungible asset "TICKET"
+		#[pallet::constant]
+		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
+
+		/// Initial amount of Tickets that are converted as soon as FRAG are locked
+		#[pallet::constant]
+		type InitialPercentageTickets: Get<u128>;
+
+		/// Initial amount of NOVA that are converted as soon as FRAG are locked
+		#[pallet::constant]
+		type InitialPercentageNova: Get<u128>;
+
+		/// Amount of Tickets/NOVA equal to 1 USD
+		#[pallet::constant]
+		type USDEquivalentAmount: Get<u128>;
 	}
 
 	/// The Genesis Configuration for the Pallet.
@@ -244,8 +277,35 @@ pub mod pallet {
 
 	/// **StorageMap** that maps an **Ethereum Account ID** to a to an ***Ethlock* struct of the aforementioned Ethereum Account Id (the struct contains the amount of FRAG token locked, amongst other things)**
 	#[pallet::storage]
-	pub type EthLockedFrag<T: Config> =
-		StorageMap<_, Identity, H160, EthLock<T::Balance, T::BlockNumber>>;
+	pub type EthLockedFrag<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		H160,
+		Identity,
+		T::BlockNumber,
+		EthLock<<T as pallet_assets::Config>::Balance, T::BlockNumber>,
+	>;
+
+	/// **StorageMap** that maps an **Ethereum Account ID** to the block number when the unlock happened**
+	#[pallet::storage]
+	pub type EthUnlockedFrag<T: Config> = StorageDoubleMap<
+		_,
+		Identity,
+		H160,
+		Identity,
+		T::BlockNumber,
+		<T as pallet_assets::Config>::Balance,
+	>;
+
+	/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
+	#[pallet::storage]
+	pub type EthReservedTickets<T: Config> =
+	StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
+
+	/// This **StorageMap** maps an Ethereum AccountID to an amount of NOVA received until a Clamor Account ID is not linked.
+	#[pallet::storage]
+	pub type EthReservedNova<T: Config> =
+	StorageMap<_, Identity, H160, <T as pallet_balances::Config>::Balance>;
 
 	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
@@ -257,10 +317,6 @@ pub mod pallet {
 	/// This **StorageMap** is the reverse mapping of `EVMLinks`.
 	#[pallet::storage]
 	pub type EVMLinksReverse<T: Config> = StorageMap<_, Identity, H160, T::AccountId>;
-
-	/// **StorageMap** that maps a **Clamor Account ID** to the **Amount of FRAG token staked by the aforementioned Clamor Account ID**
-	#[pallet::storage]
-	pub type FragUsage<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, T::Balance>;
 
 	/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**.
 	/// The key for this map is:
@@ -290,7 +346,7 @@ pub mod pallet {
 	/// the External Account ID's linked Clamor Account ID, amongst other things**.
 	#[pallet::storage]
 	pub type ExternalID2Account<T: Config> =
-		StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
+	StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
 
 	/// The authorities able to sponsor accounts and link them to external accounts.
 	#[pallet::storage]
@@ -304,10 +360,18 @@ pub mod pallet {
 		Linked { sender: T::AccountId, eth_key: H160 },
 		/// A link was removed between native and ethereum account.
 		Unlinked { sender: T::AccountId, eth_key: H160 },
+		/// Tickets were reserved for an unlinked ethereum account.
+		TicketsReserved { eth_key: H160, balance: <T as pallet_assets::Config>::Balance },
+		/// NOVA were reserved for an unlinked ethereum account.
+		NOVAReserved { eth_key: H160, balance: <T as pallet_balances::Config>::Balance },
+		/// Tickets were minted into an account.
+		TicketsMinted { sender: T::AccountId, balance: <T as pallet_assets::Config>::Balance },
+		/// NOVA were assigned to an account balance.
+		NOVAAssigned { sender: T::AccountId, balance: <T as pallet_balances::Config>::Balance },
 		/// ETH side lock was updated
-		Locked { eth_key: H160, balance: T::Balance, locktime: T::Moment },
+		Locked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance, lock_period: u8 },
 		/// ETH side lock was unlocked
-		Unlocked { eth_key: H160, balance: T::Balance },
+		Unlocked { eth_key: H160, balance: <T as pallet_assets::Config>::Balance },
 		/// A new sponsored account was added
 		SponsoredAccount { sponsor: T::AccountId, sponsored: T::AccountId, external_id: ExternalID },
 	}
@@ -333,6 +397,12 @@ pub mod pallet {
 		AccountAlreadyExists,
 		/// Too many proxies
 		TooManyProxies,
+		/// Nothing to withdraw
+		NothingToWithdraw,
+		/// Lock period out of range
+		LockPeriodOutOfRange,
+		/// Amount below minimum balance
+		BelowMinimumBalance,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -378,47 +448,137 @@ pub mod pallet {
 
 		// Firstly: Verify the `signature` for the message keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)
 		// Secondly: After verification, recover the public key used to sign the aforementioned `signature` for the aforementioned message
-		// Third: Add
-		// TODO
 		/// **Link** the **Clamor public account address that calls this extrinsic** with the
 		/// **public account address that is returned from verifying the signature `signature` for
 		/// the message `keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)`** (NOTE: The
 		/// returned public account address is of the account that signed the signature
 		/// `signature`).
-		///
-		/// After linking, also emit an event indicating that the two accounts were linked.
+		/// This function also checks whether or not the linked account has some reserved Tickets or NOVA
+		/// from any previous lock of FRAG. If there are, then they are minted.
+		/// After linking and minting, it emit events indicating that the two accounts were linked and that Tickets and NOVA were minted.
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::link())]
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			// the idea is to prove to this chain that the sender knows the private key of the external address
-			let mut message = b"EVM2Fragnova".to_vec();
-			message.extend_from_slice(&T::EthChainId::get().to_be_bytes());
-			message.extend_from_slice(&sender.encode());
-			let message_hash = keccak_256(&message);
+			let genesis_hash = <frame_system::Pallet<T>>::block_hash(T::BlockNumber::zero());
+			let genesis_hash_string = format!("0x{}", hex::encode(genesis_hash));
 
-			let recovered = Crypto::secp256k1_ecdsa_recover(&signature.0, &message_hash)
-				.map_err(|_| Error::<T>::VerificationFailed)?; // Verify the `signature` for the message keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)
+			let sender_string = format!("0x{}", hex::encode(sender.encode()));
 
-			let eth_key = keccak_256(&recovered[..]);
-			let eth_key = &eth_key[12..];
-			let eth_key = H160::from_slice(&eth_key[..]);
+			// Metamask signTypedData_v4 - https://jsfiddle.net/4mwu2g80/43/
+
+			// We encode the message using the following encoding function:
+			// encode(domainSeparator : 𝔹²⁵⁶, message : 𝕊) = "\x19\x01" ‖ domainSeparator ‖ hashStruct(message).
+			// See: https://eips.ethereum.org/EIPS/eip-712#specification-1
+			let encoded_message: Vec<u8> = [
+				&[0x19, 0x01],
+				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&vec![
+							Token::Uint(
+								U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+							),
+							Token::Uint(U256::from(keccak_256(b"Fragnova Network"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(T::EthChainId::get())),
+							Token::Address(H160::from(TryInto::<[u8; 20]>::try_into(hex::decode(LINK_VERIFYING_CONTRACT).unwrap()).unwrap())),
+						]
+					)
+				)[..],
+				// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&vec![
+							// This is the `typeHash`
+							Token::Uint(
+								U256::from(keccak_256(b"Msg(string fragnovaGenesis,string op,string sender)"))
+							),
+							// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
+							Token::Uint(U256::from(keccak_256(&genesis_hash_string.into_bytes()))),
+							Token::Uint(U256::from(keccak_256(b"link"))),
+							Token::Uint(U256::from(keccak_256(&sender_string.into_bytes()))),
+						]
+					)
+				)[..]
+			].concat();
+
+			log::trace!("encoded message: {}", hex::encode(&encoded_message));
+
+			let ecdsa_public_key = Crypto::secp256k1_ecdsa_recover(&signature.0, &keccak_256(&encoded_message))
+				.map_err(|_| Error::<T>::VerificationFailed)?;
+
+			let eth_key = H160::from_slice(&keccak_256(&ecdsa_public_key[..])[12..]);
 
 			ensure!(!<EVMLinks<T>>::contains_key(&sender), Error::<T>::AccountAlreadyLinked);
 			ensure!(!<EVMLinksReverse<T>>::contains_key(eth_key), Error::<T>::AccountAlreadyLinked);
 
+			if <EthReservedTickets<T>>::contains_key(&eth_key) {
+				let tickets_amount = <EthReservedTickets<T>>::get(&eth_key);
+				if let Some(amount) = tickets_amount {
+					ensure!(!amount.is_zero(), Error::<T>::SystematicFailure);
+				}
+			}
+			if <EthReservedNova<T>>::contains_key(&eth_key) {
+				let nova_amount = <EthReservedNova<T>>::get(&eth_key);
+				if let Some(amount) = nova_amount {
+					ensure!(!amount.is_zero(), Error::<T>::SystematicFailure);
+					let nova_old_balance =
+						pallet_balances::Pallet::<T>::free_balance(&sender.clone());
+					ensure!(
+						nova_old_balance + amount >=
+							<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(),
+						Error::<T>::BelowMinimumBalance
+					);
+					ensure!(
+						!nova_old_balance.checked_add(&amount).is_none(),
+						Error::<T>::SystematicFailure
+					);
+				}
+			}
+
+			// Check if the Ethereum account has already some tickets and nova registered when it was not linked
+			if <EthReservedTickets<T>>::contains_key(&eth_key) {
+				let tickets_amount = <EthReservedTickets<T>>::get(&eth_key);
+				if let Some(amount) = tickets_amount {
+					// mint tickets
+					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+						T::TicketsAssetId::get(),
+						&sender.clone(),
+						amount,
+					)?;
+
+					<EthReservedTickets<T>>::remove(&eth_key);
+					// also emit event
+					Self::deposit_event(TicketsMinted { sender: sender.clone(), balance: amount });
+				}
+			}
+			if <EthReservedNova<T>>::contains_key(&eth_key) {
+				let nova_amount = <EthReservedNova<T>>::get(&eth_key);
+				if let Some(amount) = nova_amount {
+					// Assign NOVA
+					let _ =
+						<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+							&sender.clone(),
+							amount,
+						)?;
+
+					<EthReservedNova<T>>::remove(&eth_key);
+					// also emit event
+					Self::deposit_event(NOVAAssigned { sender: sender.clone(), balance: amount });
+				}
+			}
+
 			<EVMLinks<T>>::insert(sender.clone(), eth_key);
 			<EVMLinksReverse<T>>::insert(eth_key, sender.clone());
-			let zero: T::Balance = 0u32.saturated_into();
-			<FragUsage<T>>::insert(sender.clone(), zero);
-
 			// also emit event
-			Self::deposit_event(Event::Linked { sender, eth_key });
+			Self::deposit_event(Event::Linked { sender: sender.clone(), eth_key });
 
 			Ok(())
 		}
 
-		// TODO
 		/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::unlink())]
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
@@ -441,7 +601,7 @@ pub mod pallet {
 
 			let data_tuple = (
 				data.amount,
-				data.locktime,
+				data.lock_period,
 				data.sender,
 				data.signature.clone(),
 				data.lock,
@@ -455,23 +615,31 @@ pub mod pallet {
 			);
 
 			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature, period)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
-			let mut message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
-			message.extend_from_slice(&data.sender.0[..]); // Add data.sender.0 ("msg.sender" in Solidity) to message
-			message.extend_from_slice(&T::EthChainId::get().to_be_bytes()); // Add EthChainId ("block.chainid" in Solidity) to message
-			let amount: [u8; 32] = data.amount.into();
-			message.extend_from_slice(&amount[..]); // Add amount to message
+			let message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
+			let contract = T::EthFragContract::get_partner_contracts();
+			let contract = contract[0].as_str();
+			let contract = Address::from_str(&contract[2..]).map_err(|_| "Invalid response - invalid sender")?;
+
+			let mut hash_struct = vec![
+				// This is the `typeHash`
+				Token::Uint(U256::from(keccak_256(
+					b"Msg(string name,address sender,uint256 amount,uint8 lock_period)",
+				))),
+				// This is the `encodeData(message)`. (https://eips.ethereum.org/EIPS/eip-712#definition-of-encodedata)
+				Token::Uint(U256::from(keccak_256(&message))),
+				Token::Address(H160::from(data.sender)),
+				Token::Uint(U256::from(data.amount)),
+			];
 			if data.lock {
-				let locktime: [u8; 32] = data.locktime.into();
-				message.extend_from_slice(&locktime[..]); // Add amount to message
+				hash_struct.push(Token::Uint(U256::from(data.lock_period)));
 			}
+			let message = Self::get_eip712_hash(contract, &hash_struct);
 
-			let message_hash = keccak_256(&message); // This should be
-
-			let message = [b"\x19Ethereum Signed Message:\n32", &message_hash[..]].concat();
 			let message_hash = keccak_256(&message);
+			log::trace!("eip-712 message: {}", hex::encode(&message_hash));
 
 			let signature = data.signature;
-			let sender = data.sender;
+			let sender = data.sender.clone();
 
 			// We check if the `message_hash` and **the signature in the emitted event `Lock` or `Unlock`**
 			// **allow us** to **recover the Ethereum sender account address** that was in the **same aforementioned emitted event `Lock` or `Unlock`**
@@ -481,19 +649,17 @@ pub mod pallet {
 			let pub_key = &pub_key[12..];
 			ensure!(pub_key == sender.0, Error::<T>::VerificationFailed);
 
-			let amount: u128 = data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+			let data_amount: u128 =
+				data.amount.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 
 			if !data.lock {
-				ensure!(amount == 0, Error::<T>::SystematicFailure);
+				ensure!(data_amount == 0, Error::<T>::SystematicFailure);
 			} else {
-				ensure!(amount > 0, Error::<T>::SystematicFailure);
+				ensure!(data_amount > 0, Error::<T>::SystematicFailure);
 			}
-
-			// verifications ended, let's proceed with voting count and writing
 
 			let threshold = T::Threshold::get();
 			if threshold > 1 {
-				// 问Gio
 				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
 				if let Some(current_votes) = current_votes {
 					// Number of votes for the key `data_hash` in EVMLinkVoting
@@ -513,59 +679,111 @@ pub mod pallet {
 				}
 			}
 
-			// writing here at end (THE lines below only execute if the number of votes receieved by `data_hash` passes the `threshold`)
+			// The lines below only execute if the number of votes received by `data_hash` passes the `threshold`
 
-			let amount: T::Balance = amount.saturated_into();
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			let lock_period: u8 =
+				data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+			let frag_amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
+
+			let current_frag_price = Self::get_oracle_price();
+			// Calculate the initial amount of Tickets and NOVA to convert based on
+			// 1) the amount of FRAG locked, 2) the initial percentages defined in Config, 3) the current FRAG price
+			let initial_nova_amount = Self::initial_amount(
+				data_amount,
+				T::InitialPercentageNova::get(),
+				current_frag_price,
+			);
+			let initial_tickets_amount = Self::initial_amount(
+				data_amount,
+				T::InitialPercentageTickets::get(),
+				current_frag_price,
+			);
+
+			let nova_amount: <T as pallet_balances::Config>::Balance =
+				initial_nova_amount.saturated_into();
+			let tickets_amount: <T as pallet_assets::Config>::Balance =
+				initial_tickets_amount.saturated_into();
 
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
-				// ! TODO TEST
-				let locktime: u128 =
-					data.locktime.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
-				let locktime: T::Moment = locktime.saturated_into();
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
-					// If there is no linked account, shouldn't we throw an error? - 问Gio
-					let used = <FragUsage<T>>::get(linked.clone());
-					if let Some(used) = used {
-						if used > amount {
-							// Amount is the total amount of FRAG token locked on the Fragnova-owned Ethereum Smart Contract. So that means that if `amount` is smaller than `used`, there's a systemic/catastropic failure somewhere!
-							// this is bad, the user just reduced his balance so we just "slash" all the stakes
-							// reset usage counter
-							<FragUsage<T>>::remove(linked.clone()); // Remove the Clamor Account `linked` from FragUsage
-										// force dereferencing of protos and more
-							<PendingUnlinks<T>>::append(linked.clone()); // Unlink `linked` from `sender`
-						}
-					}
-				}
+					let nova_old_balance = pallet_balances::Pallet::<T>::free_balance(&linked);
+					ensure!(
+						nova_old_balance + nova_amount >=
+							<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
+							),
+						Error::<T>::BelowMinimumBalance
+					);
+					ensure!(
+						!nova_old_balance.checked_add(&nova_amount).is_none(),
+						Error::<T>::SystematicFailure
+					);
 
+					// Checks passed. Now write.
+					// mint Tickets for the linked user
+					<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+						T::TicketsAssetId::get(),
+						&linked,
+						tickets_amount, // amount already ensured to be > 0 in case of Lock
+					)?;
+
+					let _ =
+						<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+							&linked,
+							nova_amount, // amount already ensured to be > 0 in case of Lock
+						)?;
+
+					Self::deposit_event(TicketsMinted {
+						sender: linked.clone(),
+						balance: tickets_amount,
+					});
+					Self::deposit_event(NOVAAssigned {
+						sender: linked.clone(),
+						balance: nova_amount,
+					});
+				} else {
+					// Ethereum Account ID (H160) not linked to Clamor Account ID
+					// So, register the amount of tickets and NOVA owned by the H160 account for later linking
+					<EthReservedTickets<T>>::insert(sender.clone(), tickets_amount);
+					<EthReservedNova<T>>::insert(sender.clone(), nova_amount);
+
+					Self::deposit_event(TicketsReserved {
+						eth_key: sender.clone(),
+						balance: tickets_amount,
+					});
+					Self::deposit_event(NOVAReserved {
+						eth_key: sender.clone(),
+						balance: nova_amount,
+					});
+				}
 				// also emit event
-				Self::deposit_event(Event::Locked { eth_key: sender, balance: amount, locktime });
-			// 问Gio for clarification
+				Self::deposit_event(Event::Locked {
+					eth_key: sender,
+					balance: frag_amount,
+					lock_period,
+				});
+
+				<EthLockedFrag<T>>::insert(
+					sender.clone(),
+					current_block_number,
+					EthLock {
+						amount: frag_amount, // amount already ensured to be > 0 for lock, = 0 for unlock
+						block_number: current_block_number,
+						lock_period,
+						last_withdraw: 0, // never withdrawn
+					},
+				);
 			} else {
-				// If we want to unlock all the FRAG tokens that were
-				// ! TODO TEST
-
-				// if we have any link to this account, then force unlinking
-				let linked = <EVMLinksReverse<T>>::get(sender.clone());
-				if let Some(linked) = linked {
-					Self::unlink_account(linked, sender.clone())?; // Unlink Ethereum Account `sender` and Clamor Account `linked`
-				}
-
-				// also emit event
-				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: amount }); // 问Gio for clarification
+				Self::deposit_event(Event::Unlocked { eth_key: sender, balance: frag_amount });
+				<EthUnlockedFrag<T>>::insert(sender.clone(), current_block_number, frag_amount);
 			}
-
-			// write this later as unlink_account can fail
-			<EthLockedFrag<T>>::insert(
-				// VERY IMPORTANT TO NOTE
-				sender.clone(),
-				EthLock { amount, block_number: current_block_number },
-			);
 
 			// also record link hash
 			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
+
 
 			Ok(())
 		}
@@ -602,7 +820,7 @@ pub mod pallet {
 			// ! Writing state
 
 			let deposit = T::ProxyDepositBase::get() + T::ProxyDepositFactor::get();
-			T::Currency::reserve(&who, deposit)?;
+			<T as pallet_proxy::Config>::Currency::reserve(&who, deposit)?;
 
 			pallet_proxy::Proxies::<T>::insert(&account, (bounded_proxies, deposit));
 
@@ -650,15 +868,32 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Withdraw vested tickets and NOVA
+		#[pallet::weight(25_000)] // TODO - weight
+		pub fn withdraw(origin: OriginFor<T>) -> DispatchResult {
+			let account = ensure_signed(origin)?;
+			Self::withdraw_tickets_and_nova(account)
+		}
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		/// This function is being called after every block import (when fully synced).
-		///
 		/// Implementing this function on a module allows you to perform long-running tasks
 		/// that make (by default) validators generate transactions that feed results
 		/// of those long-running computations back on chain.
+		///
+		/// NOTE: This function runs off-chain, so it can access the block state,
+		/// but cannot preform any alterations. More specifically alterations are
+		/// not forbidden, but they are not persisted in any way after the worker
+		/// has finished.
+		///
+		/// This function is being called after every block import (when fully synced).
+		///
+		/// Implement this and use any of the `Offchain` `sp_io` set of APIs
+		/// to perform off-chain computations, calls and submit transactions
+		/// with results to trigger any on-chain changes.
+		/// Any state alterations are lost and are not persisted.
 		fn offchain_worker(n: T::BlockNumber) {
 			Self::sync_partner_contracts(n);
 		}
@@ -687,7 +922,7 @@ pub mod pallet {
 		/// are being whitelisted and marked as valid.
 		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
-			if let Call::internal_lock_update { ref data, ref signature } = call {
+			if let Call::internal_lock_update { ref data, ref signature, .. } = call {
 				// ensure it's a local transaction sent by an offchain worker
 				match source {
 					TransactionSource::InBlock | TransactionSource::Local => {},
@@ -724,7 +959,7 @@ pub mod pallet {
 				// Check whether a provided signature matches the public key used to sign the payload
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key (if valid)
-																	   // The provided signature does not match the public key used to sign the payload
+				// The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
 					return InvalidTransaction::BadProof.into();
@@ -736,7 +971,7 @@ pub mod pallet {
 					.and_provides((
 						data.public.clone(),
 						data.amount,
-						data.locktime,
+						data.lock_period,
 						data.sender,
 						data.signature.clone(),
 						data.lock,
@@ -863,10 +1098,10 @@ pub mod pallet {
 				let data =
 					hex::decode(&data[2..]).map_err(|_| "Invalid response - invalid data")?; // Convert the hexadecimal `data` from hexadecimal to binary (i.e raw bits)
 				let data = ethabi::decode(
-					&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(256)],
+					&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(8)],
 					&data,
-				) // First parameter is a signature, the second paramteter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
-				.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
+				) // First parameter is a signature, the second parameter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+					.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
 				let locked = match topic {
 					// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
 					LOCK_EVENT => true,
@@ -886,17 +1121,17 @@ pub mod pallet {
 
 				let amount = data[1].clone().into_uint().ok_or_else(|| "Invalid data")?; // Amount of FRAG token locked/unlocked (`data[1]`)
 
-				// Lock period (`data[2]`). In case of Unlock event, it is zero.
-				let locktime = data[2].clone().into_uint().unwrap_or(U256::from(0));
+				// Lock period (`data[2]`). In case of Unlock event.
+				let lock_period = data[2].clone().into_uint().ok_or_else(|| "Invalid data")?;
 
 				if locked {
 					log::trace!(
-						"Block: {}, sender: {}, locked: {}, amount: {}, locktime: {}, signature: {:?}",
+						"Block: {}, sender: {}, locked: {}, amount: {}, lock_period: {}, signature: {:?}",
 						block_number,
 						sender,
 						locked,
 						amount,
-						locktime,
+						lock_period,
 						eth_signature.clone(),
 					);
 				} else {
@@ -911,6 +1146,7 @@ pub mod pallet {
 					);
 				}
 
+				let lock_period = u8::try_from(lock_period).unwrap();
 				// `send_unsigned_transaction` is returning a type of `Option<(Account<T>, Result<(), ()>)>`.
 				//   The returned result means:
 				//   - `None`: no account is available for sending transaction
@@ -923,7 +1159,7 @@ pub mod pallet {
 							// `account` is an account `Signer::<T, T::AuthorityId>::any_account()`
 							public: account.public.clone(), // 问Gio what is account.public and why is it supposed to be in FragKey
 							amount,
-							locktime,
+							lock_period,
 							sender,
 							signature: eth_signature.clone(),
 							lock: locked,
@@ -946,7 +1182,7 @@ pub mod pallet {
 		}
 
 		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
-		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
+		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount, uint8 lock_period)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
 		///
 		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
 		/// (NOTE: the signed payload consists of a payload and a signature.
@@ -983,8 +1219,6 @@ pub mod pallet {
 
 			<EVMLinks<T>>::remove(sender.clone());
 			<EVMLinksReverse<T>>::remove(account);
-			// reset usage counter
-			<FragUsage<T>>::remove(sender.clone());
 			// force dereferencing of protos and more
 			<PendingUnlinks<T>>::append(sender.clone());
 
@@ -992,6 +1226,233 @@ pub mod pallet {
 			Self::deposit_event(Event::Unlinked { sender, eth_key: account });
 
 			Ok(())
+		}
+
+		/// This function allows the account to withdraw the vested amount of Tickets and NOVA.
+		///
+		/// An account can decide to withdraw before or after the FRAG lock period is over.
+		/// The amount is calculated with this formula:
+		/// amount = (num of weeks since FRAG lock) * (tickets/NOVA available each week) * (FRAG price in USD).
+		///
+		/// To be noted that an initial amount of Tickets and NOVA have been already given to the account
+		/// when FRAG have been locked (see internal_lock_update). The initial amount is a percentage of the amount
+		/// of FRAG locked (percentage that is set in Config for both Tickets and NOVA).
+		///
+		fn withdraw_tickets_and_nova(account: T::AccountId) -> DispatchResult {
+			let seconds_in_week = 3600 * 24 * 7;
+			let seconds_in_block = 6;
+			let current_block_number =
+				<frame_system::Pallet<T>>::block_number().saturated_into::<u128>();
+
+			let eth_account = <EVMLinks<T>>::get(&account);
+			if let Some(eth_account) = eth_account {
+				ensure!(
+					<EthLockedFrag<T>>::iter_prefix(eth_account).count() > 0,
+					Error::<T>::NothingToWithdraw
+				);
+
+				let mut tickets_amount: <T as pallet_assets::Config>::Balance = (0 as u32).into();
+				let mut nova_amount: <T as pallet_balances::Config>::Balance = (0 as u32).into();
+
+				// Since an account can do multiple locks of FRAG, all these locks are linked to the same
+				// Ethereum account in EthLockedFrag. So here we loop over all these registrations to handle
+				// every single lock registration as separated item.
+				// This allows to withdraw the correct amount from each lock of reference, which depend on
+				// the lock period chosen and amount of FRAG locked.
+				for (_block_number, eth_lock) in <EthLockedFrag<T>>::iter_prefix(eth_account) {
+					// Retrieve the info related to the FRAG locked by this account
+					let frag_lock_block_number = eth_lock.block_number.saturated_into::<u128>();
+					let total_frag_locked_on_eth = eth_lock.amount.saturated_into::<u128>();
+					let frag_lock_period = eth_lock.lock_period;
+					let last_withdraw_week = eth_lock.last_withdraw.saturated_into::<u128>();
+
+					// convert for convenience. The calculations below are made by num of weeks
+					// calculated from the num of blocks from the block num of the FRAG lock to the current block.
+					let lock_period_in_weeks =
+						Self::eth_lock_period_to_weeks(frag_lock_period).unwrap(); // unwrap here is safe
+
+					// Example: 100 FRAG locked => <80 FRAG convertible to Tickets immediately, 20 vested>
+					// If vesting period = 4 weeks => 20 / 4 = 5 FRAG convertible each week.
+					let tickets_convertible_per_week = Self::apply_percent(
+						total_frag_locked_on_eth,
+						100 - T::InitialPercentageTickets::get(),
+					) / lock_period_in_weeks as u128;
+
+					let nova_convertible_per_week = Self::apply_percent(
+						total_frag_locked_on_eth.clone(),
+						100 - T::InitialPercentageNova::get(),
+					) / lock_period_in_weeks.clone() as u128;
+
+					// price of 1 FRAG in USD
+					let current_frag_price = Self::get_oracle_price();
+					// The amount of Tickets and NOVA depend on the price of 1 FRAG at the time of withdraw
+					// considering that 1 FRAG = 100 Tickets, 100 NOVA
+					let tickets_amount_per_week_at_current_price = current_frag_price
+						* T::USDEquivalentAmount::get()
+						* tickets_convertible_per_week;
+					let nova_amount_per_week_at_current_price = current_frag_price.clone()
+						* T::USDEquivalentAmount::get()
+						* nova_convertible_per_week;
+
+					// Weeks passed since FRAG was locked
+					let mut num_weeks_since_lock_frag: u128 =
+						((current_block_number - frag_lock_block_number)
+							* seconds_in_block.clone()) / seconds_in_week.clone()
+							+ 1;
+
+					// The week number of the last withdraw is stored,
+					// so this checks the case of subsequent withdraws done in the same week when nothing has been yielded.
+					if num_weeks_since_lock_frag - last_withdraw_week == 0 {
+						return Err(Error::<T>::NothingToWithdraw.into());
+					}
+
+					// This is for the case of withdraw performed when the FRAG lock period is already over.
+					// In this case the total withdrawal amount cannot be more than the total amount yielded until within the lock period.
+					if num_weeks_since_lock_frag >= lock_period_in_weeks.clone() as u128 {
+						num_weeks_since_lock_frag = lock_period_in_weeks.clone() as u128;
+					}
+
+					let tickets_amount_to_withdraw = tickets_amount_per_week_at_current_price
+						* (num_weeks_since_lock_frag.clone() - last_withdraw_week.clone());
+
+					let nova_amount_to_withdraw = nova_amount_per_week_at_current_price
+						* (num_weeks_since_lock_frag.clone() - last_withdraw_week.clone());
+
+					log::trace!("Tickets available per week: {}", tickets_convertible_per_week);
+					log::trace!("NOVA available per week: {}", nova_convertible_per_week);
+					log::trace!(
+						"Weeks passed since FRAG was locked: {}",
+						num_weeks_since_lock_frag
+					);
+					log::trace!(
+						"Tickets available per week at current price: {}",
+						tickets_amount_per_week_at_current_price
+					);
+					log::trace!(
+						"NOVA available per week at current price: {}",
+						nova_amount_per_week_at_current_price
+					);
+					log::trace!("Tickets to be withdrawn: {}", tickets_amount_to_withdraw);
+					log::trace!("NOVA to be withdrawn: {}", nova_amount_to_withdraw);
+
+					let tickets_amount_to_mint: <T as pallet_assets::Config>::Balance =
+						tickets_amount_to_withdraw.saturated_into();
+					let nova_amount_to_deposit: <T as pallet_balances::Config>::Balance =
+						nova_amount_to_withdraw.saturated_into();
+
+					ensure!(tickets_amount_to_withdraw > 0, Error::<T>::SystematicFailure);
+					ensure!(nova_amount_to_withdraw > 0, Error::<T>::SystematicFailure);
+
+					tickets_amount = tickets_amount.saturating_add(tickets_amount_to_mint);
+					nova_amount = nova_amount.saturating_add(nova_amount_to_deposit);
+
+					let nova_old_balance =
+						pallet_balances::Pallet::<T>::free_balance(&account.clone());
+					ensure!(
+					nova_old_balance + nova_amount >=
+						<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
+						),
+					Error::<T>::SystematicFailure // this should never happen
+					);
+
+					if num_weeks_since_lock_frag == lock_period_in_weeks.clone() as u128 {
+						<EthLockedFrag<T>>::remove(eth_account.clone(), eth_lock.block_number);
+					} else {
+						// Update the week number of the latest withdraw
+						<EthLockedFrag<T>>::mutate(
+							&eth_account,
+							eth_lock.block_number,
+							|eth_lock| {
+								let eth_lock = eth_lock.as_mut().unwrap();
+								eth_lock.last_withdraw = num_weeks_since_lock_frag.clone();
+							},
+						);
+					}
+				}
+
+				// Checks completed, now write
+				// mint tickets
+				<pallet_assets::Pallet<T> as Mutate<T::AccountId>>::mint_into(
+					T::TicketsAssetId::get(),
+					&account.clone(),
+					tickets_amount,
+				)?;
+
+				// Assign NOVA
+				<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+					&account.clone(),
+					nova_amount,
+				)?;
+				Ok(())
+			} else {
+				return Err(Error::<T>::NothingToWithdraw.into());
+			}
+		}
+
+		fn initial_amount(amount: u128, percent: u128, current_frag_price: u128) -> u128 {
+			if amount == 0 {
+				return 0;
+			}
+			let percentage_amount = Self::apply_percent(amount, percent);
+			percentage_amount * current_frag_price * 100
+		}
+
+		/// Calculate a percentage
+		pub fn apply_percent(amount: u128, percent: u128) -> u128 {
+			if amount == 0 {
+				return 0;
+			}
+			amount * percent / 100
+		}
+
+		/// Get the price of FRAG from pallet-oracle
+		pub fn get_oracle_price() -> u128 {
+			1 // Assume the current price of 1 FRAG = 1 USD
+			// TODO implement pallet Oracle
+		}
+
+		/// Convert the lock period integer retrieved from Ethereum event into the number of weeks.
+		/// Refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
+		pub fn eth_lock_period_to_weeks(lock_period: u8) -> Result<u8, Error<T>> {
+			let sec = match lock_period {
+				0 => 2,  // 2 weeksu64
+				1 => 4,  // 1 month
+				2 => 13, // 3 months
+				3 => 26, // 6 months
+				4 => 52, // 1 year
+				_ => return Err(Error::<T>::LockPeriodOutOfRange),
+			};
+			Ok(sec)
+		}
+
+		/// Build and return a hash from a EPIP-712 compliant structure
+		pub fn get_eip712_hash(contract: Address, hash_struct: &Vec<Token>) -> Vec<u8> {
+			let message: Vec<u8> = [&[0x19, 0x01],
+				// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&vec![
+							Token::Uint(
+								U256::from(keccak_256(b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"))
+							),
+							Token::Uint(U256::from(keccak_256(b"Fragnova Network Token"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(keccak_256(b"1"))), // The dynamic values bytes and string are encoded as a keccak_256 hash of their contents.
+							Token::Uint(U256::from(T::EthChainId::get())),
+							Token::Address(contract),
+						]
+					)
+				)[..],
+				// This is the `hashStruct(message)`. Note: `hashStruct(message : 𝕊) = keccak_256(typeHash ‖ encodeData(message))`, where `typeHash = keccak_256(encodeType(typeOf(message)))`.
+				&keccak_256(
+					// We use the ABI encoding Rust library since it encodes each token as 32-bytes
+					&ethabi::encode(
+						&hash_struct
+					)
+				)[..]
+			].concat();
+
+			message
 		}
 	}
 }

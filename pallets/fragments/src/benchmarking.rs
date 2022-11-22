@@ -70,7 +70,7 @@ benchmarks! {
 		};
 		let permissions: FragmentPerms = FragmentPerms::EDIT | FragmentPerms::TRANSFER;
 		let unique: Option<UniqueOptions> = Some(UniqueOptions { mutable: false});
-		let max_supply: Option<Unit> = Some(7);
+		let max_supply: Option<InstanceUnit> = Some(7);
 
 	}: create(RawOrigin::Signed(caller), proto_hash, metadata.clone(), permissions, unique, max_supply) // Execution phase
 	verify { // Optional verification phase
@@ -116,7 +116,7 @@ benchmarks! {
 		let price = 7u128;
 		let quantity = Some(7); // making `quantity` Some causes an if condition to execute
 		let expires: Option<T::BlockNumber> = Some(T::BlockNumber::from(7u32));
-		let amount: Option<Unit> = Some(7);
+		let amount: Option<InstanceUnit> = Some(7);
 
 	}: publish(RawOrigin::Signed(caller), definition_hash, price, quantity, expires, amount) // Execution phase
 	verify { // Optional verification phase
@@ -202,7 +202,7 @@ benchmarks! {
 		);
 
 		let options = FragmentBuyOptions::Quantity(q.into());
-		let amount: Option<Unit> = Some(7);
+		let amount: Option<InstanceUnit> = Some(7);
 
 	}: mint(RawOrigin::Signed(caller.clone()), definition_hash, options, amount) // Execution phase
 	verify { // Optional verification phase
@@ -252,7 +252,7 @@ benchmarks! {
 		);
 
 		let options = FragmentBuyOptions::UniqueData(vec![7u8; d as usize]);
-		let amount: Option<Unit> = Some(7);
+		let amount: Option<InstanceUnit> = Some(7);
 
 	}: mint(RawOrigin::Signed(caller.clone()), definition_hash, options, amount) // Execution phase
 	verify { // Optional verification phase
@@ -310,10 +310,10 @@ benchmarks! {
 			None,
 			None
 		)?;
-		_ = <Balances::<T> as Currency<T::AccountId>>::deposit_creating(
+		_ = <Balances::<T> as fungible::Mutate<T::AccountId>>::mint_into(
 			&caller.clone(),
 			<T as pallet_balances::Config>::Balance::from(price.saturating_mul(q))
-			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
+			+ <Balances::<T> as fungible::Inspect<T::AccountId>>::minimum_balance(),
 		);
 
 		let options = FragmentBuyOptions::Quantity(q.into());
@@ -377,10 +377,10 @@ benchmarks! {
 			None
 		)?;
 
-		_ = <Balances::<T> as Currency<T::AccountId>>::deposit_creating(
+		_ = <Balances::<T> as fungible::Mutate<T::AccountId>>::mint_into(
 			&caller,
 			<T as pallet_balances::Config>::Balance::from(price)
-			+ <Balances::<T> as Currency<T::AccountId>>::minimum_balance(),
+			+ <Balances::<T> as fungible::Inspect<T::AccountId>>::minimum_balance(),
 		);
 
 		let options = FragmentBuyOptions::UniqueData(vec![7u8; d as usize]);

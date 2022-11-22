@@ -1,5 +1,7 @@
 use crate::*;
 
+use pallet_detach::SupportedChains;
+
 // pub use pallet_protos::dummy_data::ProtoFragment;
 pub use copied_from_pallet_protos::ProtoFragment;
 
@@ -70,7 +72,7 @@ impl Definition {
 				&self.metadata.name.encode(),
 				&self.metadata.currency.encode(),
 			]
-			.concat(),
+				.concat(),
 		)
 	}
 
@@ -93,7 +95,7 @@ pub struct Publish {
 
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** to **top up** in the **stack of stackable items**
-	pub amount: Option<u64>,
+	pub stack_amount: Option<u64>,
 }
 
 #[derive(Clone)]
@@ -118,10 +120,11 @@ pub struct Buy {
 	pub buy_options: FragmentBuyOptions,
 }
 
+#[derive(Clone)]
 pub struct Give {
 	pub mint: Mint,
-	pub edition_id: u64,
-	pub copy_id: u64,
+	pub edition_id: InstanceUnit,
+	pub copy_id: InstanceUnit,
 	pub to: sp_core::ed25519::Public,
 	pub new_permissions: Option<FragmentPerms>,
 	pub expiration: Option<u64>,
@@ -130,8 +133,35 @@ pub struct Give {
 pub struct CreateAccount {
 	// Creates Account for a Fragment Instance
 	pub mint: Mint,
+	pub edition_id: InstanceUnit,
+	pub copy_id: InstanceUnit,
+}
+
+#[derive(Clone)]
+pub struct Resell {
+	pub mint: Mint,
+	pub edition_id: InstanceUnit,
+	pub copy_id: InstanceUnit,
+	pub new_permissions: Option<FragmentPerms>,
+	pub expiration: Option<u64>,
+	pub secondary_sale_type: SecondarySaleType,
+}
+#[derive(Clone)]
+pub struct EndResale {
+	pub resell: Resell
+}
+#[derive(Clone)]
+pub struct SecondaryBuy {
+	pub resell: Resell,
+	pub options: SecondarySaleBuyOptions
+}
+
+pub struct Detach {
+	pub mint: Mint,
 	pub edition_id: u64,
 	pub copy_id: u64,
+	pub target_chain: SupportedChains,
+	pub target_account: Vec<u8>,
 }
 
 /// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
@@ -154,8 +184,19 @@ pub struct DummyData {
 
 	pub create_account: CreateAccount,
 
+	pub resell_normal: Resell,
+
+	pub end_resale: EndResale,
+
+	pub secondary_buy: SecondaryBuy,
+	pub secondary_buy_no_copy_perms: SecondaryBuy,
+	pub secondary_buy_copy_perms: SecondaryBuy,
+
+	pub detach: Detach,
+
 	pub account_id: sp_core::ed25519::Public,
 	pub account_id_second: sp_core::ed25519::Public,
+	pub account_id_third: sp_core::ed25519::Public,
 }
 
 impl DummyData {
@@ -182,7 +223,7 @@ impl DummyData {
 			price: 2,
 			quantity: None,
 			expires: None,
-			amount: None,
+			stack_amount: None,
 		};
 		let publish_with_max_supply = Publish {
 			definition: Definition {
@@ -225,7 +266,7 @@ impl DummyData {
 		let give_no_copy_perms = Give {
 			mint: Mint {
 				definition: Definition {
-					permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER, // no copy perms
+					permissions: FragmentPerms::TRANSFER, // no copy perms
 					..mint_unique.definition.clone()
 				},
 				..mint_unique.clone()
@@ -239,9 +280,7 @@ impl DummyData {
 		let give_copy_perms = Give {
 			mint: Mint {
 				definition: Definition {
-					permissions: FragmentPerms::EDIT
-						| FragmentPerms::TRANSFER
-						| FragmentPerms::COPY, // copy perms
+					permissions: FragmentPerms::TRANSFER | FragmentPerms::COPY, // copy perms
 					..mint_unique.definition.clone()
 				},
 				..mint_unique.clone()
@@ -254,6 +293,43 @@ impl DummyData {
 		};
 
 		let create_account = CreateAccount { mint: mint_unique.clone(), edition_id: 1, copy_id: 1 };
+
+		let resell_normal = Resell {
+			mint: mint_unique.clone(),
+			edition_id: 1,
+			copy_id: 1,
+			new_permissions: Some(FragmentPerms::NONE),
+			expiration: Some(999),
+			secondary_sale_type: SecondarySaleType::Normal(777),
+		};
+
+		let end_resale = EndResale {
+			resell: resell_normal.clone(),
+		};
+
+		let secondary_buy = SecondaryBuy {
+			resell: resell_normal.clone(),
+			options: SecondarySaleBuyOptions::Normal,
+		};
+
+		let secondary_buy_no_copy_perms = {
+			let mut secondary_buy = secondary_buy.clone();
+			secondary_buy.resell.mint.definition.permissions = FragmentPerms::TRANSFER; // no copy perms
+			secondary_buy
+		};
+		let secondary_buy_copy_perms = {
+			let mut secondary_buy = secondary_buy.clone();
+			secondary_buy.resell.mint.definition.permissions = FragmentPerms::TRANSFER | FragmentPerms::COPY; // no copy perms
+			secondary_buy
+		};
+
+		let detach = Detach {
+			mint: mint_unique.clone(),
+			edition_id: 1,
+			copy_id: 1,
+			target_chain: SupportedChains::EthereumMainnet,
+			target_account: [7u8; 20].to_vec(),
+		};
 
 		Self {
 			definition,
@@ -269,13 +345,24 @@ impl DummyData {
 			buy_unique,
 			buy_non_unique_with_limited_published_quantity,
 
-			give_copy_perms,
 			give_no_copy_perms,
+			give_copy_perms,
 
 			create_account,
 
+			resell_normal,
+
+			end_resale,
+
+			secondary_buy,
+			secondary_buy_no_copy_perms,
+			secondary_buy_copy_perms,
+
+			detach,
+
 			account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([2u8; 32]),
+			account_id_third: sp_core::ed25519::Public::from_raw([3u8; 32]),
 		}
 	}
 }

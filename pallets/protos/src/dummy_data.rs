@@ -1,7 +1,9 @@
+use std::str::FromStr;
+use ethabi::ethereum_types::Address;
 use crate::*;
 
 pub use pallet_accounts::dummy_data::{
-	create_link_signature, create_lock_signature, get_ethereum_account_id_from_ecdsa_public_struct,
+	create_link_signature, create_lock_signature, get_ethereum_public_address,
 	Link, Lock,
 };
 
@@ -16,6 +18,7 @@ use sp_clamor::{Hash256, CID_PREFIX};
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
 use protos::traits::{RecordInfo, Trait, VariableType, VariableTypeInfo};
+use pallet_detach::SupportedChains;
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
@@ -80,11 +83,16 @@ pub struct Stake {
 	pub proto_fragment: ProtoFragment,
 	pub lock: Lock,
 }
-
 impl Stake {
 	pub fn get_stake_amount(&self) -> u128 {
 		self.proto_fragment.include_cost.unwrap().into()
 	}
+}
+
+pub struct Detach {
+	pub proto_fragment: ProtoFragment,
+	pub target_chain: SupportedChains,
+	pub target_account: Vec<u8>,
 }
 
 /// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
@@ -100,6 +108,7 @@ pub struct DummyData {
 	pub proto_shard_script_4: ProtoFragment,
 	pub patch: Patch,
 	pub metadata: Metadata,
+	pub detach: Detach,
 	pub stake: Stake,
 	pub account_id: sp_core::ed25519::Public,
 	pub account_id_second: sp_core::ed25519::Public,
@@ -265,20 +274,32 @@ impl DummyData {
 			data: b"{\"name\": \"ram\"}".to_vec(),
 		};
 
+		let detach = Detach {
+			proto_fragment: proto.clone(),
+			target_chain: SupportedChains::EthereumMainnet,
+			target_account: [7u8; 20].to_vec(),
+		};
+
+		let contracts = vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")];
+		let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
 		let stake = Stake {
 			proto_fragment: proto.clone(),
 			lock: Lock {
 				data: pallet_accounts::EthLockUpdate {
 					public: sp_core::ed25519::Public([69u8; 32]),
 					amount: U256::from(69u32),
-					locktime: U256::from(1234567890),
-					sender: get_ethereum_account_id_from_ecdsa_public_struct(
-						&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]).public(),
+					lock_period: 1,
+					sender: get_ethereum_public_address(
+						&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 					),
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 						U256::from(69u32),
-						U256::from(1234567890),
+						1,
+						get_ethereum_public_address(
+							&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
+						),
+						contract,
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
@@ -289,6 +310,7 @@ impl DummyData {
 						sp_core::ed25519::Public::from_raw([3u8; 32]),
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 					),
+					_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 				},
 				ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 			},
@@ -306,6 +328,7 @@ impl DummyData {
 			proto_shard_script_4,
 			patch,
 			metadata,
+			detach,
 			stake,
 			account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([2u8; 32]),
