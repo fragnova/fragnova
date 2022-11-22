@@ -13,6 +13,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"]}
 log = { version = "0.4.14", default-features = false }
+hex = { version = "0.4.3", default-features = false }
 scale-info = { version = "2.1.1", default-features = false, features = ["derive"] }
 frame-benchmarking = { version = "4.0.0-dev", default-features = false, optional = true, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
 frame-support = { version = "4.0.0-dev", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
@@ -24,6 +25,8 @@ sp-core = { version = "6.0.0", default-features = false, git = "https://github.c
 sp-io = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
 sp-runtime = { version = "6.0.0", default-features = false, git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.30" }
 pallet-balances = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = "fragnova-v0.9.30", default-features = false }
+pallet-proxy = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = "fragnova-v0.9.30", default-features = false }
+pallet-timestamp = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = "fragnova-v0.9.30", default-features = false }
 
 [features]
 default = ["std"]
@@ -39,6 +42,8 @@ std = [
 	'sp-runtime/std',
 	'log/std',
 	'pallet-balances/std',
+	'pallet-proxy/std',
+	'pallet-timestamp/std',
 ]
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]

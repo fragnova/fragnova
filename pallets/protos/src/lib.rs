@@ -394,7 +394,7 @@ pub mod pallet {
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
 			data: Vec<u8>,
-			cluster: Option<Cluster<T::AccountId>>
+			_cluster: Option<Cluster<T::AccountId>>
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
