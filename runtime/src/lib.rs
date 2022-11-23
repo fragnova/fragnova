@@ -770,27 +770,38 @@ pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// 1. Each element in the tuple implements the trait `SignedExtension`.
 /// 2. This tuple implements the trait `SignedExtension`. See: https://paritytech.github.io/substrate/master/sp_runtime/traits/trait.SignedExtension.html#impl-SignedExtension-for-(TupleElement0%2C%20TupleElement1%2C%20TupleElement2%2C%20TupleElement3%2C%20TupleElement4%2C%20TupleElement5%2C%20TupleElement6)
 ///
+/// # Example
+///
+/// Notice that in any signed transaction/extrinsic that is sent to Clamor, it will the extra data🥕 "era", "nonce" and "tip": https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
+///
+/// The reason we see this additional data in the encoded extrinsic is because we have defined them here.
+///
 pub type SignedExtra = (
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32`,
-	/// the extrinsic will be extended by quanti more bytes?
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32` (and not `()`),
+	/// the signing payload (i.e the payload that will be signed to generate the signature🥖) must contain the runtime version number.
 	frame_system::CheckSpecVersion<Runtime>,
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32`,
-	/// the extrinsic will be extended by quanti more bytes?
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32` (and not `()`),
+	/// the signing payload must contain the transaction version number.
 	frame_system::CheckTxVersion<Runtime>,
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash`,
-	/// the extrinsic will be extended by quanti more bytes?
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash` (and not `()`),
+	/// the signing payload must contain the Genesis Block's Block Hash.
 	frame_system::CheckGenesis<Runtime>,
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash`,
-	/// the extrinsic will be extended by quanti more bytes?
+	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash` (and not `()`),
+	/// the signing payload must contain <TODO>.
+	///
+	/// Furthermore - since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" (i.e the enum `Era`),
+	/// any encoded extrinsic sent to this blockchain must have the enum `Era` as part of its extra data🥕
 	frame_system::CheckEra<Runtime>,
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `()`,
-	/// it will not cause extrinsic to be extended by any bytes.
+	/// Since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" (i.e the `#[codec(compact)] pub Runtime::Index`),
+	/// any encoded extrinsic sent to this blockchain must have the sender account's nonce (encoded as a `Comapct<Runtime::Index>`) as part of its extra data🥕
 	frame_system::CheckNonce<Runtime>,
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `()`,
-	/// it will not cause extrinsic to be extended by any bytes.
+	/// Since the `SigningExtension` object is a tuple struct with only `PhantomData`-typed element(s) AND since its `SignedExtension::AdditionalSigned` is `()`,
+	/// this `SignedExtension` object will not have any impact on the signing payload and thus the signature🥖.
 	frame_system::CheckWeight<Runtime>,
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `()`,
-	/// it will not cause extrinsic to be extended by any bytes.
+	/// Since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" of type `#[codec(compact)] pub BalanceOf<Runtime>`,
+	/// any encoded extrinsic sent to this blockchain must have a tip (encoded as a `Compact<BalanceOf<Runtime>>`) as part of its extra data🥕
+	///
+	/// Footnote: `type BalanceOf<T> = <<T as Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance`
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// The **type** (i.e "format") that an **unchecked extrinsic** must have.
@@ -809,16 +820,27 @@ pub type SignedExtra = (
 /// Substrate defines its transaction formats generically to allow developers to implement custom ways to define valid transactions.
 /// In a runtime built with FRAME however (assuming transaction version 4), a transaction must be constructed by submitting the following encoded data:
 ///
-/// `<signing account ID> + <signature> + <additional data>`
+/// `<signing account ID> + <signature>🥖 + <additional data>🥕🥦`
 ///
-/// When submitting a signed transaction, the signature is constructed by signing:
+/// When submitting a signed transaction, the signature🥖is constructed by signing:
 /// - The actual call, composed of:
 ///   - The index of the pallet.
 ///   - The index of the function call in the pallet.
 ///   - The parameters required by the function call being targeted.
-/// - Some extra information, verified by the signed extensions of the transaction. Please see https://docs.substrate.io/reference/transaction-format/ for more information on this.
+/// - Some extra information🥕, verified by the signed extensions of the transaction:
+///   - What's the era for this transaction, i.e. how long should this call last in the transaction pool before it gets discarded?
+///	  - The nonce, i.e. how many prior transactions have occurred from this account? This helps protect against replay attacks or accidental double-submissions.
+///   - The tip amount paid to the block producer to help incentive it to include this transaction in the block.
 ///
-/// Then, some additional data that's not part of what gets signed is required.
+/// Then, some additional data that's not part of what gets s̶i̶g̶n̶e̶d̶ sent (**Note from Karan: I think they meant to say "sent" here, not "signed"**),  which includes:
+/// - The spec version and the transaction version. This ensures the transaction is being submitted to a compatible runtime.
+/// - The genesis hash. This ensures that the transaction is valid for the correct chain.
+/// - The block hash. This corresponds to the hash of the checkpoint block, which enables the signature to verify that the transaction doesn't execute on the wrong fork, by checking against the block number provided by the era information.
+///
+/// **The SCALE encoded data is then signed (i.e. (`call`, `extra`, `additional`)) and the signature🥖, extra data🥕 and call data🥦
+/// is attached in the correct order and SCALE encoded, ready to send off to a node that will verify the signed payload.**
+/// If the payload to be signed is longer than 256 bytes, it is hashed just prior to being signed,
+/// to ensure that the size of the signed data does not grow beyond a certain size.
 ///
 /// This process can be broken down into the following steps:
 ///
@@ -834,12 +856,16 @@ pub type SignedExtra = (
 ///
 /// where:
 ///
-/// `[1]` contains the compact encoded length in bytes of all of the following data. Learn how compact encoding works using SCALE.
+/// `[1]` contains the compact encoded length in bytes of all of the following data. (Learn how compact encoding works using SCALE here: https://docs.substrate.io/reference/scale-codec/)
 /// `[2]` is a `u8` containing 1 byte to indicate whether the transaction is signed or unsigned (1 bit), and the encoded transaction version ID (7 bits).
-/// `[3]` if a signature is present, this field contains an account ID, an SR25519 signature and some extra data. If unsigned this field contains 0 bytes.
-/// `[4]` is the encoded call data. This comprises of 1 byte denoting the pallet to call into, 1 byte denoting the call to make in that pallet, and then as many bytes as needed to encode the arguments expected by that call.
+/// `[3]`️ if a signature🥖️ is present, this field contains an account ID, an SR25519 signature🥖 and some extra data🥕. If unsigned this field contains 0 bytes.
+/// `[4]` is the encoded call data🥦. This comprises of 1 byte denoting the pallet to call into, 1 byte denoting the call to make in that pallet, and then as many bytes as needed to encode the arguments expected by that call.
 ///
 /// Source: https://docs.substrate.io/reference/transaction-format/
+///
+/// # Example
+///
+/// For example - notice that the encoded transaction for `protos.upload()` has the order of first "signer", "signature"🥖, extra data🥕 (i.e "era", "nonce" and "tip") and finally the encoded call data🥦 (i.e "callIndex" and the arguments of `protos.upload()`): https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
 ///
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// The payload being signed in transactions.
