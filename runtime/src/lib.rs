@@ -777,31 +777,31 @@ pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// The reason we see this additional data in the encoded extrinsic is because we have defined them here.
 ///
 pub type SignedExtra = (
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32` (and not `()`),
-	/// the signing payload (i.e the payload that will be signed to generate the signature🥖) must contain the runtime version number.
+	// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32` (and not `()`),
+	// the signing payload (i.e the payload that will be signed to generate the signature🥖) must contain the runtime version number.
 	frame_system::CheckSpecVersion<Runtime>,
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32` (and not `()`),
-	/// the signing payload must contain the transaction version number.
+	// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32` (and not `()`),
+	// the signing payload must contain the transaction version number.
 	frame_system::CheckTxVersion<Runtime>,
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash` (and not `()`),
-	/// the signing payload must contain the Genesis Block's Block Hash.
+	// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash` (and not `()`),
+	// the signing payload must contain the Genesis Block's Block Hash.
 	frame_system::CheckGenesis<Runtime>,
-	/// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash` (and not `()`),
-	/// the signing payload must contain <TODO>.
-	///
-	/// Furthermore - since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" (i.e the enum `Era`),
-	/// any encoded extrinsic sent to this blockchain must have the enum `Era` as part of its extra data🥕
+	// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash` (and not `()`),
+	// the signing payload must contain <TODO>.
+	//
+	// Furthermore - since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" (i.e the enum `Era`),
+	// any encoded extrinsic sent to this blockchain must have the enum `Era` as part of its extra data🥕
 	frame_system::CheckEra<Runtime>,
-	/// Since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" (i.e the `#[codec(compact)] pub Runtime::Index`),
-	/// any encoded extrinsic sent to this blockchain must have the sender account's nonce (encoded as a `Comapct<Runtime::Index>`) as part of its extra data🥕
+	// Since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" (i.e the `#[codec(compact)] pub Runtime::Index`),
+	// any encoded extrinsic sent to this blockchain must have the sender account's nonce (encoded as a `Comapct<Runtime::Index>`) as part of its extra data🥕
 	frame_system::CheckNonce<Runtime>,
-	/// Since the `SigningExtension` object is a tuple struct with only `PhantomData`-typed element(s) AND since its `SignedExtension::AdditionalSigned` is `()`,
-	/// this `SignedExtension` object will not have any impact on the signing payload and thus the signature🥖.
+	// Since the `SigningExtension` object is a tuple struct with only `PhantomData`-typed element(s) AND since its `SignedExtension::AdditionalSigned` is `()`,
+	// this `SignedExtension` object will not have any impact on the signing payload and thus the signature🥖.
 	frame_system::CheckWeight<Runtime>,
-	/// Since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" of type `#[codec(compact)] pub BalanceOf<Runtime>`,
-	/// any encoded extrinsic sent to this blockchain must have a tip (encoded as a `Compact<BalanceOf<Runtime>>`) as part of its extra data🥕
-	///
-	/// Footnote: `type BalanceOf<T> = <<T as Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance`
+	// Since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" of type `#[codec(compact)] pub BalanceOf<Runtime>`,
+	// any encoded extrinsic sent to this blockchain must have a tip (encoded as a `Compact<BalanceOf<Runtime>>`) as part of its extra data🥕
+	//
+	// Footnote: `type BalanceOf<T> = <<T as Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance`
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// The **type** (i.e "format") that an **unchecked extrinsic** must have.
@@ -1047,8 +1047,8 @@ impl_runtime_apis! {
 				#[allow(unused_variables)]
 				RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
 					// TODO
-					let is_valid = is_valid(category, data);
-					()
+					// let is_valid = is_valid(category, data);
+					// ()
 				},
 				#[allow(unused_variables)]
 				RuntimeCall::Protos(ProtosCall::patch{ref data, ..}) |
