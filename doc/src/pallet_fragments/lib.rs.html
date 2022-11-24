@@ -2234,6 +2234,25 @@
 <span id="2234">2234</span>
 <span id="2235">2235</span>
 <span id="2236">2236</span>
+<span id="2237">2237</span>
+<span id="2238">2238</span>
+<span id="2239">2239</span>
+<span id="2240">2240</span>
+<span id="2241">2241</span>
+<span id="2242">2242</span>
+<span id="2243">2243</span>
+<span id="2244">2244</span>
+<span id="2245">2245</span>
+<span id="2246">2246</span>
+<span id="2247">2247</span>
+<span id="2248">2248</span>
+<span id="2249">2249</span>
+<span id="2250">2250</span>
+<span id="2251">2251</span>
+<span id="2252">2252</span>
+<span id="2253">2253</span>
+<span id="2254">2254</span>
+<span id="2255">2255</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -2242,7 +2261,7 @@
 //!
 //! A Fragment Definition is created using a Proto-Fragment (see pallet `protos`).
 //! A Fragment Definition&#39;s ID can be determinstically computed using its Proto-Fragment hash and
-//! its metadata struct `FragmentMetadata`.
+//! its metadata struct `DefinitionMetadata`.
 //!
 //! A Fragment Definition is essentially a digital asset that can be used to enhance the user experience in a game or application,
 //! like an in-game item or user account. A Fragment has its own storage, metadata and digital life on its own.
@@ -2391,14 +2410,22 @@
 	</span><span class="kw">pub </span>copy_id: InstanceUnit,
 }
 
+<span class="doccomment">/// Enum can be used to represent a currency that exists on the Clamor Blockchain
+</span><span class="attribute">#[derive(Encode, Decode, Copy, Clone, scale_info::TypeInfo, Debug, PartialEq)] </span><span class="comment">// REVIEW - should it implement the trait `Copy`?
+</span><span class="kw">pub enum </span>Currency&lt;TFungibleAsset&gt; {
+	<span class="doccomment">/// Clamor&#39;s Native Currency (i.e NOVA token)
+	</span>Native,
+	<span class="doccomment">/// A Custom Currency
+	</span>Custom(TFungibleAsset),
+}
+
 <span class="doccomment">/// **Struct** of a **Fragment Definition&#39;s Metadata**
 </span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-</span><span class="kw">pub struct </span>FragmentMetadata&lt;TFungibleAsset&gt; {
+</span><span class="kw">pub struct </span>DefinitionMetadata&lt;TFungibleAsset&gt; {
 	<span class="doccomment">/// **Name** of the **Fragment Definition**
 	</span><span class="kw">pub </span>name: Vec&lt;u8&gt;,
-	<span class="doccomment">/// **Currency** that the **buyer** of a **Fragment Instance that is created from the Fragment Definition** must **pay in**.
-	/// If this field is `None`, the currency the buyer must pay in is NOVA.
-	</span><span class="kw">pub </span>currency: <span class="prelude-ty">Option</span>&lt;TFungibleAsset&gt;,
+	<span class="doccomment">/// **Currency** that must be used to buy **any and all Fragment Instances created from the Fragment Definition**
+	</span><span class="kw">pub </span>currency: Currency&lt;TFungibleAsset&gt;,
 }
 
 <span class="doccomment">/// TODO
@@ -2414,8 +2441,8 @@
 </span><span class="kw">pub struct </span>FragmentDefinition&lt;TFungibleAsset, TAccountId, TBlockNum&gt; {
 	<span class="doccomment">/// **Proto-Fragment used** to **create** the **Fragment**
 	</span><span class="kw">pub </span>proto_hash: Hash256,
-	<span class="doccomment">/// ***FragmentMetadata* Struct** (the **struct** contains the **Fragment&#39;s name**, among other things)
-	</span><span class="kw">pub </span>metadata: FragmentMetadata&lt;TFungibleAsset&gt;,
+	<span class="doccomment">/// ***DefinitionMetadata* Struct** (the **struct** contains the **Fragment Definition&#39;s name**, among other things)
+	</span><span class="kw">pub </span>metadata: DefinitionMetadata&lt;TFungibleAsset&gt;,
 	<span class="doccomment">/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to
 	/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)
 	///
@@ -2562,7 +2589,7 @@
 	</span><span class="kw">pub type </span>Proto2Fragments&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash256, Vec&lt;Hash128&gt;&gt;;
 
 	<span class="comment">// fragment-hash to fragment-data
-	</span><span class="doccomment">/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `FragmentMetadata`)**
+	</span><span class="doccomment">/// **StorageMap** that maps a **Fragment Definition ID (which is determinstically computed using its Proto-Fragment hash and its metadata struct `DefinitionMetadata`)**
 	/// to a
 	/// ***FragmentDefinition* struct**
 	</span><span class="attribute">#[pallet::storage]
@@ -2835,7 +2862,7 @@
 		</span><span class="kw">pub fn </span>create(
 			origin: OriginFor&lt;T&gt;,
 			proto_hash: Hash256,
-			metadata: FragmentMetadata&lt;T::AssetId&gt;,
+			metadata: DefinitionMetadata&lt;T::AssetId&gt;,
 			permissions: FragmentPerms,
 			unique: <span class="prelude-ty">Option</span>&lt;UniqueOptions&gt;,
 			max_supply: <span class="prelude-ty">Option</span>&lt;InstanceUnit&gt;,
@@ -2863,7 +2890,7 @@
 
 			<span class="macro">ensure!</span>(!&lt;Definitions&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>hash), Error::&lt;T&gt;::AlreadyExist); <span class="comment">// If fragment already exists, throw error
 
-			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(currency) = metadata.currency {
+			</span><span class="kw">if let </span>Currency::Custom(currency) = metadata.currency {
 				<span class="macro">ensure!</span>(
 					pallet_assets::Pallet::&lt;T&gt;::maybe_total_supply(currency).is_some(),
 					Error::&lt;T&gt;::CurrencyNotFound
@@ -2878,22 +2905,25 @@
 			// we need an existential amount deposit to be able to create the vault account
 			</span><span class="kw">let </span>vault = <span class="self">Self</span>::get_vault_id(hash);
 
-			<span class="kw">if let </span><span class="prelude-val">Some</span>(currency) = metadata.currency {
-				<span class="kw">let </span>minimum_balance =
-					&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance(currency);
-				&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
-					currency,
-					<span class="kw-2">&amp;</span>vault,
-					minimum_balance,
-				)<span class="question-mark">?</span>;
-			} <span class="kw">else </span>{
-				<span class="kw">let </span>minimum_balance =
-					&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance();
-				&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
-					<span class="kw-2">&amp;</span>vault,
-					minimum_balance,
-				)<span class="question-mark">?</span>;
-			}
+			<span class="kw">match </span>metadata.currency {
+				Currency::Native =&gt; {
+					<span class="kw">let </span>minimum_balance =
+						&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance();
+					&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
+						<span class="kw-2">&amp;</span>vault,
+						minimum_balance,
+					)<span class="question-mark">?</span>;
+				},
+				Currency::Custom(currency) =&gt; {
+					<span class="kw">let </span>minimum_balance =
+						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance(currency);
+					&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
+						currency,
+						<span class="kw-2">&amp;</span>vault,
+						minimum_balance,
+					)<span class="question-mark">?</span>;
+				}
+			};
 
 			<span class="kw">let </span>fragment_data = FragmentDefinition {
 				proto_hash,
@@ -3860,40 +3890,44 @@
 			from: <span class="kw-2">&amp;</span>T::AccountId,
 			to: <span class="kw-2">&amp;</span>T::AccountId,
 			amount: u128,
-			currency: <span class="prelude-ty">Option</span>&lt;T::AssetId&gt;
+			currency: Currency&lt;T::AssetId&gt;
 		) -&gt; DispatchResult {
-			<span class="kw">if let </span><span class="prelude-val">Some</span>(currency) = currency {
-				<span class="kw">let </span>minimum_balance_needed_to_exist =
-					&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance(currency);
-				<span class="kw">let </span>price_balance: &lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::Balance =
-					amount.saturated_into();
 
-				<span class="macro">ensure!</span>(
-					&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::balance(currency, from) &gt;=
-						price_balance + minimum_balance_needed_to_exist,
-					Error::&lt;T&gt;::InsufficientBalance
-				);
-				<span class="macro">ensure!</span>(
-					&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::balance(currency, to) +
-						price_balance &gt;= minimum_balance_needed_to_exist,
-					Error::&lt;T&gt;::ReceiverBelowMinimumBalance
-				);
-			} <span class="kw">else </span>{
-				<span class="kw">let </span>minimum_balance_needed_to_exist =
-					&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance();
-				<span class="kw">let </span>price_balance: &lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::Balance =
-					amount.saturated_into();
+			<span class="kw">match </span>currency {
+				Currency::Custom(currency) =&gt; {
+					<span class="kw">let </span>minimum_balance_needed_to_exist =
+						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance(currency);
+					<span class="kw">let </span>price_balance: &lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::Balance =
+						amount.saturated_into();
 
-				<span class="macro">ensure!</span>(
-					pallet_balances::Pallet::&lt;T&gt;::free_balance(from) &gt;=
-						price_balance + minimum_balance_needed_to_exist,
-					Error::&lt;T&gt;::InsufficientBalance
-				);
-				<span class="macro">ensure!</span>(
-					pallet_balances::Pallet::&lt;T&gt;::free_balance(to) +
-						price_balance &gt;= minimum_balance_needed_to_exist,
-					Error::&lt;T&gt;::ReceiverBelowMinimumBalance
-				);
+					<span class="macro">ensure!</span>(
+						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::balance(currency, from) &gt;=
+							price_balance + minimum_balance_needed_to_exist,
+						Error::&lt;T&gt;::InsufficientBalance
+					);
+					<span class="macro">ensure!</span>(
+						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::balance(currency, to) +
+							price_balance &gt;= minimum_balance_needed_to_exist,
+						Error::&lt;T&gt;::ReceiverBelowMinimumBalance
+					);
+				},
+				Currency::Native =&gt; {
+					<span class="kw">let </span>minimum_balance_needed_to_exist =
+						&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance();
+					<span class="kw">let </span>price_balance: &lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::Balance =
+						amount.saturated_into();
+
+					<span class="macro">ensure!</span>(
+						pallet_balances::Pallet::&lt;T&gt;::free_balance(from) &gt;=
+							price_balance + minimum_balance_needed_to_exist,
+						Error::&lt;T&gt;::InsufficientBalance
+					);
+					<span class="macro">ensure!</span>(
+						pallet_balances::Pallet::&lt;T&gt;::free_balance(to) +
+							price_balance &gt;= minimum_balance_needed_to_exist,
+						Error::&lt;T&gt;::ReceiverBelowMinimumBalance
+					);
+				}
 			}
 
 			<span class="prelude-val">Ok</span>(())
@@ -3904,27 +3938,31 @@
 			from: <span class="kw-2">&amp;</span>T::AccountId,
 			to: <span class="kw-2">&amp;</span>T::AccountId,
 			amount: u128,
-			currency: <span class="prelude-ty">Option</span>&lt;T::AssetId&gt;
+			currency: Currency&lt;T::AssetId&gt;
 		) -&gt; DispatchResult {
-			<span class="kw">if let </span><span class="prelude-val">Some</span>(currency) = currency {
-				&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Transfer&lt;T::AccountId&gt;&gt;::transfer(
-					<span class="comment">// transfer `amount` units of `currency` from `from` to `to`
-					</span>currency,
-					from,
-					to,
-					amount.saturated_into(),
-					<span class="bool-val">true</span>, <span class="comment">// The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
-				</span>)
-					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
-			} <span class="kw">else </span>{
-				pallet_balances::Pallet::&lt;T&gt;::do_transfer(
-					<span class="comment">// transfer `amount` units of NOVA from `from` to `to`
-					</span>from,
-					to,
-					amount.saturated_into(),
-					ExistenceRequirement::KeepAlive,
-				)
-					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
+
+			<span class="kw">match </span>currency {
+				Currency::Custom(currency) =&gt; {
+					&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Transfer&lt;T::AccountId&gt;&gt;::transfer(
+						<span class="comment">// transfer `amount` units of `currency` from `from` to `to`
+						</span>currency,
+						from,
+						to,
+						amount.saturated_into(),
+						<span class="bool-val">true</span>, <span class="comment">// The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
+					</span>)
+						.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
+				},
+				Currency::Native =&gt; {
+					pallet_balances::Pallet::&lt;T&gt;::do_transfer(
+						<span class="comment">// transfer `amount` units of NOVA from `from` to `to`
+						</span>from,
+						to,
+						amount.saturated_into(),
+						ExistenceRequirement::KeepAlive,
+					)
+						.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
+				}
 			}
 
 			<span class="prelude-val">Ok</span>(())
