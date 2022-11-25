@@ -19,7 +19,8 @@ use sp_core::{
 	H256,
 };
 
-use frame_support::traits::GenesisBuild;
+use frame_support::traits::{AsEnsureOriginWithArg, GenesisBuild};
+use frame_system::EnsureSigned;
 
 use sp_runtime::{
 	testing::{Header, TestXt},
@@ -154,6 +155,7 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 }
 
 impl pallet_accounts::EthFragContract for Test {
