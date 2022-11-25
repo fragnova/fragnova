@@ -4,10 +4,7 @@ use codec::Decode;
 use ethabi::Token;
 use frame_support::dispatch::DispatchResult;
 use frame_support::inherent::BlockT;
-use frame_support::{
-	assert_ok, parameter_types,
-	traits::{ConstU32, ConstU64},
-};
+use frame_support::{assert_noop, assert_ok, parameter_types, traits::{ConstU32, ConstU64}};
 use parking_lot::RwLock;
 use sp_core::offchain::testing::{OffchainState, PoolState};
 use sp_core::offchain::OffchainDbExt;
@@ -232,8 +229,17 @@ pub fn store_price_(
 	)
 }
 
+pub fn stop_oracle_(
+	flag: bool,
+) -> DispatchResult {
+	Oracle::stop_oracle(
+		RuntimeOrigin::root(),
+		flag,
+	)
+}
+
 #[test]
-fn fetch_price_from_oracle_should_work() {
+fn offchain_worker_works() {
 	let (mut t, pool_state, offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
 
 	hardcode_expected_request_and_response(&mut offchain_state.write());
@@ -276,7 +282,7 @@ fn fetch_price_from_oracle_should_work() {
 }
 
 #[test]
-fn fetch_from_oracle_should_work() {
+fn price_storage_after_offchain_worker_works() {
 	new_test_ext().execute_with(|| {
 		let expected_data = OraclePrice {
 			round_id: U256::from(123),
@@ -299,6 +305,36 @@ fn fetch_from_oracle_should_work() {
 
 		assert_eq!(event, RuntimeEvent::from(Event::NewPrice { price, block_number }));
 		assert_eq!(<Price<Test>>::get(), price);
+	});
+}
+
+#[test]
+fn circuit_breaker_works() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(stop_oracle_(true));
+		let event = <frame_system::Pallet<Test>>::events()
+			.pop()
+			.expect("Expected one EventRecord to be found")
+			.event;
+		assert_eq!(event, RuntimeEvent::from(Event::OracleStopFlag { is_stopped: true }));
+	});
+}
+
+#[test]
+fn fetch_price_zero_will_fail() {
+	new_test_ext().execute_with(|| {
+		let expected_data = OraclePrice {
+			round_id: U256::from(123),
+			price: U256::from(0),
+			started_at: U256::from(1667),
+			updated_at: U256::from(1668),
+			answered_in_round: U256::from(124),
+			block_number: System::block_number(),
+			public: sp_core::ed25519::Public([69u8; 32]),
+		};
+
+		assert_noop!(store_price_(expected_data.clone()), Error::<Test>::PriceIsZero);
+
 	});
 }
 

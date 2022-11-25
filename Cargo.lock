@@ -4571,7 +4571,7 @@ name = "pallet-protos"
 version = "0.0.1"
 dependencies = [
  "base58",
- "ethabi",
+ "ethabi 17.2.0",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

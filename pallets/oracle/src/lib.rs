@@ -66,7 +66,7 @@ pub mod crypto {
 
 /// **Traits** of the **Chainlink contract** on the **Ethereum (Goerli) network**
 pub trait OracleContract {
-        /// Get the contract address.
+	/// Get the contract address.
 	fn get_contract() -> &'static str {
 		"0xABCD"
 	}
@@ -83,15 +83,14 @@ use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use ethabi::ethereum_types::H256;
-	use ethabi::{ParamType, Token};
+	use ethabi::{ethereum_types::H256, ParamType, Token};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use sp_core::{ed25519, U256};
-	use sp_core::offchain::Timestamp;
-	use sp_runtime::MultiSigner;
-	use sp_runtime::traits::ValidateUnsigned;
-	use sp_runtime::transaction_validity::TransactionSource;
+	use sp_core::{ed25519, offchain::Timestamp, U256};
+	use sp_runtime::{
+		traits::ValidateUnsigned, transaction_validity::TransactionSource, MultiSigner,
+	};
+	use sp_runtime::traits::Zero;
 
 	const FETCH_TIMEOUT_PERIOD: u64 = 3000; // in milli-seconds
 
@@ -180,6 +179,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
+	/// **StorageValue** that contains the flag used to stop the Oracle.
+	#[pallet::storage]
+	pub type IsOracleStopped<T: Config> = StorageValue<_, bool, ValueQuery>;
+
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn offchain_worker(block_number: T::BlockNumber) {
@@ -238,6 +241,8 @@ pub mod pallet {
 
 			let latest_price: u32 =
 				oracle_price.price.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
+			ensure!(!latest_price.is_zero(), Error::<T>::PriceIsZero);
+
 			let block_number = oracle_price.block_number;
 
 			// voting
@@ -250,7 +255,7 @@ pub mod pallet {
 					if current_votes + 1u64 < threshold {
 						// Current Votes has not passed the threshold
 						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
-						return Ok(());
+						return Ok(())
 					} else {
 						// Current votes passes the threshold, let's remove the record
 						<EVMLinkVoting<T>>::remove(&data_hash);
@@ -258,7 +263,7 @@ pub mod pallet {
 				} else {
 					// If key `data_hash` doesn't exist in EVMLinkVoting
 					<EVMLinkVoting<T>>::insert(&data_hash, 1);
-					return Ok(());
+					return Ok(())
 				}
 			}
 
@@ -267,6 +272,23 @@ pub mod pallet {
 			<Price<T>>::put(latest_price);
 
 			Self::deposit_event(Event::NewPrice { price: latest_price, block_number });
+			Ok(())
+		}
+
+		/// Circuit breaker!
+		/// Stop the Oracle by changing the value of **OracleStop** flag.
+		/// **true** = oracle stop from the next block,
+		/// **false** = oracle keeps running (default).
+		#[pallet::weight(10000)]
+		pub fn stop_oracle(origin: OriginFor<T>, stop_it: bool) -> DispatchResult {
+			ensure_root(origin)?;
+
+			log::debug!("Oracle stop flag: {:?}", stop_it);
+
+			IsOracleStopped::<T>::put(stop_it);
+
+			Self::deposit_event(Event::OracleStopFlag { is_stopped: stop_it });
+
 			Ok(())
 		}
 	}
@@ -278,12 +300,16 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Event generated when new price is accepted.
 		NewPrice { price: u32, block_number: T::BlockNumber },
+		/// Oracle stop flag updated
+		OracleStopFlag { is_stopped: bool },
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
 		/// Error with connection with Geth client.
 		GethConnectionError,
+		/// Error in case the price of FRAG is zero. It should never happen.
+		PriceIsZero,
 		/// Systematic failure - those errors should not happen.
 		SystematicFailure,
 	}
@@ -302,17 +328,25 @@ pub mod pallet {
 
 		/// A helper function to fetch the price, sign payload and send an unsigned transaction
 		pub fn fetch_price_from_oracle(block_number: T::BlockNumber) {
-			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
-				String::from_utf8(geth).unwrap()
+			let is_oracle_stopped = <IsOracleStopped<T>>::get();
+			if !is_oracle_stopped {
+				// check that the oracle is NOT stopped
+				let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
+					String::from_utf8(geth).unwrap()
+				} else {
+					log::debug!("Geth URL not set, skipping fetch price from oracle.");
+					return
+				};
+
+				let oracle_address = T::OracleContract::get_contract();
+
+				if let Err(e) = Self::fetch_price(block_number, &oracle_address, &geth_uri) {
+					log::error!("Failed to fetch price from oracle with error: {}", e);
+				}
+
 			} else {
-				log::debug!("Geth URL not set, skipping fetch price from oracle.");
-				return;
-			};
-
-			let oracle_address = T::OracleContract::get_contract();
-
-			if let Err(e) = Self::fetch_price(block_number, &oracle_address, &geth_uri) {
-				log::error!("Failed to fetch price from oracle with error: {}", e);
+				log::debug!("The IsOracleStopped flag is set on {:?}. Call stop_oracle(false) to restart it.", is_oracle_stopped);
+				return
 			}
 		}
 
@@ -344,7 +378,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from Ethereum.");
+				return Err("Failed to get response from Ethereum.")
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -365,7 +399,8 @@ pub mod pallet {
 					ParamType::Uint(80),  // uint80 answeredInRound
 				])],
 				&data,
-			).map_err(|_| "Invalid response")?;
+			)
+			.map_err(|_| "Invalid response")?;
 
 			let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid tuple")?;
 			let round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
@@ -430,7 +465,7 @@ pub mod pallet {
 					_ => {
 						log::debug!("Not a local transaction");
 						// Return TransactionValidityError˘ if the call is not allowed.
-						return InvalidTransaction::Call.into();
+						return InvalidTransaction::Call.into()
 					},
 				}
 
@@ -445,19 +480,19 @@ pub mod pallet {
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into(); // // 问Gio
+						return InvalidTransaction::BadSigner.into() // // 问Gio
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
 					// return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadSigner.into();
+					return InvalidTransaction::BadSigner.into()
 				}
 
 				let signature_valid =
 					SignedPayload::<T>::verify::<T::AuthorityId>(oracle_price, signature.clone());
 				if !signature_valid {
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 				log::debug!("Sending store_price extrinsic");
 				ValidTransaction::with_tag_prefix("PriceFromOracleUpdate")
