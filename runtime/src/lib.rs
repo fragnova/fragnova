@@ -2,6 +2,50 @@
 //!
 //! The runtime for a Substrate node contains all of the business logic
 //! for executing transactions, saving state transitions, and interacting with the outer node.
+//!
+//! # Footnotes
+//!
+//! ## Weights
+//!
+//! In Substrate, **weight** is a **unit of measurement** to measure **computation time**.
+//!
+//! "Built into FRAME, it is hardcoded that 10**12 weight is equivalent to 1 second of computation time [on the reference hardware]" - https://www.youtube.com/watch?v=i3zW4wGexAc&t=138s
+//!
+//! Therefore, one unit of weight is one picosecond of computation time on the reference hardware. Source: https://docs.substrate.io/reference/glossary/#weight
+//!
+//! ### What does "Maximum Block Weight" mean?
+//!
+//! The **maximum block weight** is the **maximum amount of computation time** that a Node is **allowed to spend in constructing a block**.
+//!
+//! In Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** with an allocation of:
+//! - One third for block construction
+//! - One third for network propagation
+//! - One third for import and verification
+//!
+//! Source: https://docs.substrate.io/reference/glossary/#weight
+//!
+//! ## Transaction lifecycle (i.e the sequence of events that happens when a transaction/extrinsic is sent to a Substrate Blockchain):
+//!
+//! 1. The transaction (i.e the payload) is sent to a **single Substrate Node** using an RPC
+//! 2. The transaction enters the transaction pool of this Substrate Note
+//! 2a. In the transaction pool, the payload is checked to be valid in `validate_transaction()`
+//!
+//! 3. The Substrate Node gossips this transaction to peer nodes using libp2p
+//! 3a. The peer nodes also check if this transaction is valid by running `validate_transaction()`
+//!
+//! 4. One of the nodes creates a block which will include the transaction.
+//! 5. This "block author node" will gossip the block to peer nodes using libp2p
+//!
+//! 6. The gossiped block will be imported by the peer nodes (and surprisingly by the "block author node" also).
+//! 6a. All the transactions of the imported block will be executed. (This includes the transaction-in-question obviously)
+//!
+//! Source: https://www.youtube.com/watch?v=3pfM0GOp02c&ab_channel=ParityTech
+//!
+//! TODO - Giovanni & Alessandro, notice that once the block is imported (i.e step 6a) - all its transactions/extrinsics get executed right-away (if we take what the presenter said in the YouTube video completely literally). It does not validate the transactions (i.e perform `validate_transaction` on them) in the block before executing them!!! Isn't this a problem !?!?
+//!
+//! # Transaction Format
+//!
+//! Please see the types `UncheckedExtrinsic` and `SignedExtra` below to know what the transaction format should be when submitting a transaction to a **Node of this Blockchain** via RPC
 
 // Some of the Substrate Macros in this file throw missing_docs warnings.
 // That's why we allow this file to have missing_docs.
@@ -205,9 +249,11 @@ pub fn native_version() -> NativeVersion {
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
-/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
-/// by  Operational  extrinsics.
+/// We allow `Normal` extrinsics to fill up the block up to 75% (i.e up to 75% of the block length and block weight of a block can be filled up by Normal extrinsics).
+/// The rest can be used by Operational extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+/// TODO Documentation - It is actually the "target block weight", not "maximum block weight".
+/// The **maximum block weight** is the **maximum amount of computation time** that a Node is **allowed to spend in constructing a block**.
 /// We allow for 2 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_mul(2);
 
@@ -225,11 +271,11 @@ pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
 //
 // Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
-	/// TODO: Documentation
+	/// Version of the runtime.
 	pub const Version: RuntimeVersion = VERSION;
-	/// TODO: Documentation
+	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	pub const BlockHashCount: BlockNumber = 2400;
-	/// TODO: Documentation
+	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	pub const SS58Prefix: u8 = 93;
 
 	/// `max_with_normal_ratio(max: u32, normal: Perbill)` creates a new `BlockLength` with `max` for `Operational` & `Mandatory` and `normal * max` for `Normal`.
@@ -241,15 +287,55 @@ parameter_types! {
 	pub RuntimeBlockLength: BlockLength = BlockLength
 		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
 
-	/// TODO: Documentation
+	/// Set the "target block weight"[^1] for the Clamor Blockchain.
+	///
+	/// # Footnotes
+	///
+	/// ## `BlockWeights::builder()`
+	///
+	/// `BlockWeights::builder()` is called to start constructing a new `BlockWeights` object. By default all kinds except of Mandatory extrinsics are disallowed.
+	///
+	/// ## `BlockWeights` struct
+	///
+	/// A `BlockWeights` struct that contains the following information for each extrinsic class:
+	/// 1. The weight limits:
+	///    1. The maximum possible weight that can be used to run a single extrinsic of the extrinsic class: `WeightsPerClass::max_extrinsic`.
+	///    2. The maximum possible weight in a block that can be used to compute extrinsics of the extrinsic class: `WeightsPerClass::max_total`.
+	/// 	  If this is `None`, there is no limit for the extrinsic class and therefore this may result in "heavily oversized blocks."
+	/// 2. The base weight (i.e the "overhead" weight for running any extrinsic of the extrinsic class: `WeightsPerClass::base_extrinsic`)
+	/// 3. The reserved weight (i.e an amount of weight that is guaranteed to be executed in every block on extrinsics of the extrinsic class: `WeightsPerClass::reserved`)
+	///    - Setting to `None`[^1] allows the extrinsics of the extrinsic class to **always get into the block (i.e even if their inclusion causes the total block weight to go above the `BlockWeights::max_block`)**
+	/// 	 up to their `WeightsPerClass::max_total` limit.
+	///       - If `max_total` is set to `None` as well, all extrinsics with dispatchables of given class will always end up in the block (recommended for `Mandatory` dispatch class).
+	/// 	- Setting to `Some(x)`[^1] guarantees that at least `x` weight of particular class is processed in every block.
+	/// 	- Setting to `Some(0)` means that there is no reserved weight (obviously!).
+	/// Furthermore, a `BlockWeights` struct also contains information about the maximum weight limit [^1] (`BlockWeights::max_block`) and base weight[^2] (`BlockWeights::base_block`) for the block itself.
+	///
+	/// Note: "Each dispatch class is being tracked separately, but the sum can’t exceed `max_block` (except for `reserved`)" - https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	///
+	/// Note 2: "Each class has it’s own limit `max_total`, but also the sum cannot exceed `max_block` value [except for `reserved`]" - https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	///
+	/// [^1] **"As a consequence of `reserved` space, total consumed block weight might exceed `max_block` value,
+	/// so this parameter should rather be thought of as “target block weight” than a hard limit."** - https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	///
+	/// [^2] Note: Each block starts with `BlockWeights::base_block` weight being consumed right away **as part of the Mandatory extrinsic class**. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	///
+	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
 	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+		// `BlockWeightsBuilder::base_block()` sets the base weight of the block (i.e `BlockWeights::base_block`) to
+	    // `frame_support::weights::constants::BlockExecutionWeight` which is defined as the "Time to execute an empty block" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.BlockExecutionWeight.html#).
 		.base_block(BlockExecutionWeight::get())
+		// Set the base weight (i.e `WeightsPerClass::base_extrinsic`) for each extrinsic class to `ExtrinsicBaseWeight::get()`.
+		//
+		// Note: `frame_support::weights::constants::ExtrinsicBaseWeight` is the "Time to execute a NO-OP extrinsic, for example `System::remark`" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.ExtrinsicBaseWeight.html#).
 		.for_class(DispatchClass::all(), |weights| {
 			weights.base_extrinsic = ExtrinsicBaseWeight::get();
 		})
+		// Set the maximum block weight for the `Normal` extrinsic class to `NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT`.
 		.for_class(DispatchClass::Normal, |weights| {
 			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
 		})
+		// Set the maximum block weight and the reserved weight for the `Operational` extrinsic class to `MAXIMUM_BLOCK_WEIGHT` and `MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT` respectively.
 		.for_class(DispatchClass::Operational, |weights| {
 			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
 			// Operational transactions have some extra reserved space, so that they
@@ -429,12 +515,36 @@ parameter_types! {
 	pub StorageBytesMultiplier: u64 = 10;
 }
 
+/// This pallet provides the basic logic needed to pay the absolute minimum amount needed for a
+/// transaction to be included. This includes:
+///   - _base fee_: This is the minimum amount a user pays for a transaction. It is declared
+/// 	as a base _weight_ in the runtime and converted to a fee using `WeightToFee`.
+///   - _weight fee_: A fee proportional to amount of weight a transaction consumes.
+///   - _length fee_: A fee proportional to the encoded length of the transaction.
+///   - _tip_: An optional tip. Tip increases the priority of the transaction, giving it a higher
+///     chance to be included by the transaction queue.
+///
+/// The base fee and adjusted weight and length fees constitute the _inclusion fee_, which is
+/// the minimum fee for a transaction to be included in a block.
+///
+/// The formula of final fee:
+///   ```ignore
+///   inclusion_fee = base_fee + length_fee + [targeted_fee_adjustment * weight_fee];
+///   final_fee = inclusion_fee + tip;
+///   ```
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	/// Convert a weight value into a deductible fee based on the currency type.
+	///
+	/// Footnote: The Struct `IdentityFee<T>` is an Implementor of trait `WeightToFee` that maps one unit of weight to one unit of fee. Source: https://paritytech.github.io/substrate/master/frame_support/weights/struct.IdentityFee.html
 	type WeightToFee = IdentityFee<Balance>;
+	/// Convert a length value into a deductible fee based on the currency type.
+	///
+	/// Footnote: The Struct `IdentityFee<T>` is an Implementor of trait `WeightToFee` that maps one unit of weight to one unit of fee. Source: https://paritytech.github.io/substrate/master/frame_support/weights/struct.IdentityFee.html
 	type LengthToFee = IdentityFee<Balance>;
+	/// Update the multiplier of the next block, based on the previous block's weight.
 	type FeeMultiplierUpdate = ();
 }
 
