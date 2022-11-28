@@ -762,50 +762,59 @@ pub type Executive = frame_executive::Executive<
 // For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
 impl_runtime_apis! {
 
-	/// TODO: Documentation
+	/// The `Core` runtime api that every Substrate runtime needs to implement.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_api/trait.Core.html
 	impl sp_api::Core<Block> for Runtime {
-		/// TODO: Documentation
+		/// Returns the version of the runtime.
 		fn version() -> RuntimeVersion {
 			VERSION
 		}
 
-		/// TODO: Documentation
+		/// Execute the given block.
 		fn execute_block(block: Block) {
 			Executive::execute_block(block);
 		}
 
-		/// TODO: Documentation
+		/// Initialize a block with the given header.
 		fn initialize_block(header: &<Block as BlockT>::Header) {
 			Executive::initialize_block(header)
 		}
 	}
 
-	/// TODO: Documentation
+	/// The `Metadata` runtime api that returns the metadata of a runtime.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_api/trait.Metadata.html
 	impl sp_api::Metadata<Block> for Runtime {
-		/// TODO: Documentation
+		/// Returns the metadata of a runtime.
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
 		}
 	}
 
-	/// TODO: Documentation
+	/// The `BlockBuilder` runtime api trait that provides the required functionality for building a block.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_block_builder/trait.BlockBuilder.html#
 	impl sp_block_builder::BlockBuilder<Block> for Runtime {
-		/// TODO: Documentation
+		/// Apply the given extrinsic.
+		///
+		/// Returns an inclusion outcome which specifies if this extrinsic is included in
+		/// this block or not.
 		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
 			Executive::apply_extrinsic(extrinsic)
 		}
 
-		/// TODO: Documentation
+		/// Finish the current block.
 		fn finalize_block() -> <Block as BlockT>::Header {
 			Executive::finalize_block()
 		}
 
-		/// TODO: Documentation
+		/// Generate inherent extrinsics. The inherent data will vary from chain to chain.
 		fn inherent_extrinsics(data: sp_inherents::InherentData) -> Vec<<Block as BlockT>::Extrinsic> {
 			data.create_extrinsics()
 		}
 
-		/// TODO: Documentation
+		/// Check that the inherents are valid. The inherent data will vary from chain to chain.
 		fn check_inherents(
 			block: Block,
 			data: sp_inherents::InherentData,
@@ -814,9 +823,19 @@ impl_runtime_apis! {
 		}
 	}
 
-	/// TODO: Documentation
+	/// The `TaggedTransactionQueue` runtime api trait for interfering with the transaction queue.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_transaction_pool/runtime_api/trait.TaggedTransactionQueue.html#
 	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
-		/// TODO: Documentation
+		/// Validate the transaction.
+		///
+		/// This method is invoked by the transaction pool to learn details about given transaction.
+		/// The implementation should make sure to verify the correctness of the transaction
+		/// against current state. The given `block_hash` corresponds to the hash of the block
+		/// that is used as current state.
+		///
+		/// Note that this call may be performed by the pool multiple times and transactions
+		/// might be verified in any possible order.
 		fn validate_transaction(
 			source: TransactionSource,
 			tx: <Block as BlockT>::Extrinsic,
@@ -844,35 +863,51 @@ impl_runtime_apis! {
 		}
 	}
 
-	/// TODO: Documentation
+	/// The Offchain Worker Runtime API
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_offchain/trait.OffchainWorkerApi.html#
 	impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
-		/// TODO: Documentation
+		/// Starts the off-chain task for given block header.
 		fn offchain_worker(header: &<Block as BlockT>::Header) {
 			Executive::offchain_worker(header)
 		}
 	}
 
-	/// TODO: Documentation
+	/// Runtime API necessary for block authorship with aura.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_consensus_aura/trait.AuraApi.html#
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
-		/// TODO: Documentation
+		/// Returns the slot duration for Aura.
+		///
+		/// Currently, only the value provided by this type at genesis will be used.
 		fn slot_duration() -> sp_consensus_aura::SlotDuration {
 			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
 		}
 
-		/// TODO: Documentation
+		/// Return the current set of authorities.
 		fn authorities() -> Vec<AuraId> {
 			Aura::authorities().into_inner()
 		}
 	}
 
-	/// TODO: Documentation
+	/// Session keys runtime api.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_session/trait.SessionKeys.html#
 	impl sp_session::SessionKeys<Block> for Runtime {
-		/// TODO: Documentation
+		/// Generate a set of session keys with optionally using the given seed.
+		/// The keys should be stored within the keystore exposed via runtime
+		/// externalities.
+		///
+		/// The seed needs to be a valid `utf8` string.
+		///
+		/// Returns the concatenated SCALE encoded public keys.
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
 			opaque::SessionKeys::generate(seed)
 		}
 
-		/// TODO: Documentation
+		/// Decode the given public session keys.
+		///
+		/// Returns the list of public raw public keys + key type.
 		fn decode_session_keys(
 			encoded: Vec<u8>,
 		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
@@ -880,19 +915,41 @@ impl_runtime_apis! {
 		}
 	}
 
-	/// TODO: Documentation
+	/// Runtime APIs for integrating the GRANDPA finality gadget into runtimes.
+	/// This should be implemented on the runtime side.
+	///
+	/// This is primarily used for negotiating authority-set changes for the
+	/// gadget. GRANDPA uses a signaling model of changing authority sets:
+	/// changes should be signaled with a delay of N blocks, and then automatically
+	/// applied in the runtime after those N blocks have passed.
+	///
+	/// The consensus protocol will coordinate the handoff externally.
+	///
+	/// See: https://paritytech.github.io/substrate/master/sp_finality_grandpa/trait.GrandpaApi.html#
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
-		/// TODO: Documentation
+		/// Get the current GRANDPA authorities and weights. This should not change except
+		/// for when changes are scheduled and the corresponding delay has passed.
+		///
+		/// When called at block B, it will return the set of authorities that should be
+		/// used to finalize descendants of this block (B+1, B+2, ...). The block B itself
+		/// is finalized by the authorities from block B-1.
 		fn grandpa_authorities() -> GrandpaAuthorityList {
 			Grandpa::grandpa_authorities()
 		}
 
-		/// TODO: Documentation
+		/// Get current GRANDPA authority set id.
 		fn current_set_id() -> fg_primitives::SetId {
 			Grandpa::current_set_id()
 		}
 
-		/// TODO: Documentation
+		/// Submits an unsigned extrinsic to report an equivocation. The caller
+		/// must provide the equivocation proof and a key ownership proof
+		/// (should be obtained using `generate_key_ownership_proof`). The
+		/// extrinsic will be unsigned and should only be accepted for local
+		/// authorship (not to be broadcast to the network). This method returns
+		/// `None` when creation of the extrinsic fails, e.g. if equivocation
+		/// reporting is disabled for the given runtime (i.e. this method is
+		/// hardcoded to return `None`). Only useful in an offchain context.
 		fn submit_report_equivocation_unsigned_extrinsic(
 			_equivocation_proof: fg_primitives::EquivocationProof<
 				<Block as BlockT>::Hash,
@@ -903,7 +960,17 @@ impl_runtime_apis! {
 			None
 		}
 
-		/// TODO: Documentation
+		/// Generates a proof of key ownership for the given authority in the
+		/// given set. An example usage of this module is coupled with the
+		/// session historical module to prove that a given authority key is
+		/// tied to a given staking identity during a specific session. Proofs
+		/// of key ownership are necessary for submitting equivocation reports.
+		/// NOTE: even though the API takes a `set_id` as parameter the current
+		/// implementations ignore this parameter and instead rely on this
+		/// method being called at the correct block height, i.e. any point at
+		/// which the given set id is live on-chain. Future implementations will
+		/// instead use indexed data through an offchain worker, not requiring
+		/// older states to be available.
 		fn generate_key_ownership_proof(
 			_set_id: fg_primitives::SetId,
 			_authority_id: GrandpaId,
@@ -915,17 +982,21 @@ impl_runtime_apis! {
 		}
 	}
 
-	/// TODO: Documentation
+	/// The Runtime API to query account nonce (aka transaction index).
+	///
+	/// See: https://paritytech.github.io/substrate/master/frame_system_rpc_runtime_api/trait.AccountNonceApi.html#
 	impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
-		/// TODO: Documentation
+		/// Get current account nonce of given `AccountId`.
 		fn account_nonce(account: AccountId) -> Index {
 			System::account_nonce(account)
 		}
 	}
 
-	/// TODO: Documentation
+	/// Runtime API for transaction payment pallet.
+	///
+	/// See: https://paritytech.github.io/substrate/master/pallet_transaction_payment_rpc_runtime_api/trait.TransactionPaymentApi.html#
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance> for Runtime {
-		/// TODO: Documentation
+		/// Query the data that we know about the fee of a given `call`.
 		fn query_info(
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
@@ -933,7 +1004,7 @@ impl_runtime_apis! {
 			TransactionPayment::query_info(uxt, len)
 		}
 
-		/// TODO: Documentation
+		/// Query the detailed fee of a given `call`.
 		fn query_fee_details(
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
@@ -942,11 +1013,13 @@ impl_runtime_apis! {
 		}
 	}
 
-	/// TODO: Documentation
-		impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
-		for Runtime
-	{
-		/// TODO: Documentation
+	/// The Runtime API used to dry-run contract interactions.
+	///
+	/// See: https://paritytech.github.io/substrate/master/pallet_contracts/trait.ContractsApi.html#
+	impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash> for Runtime {
+		/// Perform a call from a specified account to a given contract.
+		///
+		/// See [`crate::Pallet::bare_call`].
 		fn call(
 			origin: AccountId,
 			dest: AccountId,
@@ -958,7 +1031,9 @@ impl_runtime_apis! {
 			Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, true)
 		}
 
-		/// TODO: Documentation
+		/// Instantiate a new contract.
+		///
+		/// See `[crate::Pallet::bare_instantiate]`.
 		fn instantiate(
 			origin: AccountId,
 			value: Balance,
@@ -972,7 +1047,9 @@ impl_runtime_apis! {
 			Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, true)
 		}
 
-		/// TODO: Documentation
+		/// Upload new code without instantiating a contract from it.
+		///
+		/// See [`crate::Pallet::bare_upload_code`].
 		fn upload_code(
 			origin: AccountId,
 			code: Vec<u8>,
@@ -982,7 +1059,11 @@ impl_runtime_apis! {
 			Contracts::bare_upload_code(origin, code, storage_deposit_limit)
 		}
 
-		/// TODO: Documentation
+		/// Query a given storage key in a given contract.
+		///
+		/// Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
+		/// specified account and `Ok(None)` if it doesn't. If the account specified by the address
+		/// doesn't exist, or doesn't have a contract then `Err` is returned.
 		fn get_storage(
 			address: AccountId,
 			key: Vec<u8>,
@@ -991,7 +1072,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	/// TODO: Documentation
+	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Protos
 	impl pallet_protos_rpc_runtime_api::ProtosRuntimeApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
@@ -1003,7 +1084,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	/// TODO: Documentation
+	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Fragments
 	impl pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
@@ -1019,10 +1100,16 @@ impl_runtime_apis! {
 		}
 	}
 
-	/// TODO: Documentation
+	/// Runtime api for benchmarking a FRAME runtime.
+	///
+	/// See: https://paritytech.github.io/substrate/master/frame_benchmarking/trait.Benchmark.html#
 	#[cfg(feature = "runtime-benchmarks")]
 	impl frame_benchmarking::Benchmark<Block> for Runtime {
-		/// TODO: Documentation
+		/// Get the benchmark metadata available for this runtime.
+		///
+		/// Parameters
+		/// - `extra`: Also list benchmarks marked "extra" which would otherwise not be
+		///            needed for weight calculation.
 		fn benchmark_metadata(extra: bool) -> (
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
@@ -1052,7 +1139,7 @@ impl_runtime_apis! {
 			return (list, storage_info)
 		}
 
-		/// TODO: Documentation
+		/// Dispatch the given benchmark.
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {

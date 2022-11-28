@@ -6,6 +6,8 @@ use frame_support::{
 	traits::{ConstU128, ConstU32, ConstU64},
 };
 
+use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
+use std::sync::Arc;
 use parking_lot::RwLock;
 
 use sp_core::{
@@ -17,12 +19,7 @@ use sp_core::{
 	H256,
 };
 
-use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
-
 use frame_support::traits::GenesisBuild;
-use sp_core::ed25519::Public;
-use sp_io::TestExternalities;
-use std::sync::Arc;
 
 use sp_runtime::{
 	testing::{Header, TestXt},
@@ -206,7 +203,7 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-fn create_public_key(keystore: &KeyStore) -> Public {
+fn create_public_key(keystore: &KeyStore) -> sp_core::ed25519::Public {
 	const PHRASE: &str =
 		"news slush supreme milk chapter athlete soap sausage put clutch what kitten";
 	SyncCryptoStore::ed25519_generate_new(
@@ -230,7 +227,7 @@ pub fn new_test_ext_with_nova() -> sp_io::TestExternalities {
 	};
 
 	config.assimilate_storage(&mut t).unwrap();
-	let mut ext: TestExternalities = t.into();
+	let mut ext: sp_io::TestExternalities = t.into();
 	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
 	ext
 }
