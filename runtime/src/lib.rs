@@ -253,8 +253,10 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// The rest can be used by Operational extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// TODO Documentation - It is actually the "target block weight", not "maximum block weight".
-/// The **maximum block weight** is the **maximum amount of computation time** that a Node is **allowed to spend in constructing a block**.
-/// We allow for 2 seconds of compute with a 6 second average block time.
+/// The **maximum block weight** is the **maximum amount of computation time** (assuming no extrinsic class uses its `reserved` space - please see the type `RuntimeBlockWeights` below to understand what `reserved` is)
+/// that is **allowed to be spent in constructing a block** by a Node.
+///
+/// Here, we set this to 2 seconds because we want a 6 second average block time. (since in Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** - see the crate documentation above for more information)
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_mul(2);
 
 /// The maximum possible length (in bytes) that a Clamor Block can be
