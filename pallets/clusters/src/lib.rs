@@ -2,11 +2,15 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::BoundedVec;
 pub use pallet::*;
 use sp_clamor::Hash128;
-use sp_core::bounded::BoundedVec;
 use sp_std::{vec, vec::Vec};
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+use sp_core::{Get, RuntimeDebug};
 
 #[cfg(test)]
 mod mock;
@@ -22,42 +26,42 @@ mod benchmarking;
 
 /// The **settings** of a **Role**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct RoleSetting {
+pub struct RoleSetting<BoundedName, BoundedData> {
 	/// Name of the setting
-	pub name: Vec<u8>,
+	pub name: BoundedName,
 	/// The data associated with the Role
-	pub data: Vec<u8>,
+	pub data: BoundedData,
 }
 
 /// **Struct** of **Role** belonging to a **Cluster**.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct Role<TAccountId> {
+pub struct Role<TAccountId, BoundedName> {
 	/// Name of the role
-	pub name: Vec<u8>,
+	pub name: BoundedName,
 	/// The list of Members associated with the role
 	pub members: Vec<TAccountId>,
 	/// The optional list of Rules associated to the Role
-	pub rules: Option<Rule>,
+	pub rules: Option<Rule<BoundedName>>,
 }
 
 /// **Struct** of **Rule** belonging to a **Role**.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct Rule {
+pub struct Rule<BoundedName> {
 	/// The name of the Rule
-	pub name: Vec<u8>,
+	pub name: BoundedName,
 }
 
 /// **Struct** of a **Cluster**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct Cluster<TAccountId> {
+pub struct Cluster<TAccountId, BoundedName> {
 	/// The owner of the Cluster
 	pub owner: TAccountId,
 	/// The name of the Cluster
-	pub name: Vec<u8>,
+	pub name: BoundedName,
 	/// The ID of the cluster
 	pub cluster_id: Hash128,
 	/// The list of Roles associated to the Cluster
-	pub roles: Vec<Role<TAccountId>>,
+	pub roles: Vec<Role<TAccountId, BoundedName>>,
 	/// The list of Members of the Cluster
 	pub members: Vec<TAccountId>,
 }
@@ -75,12 +79,15 @@ pub struct AccountInfo<TAccountID, TMoment> {
 pub mod pallet {
 	use super::*;
 	use crate::{Cluster, Role, RoleSetting};
-	use frame_support::traits::ReservableCurrency;
-	use frame_support::{log, pallet_prelude::*, sp_runtime::traits::Zero, traits::fungible};
-	use frame_system::pallet_prelude::*;
-	use sp_io::{
-		hashing::{blake2_128, blake2_256},
+	use frame_support::{
+		log,
+		pallet_prelude::*,
+		sp_runtime::traits::Zero,
+		traits::{fungible, ReservableCurrency},
 	};
+	use frame_system::pallet_prelude::*;
+	use sp_clamor::get_vault_id;
+	use sp_io::hashing::{blake2_128, blake2_256};
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -97,11 +104,20 @@ pub mod pallet {
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		/// The max size of name
+		#[pallet::constant]
+		type NameLimit: Get<u32>;
+
+		/// The max size of data
+		#[pallet::constant]
+		type DataLimit: Get<u32>;
 	}
 
 	/// **StorageMap** that maps a **Cluster** ID to its data.
 	#[pallet::storage]
-	pub type Clusters<T: Config> = StorageMap<_, Identity, Hash128, Cluster<T::AccountId>>;
+	pub type Clusters<T: Config> =
+		StorageMap<_, Identity, Hash128, Cluster<T::AccountId, BoundedVec<u8, T::NameLimit>>>;
 
 	/// **StorageMap** that maps a **AccountId** with a list of **Cluster** owned by the account.
 	#[pallet::storage]
@@ -109,7 +125,8 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Role** with its **RoleSettings**.
 	#[pallet::storage]
-	pub type RoleToSettings<T: Config> = StorageMap<_, Twox64Concat, Hash128, Vec<RoleSetting>>;
+	pub type RoleToSettings<T: Config> =
+		StorageMap<_, Twox64Concat, Hash128, Vec<RoleSetting<BoundedVec<u8, T::NameLimit>, BoundedVec<u8, T::DataLimit>>>>;
 
 	#[allow(missing_docs)]
 	#[pallet::event]
@@ -168,8 +185,11 @@ pub mod pallet {
 		/// Create a **Cluster** passing a name as input.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		pub fn create_cluster(origin: OriginFor<T>, name: Vec<u8>) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			ensure!(!name.len().is_zero(), Error::<T>::InvalidInputs);
+			let who = ensure_signed(origin.clone())?;
+
+			let bounded_name: BoundedVec<_, T::NameLimit> =
+				name.clone().try_into().expect("cluster name is too long");
+			ensure!(!bounded_name.len().is_zero(), Error::<T>::InvalidInputs);
 
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
@@ -178,19 +198,21 @@ pub mod pallet {
 				&[name.clone(), extrinsic_index.clone().encode(), who.clone().encode()].concat(),
 			);
 
-			sp_std::if_std! {
-				// This code is only being compiled and executed when the `std` feature is enabled.
-				println!("CLUSTER_ID: {:?}", cluster_id);
-			}
 			// Check that the cluster does not exist already
 			ensure!(!<Clusters<T>>::contains_key(&cluster_id), Error::<T>::ClusterExists);
 
 			// At creation there are no roles and no members assigned to the cluster
-			let cluster =
-				Cluster { owner: who.clone(), name, cluster_id, roles: vec![], members: vec![] };
+			let cluster = Cluster {
+				owner: who.clone(),
+				name: bounded_name,
+				cluster_id,
+				roles: vec![],
+				members: vec![],
+			};
 
+			// write
 			// create an account for the cluster
-			let vault = Self::get_vault_id(cluster_id);
+			let vault = get_vault_id(cluster_id);
 			let minimum_balance =
 				<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
 			<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
@@ -198,7 +220,14 @@ pub mod pallet {
 				minimum_balance,
 			)?;
 
-			// write
+			// create a pure proxy
+			pallet_proxy::Pallet::<T>::create_pure(
+				origin.clone(),
+				T::ProxyType::default(),
+				T::BlockNumber::zero(),
+				0,
+			)?;
+
 			<Clusters<T>>::insert(cluster_id, cluster);
 			<ClustersByOwner<T>>::append(who.clone(), &cluster_id);
 
@@ -214,37 +243,39 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			cluster_id: Hash128,
 			role_name: Vec<u8>,
-			settings: RoleSetting,
+			settings: RoleSetting<BoundedVec<u8, T::NameLimit>, BoundedVec<u8, T::DataLimit>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			ensure!(!cluster_id.len().is_zero(), Error::<T>::InvalidInputs);
-			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInputs);
+			let bounded_name: BoundedVec<u8, T::NameLimit> =
+				role_name.clone().try_into().expect("role name is too long");
+			ensure!(!bounded_name.len().is_zero(), Error::<T>::InvalidInputs);
 			ensure!(!settings.name.len().is_zero(), Error::<T>::InvalidInputs);
 			ensure!(!settings.data.len().is_zero(), Error::<T>::InvalidInputs);
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name.clone()[..]].concat());
+			let role_hash = blake2_128(&[&cluster_id[..], &bounded_name.clone()[..]].concat());
 
 			// Check that the caller is the owner of the cluster
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			// At creation there are no Members and no Rules assigned to a Role
-			let role = Role { name: role_name.clone(), members: vec![], rules: None };
+			let role = Role { name: bounded_name.clone(), members: vec![], rules: None };
 
 			// Check that the role does not exists already in the cluster
 			let roles_in_cluster = <Clusters<T>>::get(&cluster_id)
 				.ok_or(Error::<T>::ClusterNotFound)?
 				.roles
 				.into_iter()
-				.filter(|role| role.name == role_name)
-				.collect::<Vec<Role<T::AccountId>>>();
+				.filter(|role| role.name == bounded_name)
+				.collect::<Vec<Role<T::AccountId, BoundedVec<u8, T::NameLimit>>>>();
 			ensure!(roles_in_cluster.is_empty(), Error::<T>::RoleExists);
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster.as_mut().unwrap();
-				cluster.roles.push(role.clone());
+				cluster.roles.push(role);
 			});
 
 			<RoleToSettings<T>>::append(role_hash, settings);
@@ -262,14 +293,17 @@ pub mod pallet {
 			role_name: Vec<u8>,
 			cluster_id: Hash128,
 			new_members_list: Vec<T::AccountId>,
-			new_settings: RoleSetting,
+			new_settings: RoleSetting<BoundedVec<u8, T::NameLimit>, BoundedVec<u8, T::DataLimit>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			if new_members_list.is_empty()
-				&& (new_settings.data.is_empty() || new_settings.name.is_empty())
+			let bounded_name: BoundedVec<u8, T::NameLimit> =
+				role_name.clone().try_into().expect("role name is too long");
+
+			if new_members_list.is_empty() &&
+				(new_settings.data.is_empty() || new_settings.name.is_empty())
 			{
-				return Err(Error::<T>::InvalidInputs.into());
+				return Err(Error::<T>::InvalidInputs.into())
 			}
 
 			// Check that the caller is the owner of the cluster
@@ -281,16 +315,16 @@ pub mod pallet {
 				.ok_or(Error::<T>::ClusterNotFound)?
 				.roles
 				.into_iter()
-				.filter(|role| role.name == role_name)
-				.collect::<Vec<Role<T::AccountId>>>();
+				.filter(|role| role.name == bounded_name)
+				.collect::<Vec<Role<T::AccountId, BoundedVec<u8, T::NameLimit>>>>();
 			ensure!(!roles_in_cluster.is_empty(), Error::<T>::RoleNotFound);
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name.clone()].concat());
+			let role_hash = blake2_128(&[&cluster_id[..], &bounded_name.clone()].concat());
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster.as_mut().unwrap();
-				let index = cluster.clone().roles.iter().position(|x| x.name == role_name);
+				let index = cluster.roles.iter().position(|x| x.name == bounded_name);
 				if let Some(index) = index {
 					let role = cluster.roles.get(index).unwrap();
 					let mut members = role.clone().members;
@@ -319,6 +353,9 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			let bounded_name: BoundedVec<u8, T::NameLimit> =
+				role_name.clone().try_into().expect("role name is too long");
+
 			// only the owner of the cluster can do this operation
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
@@ -327,21 +364,21 @@ pub mod pallet {
 			let roles_in_cluster = cluster
 				.roles
 				.into_iter()
-				.filter(|role| role.name == role_name)
-				.collect::<Vec<Role<T::AccountId>>>();
+				.filter(|role| role.name == bounded_name)
+				.collect::<Vec<Role<T::AccountId, BoundedVec<u8, T::NameLimit>>>>();
 			ensure!(!roles_in_cluster.is_empty(), Error::<T>::RoleNotFound);
 
 			// write
 			// Remove Role from Cluster
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster.as_mut().unwrap();
-				let index = cluster.roles.iter().position(|x| x.name == role_name);
+				let index = cluster.roles.iter().position(|x| x.name == bounded_name);
 				if let Some(index) = index {
 					cluster.roles.remove(index);
 				}
 			});
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name.clone()].concat());
+			let role_hash = blake2_128(&[&cluster_id[..], &bounded_name.clone()].concat());
 			if !roles_in_cluster.is_empty() {
 				<RoleToSettings<T>>::remove(&role_hash);
 			}
@@ -370,10 +407,14 @@ pub mod pallet {
 			ensure!(!cluster.members.contains(&member), Error::<T>::MemberExists);
 
 			// Check that the roles for the member already exists in the cluster
-			let roles_in_cluster: Vec<Vec<u8>> =
+			let roles_in_cluster: Vec<BoundedVec<u8, _>> =
 				cluster.roles.iter().map(|role| role.name.clone()).collect();
-			for role in &roles {
-				ensure!(roles_in_cluster.contains(&role), Error::<T>::RoleNotFound);
+			for role in roles.clone() {
+				ensure!(
+					roles_in_cluster
+						.contains(&BoundedVec::try_from(role).expect("Unexpected error")),
+					Error::<T>::RoleNotFound
+				);
 			}
 
 			// write
@@ -422,55 +463,6 @@ pub mod pallet {
 			});
 
 			Ok(())
-		}
-
-		/// Allow another Account ID `proxy_account` to be used as a proxy for the Account ID of the cluster
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		pub fn add_proxy_account(
-			origin: OriginFor<T>,
-			cluster_id: Hash128,
-			proxy_account: T::AccountId,
-		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-
-			// Check that the caller is the owner of the cluster
-			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
-			ensure!(who == cluster.owner, Error::<T>::NoPermission);
-
-			ensure!(
-				!pallet_proxy::Proxies::<T>::contains_key(&proxy_account),
-				Error::<T>::AccountProxyAlreadyExists
-			);
-
-			let cluster_account = Self::get_vault_id(cluster_id);
-
-			let proxy_def = pallet_proxy::ProxyDefinition {
-				delegate: cluster_account.clone(),
-				proxy_type: T::ProxyType::default(),
-				delay: T::BlockNumber::default(),
-			};
-			let bounded_proxies: BoundedVec<_, T::MaxProxies> =
-				vec![proxy_def].try_into().map_err(|_| Error::<T>::TooManyProxies)?;
-
-			// ! Writing state
-
-			let deposit = T::ProxyDepositBase::get() + T::ProxyDepositFactor::get();
-			<T as pallet_proxy::Config>::Currency::reserve(&cluster_account, deposit.clone())?;
-
-			pallet_proxy::Proxies::<T>::insert(&proxy_account, (bounded_proxies, deposit.clone()));
-
-			Self::deposit_event(Event::ProxyAccountAdded { cluster_account, proxy_account });
-
-			Ok(())
-		}
-	}
-
-	impl<T: Config> Pallet<T> {
-		/// **Get** the **Account ID** of the Cluster specified by its `cluster_hash`**.
-		/// This Account ID is deterministically computed using the `cluster_hash`
-		pub fn get_vault_id(cluster_hash: Hash128) -> T::AccountId {
-			let hash = blake2_256(&[&b"cluster-vault"[..], &cluster_hash].concat());
-			T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 		}
 	}
 }

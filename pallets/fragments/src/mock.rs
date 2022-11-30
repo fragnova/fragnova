@@ -257,6 +257,8 @@ impl pallet_timestamp::Config for Test {
 
 impl pallet_clusters::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type NameLimit = ConstU32<10>;
+	type DataLimit = ConstU32<100>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

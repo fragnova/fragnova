@@ -3,7 +3,7 @@ use crate::*;
 use frame_support::parameter_types;
 use frame_support::traits::{ConstU16, ConstU64};
 use frame_system;
-use sp_core::{ConstU128, ConstU32, H256};
+use sp_core::{ConstU128, ConstU32, ConstU8, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
@@ -100,6 +100,8 @@ impl pallet_timestamp::Config for Test {
 
 impl pallet_clusters::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type NameLimit = ConstU32<10>;
+	type DataLimit = ConstU32<100>;
 }
 
 // Build genesis storage according to the mock runtime.

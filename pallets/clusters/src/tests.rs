@@ -22,10 +22,10 @@ mod create_tests {
 	}
 
 	pub fn create_role_(
-        signer: <Test as frame_system::Config>::AccountId,
-        cluster: Hash128,
-        role: Vec<u8>,
-        settings: RoleSetting,
+		signer: <Test as frame_system::Config>::AccountId,
+		cluster: Hash128,
+		role: Vec<u8>,
+		settings: RoleSetting<<Test as Config>::NameLimit, <Test as Config>::DataLimit>,
 	) -> DispatchResult {
 		ClustersPallet::create_role(
 			RuntimeOrigin::signed(signer),
@@ -66,7 +66,7 @@ mod create_tests {
         role_name: Vec<u8>,
         cluster_id: Hash128,
         new_members_list: Vec<<Test as frame_system::Config>::AccountId>,
-        new_settings: RoleSetting,
+        new_settings: RoleSetting<<Test as Config>::NameLimit, <Test as Config>::DataLimit>,
 	) -> DispatchResult {
 		ClustersPallet::edit_role(
 			RuntimeOrigin::signed(signer),
@@ -83,10 +83,10 @@ mod create_tests {
 			let dummy = DummyData::new();
 			let account_id = dummy.account_id;
 			let cluster_name = b"MyCluster".to_vec();
-			assert_ok!(create_cluster_(account_id, cluster_name.clone()));
+			assert_ok!(create_cluster_(account_id, cluster_name));
 
 			let cluster_id = get_cluster_id(cluster_name.clone(), account_id);
-			
+
 			assert!(<Clusters<Test>>::contains_key(&cluster_id.clone()));
 
 			let cluster = Cluster {
@@ -162,8 +162,8 @@ mod create_tests {
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
-				role.clone(),
-				settings.clone()
+				role,
+				settings
 			));
 
 			let role_hash = blake2_128(&[&cluster_id[..], &role.clone()[..]].concat());
@@ -191,15 +191,15 @@ mod create_tests {
 			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
-			assert_ok!(create_cluster_(account_id, cluster.clone()));
+			assert_ok!(create_cluster_(account_id, cluster));
 
-			let cluster_id = get_cluster_id(cluster, account_id);
+			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
-				role.clone(),
-				settings.clone()
+				role,
+				settings
 			));
 
 			let setting_wrong = RoleSetting { name: b"Name".to_vec(),  data: b"".to_vec() };
@@ -225,8 +225,8 @@ mod create_tests {
 			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
-			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			let cluster_id = get_cluster_id(cluster, account_id);
+			assert_ok!(create_cluster_(account_id, cluster));
+			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 			// do not create any role
 
 			// assert there is no role
@@ -252,19 +252,19 @@ mod create_tests {
 			let account_id = dummy.account_id;
 			let settings = dummy.role_settings;
 
-			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			let cluster_id = get_cluster_id(cluster, account_id);
+			assert_ok!(create_cluster_(account_id, cluster));
+			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
-				role.clone(),
-				settings.clone()
+				role,
+				settings
 			));
 
 			let role_hash = get_role_hash(cluster_id.clone(), role.clone());
 
-			assert_ok!(delete_role_(account_id.clone(), role.clone(), cluster_id.clone(),));
+			assert_ok!(delete_role_(account_id.clone(), role.clone(), cluster_id.clone()));
 
 			let roles_in_cluster = <Clusters<Test>>::get(&cluster_id).unwrap().roles;
 			assert!(roles_in_cluster.is_empty());
@@ -289,14 +289,14 @@ mod create_tests {
 			let account_id = dummy.account_id;
 
 			// create a cluster
-			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			let cluster_id = get_cluster_id(cluster, account_id);
+			assert_ok!(create_cluster_(account_id, cluster));
+			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 			// associate the role to the cluster
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
-				role.clone(),
-				settings.clone()
+				role,
+				settings
 			));
 
 			assert_ok!(edit_role_(
@@ -327,8 +327,8 @@ mod create_tests {
 			let member = dummy.account_id_2;
 
 			// create a cluster
-			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			let cluster_id = get_cluster_id(cluster, account_id);
+			assert_ok!(create_cluster_(account_id, cluster));
+			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 
 			// create a role for the cluster
 			assert_ok!(create_role_(

@@ -213,3 +213,11 @@ pub fn get_locked_frag_account<TAccountId: Encode + Decode>(
 	let who = blake2_256(&who);
 	TAccountId::decode(&mut &who[..])
 }
+
+/// **Get** an **Account ID** deterministically computed from an input `hash`**.
+pub fn get_vault_id<TAccountId: Encode + Decode>(
+	hash: Hash128
+) -> TAccountId {
+	let hash = blake2_256(&[&b"fragnova-vault"[..], &hash].concat());
+	TAccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
+}

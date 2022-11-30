@@ -307,6 +307,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use pallet_detach::DetachedHashes;
 	use pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
+	use sp_clamor::get_vault_id;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -641,7 +642,7 @@ pub mod pallet {
 
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
-			let vault = Self::get_vault_id(hash);
+			let vault: T::AccountId = get_vault_id(hash);
 
 			if let Some(currency) = metadata.currency {
 				let minimum_balance =
@@ -1098,7 +1099,7 @@ pub mod pallet {
 			let fragment_data =
 				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
 
-			let vault = &Self::get_vault_id(definition_hash); // Get the Vault Account ID of `definition_hash`
+			let vault: T::AccountId = get_vault_id(definition_hash); // Get the Vault Account ID of `definition_hash`
 
 			let quantity = match options {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
@@ -1393,13 +1394,6 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// **Get** the **Account ID** of the Fragment Definition `definition_hash`**
-		///
-		/// This Account ID is determinstically computed using the Fragment Definition `definition_hash`
-		pub fn get_vault_id(definition_hash: Hash128) -> T::AccountId {
-			let hash = blake2_256(&[&b"fragments-vault"[..], &definition_hash].concat());
-			T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
-		}
 
 		/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `definition_hash`,
 		/// whose Edition ID is `edition`** and whose Copy ID is `copy`**

@@ -1,1 +1,1 @@
-License: Unlicense
+License: BUSL-1.1

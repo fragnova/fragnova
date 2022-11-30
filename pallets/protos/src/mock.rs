@@ -8,7 +8,7 @@ use frame_support::{
 };
 use frame_system;
 
-use sp_core::{ed25519::Signature, H256};
+use sp_core::{ConstU8, ed25519::Signature, H256};
 
 use sp_runtime::traits::{
 	BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
@@ -204,6 +204,8 @@ impl pallet_detach::Config for Test {
 
 impl pallet_clusters::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type NameLimit = ConstU32<10>;
+	type DataLimit = ConstU32<100>;
 }
 
 impl pallet_timestamp::Config for Test {
