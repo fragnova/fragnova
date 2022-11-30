@@ -8,8 +8,7 @@
 use crate::{
 	chain_spec,
 	cli::{Cli, Subcommand},
-	service,
-	service::new_partial,
+	service, service::new_partial
 };
 use clamor_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
@@ -104,7 +103,8 @@ pub fn run() -> sc_cli::Result<()> {
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents { client, task_manager, backend, .. } = new_partial(&config)?;
+				let PartialComponents { client, task_manager, backend, .. } =
+					new_partial(&config)?;
 				let aux_revert = Box::new(|client, _, blocks| {
 					sc_finality_grandpa::revert(client, blocks)?;
 					Ok(())
