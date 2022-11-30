@@ -193,9 +193,10 @@ pub mod pallet {
 
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			let cluster_id = blake2_128(
-				&[name.clone(), extrinsic_index.clone().encode(), who.clone().encode()].concat(),
+				&[current_block_number.encode(), name.clone(), extrinsic_index.clone().encode(), who.clone().encode()].concat(),
 			);
 
 			// Check that the cluster does not exist already
