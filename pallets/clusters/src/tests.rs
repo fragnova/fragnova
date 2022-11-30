@@ -13,11 +13,15 @@ mod create_tests {
 	use crate::dummy_data::DummyData;
 	use frame_benchmarking::account;
 	use frame_support::{assert_noop, ensure, traits::fungible};
+	use frame_support::traits::Currency;
+	use sp_core::{bounded_vec, ConstU32};
 
 	pub fn create_cluster_(
 		signer: <Test as frame_system::Config>::AccountId,
 		name: Vec<u8>,
 	) -> DispatchResult {
+		// fund the account to be able to create the proxy
+		pallet_balances::Pallet::<Test>::make_free_balance_be(&signer, 1000000);
 		ClustersPallet::create_cluster(RuntimeOrigin::signed(signer), name)
 	}
 
@@ -25,13 +29,13 @@ mod create_tests {
 		signer: <Test as frame_system::Config>::AccountId,
 		cluster: Hash128,
 		role: Vec<u8>,
-		settings: RoleSetting<<Test as Config>::NameLimit, <Test as Config>::DataLimit>,
+		settings: RoleSetting<BoundedVec<u8, <Test as Config>::NameLimit>, BoundedVec<u8, <Test as Config>::DataLimit>>,
 	) -> DispatchResult {
 		ClustersPallet::create_role(
 			RuntimeOrigin::signed(signer),
-			cluster.clone(),
-			role.clone(),
-			settings.clone(),
+			cluster,
+			role,
+			settings,
 		)
 	}
 
@@ -42,8 +46,8 @@ mod create_tests {
 	) -> DispatchResult {
 		ClustersPallet::delete_role(
 			RuntimeOrigin::signed(signer),
-			role_name.clone(),
-			cluster_id.clone(),
+			role_name,
+			cluster_id,
 		)
 	}
 
@@ -55,9 +59,9 @@ mod create_tests {
 	) -> DispatchResult {
 		ClustersPallet::add_member(
 			RuntimeOrigin::signed(signer),
-			cluster_id.clone(),
-			roles_names.clone(),
-			member.clone(),
+			cluster_id,
+			roles_names,
+			member,
 		)
 	}
 
@@ -66,14 +70,14 @@ mod create_tests {
         role_name: Vec<u8>,
         cluster_id: Hash128,
         new_members_list: Vec<<Test as frame_system::Config>::AccountId>,
-        new_settings: RoleSetting<<Test as Config>::NameLimit, <Test as Config>::DataLimit>,
+        new_settings: RoleSetting<BoundedVec<u8, <Test as Config>::NameLimit>, BoundedVec<u8, <Test as Config>::DataLimit>>,
 	) -> DispatchResult {
 		ClustersPallet::edit_role(
 			RuntimeOrigin::signed(signer),
-			role_name.clone(),
-			cluster_id.clone(),
-			new_members_list.clone(),
-			new_settings.clone(),
+			role_name,
+			cluster_id,
+			new_members_list,
+			new_settings,
 		)
 	}
 
@@ -82,8 +86,11 @@ mod create_tests {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
 			let account_id = dummy.account_id;
-			let cluster_name = b"MyCluster".to_vec();
-			assert_ok!(create_cluster_(account_id, cluster_name));
+			let cluster_name = b"Name".to_vec();
+			assert_ok!(create_cluster_(account_id, cluster_name.clone()));
+
+			let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
+				cluster_name.clone().try_into().expect("cluster name is too long");
 
 			let cluster_id = get_cluster_id(cluster_name.clone(), account_id);
 
@@ -91,7 +98,7 @@ mod create_tests {
 
 			let cluster = Cluster {
 				owner: account_id,
-				name: cluster_name.clone(),
+				name: bounded_name.clone(),
 				cluster_id,
 				roles: vec![],
 				members: vec![],
@@ -134,19 +141,6 @@ mod create_tests {
 	}
 
 	#[test]
-	fn create_cluster_with_no_name_fails() {
-		new_test_ext().execute_with(|| {
-			let dummy = DummyData::new();
-			let account_id = dummy.account_id;
-			let cluster_name = b"".to_vec();
-			assert_noop!(
-				create_cluster_(account_id, cluster_name.clone()),
-				Error::<Test>::InvalidInputs
-			);
-		});
-	}
-
-	#[test]
 	fn create_role_should_work() {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
@@ -156,23 +150,24 @@ mod create_tests {
 			let account_id = dummy.account_id;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
-
-			let cluster_id = get_cluster_id(cluster, account_id);
+			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
-				role,
+				role.clone(),
 				settings
 			));
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role.clone()[..]].concat());
 
-			let expected_role = Role { name: role.clone(), members: vec![], rules: None };
+			let bounded_role_name: BoundedVec<u8, <Test as Config>::NameLimit> =
+				role.clone().try_into().expect("role name is too long");
+			let expected_role = Role { name: bounded_role_name.clone(), members: vec![], rules: None };
 
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
 			assert!(roles_in_cluster.contains(&expected_role));
 
+			let role_hash = get_role_hash(cluster_id, bounded_role_name.clone());
 			System::assert_has_event(
 				ClusterEvent::RoleCreated {
 					role_hash,
@@ -187,26 +182,28 @@ mod create_tests {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
-			let role = dummy.role.name;
-			let settings = dummy.role_settings;
+			let role_name = dummy.role.name;
+			let role_settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
-			assert_ok!(create_cluster_(account_id, cluster));
-
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
 			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
-				role,
-				settings
+				role_name.clone(),
+				role_settings
 			));
 
-			let setting_wrong = RoleSetting { name: b"Name".to_vec(),  data: b"".to_vec() };
+			let bounded_role_name: BoundedVec<u8, <Test as Config>::NameLimit> =
+				role_name.clone().try_into().expect("cluster name is too long");
+			let bounded_role_settings_wrong: BoundedVec<u8, <Test as Config>::DataLimit> = bounded_vec![];
+			let setting_wrong = RoleSetting { name: bounded_role_name,  data: bounded_role_settings_wrong };
 			assert_noop!(
 				edit_role_(
 					account_id.clone(),
-					role.clone(),
+					role_name.clone(),
 					cluster_id,
 					Vec::new(),
 					setting_wrong
@@ -225,7 +222,7 @@ mod create_tests {
 			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
-			assert_ok!(create_cluster_(account_id, cluster));
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
 			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 			// do not create any role
 
@@ -252,17 +249,19 @@ mod create_tests {
 			let account_id = dummy.account_id;
 			let settings = dummy.role_settings;
 
-			assert_ok!(create_cluster_(account_id, cluster));
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
 			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
-				role,
+				role.clone(),
 				settings
 			));
 
-			let role_hash = get_role_hash(cluster_id.clone(), role.clone());
+			let bounded_role_name: BoundedVec<u8, <Test as Config>::NameLimit> =
+				role.clone().try_into().expect("role name is too long");
+			let role_hash = get_role_hash(cluster_id.clone(), bounded_role_name);
 
 			assert_ok!(delete_role_(account_id.clone(), role.clone(), cluster_id.clone()));
 
@@ -289,13 +288,13 @@ mod create_tests {
 			let account_id = dummy.account_id;
 
 			// create a cluster
-			assert_ok!(create_cluster_(account_id, cluster));
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
 			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 			// associate the role to the cluster
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
-				role,
+				role.clone(),
 				settings
 			));
 
@@ -307,8 +306,11 @@ mod create_tests {
 				new_settings.clone(),
 			));
 
+			let bounded_role_name: BoundedVec<u8, <Test as Config>::NameLimit> =
+				role.clone().try_into().expect("role name is too long");
+
 			let expected_role =
-				Role { name: role.clone(), members: vec![], rules: None };
+				Role { name: bounded_role_name.clone(), members: vec![], rules: None };
 
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
 			assert!(roles_in_cluster.contains(&expected_role));
@@ -327,7 +329,7 @@ mod create_tests {
 			let member = dummy.account_id_2;
 
 			// create a cluster
-			assert_ok!(create_cluster_(account_id, cluster));
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
 			let cluster_id = get_cluster_id(cluster.clone(), account_id);
 
 			// create a role for the cluster

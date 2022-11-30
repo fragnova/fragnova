@@ -166,6 +166,12 @@ pub mod pallet {
 		NoPermission,
 		/// Invalid inputs
 		InvalidInputs,
+		/// Invalid cluster iD
+		InvalidClusterId,
+		/// Invalid setting name
+		InvalidSettingName,
+		/// Invalid setting data
+		InvalidSettingData,
 		/// Technical error not categorized
 		SystematicFailure,
 		/// The owner is not correct.
@@ -178,6 +184,8 @@ pub mod pallet {
 		AccountProxyAlreadyExists,
 		/// Too many proxies associated with the cluster
 		TooManyProxies,
+		/// InsufficientBalance
+		InsufficientFunds,
 	}
 
 	#[pallet::call]
@@ -211,11 +219,14 @@ pub mod pallet {
 				members: vec![],
 			};
 
+			let minimum_balance =
+				<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
+			let origin_balance = <pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::balance(&who);
+			ensure!(origin_balance > minimum_balance, Error::<T>::InsufficientFunds);
+
 			// write
 			// create an account for the cluster
 			let vault = get_vault_id(cluster_id);
-			let minimum_balance =
-				<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
 			<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
 				&vault,
 				minimum_balance,
@@ -248,12 +259,11 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			ensure!(!cluster_id.len().is_zero(), Error::<T>::InvalidInputs);
+			ensure!(!cluster_id.len().is_zero(), Error::<T>::InvalidClusterId);
 			let bounded_name: BoundedVec<u8, T::NameLimit> =
 				role_name.clone().try_into().expect("role name is too long");
-			ensure!(!bounded_name.len().is_zero(), Error::<T>::InvalidInputs);
-			ensure!(!settings.name.len().is_zero(), Error::<T>::InvalidInputs);
-			ensure!(!settings.data.len().is_zero(), Error::<T>::InvalidInputs);
+			ensure!(!settings.name.len().is_zero(), Error::<T>::InvalidSettingName);
+			ensure!(!settings.data.len().is_zero(), Error::<T>::InvalidSettingData);
 
 			let role_hash = blake2_128(&[&cluster_id[..], &bounded_name.clone()[..]].concat());
 
