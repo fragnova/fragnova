@@ -19,6 +19,9 @@ pub type Hash128 = [u8; 16];
 /// 64 bytes u8-Array
 pub type Hash64 = [u8; 8];
 
+/// Type used to represent an Instance's Edition ID and an Instance's Copy ID
+pub type InstanceUnit = u64;
+
 /// The IPFS CID prefix used to use to obtain any data that is stored on the Fragnova Blockchain
 ///
 /// The format of the CID prefix is: <cid-version><multicodec><multihash> (see: https://proto.school/anatomy-of-a-cid/05)

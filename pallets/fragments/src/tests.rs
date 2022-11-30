@@ -172,8 +172,10 @@ mod create_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
+			let asset_id = 0;
+
 			let mut definition = dd.definition;
-			definition.metadata.currency = Some(0);
+			definition.metadata.currency = Currency::Custom(asset_id);
 
 			assert_ok!(upload(dd.account_id, &definition.proto_fragment));
 
@@ -181,7 +183,7 @@ mod create_tests {
 
 			assert_ok!(Assets::force_create(
 				RuntimeOrigin::root(),
-				definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				asset_id, // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true, // Whether this asset needs users to have an existential deposit to hold this asset
 				69, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
@@ -975,13 +977,15 @@ mod buy_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
+			let asset_id = 0;
+
 			let mut buy = dd.buy_non_unique;
-			buy.publish.definition.metadata.currency = Some(0);
+			buy.publish.definition.metadata.currency = Currency::Custom(asset_id);
 
 			let minimum_balance = 1;
 			assert_ok!(Assets::force_create(
 				RuntimeOrigin::root(),
-				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				asset_id, // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
@@ -998,7 +1002,7 @@ mod buy_tests {
 
 			assert_ok!(Assets::mint(
 				RuntimeOrigin::signed(dd.account_id),
-				buy.publish.definition.metadata.currency.unwrap(),
+				asset_id,
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance - 1,
 			));
@@ -1006,7 +1010,7 @@ mod buy_tests {
 
 			assert_ok!(Assets::mint(
 				RuntimeOrigin::signed(dd.account_id),
-				buy.publish.definition.metadata.currency.unwrap(),
+				asset_id,
 				dd.account_id_third,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			));
@@ -1022,8 +1026,10 @@ mod buy_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
+			let asset_id = 0;
+
 			let mut buy = dd.buy_non_unique;
-			buy.publish.definition.metadata.currency = Some(0);
+			buy.publish.definition.metadata.currency = Currency::Custom(asset_id);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
@@ -1034,7 +1040,7 @@ mod buy_tests {
 			let minimum_balance = buy.publish.price.saturating_mul(quantity as u128); // vault ID wil have minimum balance after `buy()` transaction
 			assert_ok!(Assets::force_create(
 				RuntimeOrigin::root(),
-				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				asset_id, // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
@@ -1045,7 +1051,7 @@ mod buy_tests {
 
 			assert_ok!(Assets::mint(
 				RuntimeOrigin::signed(dd.account_id),
-				buy.publish.definition.metadata.currency.unwrap(),
+				asset_id,
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			));
@@ -1061,8 +1067,10 @@ mod buy_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
+			let asset_id = 0;
+
 			let mut buy = dd.buy_non_unique;
-			buy.publish.definition.metadata.currency = Some(0);
+			buy.publish.definition.metadata.currency = Currency::Custom(asset_id);
 
 			// Deposit `quantity` to buyer's account
 			let quantity = match buy.buy_options {
@@ -1073,7 +1081,7 @@ mod buy_tests {
 			let minimum_balance = buy.publish.price.saturating_mul(quantity as u128) + 1; // vault ID wil not have minimum balance after `buy()` transaction
 			assert_ok!(Assets::force_create(
 				RuntimeOrigin::root(),
-				buy.publish.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				asset_id, // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
@@ -1084,7 +1092,7 @@ mod buy_tests {
 
 			assert_ok!(Assets::mint(
 				RuntimeOrigin::signed(dd.account_id),
-				buy.publish.definition.metadata.currency.unwrap(),
+				asset_id,
 				dd.account_id_second,
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			));
@@ -1680,6 +1688,15 @@ mod give_tests {
 			);
 		});
 	}
+
+
+	#[test]
+	#[ignore]
+	fn give_should_not_work_if_the_instance_is_detached() {
+		todo!()
+	}
+
+
 }
 
 mod create_account_tests {
@@ -2379,13 +2396,15 @@ mod secondary_buy_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
+			let asset_id = 0;
+
 			let mut secondary_buy = dd.secondary_buy;
-			secondary_buy.resell.mint.definition.metadata.currency = Some(0);
+			secondary_buy.resell.mint.definition.metadata.currency = Currency::Custom(asset_id);
 
 			let minimum_balance = 1;
 			assert_ok!(Assets::force_create(
 				RuntimeOrigin::root(),
-				secondary_buy.resell.mint.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				asset_id, // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
@@ -2400,7 +2419,7 @@ mod secondary_buy_tests {
 
 			assert_ok!(Assets::mint(
 				RuntimeOrigin::signed(dd.account_id),
-				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
+				asset_id,
 				dd.account_id_second,
 				price + minimum_balance - 1,
 			));
@@ -2408,7 +2427,7 @@ mod secondary_buy_tests {
 
 			assert_ok!(Assets::mint(
 				RuntimeOrigin::signed(dd.account_id),
-				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
+				asset_id,
 				dd.account_id_third,
 				price + minimum_balance,
 			));
@@ -2424,8 +2443,10 @@ mod secondary_buy_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
+			let asset_id = 0;
+
 			let mut secondary_buy = dd.secondary_buy;
-			secondary_buy.resell.mint.definition.metadata.currency = Some(0);
+			secondary_buy.resell.mint.definition.metadata.currency = Currency::Custom(asset_id);
 
 			let price = match secondary_buy.resell.secondary_sale_type {
 				SecondarySaleType::Normal(price) => price,
@@ -2434,7 +2455,7 @@ mod secondary_buy_tests {
 			let minimum_balance = price;
 			assert_ok!(Assets::force_create(
 				RuntimeOrigin::root(),
-				secondary_buy.resell.mint.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				asset_id, // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
@@ -2445,7 +2466,7 @@ mod secondary_buy_tests {
 
 			assert_ok!(Assets::mint(
 				RuntimeOrigin::signed(dd.account_id),
-				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
+				asset_id,
 				dd.account_id_second,
 				price + minimum_balance,
 			));
@@ -2461,8 +2482,10 @@ mod secondary_buy_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
+			let asset_id = 0;
+
 			let mut secondary_buy = dd.secondary_buy;
-			secondary_buy.resell.mint.definition.metadata.currency = Some(0);
+			secondary_buy.resell.mint.definition.metadata.currency = Currency::Custom(asset_id);
 
 			let price = match secondary_buy.resell.secondary_sale_type {
 				SecondarySaleType::Normal(price) => price,
@@ -2471,7 +2494,7 @@ mod secondary_buy_tests {
 			let minimum_balance = price + 1;
 			assert_ok!(Assets::force_create(
 				RuntimeOrigin::root(),
-				secondary_buy.resell.mint.definition.metadata.currency.unwrap(), // The identifier of the new asset. This must not be currently in use to identify an existing asset.
+				asset_id, // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
 				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				minimum_balance, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
@@ -2482,7 +2505,7 @@ mod secondary_buy_tests {
 
 			assert_ok!(Assets::mint(
 				RuntimeOrigin::signed(dd.account_id),
-				secondary_buy.resell.mint.definition.metadata.currency.unwrap(),
+				asset_id,
 				dd.account_id_second,
 				price + minimum_balance,
 			));
@@ -2495,6 +2518,102 @@ mod secondary_buy_tests {
 	}
 
 }
+
+
+mod detach_tests {
+	use super::*;
+
+	pub fn detach_(
+		signer: <Test as frame_system::Config>::AccountId,
+		detach: &Detach,
+	) -> DispatchResult {
+		FragmentsPallet::detach(
+			RuntimeOrigin::signed(signer),
+			detach.mint.definition.get_definition_id(),
+			detach.edition_id,
+			detach.copy_id,
+			detach.target_chain,
+			detach.target_account.clone()
+		)
+	}
+
+	pub fn mint_detach_instance(
+		signer: <Test as frame_system::Config>::AccountId,
+		detach: &Detach
+	) {
+		assert_ok!(upload(signer, &detach.mint.definition.proto_fragment));
+		assert_ok!(create(signer, &detach.mint.definition));
+		assert_ok!(mint_(signer, &detach.mint));
+	}
+
+	#[test]
+	fn detach_should_work() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			mint_detach_instance(dd.account_id, &detach);
+			assert_ok!(detach_(dd.account_id, &detach));
+
+
+			assert_eq!(
+				pallet_detach::DetachRequests::<Test>::get(),
+				vec![
+					pallet_detach::DetachRequest {
+						hash: pallet_detach::DetachHash::Instance(
+							detach.mint.definition.get_definition_id(),
+							Compact(detach.edition_id),
+							Compact(detach.copy_id),
+						),
+						target_chain: detach.target_chain,
+						target_account: detach.target_account,
+					},
+				]
+			);
+
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_user_does_not_own_the_instance() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			mint_detach_instance(dd.account_id, &detach);
+			assert_noop!(detach_(dd.account_id_second, &detach), Error::<Test>::NoPermission);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_the_instance_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			// REVIEW - error name
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NoPermission);
+		});
+	}
+
+	#[test]
+	fn detach_should_not_work_if_the_detach_request_already_exists() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+
+			let detach = dd.detach;
+
+			mint_detach_instance(dd.account_id, &detach);
+			assert_ok!(detach_(dd.account_id, &detach));
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::DetachRequestAlreadyExists);
+		});
+	}
+
+}
+
 
 mod get_definitions_tests {
 	use super::*;

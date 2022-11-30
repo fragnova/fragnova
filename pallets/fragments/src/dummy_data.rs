@@ -1,5 +1,7 @@
 use crate::*;
 
+use pallet_detach::SupportedChains;
+
 // pub use pallet_protos::dummy_data::ProtoFragment;
 pub use copied_from_pallet_protos::ProtoFragment;
 
@@ -54,7 +56,7 @@ pub struct Definition {
 	// "Definition" is short for "Fragment Definition"
 	pub proto_fragment: ProtoFragment,
 
-	pub metadata: FragmentMetadata<u64>,
+	pub metadata: DefinitionMetadata<u64>,
 	pub permissions: FragmentPerms,
 
 	pub unique: Option<UniqueOptions>,
@@ -121,8 +123,8 @@ pub struct Buy {
 #[derive(Clone)]
 pub struct Give {
 	pub mint: Mint,
-	pub edition_id: Unit,
-	pub copy_id: Unit,
+	pub edition_id: InstanceUnit,
+	pub copy_id: InstanceUnit,
 	pub to: sp_core::ed25519::Public,
 	pub new_permissions: Option<FragmentPerms>,
 	pub expiration: Option<u64>,
@@ -131,15 +133,15 @@ pub struct Give {
 pub struct CreateAccount {
 	// Creates Account for a Fragment Instance
 	pub mint: Mint,
-	pub edition_id: Unit,
-	pub copy_id: Unit,
+	pub edition_id: InstanceUnit,
+	pub copy_id: InstanceUnit,
 }
 
 #[derive(Clone)]
 pub struct Resell {
 	pub mint: Mint,
-	pub edition_id: Unit,
-	pub copy_id: Unit,
+	pub edition_id: InstanceUnit,
+	pub copy_id: InstanceUnit,
 	pub new_permissions: Option<FragmentPerms>,
 	pub expiration: Option<u64>,
 	pub secondary_sale_type: SecondarySaleType,
@@ -152,6 +154,14 @@ pub struct EndResale {
 pub struct SecondaryBuy {
 	pub resell: Resell,
 	pub options: SecondarySaleBuyOptions
+}
+
+pub struct Detach {
+	pub mint: Mint,
+	pub edition_id: u64,
+	pub copy_id: u64,
+	pub target_chain: SupportedChains,
+	pub target_account: Vec<u8>,
 }
 
 /// NOTE: All `ProtoFragment`-type fields found in `DummyData` have no references
@@ -182,6 +192,8 @@ pub struct DummyData {
 	pub secondary_buy_no_copy_perms: SecondaryBuy,
 	pub secondary_buy_copy_perms: SecondaryBuy,
 
+	pub detach: Detach,
+
 	pub account_id: sp_core::ed25519::Public,
 	pub account_id_second: sp_core::ed25519::Public,
 	pub account_id_third: sp_core::ed25519::Public,
@@ -198,7 +210,7 @@ impl DummyData {
 				include_cost: Some(111),
 				data: "0x111".as_bytes().to_vec(),
 			},
-			metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None },
+			metadata: DefinitionMetadata { name: b"Il Nome".to_vec(), currency: Currency::Native },
 			permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 			unique: Some(UniqueOptions { mutable: true }),
 			max_supply: None,
@@ -311,6 +323,14 @@ impl DummyData {
 			secondary_buy
 		};
 
+		let detach = Detach {
+			mint: mint_unique.clone(),
+			edition_id: 1,
+			copy_id: 1,
+			target_chain: SupportedChains::EthereumMainnet,
+			target_account: [7u8; 20].to_vec(),
+		};
+
 		Self {
 			definition,
 
@@ -337,6 +357,8 @@ impl DummyData {
 			secondary_buy,
 			secondary_buy_no_copy_perms,
 			secondary_buy_copy_perms,
+
+			detach,
 
 			account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([2u8; 32]),
