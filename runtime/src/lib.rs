@@ -287,7 +287,7 @@ parameter_types! {
 	pub RuntimeBlockLength: BlockLength = BlockLength
 		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
 
-	/// Set the "target block weight"[^1] for the Clamor Blockchain.
+	/// Set the "target block weight" for the Clamor Blockchain.
 	///
 	/// # Footnotes
 	///
@@ -297,30 +297,39 @@ parameter_types! {
 	///
 	/// ## `BlockWeights` struct
 	///
-	/// A `BlockWeights` struct that contains the following information for each extrinsic class:
-	/// 1. The weight limits:
-	///    1. The maximum possible weight that can be used to run a single extrinsic of the extrinsic class: `WeightsPerClass::max_extrinsic`.
-	///    2. The maximum possible weight in a block that can be used to compute extrinsics of the extrinsic class: `WeightsPerClass::max_total`.
-	/// 	  If this is `None`, there is no limit for the extrinsic class and therefore this may result in "heavily oversized blocks."
-	/// 2. The base weight (i.e the "overhead" weight for running any extrinsic of the extrinsic class: `WeightsPerClass::base_extrinsic`)
-	/// 3. The reserved weight (i.e an amount of weight that is guaranteed to be executed in every block on extrinsics of the extrinsic class: `WeightsPerClass::reserved`)
-	///    - Setting to `None`[^1] allows the extrinsics of the extrinsic class to **always get into the block (i.e even if their inclusion causes the total block weight to go above the `BlockWeights::max_block`)**
-	/// 	 up to their `WeightsPerClass::max_total` limit.
-	///       - If `max_total` is set to `None` as well, all extrinsics with dispatchables of given class will always end up in the block (recommended for `Mandatory` dispatch class).
-	/// 	- Setting to `Some(x)`[^1] guarantees that at least `x` weight of particular class is processed in every block.
-	/// 	- Setting to `Some(0)` means that there is no reserved weight (obviously!).
-	/// Furthermore, a `BlockWeights` struct also contains information about the maximum weight limit [^1] (`BlockWeights::max_block`) and base weight[^2] (`BlockWeights::base_block`) for the block itself.
+	/// A `BlockWeights` struct contains the following information for each extrinsic class:
+	/// 1. **Base weight of any extrinsic** of the **extrinsic class** (`WeightsPerClass::base_extrinsic`): The "overhead cost" (i.e overhead computation time) when running any extrinsic of the extrinsic class.
+	/// 2. **Maximum possible weight** that can be **consumed by a single extrinsic** of the **extrinsic class**: `WeightsPerClass::max_extrinsic`.
+	/// 3. **Maximum possible weight in a block** that can be **consumed by the extrinsic class** (to compute extrinsics): `WeightsPerClass::max_total`.
+	///    - If this is `None`, an unlimited amount of weight can be consumed by the extrinsic class. This is generally highly recommended for `Mandatory` dispatch class, while it can be dangerous for `Normal` class and should only be done with extra care and consideration.
+	///    - In the worst case, the total weight consumed by the extrinsic class is going to be: `MAX(max_total) + MAX(reserved)`. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.WeightsPerClass.html#structfield.max_total
+	/// 4. **Maximum additional amount of weight that can always be consumed by an extrinsic class**, **once a block's target block weight (`BlockWeights::max_block`)
+    ///	   has been reached** (`WeightsPerClass::reserved`): "Often it's desirable for some class of transactions to be added to the block despite it being full.
+    ///    For instance one might want to prevent high-priority `Normal` transactions from pushing out lower-priority `Operational` transactions.
+    ///    In such cases you might add a `reserved` capacity for given class.".
+    ///    Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
+    ///    - Note that the `max_total` limit applies to `reserved` space as well.
+    ///		 For example, in the diagram (https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# - click the "src" button - since the diagram gets cut off on the
+    ///		 webpage), "the sum of weights of `Ext7` & `Ext8` (which are `Operational` extrinsics) mustn't exceed the `max_total` (of the `Operational` extrinsic)".
+    ///      Please do see the diagram for complete understanding.
+    ///    - Setting `reserved` to `Some(x)`, guarantees that at least `x` weight can be consumed by the extrinsic class in every block.
+    ///    	  - Note: `x` can be zero obviously. It doesn't have to only be non-zero integers (obviously!).
+    ///    - Setting `reserved` to `None` guarantees that at least `max_total` weight can be consumed by the extrinsic class in every block.
+	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrisnic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
+	/// Furthermore, a `BlockWeights` struct also contains information about the block:
+	/// 1. **Maximum total amount of weight that can be consumed by all kinds of extrinsics in a block (assuming no extrinsic class uses its `reserved` space)** (`BlockWeights::max_block`)
+	/// 2. **Base weight of a block (i.e the computation time to execute an empty block)** (`BlockWeights::base_block`).
 	///
-	/// Note: "Each dispatch class is being tracked separately, but the sum can’t exceed `max_block` (except for `reserved`)" - https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
 	///
-	/// Note 2: "Each class has it’s own limit `max_total`, but also the sum cannot exceed `max_block` value [except for `reserved`]" - https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	/// Note: Even though each extrinsic class has its own separate limit `max_total`,
+	/// in an actual block the total weight consumed by each extrinsic class cannot not exceed `max_block` (except for `reserved`).
 	///
-	/// [^1] **"As a consequence of `reserved` space, total consumed block weight might exceed `max_block` value,
-	/// so this parameter should rather be thought of as “target block weight” than a hard limit."** - https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	/// Note 2: As a consequence of `reserved` space, total consumed block weight might exceed `max_block` value,
+	/// so this parameter (i.e `max_block`) should rather be thought of as "target block weight" than a hard limit.
 	///
-	/// [^2] Note: Each block starts with `BlockWeights::base_block` weight being consumed right away **as part of the Mandatory extrinsic class**. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	/// Note 3: Each block starts with `BlockWeights::base_block` weight being consumed right away **as part of the Mandatory extrinsic class**. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
 	///
-	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
 	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
 		// `BlockWeightsBuilder::base_block()` sets the base weight of the block (i.e `BlockWeights::base_block`) to
 	    // `frame_support::weights::constants::BlockExecutionWeight` which is defined as the "Time to execute an empty block" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.BlockExecutionWeight.html#).
