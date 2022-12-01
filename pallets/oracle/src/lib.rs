@@ -497,10 +497,6 @@ pub mod pallet {
 				log::debug!("Sending store_price extrinsic");
 				ValidTransaction::with_tag_prefix("PriceFromOracleUpdate")
 					.and_provides(oracle_price.price)
-					// The transaction is only valid for next 5 blocks. After that it's
-					// going to be revalidated by the pool.
-					// TODO param to consider. It could be useful since the price from Oracle is valid only for few hours
-					//.longevity(5)
 					.propagate(false)
 					.build()
 			} else {
