@@ -100,8 +100,9 @@ impl pallet_timestamp::Config for Test {
 
 impl pallet_clusters::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
-	type NameLimit = ConstU32<5>;
+	type NameLimit = ConstU32<15>;
 	type DataLimit = ConstU32<5>;
+	type MembersLimit = ConstU32<25>;
 }
 
 // Build genesis storage according to the mock runtime.

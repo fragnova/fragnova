@@ -469,6 +469,7 @@ impl pallet_clusters::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type NameLimit = ConstU32<20>;
 	type DataLimit = ConstU32<300>;
+	type MembersLimit = ConstU32<20>;
 }
 
 impl pallet_multisig::Config for Runtime {
