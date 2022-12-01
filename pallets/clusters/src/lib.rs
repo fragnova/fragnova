@@ -202,7 +202,7 @@ pub mod pallet {
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			let cluster_id = blake2_128(
-				&[current_block_number.encode(), name.to_vec().clone(), extrinsic_index.clone().encode(), who.clone().encode()].concat(),
+				&[current_block_number.encode(), Vec::from(name.clone()), extrinsic_index.clone().encode(), who.clone().encode()].concat(),
 			);
 
 			// Check that the cluster does not exist already
@@ -211,7 +211,7 @@ pub mod pallet {
 			// At creation there are no roles and no members assigned to the cluster
 			let cluster = Cluster {
 				owner: who.clone(),
-				name: name.to_vec(),
+				name: Vec::from(name),
 				cluster_id,
 				roles: vec![],
 				members: vec![],
@@ -262,21 +262,22 @@ pub mod pallet {
 			ensure!(!settings.name.len().is_zero(), Error::<T>::InvalidInput);
 			ensure!(!settings.data.len().is_zero(), Error::<T>::InvalidInput);
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name.to_vec().clone()[..]].concat());
+			let role_name_vec = Vec::from(role_name.clone());
+			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec[..]].concat());
 
 			// Check that the caller is the owner of the cluster
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			// At creation there are no Members and no Rules assigned to a Role
-			let role = Role { name: role_name.to_vec().clone(), members: vec![], rules: None };
+			let role = Role { name: role_name_vec.clone(), members: vec![], rules: None };
 
 			// Check that the role does not exists already in the cluster
 			let roles_in_cluster = <Clusters<T>>::get(&cluster_id)
 				.ok_or(Error::<T>::ClusterNotFound)?
 				.roles
 				.into_iter()
-				.filter(|role| role.name == role_name.to_vec())
+				.filter(|role| role_name_vec.eq(&role.name))
 				.collect::<Vec<Role<T::AccountId>>>();
 			ensure!(roles_in_cluster.is_empty(), Error::<T>::RoleExists);
 
@@ -305,6 +306,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			let role_name_vec = Vec::from(role_name.clone());
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
 			if new_members_list.len().is_zero() &&
@@ -322,16 +324,16 @@ pub mod pallet {
 				.ok_or(Error::<T>::ClusterNotFound)?
 				.roles
 				.into_iter()
-				.filter(|role| role.name == role_name.to_vec())
+				.filter(|role| role_name_vec.eq(&role.name))
 				.collect::<Vec<Role<T::AccountId>>>();
 			ensure!(!roles_in_cluster.is_empty(), Error::<T>::RoleNotFound);
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name.to_vec().clone()].concat());
+			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec].concat());
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster.as_mut().unwrap();
-				let index = cluster.roles.iter().position(|x| x.name == role_name.to_vec());
+				let index = cluster.roles.iter().position(|x| role_name_vec.eq(&x.name));
 				if let Some(index) = index {
 					let role = cluster.roles.get(index).unwrap();
 					let mut members = role.clone().members;
@@ -360,6 +362,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			let role_name_vec = Vec::from(role_name.clone());
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
 			// only the owner of the cluster can do this operation
@@ -370,7 +373,7 @@ pub mod pallet {
 			let roles_in_cluster = cluster
 				.roles
 				.into_iter()
-				.filter(|role| role.name == role_name.to_vec())
+				.filter(|role| role_name_vec.eq(&role.name))
 				.collect::<Vec<Role<T::AccountId>>>();
 			ensure!(!roles_in_cluster.is_empty(), Error::<T>::RoleNotFound);
 
@@ -378,13 +381,13 @@ pub mod pallet {
 			// Remove Role from Cluster
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster.as_mut().unwrap();
-				let index = cluster.roles.iter().position(|x| x.name == role_name.to_vec());
+				let index = cluster.roles.iter().position(|x| role_name_vec.eq(&x.name));
 				if let Some(index) = index {
 					cluster.roles.remove(index);
 				}
 			});
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name.to_vec().clone()].concat());
+			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec].concat());
 			if !roles_in_cluster.is_empty() {
 				<RoleToSettings<T>>::remove(&role_hash);
 			}
