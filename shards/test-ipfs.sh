@@ -4,9 +4,9 @@ set -e
 # INSTALL IPFS
 apt-get update
 apt-get install -y wget
-wget -q https://dist.ipfs.tech/kubo/v0.16.0/kubo_v0.16.0_linux-amd64.tar.gz
-tar -xvzf kubo_v0.16.0_linux-amd64.tar.gz
-export PATH=$PATH:`pwd`/kubo
+wget -q https://dist.ipfs.tech/go-ipfs/v0.12.2/go-ipfs_v0.12.2_linux-amd64.tar.gz
+tar -xvzf go-ipfs_v0.12.0_linux-amd64.tar.gz
+export PATH=$PATH:`pwd`/go-ipfs
 
 # RUN IPFS
 ipfs init # Initializes ipfs configuration files and generates a new keypair. (https://docs.ipfs.tech/how-to/command-line-quick-start/#initialize-the-repository)
