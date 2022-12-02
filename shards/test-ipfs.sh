@@ -5,7 +5,7 @@ set -e
 apt-get update
 apt-get install -y wget
 wget -q https://dist.ipfs.tech/go-ipfs/v0.12.2/go-ipfs_v0.12.2_linux-amd64.tar.gz
-tar -xvzf go-ipfs_v0.12.0_linux-amd64.tar.gz
+tar -xvzf go-ipfs_v0.12.2_linux-amd64.tar.gz
 export PATH=$PATH:`pwd`/go-ipfs
 
 # RUN IPFS
