@@ -1,6 +1,4 @@
-use frame_support::traits::fungible;
-use sp_core::{bounded_vec, ConstU32};
-use crate::{mock, mock::*, *};
+use crate::{mock::*, *};
 use sp_core::ed25519::Public;
 use sp_io::hashing::{blake2_128, blake2_256};
 

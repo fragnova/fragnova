@@ -2,15 +2,14 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode};
 use frame_support::BoundedVec;
 pub use pallet::*;
 use sp_clamor::Hash128;
 use sp_std::{vec, vec::Vec};
 
 #[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use sp_core::{Get, RuntimeDebug};
+use sp_core::Get;
 
 #[cfg(test)]
 mod mock;
@@ -83,11 +82,11 @@ pub mod pallet {
 		log,
 		pallet_prelude::*,
 		sp_runtime::traits::Zero,
-		traits::{fungible, ReservableCurrency},
+		traits::fungible,
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_clamor::get_vault_id;
-	use sp_io::hashing::{blake2_128, blake2_256};
+	use sp_io::hashing::blake2_128;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -202,7 +201,7 @@ pub mod pallet {
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			let cluster_id = blake2_128(
-				&[current_block_number.encode(), Vec::from(name.clone()), extrinsic_index.clone().encode(), who.clone().encode()].concat(),
+				&[current_block_number.encode(), Vec::from(name.clone().as_slice()), extrinsic_index.clone().encode(), who.encode()].concat(),
 			);
 
 			// Check that the cluster does not exist already
@@ -242,7 +241,7 @@ pub mod pallet {
 			<ClustersByOwner<T>>::append(who.clone(), &cluster_id);
 
 			Self::deposit_event(Event::ClusterCreated { cluster_hash: cluster_id });
-			log::trace!("Cluster created: {:?}", hex::encode(cluster_id.clone()));
+			log::trace!("Cluster created: {:?}", hex::encode(&cluster_id));
 
 			Ok(())
 		}

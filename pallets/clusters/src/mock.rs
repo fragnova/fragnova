@@ -1,9 +1,9 @@
 use crate as pallet_clusters;
 use crate::*;
 use frame_support::parameter_types;
-use frame_support::traits::{ConstU16, ConstU64};
+use frame_support::traits::ConstU64;
 use frame_system;
-use sp_core::{ConstU128, ConstU32, ConstU8, H256};
+use sp_core::{ConstU128, ConstU32, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},

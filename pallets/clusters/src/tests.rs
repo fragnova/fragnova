@@ -1,20 +1,15 @@
 #![cfg(test)]
 
-use crate as pallet_clusters;
-use crate::{dummy_data::*, mock, mock::*, *};
+use crate::{dummy_data::*, mock::*, *};
 
 use crate::Event as ClusterEvent;
-use create_tests::{create_cluster_, create_role_, edit_role_};
 use frame_support::{assert_ok, dispatch::DispatchResult};
-use sp_io::hashing::{blake2_256, blake2_128};
 
 mod create_tests {
 	use super::*;
 	use crate::dummy_data::DummyData;
-	use frame_benchmarking::account;
-	use frame_support::{assert_noop, ensure, traits::fungible};
+	use frame_support::{assert_noop, traits::fungible};
 	use frame_support::traits::Currency;
-	use sp_core::{bounded_vec, ConstU32};
 
 	pub fn create_cluster_(
 		signer: <Test as frame_system::Config>::AccountId,
