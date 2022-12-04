@@ -44,8 +44,8 @@
     = .p2p-address
     ["swarm" "peering" "add" .p2p-address] = .ipfs-args
     "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args)
-    ["swarm" "connect" .p2p-address] = .ipfs-args
-    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args)))
+    ["swarm" "connect" .p2p-address] = .ipfs-args-2
+    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args-2)))
 
   (Maybe (-> "" (Process.Run :Executable "ipfs" :Arguments ["repo" "gc"]) nil)) ;  `ipfs repo gc` - Performs a garbage collection sweep on the IPFS Repo.
   )
