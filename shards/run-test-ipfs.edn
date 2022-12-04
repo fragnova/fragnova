@@ -12,9 +12,7 @@
 
   .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of protos.upload() is")
 
-  .proto-data (Hash.Blake2-256) (| (ToHex) (Log "Uploaded Proto With Proto Hash"))
-
-  )
+  .proto-data (Hash.Blake2-256) (| (ToHex) (Log "Uploaded Proto With Proto Hash")))
 
 
 (defwire convert-blake256-hash-to-ipfs-cid
@@ -24,16 +22,13 @@
   "0x0155a0e40220" (HexToBytes) (PrependTo .proto-hash-duplicate)
   .proto-hash-duplicate (ToBase58) >= .ipfs-cid
   "z" (PrependTo .ipfs-cid)
-  .ipfs-cid (Log "IPFS CID")
-
-  )
+  .ipfs-cid (Log "IPFS CID"))
 
 (defwire get-clamor-p2p-addresses
 
   {"id" 1 "jsonrpc" "2.0" "method" "system_localListenAddresses" "params" []} (ToJson) (Http.Post RPC-SERVER) ; `system_localListenAddresses` return the string representation of the addresses we listen on, including the trailing /p2p/.
   (FromJson) (ExpectTable) (Take "result")
-  (ExpectStringSeq) (Log "Clamor is listening to the following P2P addresses")
-  )
+  (ExpectStringSeq) (Log "Clamor is listening to the following P2P addresses"))
 
 (defwire connect-to-clamor-p2p-addresses
 
@@ -49,11 +44,10 @@
     = .p2p-address
     ["swarm" "peering" "add" .p2p-address] = .ipfs-args
     "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args)
-    )
-   )
+    ["swarm" "connect" .p2p-address] = .ipfs-args
+    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args)))
 
   (Maybe (-> "" (Process.Run :Executable "ipfs" :Arguments ["repo" "gc"]) nil)) ;  `ipfs repo gc` - Performs a garbage collection sweep on the IPFS Repo.
-
   )
 
 (defwire call-ipfs-block-get
@@ -63,13 +57,11 @@
 
   ["block" "get" .proto-hash-cid] = .ipfs-args
   "" (Process.Run "ipfs" :Arguments .ipfs-args :Timeout 120) (StringToBytes) ; `ipfs block` - Interact with raw IPFS blocks. A block is identified by a Multihash passed with a valid CID.
-
   )
 
 (defwire main
   (Setup
-   (get Fragnova-Node :setup)
-   )
+   (get Fragnova-Node :setup))
 
   "Proto-Indo-European" (ToBytes) = .proto-data
   (Do upload-proto) = .proto-hash
@@ -80,9 +72,7 @@
   ; not ideal but we need to wait transaction is done and CI can be slow
   (Pause 5.0)
 
-  (Do call-ipfs-block-get) (Log "ipfs block is")  (Is .proto-data) (Assert.Is true)
-
-  )
+  (Do call-ipfs-block-get) (Log "ipfs block is")  (Is .proto-data) (Assert.Is true))
 
 (defmesh root)
 (schedule root main)

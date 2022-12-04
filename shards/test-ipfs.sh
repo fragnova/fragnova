@@ -4,8 +4,8 @@ set -e
 # INSTALL IPFS
 apt-get update
 apt-get install -y wget
-wget -q https://dist.ipfs.tech/kubo/v0.16.0/kubo_v0.16.0_linux-amd64.tar.gz
-tar -xvzf kubo_v0.16.0_linux-amd64.tar.gz
+wget -q https://dist.ipfs.tech/kubo/v0.17.0/kubo_v0.17.0_linux-amd64.tar.gz
+tar -xvzf kubo_v0.17.0_linux-amd64.tar.gz
 export PATH=$PATH:`pwd`/kubo
 
 # RUN IPFS
