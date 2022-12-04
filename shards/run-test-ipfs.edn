@@ -37,15 +37,24 @@
   ; Q: What is IPFS Swarm?
   ; A: 'ipfs swarm' is a tool to manipulate the network swarm. The swarm is the component that opens, listens for, and maintains connections to other ipfs peers in the internet.
 
+  (Count .clamor-p2p-addresses) >= .p2p-count
   .clamor-p2p-addresses
   (ForEach
    (->
     (Log "connecting to p2p address")
     = .p2p-address
     ["swarm" "peering" "add" .p2p-address] = .ipfs-args
-    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args)
+    (Maybe
+     (->
+      "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args))
+     (-> (Math.Dec .p2p-count)))
     ["swarm" "connect" .p2p-address] = .ipfs-args-2
-    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args-2)))
+    (Maybe
+     (->
+      "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args-2))
+     (-> (Math.Dec .p2p-count)))
+   )
+  )
 
   (Maybe (-> "" (Process.Run :Executable "ipfs" :Arguments ["repo" "gc"]) nil)) ;  `ipfs repo gc` - Performs a garbage collection sweep on the IPFS Repo.
   )
@@ -67,13 +76,16 @@
   (Do upload-proto) = .proto-hash
   (Do convert-blake256-hash-to-ipfs-cid) = .proto-hash-cid
   (Do get-clamor-p2p-addresses) = .clamor-p2p-addresses
-  (Do connect-to-clamor-p2p-addresses)
+  (Do connect-to-clamor-p2p-addresses) (Assert.IsNot 0)
 
   ; not ideal but we need to wait transaction is done and CI can be slow
   (Pause 5.0)
 
-  (Do call-ipfs-block-get) (Log "ipfs block is")  (Is .proto-data) (Assert.Is true))
+  (Maybe
+   (-> (Do call-ipfs-block-get) (Log "ipfs block is")  (Is .proto-data))
+   (-> false))
+  (Assert.Is true))
 
 (defmesh root)
 (schedule root main)
-(run root 0.1)
+(if (run root 0.1) nil (throw "Root tick failed"))
