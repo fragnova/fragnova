@@ -37,24 +37,15 @@
   ; Q: What is IPFS Swarm?
   ; A: 'ipfs swarm' is a tool to manipulate the network swarm. The swarm is the component that opens, listens for, and maintains connections to other ipfs peers in the internet.
 
-  (Count .clamor-p2p-addresses) >= .p2p-count
   .clamor-p2p-addresses
   (ForEach
    (->
     (Log "connecting to p2p address")
     = .p2p-address
-    ["swarm" "peering" "add" .p2p-address] = .ipfs-args
-    (Maybe
-     (->
-      "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args))
-     (-> (Math.Dec .p2p-count)))
-    ["swarm" "connect" .p2p-address] = .ipfs-args-2
-    (Maybe
-     (->
-      "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args-2))
-     (-> (Math.Dec .p2p-count)))
-   )
-  )
+    ["swarm" "peering" "add" .p2p-address] >= .ipfs-args
+    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args)
+    ["swarm" "connect" .p2p-address] > .ipfs-args
+    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args-2)))
 
   (Maybe (-> "" (Process.Run :Executable "ipfs" :Arguments ["repo" "gc"]) nil)) ;  `ipfs repo gc` - Performs a garbage collection sweep on the IPFS Repo.
   )
