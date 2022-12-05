@@ -196,12 +196,16 @@ pub mod pallet {
 
 			ensure!(!name.len().is_zero(), Error::<T>::InvalidInput);
 
+			// as_be_bytes to get bytes without allocations
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
-				.ok_or(Error::<T>::SystematicFailure)?;
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
+				.ok_or(Error::<T>::SystematicFailure)?.to_be_bytes();
+			// Blocknumber type is non concrete, so we need to encode it to get bytes
+			let current_block_number = <frame_system::Pallet<T>>::block_number().encode();
+			// Who is not concrete, so we need to encode it to get bytes
+			let who_bytes = who.encode();
 
 			let cluster_id = blake2_128(
-				&[current_block_number.encode(), Vec::from(name.clone().as_slice()), extrinsic_index.clone().encode(), who.encode()].concat(),
+				&[&current_block_number, name.as_slice(), &extrinsic_index, &who_bytes].concat()
 			);
 
 			// Check that the cluster does not exist already
@@ -210,7 +214,7 @@ pub mod pallet {
 			// At creation there are no roles and no members assigned to the cluster
 			let cluster = Cluster {
 				owner: who.clone(),
-				name: Vec::from(name),
+				name: Vec::from(name), // note this as of now does simply `x.0`
 				cluster_id,
 				roles: vec![],
 				members: vec![],
@@ -238,7 +242,8 @@ pub mod pallet {
 			)?;
 
 			<Clusters<T>>::insert(cluster_id, cluster);
-			<ClustersByOwner<T>>::append(who.clone(), &cluster_id);
+			// Don't clone, it's the last usage so let it move!
+			<ClustersByOwner<T>>::append(who, &cluster_id);
 
 			Self::deposit_event(Event::ClusterCreated { cluster_hash: cluster_id });
 			log::trace!("Cluster created: {:?}", hex::encode(&cluster_id));
