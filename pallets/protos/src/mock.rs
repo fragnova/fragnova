@@ -6,6 +6,8 @@ use frame_support::{
 	traits::{ConstU32, ConstU64},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
+use frame_support::traits::AsEnsureOriginWithArg;
+use frame_system::EnsureSigned;
 use frame_system;
 
 use sp_core::{ed25519::Signature, H256};
@@ -186,6 +188,7 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 }
 
 impl pallet_protos::Config for Test {
@@ -243,8 +246,6 @@ parameter_types! {
 	};
 	pub static DepositPerByte: u64 = 1;
 	pub const DepositPerItem: u64 = 2;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(WEIGHT_PER_SECOND.saturating_mul(2));
 }
 
 impl pallet_contracts::Config for Test {
@@ -264,7 +265,6 @@ impl pallet_contracts::Config for Test {
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<BlockWeights>;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
 }
