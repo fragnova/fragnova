@@ -132,7 +132,7 @@ use protos::categories::{
 	VectorCategories,
 	VideoCategories
 };
-// use unic_emoji_char::is_emoji;
+use sp_clamor::Hash256;
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.
@@ -1013,7 +1013,7 @@ fn get_utf8_string(string: &Vec<u8>) -> Result<&str, &str> {
 }
 
 
-fn is_valid(category: &Categories, data: &Vec<u8>) -> bool {
+fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
 	match category {
 		Categories::Text(sub_categories) => match sub_categories {
 			TextCategories::Plain => str::from_utf8(data).is_ok(),
@@ -1026,6 +1026,11 @@ fn is_valid(category: &Categories, data: &Vec<u8>) -> bool {
 				let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // REVIEW - is `&mut *data` safe?
 					return false;
 				};
+
+				if trait_struct.name.len() == 0 {
+					return false;
+				}
+
 				trait_struct.records.windows(2).all(|window| {
 					let (record_1, record_2) = (&window[0], &window[1]);
 					let (Ok(a1), Ok(a2)) = (get_utf8_string(&record_1.0), get_utf8_string(&record_2.0)) else { // `a1` is short for `attribute_1`, `a2` is short for `attribute_2`
@@ -1040,39 +1045,68 @@ fn is_valid(category: &Categories, data: &Vec<u8>) -> bool {
 						&&
 						(a1 == a1.to_lowercase() && a2 == a2.to_lowercase()) // ensure lowercase
 						&&
-						a1 <= a2 // ensure sorted
+						a1 <= a2 // ensure sorted. Note: "Strings are ordered lexicographically by their byte values ... This is not necessarily the same as “alphabetical” order, which varies by language and locale". Source: https://doc.rust-lang.org/std/primitive.str.html#impl-Ord-for-str
 						&&
 						a1 != a2 // ensure no duplicates
 				})
 			},
 		},
-		Categories::Shards(shards_script_info_struct) => false,
+		Categories::Shards(shards_script_info_struct) => {
+			let format = shards_script_info_struct.format;
+			let requiring = &shards_script_info_struct.requiring;
+			let implementing = &shards_script_info_struct.implementing;
+
+			let all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
+				proto_references.iter().any(|proto| {
+					if let Some(trait_impls) = pallet_protos::TraitImplsByShard::<Runtime>::get(proto) {
+						trait_impls.contains(shards_trait)
+					} else {
+						false
+					}
+				})
+			});
+
+			let all_traits_implemented_in_this_shards = implementing.iter().all(|shards_trait| {
+				match format {
+					ShardsFormat::Edn => {
+						// TODO - How do I check if this Shards is implementing this Trait - Giovanni Petrantoni
+						false
+					},
+					ShardsFormat::Binary => {
+						// TODO - How do I check if this Shards is implementing this Trait - Giovanni Petrantoni
+						false
+					},
+				}
+			});
+
+			all_required_trait_impls_found && all_traits_implemented_in_this_shards
+		},
 		Categories::Audio(sub_categories) => match sub_categories {
-			AudioCategories::OggFile => false, // Non Esiste!!!
-			AudioCategories::Mp3File => false, // Non Esiste!!!
+			AudioCategories::OggFile => infer::is(data, "ogg"),  // TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
+			AudioCategories::Mp3File => infer::is(data, "mp3"),
 		},
 		Categories::Texture(sub_categories) => match sub_categories {
-			TextureCategories::PngFile => png_decoder::decode(&data[..]).is_ok(),
-			TextureCategories::JpgFile => false, // Non Esiste!!!
+			TextureCategories::PngFile => infer::is(data, "png"), // png_decoder::decode(&data[..]).is_ok(),
+			TextureCategories::JpgFile => infer::is(data, "jpg"), // TODO - Review because this does not include ".jpeg" images, only ".jpg" images
 		},
 		Categories::Vector(sub_categories) => match sub_categories {
-			VectorCategories::SvgFile => false, // Non Esiste!!!
-			VectorCategories::TtfFile => ttf_parser::Face::parse(&data[..], 0).is_ok(),
+			VectorCategories::SvgFile => false, // TODO - Giovanni Petrantoni
+			VectorCategories::TtfFile => infer::is(data, "ttf"), // ttf_parser::Face::parse(&data[..], 0).is_ok(),
 		},
 		Categories::Video(sub_categories) => match sub_categories {
-			VideoCategories::MkvFile => false, // Non Esiste!!!
-			VideoCategories::Mp4File => false, // Non Esiste!!!
+			VideoCategories::MkvFile => infer::is(data, "mkv"),
+			VideoCategories::Mp4File => infer::is(data, "mp4"),
 		},
 		Categories::Model(sub_categories) => match sub_categories {
-			ModelCategories::GltfFile => false, // Non Esiste!!!
-			ModelCategories::Sdf => false, // Non Esiste!!!
-			ModelCategories::PhysicsCollider => false, // Non Esiste!!!
+			ModelCategories::GltfFile => false, // TODO - Giovanni Petrantoni
+			ModelCategories::Sdf => infer::is(data, "sqlite"), // TODO Review - We are not checking for the file extension ".sdf" https://en.wikipedia.org/wiki/Spatial_Data_File
+			ModelCategories::PhysicsCollider => false, // TODO - Giovanni Petrantoni
 		},
 		Categories::Binary(sub_categories) => match sub_categories {
-			BinaryCategories::WasmProgram => wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
-			BinaryCategories::WasmReactor => false, // Non Esiste!!!
-			BinaryCategories::BlendFile => false, // Non Esiste!!!
-			BinaryCategories::OnnxModel => false, // Non Esiste!!!
+			BinaryCategories::WasmProgram => infer::is(data, "wasm"), // wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
+			BinaryCategories::WasmReactor => false, // TODO - Giovanni Petrantoni
+			BinaryCategories::BlendFile => false, // TODO - Giovanni Petrantoni
+			BinaryCategories::OnnxModel => false, // TODO - Giovanni Petrantoni
 		},
 	}
 }
@@ -1166,9 +1200,9 @@ impl_runtime_apis! {
 				// We want to prevent polluting blocks with a lot of useless invalid data.
 				// TODO perform quick and preliminary data validation
 				#[allow(unused_variables)]
-				RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
+				RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref tags, ref references, ..}) => {
 					// TODO
-					// let is_valid = is_valid(category, data);
+					let is_valid = is_valid(category, data, references);
 					// ()
 				},
 				#[allow(unused_variables)]

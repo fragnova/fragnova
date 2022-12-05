@@ -251,9 +251,15 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MetaKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// **StorageMap** that maps a **Trait ID** to the name of the Trait itself
+	/// **StorageMap** that maps a **Trait ID** to the **name of the Trait**
 	#[pallet::storage]
 	pub type Traits<T: Config> = StorageMap<_, Identity, Hash64, Vec<u8>, ValueQuery>;
+
+	/// **StorageMap** that maps a **Shards-Proto** (i.e a Proto-Fragment that is a Shards Script) to
+	/// **all the traits** that are
+	/// **in the "implementing" field (`ShardsScriptInfo::implementing`) of the Shards-Proto's category** or **in the "implementing" field of one Shard-Proto's Shard-Proto ancestor's category**
+	#[pallet::storage]
+	pub type TraitImplsByShard<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash64>>;
 
 	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the
 	/// aforementioned Proto-Fragment)**
@@ -433,6 +439,14 @@ pub mod pallet {
 					<Traits<T>>::insert(trait_id, info.name.encode());
 
 					Categories::Trait(Some(trait_id))
+				},
+				Categories::Shards(shards_script_info_struct) => {
+					// let format = &shards_script_info_struct.format;
+
+					let trait_implementations = [&shards_script_info_struct.requiring[..], &shards_script_info_struct.implementing[..]].concat();
+					TraitImplsByShard::<T>::insert(proto_hash, trait_implementations);
+
+					Categories::Shards(shards_script_info_struct)
 				},
 				_ => category,
 			};
