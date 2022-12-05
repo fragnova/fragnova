@@ -80,12 +80,7 @@ pub struct AccountInfo<TAccountID, TMoment> {
 pub mod pallet {
 	use super::*;
 	use crate::{Cluster, Role, RoleSetting};
-	use frame_support::{
-		log,
-		pallet_prelude::*,
-		sp_runtime::traits::Zero,
-		traits::fungible,
-	};
+	use frame_support::{log, pallet_prelude::*, sp_runtime::traits::Zero, traits::fungible};
 	use frame_system::pallet_prelude::*;
 	use sp_clamor::get_vault_id;
 	use sp_io::hashing::blake2_128;
@@ -121,8 +116,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Cluster** ID to its data.
 	#[pallet::storage]
-	pub type Clusters<T: Config> =
-		StorageMap<_, Identity, Hash128, Cluster<T::AccountId>>;
+	pub type Clusters<T: Config> = StorageMap<_, Identity, Hash128, Cluster<T::AccountId>>;
 
 	/// **StorageMap** that maps a **AccountId** with a list of **Cluster** owned by the account.
 	#[pallet::storage]
@@ -130,8 +124,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Role** with its **RoleSettings**.
 	#[pallet::storage]
-	pub type RoleToSettings<T: Config> =
-		StorageMap<_, Twox64Concat, Hash128, Vec<RoleSetting>>;
+	pub type RoleToSettings<T: Config> = StorageMap<_, Twox64Concat, Hash128, Vec<RoleSetting>>;
 
 	#[allow(missing_docs)]
 	#[pallet::event]
@@ -193,21 +186,25 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Create a **Cluster** passing a name as input.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		pub fn create_cluster(origin: OriginFor<T>, name: BoundedVec<u8, T::NameLimit>) -> DispatchResult {
+		pub fn create_cluster(
+			origin: OriginFor<T>,
+			name: BoundedVec<u8, T::NameLimit>,
+		) -> DispatchResult {
 			let who = ensure_signed(origin.clone())?;
 
 			ensure!(!name.len().is_zero(), Error::<T>::InvalidInput);
 
 			// as_be_bytes to get bytes without allocations
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
-				.ok_or(Error::<T>::SystematicFailure)?.to_be_bytes();
+				.ok_or(Error::<T>::SystematicFailure)?
+				.to_be_bytes();
 			// BlockNumber type is non concrete, so we need to encode it to get bytes
 			let current_block_number = <frame_system::Pallet<T>>::block_number().encode();
 			// Who is not concrete, so we need to encode it to get bytes
 			let who_bytes = who.encode();
 
 			let cluster_id = blake2_128(
-				&[&current_block_number, name.as_slice(), &extrinsic_index, &who_bytes].concat()
+				&[&current_block_number, name.as_slice(), &extrinsic_index, &who_bytes].concat(),
 			);
 
 			// Check that the cluster does not exist already
@@ -224,7 +221,8 @@ pub mod pallet {
 
 			let minimum_balance =
 				<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
-			let origin_balance = <pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::balance(&who);
+			let origin_balance =
+				<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::balance(&who);
 			ensure!(origin_balance > minimum_balance, Error::<T>::InsufficientFunds);
 
 			// write
@@ -278,13 +276,12 @@ pub mod pallet {
 			let new_role = Role { name: role_name.into_inner(), members: vec![], rules: None };
 
 			// Check that the role does not exists already in the cluster
-			let roles_in_cluster = <Clusters<T>>::get(&cluster_id)
-				.ok_or(Error::<T>::ClusterNotFound)?
-				.roles
-				.into_iter()
-				.filter(|role| new_role.name.eq(&role.name))
-				.collect::<Vec<Role<T::AccountId>>>();
-			ensure!(roles_in_cluster.is_empty(), Error::<T>::RoleExists);
+			if <Clusters<T>>::get(&cluster_id)
+				.iter()
+				.any(|cluster| cluster.roles.iter().any(|role| new_role.name.eq(&role.name)))
+			{
+				return Err(Error::<T>::RoleExists.into())
+			}
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
@@ -324,13 +321,12 @@ pub mod pallet {
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			// Check that the role exists in the cluster and in storage
-			let roles_in_cluster = <Clusters<T>>::get(&cluster_id)
-				.ok_or(Error::<T>::ClusterNotFound)?
-				.roles
-				.into_iter()
-				.filter(|role| role_name.eq(&role.name))
-				.collect::<Vec<Role<T::AccountId>>>();
-			ensure!(!roles_in_cluster.is_empty(), Error::<T>::RoleNotFound);
+			if !<Clusters<T>>::get(&cluster_id)
+				.iter()
+				.any(|cluster| cluster.roles.iter().any(|role| role_name.eq(&role.name)))
+			{
+				return Err(Error::<T>::RoleNotFound.into())
+			}
 
 			let role_hash = blake2_128(&[&cluster_id[..], &role_name.as_slice()].concat());
 			let role_name_vec = role_name.into_inner();
@@ -376,12 +372,12 @@ pub mod pallet {
 			let role_name_vec = role_name.into_inner();
 
 			// Check that the role exists in the cluster and in storage
-			let roles_in_cluster = cluster
-				.roles
-				.into_iter()
-				.filter(|role| role_name_vec.eq(&role.name))
-				.collect::<Vec<Role<T::AccountId>>>();
-			ensure!(!roles_in_cluster.is_empty(), Error::<T>::RoleNotFound);
+			if !<Clusters<T>>::get(&cluster_id)
+				.iter()
+				.any(|cluster| cluster.roles.iter().any(|role| role_name_vec.eq(&role.name)))
+			{
+				return Err(Error::<T>::RoleNotFound.into())
+			}
 
 			// write
 			// Remove Role from Cluster
@@ -394,9 +390,7 @@ pub mod pallet {
 			});
 
 			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec.as_slice()].concat());
-			if !roles_in_cluster.is_empty() {
-				<RoleToSettings<T>>::remove(&role_hash);
-			}
+			<RoleToSettings<T>>::remove(&role_hash);
 
 			Self::deposit_event(Event::RoleDeleted { role_hash });
 			log::trace!("Role deleted: {:?}", role_hash);
@@ -421,18 +415,17 @@ pub mod pallet {
 			// Check that the cluster does not already contain the member
 			ensure!(!cluster.members.contains(&member), Error::<T>::MemberExists);
 
-			ensure!(cluster.members.len() < T::MembersLimit::get() as usize, Error::<T>::MembersLimitReached);
+			ensure!(
+				cluster.members.len() < T::MembersLimit::get() as usize,
+				Error::<T>::MembersLimitReached
+			);
 
 			// Check that the roles for the member already exists in the cluster
 			let roles_in_cluster: Vec<Vec<u8>> =
 				cluster.roles.iter().map(|role| role.name.clone()).collect();
 
-			let roles = roles.clone();
 			for role in &roles {
-				ensure!(
-					roles_in_cluster.contains(&role),
-					Error::<T>::RoleNotFound
-				);
+				ensure!(roles_in_cluster.contains(&role), Error::<T>::RoleNotFound);
 			}
 
 			// write
