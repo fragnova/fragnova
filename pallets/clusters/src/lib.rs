@@ -442,8 +442,8 @@ pub mod pallet {
 				cluster.members.push(member.clone());
 
 				// Associate the member with its roles in the cluster
-				for role in &roles {
-					let index = cluster.roles.iter().position(|x| x.name == *role);
+				for role in roles {
+					let index = cluster.roles.iter().position(|x| x.name == role);
 					if let Some(index) = index {
 						let role =
 							cluster.roles.get(index).ok_or(Error::<T>::SystematicFailure).unwrap();
