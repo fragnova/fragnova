@@ -45,7 +45,7 @@
     ["swarm" "peering" "add" .p2p-address] >= .ipfs-args
     "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args)
     ["swarm" "connect" .p2p-address] > .ipfs-args
-    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args-2)))
+    "" (Process.Run :Executable "ipfs" :Arguments .ipfs-args)))
 
   (Maybe (-> "" (Process.Run :Executable "ipfs" :Arguments ["repo" "gc"]) nil)) ;  `ipfs repo gc` - Performs a garbage collection sweep on the IPFS Repo.
   )
@@ -72,10 +72,7 @@
   ; not ideal but we need to wait transaction is done and CI can be slow
   (Pause 5.0)
 
-  (Maybe
-   (-> (Do call-ipfs-block-get) (Log "ipfs block is")  (Is .proto-data))
-   (-> false))
-  (Assert.Is true))
+  (Do call-ipfs-block-get) (Log "ipfs block is")  (Is .proto-data))
 
 (defmesh root)
 (schedule root main)
