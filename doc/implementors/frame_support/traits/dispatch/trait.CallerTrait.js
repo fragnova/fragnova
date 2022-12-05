@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"clamor_runtime":[["impl CallerTrait&lt;&lt;<a class=\"struct\" href=\"clamor_runtime/struct.Runtime.html\" title=\"struct clamor_runtime::Runtime\">Runtime</a> as Config&gt;::AccountId&gt; for <a class=\"enum\" href=\"clamor_runtime/enum.OriginCaller.html\" title=\"enum clamor_runtime::OriginCaller\">OriginCaller</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

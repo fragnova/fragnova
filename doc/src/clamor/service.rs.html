@@ -372,6 +372,8 @@
 <span id="372">372</span>
 <span id="373">373</span>
 <span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 //!
 //! service.rs: This file defines the implementation of the node. Take note of the libraries that this file imports and the names of the functions it invokes.
@@ -520,6 +522,7 @@
 			registry: config.prometheus_registry(),
 			check_for_equivocation: Default::default(),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
+			compatibility_mode: Default::default(),
 		})<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(sc_service::PartialComponents {
@@ -676,6 +679,7 @@
 				block_proposal_slot_portion: SlotProportion::new(<span class="number">2f32 </span>/ <span class="number">3f32</span>),
 				max_block_proposal_slot_portion: <span class="prelude-val">None</span>,
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
+				compatibility_mode: Default::default(),
 			},
 		)<span class="question-mark">?</span>;
 

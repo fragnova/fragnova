@@ -1456,6 +1456,12 @@
 <span id="1456">1456</span>
 <span id="1457">1457</span>
 <span id="1458">1458</span>
+<span id="1459">1459</span>
+<span id="1460">1460</span>
+<span id="1461">1461</span>
+<span id="1462">1462</span>
+<span id="1463">1463</span>
+<span id="1464">1464</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
@@ -1496,7 +1502,9 @@
 
 <span class="kw">const </span>LINK_VERIFYING_CONTRACT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;f5a0af5a0af5a0af5a0af5a0af5a0af5a0af5a0a&quot;</span>;
 
-<span class="kw">use </span>sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
+<span class="kw">use </span>sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H256};
+
+<span class="kw">use </span>ethabi::ethereum_types::{Address, H160, U256};
 
 <span class="doccomment">/// Defines application identifier for crypto keys of this module.
 ///
@@ -1568,6 +1576,9 @@
 
 <span class="kw">use </span>serde_json::{json, Value};
 
+<span class="attribute">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="kw">use </span>serde::{Deserialize, Serialize};
+
 <span class="kw">use </span>ethabi::{ParamType, Token};
 
 <span class="kw">use </span>frame_support::traits::{tokens::fungibles::Mutate, ReservableCurrency};
@@ -1594,6 +1605,7 @@
 
 <span class="doccomment">/// **Struct** representing a **recent confirmed (i.e with sufficient blockchain confirmations) log** for the **event `Lock` or `Unlock`** of the **FRAG token Smart Contract**
 </span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>EthLockUpdate&lt;TPublic&gt; {
 	<span class="doccomment">/// Public Account Address of What? (问Gio)
 	</span><span class="kw">pub </span>public: TPublic,

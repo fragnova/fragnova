@@ -1462,6 +1462,21 @@
 <span id="1462">1462</span>
 <span id="1463">1463</span>
 <span id="1464">1464</span>
+<span id="1465">1465</span>
+<span id="1466">1466</span>
+<span id="1467">1467</span>
+<span id="1468">1468</span>
+<span id="1469">1469</span>
+<span id="1470">1470</span>
+<span id="1471">1471</span>
+<span id="1472">1472</span>
+<span id="1473">1473</span>
+<span id="1474">1474</span>
+<span id="1475">1475</span>
+<span id="1476">1476</span>
+<span id="1477">1477</span>
+<span id="1478">1478</span>
+<span id="1479">1479</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1662,9 +1677,12 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
+	<span class="kw">use </span>pallet_contracts::Determinism;
+	<span class="kw">use </span>pallet_detach::{
+		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
+	};
 	<span class="kw">use </span>sp_clamor::CID_PREFIX;
 	<span class="kw">use </span>sp_runtime::SaturatedConversion;
-	<span class="kw">use </span>pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachedHashes, SupportedChains};
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
 	</span><span class="attribute">#[pallet::config]
@@ -2009,7 +2027,10 @@
 				},
 			};
 
-			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached);
+			<span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)),
+				Error::&lt;T&gt;::Detached
+			);
 
 			<span class="kw">let </span>data_hash = blake2_256(<span class="kw-2">&amp;</span>data);
 
@@ -2115,7 +2136,10 @@
 			};
 
 			<span class="comment">// make sure the proto is not detached
-			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached);
+			</span><span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)),
+				Error::&lt;T&gt;::Detached
+			);
 
 			<span class="comment">// collect new owner
 			</span><span class="kw">let </span>new_owner_s = ProtoOwner::User(new_owner.clone());
@@ -2184,7 +2208,10 @@
 				},
 			};
 
-			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached);
+			<span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)),
+				Error::&lt;T&gt;::Detached
+			);
 
 			<span class="kw">let </span>data_hash = blake2_256(<span class="kw-2">&amp;</span>data);
 
@@ -2263,10 +2290,14 @@
 			};
 
 			<span class="kw">let </span>detach_hash = DetachHash::Proto(proto_hash);
-			<span class="kw">let </span>detach_request = DetachRequest { hash: detach_hash.clone(), target_chain, target_account };
+			<span class="kw">let </span>detach_request =
+				DetachRequest { hash: detach_hash.clone(), target_chain, target_account };
 
 			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>detach_hash), Error::&lt;T&gt;::Detached);
-			<span class="macro">ensure!</span>(!&lt;DetachRequests&lt;T&gt;&gt;::get().contains(<span class="kw-2">&amp;</span>detach_request), Error::&lt;T&gt;::DetachRequestAlreadyExists);
+			<span class="macro">ensure!</span>(
+				!&lt;DetachRequests&lt;T&gt;&gt;::get().contains(<span class="kw-2">&amp;</span>detach_request),
+				Error::&lt;T&gt;::DetachRequestAlreadyExists
+			);
 
 			&lt;DetachRequests&lt;T&gt;&gt;::mutate(|requests| {
 				requests.push(detach_request);
@@ -2389,8 +2420,8 @@
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(owner) = owner {
 						<span class="kw">if </span>owner == <span class="kw-2">*</span>who {
 							<span class="comment">// owner can include freely
-							</span><span class="kw">continue</span>;
-						}
+							</span><span class="kw">continue
+						</span>}
 					}
 
 					<span class="kw">let </span>license = proto.license;
@@ -2407,7 +2438,7 @@
 								</span><span class="macro">ensure!</span>(curation.<span class="number">0 </span>&gt;= amount, Error::&lt;T&gt;::NotEnoughTickets);
 							} <span class="kw">else </span>{
 								<span class="comment">// Curation not found
-								</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::CurationNotFound.into());
+								</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::CurationNotFound.into())
 							}
 						},
 						UsageLicense::Contract(contract_address) =&gt; {
@@ -2421,6 +2452,7 @@
 									</span><span class="prelude-val">None</span>,
 									data,
 									<span class="bool-val">false</span>,
+									Determinism::Deterministic,
 								)
 								.result
 								.map_err(|e| {
@@ -2429,22 +2461,22 @@
 								});
 
 							<span class="kw">if let </span><span class="prelude-val">Ok</span>(res) = res {
-								<span class="kw">let </span>allowed = bool::decode(<span class="kw-2">&amp;mut &amp;</span>res.data.<span class="number">0</span>[..]);
+								<span class="kw">let </span>allowed = bool::decode(<span class="kw-2">&amp;mut &amp;</span>res.data[..]);
 								<span class="kw">if let </span><span class="prelude-val">Ok</span>(allowed) = allowed {
 									<span class="kw">if </span>!allowed {
-										<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
+										<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into())
 									}
 								} <span class="kw">else </span>{
-									<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
+									<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into())
 								}
 							} <span class="kw">else </span>{
-								<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into());
+								<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::Unauthorized.into())
 							}
 						},
 					}
 				} <span class="kw">else </span>{
 					<span class="comment">// Proto not found
-					</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ReferenceNotFound.into());
+					</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ReferenceNotFound.into())
 				}
 			}
 			<span class="prelude-val">Ok</span>(())
@@ -2460,16 +2492,16 @@
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(struct_proto) = &lt;Protos&lt;T&gt;&gt;::get(proto_id) {
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(avail) = avail {
 					<span class="kw">if </span>avail &amp;&amp; struct_proto.license == UsageLicense::Closed {
-						<span class="kw">return </span><span class="bool-val">false</span>;
-					} <span class="kw">else if </span>!avail &amp;&amp; struct_proto.license != UsageLicense::Closed {
-						<span class="kw">return </span><span class="bool-val">false</span>;
-					}
+						<span class="kw">return </span><span class="bool-val">false
+					</span>} <span class="kw">else if </span>!avail &amp;&amp; struct_proto.license != UsageLicense::Closed {
+						<span class="kw">return </span><span class="bool-val">false
+					</span>}
 				}
 
 				<span class="kw">if </span>categories.len() == <span class="number">0 </span>{
-					<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, <span class="kw-2">&amp;</span>struct_proto, exclude_tags);
+					<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, <span class="kw-2">&amp;</span>struct_proto, exclude_tags)
 				} <span class="kw">else </span>{
-					<span class="kw">return </span><span class="self">Self</span>::filter_category(tags, <span class="kw-2">&amp;</span>struct_proto, categories, exclude_tags);
+					<span class="kw">return </span><span class="self">Self</span>::filter_category(tags, <span class="kw-2">&amp;</span>struct_proto, categories, exclude_tags)
 				}
 			} <span class="kw">else </span>{
 				<span class="bool-val">false
@@ -2507,41 +2539,40 @@
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							</span><span class="kw">if </span>!implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								<span class="kw">if </span>param_script_info.format == stored_script_info.format {
-									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
+									<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags)
 								} <span class="kw">else </span>{
-									<span class="kw">return </span><span class="bool-val">false</span>;
-								}
+									<span class="kw">return </span><span class="bool-val">false
+								</span>}
 							}
 							<span class="comment">// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec)
-								&amp;&amp; param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec)
-								&amp;&amp; param_script_info.format == stored_script_info.format
+							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
+								param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
+								param_script_info.format == stored_script_info.format
 							{
-								<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
+								<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags)
 							} <span class="kw">else </span>{
-								<span class="kw">return </span><span class="bool-val">false</span>;
-							}
+								<span class="kw">return </span><span class="bool-val">false
+							</span>}
 						} <span class="kw">else </span>{
 							<span class="comment">// it should never go here
-							</span><span class="kw">return </span><span class="bool-val">false</span>;
-						}
+							</span><span class="kw">return </span><span class="bool-val">false
+						</span>}
 					},
-					<span class="kw">_ </span>=&gt; {
+					<span class="kw">_ </span>=&gt;
 						<span class="kw">if </span><span class="kw-2">*</span>cat == <span class="kw-2">&amp;</span>struct_proto.category {
-							<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags);
+							<span class="kw">return </span><span class="self">Self</span>::filter_tags(tags, struct_proto, exclude_tags)
 						} <span class="kw">else </span>{
-							<span class="kw">return </span><span class="bool-val">false</span>;
-						}
-					},
+							<span class="kw">return </span><span class="bool-val">false
+						</span>},
 				})
 				.collect();
 
 			<span class="kw">if </span>found.is_empty() {
-				<span class="kw">return </span><span class="bool-val">false</span>;
-			} <span class="kw">else </span>{
-				<span class="kw">return </span><span class="bool-val">true</span>;
-			}
+				<span class="kw">return </span><span class="bool-val">false
+			</span>} <span class="kw">else </span>{
+				<span class="kw">return </span><span class="bool-val">true
+			</span>}
 		}
 
 		<span class="doccomment">/// Whether `struct_proto` has all the tags `tags`
@@ -2600,39 +2631,38 @@
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							</span><span class="kw">if </span>!implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								<span class="kw">if </span>param_script_info.format == stored_script_info.format {
-									<span class="kw">return </span><span class="bool-val">true</span>;
-								} <span class="kw">else </span>{
-									<span class="kw">return </span><span class="bool-val">false</span>;
-								}
+									<span class="kw">return </span><span class="bool-val">true
+								</span>} <span class="kw">else </span>{
+									<span class="kw">return </span><span class="bool-val">false
+								</span>}
 							}
 							<span class="comment">// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec)
-								&amp;&amp; param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec)
-								&amp;&amp; param_script_info.format == stored_script_info.format
+							</span><span class="kw">else if </span>param_script_info.implementing.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
+								param_script_info.requiring.contains(<span class="kw-2">&amp;</span>zero_vec) &amp;&amp;
+								param_script_info.format == stored_script_info.format
 							{
-								<span class="kw">return </span><span class="bool-val">true</span>;
-							} <span class="kw">else if </span>!(<span class="kw-2">&amp;</span>cat == <span class="kw-2">&amp;</span>category) {
-								<span class="kw">return </span><span class="bool-val">false</span>;
-							} <span class="kw">else </span>{
-								<span class="kw">return </span><span class="bool-val">false</span>;
-							}
+								<span class="kw">return </span><span class="bool-val">true
+							</span>} <span class="kw">else if </span>!(<span class="kw-2">&amp;</span>cat == <span class="kw-2">&amp;</span>category) {
+								<span class="kw">return </span><span class="bool-val">false
+							</span>} <span class="kw">else </span>{
+								<span class="kw">return </span><span class="bool-val">false
+							</span>}
 						} <span class="kw">else </span>{
-							<span class="kw">return </span><span class="bool-val">false</span>;
-						}
+							<span class="kw">return </span><span class="bool-val">false
+						</span>}
 					},
 					<span class="comment">// for all other types of Categories
-					</span><span class="kw">_ </span>=&gt; {
+					</span><span class="kw">_ </span>=&gt;
 						<span class="kw">if </span>!(<span class="kw-2">&amp;</span>cat == <span class="kw-2">&amp;</span>category) {
-							<span class="kw">return </span><span class="bool-val">false</span>;
-						} <span class="kw">else </span>{
-							<span class="kw">return </span><span class="bool-val">true</span>;
-						}
-					},
+							<span class="kw">return </span><span class="bool-val">false
+						</span>} <span class="kw">else </span>{
+							<span class="kw">return </span><span class="bool-val">true
+						</span>},
 				})
 				.collect();
 
-			<span class="kw">return </span>found;
+			<span class="kw">return </span>found
 		}
 
 		<span class="doccomment">/// Converts a `ProtoOwner` struct into a JSON
@@ -2776,8 +2806,8 @@
 						<span class="comment">// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						</span><span class="kw">if </span>found.is_empty() {
-							<span class="kw">continue</span>;
-						}
+							<span class="kw">continue
+						</span>}
 					}
 					<span class="comment">// Found the category.
 					// Now collect all the protos linked to the category type in input

@@ -1159,25 +1159,6 @@
 <span id="1159">1159</span>
 <span id="1160">1160</span>
 <span id="1161">1161</span>
-<span id="1162">1162</span>
-<span id="1163">1163</span>
-<span id="1164">1164</span>
-<span id="1165">1165</span>
-<span id="1166">1166</span>
-<span id="1167">1167</span>
-<span id="1168">1168</span>
-<span id="1169">1169</span>
-<span id="1170">1170</span>
-<span id="1171">1171</span>
-<span id="1172">1172</span>
-<span id="1173">1173</span>
-<span id="1174">1174</span>
-<span id="1175">1175</span>
-<span id="1176">1176</span>
-<span id="1177">1177</span>
-<span id="1178">1178</span>
-<span id="1179">1179</span>
-<span id="1180">1180</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -1196,13 +1177,10 @@
 </span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
 
 <span class="kw">use </span>frame_support::{
-	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
+	traits::{ConstU128, ConstU32, ConstU64},
 	dispatch::DispatchClass,
 };
-<span class="kw">use </span>frame_system::{
-	limits::{BlockLength, BlockWeights},
-	EnsureRoot,
-};
+<span class="kw">use </span>frame_system::{EnsureRoot, EnsureSigned};
 <span class="kw">use </span>pallet_grandpa::{
 	fg_primitives, AuthorityId <span class="kw">as </span>GrandpaId, AuthorityList <span class="kw">as </span>GrandpaAuthorityList,
 };
@@ -1243,6 +1221,7 @@
 <span class="kw">use </span>scale_info::prelude::string::String;
 
 <span class="kw">use </span>codec::Encode;
+<span class="kw">use </span>frame_support::traits::AsEnsureOriginWithArg;
 <span class="kw">use </span>sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
 <span class="kw">use </span>pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
@@ -1369,14 +1348,9 @@
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
-<span class="doccomment">/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
-/// This is used to limit the maximal weight of a single extrinsic.
-</span><span class="kw">const </span>AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(<span class="number">10</span>);
 <span class="doccomment">/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 </span><span class="kw">const </span>NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(<span class="number">75</span>);
-<span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.
-</span><span class="kw">const </span>MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND.saturating_mul(<span class="number">2</span>);
 
 <span class="comment">// When to use:
 //
@@ -1397,28 +1371,13 @@
 	</span><span class="kw">pub const </span>SS58Prefix: u8 = <span class="number">93</span>;
 
 	<span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.
-	</span><span class="kw">pub </span>RuntimeBlockLength: BlockLength = BlockLength
+	</span><span class="kw">pub </span>BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::with_sensible_defaults(
+			(<span class="number">2u64 </span>* WEIGHT_PER_SECOND).set_proof_size(u64::MAX),
+			NORMAL_DISPATCH_RATIO,
+		);
+	<span class="kw">pub </span>BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(<span class="number">5 </span>* <span class="number">1024 </span>* <span class="number">1024</span>, NORMAL_DISPATCH_RATIO);
-
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">pub </span>RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
-		.base_block(BlockExecutionWeight::get())
-		.for_class(DispatchClass::all(), |weights| {
-			weights.base_extrinsic = ExtrinsicBaseWeight::get();
-		})
-		.for_class(DispatchClass::Normal, |weights| {
-			weights.max_total = <span class="prelude-val">Some</span>(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-		})
-		.for_class(DispatchClass::Operational, |weights| {
-			weights.max_total = <span class="prelude-val">Some</span>(MAXIMUM_BLOCK_WEIGHT);
-			<span class="comment">// Operational transactions have some extra reserved space, so that they
-			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-			</span>weights.reserved = <span class="prelude-val">Some</span>(
-				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-			);
-		})
-		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-		.build_or_panic();
 }
 
 <span class="comment">// Configure FRAME pallets to include in runtime.
@@ -1427,9 +1386,9 @@
 	<span class="doccomment">/// The basic call filter to use in dispatchable.
 	</span><span class="kw">type </span>BaseCallFilter = frame_support::traits::Everything;
 	<span class="doccomment">/// Block &amp; extrinsics weights: base values and limits.
-	</span><span class="kw">type </span>BlockWeights = RuntimeBlockWeights;
+	</span><span class="kw">type </span>BlockWeights = BlockWeights;
 	<span class="doccomment">/// The maximum length of a block (in bytes).
-	</span><span class="kw">type </span>BlockLength = RuntimeBlockLength;
+	</span><span class="kw">type </span>BlockLength = BlockLength;
 	<span class="doccomment">/// The identifier used to distinguish between accounts.
 	</span><span class="kw">type </span>AccountId = AccountId;
 	<span class="doccomment">/// The aggregated dispatch type that is available for extrinsics.
@@ -1651,7 +1610,7 @@
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>DepositBase = ConstU128&lt;<span class="number">1</span>&gt;;
 	<span class="kw">type </span>DepositFactor = ConstU128&lt;<span class="number">1</span>&gt;;
-	<span class="kw">type </span>MaxSignatories = ConstU16&lt;<span class="number">3</span>&gt;;
+	<span class="kw">type </span>MaxSignatories = ConstU32&lt;<span class="number">3</span>&gt;;
 	<span class="kw">type </span>WeightInfo = ();
 }
 
@@ -1796,7 +1755,6 @@
 	<span class="kw">type </span>DeletionWeightLimit = DeletionWeightLimit;
 	<span class="kw">type </span>Schedule = MySchedule;
 	<span class="kw">type </span>AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-	<span class="kw">type </span>ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight&lt;RuntimeBlockWeights&gt;;
 	<span class="kw">type </span>MaxCodeLen = ConstU32&lt;{ <span class="number">128 </span>* <span class="number">1024 </span>}&gt;;
 	<span class="kw">type </span>MaxStorageKeyLen = ConstU32&lt;<span class="number">128</span>&gt;;
 }
@@ -1833,6 +1791,7 @@
 	<span class="kw">type </span>Balance = Balance;
 	<span class="kw">type </span>AssetId = u64;
 	<span class="kw">type </span>Currency = Balances;
+	<span class="kw">type </span>CreateOrigin = AsEnsureOriginWithArg&lt;EnsureSigned&lt;AccountId&gt;&gt;;
 	<span class="kw">type </span>ForceOrigin = EnsureRoot&lt;AccountId&gt;;
 	<span class="kw">type </span>AssetDeposit = AssetDeposit;
 	<span class="kw">type </span>AssetAccountDeposit = ConstU128&lt;DOLLARS&gt;;
@@ -2191,7 +2150,7 @@
 	<span class="doccomment">/// The Runtime API used to dry-run contract interactions.
 	///
 	/// See: https://paritytech.github.io/substrate/master/pallet_contracts/trait.ContractsApi.html#
-	</span><span class="kw">impl </span>pallet_contracts_rpc_runtime_api::ContractsApi&lt;Block, AccountId, Balance, BlockNumber, Hash&gt; <span class="kw">for </span>Runtime {
+	</span><span class="kw">impl </span>pallet_contracts::ContractsApi&lt;Block, AccountId, Balance, BlockNumber, Hash&gt; <span class="kw">for </span>Runtime {
 		<span class="doccomment">/// Perform a call from a specified account to a given contract.
 		///
 		/// See [`crate::Pallet::bare_call`].
@@ -2199,11 +2158,12 @@
 			origin: AccountId,
 			dest: AccountId,
 			value: Balance,
-			gas_limit: u64,
+			gas_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
 			storage_deposit_limit: <span class="prelude-ty">Option</span>&lt;Balance&gt;,
 			input_data: Vec&lt;u8&gt;,
 		) -&gt; pallet_contracts_primitives::ContractExecResult&lt;Balance&gt; {
-			Contracts::bare_call(origin, dest, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, input_data, <span class="bool-val">true</span>)
+			<span class="kw">let </span>gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
+			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, <span class="bool-val">true</span>, pallet_contracts::Determinism::Deterministic)
 		}
 
 		<span class="doccomment">/// Instantiate a new contract.
@@ -2212,14 +2172,15 @@
 		</span><span class="kw">fn </span>instantiate(
 			origin: AccountId,
 			value: Balance,
-			gas_limit: u64,
+			gas_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
 			storage_deposit_limit: <span class="prelude-ty">Option</span>&lt;Balance&gt;,
 			code: pallet_contracts_primitives::Code&lt;Hash&gt;,
 			data: Vec&lt;u8&gt;,
 			salt: Vec&lt;u8&gt;,
 		) -&gt; pallet_contracts_primitives::ContractInstantiateResult&lt;AccountId, Balance&gt;
 		{
-			Contracts::bare_instantiate(origin, value, Weight::from_ref_time(gas_limit), storage_deposit_limit, code, data, salt, <span class="bool-val">true</span>)
+			<span class="kw">let </span>gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
+			Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, <span class="bool-val">true</span>)
 		}
 
 		<span class="doccomment">/// Upload new code without instantiating a contract from it.
@@ -2229,9 +2190,10 @@
 			origin: AccountId,
 			code: Vec&lt;u8&gt;,
 			storage_deposit_limit: <span class="prelude-ty">Option</span>&lt;Balance&gt;,
+			determinism: pallet_contracts::Determinism,
 		) -&gt; pallet_contracts_primitives::CodeUploadResult&lt;Hash, Balance&gt;
 		{
-			Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+			Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
 		}
 
 		<span class="doccomment">/// Query a given storage key in a given contract.
