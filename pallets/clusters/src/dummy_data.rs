@@ -25,13 +25,13 @@ pub fn get_role_hash(cluster_id: Hash128, role: Vec<u8>) -> Hash128 {
 	blake2_128(&[&cluster_id[..], &role.clone()[..]].concat())
 }
 
-pub fn get_cluster_id(cluster_name: Vec<u8>, account_id: sp_core::ed25519::Public) -> Hash128 {
+pub fn get_cluster_id(cluster_name: Vec<u8>, account_id: sp_core::ed25519::Public, index: u32) -> Hash128 {
 	let extrinsic_index = 2;
 	System::set_extrinsic_index(extrinsic_index);
 	let block_number = System::block_number();
 
 	blake2_128(
-		&[block_number.encode(), cluster_name.clone(), extrinsic_index.clone().encode(), account_id.clone().encode()]
+		&[&block_number.encode(), cluster_name.as_slice(), &index.to_be_bytes(), &account_id.encode()]
 			.concat(),
 	)
 }

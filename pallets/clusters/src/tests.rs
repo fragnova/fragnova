@@ -96,7 +96,8 @@ mod create_tests {
 
 			assert_ok!(create_cluster_(account_id, cluster_name.clone()));
 
-			let cluster_id = get_cluster_id(cluster_name.clone(), account_id);
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+			let cluster_id = get_cluster_id(cluster_name.clone(), account_id, extrinsic_index);
 
 			assert!(<Clusters<Test>>::contains_key(&cluster_id.clone()));
 
@@ -155,7 +156,9 @@ mod create_tests {
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
 
-			let cluster_id = get_cluster_id(cluster.clone(), account_id);
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+
+			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
 			assert_ok!(create_role_(
 				account_id.clone(),
@@ -190,7 +193,10 @@ mod create_tests {
 			let account_id = dummy.account_id;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			let cluster_id = get_cluster_id(cluster.clone(), account_id);
+
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+
+			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
 			assert_ok!(create_role_(
 				account_id.clone(),
@@ -224,7 +230,10 @@ mod create_tests {
 			let account_id = dummy.account_id;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			let cluster_id = get_cluster_id(cluster.clone(), account_id);
+
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+
+			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 			// do not create any role
 
 			// assert there is no role
@@ -251,7 +260,10 @@ mod create_tests {
 			let settings = dummy.role_settings;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			let cluster_id = get_cluster_id(cluster.clone(), account_id);
+
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+
+			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
 			assert_ok!(create_role_(
 				account_id.clone(),
@@ -288,7 +300,10 @@ mod create_tests {
 
 			// create a cluster
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			let cluster_id = get_cluster_id(cluster.clone(), account_id);
+
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+
+			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 			// associate the role to the cluster
 			assert_ok!(create_role_(
 				account_id.clone(),
@@ -326,7 +341,10 @@ mod create_tests {
 
 			// create a cluster
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			let cluster_id = get_cluster_id(cluster.clone(), account_id);
+
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+
+			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
 			// create a role for the cluster
 			assert_ok!(create_role_(

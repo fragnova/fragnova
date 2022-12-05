@@ -2,6 +2,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate core;
+
 use codec::{Decode, Encode};
 use frame_support::BoundedVec;
 pub use pallet::*;
@@ -199,7 +201,7 @@ pub mod pallet {
 			// as_be_bytes to get bytes without allocations
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?.to_be_bytes();
-			// Blocknumber type is non concrete, so we need to encode it to get bytes
+			// BlockNumber type is non concrete, so we need to encode it to get bytes
 			let current_block_number = <frame_system::Pallet<T>>::block_number().encode();
 			// Who is not concrete, so we need to encode it to get bytes
 			let who_bytes = who.encode();
@@ -214,7 +216,7 @@ pub mod pallet {
 			// At creation there are no roles and no members assigned to the cluster
 			let cluster = Cluster {
 				owner: who.clone(),
-				name: Vec::from(name), // note this as of now does simply `x.0`
+				name: name.into_inner(), // `self.0`
 				cluster_id,
 				roles: vec![],
 				members: vec![],
@@ -266,29 +268,28 @@ pub mod pallet {
 			ensure!(!settings.name.len().is_zero(), Error::<T>::InvalidInput);
 			ensure!(!settings.data.len().is_zero(), Error::<T>::InvalidInput);
 
-			let role_name_vec = Vec::from(role_name.clone());
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec[..]].concat());
+			let role_hash = blake2_128(&[&cluster_id.as_slice(), role_name.as_slice()].concat());
 
 			// Check that the caller is the owner of the cluster
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			// At creation there are no Members and no Rules assigned to a Role
-			let role = Role { name: role_name_vec.clone(), members: vec![], rules: None };
+			let new_role = Role { name: role_name.into_inner(), members: vec![], rules: None };
 
 			// Check that the role does not exists already in the cluster
 			let roles_in_cluster = <Clusters<T>>::get(&cluster_id)
 				.ok_or(Error::<T>::ClusterNotFound)?
 				.roles
 				.into_iter()
-				.filter(|role| role_name_vec.eq(&role.name))
+				.filter(|role| new_role.name.eq(&role.name))
 				.collect::<Vec<Role<T::AccountId>>>();
 			ensure!(roles_in_cluster.is_empty(), Error::<T>::RoleExists);
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster.as_mut().unwrap();
-				cluster.roles.push(role);
+				cluster.roles.push(new_role);
 			});
 
 			<RoleToSettings<T>>::append(role_hash, settings);
@@ -310,7 +311,6 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			let role_name_vec = Vec::from(role_name.clone());
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
 			if new_members_list.len().is_zero() &&
@@ -328,11 +328,12 @@ pub mod pallet {
 				.ok_or(Error::<T>::ClusterNotFound)?
 				.roles
 				.into_iter()
-				.filter(|role| role_name_vec.eq(&role.name))
+				.filter(|role| role_name.eq(&role.name))
 				.collect::<Vec<Role<T::AccountId>>>();
 			ensure!(!roles_in_cluster.is_empty(), Error::<T>::RoleNotFound);
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec].concat());
+			let role_hash = blake2_128(&[&cluster_id[..], &role_name.as_slice()].concat());
+			let role_name_vec = role_name.into_inner();
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
@@ -366,12 +367,13 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			let role_name_vec = Vec::from(role_name.clone());
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
 			// only the owner of the cluster can do this operation
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
+
+			let role_name_vec = role_name.into_inner();
 
 			// Check that the role exists in the cluster and in storage
 			let roles_in_cluster = cluster
@@ -391,7 +393,7 @@ pub mod pallet {
 				}
 			});
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec].concat());
+			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec.as_slice()].concat());
 			if !roles_in_cluster.is_empty() {
 				<RoleToSettings<T>>::remove(&role_hash);
 			}
@@ -424,7 +426,9 @@ pub mod pallet {
 			// Check that the roles for the member already exists in the cluster
 			let roles_in_cluster: Vec<Vec<u8>> =
 				cluster.roles.iter().map(|role| role.name.clone()).collect();
-			for role in roles.clone() {
+
+			let roles = roles.clone();
+			for role in &roles {
 				ensure!(
 					roles_in_cluster.contains(&role),
 					Error::<T>::RoleNotFound
@@ -438,8 +442,8 @@ pub mod pallet {
 				cluster.members.push(member.clone());
 
 				// Associate the member with its roles in the cluster
-				for role in roles.clone() {
-					let index = cluster.roles.iter().position(|x| x.name == role);
+				for role in &roles {
+					let index = cluster.roles.iter().position(|x| x.name == *role);
 					if let Some(index) = index {
 						let role =
 							cluster.roles.get(index).ok_or(Error::<T>::SystematicFailure).unwrap();
