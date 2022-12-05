@@ -1,7 +1,6 @@
 #![cfg(test)]
 
 use crate as pallet_fragments;
-use crate::mock;
 
 use crate::*;
 use crate::dummy_data::*;
