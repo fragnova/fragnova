@@ -81,6 +81,7 @@ pub mod pallet {
 	use super::*;
 	use crate::{Cluster, Role, RoleSetting};
 	use frame_support::{log, pallet_prelude::*, sp_runtime::traits::Zero, traits::fungible};
+	use frame_support::traits::ReservableCurrency;
 	use frame_system::pallet_prelude::*;
 	use sp_clamor::get_vault_id;
 	use sp_io::hashing::blake2_128;
@@ -233,13 +234,22 @@ pub mod pallet {
 				minimum_balance,
 			)?;
 
-			// create a pure proxy
-			pallet_proxy::Pallet::<T>::create_pure(
-				origin.clone(),
-				T::ProxyType::default(),
-				T::BlockNumber::zero(),
-				0,
-			)?;
+			// create a proxy
+			let proxy_def = pallet_proxy::ProxyDefinition {
+				delegate: who.clone(),
+				proxy_type: T::ProxyType::default(),
+				delay: T::BlockNumber::default(),
+			};
+
+			let bounded_proxies: BoundedVec<_, T::MaxProxies> =
+				vec![proxy_def].try_into().map_err(|_| Error::<T>::TooManyProxies)?;
+
+			// ! Writing state
+
+			let deposit = T::ProxyDepositBase::get() + T::ProxyDepositFactor::get();
+			<T as pallet_proxy::Config>::Currency::reserve(&who, deposit)?;
+
+			pallet_proxy::Proxies::<T>::insert(&vault, (bounded_proxies, deposit));
 
 			<Clusters<T>>::insert(cluster_id, cluster);
 			// Don't clone, it's the last usage so let it move!
@@ -269,8 +279,7 @@ pub mod pallet {
 			let role_hash = blake2_128(&[&cluster_id.as_slice(), role_name.as_slice()].concat());
 
 			// Check that the caller is the owner of the cluster
-			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
-			ensure!(who == cluster.owner, Error::<T>::NoPermission);
+			ensure!(who == <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?.owner, Error::<T>::NoPermission);
 
 			// At creation there are no Members and no Rules assigned to a Role
 			let new_role = Role { name: role_name.into_inner(), members: vec![], rules: None };
@@ -316,9 +325,8 @@ pub mod pallet {
 				return Err(Error::<T>::InvalidInput.into())
 			}
 
-			// Check that the caller is the owner of the cluster
-			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::SystematicFailure)?;
-			ensure!(who == cluster.owner, Error::<T>::NoPermission);
+			// Check that the caller is the owner of the cluster;
+			ensure!(who == <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::SystematicFailure)?.owner, Error::<T>::NoPermission);
 
 			// Check that the role exists in the cluster and in storage
 			if !<Clusters<T>>::get(&cluster_id)
