@@ -281,10 +281,11 @@ pub mod pallet {
 			ensure!(!settings.data.len().is_zero(), Error::<T>::InvalidInput);
 
 			let role_hash = blake2_128(&[&cluster_id.as_slice(), role_name.as_slice()].concat());
+			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 
 			// Check that the caller is the owner of the cluster
 			ensure!(
-				who == <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?.owner,
+				who == cluster.owner,
 				Error::<T>::NoPermission
 			);
 
@@ -292,8 +293,7 @@ pub mod pallet {
 			let new_role = Role { name: role_name.into_inner(), members: vec![], rules: None };
 
 			// Check that the role does not exists already in the cluster
-			if <Clusters<T>>::get(&cluster_id)
-				.ok_or(Error::<T>::ClusterNotFound)?
+			if cluster
 				.roles
 				.iter()
 				.any(|role| new_role.name.eq(&role.name))
@@ -305,7 +305,6 @@ pub mod pallet {
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster
 					.as_mut()
-					.ok_or(Error::<T>::SystematicFailure)
 					.expect("Should find the cluster");
 				cluster.roles.push(new_role);
 			});
@@ -337,15 +336,16 @@ pub mod pallet {
 				return Err(Error::<T>::InvalidInput.into())
 			}
 
+			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::SystematicFailure)?;
+
 			// Check that the caller is the owner of the cluster;
 			ensure!(
-				who == <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::SystematicFailure)?.owner,
+				who == cluster.owner,
 				Error::<T>::NoPermission
 			);
 
 			// Check that the role exists in the cluster and in storage
-			if !<Clusters<T>>::get(&cluster_id)
-				.ok_or(Error::<T>::ClusterNotFound)?
+			if !cluster
 				.roles
 				.iter()
 				.any(|role| role_name.eq(&role.name))
@@ -360,14 +360,12 @@ pub mod pallet {
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster
 					.as_mut()
-					.ok_or(Error::<T>::SystematicFailure)
 					.expect("Should find the cluster");
 				cluster.roles.iter().position(|x| x.name == role_name_vec).map(|index| {
 					let role = cluster
 						.roles
 						.get(index)
-						.ok_or(Error::<T>::SystematicFailure)
-						.expect("Should find the role");
+						.expect("Should find the cluster");
 					let mut members = role.clone().members;
 					for member in new_members_list {
 						members.push(member);
@@ -378,7 +376,6 @@ pub mod pallet {
 			<RoleToSettings<T>>::mutate(&role_hash, |role| {
 				let role_settings = role
 					.as_mut()
-					.ok_or(Error::<T>::SystematicFailure)
 					.expect("Should find the role settings");
 				role_settings.push(new_settings);
 			});
@@ -407,8 +404,7 @@ pub mod pallet {
 			let role_name_vec = role_name.into_inner();
 
 			// Check that the role exists in the cluster and in storage
-			if !<Clusters<T>>::get(&cluster_id)
-				.ok_or(Error::<T>::ClusterNotFound)?
+			if !cluster
 				.roles
 				.iter()
 				.any(|role| role_name_vec.eq(&role.name))
@@ -421,7 +417,6 @@ pub mod pallet {
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster
 					.as_mut()
-					.ok_or(Error::<T>::SystematicFailure)
 					.expect("Should find the cluster");
 				cluster
 					.roles
@@ -473,7 +468,6 @@ pub mod pallet {
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster
 					.as_mut()
-					.ok_or(Error::<T>::SystematicFailure)
 					.expect("Should find the cluster");
 				// Add member into the cluster
 				cluster.members.push(member.clone());
@@ -511,7 +505,6 @@ pub mod pallet {
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster
 					.as_mut()
-					.ok_or(Error::<T>::SystematicFailure)
 					.expect("Should find the cluster");
 
 				cluster
