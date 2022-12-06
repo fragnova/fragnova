@@ -155,6 +155,7 @@ mod create_tests {
 			let account_id = dummy.account_id;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
+			assert_ok!(create_cluster_(account_id, b"cluster2".to_vec()));
 
 			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
 
