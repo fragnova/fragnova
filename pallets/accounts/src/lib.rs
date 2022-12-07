@@ -38,7 +38,9 @@ const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a2551
 
 const LINK_VERIFYING_CONTRACT: &str = "f5a0af5a0af5a0af5a0af5a0af5a0af5a0af5a0a";
 
-use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H256};
+
+use ethabi::ethereum_types::{Address, H160, U256};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -110,6 +112,9 @@ use scale_info::prelude::{format, string::String};
 
 use serde_json::{json, Value};
 
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
 use ethabi::{ParamType, Token};
 
 use frame_support::traits::{tokens::fungibles::Mutate, ReservableCurrency};
@@ -136,6 +141,7 @@ impl EthFragContract for () {}
 
 /// **Struct** representing a **recent confirmed (i.e with sufficient blockchain confirmations) log** for the **event `Lock` or `Unlock`** of the **FRAG token Smart Contract**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct EthLockUpdate<TPublic> {
 	/// Public Account Address of What? (问Gio)
 	pub public: TPublic,

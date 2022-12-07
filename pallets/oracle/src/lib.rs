@@ -15,6 +15,9 @@ use sp_clamor::http_json_post;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction};
 
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
+
 #[cfg(test)]
 pub mod tests;
 /// Defines application identifier for crypto keys of this module.
@@ -83,10 +86,10 @@ use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use ethabi::{ethereum_types::H256, ParamType, Token};
+	use ethabi::{ParamType, ethereum_types::U256};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
-	use sp_core::{ed25519, offchain::Timestamp, U256};
+	use sp_core::{ed25519, offchain::Timestamp, H256};
 	use sp_runtime::{
 		traits::ValidateUnsigned, transaction_validity::TransactionSource, MultiSigner,
 	};
@@ -140,6 +143,7 @@ pub mod pallet {
 	/// Struct used to hold price data received from the Chainlink Price Feed smart contract.
 	/// Please refer to https://docs.chain.link/docs/data-feeds/price-feeds/api-reference/#latestrounddata.
 	#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
+	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	pub struct OraclePrice<TPublic, TBlockNumber> {
 		/// The round ID
 		pub round_id: U256,
