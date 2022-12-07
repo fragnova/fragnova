@@ -198,7 +198,6 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
-	use pallet_contracts::Determinism;
 	use pallet_detach::{
 		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
 	};
@@ -215,7 +214,7 @@ pub mod pallet {
 		+ pallet_contracts::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
 
@@ -969,11 +968,10 @@ pub mod pallet {
 									who.clone(),
 									contract_address,
 									0u32.saturated_into(),
-									Weight::from_ref_time(1_000_000), // TODO determine this limit better should not be too high indeed
+									1_000_000, // TODO determine this limit better should not be too high indeed
 									None,
 									data,
 									false,
-									Determinism::Deterministic,
 								)
 								.result
 								.map_err(|e| {

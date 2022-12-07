@@ -2,12 +2,14 @@ use std::str::FromStr;
 use crate::*;
 
 use codec::Encode;
-use ethabi::ethereum_types::{Address, H160, U256};
+use ethabi::ethereum_types::{Address};
 
 use sp_core::{
 	ecdsa,
 	keccak_256,
 	Pair,
+	H160, // size of an Ethereum Account Address
+	U256,
 };
 
 #[cfg(test)]

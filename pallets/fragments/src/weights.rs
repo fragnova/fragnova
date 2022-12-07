@@ -68,11 +68,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Fragments Proto2Fragments (r:1 w:1)
 	/// The range of component `n` is `[1, 100]`.
 	fn create(n: u32, ) -> Weight {
-		Weight::from_ref_time(53_058_000 as u64)
+		(53_058_000 as Weight)
 			// Standard Error: 9_000
-			.saturating_add(Weight::from_ref_time(10_000 as u64).saturating_mul(n as u64))
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(3 as u64))
+			.saturating_add((10_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add(T::DbWeight::get().reads(6 as Weight))
+			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
 	// Storage: Fragments Definitions (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:0)
@@ -80,18 +80,18 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments EditionsCount (r:1 w:0)
 	fn publish() -> Weight {
-		Weight::from_ref_time(34_050_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(5 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		(34_050_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(5 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Fragments Definitions (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Fragments Publishing (r:1 w:1)
 	fn unpublish() -> Weight {
-		Weight::from_ref_time(32_337_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(4 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		(32_337_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(4 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Fragments Definitions (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:0)
@@ -104,12 +104,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	/// The range of component `q` is `[1, 100]`.
 	fn mint_definition_that_has_non_unique_capability(q: u32, ) -> Weight {
-		Weight::from_ref_time(36_569_000 as u64)
+		(36_569_000 as Weight)
 			// Standard Error: 133_000
-			.saturating_add(Weight::from_ref_time(8_255_000 as u64).saturating_mul(q as u64))
-			.saturating_add(T::DbWeight::get().reads(7 as u64))
-			.saturating_add(T::DbWeight::get().writes(4 as u64))
-			.saturating_add(T::DbWeight::get().writes((2 as u64).saturating_mul(q as u64)))
+			.saturating_add((8_255_000 as Weight).saturating_mul(q as Weight))
+			.saturating_add(T::DbWeight::get().reads(7 as Weight))
+			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+			.saturating_add(T::DbWeight::get().writes((2 as Weight).saturating_mul(q as Weight)))
 	}
 	// Storage: Fragments Definitions (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:0)
@@ -123,11 +123,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	/// The range of component `d` is `[1, 1000000]`.
 	fn mint_definition_that_has_unique_capability(d: u32, ) -> Weight {
-		Weight::from_ref_time(77_922_000 as u64)
+		(77_922_000 as Weight)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(d as u64))
-			.saturating_add(T::DbWeight::get().reads(8 as u64))
-			.saturating_add(T::DbWeight::get().writes(7 as u64))
+			.saturating_add((1_000 as Weight).saturating_mul(d as Weight))
+			.saturating_add(T::DbWeight::get().reads(8 as Weight))
+			.saturating_add(T::DbWeight::get().writes(7 as Weight))
 	}
 	// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments Definitions (r:1 w:1)
@@ -140,12 +140,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	/// The range of component `q` is `[1, 100]`.
 	fn buy_definition_that_has_non_unique_capability(q: u32, ) -> Weight {
-		Weight::from_ref_time(49_276_000 as u64)
+		(49_276_000 as Weight)
 			// Standard Error: 32_000
-			.saturating_add(Weight::from_ref_time(7_485_000 as u64).saturating_mul(q as u64))
-			.saturating_add(T::DbWeight::get().reads(7 as u64))
-			.saturating_add(T::DbWeight::get().writes(6 as u64))
-			.saturating_add(T::DbWeight::get().writes((2 as u64).saturating_mul(q as u64)))
+			.saturating_add((7_485_000 as Weight).saturating_mul(q as Weight))
+			.saturating_add(T::DbWeight::get().reads(7 as Weight))
+			.saturating_add(T::DbWeight::get().writes(6 as Weight))
+			.saturating_add(T::DbWeight::get().writes((2 as Weight).saturating_mul(q as Weight)))
 	}
 	// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments Definitions (r:1 w:1)
@@ -159,19 +159,19 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	/// The range of component `d` is `[1, 1000000]`.
 	fn buy_definition_that_has_unique_capability(d: u32, ) -> Weight {
-		Weight::from_ref_time(33_800_000 as u64)
+		(33_800_000 as Weight)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(d as u64))
-			.saturating_add(T::DbWeight::get().reads(8 as u64))
-			.saturating_add(T::DbWeight::get().writes(9 as u64))
+			.saturating_add((2_000 as Weight).saturating_mul(d as Weight))
+			.saturating_add(T::DbWeight::get().reads(8 as Weight))
+			.saturating_add(T::DbWeight::get().writes(9 as Weight))
 	}
 	// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Inventory (r:2 w:2)
 	// Storage: Fragments Owners (r:2 w:2)
 	fn benchmark_give_instance_that_does_not_have_copy_perms() -> Weight {
-		Weight::from_ref_time(36_669_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(5 as u64))
-			.saturating_add(T::DbWeight::get().writes(5 as u64))
+		(36_669_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(5 as Weight))
+			.saturating_add(T::DbWeight::get().writes(5 as Weight))
 	}
 	// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Inventory (r:2 w:1)
@@ -179,9 +179,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Fragments Owners (r:1 w:1)
 	// Storage: Fragments Expirations (r:1 w:1)
 	fn benchmark_give_instance_that_has_copy_perms() -> Weight {
-		Weight::from_ref_time(30_168_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(5 as u64))
+		(30_168_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(6 as Weight))
+			.saturating_add(T::DbWeight::get().writes(5 as Weight))
 	}
 }
 
@@ -195,11 +195,11 @@ impl WeightInfo for () {
 	// Storage: Fragments Proto2Fragments (r:1 w:1)
 	/// The range of component `n` is `[1, 100]`.
 	fn create(n: u32, ) -> Weight {
-		Weight::from_ref_time(53_058_000 as u64)
+		(53_058_000 as Weight)
 			// Standard Error: 9_000
-			.saturating_add(Weight::from_ref_time(10_000 as u64).saturating_mul(n as u64))
-			.saturating_add(RocksDbWeight::get().reads(6 as u64))
-			.saturating_add(RocksDbWeight::get().writes(3 as u64))
+			.saturating_add((10_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
 	}
 	// Storage: Fragments Definitions (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:0)
@@ -207,18 +207,18 @@ impl WeightInfo for () {
 	// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments EditionsCount (r:1 w:0)
 	fn publish() -> Weight {
-		Weight::from_ref_time(34_050_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(5 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+		(34_050_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Fragments Definitions (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Fragments Publishing (r:1 w:1)
 	fn unpublish() -> Weight {
-		Weight::from_ref_time(32_337_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(4 as u64))
-			.saturating_add(RocksDbWeight::get().writes(1 as u64))
+		(32_337_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	// Storage: Fragments Definitions (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:0)
@@ -231,12 +231,12 @@ impl WeightInfo for () {
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	/// The range of component `q` is `[1, 100]`.
 	fn mint_definition_that_has_non_unique_capability(q: u32, ) -> Weight {
-		Weight::from_ref_time(36_569_000 as u64)
+		(36_569_000 as Weight)
 			// Standard Error: 133_000
-			.saturating_add(Weight::from_ref_time(8_255_000 as u64).saturating_mul(q as u64))
-			.saturating_add(RocksDbWeight::get().reads(7 as u64))
-			.saturating_add(RocksDbWeight::get().writes(4 as u64))
-			.saturating_add(RocksDbWeight::get().writes((2 as u64).saturating_mul(q as u64)))
+			.saturating_add((8_255_000 as Weight).saturating_mul(q as Weight))
+			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+			.saturating_add(RocksDbWeight::get().writes((2 as Weight).saturating_mul(q as Weight)))
 	}
 	// Storage: Fragments Definitions (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:0)
@@ -250,11 +250,11 @@ impl WeightInfo for () {
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	/// The range of component `d` is `[1, 1000000]`.
 	fn mint_definition_that_has_unique_capability(d: u32, ) -> Weight {
-		Weight::from_ref_time(77_922_000 as u64)
+		(77_922_000 as Weight)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(1_000 as u64).saturating_mul(d as u64))
-			.saturating_add(RocksDbWeight::get().reads(8 as u64))
-			.saturating_add(RocksDbWeight::get().writes(7 as u64))
+			.saturating_add((1_000 as Weight).saturating_mul(d as Weight))
+			.saturating_add(RocksDbWeight::get().reads(8 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(7 as Weight))
 	}
 	// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments Definitions (r:1 w:1)
@@ -267,12 +267,12 @@ impl WeightInfo for () {
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	/// The range of component `q` is `[1, 100]`.
 	fn buy_definition_that_has_non_unique_capability(q: u32, ) -> Weight {
-		Weight::from_ref_time(49_276_000 as u64)
+		(49_276_000 as Weight)
 			// Standard Error: 32_000
-			.saturating_add(Weight::from_ref_time(7_485_000 as u64).saturating_mul(q as u64))
-			.saturating_add(RocksDbWeight::get().reads(7 as u64))
-			.saturating_add(RocksDbWeight::get().writes(6 as u64))
-			.saturating_add(RocksDbWeight::get().writes((2 as u64).saturating_mul(q as u64)))
+			.saturating_add((7_485_000 as Weight).saturating_mul(q as Weight))
+			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(6 as Weight))
+			.saturating_add(RocksDbWeight::get().writes((2 as Weight).saturating_mul(q as Weight)))
 	}
 	// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments Definitions (r:1 w:1)
@@ -286,19 +286,19 @@ impl WeightInfo for () {
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	/// The range of component `d` is `[1, 1000000]`.
 	fn buy_definition_that_has_unique_capability(d: u32, ) -> Weight {
-		Weight::from_ref_time(33_800_000 as u64)
+		(33_800_000 as Weight)
 			// Standard Error: 0
-			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(d as u64))
-			.saturating_add(RocksDbWeight::get().reads(8 as u64))
-			.saturating_add(RocksDbWeight::get().writes(9 as u64))
+			.saturating_add((2_000 as Weight).saturating_mul(d as Weight))
+			.saturating_add(RocksDbWeight::get().reads(8 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(9 as Weight))
 	}
 	// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Inventory (r:2 w:2)
 	// Storage: Fragments Owners (r:2 w:2)
 	fn benchmark_give_instance_that_does_not_have_copy_perms() -> Weight {
-		Weight::from_ref_time(36_669_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(5 as u64))
-			.saturating_add(RocksDbWeight::get().writes(5 as u64))
+		(36_669_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(5 as Weight))
 	}
 	// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Inventory (r:2 w:1)
@@ -306,8 +306,8 @@ impl WeightInfo for () {
 	// Storage: Fragments Owners (r:1 w:1)
 	// Storage: Fragments Expirations (r:1 w:1)
 	fn benchmark_give_instance_that_has_copy_perms() -> Weight {
-		Weight::from_ref_time(30_168_000 as u64)
-			.saturating_add(RocksDbWeight::get().reads(6 as u64))
-			.saturating_add(RocksDbWeight::get().writes(5 as u64))
+		(30_168_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(5 as Weight))
 	}
 }

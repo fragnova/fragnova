@@ -48,12 +48,14 @@ where
 		+ Send
 		+ 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
+	C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: pallet_protos_rpc::ProtosRuntimeApi<Block, AccountId>,
 	C::Api: pallet_fragments_rpc::FragmentsRuntimeApi<Block, AccountId>,
 	C::Api: BlockBuilder<Block>,
 	P: TransactionPool + 'static,
 {
+	use pallet_contracts_rpc::{Contracts, ContractsApiServer};
 	use pallet_fragments_rpc::{FragmentsRpcServer, FragmentsRpcServerImpl};
 	use pallet_protos_rpc::{ProtosRpcServer, ProtosRpcServerImpl};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -68,6 +70,7 @@ where
 	// more context: https://github.com/paritytech/substrate/pull/3480
 	// These RPCs should use an asynchronous caller instead.
 	io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+	io.merge(Contracts::new(client.clone()).into_rpc())?;
 
 	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 

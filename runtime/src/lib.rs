@@ -16,10 +16,10 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
-	traits::{ConstU128, ConstU32, ConstU64},
-	dispatch::DispatchClass,
+	traits::{ConstU16, ConstU128, ConstU32, ConstU64},
+	weights::DispatchClass,
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::{EnsureRoot, EnsureSigned, limits::{BlockLength, BlockWeights},};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -93,10 +93,10 @@ pub type Hash = sp_core::H256;
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+	generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 
 /// The payload being signed in transactions.
-pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
+pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 
 /// Related to Index pallet
 pub type AccountIndex = u64;
@@ -187,9 +187,14 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// This is used to limit the maximal weight of a single extrinsic.
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+/// We allow for 2 seconds of compute with a 6 second average block time.
+const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 // When to use:
 //
@@ -210,13 +215,27 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 93;
 
 	/// We allow for 2 seconds of compute with a 6 second average block time.
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::with_sensible_defaults(
-			(2u64 * WEIGHT_PER_SECOND).set_proof_size(u64::MAX),
-			NORMAL_DISPATCH_RATIO,
-		);
-	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
+	pub RuntimeBlockLength: BlockLength = BlockLength
 		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+
+	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+		.base_block(BlockExecutionWeight::get())
+		.for_class(DispatchClass::all(), |weights| {
+			weights.base_extrinsic = ExtrinsicBaseWeight::get();
+		})
+		.for_class(DispatchClass::Normal, |weights| {
+			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+		})
+		.for_class(DispatchClass::Operational, |weights| {
+			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+			// Operational transactions have some extra reserved space, so that they
+			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+			weights.reserved = Some(
+				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+			);
+		})
+		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+		.build_or_panic();
 }
 
 // Configure FRAME pallets to include in runtime.
@@ -225,13 +244,13 @@ impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = frame_support::traits::Everything;
 	/// Block & extrinsics weights: base values and limits.
-	type BlockWeights = BlockWeights;
+	type BlockWeights = RuntimeBlockWeights;
 	/// The maximum length of a block (in bytes).
-	type BlockLength = BlockLength;
+	type BlockLength = RuntimeBlockLength;
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The aggregated dispatch type that is available for extrinsics.
-	type RuntimeCall = RuntimeCall;
+	type Call = Call;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = Indices;
 	/// The index type for storing how many extrinsics an account has signed.
@@ -245,9 +264,9 @@ impl frame_system::Config for Runtime {
 	/// The header type.
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// The ubiquitous event type.
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	/// The ubiquitous origin type.
-	type RuntimeOrigin = RuntimeOrigin;
+	type Origin = Origin;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	/// The weight of database operations that the runtime can invoke.
@@ -287,7 +306,8 @@ impl pallet_aura::Config for Runtime {
 }
 
 impl pallet_grandpa::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
+	type Call = Call;
 
 	type KeyOwnerProofSystem = ();
 
@@ -335,7 +355,7 @@ impl pallet_balances::Config for Runtime {
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// The ubiquitous event type.
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
@@ -375,7 +395,7 @@ parameter_types! {
 	/// The maximum number of contracts that can be pending for deletion.
 	pub const DeletionQueueDepth: u32 = 1024;
 	/// The maximum amount of weight that can be consumed per block for lazy trie removal.
-	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
+	pub const DeletionWeightLimit: Weight = 500_000_000_000;
 	// pub const MaxCodeSize: u32 = 2 * 1024;
 	/// Cost schedule and limits.
 	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
@@ -387,7 +407,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type WeightToFee = IdentityFee<Balance>;
@@ -396,12 +416,12 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 impl pallet_sudo::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
+	type Event = Event;
+	type Call = Call;
 }
 
 impl pallet_fragments::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type WeightInfo = ();
 }
 
@@ -416,7 +436,7 @@ parameter_types! {
 }
 
 impl pallet_accounts::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = Runtime;
@@ -430,7 +450,7 @@ impl pallet_accounts::Config for Runtime {
 }
 
 impl pallet_protos::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
 	type CurationExpiration = ConstU64<100800>; // one week
@@ -438,24 +458,24 @@ impl pallet_protos::Config for Runtime {
 }
 
 impl pallet_detach::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
 impl pallet_multisig::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
+	type Event = Event;
+	type Call = Call;
 	type Currency = Balances;
 	type DepositBase = ConstU128<1>;
 	type DepositFactor = ConstU128<1>;
-	type MaxSignatories = ConstU32<3>;
+	type MaxSignatories = ConstU16<3>;
 	type WeightInfo = ();
 }
 
 impl pallet_proxy::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
+	type Event = Event;
+	type Call = Call;
 	type Currency = Balances;
 	type ProxyType = ();
 	type ProxyDepositBase = ConstU128<1>;
@@ -478,7 +498,7 @@ parameter_types! {
 }
 
 impl pallet_identity::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type Currency = Balances;
 	type Slashed = ();
 	type BasicDeposit = ConstU128<10>;
@@ -493,8 +513,8 @@ impl pallet_identity::Config for Runtime {
 }
 
 impl pallet_utility::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
+	type Event = Event;
+	type Call = Call;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = ();
 }
@@ -514,9 +534,9 @@ impl frame_system::offchain::SigningTypes for Runtime {
 /// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Runtime
 where
-	RuntimeCall: From<LocalCall>,
+	Call: From<LocalCall>,
 {
-	type OverarchingCall = RuntimeCall;
+	type OverarchingCall = Call;
 	type Extrinsic = UncheckedExtrinsic;
 }
 
@@ -524,7 +544,7 @@ where
 /// to implement the CreateSignedTransaction trait, you also need to implement that trait for the runtime.
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
 where
-	RuntimeCall: From<LocalCall>,
+	Call: From<LocalCall>,
 {
 	/// The code seems long, but what it tries to do is really:
 	/// 	- Create and prepare extra of SignedExtra type, and put various checkers in-place.
@@ -535,11 +555,11 @@ where
 	///
 	/// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-		call: RuntimeCall,
+		call: Call,
 		public: <Signature as Verify>::Signer,
 		account: AccountId,
 		nonce: Index,
-	) -> Option<(RuntimeCall, <UncheckedExtrinsic as ExtrinsicT>::SignaturePayload)> {
+	) -> Option<(Call, <UncheckedExtrinsic as ExtrinsicT>::SignaturePayload)> {
 		let tip = 0;
 		// take the biggest period possible.
 		let period =
@@ -575,8 +595,8 @@ impl pallet_contracts::Config for Runtime {
 	type Time = Timestamp;
 	type Randomness = RandomnessCollectiveFlip;
 	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
+	type Event = Event;
+	type Call = Call;
 	/// The safest default is to allow no calls at all.
 	///
 	/// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -594,7 +614,9 @@ impl pallet_contracts::Config for Runtime {
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<RuntimeBlockWeights>;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
 }
 
@@ -607,7 +629,7 @@ impl pallet_indices::Config for Runtime {
 	type AccountIndex = AccountIndex;
 	type Currency = Balances;
 	type Deposit = IndexDeposit;
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type WeightInfo = pallet_indices::weights::SubstrateWeight<Runtime>;
 }
 
@@ -626,11 +648,10 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type Balance = Balance;
 	type AssetId = u64;
 	type Currency = Balances;
-	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
 	type AssetAccountDeposit = ConstU128<DOLLARS>;
@@ -818,12 +839,12 @@ impl_runtime_apis! {
 				// We want to prevent polluting blocks with a lot of useless invalid data.
 				// TODO perform quick and preliminary data validation
 				#[allow(unused_variables)]
-				RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
+				Call::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
 					// TODO
 				},
 				#[allow(unused_variables)]
-				RuntimeCall::Protos(ProtosCall::patch{ref data, ..}) |
-				RuntimeCall::Protos(ProtosCall::set_metadata{ref data, ..}) => {
+				Call::Protos(ProtosCall::patch{ref data, ..}) |
+				Call::Protos(ProtosCall::set_metadata{ref data, ..}) => {
 					// TODO
 					// if let Err(_) = <pallet_protos::Pallet<Runtime>>::ensure_valid_auth(auth) {
 					// 	return InvalidTransaction::BadProof.into();
@@ -989,64 +1010,53 @@ impl_runtime_apis! {
 	/// The Runtime API used to dry-run contract interactions.
 	///
 	/// See: https://paritytech.github.io/substrate/master/pallet_contracts/trait.ContractsApi.html#
-	impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash> for Runtime {
-		/// Perform a call from a specified account to a given contract.
-		///
-		/// See [`crate::Pallet::bare_call`].
-		fn call(
-			origin: AccountId,
-			dest: AccountId,
-			value: Balance,
-			gas_limit: Option<Weight>,
-			storage_deposit_limit: Option<Balance>,
-			input_data: Vec<u8>,
-		) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-			let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
-		}
-
-		/// Instantiate a new contract.
-		///
-		/// See `[crate::Pallet::bare_instantiate]`.
-		fn instantiate(
-			origin: AccountId,
-			value: Balance,
-			gas_limit: Option<Weight>,
-			storage_deposit_limit: Option<Balance>,
-			code: pallet_contracts_primitives::Code<Hash>,
-			data: Vec<u8>,
-			salt: Vec<u8>,
-		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
-		{
-			let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-			Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
-		}
-
-		/// Upload new code without instantiating a contract from it.
-		///
-		/// See [`crate::Pallet::bare_upload_code`].
-		fn upload_code(
-			origin: AccountId,
-			code: Vec<u8>,
-			storage_deposit_limit: Option<Balance>,
-			determinism: pallet_contracts::Determinism,
-		) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
-		{
-			Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
-		}
-
-		/// Query a given storage key in a given contract.
-		///
-		/// Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
-		/// specified account and `Ok(None)` if it doesn't. If the account specified by the address
-		/// doesn't exist, or doesn't have a contract then `Err` is returned.
-		fn get_storage(
-			address: AccountId,
-			key: Vec<u8>,
-		) -> pallet_contracts_primitives::GetStorageResult {
-			Contracts::get_storage(address, key)
-		}
+	impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+	for Runtime
+{
+	/// TODO: Documentation
+	fn call(
+		origin: AccountId,
+		dest: AccountId,
+		value: Balance,
+		gas_limit: u64,
+		storage_deposit_limit: Option<Balance>,
+		input_data: Vec<u8>,
+	) -> pallet_contracts_primitives::ContractExecResult<Balance> {
+		Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
 	}
+
+	/// TODO: Documentation
+	fn instantiate(
+		origin: AccountId,
+		value: Balance,
+		gas_limit: u64,
+		storage_deposit_limit: Option<Balance>,
+		code: pallet_contracts_primitives::Code<Hash>,
+		data: Vec<u8>,
+		salt: Vec<u8>,
+	) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
+	{
+		Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+	}
+
+	/// TODO: Documentation
+	fn upload_code(
+		origin: AccountId,
+		code: Vec<u8>,
+		storage_deposit_limit: Option<Balance>,
+	) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
+	{
+		Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+	}
+
+	/// TODO: Documentation
+	fn get_storage(
+		address: AccountId,
+		key: Vec<u8>,
+	) -> pallet_contracts_primitives::GetStorageResult {
+		Contracts::get_storage(address, key)
+	}
+}
 
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Protos
 	impl pallet_protos_rpc_runtime_api::ProtosRuntimeApi<Block, AccountId> for Runtime {
