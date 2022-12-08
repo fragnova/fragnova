@@ -27,7 +27,7 @@
 //! ## Transaction lifecycle (i.e the sequence of events that happens when a transaction/extrinsic is sent to a Substrate Blockchain):
 //!
 //! 1. The transaction (i.e the payload) is sent to a **single Substrate Node** using an RPC
-//! 2. The transaction enters the transaction pool of this Substrate Note
+//! 2. The transaction enters the transaction pool of this Substrate Node
 //! 2a. In the transaction pool, the payload is checked to be valid in `validate_transaction()`
 //!
 //! 3. The Substrate Node gossips this transaction to peer nodes using libp2p
@@ -360,10 +360,69 @@ parameter_types! {
 }
 
 // Configure FRAME pallets to include in runtime.
+pub const MAXIMUM_NESTED_CALL_DEPTH_LEVEL: u8 = 4;
+pub struct BaseCallFilter;
+impl Contains<RuntimeCall> for BaseCallFilter {
+	fn contains(c: &RuntimeCall) -> bool {
 
+		// Prevent `utility.batch()` from containing extrinsics that use `transaction_index::index`. The reason we do this is explained here (by @sinkingsugar): https://github.com/paritytech/substrate/issues/12835
+		if matches!(
+			c,
+			RuntimeCall::Utility(pallet_utility::Call::batch { calls }) // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
+			if matches!(
+				calls.as_slice(),
+				[RuntimeCall::Protos(pallet_protos::Call::upload { .. }), ..] | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+				[RuntimeCall::Protos(pallet_protos::Call::patch { .. }), ..] |
+				[RuntimeCall::Protos(pallet_protos::Call::set_metadata { .. }), ..] |
+				[RuntimeCall::Fragments(pallet_fragments::Call::set_definition_metadata { .. }), ..] | // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+				[RuntimeCall::Fragments(pallet_fragments::Call::set_instance_metadata { .. }), ..]
+			)
+		) {
+			return false;
+		}
+
+		// Prevent Nested Calls with Depth Level > `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`
+		if matches!(
+			c,
+			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
+			RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. }) // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
+		) {
+			let mut stack  = Vec::<(&RuntimeCall, u8)>::new();
+			stack.push((c, 0));
+
+			while let Some((call, depth_level)) = stack.pop() {
+				match call {
+					RuntimeCall::Utility(pallet_utility::Call::batch { calls }) => {
+						let calls = calls
+							.iter()
+							.filter(|call| matches!( call, RuntimeCall::Utility(pallet_utility::Call::batch { .. }) | RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. })))
+							.collect::<Vec<&RuntimeCall>>();
+						if calls.len() > 0 && depth_level + 1 == MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
+							return false;
+						}
+						calls.iter().for_each(|call| stack.push((call, depth_level + 1)));
+					},
+					RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) => {
+						if matches!(**call, RuntimeCall::Utility(pallet_utility::Call::batch { .. }) | RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. })) {
+							if depth_level + 1 == MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
+								return false;
+							}
+							stack.push((call, depth_level + 1));
+						}
+					},
+					_ => (),
+				};
+			}
+
+		}
+
+		true
+
+	}
+}
 impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
-	type BaseCallFilter = frame_support::traits::Everything;
+	type BaseCallFilter = BaseCallFilter;
 	/// Block & extrinsics weights: base values and limits.
 	type BlockWeights = RuntimeBlockWeights;
 	/// The maximum length of a block (in bytes).
