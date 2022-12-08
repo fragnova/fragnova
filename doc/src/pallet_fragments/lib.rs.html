@@ -2572,7 +2572,7 @@
 	</span><span class="attribute">#[pallet::config]
 	</span><span class="kw">pub trait </span>Config: frame_system::Config + pallet_protos::Config {
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
-		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
+		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
 		<span class="doccomment">/// Weight functions needed for pallet_fragments.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 	}

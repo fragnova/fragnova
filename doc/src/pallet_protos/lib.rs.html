@@ -1475,8 +1475,6 @@
 <span id="1475">1475</span>
 <span id="1476">1476</span>
 <span id="1477">1477</span>
-<span id="1478">1478</span>
-<span id="1479">1479</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1677,7 +1675,6 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
-	<span class="kw">use </span>pallet_contracts::Determinism;
 	<span class="kw">use </span>pallet_detach::{
 		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
 	};
@@ -1694,7 +1691,7 @@
 		+ pallet_contracts::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
-		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
+		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
 		<span class="doccomment">/// Weight functions needed for pallet_protos.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 
@@ -2448,11 +2445,10 @@
 									who.clone(),
 									contract_address,
 									<span class="number">0u32</span>.saturated_into(),
-									Weight::from_ref_time(<span class="number">1_000_000</span>), <span class="comment">// TODO determine this limit better should not be too high indeed
+									<span class="number">1_000_000</span>, <span class="comment">// TODO determine this limit better should not be too high indeed
 									</span><span class="prelude-val">None</span>,
 									data,
 									<span class="bool-val">false</span>,
-									Determinism::Deterministic,
 								)
 								.result
 								.map_err(|e| {

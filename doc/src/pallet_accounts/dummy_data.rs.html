@@ -427,16 +427,20 @@
 <span id="427">427</span>
 <span id="428">428</span>
 <span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::str::FromStr;
 <span class="kw">use crate</span>::<span class="kw-2">*</span>;
 
 <span class="kw">use </span>codec::Encode;
-<span class="kw">use </span>ethabi::ethereum_types::{Address, H160, U256};
+<span class="kw">use </span>ethabi::ethereum_types::{Address};
 
 <span class="kw">use </span>sp_core::{
 	ecdsa,
 	keccak_256,
 	Pair,
+	H160, <span class="comment">// size of an Ethereum Account Address
+	</span>U256,
 };
 
 <span class="attribute">#[cfg(test)]

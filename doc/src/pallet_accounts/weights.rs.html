@@ -247,32 +247,32 @@
 <span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="comment">// Storage: Accounts FragKeys (r:1 w:1)
 	</span><span class="kw">fn </span>add_key() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">6_401_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">6_401_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts FragKeys (r:1 w:1)
 	</span><span class="kw">fn </span>del_key() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">6_890_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">6_890_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
 	// Storage: Accounts EthReservedTickets (r:1 w:0)
 	// Storage: Accounts EthReservedNova (r:1 w:0)
 	</span><span class="kw">fn </span>link() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">58_668_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
+		(<span class="number">58_668_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
 	// Storage: Accounts PendingUnlinks (r:1 w:1)
 	</span><span class="kw">fn </span>unlink() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">23_631_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
+		(<span class="number">23_631_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts EVMLinkVotingClosed (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:0)
@@ -280,30 +280,30 @@
 	// Storage: Accounts EthReservedTickets (r:0 w:1)
 	// Storage: Accounts EthLockedFrag (r:0 w:1)
 	</span><span class="kw">fn </span>internal_lock_update() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">67_671_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
+		(<span class="number">67_671_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts ExternalAuthorities (r:1 w:0)
 	// Storage: Proxy Proxies (r:1 w:1)
 	// Storage: Timestamp Now (r:1 w:0)
 	// Storage: Accounts ExternalID2Account (r:0 w:1)
 	</span><span class="kw">fn </span>sponsor_account() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">37_290_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
+		(<span class="number">37_290_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts ExternalAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>add_sponsor() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">6_491_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">6_491_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts ExternalAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>remove_sponsor() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">7_589_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">7_589_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 }
 
@@ -311,32 +311,32 @@
 </span><span class="kw">impl </span>WeightInfo <span class="kw">for </span>() {
 	<span class="comment">// Storage: Accounts FragKeys (r:1 w:1)
 	</span><span class="kw">fn </span>add_key() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">6_401_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">6_401_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts FragKeys (r:1 w:1)
 	</span><span class="kw">fn </span>del_key() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">6_890_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">6_890_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
 	// Storage: Accounts EthReservedTickets (r:1 w:0)
 	// Storage: Accounts EthReservedNova (r:1 w:0)
 	</span><span class="kw">fn </span>link() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">58_668_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
+		(<span class="number">58_668_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
 	// Storage: Accounts PendingUnlinks (r:1 w:1)
 	</span><span class="kw">fn </span>unlink() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">23_631_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
+		(<span class="number">23_631_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts EVMLinkVotingClosed (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:0)
@@ -344,30 +344,30 @@
 	// Storage: Accounts EthReservedTickets (r:0 w:1)
 	// Storage: Accounts EthLockedFrag (r:0 w:1)
 	</span><span class="kw">fn </span>internal_lock_update() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">67_671_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
+		(<span class="number">67_671_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">2 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts ExternalAuthorities (r:1 w:0)
 	// Storage: Proxy Proxies (r:1 w:1)
 	// Storage: Timestamp Now (r:1 w:0)
 	// Storage: Accounts ExternalID2Account (r:0 w:1)
 	</span><span class="kw">fn </span>sponsor_account() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">37_290_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
+		(<span class="number">37_290_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts ExternalAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>add_sponsor() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">6_491_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">6_491_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Accounts ExternalAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>remove_sponsor() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">7_589_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">7_589_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 }
 </code></pre></div>

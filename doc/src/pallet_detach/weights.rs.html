@@ -135,15 +135,15 @@
 <span class="kw">impl</span>&lt;T: frame_system::Config&gt; WeightInfo <span class="kw">for </span>SubstrateWeight&lt;T&gt; {
 	<span class="comment">// Storage: Detach EthereumAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>add_eth_auth() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">3_000_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">3_000_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Detach EthereumAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>del_eth_auth() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">3_000_000 </span><span class="kw">as </span>u64)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">3_000_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 }
 
@@ -151,15 +151,15 @@
 </span><span class="kw">impl </span>WeightInfo <span class="kw">for </span>() {
 	<span class="comment">// Storage: Detach EthereumAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>add_eth_auth() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">3_000_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">3_000_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 	<span class="comment">// Storage: Detach EthereumAuthorities (r:1 w:1)
 	</span><span class="kw">fn </span>del_eth_auth() -&gt; Weight {
-		Weight::from_ref_time(<span class="number">3_000_000 </span><span class="kw">as </span>u64)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>u64))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
+		(<span class="number">3_000_000 </span><span class="kw">as </span>Weight)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">1 </span><span class="kw">as </span>Weight))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
 	}
 }
 </code></pre></div>

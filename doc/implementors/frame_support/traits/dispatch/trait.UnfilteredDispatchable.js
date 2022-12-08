@@ -1,5 +1,5 @@
 (function() {var implementors = {
-"clamor_runtime":[["impl UnfilteredDispatchable for <a class=\"enum\" href=\"clamor_runtime/enum.RuntimeCall.html\" title=\"enum clamor_runtime::RuntimeCall\">RuntimeCall</a>"]],
+"clamor_runtime":[["impl UnfilteredDispatchable for <a class=\"enum\" href=\"clamor_runtime/enum.Call.html\" title=\"enum clamor_runtime::Call\">Call</a>"]],
 "pallet_accounts":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_accounts/pallet/trait.Config.html\" title=\"trait pallet_accounts::pallet::Config\">Config</a>&gt; UnfilteredDispatchable for <a class=\"enum\" href=\"pallet_accounts/pallet/enum.Call.html\" title=\"enum pallet_accounts::pallet::Call\">Call</a>&lt;T&gt;"]],
 "pallet_detach":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_detach/pallet/trait.Config.html\" title=\"trait pallet_detach::pallet::Config\">Config</a>&gt; UnfilteredDispatchable for <a class=\"enum\" href=\"pallet_detach/pallet/enum.Call.html\" title=\"enum pallet_detach::pallet::Call\">Call</a>&lt;T&gt;"]],
 "pallet_fragments":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_fragments/pallet/trait.Config.html\" title=\"trait pallet_fragments::pallet::Config\">Config</a>&gt; UnfilteredDispatchable for <a class=\"enum\" href=\"pallet_fragments/pallet/enum.Call.html\" title=\"enum pallet_fragments::pallet::Call\">Call</a>&lt;T&gt;"]],
