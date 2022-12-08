@@ -165,6 +165,8 @@ pub mod pallet {
 		RoleExists,
 		/// Element not found
 		RoleNotFound,
+		/// RoleSettings not found
+		RoleSettingsNotFound,
 		/// Missing permission to perform an operation
 		NoPermission,
 		/// Invalid inputs
@@ -284,28 +286,20 @@ pub mod pallet {
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 
 			// Check that the caller is the owner of the cluster
-			ensure!(
-				who == cluster.owner,
-				Error::<T>::NoPermission
-			);
+			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			// At creation there are no Members and no Rules assigned to a Role
 			let new_role = Role { name: role_name.into_inner(), members: vec![], rules: None };
 
 			// Check that the role does not exists already in the cluster
-			if cluster
-				.roles
-				.iter()
-				.any(|role| new_role.name.eq(&role.name))
+			if cluster.roles.iter().any(|role| new_role.name.eq(&role.name))
 			{
 				return Err(Error::<T>::RoleExists.into())
 			}
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
-				let cluster = cluster
-					.as_mut()
-					.expect("Should find the cluster");
+				let cluster = cluster.as_mut().expect("Should find the cluster");
 				cluster.roles.push(new_role);
 			});
 
@@ -339,38 +333,29 @@ pub mod pallet {
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::SystematicFailure)?;
 
 			// Check that the caller is the owner of the cluster;
-			ensure!(
-				who == cluster.owner,
-				Error::<T>::NoPermission
-			);
+			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			// Check that the role exists in the cluster and in storage
-			if !cluster
-				.roles
-				.iter()
-				.any(|role| role_name.eq(&role.name))
-			{
+			if !cluster.roles.iter().any(|role| role_name.eq(&role.name)) {
 				return Err(Error::<T>::RoleNotFound.into())
 			}
 
 			let role_hash = blake2_128(&[&cluster_id[..], &role_name.as_slice()].concat());
 			let role_name_vec = role_name.into_inner();
 
+			// Check that the hash generated actually exists in storage.
+			// If `cluster_id` and `role_name` are correct it should.
+			ensure!(<RoleToSettings<T>>::get(&role_hash).is_some(), Error::<T>::RoleSettingsNotFound);
+
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
-				let cluster = cluster
-					.as_mut()
-					.expect("Should find the cluster");
-				cluster.roles.iter().position(|x| x.name == role_name_vec).map(|index| {
-					let role = cluster
-						.roles
-						.get(index)
-						.expect("Should find the cluster");
-					let mut members = role.clone().members;
-					for member in new_members_list {
-						members.push(member);
+				if let Some(cluster) = cluster{
+					let index = cluster.roles.iter().position(|role| role.name == role_name_vec);
+					if let Some(index) = index {
+						let role = cluster.roles.get_mut(index).expect("Should find the role");
+						role.members = new_members_list.into_inner();
 					}
-				});
+				}
 			});
 
 			<RoleToSettings<T>>::mutate(&role_hash, |role| {
@@ -404,25 +389,19 @@ pub mod pallet {
 			let role_name_vec = role_name.into_inner();
 
 			// Check that the role exists in the cluster and in storage
-			if !cluster
-				.roles
-				.iter()
-				.any(|role| role_name_vec.eq(&role.name))
-			{
+			if !cluster.roles.iter().any(|role| role_name_vec.eq(&role.name)) {
 				return Err(Error::<T>::RoleNotFound.into())
 			}
 
 			// write
 			// Remove Role from Cluster
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
-				let cluster = cluster
-					.as_mut()
-					.expect("Should find the cluster");
-				cluster
-					.roles
-					.iter()
-					.position(|x| x.name == role_name_vec)
-					.map(|index| cluster.roles.remove(index));
+				if let Some(cluster) = cluster {
+					let index = cluster.roles.iter().position(|role| role.name == role_name_vec);
+					if let Some(index) = index {
+						cluster.roles.remove(index);
+					}
+				}
 			});
 
 			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec.as_slice()].concat());
@@ -470,7 +449,7 @@ pub mod pallet {
 					.as_mut()
 					.expect("Should find the cluster");
 				// Add member into the cluster
-				cluster.members.push(member.clone());
+					cluster.members.push(member.clone());
 
 				// Associate the member with its roles in the cluster
 				for role in roles {
