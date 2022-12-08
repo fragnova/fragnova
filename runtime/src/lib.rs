@@ -397,14 +397,14 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 							.iter()
 							.filter(|call| matches!( call, RuntimeCall::Utility(pallet_utility::Call::batch { .. }) | RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. })))
 							.collect::<Vec<&RuntimeCall>>();
-						if calls.len() > 0 && depth_level + 1 == MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
+						if calls.len() > 0 && depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
 							return false;
 						}
 						calls.iter().for_each(|call| stack.push((call, depth_level + 1)));
 					},
 					RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) => {
 						if matches!(**call, RuntimeCall::Utility(pallet_utility::Call::batch { .. }) | RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. })) {
-							if depth_level + 1 == MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
+							if depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
 								return false;
 							}
 							stack.push((call, depth_level + 1));
