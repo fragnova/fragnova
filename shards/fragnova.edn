@@ -112,6 +112,9 @@
 
    (Do get-node-genesis-hash) (ExpectBytes) = .node-genesis-hash ; ensure the node is up and running
 
+    ; so this is not ideal but we want to pause a bit to let the node start up all services
+   (Pause 5.0)
+
    0 >== .fragnova-rpc-index ; make it global so Spawn won't copy it ; `.fragnova-rpc-index` is the number of RPC calls made so far by the account
 
    (get Fragnova-Account :private-key) (Sr25519.PublicKey) (Substrate.AccountId) = .pub-key
