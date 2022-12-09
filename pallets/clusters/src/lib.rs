@@ -10,9 +10,6 @@ pub use pallet::*;
 use sp_clamor::Hash128;
 use sp_std::{vec, vec::Vec};
 
-#[cfg(feature = "std")]
-use sp_core::Get;
-
 #[cfg(test)]
 mod mock;
 
@@ -106,7 +103,7 @@ pub mod pallet {
 		+ pallet_timestamp::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// The max size of name
 		#[pallet::constant]
@@ -194,7 +191,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Create a **Cluster** passing a name as input.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn create_cluster(
 			origin: OriginFor<T>,
 			name: BoundedVec<u8, T::NameLimit>,
@@ -270,7 +267,7 @@ pub mod pallet {
 		}
 
 		/// Create a **Role** and assign it to an existing **Cluster**.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn create_role(
 			origin: OriginFor<T>,
 			cluster_id: Hash128,
@@ -314,7 +311,7 @@ pub mod pallet {
 		}
 
 		/// Edit a **Role**.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn edit_role(
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
@@ -360,7 +357,7 @@ pub mod pallet {
 		}
 
 		/// Delete a **Role**.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn delete_role(
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
@@ -401,7 +398,7 @@ pub mod pallet {
 		}
 
 		/// Create a **Member**, give it a set of existing **Role** and assign it to an existing **Cluster**.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn add_member(
 			origin: OriginFor<T>,
 			cluster_id: Hash128,
@@ -451,7 +448,7 @@ pub mod pallet {
 		}
 
 		/// Delete a **Member** from an existing **Cluster**.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn delete_member(
 			origin: OriginFor<T>,
 			cluster_id: Hash128,

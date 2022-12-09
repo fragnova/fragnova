@@ -85,8 +85,8 @@ mod process_detach_requests_tests {
 
 			let computed_ecdsa_key = deterministically_compute_ecdsa_key(KEY_TYPE, ed25519_public_key);
 
-			assert_ok!(DetachPallet::add_key(RuntimeOrigin::root(), ed25519_public_key));
-			assert_ok!(DetachPallet::add_eth_auth(RuntimeOrigin::root(), computed_ecdsa_key));
+			assert_ok!(DetachPallet::add_key(Origin::root(), ed25519_public_key));
+			assert_ok!(DetachPallet::add_eth_auth(Origin::root(), computed_ecdsa_key));
 
 			DetachPallet::process_detach_requests();
 
@@ -104,7 +104,7 @@ mod process_detach_requests_tests {
 			let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
 			assert_eq!(tx.signature, None); // Because `DetachPallet::process_detach_requests()` sends an unsigned transaction with a signed payload
 
-			let RuntimeCall::DetachPallet(crate::Call::internal_finalize_detach { data, signature }) = tx.call else {
+			let Call::DetachPallet(crate::Call::internal_finalize_detach { data, signature }) = tx.call else {
 				panic!("The unsigned transaction that was sent is incorrect!");
 			};
 
@@ -149,8 +149,8 @@ mod process_detach_requests_tests {
 
 			let computed_ecdsa_key = deterministically_compute_ecdsa_key(KEY_TYPE, ed25519_public_key);
 
-			assert_ok!(DetachPallet::add_key(RuntimeOrigin::root(), ed25519_public_key));
-			// assert_ok!(DetachPallet::add_eth_auth(RuntimeOrigin::root(), computed_ecdsa_key)); // no ECDSA key in the keystore under `KEY_TYPE` is an Ethereum Authority
+			assert_ok!(DetachPallet::add_key(Origin::root(), ed25519_public_key));
+			// assert_ok!(DetachPallet::add_eth_auth(Origin::root(), computed_ecdsa_key)); // no ECDSA key in the keystore under `KEY_TYPE` is an Ethereum Authority
 
 			DetachPallet::process_detach_requests();
 
@@ -195,7 +195,7 @@ mod validate_unsigned_tests {
 
 			let crate::Call::internal_finalize_detach {ref data, signature: _} = validate_unsigned.call else { panic!() };
 
-			assert_ok!(DetachPallet::add_key(RuntimeOrigin::root(), TryInto::<ed25519::Public>::try_into(data.public.clone()).unwrap()));
+			assert_ok!(DetachPallet::add_key(Origin::root(), TryInto::<ed25519::Public>::try_into(data.public.clone()).unwrap()));
 			assert!(validate_unsigned_(&validate_unsigned).is_ok());
 		})
 	}
@@ -243,7 +243,7 @@ mod validate_unsigned_tests {
 				..dd.validate_unsigned
 			};
 
-			assert_ok!(DetachPallet::add_key(RuntimeOrigin::root(), TryInto::<ed25519::Public>::try_into(data.public.clone()).unwrap()));
+			assert_ok!(DetachPallet::add_key(Origin::root(), TryInto::<ed25519::Public>::try_into(data.public.clone()).unwrap()));
 			assert_eq!(
 				<DetachPallet as sp_runtime::traits::ValidateUnsigned>::validate_unsigned(
 					validate_unsigned.source,

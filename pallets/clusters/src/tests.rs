@@ -19,7 +19,7 @@ mod create_tests {
 			name.clone().try_into().expect("cluster name is too long");
 		// fund the account to be able to create the proxy
 		pallet_balances::Pallet::<Test>::make_free_balance_be(&signer, 1000000);
-		ClustersPallet::create_cluster(RuntimeOrigin::signed(signer), bounded_name)
+		ClustersPallet::create_cluster(Origin::signed(signer), bounded_name)
 	}
 
 	pub fn create_role_(
@@ -33,7 +33,7 @@ mod create_tests {
 		let bounded_settings: BoundedVec<RoleSetting, <Test as Config>::RoleSettingsLimit> =
 			settings.clone().try_into().expect("role settings is too long");
 		ClustersPallet::create_role(
-			RuntimeOrigin::signed(signer),
+			Origin::signed(signer),
 			cluster,
 			bounded_name,
 			bounded_settings,
@@ -48,7 +48,7 @@ mod create_tests {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			role_name.clone().try_into().expect("role name is too long");
 		ClustersPallet::delete_role(
-			RuntimeOrigin::signed(signer),
+			Origin::signed(signer),
 			bounded_name,
 			cluster_id,
 		)
@@ -61,7 +61,7 @@ mod create_tests {
 		member: <Test as frame_system::Config>::AccountId,
 	) -> DispatchResult {
 		ClustersPallet::add_member(
-			RuntimeOrigin::signed(signer),
+			Origin::signed(signer),
 			cluster_id,
 			roles_names,
 			member,
@@ -82,7 +82,7 @@ mod create_tests {
 		let bounded_settings: BoundedVec<RoleSetting, <Test as Config>::RoleSettingsLimit> =
 			new_settings.clone().try_into().expect("role settings is too long");
 		ClustersPallet::edit_role(
-			RuntimeOrigin::signed(signer),
+			Origin::signed(signer),
 			bounded_name,
 			cluster_id,
 			bounded_members,
