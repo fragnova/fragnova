@@ -260,6 +260,7 @@ impl pallet_clusters::Config for Test {
 	type NameLimit = ConstU32<10>;
 	type DataLimit = ConstU32<100>;
 	type MembersLimit = ConstU32<10>;
+	type RoleSettingsLimit = ConstU32<20>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

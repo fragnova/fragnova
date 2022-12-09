@@ -26,15 +26,17 @@ mod create_tests {
 		signer: <Test as frame_system::Config>::AccountId,
 		cluster: Hash128,
 		role: Vec<u8>,
-		settings: RoleSetting,
+		settings: Vec<RoleSetting>,
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			role.clone().try_into().expect("role name is too long");
+		let bounded_settings: BoundedVec<RoleSetting, <Test as Config>::RoleSettingsLimit> =
+			settings.clone().try_into().expect("role settings is too long");
 		ClustersPallet::create_role(
 			RuntimeOrigin::signed(signer),
 			cluster,
 			bounded_name,
-			settings,
+			bounded_settings,
 		)
 	}
 
@@ -71,19 +73,20 @@ mod create_tests {
 		role_name: Vec<u8>,
 		cluster_id: Hash128,
 		new_members_list: Vec<<Test as frame_system::Config>::AccountId>,
-		new_settings: RoleSetting,
+		new_settings: Vec<RoleSetting>,
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			role_name.clone().try_into().expect("role name is too long");
-
 		let bounded_members: BoundedVec<<Test as frame_system::Config>::AccountId, <Test as Config>::MembersLimit> =
 			new_members_list.clone().try_into().expect("role name is too long");
+		let bounded_settings: BoundedVec<RoleSetting, <Test as Config>::RoleSettingsLimit> =
+			new_settings.clone().try_into().expect("role settings is too long");
 		ClustersPallet::edit_role(
 			RuntimeOrigin::signed(signer),
 			bounded_name,
 			cluster_id,
 			bounded_members,
-			new_settings,
+			bounded_settings,
 		)
 	}
 
@@ -165,11 +168,11 @@ mod create_tests {
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				settings.clone()
+				vec![settings.clone()]
 			));
 
 
-			let expected_role = Role { name: role.clone(), members: vec![], rules: None };
+			let expected_role = Role { name: role.clone(), members: vec![], rules: None, settings: vec![settings] };
 
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
 			assert!(roles_in_cluster.contains(&expected_role));
@@ -203,18 +206,16 @@ mod create_tests {
 				account_id.clone(),
 				cluster_id.clone(),
 				role_name.clone(),
-				role_settings.clone()
+				vec![role_settings.clone()]
 			));
 
-
-			let setting_wrong = RoleSetting { name: role_settings.name,  data: vec![] };
 			assert_noop!(
 				edit_role_(
 					account_id.clone(),
 					role_name.clone(),
 					cluster_id,
 					Vec::new(),
-					setting_wrong
+					vec![]
 				),
 				Error::<Test>::InvalidInput
 			);
@@ -244,7 +245,7 @@ mod create_tests {
 					role.clone(),
 					cluster_id,
 					Vec::new(),
-					settings,
+					vec![settings],
 				),
 				Error::<Test>::RoleNotFound
 			);
@@ -270,7 +271,7 @@ mod create_tests {
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				settings
+				vec![settings]
 			));
 
 			let role_hash = get_role_hash(cluster_id.clone(), role.clone());
@@ -310,7 +311,7 @@ mod create_tests {
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				settings
+				vec![settings.clone()]
 			));
 
 			assert_ok!(edit_role_(
@@ -318,11 +319,11 @@ mod create_tests {
 				role.clone(),
 				cluster_id.clone(),
 				Vec::new(),
-				new_settings.clone(),
+				vec![new_settings.clone()],
 			));
 
 			let expected_role =
-				Role { name: role.clone(), members: vec![], rules: None };
+				Role { name: role.clone(), members: vec![], rules: None, settings: vec![settings, new_settings] };
 
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
 			assert!(roles_in_cluster.contains(&expected_role));
@@ -352,7 +353,7 @@ mod create_tests {
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				settings.clone()
+				vec![settings.clone()]
 			));
 
 			// add member into the cluster

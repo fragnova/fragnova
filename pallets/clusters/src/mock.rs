@@ -103,6 +103,7 @@ impl pallet_clusters::Config for Test {
 	type NameLimit = ConstU32<15>;
 	type DataLimit = ConstU32<5>;
 	type MembersLimit = ConstU32<25>;
+	type RoleSettingsLimit = ConstU32<20>;
 }
 
 // Build genesis storage according to the mock runtime.

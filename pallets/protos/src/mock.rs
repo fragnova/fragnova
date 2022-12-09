@@ -210,6 +210,7 @@ impl pallet_clusters::Config for Test {
 	type NameLimit = ConstU32<10>;
 	type DataLimit = ConstU32<100>;
 	type MembersLimit = ConstU32<20>;
+	type RoleSettingsLimit = ConstU32<20>;
 }
 
 impl pallet_timestamp::Config for Test {
