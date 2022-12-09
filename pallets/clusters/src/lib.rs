@@ -364,12 +364,9 @@ pub mod pallet {
 				cluster.roles.iter().position(|x| x.name == role_name_vec).map(|index| {
 					let role = cluster
 						.roles
-						.get(index)
+						.get_mut(index)
 						.expect("Should find the cluster");
-					let mut members = role.clone().members;
-					for member in new_members_list {
-						members.push(member);
-					}
+					role.members.extend(new_members_list);
 				});
 			});
 
@@ -457,8 +454,8 @@ pub mod pallet {
 			);
 
 			// Check that the roles for the member already exists in the cluster
-			let roles_in_cluster: Vec<Vec<u8>> =
-				cluster.roles.iter().map(|role| role.name.clone()).collect();
+			let roles_in_cluster =
+				cluster.roles.iter().map(|role| &role.name).collect::<Vec<&Vec<u8>>>();
 
 			for role in &roles {
 				ensure!(roles_in_cluster.contains(&role), Error::<T>::RoleNotFound);
