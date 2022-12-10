@@ -78,7 +78,7 @@ use sp_runtime::{
 	traits::{
 		BlakeTwo256, Block as BlockT, Extrinsic as ExtrinsicT, IdentifyAccount, NumberFor, Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError, InvalidTransaction},
 	ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::{
@@ -101,6 +101,7 @@ pub use frame_support::{
 };
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_protos::Call as ProtosCall;
+pub use pallet_fragments::Call as FragmentsCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
 #[cfg(any(feature = "std", test))]
@@ -359,65 +360,97 @@ parameter_types! {
 		.build_or_panic();
 }
 
-// Configure FRAME pallets to include in runtime.
+
+/// Does the call `c` use `transaction_index::index`.
+fn does_call_index_the_transaction(c: &RuntimeCall) -> bool {
+	matches!(
+		c,
+		RuntimeCall::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+		RuntimeCall::Protos(pallet_protos::Call::patch { .. }) |
+		RuntimeCall::Protos(pallet_protos::Call::set_metadata { .. }) |
+		RuntimeCall::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+		RuntimeCall::Fragments(pallet_fragments::Call::set_instance_metadata { .. })
+	)
+}
+
 pub const MAXIMUM_NESTED_CALL_DEPTH_LEVEL: u8 = 4;
+
+/// Return the list of `RuntimeCall` that will be directly called by the call `c`, if any.
+fn get_child_calls(c: &RuntimeCall) -> &[RuntimeCall] {
+	match c {
+		RuntimeCall::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
+		RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) |
+		RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => calls,
+		// `sp_std::slice::from_ref()` converts a reference to T into a slice of length 1 (without copying). Source: https://paritytech.github.io/substrate/master/sp_std/slice/fn.from_ref.html#
+		RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) => sp_std::slice::from_ref(call), // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
+		_ => &[]
+	}
+}
+
+/// Returns true if `c` is a Nesting Call whose Depth Level is greater than `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`
+fn does_call_exceed_maximum_depth_level(c: &RuntimeCall) -> bool {
+
+	let mut stack  = Vec::<(&RuntimeCall, u8)>::new();
+	stack.push((c, 0));
+
+	while let Some((call, depth_level)) = stack.pop() {
+		let child_calls = get_child_calls(call);
+		if child_calls.len() > 0 && depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
+			return true;
+		}
+		child_calls.iter().for_each(|call| stack.push((call, depth_level + 1)));
+	}
+
+	false
+}
+
+/// Is the **`data` parameter of certain calls** **correctly formatted**?
+fn does_call_have_correct_data_param(c: &RuntimeCall) -> bool {
+	match c {
+		RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
+			is_valid(category, data, references)
+		},
+		RuntimeCall::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
+			let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
+				return false;
+			};
+			let category = proto_struct.category;
+			is_valid(&category, data, new_references)
+		},
+		RuntimeCall::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
+		RuntimeCall::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
+		RuntimeCall::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
+			// TODO
+			// if let Err(_) = <pallet_protos::Pallet<Runtime>>::ensure_valid_auth(auth) {
+			// 	return InvalidTransaction::BadProof.into();
+			// }
+
+			match &metadata_key[..] {
+				b"title" => is_valid(&Categories::Text(TextCategories::Plain), data, &vec![]),
+				b"json_description" => is_valid(&Categories::Text(TextCategories::Json), data, &vec![]),
+				b"image" => is_valid(&Categories::Texture(TextureCategories::PngFile), data, &vec![]) || is_valid(&Categories::Texture(TextureCategories::JpgFile), data, &vec![]),
+				_ => false,
+			}
+		},
+		_ => true,
+	}
+}
+
+// Configure FRAME pallets to include in runtime.
 pub struct BaseCallFilter;
 impl Contains<RuntimeCall> for BaseCallFilter {
 	fn contains(c: &RuntimeCall) -> bool {
-
-		// Prevent `utility.batch()` from containing extrinsics that use `transaction_index::index`. The reason we do this is explained here (by @sinkingsugar): https://github.com/paritytech/substrate/issues/12835
-		if matches!(
+		// Prevent batch calls from containing any extrinsic that uses `transaction_index::index`. The reason we do this is because "any extrinsic using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index." (https://github.com/paritytech/substrate/issues/12835)
+		!matches!(
 			c,
-			RuntimeCall::Utility(pallet_utility::Call::batch { calls }) // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
-			if matches!(
-				calls.as_slice(),
-				[RuntimeCall::Protos(pallet_protos::Call::upload { .. }), ..] | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-				[RuntimeCall::Protos(pallet_protos::Call::patch { .. }), ..] |
-				[RuntimeCall::Protos(pallet_protos::Call::set_metadata { .. }), ..] |
-				[RuntimeCall::Fragments(pallet_fragments::Call::set_definition_metadata { .. }), ..] | // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
-				[RuntimeCall::Fragments(pallet_fragments::Call::set_instance_metadata { .. }), ..]
-			)
-		) {
-			return false;
-		}
-
-		// Prevent Nested Calls with Depth Level > `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`
-		if matches!(
-			c,
-			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
-			RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. }) // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
-		) {
-			let mut stack  = Vec::<(&RuntimeCall, u8)>::new();
-			stack.push((c, 0));
-
-			while let Some((call, depth_level)) = stack.pop() {
-				match call {
-					RuntimeCall::Utility(pallet_utility::Call::batch { calls }) => {
-						let calls = calls
-							.iter()
-							.filter(|call| matches!( call, RuntimeCall::Utility(pallet_utility::Call::batch { .. }) | RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. })))
-							.collect::<Vec<&RuntimeCall>>();
-						if calls.len() > 0 && depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
-							return false;
-						}
-						calls.iter().for_each(|call| stack.push((call, depth_level + 1)));
-					},
-					RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) => {
-						if matches!(**call, RuntimeCall::Utility(pallet_utility::Call::batch { .. }) | RuntimeCall::Proxy(pallet_proxy::Call::proxy { .. })) {
-							if depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
-								return false;
-							}
-							stack.push((call, depth_level + 1));
-						}
-					},
-					_ => (),
-				};
-			}
-
-		}
-
-		true
-
+			RuntimeCall::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
+			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) |
+			RuntimeCall::Utility(pallet_utility::Call::force_batch { calls })
+			if calls.iter().any(|call| does_call_index_the_transaction(call))
+		)
+		||
+			// We want to prevent polluting blocks with a lot of useless invalid data.
+			!does_call_have_correct_data_param(c)
 	}
 }
 impl frame_system::Config for Runtime {
@@ -1082,7 +1115,7 @@ fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash25
 		Categories::Trait(trait_hash) => match trait_hash { // Non Capisco Cosa Fare Qui!!!
 			Some(_) => false,
 			None => {
-				let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // REVIEW - is `&mut *data` safe?
+				let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // TODO Review - is `&mut *data` safe?
 					return false;
 				};
 
@@ -1125,7 +1158,7 @@ fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash25
 				})
 			});
 
-			let all_traits_implemented_in_this_shards = implementing.iter().all(|shards_trait| {
+			let all_traits_implemented_in_this_shards = implementing.iter().all(|_shards_trait| {
 				match format {
 					ShardsFormat::Edn => {
 						// TODO - How do I check if this Shards is implementing this Trait - Giovanni Petrantoni
@@ -1146,10 +1179,10 @@ fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash25
 		},
 		Categories::Texture(sub_categories) => match sub_categories {
 			TextureCategories::PngFile => infer::is(data, "png"), // png_decoder::decode(&data[..]).is_ok(),
-			TextureCategories::JpgFile => infer::is(data, "jpg"), // TODO - Review because this does not include ".jpeg" images, only ".jpg" images
+			TextureCategories::JpgFile => infer::is(data, "jpg"), // TODO Review - we do not include ".jpeg" images, only ".jpg" images
 		},
 		Categories::Vector(sub_categories) => match sub_categories {
-			VectorCategories::SvgFile => false, // TODO - Giovanni Petrantoni
+			VectorCategories::SvgFile => false,
 			VectorCategories::TtfFile => infer::is(data, "ttf"), // ttf_parser::Face::parse(&data[..], 0).is_ok(),
 		},
 		Categories::Video(sub_categories) => match sub_categories {
@@ -1157,15 +1190,15 @@ fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash25
 			VideoCategories::Mp4File => infer::is(data, "mp4"),
 		},
 		Categories::Model(sub_categories) => match sub_categories {
-			ModelCategories::GltfFile => false, // TODO - Giovanni Petrantoni
-			ModelCategories::Sdf => infer::is(data, "sqlite"), // TODO Review - We are not checking for the file extension ".sdf" https://en.wikipedia.org/wiki/Spatial_Data_File
-			ModelCategories::PhysicsCollider => false, // TODO - Giovanni Petrantoni
+			ModelCategories::GltfFile => false,
+			ModelCategories::Sdf => false,
+			ModelCategories::PhysicsCollider => false,
 		},
 		Categories::Binary(sub_categories) => match sub_categories {
 			BinaryCategories::WasmProgram => infer::is(data, "wasm"), // wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
-			BinaryCategories::WasmReactor => false, // TODO - Giovanni Petrantoni
-			BinaryCategories::BlendFile => false, // TODO - Giovanni Petrantoni
-			BinaryCategories::OnnxModel => false, // TODO - Giovanni Petrantoni
+			BinaryCategories::WasmReactor => false,
+			BinaryCategories::BlendFile => false,
+			BinaryCategories::OnnxModel => false,
 		},
 	}
 }
@@ -1214,7 +1247,19 @@ impl_runtime_apis! {
 		///
 		/// Returns an inclusion outcome which specifies if this extrinsic is included in
 		/// this block or not.
+		///
+		/// # Footnote from Karan:
+		///
+		/// `ApplyExtrinsicResult` is defined as `Result<DispatchOutcome, transaction_validity::TransactionValidityError>` (https://paritytech.github.io/substrate/master/sp_runtime/type.ApplyExtrinsicResult.html#),
+		/// where `DispatchOutcome` is defined as `Result<(), DispatchError>` (https://paritytech.github.io/substrate/master/sp_runtime/type.DispatchOutcome.html#).
+		///
+		/// Here the error `DispatchError` refers to types of errors (represented as a enum) thrown **while executing the extrinsic**,
+		/// while the error `transaction_validity::TransactionValidityError` refers to the types of errors (represented as a enum)
+		/// that are thrown **when the extrinsic is being verified (which obviously always happens before the extrinsic is executed)**
 		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
+			if does_call_exceed_maximum_depth_level(&extrinsic.function) {
+				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)) // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
+			}
 			Executive::apply_extrinsic(extrinsic)
 		}
 
@@ -1255,25 +1300,10 @@ impl_runtime_apis! {
 			tx: <Block as BlockT>::Extrinsic,
 			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
-			match tx.function {
-				// We want to prevent polluting blocks with a lot of useless invalid data.
-				// TODO perform quick and preliminary data validation
-				#[allow(unused_variables)]
-				RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref tags, ref references, ..}) => {
-					// TODO
-					let is_valid = is_valid(category, data, references);
-					// ()
-				},
-				#[allow(unused_variables)]
-				RuntimeCall::Protos(ProtosCall::patch{ref data, ..}) |
-				RuntimeCall::Protos(ProtosCall::set_metadata{ref data, ..}) => {
-					// TODO
-					// if let Err(_) = <pallet_protos::Pallet<Runtime>>::ensure_valid_auth(auth) {
-					// 	return InvalidTransaction::BadProof.into();
-					// }
-				},
-				_ => {},
-			};
+			// We want to prevent polluting blocks with a lot of useless invalid data.
+			if !does_call_have_correct_data_param(&tx.function) {
+				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)); // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
+			}
 			// Always run normally anyways
 			Executive::validate_transaction(source, tx, block_hash)
 		}
