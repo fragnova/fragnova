@@ -421,7 +421,8 @@ pub mod pallet {
 			- https://ethereum.stackexchange.com/questions/133890/chainlink-latestrounddata-security-fresh-data-check-usage
 			and other similar reports: https://github.com/search?q=latestrounddata+validation&type=issues
 			*/
-			ensure!(round_id.gt(&U256::from(U256::zero())), "Price from oracle is 0");
+			ensure!(round_id.gt(&U256::zero()), "Price from oracle is 0");
+			ensure!(price > U256::zero(), "Price from oracle is <= 0");
 			ensure!(price > U256::from(0), "Price from oracle is <= 0");
 			ensure!(!updated_at.is_zero(), "UpdateAt = 0. Incomplete round.");
 			ensure!(!answered_in_round.is_zero(), "AnsweredInRound from oracle is 0");
