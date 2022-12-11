@@ -12,6 +12,8 @@ use frame_support::{assert_noop, assert_ok};
 use protos::permissions::FragmentPerms;
 use itertools::Itertools;
 
+use sp_runtime::BoundedVec;
+
 use copied_from_pallet_protos::upload;
 mod copied_from_pallet_protos {
 	use pallet_protos::UsageLicense;
@@ -26,7 +28,14 @@ mod copied_from_pallet_protos {
 			Origin::signed(signer),
 			proto.references.clone(),
 			proto.category.clone(),
-			proto.tags.clone(),
+			TryInto::<BoundedVec<BoundedVec<_, _>, <Test as pallet_protos::Config>::MaxTags>>::try_into(
+				proto
+					.tags
+					.clone()
+					.into_iter()
+					.map(|tag: Vec<u8>| TryInto::<BoundedVec<u8, <Test as pallet_protos::Config>::StringLimit>>::try_into(tag).unwrap())
+					.collect::<Vec<BoundedVec<_, _>>>()
+			).unwrap(),
 			proto.linked_asset.clone(),
 			proto
 				.include_cost
@@ -48,7 +57,10 @@ mod create_tests {
 		FragmentsPallet::create(
 			Origin::signed(signer),
 			definition.proto_fragment.get_proto_hash(),
-			definition.metadata.clone(),
+			DefinitionMetadata::<BoundedVec<_, _>, _> {
+				name: definition.metadata.name.clone().try_into().unwrap(),
+				currency: definition.metadata.currency,
+			},
 			definition.permissions,
 			definition.unique.clone(),
 			definition.max_supply,
@@ -2531,7 +2543,7 @@ mod detach_tests {
 			detach.edition_id,
 			detach.copy_id,
 			detach.target_chain,
-			detach.target_account.clone()
+			detach.target_account.clone().try_into().unwrap()
 		)
 	}
 

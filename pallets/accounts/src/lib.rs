@@ -40,7 +40,7 @@ const LINK_VERIFYING_CONTRACT: &str = "f5a0af5a0af5a0af5a0af5a0af5a0af5a0af5a0a"
 
 use sp_core::{crypto::KeyTypeId, ecdsa, ed25519, H256};
 
-use ethabi::ethereum_types::{Address, H160, U256};
+use ethabi::ethereum_types::{H160, U256};
 
 /// Defines application identifier for crypto keys of this module.
 ///
@@ -96,7 +96,7 @@ use sp_io::{
 	crypto as Crypto,
 	hashing::{blake2_256, keccak_256},
 };
-use sp_runtime::{offchain::storage::StorageValueRef, traits::Zero, MultiSigner};
+use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use frame_system::offchain::{

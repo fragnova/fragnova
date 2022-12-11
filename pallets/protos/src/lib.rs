@@ -40,6 +40,7 @@ use sp_std::{
 	collections::{btree_map::BTreeMap, vec_deque::VecDeque},
 	vec,
 	vec::Vec,
+	ops::Deref
 };
 
 pub use weights::WeightInfo;
@@ -217,6 +218,15 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
+		/// The **maximum length** of a **metadata key** or a **proto-fragment's tag** or a **fragment definition's name** that is **stored on-chain**.
+		#[pallet::constant]
+		type StringLimit: Get<u32>;
+		/// The **maximum length** of an **Public Account Address on an External Blockchain** that can be **given sole ownership of a Proto-Fragment or a Fragment Instance**.
+		#[pallet::constant]
+		type DetachAccountLimit: Get<u32>;
+		/// The **maximum number of tags** that a **single Proto-Fragment** can be **tagged with**.
+		#[pallet::constant]
+		type MaxTags: Get<u32>;
 
 		/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
 		#[pallet::constant]
@@ -229,6 +239,7 @@ pub mod pallet {
 		/// Asset ID of the fungible asset "TICKET"
 		#[pallet::constant]
 		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
+
 	}
 
 	#[pallet::pallet]
@@ -314,7 +325,7 @@ pub mod pallet {
 		/// A Proto-Fragment was patched
 		Patched { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment metadata has changed
-		MetadataChanged { proto_hash: Hash256, cid: Vec<u8> },
+		MetadataChanged { proto_hash: Hash256, metadata_key: Vec<u8> },
 		/// A Proto-Fragment was detached
 		Detached { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment was transferred
@@ -389,7 +400,7 @@ pub mod pallet {
 			// we store this in the state as well
 			references: Vec<Hash256>,
 			category: Categories,
-			tags: Vec<Vec<u8>>,
+			tags: BoundedVec::<BoundedVec::<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>,
 			linked_asset: Option<LinkedAsset>,
 			license: UsageLicense<T::AccountId>,
 			// let data come last as we record this size in blocks db (storage chain)
@@ -448,6 +459,7 @@ pub mod pallet {
 			let tags = tags
 				.iter()
 				.map(|s| {
+					let s = s.deref();
 					let tag_index = <Tags<T>>::get(s);
 					if let Some(tag_index) = tag_index {
 						<Compact<u64>>::from(tag_index)
@@ -527,7 +539,7 @@ pub mod pallet {
 			proto_hash: Hash256,
 			license: Option<UsageLicense<T::AccountId>>,
 			new_references: Vec<Hash256>,
-			tags: Option<Vec<Vec<u8>>>,
+			tags: Option<BoundedVec::<BoundedVec::<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -590,6 +602,7 @@ pub mod pallet {
 					let tags = tags
 						.iter()
 						.map(|s| {
+							let s = s.deref();
 							let tag_index = <Tags<T>>::get(s);
 							if let Some(tag_index) = tag_index {
 								<Compact<u64>>::from(tag_index)
@@ -710,7 +723,7 @@ pub mod pallet {
 			// proto hash we want to update
 			proto_hash: Hash256,
 			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
-			metadata_key: Vec<u8>,
+			metadata_key: BoundedVec<u8, <T as pallet::Config>::StringLimit>,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
@@ -766,7 +779,7 @@ pub mod pallet {
 			transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 
 			// also emit event
-			Self::deposit_event(Event::MetadataChanged { proto_hash, cid: metadata_key.clone() });
+			Self::deposit_event(Event::MetadataChanged { proto_hash, metadata_key: metadata_key.clone().into() });
 
 			log::debug!("Added metadata to proto: {:x?} with key: {:x?}", proto_hash, metadata_key);
 
@@ -792,7 +805,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
 			target_chain: SupportedChains,
-			target_account: Vec<u8>, // an eth address or so
+			target_account: BoundedVec<u8, T::DetachAccountLimit>, // an eth address or so
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -811,7 +824,7 @@ pub mod pallet {
 
 			let detach_hash = DetachHash::Proto(proto_hash);
 			let detach_request =
-				DetachRequest { hash: detach_hash.clone(), target_chain, target_account };
+				DetachRequest { hash: detach_hash.clone(), target_chain, target_account: target_account.into() };
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
 			ensure!(
