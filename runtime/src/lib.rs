@@ -1192,7 +1192,7 @@ fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash25
 		Categories::Model(sub_categories) => match sub_categories {
 			ModelCategories::GltfFile => false,
 			ModelCategories::Sdf => false,
-			ModelCategories::PhysicsCollider => false,
+			ModelCategories::PhysicsCollider => false, // "This is a Fragnova/Fragcolor data type" - Giovanni Petrantoni
 		},
 		Categories::Binary(sub_categories) => match sub_categories {
 			BinaryCategories::WasmProgram => infer::is(data, "wasm"), // wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
