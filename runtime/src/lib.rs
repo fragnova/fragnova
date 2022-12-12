@@ -358,24 +358,26 @@ parameter_types! {
 		.build_or_panic();
 }
 
+///  **Maximum permitted depth level** that a **descendant call** of the **outermost call of an extrinsic** can be
+pub const MAXIMUM_NESTED_CALL_DEPTH_LEVEL: u8 = 4;
+/// Maximum length (in bytes) that the metadata data of a Proto-Fragment / Fragment Definition / Fragment Instance can be
+pub const MAXIMUM_METADATA_DATA_LENGTH: usize = 1 * 1024 * 1024;
 
-/// Does the call `c` use `transaction_index::index`.
-fn does_call_index_the_transaction(c: &Call) -> bool {
-	matches!(
+mod validation_logic {
+
+	use super::*;
+
+	/// Does the call `c` use `transaction_index::index`.
+	fn does_call_index_the_transaction(c: &Call) -> bool {
+		matches!(
 		c,
 		Call::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
 		Call::Protos(pallet_protos::Call::patch { .. }) |
 		Call::Protos(pallet_protos::Call::set_metadata { .. }) |
 		Call::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
 		Call::Fragments(pallet_fragments::Call::set_instance_metadata { .. })
-	)
-}
-
-pub const MAXIMUM_NESTED_CALL_DEPTH_LEVEL: u8 = 4;
-
-mod validation_logic {
-
-	use super::*;
+		)
+	}
 
 	/// Return the list of `Call` that will be directly called by the call `c`, if any.
 	fn get_child_calls(c: &Call) -> &[Call] {
@@ -504,6 +506,9 @@ mod validation_logic {
 			Call::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
 			Call::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
 			Call::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
+				if data.len() > MAXIMUM_METADATA_DATA_LENGTH {
+					return false;
+				}
 				match &metadata_key[..] {
 					b"title" => is_valid(&Categories::Text(TextCategories::Plain), data, &vec![]),
 					b"json_description" => is_valid(&Categories::Text(TextCategories::Json), data, &vec![]),
