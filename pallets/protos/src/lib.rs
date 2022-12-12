@@ -353,6 +353,12 @@ pub mod pallet {
 		ProtoNotFound,
 		/// Proto already uploaded
 		ProtoExists,
+		/// Proto data is empty
+		ProtoDataIsEmpty,
+		/// Proto-Fragment's Metadata key is empty
+		MetadataKeyIsEmpty,
+		/// Detach Request's Target Account is empty
+		DetachAccountIsEmpty,
 		/// Detach Request Already Submitted
 		DetachRequestAlreadyExists,
 		/// Already detached
@@ -409,6 +415,8 @@ pub mod pallet {
 			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(!data.is_empty(), Error::<T>::ProtoDataIsEmpty);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
@@ -729,6 +737,8 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			ensure!(!metadata_key.is_empty(), Error::<T>::MetadataKeyIsEmpty);
+
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 
@@ -808,6 +818,8 @@ pub mod pallet {
 			target_account: BoundedVec<u8, T::DetachAccountLimit>, // an eth address or so
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(!target_account.is_empty(), Error::<T>::DetachAccountIsEmpty);
 
 			// make sure the proto exists
 			let proto: Proto<T::AccountId, T::BlockNumber> =

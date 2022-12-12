@@ -543,6 +543,8 @@ pub mod pallet {
 		ProtoOwnerNotFound,
 		/// No Permission
 		NoPermission,
+		/// Detach Request's Target Account is empty
+		DetachAccountIsEmpty,
 		/// Detach Request Already Submitted
 		DetachRequestAlreadyExists,
 		/// Already detached
@@ -575,6 +577,10 @@ pub mod pallet {
 		UniqueDataExists,
 		/// Currency not found
 		CurrencyNotFound,
+		/// Fragment Definition's Metadata key is empty
+		DefinitionMetadataKeyIsEmpty,
+		/// Fragment Instance's Metadata key is empty
+		InstanceMetadataKeyIsEmpty,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -716,6 +722,8 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			ensure!(!metadata_key.is_empty(), Error::<T>::DefinitionMetadataKeyIsEmpty);
+
 			let proto_hash =
 				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `definition_hash`
 			let proto: Proto<T::AccountId, T::BlockNumber> =
@@ -801,6 +809,8 @@ pub mod pallet {
 			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(!metadata_key.is_empty(), Error::<T>::InstanceMetadataKeyIsEmpty);
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Instance(definition_hash, Compact(edition_id), Compact(copy_id))), Error::<T>::Detached);
 
@@ -1387,6 +1397,8 @@ pub mod pallet {
 		) -> DispatchResult {
 
 			let who = ensure_signed(origin)?;
+
+			ensure!(!target_account.is_empty(), Error::<T>::DetachAccountIsEmpty);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
