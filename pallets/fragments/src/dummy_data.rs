@@ -56,7 +56,7 @@ pub struct Definition {
 	// "Definition" is short for "Fragment Definition"
 	pub proto_fragment: ProtoFragment,
 
-	pub metadata: FragmentMetadata<u64>,
+	pub metadata: DefinitionMetadata<u64>,
 	pub permissions: FragmentPerms,
 
 	pub unique: Option<UniqueOptions>,
@@ -210,7 +210,7 @@ impl DummyData {
 				include_cost: Some(111),
 				data: "0x111".as_bytes().to_vec(),
 			},
-			metadata: FragmentMetadata { name: b"Il Nome".to_vec(), currency: None },
+			metadata: DefinitionMetadata { name: b"Il Nome".to_vec(), currency: Currency::Native },
 			permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 			unique: Some(UniqueOptions { mutable: true }),
 			max_supply: None,

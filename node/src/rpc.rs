@@ -69,8 +69,8 @@ where
 	// Making synchronous calls in light client freezes the browser currently,
 	// more context: https://github.com/paritytech/substrate/pull/3480
 	// These RPCs should use an asynchronous caller instead.
-	io.merge(Contracts::new(client.clone()).into_rpc())?;
 	io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
+	io.merge(Contracts::new(client.clone()).into_rpc())?;
 
 	io.merge(Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 

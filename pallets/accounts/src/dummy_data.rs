@@ -2,7 +2,7 @@ use std::str::FromStr;
 use crate::*;
 
 use codec::Encode;
-use ethabi::ethereum_types::Address;
+use ethabi::ethereum_types::{Address};
 
 use sp_core::{
 	ecdsa,
