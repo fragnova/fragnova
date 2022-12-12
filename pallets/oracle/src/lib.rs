@@ -422,8 +422,7 @@ pub mod pallet {
 			and other similar reports: https://github.com/search?q=latestrounddata+validation&type=issues
 			*/
 			ensure!(round_id.gt(&U256::zero()), "Price from oracle is 0");
-			ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
-			ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
+			ensure!(price.gt(&U256::zero()), "Price from oracle is >= 0");
 			ensure!(!updated_at.is_zero(), "UpdateAt = 0. Incomplete round.");
 			ensure!(!answered_in_round.is_zero(), "AnsweredInRound from oracle is 0");
 			ensure!(answered_in_round.ge(&round_id), "Stale price");
