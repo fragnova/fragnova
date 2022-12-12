@@ -373,72 +373,175 @@ fn does_call_index_the_transaction(c: &Call) -> bool {
 
 pub const MAXIMUM_NESTED_CALL_DEPTH_LEVEL: u8 = 4;
 
-/// Return the list of `Call` that will be directly called by the call `c`, if any.
-fn get_child_calls(c: &Call) -> &[Call] {
-	match c {
-		Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
-		Call::Utility(pallet_utility::Call::batch_all { calls }) |
-		Call::Utility(pallet_utility::Call::force_batch { calls }) => calls,
-		// `sp_std::slice::from_ref()` converts a reference to T into a slice of length 1 (without copying). Source: https://paritytech.github.io/substrate/master/sp_std/slice/fn.from_ref.html#
-		Call::Proxy(pallet_proxy::Call::proxy { call, .. }) => sp_std::slice::from_ref(call), // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
-		_ => &[]
-	}
-}
+mod validation_logic {
 
-/// Returns true if the **call `c` is a Nesting Call whose Depth Level is greater than `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`**
-/// or if the **call `c` or one of `c`'s descendants is invalid**.
-fn does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(xt: &<Block as BlockT>::Extrinsic) -> bool {
+	use super::*;
 
-	let c = &xt.function;
-
-	let mut stack  = Vec::<(&Call, u8)>::new();
-	stack.push((c, 0));
-
-	while let Some((call, depth_level)) = stack.pop() {
-		if !is_the_immediate_call_valid(call) {
-			return true;
+	/// Return the list of `Call` that will be directly called by the call `c`, if any.
+	fn get_child_calls(c: &Call) -> &[Call] {
+		match c {
+			Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
+			Call::Utility(pallet_utility::Call::batch_all { calls }) |
+			Call::Utility(pallet_utility::Call::force_batch { calls }) => calls,
+			// `sp_std::slice::from_ref()` converts a reference to T into a slice of length 1 (without copying). Source: https://paritytech.github.io/substrate/master/sp_std/slice/fn.from_ref.html#
+			Call::Proxy(pallet_proxy::Call::proxy { call, .. }) => sp_std::slice::from_ref(call), // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
+			_ => &[]
 		}
-		let child_calls = get_child_calls(call);
-		if child_calls.len() > 0 && depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
-			return true;
-		}
-		child_calls.iter().for_each(|call| stack.push((call, depth_level + 1)));
 	}
 
-	false
-}
+	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
+		match category {
+			Categories::Text(sub_categories) => match sub_categories {
+				TextCategories::Plain => str::from_utf8(data).is_ok(),
+				// REVIEW - does a Json have to be a `serde_json::Map` or can it `serde_json::Value`?
+				TextCategories::Json => serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(&data[..]).is_ok()
+			},
+			Categories::Trait(trait_hash) => match trait_hash { // Non Capisco Cosa Fare Qui!!!
+				Some(_) => false,
+				None => {
+					let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // TODO Review - is `&mut *data` safe?
+						return false;
+					};
 
-/// Is the call `c` valid?
-///
-/// Note: This function does not check whether the child/descendant calls of `c` (if it has any) are valid.
-fn is_the_immediate_call_valid(c: &Call) -> bool {
-	match c {
-		Call::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
-			is_valid(category, data, references)
-		},
-		Call::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
-			let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
-				return false;
-			};
-			is_valid(&proto_struct.category, data, new_references)
-		},
-		Call::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
-		Call::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
-		Call::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
-			match &metadata_key[..] {
-				b"title" => is_valid(&Categories::Text(TextCategories::Plain), data, &vec![]),
-				b"json_description" => is_valid(&Categories::Text(TextCategories::Json), data, &vec![]),
-				b"image" => is_valid(&Categories::Texture(TextureCategories::PngFile), data, &vec![]) || is_valid(&Categories::Texture(TextureCategories::JpgFile), data, &vec![]),
-				_ => false,
+					if trait_struct.name.len() == 0 {
+						return false;
+					}
+
+					trait_struct.records.windows(2).all(|window| {
+						let (record_1, record_2) = (&window[0], &window[1]);
+						let (Ok(a1), Ok(a2)) = (get_utf8_string(&record_1.0), get_utf8_string(&record_2.0)) else { // `a1` is short for `attribute_1`, `a2` is short for `attribute_2`
+							return false;
+						};
+
+						let (Some(first_char_a1), Some(first_char_a2)) = (a1.chars().next(), a2.chars().next()) else {
+							return false;
+						};
+
+						(first_char_a1.is_alphabetic() && first_char_a2.is_alphabetic()) // ensure first character is an alphabet
+							&&
+							(a1 == a1.to_lowercase() && a2 == a2.to_lowercase()) // ensure lowercase
+							&&
+							a1 <= a2 // ensure sorted. Note: "Strings are ordered lexicographically by their byte values ... This is not necessarily the same as “alphabetical” order, which varies by language and locale". Source: https://doc.rust-lang.org/std/primitive.str.html#impl-Ord-for-str
+							&&
+							a1 != a2 // ensure no duplicates
+					})
+				},
+			},
+			Categories::Shards(shards_script_info_struct) => {
+				let format = shards_script_info_struct.format;
+				let requiring = &shards_script_info_struct.requiring;
+				let implementing = &shards_script_info_struct.implementing;
+
+				let all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
+					proto_references.iter().any(|proto| {
+						if let Some(trait_impls) = pallet_protos::TraitImplsByShard::<Runtime>::get(proto) {
+							trait_impls.contains(shards_trait)
+						} else {
+							false
+						}
+					})
+				});
+
+				let all_traits_implemented_in_this_shards = implementing.iter().all(|_shards_trait| {
+					match format {
+						ShardsFormat::Edn => {
+							// TODO - How do I check if this Shards is implementing this Trait - Giovanni Petrantoni
+							false
+						},
+						ShardsFormat::Binary => {
+							// TODO - How do I check if this Shards is implementing this Trait - Giovanni Petrantoni
+							false
+						},
+					}
+				});
+
+				all_required_trait_impls_found && all_traits_implemented_in_this_shards
+			},
+			Categories::Audio(sub_categories) => match sub_categories {
+				AudioCategories::OggFile => infer::is(data, "ogg"),  // TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
+				AudioCategories::Mp3File => infer::is(data, "mp3"),
+			},
+			Categories::Texture(sub_categories) => match sub_categories {
+				TextureCategories::PngFile => infer::is(data, "png"), // png_decoder::decode(&data[..]).is_ok(),
+				TextureCategories::JpgFile => infer::is(data, "jpg"), // TODO Review - we do not include ".jpeg" images, only ".jpg" images
+			},
+			Categories::Vector(sub_categories) => match sub_categories {
+				VectorCategories::SvgFile => false,
+				VectorCategories::TtfFile => infer::is(data, "ttf"), // ttf_parser::Face::parse(&data[..], 0).is_ok(),
+			},
+			Categories::Video(sub_categories) => match sub_categories {
+				VideoCategories::MkvFile => infer::is(data, "mkv"),
+				VideoCategories::Mp4File => infer::is(data, "mp4"),
+			},
+			Categories::Model(sub_categories) => match sub_categories {
+				ModelCategories::GltfFile => false,
+				ModelCategories::Sdf => false,
+				ModelCategories::PhysicsCollider => false, // "This is a Fragnova/Fragcolor data type" - Giovanni Petrantoni
+			},
+			Categories::Binary(sub_categories) => match sub_categories {
+				BinaryCategories::WasmProgram => infer::is(data, "wasm"), // wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
+				BinaryCategories::WasmReactor => false,
+				BinaryCategories::BlendFile => false,
+				BinaryCategories::OnnxModel => false,
+			},
+		}
+	}
+
+	/// Is the call `c` valid?
+	///
+	/// Note: This function does not check whether the child/descendant calls of `c` (if it has any) are valid.
+	pub fn is_the_immediate_call_valid(c: &Call) -> bool {
+		match c {
+			Call::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
+				is_valid(category, data, references)
+			},
+			Call::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
+				let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
+					return false;
+				};
+				is_valid(&proto_struct.category, data, new_references)
+			},
+			Call::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
+			Call::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
+			Call::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
+				match &metadata_key[..] {
+					b"title" => is_valid(&Categories::Text(TextCategories::Plain), data, &vec![]),
+					b"json_description" => is_valid(&Categories::Text(TextCategories::Json), data, &vec![]),
+					b"image" => is_valid(&Categories::Texture(TextureCategories::PngFile), data, &vec![]) || is_valid(&Categories::Texture(TextureCategories::JpgFile), data, &vec![]),
+					_ => false,
+				}
+			},
+			// Prevent batch calls from containing any call that uses `transaction_index::index`. The reason we do this is because "any e̶x̶t̶r̶i̶n̶s̶i̶c̶ call using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index." (https://github.com/paritytech/substrate/issues/12835)
+			Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
+			Call::Utility(pallet_utility::Call::batch_all { calls }) |
+			Call::Utility(pallet_utility::Call::force_batch { calls }) => {
+				calls.iter().all(|call| !does_call_index_the_transaction(call))
 			}
-		},
-		// Prevent batch calls from containing any call that uses `transaction_index::index`. The reason we do this is because "any e̶x̶t̶r̶i̶n̶s̶i̶c̶ call using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index." (https://github.com/paritytech/substrate/issues/12835)
-		Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
-		Call::Utility(pallet_utility::Call::batch_all { calls }) |
-		Call::Utility(pallet_utility::Call::force_batch { calls }) => {
-			calls.iter().all(|call| !does_call_index_the_transaction(call))
+			_ => true,
 		}
-		_ => true,
+	}
+
+	/// Returns true if the **call `c` is a Nesting Call whose Depth Level is greater than `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`**
+	/// or if the **call `c` or one of `c`'s descendants is invalid**.
+	pub fn does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(xt: &<Block as BlockT>::Extrinsic) -> bool {
+
+		let c = &xt.function;
+
+		let mut stack  = Vec::<(&Call, u8)>::new();
+		stack.push((c, 0));
+
+		while let Some((call, depth_level)) = stack.pop() {
+			if !is_the_immediate_call_valid(call) {
+				return true;
+			}
+			let child_calls = get_child_calls(call);
+			if child_calls.len() > 0 && depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
+				return true;
+			}
+			child_calls.iter().for_each(|call| stack.push((call, depth_level + 1)));
+		}
+
+		false
 	}
 }
 
@@ -447,7 +550,7 @@ pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
 	fn contains(c: &Call) -> bool {
 		// This is completely redundant since the exact same thing is done in `apply_extrinsic()` by `does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level()`
-		is_the_immediate_call_valid(c)
+		validation_logic::is_the_immediate_call_valid(c)
 	}
 }
 impl frame_system::Config for Runtime {
@@ -1104,105 +1207,6 @@ fn get_utf8_string(string: &Vec<u8>) -> Result<&str, &str> {
 }
 
 
-fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
-	match category {
-		Categories::Text(sub_categories) => match sub_categories {
-			TextCategories::Plain => str::from_utf8(data).is_ok(),
-			// REVIEW - does a Json have to be a `serde_json::Map` or can it `serde_json::Value`?
-			TextCategories::Json => serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(&data[..]).is_ok()
-		},
-		Categories::Trait(trait_hash) => match trait_hash { // Non Capisco Cosa Fare Qui!!!
-			Some(_) => false,
-			None => {
-				let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // TODO Review - is `&mut *data` safe?
-					return false;
-				};
-
-				if trait_struct.name.len() == 0 {
-					return false;
-				}
-
-				trait_struct.records.windows(2).all(|window| {
-					let (record_1, record_2) = (&window[0], &window[1]);
-					let (Ok(a1), Ok(a2)) = (get_utf8_string(&record_1.0), get_utf8_string(&record_2.0)) else { // `a1` is short for `attribute_1`, `a2` is short for `attribute_2`
-						return false;
-					};
-
-					let (Some(first_char_a1), Some(first_char_a2)) = (a1.chars().next(), a2.chars().next()) else {
-						return false;
-					};
-
-					(first_char_a1.is_alphabetic() && first_char_a2.is_alphabetic()) // ensure first character is an alphabet
-						&&
-						(a1 == a1.to_lowercase() && a2 == a2.to_lowercase()) // ensure lowercase
-						&&
-						a1 <= a2 // ensure sorted. Note: "Strings are ordered lexicographically by their byte values ... This is not necessarily the same as “alphabetical” order, which varies by language and locale". Source: https://doc.rust-lang.org/std/primitive.str.html#impl-Ord-for-str
-						&&
-						a1 != a2 // ensure no duplicates
-				})
-			},
-		},
-		Categories::Shards(shards_script_info_struct) => {
-			let format = shards_script_info_struct.format;
-			let requiring = &shards_script_info_struct.requiring;
-			let implementing = &shards_script_info_struct.implementing;
-
-			let all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
-				proto_references.iter().any(|proto| {
-					if let Some(trait_impls) = pallet_protos::TraitImplsByShard::<Runtime>::get(proto) {
-						trait_impls.contains(shards_trait)
-					} else {
-						false
-					}
-				})
-			});
-
-			let all_traits_implemented_in_this_shards = implementing.iter().all(|_shards_trait| {
-				match format {
-					ShardsFormat::Edn => {
-						// TODO - How do I check if this Shards is implementing this Trait - Giovanni Petrantoni
-						false
-					},
-					ShardsFormat::Binary => {
-						// TODO - How do I check if this Shards is implementing this Trait - Giovanni Petrantoni
-						false
-					},
-				}
-			});
-
-			all_required_trait_impls_found && all_traits_implemented_in_this_shards
-		},
-		Categories::Audio(sub_categories) => match sub_categories {
-			AudioCategories::OggFile => infer::is(data, "ogg"),  // TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
-			AudioCategories::Mp3File => infer::is(data, "mp3"),
-		},
-		Categories::Texture(sub_categories) => match sub_categories {
-			TextureCategories::PngFile => infer::is(data, "png"), // png_decoder::decode(&data[..]).is_ok(),
-			TextureCategories::JpgFile => infer::is(data, "jpg"), // TODO Review - we do not include ".jpeg" images, only ".jpg" images
-		},
-		Categories::Vector(sub_categories) => match sub_categories {
-			VectorCategories::SvgFile => false,
-			VectorCategories::TtfFile => infer::is(data, "ttf"), // ttf_parser::Face::parse(&data[..], 0).is_ok(),
-		},
-		Categories::Video(sub_categories) => match sub_categories {
-			VideoCategories::MkvFile => infer::is(data, "mkv"),
-			VideoCategories::Mp4File => infer::is(data, "mp4"),
-		},
-		Categories::Model(sub_categories) => match sub_categories {
-			ModelCategories::GltfFile => false,
-			ModelCategories::Sdf => false,
-			ModelCategories::PhysicsCollider => false, // "This is a Fragnova/Fragcolor data type" - Giovanni Petrantoni
-		},
-		Categories::Binary(sub_categories) => match sub_categories {
-			BinaryCategories::WasmProgram => infer::is(data, "wasm"), // wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
-			BinaryCategories::WasmReactor => false,
-			BinaryCategories::BlendFile => false,
-			BinaryCategories::OnnxModel => false,
-		},
-	}
-}
-
-
 // Marks the given trait implementations as runtime apis.
 //
 // For more information, read: https://paritytech.github.io/substrate/master/sp_api/macro.impl_runtime_apis.html
@@ -1256,7 +1260,7 @@ impl_runtime_apis! {
 		/// while the error `transaction_validity::TransactionValidityError` refers to the types of errors (represented as a enum)
 		/// that are thrown **when the extrinsic is being verified (which obviously always happens before the extrinsic is executed)**
 		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
-			if does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(&extrinsic) {
+			if validation_logic::does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(&extrinsic) {
 				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)) // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
 			}
 			Executive::apply_extrinsic(extrinsic)
@@ -1300,7 +1304,7 @@ impl_runtime_apis! {
 			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
 			// We want to prevent polluting blocks with a lot of useless invalid data.
-			if does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(&tx) {
+			if validation_logic::does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(&tx) {
 				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)); // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
 			}
 			// Always run normally anyways
