@@ -387,13 +387,19 @@ fn get_child_calls(c: &RuntimeCall) -> &[RuntimeCall] {
 	}
 }
 
-/// Returns true if `c` is a Nesting Call whose Depth Level is greater than `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`
-fn does_call_exceed_maximum_depth_level(c: &RuntimeCall) -> bool {
+/// Returns true if the **call `c` is a Nesting Call whose Depth Level is greater than `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`**
+/// or if the **call `c` or one of `c`'s descendants is invalid**.
+fn does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(xt: &<Block as BlockT>::Extrinsic) -> bool {
+
+	let c = &xt.function;
 
 	let mut stack  = Vec::<(&RuntimeCall, u8)>::new();
 	stack.push((c, 0));
 
 	while let Some((call, depth_level)) = stack.pop() {
+		if !is_the_immediate_call_valid(call) {
+			return true;
+		}
 		let child_calls = get_child_calls(call);
 		if child_calls.len() > 0 && depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
 			return true;
@@ -404,8 +410,10 @@ fn does_call_exceed_maximum_depth_level(c: &RuntimeCall) -> bool {
 	false
 }
 
-/// Is the **`data` parameter of certain calls** **correctly formatted**?
-fn does_call_have_correct_data_param(c: &RuntimeCall) -> bool {
+/// Is the call `c` valid?
+///
+/// Note: This function does not check whether the child/descendant calls of `c` (if it has any) are valid.
+fn is_the_immediate_call_valid(c: &RuntimeCall) -> bool {
 	match c {
 		RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
 			is_valid(category, data, references)
@@ -414,17 +422,11 @@ fn does_call_have_correct_data_param(c: &RuntimeCall) -> bool {
 			let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
 				return false;
 			};
-			let category = proto_struct.category;
-			is_valid(&category, data, new_references)
+			is_valid(&proto_struct.category, data, new_references)
 		},
 		RuntimeCall::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
 		RuntimeCall::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
 		RuntimeCall::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
-			// TODO
-			// if let Err(_) = <pallet_protos::Pallet<Runtime>>::ensure_valid_auth(auth) {
-			// 	return InvalidTransaction::BadProof.into();
-			// }
-
 			match &metadata_key[..] {
 				b"title" => is_valid(&Categories::Text(TextCategories::Plain), data, &vec![]),
 				b"json_description" => is_valid(&Categories::Text(TextCategories::Json), data, &vec![]),
@@ -432,6 +434,12 @@ fn does_call_have_correct_data_param(c: &RuntimeCall) -> bool {
 				_ => false,
 			}
 		},
+		// Prevent batch calls from containing any call that uses `transaction_index::index`. The reason we do this is because "any e̶x̶t̶r̶i̶n̶s̶i̶c̶ call using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index." (https://github.com/paritytech/substrate/issues/12835)
+		RuntimeCall::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
+		RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) |
+		RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
+			calls.iter().all(|call| !does_call_index_the_transaction(call))
+		}
 		_ => true,
 	}
 }
@@ -440,17 +448,8 @@ fn does_call_have_correct_data_param(c: &RuntimeCall) -> bool {
 pub struct BaseCallFilter;
 impl Contains<RuntimeCall> for BaseCallFilter {
 	fn contains(c: &RuntimeCall) -> bool {
-		// Prevent batch calls from containing any extrinsic that uses `transaction_index::index`. The reason we do this is because "any extrinsic using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index." (https://github.com/paritytech/substrate/issues/12835)
-		!matches!(
-			c,
-			RuntimeCall::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
-			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) |
-			RuntimeCall::Utility(pallet_utility::Call::force_batch { calls })
-			if calls.iter().any(|call| does_call_index_the_transaction(call))
-		)
-		||
-			// We want to prevent polluting blocks with a lot of useless invalid data.
-			!does_call_have_correct_data_param(c)
+		// This is completely redundant since the exact same thing is done in `apply_extrinsic()` by `does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level()`
+		is_the_immediate_call_valid(c)
 	}
 }
 impl frame_system::Config for Runtime {
@@ -1257,7 +1256,7 @@ impl_runtime_apis! {
 		/// while the error `transaction_validity::TransactionValidityError` refers to the types of errors (represented as a enum)
 		/// that are thrown **when the extrinsic is being verified (which obviously always happens before the extrinsic is executed)**
 		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
-			if does_call_exceed_maximum_depth_level(&extrinsic.function) {
+			if does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(&extrinsic) {
 				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)) // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
 			}
 			Executive::apply_extrinsic(extrinsic)
@@ -1301,7 +1300,7 @@ impl_runtime_apis! {
 			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
 			// We want to prevent polluting blocks with a lot of useless invalid data.
-			if !does_call_have_correct_data_param(&tx.function) {
+			if does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(&tx) {
 				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)); // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
 			}
 			// Always run normally anyways
