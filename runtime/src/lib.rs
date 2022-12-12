@@ -360,27 +360,27 @@ parameter_types! {
 
 
 /// Does the call `c` use `transaction_index::index`.
-fn does_call_index_the_transaction(c: &RuntimeCall) -> bool {
+fn does_call_index_the_transaction(c: &Call) -> bool {
 	matches!(
 		c,
-		RuntimeCall::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-		RuntimeCall::Protos(pallet_protos::Call::patch { .. }) |
-		RuntimeCall::Protos(pallet_protos::Call::set_metadata { .. }) |
-		RuntimeCall::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
-		RuntimeCall::Fragments(pallet_fragments::Call::set_instance_metadata { .. })
+		Call::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+		Call::Protos(pallet_protos::Call::patch { .. }) |
+		Call::Protos(pallet_protos::Call::set_metadata { .. }) |
+		Call::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+		Call::Fragments(pallet_fragments::Call::set_instance_metadata { .. })
 	)
 }
 
 pub const MAXIMUM_NESTED_CALL_DEPTH_LEVEL: u8 = 4;
 
-/// Return the list of `RuntimeCall` that will be directly called by the call `c`, if any.
-fn get_child_calls(c: &RuntimeCall) -> &[RuntimeCall] {
+/// Return the list of `Call` that will be directly called by the call `c`, if any.
+fn get_child_calls(c: &Call) -> &[Call] {
 	match c {
-		RuntimeCall::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
-		RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) |
-		RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => calls,
+		Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
+		Call::Utility(pallet_utility::Call::batch_all { calls }) |
+		Call::Utility(pallet_utility::Call::force_batch { calls }) => calls,
 		// `sp_std::slice::from_ref()` converts a reference to T into a slice of length 1 (without copying). Source: https://paritytech.github.io/substrate/master/sp_std/slice/fn.from_ref.html#
-		RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) => sp_std::slice::from_ref(call), // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
+		Call::Proxy(pallet_proxy::Call::proxy { call, .. }) => sp_std::slice::from_ref(call), // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
 		_ => &[]
 	}
 }
@@ -391,7 +391,7 @@ fn does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(xt: &<Block
 
 	let c = &xt.function;
 
-	let mut stack  = Vec::<(&RuntimeCall, u8)>::new();
+	let mut stack  = Vec::<(&Call, u8)>::new();
 	stack.push((c, 0));
 
 	while let Some((call, depth_level)) = stack.pop() {
@@ -411,20 +411,20 @@ fn does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(xt: &<Block
 /// Is the call `c` valid?
 ///
 /// Note: This function does not check whether the child/descendant calls of `c` (if it has any) are valid.
-fn is_the_immediate_call_valid(c: &RuntimeCall) -> bool {
+fn is_the_immediate_call_valid(c: &Call) -> bool {
 	match c {
-		RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
+		Call::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
 			is_valid(category, data, references)
 		},
-		RuntimeCall::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
+		Call::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
 			let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
 				return false;
 			};
 			is_valid(&proto_struct.category, data, new_references)
 		},
-		RuntimeCall::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
-		RuntimeCall::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
-		RuntimeCall::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
+		Call::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
+		Call::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
+		Call::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
 			match &metadata_key[..] {
 				b"title" => is_valid(&Categories::Text(TextCategories::Plain), data, &vec![]),
 				b"json_description" => is_valid(&Categories::Text(TextCategories::Json), data, &vec![]),
@@ -433,9 +433,9 @@ fn is_the_immediate_call_valid(c: &RuntimeCall) -> bool {
 			}
 		},
 		// Prevent batch calls from containing any call that uses `transaction_index::index`. The reason we do this is because "any e̶x̶t̶r̶i̶n̶s̶i̶c̶ call using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index." (https://github.com/paritytech/substrate/issues/12835)
-		RuntimeCall::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
-		RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) |
-		RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
+		Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
+		Call::Utility(pallet_utility::Call::batch_all { calls }) |
+		Call::Utility(pallet_utility::Call::force_batch { calls }) => {
 			calls.iter().all(|call| !does_call_index_the_transaction(call))
 		}
 		_ => true,
@@ -444,8 +444,8 @@ fn is_the_immediate_call_valid(c: &RuntimeCall) -> bool {
 
 // Configure FRAME pallets to include in runtime.
 pub struct BaseCallFilter;
-impl Contains<RuntimeCall> for BaseCallFilter {
-	fn contains(c: &RuntimeCall) -> bool {
+impl Contains<Call> for BaseCallFilter {
+	fn contains(c: &Call) -> bool {
 		// This is completely redundant since the exact same thing is done in `apply_extrinsic()` by `does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level()`
 		is_the_immediate_call_valid(c)
 	}
@@ -1079,12 +1079,12 @@ pub type SignedExtra = (
 ///
 /// For example - notice that the encoded transaction for `protos.upload()` has the order of first "signer", "signature"🥖, extra data🥕 (i.e "era", "nonce" and "tip") and finally the encoded call data🥦 (i.e "callIndex" and the arguments of `protos.upload()`): https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
 ///
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// The payload being signed in transactions.
 ///
 /// Note: This type is only needed if you want to enable an off-chain worker for the runtime,
 /// since it is only used when implementing the trait `frame_system::offchain::CreateSignedTransaction` for `Runtime`.
-pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
+pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
