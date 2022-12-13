@@ -67,6 +67,7 @@ use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstance
 use pallet_protos::{GetGenealogyParams, GetProtosParams};
 
 pub use pallet_contracts::Schedule;
+use pallet_oracle::{OracleContract, OracleProvider};
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.
@@ -430,16 +431,16 @@ impl pallet_accounts::Config for Runtime {
 }
 
 impl pallet_oracle::OracleContract for Runtime {
-	fn get_contract() -> &'static str {
+	fn get_provider() -> pallet_oracle::OracleProvider {
 		// https://docs.chain.link/docs/data-feeds/price-feeds/addresses/
-		"0x547a514d5e3769680Ce22B2361c10Ea13619e8a9" // the contract address determines the network (mainnet, testnet)
+		OracleProvider::Uniswap("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode())
 	}
 }
 
 impl pallet_oracle::Config for Runtime {
 	type AuthorityId = pallet_oracle::crypto::FragAuthId;
 	type RuntimeEvent = RuntimeEvent;
-	type OracleContract = Runtime; // the contract address determines the network to connect (mainnet, goerli, etc.)
+	type OracleProvider = Runtime; // the contract address determines the network to connect (mainnet, goerli, etc.)
 	type Threshold = ConstU64<1>;
 }
 

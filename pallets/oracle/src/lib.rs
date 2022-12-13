@@ -5,6 +5,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+use ethabi::ethereum_types::H160;
 use frame_support::traits::Get;
 use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
@@ -69,13 +70,20 @@ pub mod crypto {
 
 /// **Traits** of the **Chainlink contract** on the **Ethereum (Goerli) network**
 pub trait OracleContract {
-	/// Get the contract address.
-	fn get_contract() -> &'static str {
-		"0xABCD"
+	/// get the default oracle provider
+	fn get_provider() -> OracleProvider {
+		OracleProvider::Uniswap("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode()) // never used
 	}
 }
 
 impl OracleContract for () {}
+
+/// enum that represents the price feed provider.
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum OracleProvider {
+	Chainlink(Vec<u8>),
+	Uniswap(Vec<u8>),
+}
 
 pub use pallet::*;
 
@@ -106,8 +114,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// **Traits** of the **ETH / USD Chainlink contract** on the **Ethereum (Goerli) network*
-		type OracleContract: OracleContract;
+		/// **Traits** that allows to set the Oracle provider for the price feed of FRAG token
+		type OracleProvider: OracleContract;
 
 		/// Number of votes needed to do something (问Gio)
 		#[pallet::constant]
@@ -135,6 +143,62 @@ pub mod pallet {
 		}
 	}
 
+	impl OracleProvider {
+		pub fn get_contract_address(&self) -> Vec<u8> {
+			match self {
+				OracleProvider::Chainlink(address) => address.clone(),
+				OracleProvider::Uniswap(address) => address.clone(),
+			}
+		}
+
+		pub fn get_function(&self) -> &'static str {
+			match self {
+				// call `latestRoundData()` function from ChainLink Feed Price contract
+				// `data` is first 4 bytes of `keccak_256(latestRoundData())`, padded - Use https://emn178.github.io/online-tools/keccak_256.html
+				OracleProvider::Chainlink(_) => "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+				OracleProvider::Uniswap(_) => "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+			}
+		}
+
+		pub fn get_price(&self, data: Vec<u8>) -> Result<U256, &'static str> {
+			let data = ethabi::decode(
+				//https://docs.chain.link/docs/data-feeds/price-feeds/api-reference/#latestrounddata
+				&[ParamType::Tuple(vec![
+					ParamType::Uint(80),  // uint80 roundId
+					ParamType::Int(256),  // int256 answer
+					ParamType::Uint(256), // uint256 startedAt
+					ParamType::Uint(256), // uint256 updatedAt
+					ParamType::Uint(80),  // uint80 answeredInRound
+				])],
+				&data,
+			)
+				.map_err(|_| "Invalid response")?;
+
+			let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid tuple")?;
+			let _round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
+			let price = tuple[1].clone().into_int().ok_or_else(|| "Invalid token")?;
+			let _started_at = tuple[2].clone().into_uint().ok_or_else(|| "Invalid startedAt")?;
+			let _updated_at = tuple[3].clone().into_uint().ok_or_else(|| "Invalid updatedAt")?;
+			let _answered_in_round =
+				tuple[4].clone().into_uint().ok_or_else(|| "Invalid answeredInRound")?;
+
+			/*
+			The following data validations have been inspired by:
+			- https://github.com/code-423n4/2021-08-notional-findings/issues/92
+			- https://github.com/code-423n4/2022-02-hubble-findings/issues/123
+			- https://ethereum.stackexchange.com/questions/133890/chainlink-latestrounddata-security-fresh-data-check-usage
+			and other similar reports: https://github.com/search?q=latestrounddata+validation&type=issues
+			*/
+			ensure!(_round_id.gt(&U256::zero()), "Price from oracle is 0");
+			ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
+			ensure!(!_updated_at.is_zero(), "UpdateAt = 0. Incomplete round.");
+			ensure!(!_answered_in_round.is_zero(), "AnsweredInRound from oracle is 0");
+			ensure!(_answered_in_round.ge(&_round_id), "Stale price");
+
+			Ok(price)
+		}
+	}
+
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
@@ -145,16 +209,7 @@ pub mod pallet {
 	#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	pub struct OraclePrice<TPublic, TBlockNumber> {
-		/// The round ID
-		pub round_id: U256,
-		/// The price
 		pub price: U256,
-		/// Timestamp of when the round started
-		pub started_at: U256,
-		/// Timestamp of when the round was updated
-		pub updated_at: U256,
-		/// The round ID of the round in which the answer was computed
-		pub answered_in_round: U256,
 		/// The block number on Clamor when this price was fetched from the oracle
 		pub block_number: TBlockNumber,
 		/// Clamor Public Account Address (the account address should be in FragKey, otherwise it fails)
@@ -342,9 +397,9 @@ pub mod pallet {
 					return
 				};
 
-				let oracle_address = T::OracleContract::get_contract();
+				let oracle_provider: OracleProvider = T::OracleProvider::get_provider();
 
-				if let Err(e) = Self::fetch_price(block_number, &oracle_address, &geth_uri) {
+				if let Err(e) = Self::fetch_price(block_number, oracle_provider, &geth_uri) {
 					log::error!("Failed to fetch price from oracle with error: {}", e);
 				}
 
@@ -356,18 +411,20 @@ pub mod pallet {
 
 		fn fetch_price(
 			block_number: T::BlockNumber,
-			contract: &str,
+			oracle_provider: OracleProvider,
 			geth_uri: &str,
 		) -> Result<(), &'static str> {
+
+			let contract_address = oracle_provider.get_contract_address();
+			let function = oracle_provider.get_function();
+
 			let req = json!({
 				"jsonrpc": "2.0",
 				"method": "eth_call", // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_call
 				"params": [
 					{
-					"to": contract,
-						// call `latestRoundData()` function from ChainLink Feed Price contract
-					// `data` is first 4 bytes of `keccak_256(latestRoundData())`, padded - Use https://emn178.github.io/online-tools/keccak_256.html
-					"data": "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+					"to": contract_address.as_slice(),
+					"data": function,
 					},
 					"latest"
 				],
@@ -392,40 +449,7 @@ pub mod pallet {
 				serde_json::from_str(&response).map_err(|_| "Invalid response - json parse")?;
 			let result = v["result"].as_str().ok_or("Invalid response - no result")?; // Get the latest block number of the Ethereum Blockchain
 			let data = hex::decode(&result[2..]).map_err(|_| "Invalid response - invalid data")?;
-			log::trace!("data: {:?}", data);
-			let data = ethabi::decode(
-				//https://docs.chain.link/docs/data-feeds/price-feeds/api-reference/#latestrounddata
-				&[ParamType::Tuple(vec![
-					ParamType::Uint(80),  // uint80 roundId
-					ParamType::Int(256),  // int256 answer
-					ParamType::Uint(256), // uint256 startedAt
-					ParamType::Uint(256), // uint256 updatedAt
-					ParamType::Uint(80),  // uint80 answeredInRound
-				])],
-				&data,
-			)
-			.map_err(|_| "Invalid response")?;
-
-			let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid tuple")?;
-			let round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
-			let price = tuple[1].clone().into_int().ok_or_else(|| "Invalid token")?;
-			let started_at = tuple[2].clone().into_uint().ok_or_else(|| "Invalid startedAt")?;
-			let updated_at = tuple[3].clone().into_uint().ok_or_else(|| "Invalid updatedAt")?;
-			let answered_in_round =
-				tuple[4].clone().into_uint().ok_or_else(|| "Invalid answeredInRound")?;
-
-			/*
-			The following data validations have been inspired by:
-			- https://github.com/code-423n4/2021-08-notional-findings/issues/92
-			- https://github.com/code-423n4/2022-02-hubble-findings/issues/123
-			- https://ethereum.stackexchange.com/questions/133890/chainlink-latestrounddata-security-fresh-data-check-usage
-			and other similar reports: https://github.com/search?q=latestrounddata+validation&type=issues
-			*/
-			ensure!(round_id.gt(&U256::zero()), "Price from oracle is 0");
-			ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
-			ensure!(!updated_at.is_zero(), "UpdateAt = 0. Incomplete round.");
-			ensure!(!answered_in_round.is_zero(), "AnsweredInRound from oracle is 0");
-			ensure!(answered_in_round.ge(&round_id), "Stale price");
+			let price = oracle_provider.get_price(data)?;
 
 			log::trace!("New price: {}", price);
 
@@ -433,11 +457,7 @@ pub mod pallet {
 			Signer::<T, T::AuthorityId>::any_account()
 				.send_unsigned_transaction(
 					|account| OraclePrice {
-						round_id,
 						price,
-						started_at,
-						updated_at,
-						answered_in_round,
 						block_number,
 						public: account.public.clone(),
 					},
@@ -501,11 +521,7 @@ pub mod pallet {
 				log::debug!("Sending store_price extrinsic");
 				ValidTransaction::with_tag_prefix("PriceFromOracleUpdate")
 					.and_provides((
-						oracle_price.round_id,
 						oracle_price.price,
-						oracle_price.started_at,
-						oracle_price.updated_at,
-						oracle_price.answered_in_round,
 						oracle_price.block_number,
 						oracle_price.public.clone())
 					)

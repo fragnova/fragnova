@@ -106,14 +106,13 @@ where
 impl Config for Test {
 	type AuthorityId = crypto::FragAuthId;
 	type RuntimeEvent = RuntimeEvent;
-	type OracleContract = Test;
+	type OracleProvider = Test;
 	type Threshold = ConstU64<1>;
 }
 
 impl OracleContract for Test {
-	fn get_contract() -> &'static str {
-		// https://docs.chain.link/docs/data-feeds/price-feeds/addresses/
-		"0x547a514d5e3769680Ce22B2361c10Ea13619e8a9" // AAVE / USD on mainnet (this is just for testing purposes)
+	fn get_provider() -> pallet_oracle::OracleProvider {
+		OracleProvider::Uniswap("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode()) // never used
 	}
 }
 
@@ -125,6 +124,9 @@ fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {
 	let geth_url = Some(String::from("https://www.dummywebsite.com/"));
 
 	sp_clamor::init(geth_url);
+
+	let oracle_provider = <<Test as pallet_oracle::Config>::OracleProvider as pallet_oracle::OracleContract>::get_provider();
+	let contract = oracle_provider.get_contract_address();
 
 	// example of response taken from ETH/BTC in mainnet
 	/*
@@ -142,9 +144,7 @@ fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {
 				"method": "eth_call", // https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_call
 				"params": [
 					{
-					"to": <
-						<Test as pallet_oracle::Config>::OracleContract as pallet_oracle::OracleContract
-					>::get_contract(),
+					"to": contract.as_slice(),
 					// first 4 bytes of keccak_256(latestRoundData()) function, padded - Use https://emn178.github.io/online-tools/keccak_256.html
 					"data": "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
 					},
@@ -248,11 +248,7 @@ fn offchain_worker_works() {
 		Oracle::fetch_price_from_oracle(1);
 
 		let expected_data = OraclePrice {
-			round_id: U256::from(123),
 			price: U256::from(10000000),
-			started_at: U256::from(1667),
-			updated_at: U256::from(1668),
-			answered_in_round: U256::from(124),
 			block_number: System::block_number(),
 			public: <Test as SigningTypes>::Public::from(ed25519_public_key),
 		};
@@ -262,11 +258,7 @@ fn offchain_worker_works() {
 		assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
 
 		if let RuntimeCall::Oracle(crate::Call::store_price { oracle_price, signature }) = tx.call {
-			assert_eq!(oracle_price.round_id, expected_data.round_id);
 			assert_eq!(oracle_price.price, expected_data.price);
-			assert_eq!(oracle_price.started_at, expected_data.started_at);
-			assert_eq!(oracle_price.updated_at, expected_data.updated_at);
-			assert_eq!(oracle_price.answered_in_round, expected_data.answered_in_round);
 			assert_eq!(oracle_price.block_number, expected_data.block_number);
 			assert_eq!(oracle_price.public, expected_data.public);
 
@@ -285,11 +277,7 @@ fn offchain_worker_works() {
 fn price_storage_after_offchain_worker_works() {
 	new_test_ext().execute_with(|| {
 		let expected_data = OraclePrice {
-			round_id: U256::from(123),
 			price: U256::from(10000000),
-			started_at: U256::from(1667),
-			updated_at: U256::from(1668),
-			answered_in_round: U256::from(124),
 			block_number: System::block_number(),
 			public: sp_core::ed25519::Public([69u8; 32]),
 		};
@@ -324,11 +312,7 @@ fn circuit_breaker_works() {
 fn fetch_price_zero_will_fail() {
 	new_test_ext().execute_with(|| {
 		let expected_data = OraclePrice {
-			round_id: U256::from(123),
 			price: U256::from(0),
-			started_at: U256::from(1667),
-			updated_at: U256::from(1668),
-			answered_in_round: U256::from(124),
 			block_number: System::block_number(),
 			public: sp_core::ed25519::Public([69u8; 32]),
 		};
