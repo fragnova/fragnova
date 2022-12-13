@@ -64,7 +64,7 @@ hex-literal = { version = "0.3.4", default-features = false }
 default = ["std"]
 std = [
 	# "chainblocks",
-	"shards",
+	# "shards",
 	"lazy_static",
 	"sp-runtime",
 	'codec/std',
