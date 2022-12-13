@@ -5,6 +5,7 @@
 use super::*;
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_system::RawOrigin;
+use frame_support::{BoundedVec};
 use pallet_protos::UsageLicense;
 use protos::{
 	categories::{Categories, TextCategories},
@@ -56,15 +57,15 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = DefinitionMetadata {
-			name: vec![7u8; n as usize],
+		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
+			name: vec![7u8; n as usize].try_into().unwrap(),
 			// By making currency `Currency::Custom`, we enter an extra if-statement and also do an extra DB read operation
 			currency: Currency::Custom(T::AssetId::default()),
 		};
@@ -88,15 +89,15 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = DefinitionMetadata {
-			name: b"Je suis un Nom".to_vec(),
+		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
+			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
@@ -131,15 +132,15 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = DefinitionMetadata {
-			name: b"Je suis un Nom".to_vec(),
+		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
+			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
@@ -176,15 +177,15 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = DefinitionMetadata {
-			name: b"Je suis un Nom".to_vec(),
+		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
+			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
@@ -226,15 +227,15 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = DefinitionMetadata {
-			name: b"Je suis un Nom".to_vec(),
+		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
+			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
@@ -275,15 +276,15 @@ benchmarks! {
 			RawOrigin::Signed(definition_owner.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = DefinitionMetadata {
-			name: b"Je suis un Nom".to_vec(),
+		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
+			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
@@ -341,15 +342,15 @@ benchmarks! {
 			RawOrigin::Signed(definition_owner.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = DefinitionMetadata {
-			name: b"Je suis un Nom".to_vec(),
+		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
+			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
@@ -405,15 +406,15 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = DefinitionMetadata {
-			name: b"Je suis un Nom".to_vec(),
+		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
+			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
 		};
 		Fragments::<T>::create(
@@ -470,15 +471,15 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
-		let metadata = DefinitionMetadata {
-			name: b"Je suis un Nom".to_vec(),
+		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
+			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
 		};
 		Fragments::<T>::create(

@@ -11,6 +11,7 @@ use pallet_detach::Pallet as Detach;
 use protos::categories::{Categories, TextCategories};
 use sp_clamor::CID_PREFIX;
 use sp_io::hashing::blake2_256;
+use frame_support::{BoundedVec, traits::Get};
 
 use crate::Pallet as Protos;
 
@@ -46,7 +47,7 @@ benchmarks! {
 				RawOrigin::Signed(caller.clone()).into(),
 				Vec::<Hash256>::new(),
 				Categories::Text(TextCategories::Plain),
-				Vec::<Vec<u8>>::new(),
+				Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 				None,
 				UsageLicense::Closed,
 				proto_data.clone()
@@ -55,9 +56,9 @@ benchmarks! {
 			Ok(proto_hash)
 		}).collect::<Result::<Vec<Hash256>, _>>()?;
 		let category = Categories::Text(TextCategories::Plain);
-		let tags = (0 .. t).into_iter().map(|i| {
-			format!("{}", i).into_bytes().to_vec()
-		}).collect::<Vec<Vec<u8>>>();
+		let tags: BoundedVec::<BoundedVec<u8, _>, _> = (0 .. t).into_iter().map(|i| {
+			format!("{}", i).repeat(<T as pallet::Config>::StringLimit::get() as usize).into_bytes()[0..<T as pallet::Config>::StringLimit::get() as usize].to_vec().try_into().unwrap()
+		}).collect::<Vec<BoundedVec<u8, _>>>().try_into().unwrap();
 		let linked_asset: Option<LinkedAsset> = None;
 		let license = UsageLicense::Closed;
 		let data = vec![7u8; d as usize];
@@ -82,7 +83,7 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(), // Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
@@ -95,7 +96,7 @@ benchmarks! {
 				RawOrigin::Signed(caller.clone()).into(),
 				Vec::<Hash256>::new(),
 				Categories::Text(TextCategories::Plain),
-				Vec::<Vec<u8>>::new(),
+				Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 				None,
 				UsageLicense::Closed,
 				proto_data.clone()
@@ -103,10 +104,10 @@ benchmarks! {
 			let proto_hash = blake2_256(&proto_data);
 			Ok(proto_hash)
 		}).collect::<Result::<Vec<Hash256>, _>>()?;
-		let new_tags: Option<Vec<Vec<u8>>> = Some(
+		let new_tags: Option::<BoundedVec::<BoundedVec<u8, _>, _>> = Some(
 			(0 .. t).into_iter().map(|i| {
-				format!("{}", i).into_bytes().to_vec()
-			}).collect::<Vec<Vec<u8>>>()
+				format!("{}", i).repeat(<T as pallet::Config>::StringLimit::get() as usize).into_bytes()[0..<T as pallet::Config>::StringLimit::get() as usize].to_vec().try_into().unwrap()
+			}).collect::<Vec<BoundedVec<u8, _>>>().try_into().unwrap()
 		);
 		let license = Some(UsageLicense::Tickets(Compact(100))); // we do this since this will trigger an extra DB write (so it lets us simulate the worst-case scenario)
 		let data = vec![7u8; d as usize];
@@ -130,14 +131,14 @@ benchmarks! {
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
 
-		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, UsageLicense::Closed, immutable_data.clone())?;
+		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(), None, UsageLicense::Closed, immutable_data.clone())?;
 
 		let public: [u8; 33] = [2, 44, 133, 69, 18, 57, 0, 152, 97, 145, 160, 85, 122, 14, 119, 232, 88, 169, 142, 77, 139, 133, 214, 67, 188, 128, 137, 28, 23, 247, 242, 193, 104];
 		let target_account: Vec<u8> = [203, 109, 249, 222, 30, 252, 167, 163, 153, 138, 142, 173, 78, 2, 21, 157, 95, 169, 156, 62, 13, 79, 214, 67, 38, 103, 57, 11, 180, 114, 104, 84].to_vec();
 		Detach::<T>::add_eth_auth(RawOrigin::Root.into(), sp_core::ecdsa::Public::from_raw(public))?;
 
 		let pre_len: usize = <pallet_detach::DetachRequests<T>>::get().len();
-	}: _(RawOrigin::Signed(caller), proto_hash, pallet_detach::SupportedChains::EthereumMainnet, target_account)
+	}: _(RawOrigin::Signed(caller), proto_hash, pallet_detach::SupportedChains::EthereumMainnet, target_account.try_into().unwrap())
 	verify {
 		assert_eq!(<pallet_detach::DetachRequests<T>>::get().len(), pre_len + 1 as usize);
 	}
@@ -151,7 +152,7 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
@@ -175,7 +176,7 @@ benchmarks! {
 			RawOrigin::Signed(caller.clone()).into(),
 			Vec::<Hash256>::new(),
 			Categories::Text(TextCategories::Plain),
-			Vec::<Vec<u8>>::new(),
+			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
 			proto_data.clone()
@@ -185,9 +186,9 @@ benchmarks! {
 		let metadata_key: Vec<u8> = vec![7u8; m as usize];
 		let data: Vec<u8> = vec![7u8; d as usize];
 
-	}: set_metadata(RawOrigin::Signed(caller), proto_hash.clone(), metadata_key.clone(), data) // Execution phase
+	}: set_metadata(RawOrigin::Signed(caller), proto_hash.clone(), metadata_key.clone().try_into().unwrap(), data) // Execution phase
 	verify { // Optional verification phase
-		assert_last_event::<T>(Event::<T>::MetadataChanged { proto_hash: proto_hash, cid: metadata_key }.into())
+		assert_last_event::<T>(Event::<T>::MetadataChanged { proto_hash: proto_hash, metadata_key: metadata_key }.into())
 	}
 
 	impl_benchmark_test_suite!(Protos, crate::mock::new_test_ext(), crate::mock::Test);
