@@ -22,7 +22,6 @@ fn apply_percent(amount: u128, percent: u128) -> u128 {
 
 fn get_oracle_price() -> u128 {
 	1 // Assume the current price of 1 FRAG = 1 USD
-	// TODO implement Oracle
 }
 
 mod link_tests {

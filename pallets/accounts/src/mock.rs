@@ -27,6 +27,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
 	RuntimeAppPublic,
 };
+use pallet_oracle::{OracleContract, OracleProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -51,6 +52,7 @@ frame_support::construct_runtime!(
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 	}
 );
 
@@ -203,6 +205,20 @@ impl pallet_timestamp::Config for Test {
 	type OnTimestampSet = ();
 	type MinimumPeriod = ();
 	type WeightInfo = ();
+}
+
+impl OracleContract for Test {
+	/// get the default oracle provider
+	fn get_provider() -> OracleProvider {
+		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+	}
+}
+
+impl pallet_oracle::Config for Test {
+	type AuthorityId = pallet_oracle::crypto::FragAuthId;
+	type RuntimeEvent = RuntimeEvent;
+	type OracleProvider = Test;
+	type Threshold = ConstU64<1>;
 }
 
 fn create_public_key(keystore: &KeyStore) -> sp_core::ed25519::Public {

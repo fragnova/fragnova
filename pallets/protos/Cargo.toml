@@ -121,6 +121,10 @@ git = 'https://github.com/fragcolor-xyz/substrate.git'
 tag = 'fragnova-v0.9.33-1'
 version = '6.0.0'
 
+[dependencies.pallet-oracle]
+default-features = false
+path = '../oracle'
+
 [dependencies]
 log = { version = "0.4.14", default-features = false }
 sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }

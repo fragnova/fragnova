@@ -217,6 +217,7 @@ pub mod pallet {
 	+ pallet_proxy::Config
 	+ pallet_timestamp::Config
 	+ pallet_assets::Config
+	+ pallet_oracle::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
@@ -664,7 +665,7 @@ pub mod pallet {
 				ensure!(data_amount > 0, Error::<T>::SystematicFailure);
 			}
 
-			let threshold = T::Threshold::get();
+			let threshold = <T as pallet::Config>::Threshold::get();
 			if threshold > 1 {
 				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
 				if let Some(current_votes) = current_votes {
@@ -964,7 +965,7 @@ pub mod pallet {
 				// most expensive bit last
 				// Check whether a provided signature matches the public key used to sign the payload
 				let signature_valid =
-					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key (if valid)
+					SignedPayload::<T>::verify::<<T as pallet::Config>::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key (if valid)
 				// The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
@@ -1158,7 +1159,7 @@ pub mod pallet {
 				//   - `None`: no account is available for sending transaction
 				//   - `Some((account, Ok(())))`: transaction is successfully sent
 				//   - `Some((account, Err(())))`: error occurred when sending the transaction
-				Signer::<T, T::AuthorityId>::any_account() // `Signer::<T, T::AuthorityId>::any_account()` is the signer that signs the payload
+				Signer::<T, <T as pallet::Config>::AuthorityId>::any_account() // `Signer::<T, T::AuthorityId>::any_account()` is the signer that signs the payload
 					.send_unsigned_transaction(
 						// this line is to prepare and return payload to be used
 						|account| EthLockUpdate {
@@ -1413,8 +1414,7 @@ pub mod pallet {
 
 		/// Get the price of FRAG from pallet-oracle
 		pub fn get_oracle_price() -> u128 {
-			1 // Assume the current price of 1 FRAG = 1 USD
-			// TODO implement pallet Oracle
+			1//pallet_oracle::Pallet::<T>::get_price() as u128
 		}
 
 		/// Convert the lock period integer retrieved from Ethereum event into the number of weeks.

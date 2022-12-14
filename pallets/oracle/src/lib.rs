@@ -81,7 +81,9 @@ impl OracleContract for () {}
 /// enum that represents the price feed provider.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum OracleProvider {
+	/// Chainlink provider
 	Chainlink(Vec<u8>),
+	/// Uniswap provider (default)
 	Uniswap(Vec<u8>),
 }
 
@@ -144,62 +146,11 @@ pub mod pallet {
 	}
 
 	impl OracleProvider {
+		/// Get the smart contract address of the selected oracle provider for the price feed of FRAG token
 		pub fn get_contract_address(&self) -> Vec<u8> {
 			match self {
 				OracleProvider::Chainlink(address) => address.clone(),
 				OracleProvider::Uniswap(address) => address.clone(),
-			}
-		}
-
-		pub fn get_function(&self) -> &'static str {
-			match self {
-				// call `latestRoundData()` function from ChainLink Feed Price contract
-				// `data` is first 4 bytes of `keccak_256(latestRoundData())`, padded - Use https://emn178.github.io/online-tools/keccak_256.html
-				OracleProvider::Chainlink(_) => "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
-				OracleProvider::Uniswap(_) => "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
-			}
-		}
-
-		pub fn get_price(&self, data: Vec<u8>) -> Result<U256, &'static str> {
-			match self {
-				OracleProvider::Chainlink(_) => {
-					let data = ethabi::decode(
-						//https://docs.chain.link/docs/data-feeds/price-feeds/api-reference/#latestrounddata
-						&[ParamType::Tuple(vec![
-							ParamType::Uint(80),  // uint80 roundId
-							ParamType::Int(256),  // int256 answer
-							ParamType::Uint(256), // uint256 startedAt
-							ParamType::Uint(256), // uint256 updatedAt
-							ParamType::Uint(80),  // uint80 answeredInRound
-						])],
-						&data,
-					)
-						.map_err(|_| "Invalid response")?;
-
-					let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid tuple")?;
-					let _round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
-					let price = tuple[1].clone().into_int().ok_or_else(|| "Invalid token")?;
-					let _updated_at = tuple[3].clone().into_uint().ok_or_else(|| "Invalid updatedAt")?;
-					let _answered_in_round =
-						tuple[4].clone().into_uint().ok_or_else(|| "Invalid answeredInRound")?;
-
-					/*
-					The following data validations have been inspired by:
-					- https://github.com/code-423n4/2021-08-notional-findings/issues/92
-					- https://github.com/code-423n4/2022-02-hubble-findings/issues/123
-					- https://ethereum.stackexchange.com/questions/133890/chainlink-latestrounddata-security-fresh-data-check-usage
-					and other similar reports: https://github.com/search?q=latestrounddata+validation&type=issues
-					*/
-					ensure!(_round_id.gt(&U256::zero()), "Price from oracle is 0");
-					ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
-					ensure!(!_updated_at.is_zero(), "UpdateAt = 0. Incomplete round.");
-					ensure!(!_answered_in_round.is_zero(), "AnsweredInRound from oracle is 0");
-					ensure!(_answered_in_round.ge(&_round_id), "Stale price");
-
-					Ok(price)
-				}
-
-				OracleProvider::Uniswap(_) => Ok(U256::from(1))
 			}
 		}
 	}
@@ -214,6 +165,7 @@ pub mod pallet {
 	#[derive(Encode, Decode, Clone, Debug, PartialEq, Eq, scale_info::TypeInfo)]
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	pub struct OraclePrice<TPublic, TBlockNumber> {
+		/// the latest price fetched from the oracle feed
 		pub price: U256,
 		/// The block number on Clamor when this price was fetched from the oracle
 		pub block_number: TBlockNumber,
@@ -426,7 +378,7 @@ pub mod pallet {
 		) -> Result<(), &'static str> {
 
 			let contract_address = oracle_provider.get_contract_address();
-			let function = oracle_provider.get_function();
+			let function = Self::get_function_to_call(&oracle_provider);
 
 			let req = json!({
 				"jsonrpc": "2.0",
@@ -459,7 +411,7 @@ pub mod pallet {
 				serde_json::from_str(&response).map_err(|_| "Invalid response - json parse")?;
 			let result = v["result"].as_str().ok_or("Invalid response - no result")?; // Get the latest block number of the Ethereum Blockchain
 			let data = hex::decode(&result[2..]).map_err(|_| "Invalid response - invalid data")?;
-			let price = oracle_provider.get_price(data)?;
+			let price = Self::get_price_from_oracle_data(&oracle_provider, data)?;
 
 			log::trace!("New price: {}", price);
 
@@ -478,6 +430,61 @@ pub mod pallet {
 				.map_err(|_| "Failed to send transaction")?;
 
 			Ok(())
+		}
+
+		/// Get the smart contract function of the selected oracle provider
+		pub fn get_function_to_call(provider: &OracleProvider) -> &'static str {
+			match provider {
+				// call `latestRoundData()` function from ChainLink Feed Price contract
+				// `data` is first 4 bytes of `keccak_256(latestRoundData())`, padded - Use https://emn178.github.io/online-tools/keccak_256.html
+				OracleProvider::Chainlink(_) => "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+				OracleProvider::Uniswap(_) => "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+			}
+		}
+
+		/// Fetch the latest price from the selected oracle provider.
+		///
+		pub fn get_price_from_oracle_data(provider: &OracleProvider, data: Vec<u8>) -> Result<U256, &'static str> {
+			match provider {
+				OracleProvider::Chainlink(_) => {
+					let data = ethabi::decode(
+						//https://docs.chain.link/docs/data-feeds/price-feeds/api-reference/#latestrounddata
+						&[ParamType::Tuple(vec![
+							ParamType::Uint(80),  // uint80 roundId
+							ParamType::Int(256),  // int256 answer
+							ParamType::Uint(256), // uint256 startedAt
+							ParamType::Uint(256), // uint256 updatedAt
+							ParamType::Uint(80),  // uint80 answeredInRound
+						])],
+						&data,
+					)
+						.map_err(|_| "Invalid response")?;
+
+					let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid tuple")?;
+					let _round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
+					let price = tuple[1].clone().into_int().ok_or_else(|| "Invalid token")?;
+					let _updated_at = tuple[3].clone().into_uint().ok_or_else(|| "Invalid updatedAt")?;
+					let _answered_in_round =
+						tuple[4].clone().into_uint().ok_or_else(|| "Invalid answeredInRound")?;
+
+					/*
+					The following data validations have been inspired by:
+					- https://github.com/code-423n4/2021-08-notional-findings/issues/92
+					- https://github.com/code-423n4/2022-02-hubble-findings/issues/123
+					- https://ethereum.stackexchange.com/questions/133890/chainlink-latestrounddata-security-fresh-data-check-usage
+					and other similar reports: https://github.com/search?q=latestrounddata+validation&type=issues
+					*/
+					ensure!(_round_id.gt(&U256::zero()), "Price from oracle is 0");
+					ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
+					ensure!(!_updated_at.is_zero(), "UpdateAt = 0. Incomplete round.");
+					ensure!(!_answered_in_round.is_zero(), "AnsweredInRound from oracle is 0");
+					ensure!(_answered_in_round.ge(&_round_id), "Stale price");
+
+					Ok(price)
+				}
+
+				OracleProvider::Uniswap(_) => Ok(U256::from(1))
+			}
 		}
 	}
 

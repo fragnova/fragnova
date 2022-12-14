@@ -17,6 +17,7 @@ use sp_runtime::traits::{
 };
 
 use sp_runtime::testing::{Header, TestXt};
+use pallet_oracle::{OracleContract, OracleProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -50,6 +51,7 @@ frame_support::construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -225,6 +227,20 @@ impl pallet_proxy::Config for Test {
 	type CallHasher = BlakeTwo256;
 	type AnnouncementDepositBase = ConstU32<1>;
 	type AnnouncementDepositFactor = ConstU32<1>;
+}
+
+impl OracleContract for Test {
+	/// get the default oracle provider
+	fn get_provider() -> pallet_oracle::OracleProvider {
+		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+	}
+}
+
+impl pallet_oracle::Config for Test {
+	type AuthorityId = pallet_oracle::crypto::FragAuthId;
+	type RuntimeEvent = RuntimeEvent;
+	type OracleProvider = Test;
+	type Threshold = ConstU64<1>;
 }
 
 parameter_types! {

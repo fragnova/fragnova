@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_oracle;
 use crate::*;
 use codec::Decode;
@@ -34,7 +36,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Oracle: pallet_oracle::{Pallet, Call, Event<T>, ValidateUnsigned},
+		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 	}
 );
 
@@ -120,7 +122,7 @@ fn test_pub() -> sp_core::sr25519::Public {
 	sp_core::sr25519::Public::from_raw([1u8; 32])
 }
 
-fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {
+pub fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {
 	let geth_url = Some(String::from("https://www.dummywebsite.com/"));
 
 	sp_clamor::init(geth_url);
