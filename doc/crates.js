@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["clamor","clamor_runtime","pallet_accounts","pallet_detach","pallet_fragments","pallet_fragments_rpc","pallet_fragments_rpc_runtime_api","pallet_protos","pallet_protos_rpc","pallet_protos_rpc_runtime_api","sp_clamor"];
+window.ALL_CRATES = ["clamor","clamor_runtime","pallet_accounts","pallet_clusters","pallet_detach","pallet_fragments","pallet_fragments_rpc","pallet_fragments_rpc_runtime_api","pallet_protos","pallet_protos_rpc","pallet_protos_rpc_runtime_api","sp_clamor"];

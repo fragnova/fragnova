@@ -2247,12 +2247,6 @@
 <span id="2247">2247</span>
 <span id="2248">2248</span>
 <span id="2249">2249</span>
-<span id="2250">2250</span>
-<span id="2251">2251</span>
-<span id="2252">2252</span>
-<span id="2253">2253</span>
-<span id="2254">2254</span>
-<span id="2255">2255</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -2566,6 +2560,7 @@
 	<span class="kw">use </span>frame_support::{pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
+	<span class="kw">use </span>sp_clamor::get_vault_id;
 	<span class="kw">use </span>pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachedHashes, SupportedChains};
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -2903,7 +2898,7 @@
 
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
-			</span><span class="kw">let </span>vault = <span class="self">Self</span>::get_vault_id(hash);
+			</span><span class="kw">let </span>vault: T::AccountId = get_vault_id(hash);
 
 			<span class="kw">match </span>metadata.currency {
 				Currency::Native =&gt; {
@@ -3365,7 +3360,7 @@
 			<span class="kw">let </span>fragment_data =
 				&lt;Definitions&lt;T&gt;&gt;::get(definition_hash).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
 
-			<span class="kw">let </span>vault = <span class="kw-2">&amp;</span><span class="self">Self</span>::get_vault_id(definition_hash); <span class="comment">// Get the Vault Account ID of `definition_hash`
+			<span class="kw">let </span>vault: T::AccountId = get_vault_id(definition_hash); <span class="comment">// Get the Vault Account ID of `definition_hash`
 
 			</span><span class="kw">let </span>quantity = <span class="kw">match </span>options {
 				FragmentBuyOptions::Quantity(amount) =&gt; u64::from(amount),
@@ -3715,13 +3710,6 @@
 	}
 
 	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-		<span class="doccomment">/// **Get** the **Account ID** of the Fragment Definition `definition_hash`**
-		///
-		/// This Account ID is determinstically computed using the Fragment Definition `definition_hash`
-		</span><span class="kw">pub fn </span>get_vault_id(definition_hash: Hash128) -&gt; T::AccountId {
-			<span class="kw">let </span>hash = blake2_256(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragments-vault&quot;</span>[..], <span class="kw-2">&amp;</span>definition_hash].concat());
-			T::AccountId::decode(<span class="kw-2">&amp;mut &amp;</span>hash[..]).expect(<span class="string">&quot;T::AccountId should decode&quot;</span>)
-		}
 
 		<span class="doccomment">/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `definition_hash`,
 		/// whose Edition ID is `edition`** and whose Copy ID is `copy`**

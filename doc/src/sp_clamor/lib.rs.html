@@ -216,6 +216,14 @@
 <span id="216">216</span>
 <span id="217">217</span>
 <span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Helper Functions and Types that are used in other Packages of the this Workspace
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
@@ -433,6 +441,14 @@
 	who.append(<span class="kw-2">&amp;mut </span><span class="string">b&quot;frag-locked-account&quot;</span>.to_vec());
 	<span class="kw">let </span>who = blake2_256(<span class="kw-2">&amp;</span>who);
 	TAccountId::decode(<span class="kw-2">&amp;mut &amp;</span>who[..])
+}
+
+<span class="doccomment">/// **Get** an **Account ID** deterministically computed from an input `hash`**.
+</span><span class="kw">pub fn </span>get_vault_id&lt;TAccountId: Encode + Decode&gt;(
+	hash: Hash128
+) -&gt; TAccountId {
+	<span class="kw">let </span>hash = blake2_256(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragnova-vault&quot;</span>[..], <span class="kw-2">&amp;</span>hash].concat());
+	TAccountId::decode(<span class="kw-2">&amp;mut &amp;</span>hash[..]).expect(<span class="string">&quot;T::AccountId should decode&quot;</span>)
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="sp_clamor" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>
