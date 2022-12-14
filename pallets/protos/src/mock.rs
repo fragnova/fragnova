@@ -50,6 +50,7 @@ frame_support::construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+		Clusters: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -201,6 +202,14 @@ impl pallet_detach::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_clusters::Config for Test {
+	type Event = Event;
+	type NameLimit = ConstU32<10>;
+	type DataLimit = ConstU32<100>;
+	type MembersLimit = ConstU32<20>;
+	type RoleSettingsLimit = ConstU32<20>;
 }
 
 impl pallet_timestamp::Config for Test {

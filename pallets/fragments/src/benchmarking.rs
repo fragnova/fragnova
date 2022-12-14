@@ -59,7 +59,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -91,7 +92,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -134,7 +136,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -179,7 +182,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -229,7 +233,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -278,7 +283,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -344,7 +350,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -408,7 +415,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -473,7 +481,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 

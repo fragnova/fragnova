@@ -106,6 +106,10 @@ git = 'https://github.com/fragcolor-xyz/substrate.git'
 tag = 'fragnova-v0.0.6'
 version = '4.0.0-dev'
 
+[dependencies.pallet-clusters]
+default-features = false
+path = '../clusters'
+
 [dependencies]
 sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
 hex = { version = "0.4.3", default-features = false }

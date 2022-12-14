@@ -463,6 +463,14 @@ impl pallet_detach::Config for Runtime {
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
+impl pallet_clusters::Config for Runtime {
+	type Event = Event;
+	type NameLimit = ConstU32<20>;
+	type DataLimit = ConstU32<300>;
+	type MembersLimit = ConstU32<20>;
+	type RoleSettingsLimit = ConstU32<20>;
+}
+
 impl pallet_multisig::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
@@ -717,6 +725,7 @@ construct_runtime!(
 		Protos: pallet_protos,
 		Fragments: pallet_fragments,
 		Detach: pallet_detach,
+		Clusters: pallet_clusters,
 		Multisig: pallet_multisig,
 		Proxy: pallet_proxy,
 		Identity: pallet_identity,

@@ -77,7 +77,7 @@ impl Definition {
 	}
 
 	pub fn get_vault_account_id(&self) -> sp_core::ed25519::Public {
-		let hash = blake2_256(&[&b"fragments-vault"[..], &self.get_definition_id()].concat());
+		let hash = blake2_256(&[&b"fragnova-vault"[..], &self.get_definition_id()].concat());
 		sp_core::ed25519::Public::from_raw(hash)
 	}
 }

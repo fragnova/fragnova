@@ -32,6 +32,7 @@ mod copied_from_pallet_protos {
 				.include_cost
 				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
 				.unwrap_or(UsageLicense::Closed),
+			None,
 			proto.data.clone(),
 		)
 	}
