@@ -161,41 +161,46 @@ pub mod pallet {
 		}
 
 		pub fn get_price(&self, data: Vec<u8>) -> Result<U256, &'static str> {
-			let data = ethabi::decode(
-				//https://docs.chain.link/docs/data-feeds/price-feeds/api-reference/#latestrounddata
-				&[ParamType::Tuple(vec![
-					ParamType::Uint(80),  // uint80 roundId
-					ParamType::Int(256),  // int256 answer
-					ParamType::Uint(256), // uint256 startedAt
-					ParamType::Uint(256), // uint256 updatedAt
-					ParamType::Uint(80),  // uint80 answeredInRound
-				])],
-				&data,
-			)
-				.map_err(|_| "Invalid response")?;
+			match self {
+				OracleProvider::Chainlink(_) => {
+					let data = ethabi::decode(
+						//https://docs.chain.link/docs/data-feeds/price-feeds/api-reference/#latestrounddata
+						&[ParamType::Tuple(vec![
+							ParamType::Uint(80),  // uint80 roundId
+							ParamType::Int(256),  // int256 answer
+							ParamType::Uint(256), // uint256 startedAt
+							ParamType::Uint(256), // uint256 updatedAt
+							ParamType::Uint(80),  // uint80 answeredInRound
+						])],
+						&data,
+					)
+						.map_err(|_| "Invalid response")?;
 
-			let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid tuple")?;
-			let _round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
-			let price = tuple[1].clone().into_int().ok_or_else(|| "Invalid token")?;
-			let _started_at = tuple[2].clone().into_uint().ok_or_else(|| "Invalid startedAt")?;
-			let _updated_at = tuple[3].clone().into_uint().ok_or_else(|| "Invalid updatedAt")?;
-			let _answered_in_round =
-				tuple[4].clone().into_uint().ok_or_else(|| "Invalid answeredInRound")?;
+					let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid tuple")?;
+					let _round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
+					let price = tuple[1].clone().into_int().ok_or_else(|| "Invalid token")?;
+					let _updated_at = tuple[3].clone().into_uint().ok_or_else(|| "Invalid updatedAt")?;
+					let _answered_in_round =
+						tuple[4].clone().into_uint().ok_or_else(|| "Invalid answeredInRound")?;
 
-			/*
-			The following data validations have been inspired by:
-			- https://github.com/code-423n4/2021-08-notional-findings/issues/92
-			- https://github.com/code-423n4/2022-02-hubble-findings/issues/123
-			- https://ethereum.stackexchange.com/questions/133890/chainlink-latestrounddata-security-fresh-data-check-usage
-			and other similar reports: https://github.com/search?q=latestrounddata+validation&type=issues
-			*/
-			ensure!(_round_id.gt(&U256::zero()), "Price from oracle is 0");
-			ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
-			ensure!(!_updated_at.is_zero(), "UpdateAt = 0. Incomplete round.");
-			ensure!(!_answered_in_round.is_zero(), "AnsweredInRound from oracle is 0");
-			ensure!(_answered_in_round.ge(&_round_id), "Stale price");
+					/*
+					The following data validations have been inspired by:
+					- https://github.com/code-423n4/2021-08-notional-findings/issues/92
+					- https://github.com/code-423n4/2022-02-hubble-findings/issues/123
+					- https://ethereum.stackexchange.com/questions/133890/chainlink-latestrounddata-security-fresh-data-check-usage
+					and other similar reports: https://github.com/search?q=latestrounddata+validation&type=issues
+					*/
+					ensure!(_round_id.gt(&U256::zero()), "Price from oracle is 0");
+					ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
+					ensure!(!_updated_at.is_zero(), "UpdateAt = 0. Incomplete round.");
+					ensure!(!_answered_in_round.is_zero(), "AnsweredInRound from oracle is 0");
+					ensure!(_answered_in_round.ge(&_round_id), "Stale price");
 
-			Ok(price)
+					Ok(price)
+				}
+
+				OracleProvider::Uniswap(_) => Ok(U256::from(1))
+			}
 		}
 	}
 

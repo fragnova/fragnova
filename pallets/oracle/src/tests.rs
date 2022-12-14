@@ -112,7 +112,7 @@ impl Config for Test {
 
 impl OracleContract for Test {
 	fn get_provider() -> pallet_oracle::OracleProvider {
-		OracleProvider::Uniswap("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode()) // never used
+		OracleProvider::Chainlink("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode()) // never used
 	}
 }
 
