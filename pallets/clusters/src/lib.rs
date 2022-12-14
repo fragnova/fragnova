@@ -227,9 +227,6 @@ pub mod pallet {
 
 			let minimum_balance =
 				<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
-			let origin_balance =
-				<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::balance(&who);
-			ensure!(origin_balance > minimum_balance, Error::<T>::InsufficientFunds);
 
 			// write
 			// create an account for the cluster
