@@ -43,8 +43,8 @@ mod upload_tests {
 				.include_cost
 				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
 				.unwrap_or(UsageLicense::Closed),
-			proto.data.clone(),
 			None,
+			proto.data.clone(),
 		)
 	}
 
