@@ -390,6 +390,11 @@ pub mod pallet {
 			}
 		}
 
+		/// A helper function to allow other pallets to fetch the latest FRAG price.
+		pub fn get_price() -> u32 {
+			<Price<T>>::get()
+		}
+
 		/// A helper function to fetch the price, sign payload and send an unsigned transaction
 		pub fn fetch_price_from_oracle(block_number: T::BlockNumber) {
 			let is_oracle_stopped = <IsOracleStopped<T>>::get();
