@@ -1414,7 +1414,7 @@ pub mod pallet {
 
 		/// Get the price of FRAG from pallet-oracle
 		pub fn get_oracle_price() -> u128 {
-			1//pallet_oracle::Pallet::<T>::get_price() as u128
+			pallet_oracle::Pallet::<T>::get_price() as u128
 		}
 
 		/// Convert the lock period integer retrieved from Ethereum event into the number of weeks.

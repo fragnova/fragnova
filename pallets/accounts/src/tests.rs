@@ -12,6 +12,7 @@ use sp_runtime::{offchain::storage::StorageValueRef, SaturatedConversion};
 
 pub use internal_lock_update_tests::lock_;
 pub use link_tests::link_;
+use pallet_oracle::OraclePrice;
 
 fn apply_percent(amount: u128, percent: u128) -> u128 {
 	if amount == 0 {
@@ -22,6 +23,19 @@ fn apply_percent(amount: u128, percent: u128) -> u128 {
 
 fn get_oracle_price() -> u128 {
 	1 // Assume the current price of 1 FRAG = 1 USD
+}
+
+pub fn store_price_() -> DispatchResult {
+	let oracle_price = OraclePrice {
+		price: U256::from(1),
+		block_number: System::block_number(),
+		public: sp_core::ed25519::Public([69u8; 32]),
+	};
+	Oracle::store_price(
+		Origin::none(),
+		oracle_price,
+		sp_core::ed25519::Signature([69u8; 64]), // this can be anything
+	)
 }
 
 mod link_tests {
@@ -361,6 +375,7 @@ mod internal_lock_update_tests {
 	use core::str::FromStr;
 	use ethabi::Address;
 	use sp_core::keccak_256;
+	use pallet_oracle::OraclePrice;
 	use super::*;
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
@@ -434,6 +449,7 @@ mod internal_lock_update_tests {
 	#[test]
 	fn lock_by_unlinked_account_should_lock_frag_internally_and_reserve_tickets_and_nova() {
 		new_test_ext().execute_with(|| {
+			let _ = store_price_();
 			let dd = DummyData::new();
 
 			let current_block_number = System::block_number();
@@ -443,7 +459,7 @@ mod internal_lock_update_tests {
 			assert_ok!(lock_(&lock));
 
 			let mut events = <frame_system::Pallet<Test>>::events();
-			assert_eq!(events.clone().len(), 3);
+			assert_eq!(events.clone().len(), 4);
 			let event = events.pop().expect("Expected at least one EventRecord to be found").event;
 			assert_eq!(
 				event,
@@ -504,7 +520,7 @@ mod internal_lock_update_tests {
 			assert_eq!(<EVMLinkVotingClosed<Test>>::get(&data_hash).unwrap(), current_block_number);
 
 			let mut events = <frame_system::Pallet<Test>>::events();
-			assert_eq!(events.clone().len(), 3);
+			assert_eq!(events.clone().len(), 4);
 
 			let event = events.pop().expect("Expected at least one EventRecord to be found").event;
 			assert_eq!(
@@ -553,6 +569,7 @@ mod internal_lock_update_tests {
 	#[test]
 	fn lock_by_linked_account_should_lock_frag_and_mint_tickets_and_assign_nova() {
 		new_test_ext_with_nova().execute_with(|| {
+			let _ = store_price_();
 			let dd = DummyData::new();
 			let lock = dd.lock;
 			let link = lock.link.clone();
@@ -595,6 +612,7 @@ mod internal_lock_update_tests {
 	#[test]
 	fn link_an_account_with_reserved_tickets_and_nova_should_mint_and_increase_balance() {
 		new_test_ext_with_nova().execute_with(|| {
+			let _ = store_price_();
 			let dd = DummyData::new();
 			let lock = dd.lock;
 			let link = lock.link.clone();
@@ -703,6 +721,8 @@ mod internal_lock_update_tests {
 	#[test]
 	fn block_number_of_first_lock_event_should_be_correct() {
 		new_test_ext_with_nova().execute_with(|| {
+			let _ = store_price_();
+
 			let dd = DummyData::new();
 			let unlock = dd.unlock;
 			let link = unlock.lock.link.clone();
@@ -730,6 +750,7 @@ mod internal_lock_update_tests {
 	#[test]
 	fn unlock_should_work() {
 		new_test_ext().execute_with(|| {
+			let _ = store_price_();
 			let dd = DummyData::new();
 			let unlock = dd.unlock;
 			//let lock = dd.lock;
@@ -881,6 +902,7 @@ mod withdraw_tests {
 	#[test]
 	fn withdraw_should_increase_tickets_and_nova_balance() {
 		new_test_ext_with_nova().execute_with(|| {
+			let _ = store_price_();
 			let dd = DummyData::new();
 			let lock = dd.lock;
 			let link = lock.link.clone();
@@ -941,6 +963,7 @@ mod withdraw_tests {
 	#[test]
 	fn withdraw_after_lock_period_is_over_gives_correct_amounts() {
 		new_test_ext_with_nova().execute_with(|| {
+			let _ = store_price_();
 			let dd = DummyData::new();
 			let lock = dd.lock;
 			let link = lock.link.clone();
@@ -1003,6 +1026,7 @@ mod withdraw_tests {
 	#[test]
 	fn subsequent_withdraws_after_one_lock_mint_correct_amounts() {
 		new_test_ext_with_nova().execute_with(|| {
+			let _ = store_price_();
 			let dd = DummyData::new();
 			let lock = dd.lock;
 			let link = lock.link.clone();
@@ -1111,6 +1135,7 @@ mod withdraw_tests {
 	#[test]
 	fn subsequent_withdraws_after_multiple_locks_produces_correct_lock_registrations() {
 		new_test_ext_with_nova().execute_with(|| {
+			let _ = store_price_();
 			let dd = DummyData::new();
 			let lock = dd.lock;
 			let lock2 = dd.lock2;
@@ -1222,6 +1247,7 @@ mod withdraw_tests {
 	#[test]
 	fn subsequent_withdraws_after_multiple_locks_produces_correct_balances() {
 		new_test_ext_with_nova().execute_with(|| {
+			let _ = store_price_();
 			let dd = DummyData::new();
 			let lock = dd.lock;
 			let lock2 = dd.lock2;
