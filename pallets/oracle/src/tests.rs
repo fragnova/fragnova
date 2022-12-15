@@ -42,7 +42,7 @@ frame_support::construct_runtime!(
 
 parameter_types! {
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(frame_support::weights::Weight::from_ref_time(1024));
+		frame_system::limits::BlockWeights::simple_max(1024);
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
 	pub StorageBytesMultiplier: u64 = 10;
@@ -53,8 +53,8 @@ impl frame_system::Config for Test {
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
-	type RuntimeOrigin = RuntimeOrigin;
-	type RuntimeCall = RuntimeCall;
+	type Origin = Origin;
+	type Call = Call;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -62,7 +62,7 @@ impl frame_system::Config for Test {
 	type AccountId = sp_core::ed25519::Public;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -75,7 +75,7 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<2>;
 }
 
-type Extrinsic = TestXt<RuntimeCall, ()>;
+type Extrinsic = TestXt<Call, ()>;
 type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 impl frame_system::offchain::SigningTypes for Test {
@@ -85,29 +85,29 @@ impl frame_system::offchain::SigningTypes for Test {
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
 where
-	RuntimeCall: From<LocalCall>,
+	Call: From<LocalCall>,
 {
 	type Extrinsic = Extrinsic;
-	type OverarchingCall = RuntimeCall;
+	type OverarchingCall = Call;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
 where
-	RuntimeCall: From<LocalCall>,
+	Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-		call: RuntimeCall,
+		call: Call,
 		_public: <Signature as Verify>::Signer,
 		_account: AccountId,
 		nonce: u64,
-	) -> Option<(RuntimeCall, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
+	) -> Option<(Call, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
 		Some((call, (nonce, ())))
 	}
 }
 
 impl Config for Test {
 	type AuthorityId = crypto::FragAuthId;
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type OracleProvider = Test;
 	type Threshold = ConstU64<1>;
 }
@@ -225,7 +225,7 @@ pub fn store_price_(
 	>,
 ) -> DispatchResult {
 	Oracle::store_price(
-		RuntimeOrigin::none(),
+		Origin::none(),
 		oracle_price,
 		sp_core::ed25519::Signature([69u8; 64]), // this can be anything
 	)
@@ -235,7 +235,7 @@ pub fn stop_oracle_(
 	flag: bool,
 ) -> DispatchResult {
 	Oracle::stop_oracle(
-		RuntimeOrigin::root(),
+		Origin::root(),
 		flag,
 	)
 }
@@ -259,7 +259,7 @@ fn offchain_worker_works() {
 		let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
 		assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
 
-		if let RuntimeCall::Oracle(crate::Call::store_price { oracle_price, signature }) = tx.call {
+		if let Call::Oracle(crate::Call::store_price { oracle_price, signature }) = tx.call {
 			assert_eq!(oracle_price.price, expected_data.price);
 			assert_eq!(oracle_price.block_number, expected_data.block_number);
 			assert_eq!(oracle_price.public, expected_data.public);
@@ -293,7 +293,7 @@ fn price_storage_after_offchain_worker_works() {
 		let price: u32 = expected_data.clone().price.try_into().unwrap();
 		let block_number = expected_data.clone().block_number;
 
-		assert_eq!(event, RuntimeEvent::from(Event::NewPrice { price, block_number }));
+		assert_eq!(event, Event::from(pallet_oracle::Event::NewPrice { price, block_number }));
 		assert_eq!(<Price<Test>>::get(), price);
 	});
 }
@@ -306,7 +306,7 @@ fn circuit_breaker_works() {
 			.pop()
 			.expect("Expected one EventRecord to be found")
 			.event;
-		assert_eq!(event, RuntimeEvent::from(Event::OracleStopFlag { is_stopped: true }));
+		assert_eq!(event, Event::from(pallet_oracle::Event::OracleStopFlag { is_stopped: true }));
 	});
 }
 

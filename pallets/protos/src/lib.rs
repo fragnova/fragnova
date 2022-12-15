@@ -198,12 +198,13 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
-	use pallet_contracts::Determinism;
 	use pallet_detach::{
 		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
 	};
 	use sp_clamor::CID_PREFIX;
 	use sp_runtime::SaturatedConversion;
+	use pallet_clusters::Cluster;
+
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -213,9 +214,10 @@ pub mod pallet {
 		+ pallet_accounts::Config
 		+ pallet_assets::Config
 		+ pallet_contracts::Config
+		+ pallet_clusters::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
 
@@ -393,6 +395,7 @@ pub mod pallet {
 			tags: Vec<Vec<u8>>,
 			linked_asset: Option<LinkedAsset>,
 			license: UsageLicense<T::AccountId>,
+			cluster: Option<Cluster<T::AccountId>>,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -969,11 +972,10 @@ pub mod pallet {
 									who.clone(),
 									contract_address,
 									0u32.saturated_into(),
-									Weight::from_ref_time(1_000_000), // TODO determine this limit better should not be too high indeed
+									1_000_000, // TODO determine this limit better should not be too high indeed
 									None,
 									data,
 									false,
-									Determinism::Deterministic,
 								)
 								.result
 								.map_err(|e| {

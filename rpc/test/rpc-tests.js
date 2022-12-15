@@ -8,14 +8,15 @@ let api;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const upload = async (signer, data, references=[], category={text: "plain"}, tags=[], linkedAsset=null, license="Closed") => {
+const upload = async (signer, data, references=[], category={text: "plain"}, tags=[], linkedAsset=null, license="Closed", cluster=null) => {
   const txHash = await api.tx.protos.upload(
     references,
     category,
     tags,
     linkedAsset,
     license,
-    data
+    cluster,
+    data,
   ).signAndSend(signer);
   console.log(arguments.callee.name, 'sent with transaction hash', txHash.toHex());
   await sleep(6000);

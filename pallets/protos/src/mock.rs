@@ -52,6 +52,7 @@ frame_support::construct_runtime!(
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
 		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>},
+		Clusters: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -76,8 +77,8 @@ impl frame_system::Config for Test {
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
-	type RuntimeOrigin = RuntimeOrigin;
-	type RuntimeCall = RuntimeCall;
+	type Origin = Origin;
+	type Call = Call;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -85,7 +86,7 @@ impl frame_system::Config for Test {
 	type AccountId = sp_core::ed25519::Public;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -98,7 +99,7 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<2>;
 }
 
-pub type Extrinsic = TestXt<RuntimeCall, ()>;
+pub type Extrinsic = TestXt<Call, ()>;
 type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 impl frame_system::offchain::SigningTypes for Test {
@@ -108,22 +109,22 @@ impl frame_system::offchain::SigningTypes for Test {
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
 where
-	RuntimeCall: From<LocalCall>,
+	Call: From<LocalCall>,
 {
-	type OverarchingCall = RuntimeCall;
+	type OverarchingCall = Call;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
 where
-	RuntimeCall: From<LocalCall>,
+	Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-		call: RuntimeCall,
+		call: Call,
 		_public: <Signature as Verify>::Signer,
 		_account: AccountId,
 		nonce: u64,
-	) -> Option<(RuntimeCall, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
+	) -> Option<(Call, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
 		Some((call, (nonce, ())))
 	}
 }
@@ -138,7 +139,7 @@ impl pallet_randomness_collective_flip::Config for Test {}
 impl pallet_balances::Config for Test {
 	type Balance = Balance;
 	type DustRemoval = ();
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	/// The minimum amount required to keep an account open.
 	type ExistentialDeposit = ConstU128<500>;
 	type AccountStore = System;
@@ -154,7 +155,7 @@ parameter_types! {
 }
 
 impl pallet_accounts::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = ();
@@ -175,7 +176,7 @@ parameter_types! {
 	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
 }
 impl pallet_assets::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type Balance = Balance;
 	type AssetId = u64;
 	type Currency = Balances;
@@ -189,11 +190,10 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
-	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 }
 
 impl pallet_protos::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type WeightInfo = ();
 	type StorageBytesMultiplier = StorageBytesMultiplier;
 	type CurationExpiration = ConstU64<5>;
@@ -201,9 +201,17 @@ impl pallet_protos::Config for Test {
 }
 
 impl pallet_detach::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_clusters::Config for Test {
+	type Event = Event;
+	type NameLimit = ConstU32<10>;
+	type DataLimit = ConstU32<100>;
+	type MembersLimit = ConstU32<20>;
+	type RoleSettingsLimit = ConstU32<20>;
 }
 
 impl pallet_timestamp::Config for Test {
@@ -215,8 +223,8 @@ impl pallet_timestamp::Config for Test {
 }
 
 impl pallet_proxy::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
+	type Event = Event;
+	type Call = Call;
 	type Currency = ();
 	type ProxyType = ();
 	type ProxyDepositBase = ConstU32<1>;
@@ -238,13 +246,13 @@ impl OracleContract for Test {
 
 impl pallet_oracle::Config for Test {
 	type AuthorityId = pallet_oracle::crypto::FragAuthId;
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type OracleProvider = Test;
 	type Threshold = ConstU64<1>;
 }
 
 parameter_types! {
-	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
+	pub const DeletionWeightLimit: Weight = 500_000_000_000;
 	pub MySchedule: pallet_contracts::Schedule<Test> = {
 		let mut schedule = <pallet_contracts::Schedule<Test>>::default();
 		// We want stack height to be always enabled for tests so that this
@@ -254,14 +262,16 @@ parameter_types! {
 	};
 	pub static DepositPerByte: u64 = 1;
 	pub const DepositPerItem: u64 = 2;
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(2 * WEIGHT_PER_SECOND);
 }
 
 impl pallet_contracts::Config for Test {
 	type Time = Timestamp;
 	type Randomness = CollectiveFlip;
 	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
+	type Event = Event;
+	type Call = Call;
 	type CallFilter = frame_support::traits::Nothing;
 	type DepositPerItem = DepositPerItem;
 	type DepositPerByte = DepositPerByte;
@@ -273,7 +283,9 @@ impl pallet_contracts::Config for Test {
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<BlockWeights>;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
 }
 

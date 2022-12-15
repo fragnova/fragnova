@@ -311,13 +311,14 @@ pub mod pallet {
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
+	use sp_clamor::get_vault_id;
 	use pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachedHashes, SupportedChains};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_protos::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 		/// Weight functions needed for pallet_fragments.
 		type WeightInfo: WeightInfo;
 	}
@@ -648,7 +649,7 @@ pub mod pallet {
 
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
-			let vault = Self::get_vault_id(hash);
+			let vault: T::AccountId = get_vault_id(hash);
 
 			match metadata.currency {
 				Currency::Native => {
@@ -1110,7 +1111,7 @@ pub mod pallet {
 			let fragment_data =
 				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
 
-			let vault = &Self::get_vault_id(definition_hash); // Get the Vault Account ID of `definition_hash`
+			let vault: T::AccountId = get_vault_id(definition_hash); // Get the Vault Account ID of `definition_hash`
 
 			let quantity = match options {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
@@ -1460,13 +1461,6 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// **Get** the **Account ID** of the Fragment Definition `definition_hash`**
-		///
-		/// This Account ID is determinstically computed using the Fragment Definition `definition_hash`
-		pub fn get_vault_id(definition_hash: Hash128) -> T::AccountId {
-			let hash = blake2_256(&[&b"fragments-vault"[..], &definition_hash].concat());
-			T::AccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
-		}
 
 		/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `definition_hash`,
 		/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
