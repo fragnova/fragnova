@@ -49,7 +49,8 @@ benchmarks! {
 				Vec::<Vec<u8>>::new(),
 				None,
 				UsageLicense::Closed,
-				proto_data.clone()
+				None,
+				proto_data.clone(),
 			)?;
 			let proto_hash = blake2_256(&proto_data);
 			Ok(proto_hash)
@@ -62,7 +63,7 @@ benchmarks! {
 		let license = UsageLicense::Closed;
 		let data = vec![7u8; d as usize];
 
-	}: upload(RawOrigin::Signed(caller), references, category, tags, linked_asset, license, data.clone())
+	}: upload(RawOrigin::Signed(caller), references, category, tags, linked_asset, license, None, data.clone())
 	verify {
 		let proto_hash = blake2_256(&data);
 		let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
@@ -85,7 +86,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -98,7 +100,8 @@ benchmarks! {
 				Vec::<Vec<u8>>::new(),
 				None,
 				UsageLicense::Closed,
-				proto_data.clone()
+				None,
+				proto_data.clone(),
 			)?;
 			let proto_hash = blake2_256(&proto_data);
 			Ok(proto_hash)
@@ -130,7 +133,7 @@ benchmarks! {
 		let proto_hash = blake2_256(immutable_data.as_slice());
 		let references = vec![];
 
-		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, UsageLicense::Closed, immutable_data.clone())?;
+		Protos::<T>::upload(RawOrigin::Signed(caller.clone()).into(), references, Categories::Text(TextCategories::Plain), <Vec<Vec<u8>>>::new(), None, UsageLicense::Closed, None, immutable_data.clone())?;
 
 		let public: [u8; 33] = [2, 44, 133, 69, 18, 57, 0, 152, 97, 145, 160, 85, 122, 14, 119, 232, 88, 169, 142, 77, 139, 133, 214, 67, 188, 128, 137, 28, 23, 247, 242, 193, 104];
 		let target_account: Vec<u8> = [203, 109, 249, 222, 30, 252, 167, 163, 153, 138, 142, 173, 78, 2, 21, 157, 95, 169, 156, 62, 13, 79, 214, 67, 38, 103, 57, 11, 180, 114, 104, 84].to_vec();
@@ -154,7 +157,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -178,7 +182,8 @@ benchmarks! {
 			Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
