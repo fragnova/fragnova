@@ -96,7 +96,7 @@ use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use ethabi::{ParamType, ethereum_types::U256};
+	use ethabi::{ethereum_types::U256, ParamType};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use sp_core::{ed25519, offchain::Timestamp, H256};
@@ -150,6 +150,8 @@ pub mod pallet {
 		pub fn get_contract_address(&self) -> Vec<u8> {
 			match self {
 				OracleProvider::Chainlink(address) => address.clone(),
+				// Uniswap v3 Quoter smart contract address: 0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6
+				// https://docs.uniswap.org/contracts/v3/reference/periphery/lens/Quoter
 				OracleProvider::Uniswap(address) => address.clone(),
 			}
 		}
@@ -364,7 +366,6 @@ pub mod pallet {
 				if let Err(e) = Self::fetch_price(block_number, oracle_provider, &geth_uri) {
 					log::error!("Failed to fetch price from oracle with error: {}", e);
 				}
-
 			} else {
 				log::debug!("The IsOracleStopped flag is set on {:?}. Call stop_oracle(false) to restart it.", is_oracle_stopped);
 				return
@@ -376,9 +377,8 @@ pub mod pallet {
 			oracle_provider: OracleProvider,
 			geth_uri: &str,
 		) -> Result<(), &'static str> {
-
 			let contract_address = oracle_provider.get_contract_address();
-			let function = Self::get_function_to_call(&oracle_provider);
+			let data = Self::get_eth_call_data(&oracle_provider);
 
 			let req = json!({
 				"jsonrpc": "2.0",
@@ -386,7 +386,7 @@ pub mod pallet {
 				"params": [
 					{
 					"to": contract_address.as_slice(),
-					"data": function,
+					"data": data,
 					},
 					"latest"
 				],
@@ -418,11 +418,7 @@ pub mod pallet {
 			// -- Sign using any account
 			Signer::<T, T::AuthorityId>::any_account()
 				.send_unsigned_transaction(
-					|account| OraclePrice {
-						price,
-						block_number,
-						public: account.public.clone(),
-					},
+					|account| OraclePrice { price, block_number, public: account.public.clone() },
 					|payload, signature| Call::store_price { oracle_price: payload, signature },
 				)
 				.ok_or_else(|| "Failed to sign transaction")?
@@ -433,18 +429,81 @@ pub mod pallet {
 		}
 
 		/// Get the smart contract function of the selected oracle provider
-		pub fn get_function_to_call(provider: &OracleProvider) -> &'static str {
+		pub fn get_eth_call_data(provider: &OracleProvider) -> &'static str {
 			match provider {
 				// call `latestRoundData()` function from ChainLink Feed Price contract
 				// `data` is first 4 bytes of `keccak_256(latestRoundData())`, padded - Use https://emn178.github.io/online-tools/keccak_256.html
-				OracleProvider::Chainlink(_) => "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
-				OracleProvider::Uniswap(_) => "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+				OracleProvider::Chainlink(_) =>
+					"0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+
+				/*
+				Uniswap provides a function in the Quoter smart contracts that "returns the amount out received for a given exact input but for a swap of a single pool":
+				https://docs.uniswap.org/contracts/v3/reference/periphery/lens/Quoter#quoteexactinputsingle
+				 function quoteExactInputSingle(
+					address tokenIn,
+					address tokenOut,
+					uint24 fee,
+					uint256 amountIn,
+					uint160 sqrtPriceLimitX96
+				  ) public returns (uint256 amountOut)
+
+			  	Using web3 library we can obtain the function encoding as follows:
+				  web3.eth.abi.encodeFunctionCall({
+					  name: 'quoteExactInputSingle',
+					  type: 'function',
+					  inputs: [{
+						  type: 'address',
+						  name: 'tokenIn'
+					  },{
+						  type: 'address',
+						  name: 'tokenOut'
+					  },{
+						  type: 'uint24',
+						  name: 'fee'
+					  },{
+						type: 'uint256',
+						name: 'amountIn'
+					  },{
+						type: 'uint160',
+						name: 'sqrtPriceLimitX96'
+					  }]
+				  }, [
+					  "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",  // ETH
+					  "0xdac17f958d2ee523a2206206994597c13d831ec7", // USDT
+					  "500", // fee. There are three fee tiers: 500, 3000, 10000.
+					  "1000000000000000000", // 1 ETH (expressed with 18 decimals)
+					  "0"
+				  ]);
+				  The result is: 0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000
+				  The first 4 bytes are the function selector, the rest are the parameters.
+
+				  Using the above result and knowing the address of the Quoter contracts on ethereum mainnet, we can call eth_call:
+				  curl --url https://mainnet.infura.io/v3/48a1226dccb4437f9f89005e62140779 -X POST -H "Content-Type: application/json" \
+				  -d '{"jsonrpc": 2,"method": "eth_call","params": \
+					[{\
+					"to": "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",\ // Quoter smart contract address in mainnet
+					"data": "<the result above>"},\
+					"latest"],"id":1}'
+
+				  Response: {"jsonrpc":"2.0","id":1,"result":"0x000000000000000000000000000000000000000000000000000000004c0fbc35"}
+
+				  Using web3 library we can decode the result as follows:
+				  > ethers.utils.formatUnits(
+								0x000000000000000000000000000000000000000000000000000000004c0fbc35, // the response above
+								6) // the decimals of the tokenOut (USDT)
+					'1276.099637' // the price of 1 ETH in USDT
+
+				*/
+				OracleProvider::Uniswap(_) =>
+					"0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000",
 			}
 		}
 
 		/// Fetch the latest price from the selected oracle provider.
-		///
-		pub fn get_price_from_oracle_data(provider: &OracleProvider, data: Vec<u8>) -> Result<U256, &'static str> {
+		pub fn get_price_from_oracle_data(
+			provider: &OracleProvider,
+			data: Vec<u8>,
+		) -> Result<U256, &'static str> {
 			match provider {
 				OracleProvider::Chainlink(_) => {
 					let data = ethabi::decode(
@@ -458,12 +517,14 @@ pub mod pallet {
 						])],
 						&data,
 					)
-						.map_err(|_| "Invalid response")?;
+					.map_err(|_| "Invalid response")?;
 
 					let tuple = data[0].clone().into_tuple().ok_or_else(|| "Invalid tuple")?;
-					let _round_id = tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
+					let _round_id =
+						tuple[0].clone().into_uint().ok_or_else(|| "Invalid roundId")?;
 					let price = tuple[1].clone().into_int().ok_or_else(|| "Invalid token")?;
-					let _updated_at = tuple[3].clone().into_uint().ok_or_else(|| "Invalid updatedAt")?;
+					let _updated_at =
+						tuple[3].clone().into_uint().ok_or_else(|| "Invalid updatedAt")?;
 					let _answered_in_round =
 						tuple[4].clone().into_uint().ok_or_else(|| "Invalid answeredInRound")?;
 
@@ -481,9 +542,19 @@ pub mod pallet {
 					ensure!(_answered_in_round.ge(&_round_id), "Stale price");
 
 					Ok(price)
-				}
+				},
 
-				OracleProvider::Uniswap(_) => Ok(U256::from(1))
+				OracleProvider::Uniswap(_) => {
+					let data = ethabi::decode(
+						&[ParamType::Uint(256)],
+						&data,
+					).map_err(|_| "Invalid response")?;
+
+					let price: U256 = data[0].clone().into_uint().ok_or_else(|| "Invalid token")?;
+					ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
+
+					Ok(price)
+				},
 			}
 		}
 	}
@@ -540,8 +611,8 @@ pub mod pallet {
 					.and_provides((
 						oracle_price.price,
 						oracle_price.block_number,
-						oracle_price.public.clone())
-					)
+						oracle_price.public.clone(),
+					))
 					.propagate(false)
 					.build()
 			} else {

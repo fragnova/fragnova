@@ -114,7 +114,8 @@ impl Config for Test {
 
 impl OracleContract for Test {
 	fn get_provider() -> pallet_oracle::OracleProvider {
-		OracleProvider::Chainlink("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode()) // never used
+		//OracleProvider::Chainlink("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode())
+		OracleProvider::Uniswap("0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6".encode())
 	}
 }
 
@@ -147,8 +148,10 @@ pub fn hardcode_expected_request_and_response(state: &mut testing::OffchainState
 				"params": [
 					{
 					"to": contract.as_slice(),
-					// first 4 bytes of keccak_256(latestRoundData()) function, padded - Use https://emn178.github.io/online-tools/keccak_256.html
-					"data": "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+					// CHAINLINK: first 4 bytes of keccak_256(latestRoundData()) function, padded - Use https://emn178.github.io/online-tools/keccak_256.html
+					// 0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000
+					// UNISWAP
+						"data": "0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000",
 					},
 					"latest"
 				],
@@ -157,19 +160,30 @@ pub fn hardcode_expected_request_and_response(state: &mut testing::OffchainState
 			.to_string()
 			.into_bytes(),
 		response: Some(
+			// CHAINLINK MOCK RESPONSE
+			// json!({
+			// 		"id": 5,
+			// 		"jsonrpc": "2.0",
+			// 		"result": format!("0x{}", hex::encode(
+			// 					ethabi::encode(
+			// 						&[ Token::Tuple(vec![
+			// 								Token::Uint(U256::from(123)), //roundId: The round ID.
+			// 								Token::Int(U256::from(10000000)), //answer: The price.
+			// 								Token::Uint(U256::from(1667)), // startedAt: Timestamp of when the round started.
+			// 								Token::Uint(U256::from(1668)),// updatedAt: Timestamp of when the round was updated
+			// 								Token::Uint(U256::from(124)),// answeredInRound: The round ID of the round in which the answer was computed.
+			// 								])
+			// 						]
+			// 					),
+			// 				))
+			// 	})
+			// UNISWAP MOCK RESPONSE
 			json!({
 					"id": 5,
 					"jsonrpc": "2.0",
 					"result": format!("0x{}", hex::encode(
 								ethabi::encode(
-									&[ Token::Tuple(vec![
-											Token::Uint(U256::from(123)), //roundId: The round ID.
-											Token::Int(U256::from(10000000)), //answer: The price.
-											Token::Uint(U256::from(1667)), // startedAt: Timestamp of when the round started.
-											Token::Uint(U256::from(1668)),// updatedAt: Timestamp of when the round was updated
-											Token::Uint(U256::from(124)),// answeredInRound: The round ID of the round in which the answer was computed.
-											])
-									]
+									&[ Token::Uint(U256::from(1269132621)),]
 								),
 							))
 				})
@@ -250,7 +264,7 @@ fn offchain_worker_works() {
 		Oracle::fetch_price_from_oracle(1);
 
 		let expected_data = OraclePrice {
-			price: U256::from(10000000),
+			price: U256::from(1269132621),
 			block_number: System::block_number(),
 			public: <Test as SigningTypes>::Public::from(ed25519_public_key),
 		};
@@ -279,7 +293,7 @@ fn offchain_worker_works() {
 fn price_storage_after_offchain_worker_works() {
 	new_test_ext().execute_with(|| {
 		let expected_data = OraclePrice {
-			price: U256::from(10000000),
+			price: U256::from(1300),
 			block_number: System::block_number(),
 			public: sp_core::ed25519::Public([69u8; 32]),
 		};
