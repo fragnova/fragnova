@@ -178,7 +178,7 @@ pub mod pallet {
 	/// Storage use for the latest price received from the oracle.
 	#[pallet::storage]
 	#[pallet::getter(fn prices)]
-	pub(super) type Price<T: Config> = StorageValue<_, u32, ValueQuery>;
+	pub(super) type Price<T: Config> = StorageValue<_, u128, ValueQuery>;
 
 	/// **StorageMap** that maps **a FRAG token locking or unlocking event** to a **number of votes ()**.
 	/// The key for this map is:
@@ -257,7 +257,7 @@ pub mod pallet {
 
 			let data_hash: H256 = oracle_price.using_encoded(blake2_256).into();
 
-			let latest_price: u32 =
+			let latest_price: u128 =
 				oracle_price.price.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 			ensure!(!latest_price.is_zero(), Error::<T>::PriceIsZero);
 
@@ -317,7 +317,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event generated when new price is accepted.
-		NewPrice { price: u32, block_number: T::BlockNumber },
+		NewPrice { price: u128, block_number: T::BlockNumber },
 		/// Oracle stop flag updated
 		OracleStopFlag { is_stopped: bool },
 	}
@@ -345,7 +345,7 @@ pub mod pallet {
 		}
 
 		/// A helper function to allow other pallets to fetch the latest FRAG price.
-		pub fn get_price() -> u32 {
+		pub fn get_price() -> u128 {
 			<Price<T>>::get()
 		}
 

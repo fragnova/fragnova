@@ -27,6 +27,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
 	RuntimeAppPublic,
 };
+use sp_runtime::traits::ConstU8;
 use pallet_oracle::{OracleContract, OracleProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -178,8 +179,8 @@ impl pallet_accounts::Config for Test {
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU128<80>;
-	type InitialPercentageNova = ConstU128<20>;
+	type InitialPercentageTickets = ConstU8<80>;
+	type InitialPercentageNova = ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
 }
 

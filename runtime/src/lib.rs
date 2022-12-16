@@ -60,7 +60,7 @@ pub use sp_runtime::{Perbill, Permill};
 use scale_info::prelude::string::String;
 
 use codec::Encode;
-use sp_runtime::traits::{SaturatedConversion, StaticLookup};
+use sp_runtime::traits::{ConstU8, SaturatedConversion, StaticLookup};
 
 use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 use pallet_protos::{GetGenealogyParams, GetProtosParams};
@@ -444,8 +444,8 @@ impl pallet_accounts::Config for Runtime {
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU128<80>;
-	type InitialPercentageNova = ConstU128<20>;
+	type InitialPercentageTickets = sp_runtime::traits::ConstU8<80>;
+	type InitialPercentageNova = ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
 }
 

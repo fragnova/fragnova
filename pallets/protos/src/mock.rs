@@ -12,9 +12,7 @@ use frame_system;
 
 use sp_core::{ed25519::Signature, H256};
 
-use sp_runtime::traits::{
-	BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
-};
+use sp_runtime::traits::{BlakeTwo256, ConstU128, ConstU8, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify};
 
 use sp_runtime::testing::{Header, TestXt};
 use pallet_oracle::{OracleContract, OracleProvider};
@@ -163,8 +161,8 @@ impl pallet_accounts::Config for Test {
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU128<80>;
-	type InitialPercentageNova = ConstU128<20>;
+	type InitialPercentageTickets = sp_runtime::traits::ConstU8<80>;
+	type InitialPercentageNova = sp_runtime::traits::ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
 }
 

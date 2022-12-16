@@ -304,7 +304,7 @@ fn price_storage_after_offchain_worker_works() {
 			.expect("Expected one EventRecord to be found")
 			.event;
 
-		let price: u32 = expected_data.clone().price.try_into().unwrap();
+		let price: u128 = expected_data.clone().price.try_into().unwrap();
 		let block_number = expected_data.clone().block_number;
 
 		assert_eq!(event, Event::from(pallet_oracle::Event::NewPrice { price, block_number }));

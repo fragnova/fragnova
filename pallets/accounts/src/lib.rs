@@ -201,10 +201,7 @@ pub mod pallet {
 		Twox64Concat,
 	};
 	use frame_system::pallet_prelude::*;
-	use sp_runtime::{
-		traits::{CheckedAdd, Saturating, Zero},
-		SaturatedConversion,
-	};
+	use sp_runtime::{traits::{CheckedAdd, Saturating, Zero}, SaturatedConversion, Percent};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -251,11 +248,11 @@ pub mod pallet {
 
 		/// Initial amount of Tickets that are converted as soon as FRAG are locked
 		#[pallet::constant]
-		type InitialPercentageTickets: Get<u128>;
+		type InitialPercentageTickets: Get<u8>;
 
 		/// Initial amount of NOVA that are converted as soon as FRAG are locked
 		#[pallet::constant]
-		type InitialPercentageNova: Get<u128>;
+		type InitialPercentageNova: Get<u8>;
 
 		/// Amount of Tickets/NOVA equal to 1 USD
 		#[pallet::constant]
@@ -1396,7 +1393,7 @@ pub mod pallet {
 			}
 		}
 
-		fn initial_amount(amount: u128, percent: u128, current_frag_price: u128) -> u128 {
+		fn initial_amount(amount: u128, percent: u8, current_frag_price: u128) -> u128 {
 			if amount == 0 {
 				return 0;
 			}
@@ -1405,11 +1402,12 @@ pub mod pallet {
 		}
 
 		/// Calculate a percentage
-		pub fn apply_percent(amount: u128, percent: u128) -> u128 {
+		pub fn apply_percent(amount: u128, percent: u8) -> u128 {
 			if amount == 0 {
 				return 0;
 			}
-			amount * percent / 100
+			//amount * percent / 100
+			Percent::from_percent(percent).mul_ceil(amount) as u128
 		}
 
 		/// Get the price of FRAG from pallet-oracle

@@ -8,17 +8,17 @@ use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::Ty
 use frame_system::offchain::{SignedPayload, SigningTypes};
 use serde_json::json;
 use sp_core::{offchain::testing, H256, Pair};
-use sp_runtime::{offchain::storage::StorageValueRef, SaturatedConversion};
+use sp_runtime::{offchain::storage::StorageValueRef, Percent, SaturatedConversion};
 
 pub use internal_lock_update_tests::lock_;
 pub use link_tests::link_;
 use pallet_oracle::OraclePrice;
 
-fn apply_percent(amount: u128, percent: u128) -> u128 {
+fn apply_percent(amount: u128, percent: u8) -> u128 {
 	if amount == 0 {
 		return 0;
 	}
-	amount * percent / 100
+	sp_runtime::Percent::from_percent(percent).mul_ceil(amount) as u128
 }
 
 fn get_oracle_price() -> u128 {
