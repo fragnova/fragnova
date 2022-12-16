@@ -27,7 +27,7 @@ fn get_oracle_price() -> u128 {
 
 pub fn store_price_() -> DispatchResult {
 	let oracle_price = OraclePrice {
-		price: U256::from(1),
+		price: U256::from(1000000),
 		block_number: System::block_number(),
 		public: sp_core::ed25519::Public([69u8; 32]),
 	};

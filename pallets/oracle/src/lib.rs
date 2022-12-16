@@ -552,7 +552,6 @@ pub mod pallet {
 
 					let price: U256 = data[0].clone().into_uint().ok_or_else(|| "Invalid token")?;
 					ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");
-
 					Ok(price)
 				},
 			}
