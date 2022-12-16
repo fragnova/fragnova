@@ -381,6 +381,7 @@ mod validation_logic {
 	/// Return the list of `Call` that will be directly called by the call `c`, if any.
 	fn get_child_calls(c: &Call) -> &[Call] {
 		match c {
+			// TODO - Add `multisig.***` and `utility.***`
 			Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
 			Call::Utility(pallet_utility::Call::batch_all { calls }) |
 			Call::Utility(pallet_utility::Call::force_batch { calls }) => calls,
