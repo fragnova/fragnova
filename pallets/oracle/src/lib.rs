@@ -99,6 +99,8 @@ pub mod pallet {
 	use ethabi::{ethereum_types::U256, ParamType};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
+	use scale_info::prelude::{format, string::String};
+	use core::str::FromStr;
 	use sp_core::{ed25519, offchain::Timestamp, H256};
 	use sp_runtime::{
 		traits::ValidateUnsigned, transaction_validity::TransactionSource, MultiSigner,
@@ -345,8 +347,12 @@ pub mod pallet {
 		}
 
 		/// A helper function to allow other pallets to fetch the latest FRAG price.
-		pub fn get_price() -> u128 {
-			<Price<T>>::get()
+		pub fn get_price() -> Result<u128, &'static str> {
+			let price = <Price<T>>::get() as f64 / 1e6; // 1e6 is the number of decimal of USDT
+			let price = format!("{:.0}", price);
+			let price = u128::from_str(&price).map_err(|_| "Error while parsing price from oracle")?;
+
+			Ok(price)
 		}
 
 		/// A helper function to fetch the price, sign payload and send an unsigned transaction
@@ -495,6 +501,7 @@ pub mod pallet {
 
 				*/
 				OracleProvider::Uniswap(_) =>
+					// encoding of quoteExactInputSingle to ETH/USDT pool. TODO to change when FRAG pool will be known
 					"0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000",
 			}
 		}

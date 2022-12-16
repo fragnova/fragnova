@@ -1417,13 +1417,7 @@ pub mod pallet {
 
 		/// Get the price of FRAG from pallet-oracle
 		pub fn get_oracle_price() -> Result<u128, &'static str> {
-			// This calculation is made here and not in pallet-oracle because pallet-oracle stores the original U256 value returned the oracle.
-			// Here instead we make the real actual price considering the correct amount of decimals.
-			let price = pallet_oracle::Pallet::<T>::get_price();
-			let price = price as f64 / 1e6;
-			let price = format!("{:.0}", price);
-			let price =
-				u128::from_str(&price).map_err(|_| "Error while parsing price from oracle")?;
+			let price = pallet_oracle::Pallet::<T>::get_price().map_err(|_| "Error while retrieving price from oracle")?;
 
 			Ok(price)
 		}
@@ -1432,7 +1426,7 @@ pub mod pallet {
 		/// Refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 		pub fn eth_lock_period_to_weeks(lock_period: u8) -> Result<u8, Error<T>> {
 			let sec = match lock_period {
-				0 => 2,  // 2 weeksu64
+				0 => 2,  // 2 weeks
 				1 => 4,  // 1 month
 				2 => 13, // 3 months
 				3 => 26, // 6 months

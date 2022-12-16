@@ -451,8 +451,19 @@ impl pallet_accounts::Config for Runtime {
 
 impl pallet_oracle::OracleContract for Runtime {
 	fn get_provider() -> pallet_oracle::OracleProvider {
+		/* https://docs.uniswap.org/contracts/v3/reference/deployments
+		 The contract of the Quoter smart contract on Ethereum mainnet that provides quotes for swaps.
+		 It allows getting the expected amount out or amount in for a given swap by optimistically executing the swap
+		 and checking the amounts in the callback.
+		*/
+		OracleProvider::Uniswap("0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6".encode())
+
+		/*
+		OracleProvider::Chainlink("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode())
 		// https://docs.chain.link/docs/data-feeds/price-feeds/addresses/
-		OracleProvider::Uniswap("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode())
+		"0x547a514d5e3769680Ce22B2361c10Ea13619e8a9" // the address of the price feed contract of AAVE/USD on Ethereum mainnet.
+		TODO to change when FRAG pool will be known
+		*/
 	}
 }
 
