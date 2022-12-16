@@ -79,6 +79,7 @@ pub trait OracleContract {
 impl OracleContract for () {}
 
 /// enum that represents the price feed provider.
+/// `Vec<u8>` is the address of the smart contract to use.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum OracleProvider {
 	/// Chainlink provider
@@ -230,7 +231,6 @@ pub mod pallet {
 		}
 
 		/// Remove a Clamor Account ID from `FragKeys`
-
 		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
 		#[pallet::weight(10000)] // TODO
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
@@ -245,7 +245,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// This function stores the new price received from the Oracle into a structure that contains a list of the last N-prices.
+		/// This function stores the original price (U256) received from the selected oracle provider.
 		#[pallet::weight(10000)] // TODO
 		pub fn store_price(
 			origin: OriginFor<T>,
@@ -268,7 +268,6 @@ pub mod pallet {
 			// voting
 			let threshold = T::Threshold::get();
 			if threshold > 1 {
-				// 问Gio
 				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
 				if let Some(current_votes) = current_votes {
 					// Number of votes for the key `data_hash` in EVMLinkVoting
@@ -346,7 +345,9 @@ pub mod pallet {
 			}
 		}
 
-		/// A helper function to allow other pallets to fetch the latest FRAG price.
+		/// A helper function to allow other pallets to fetch the latest FRAG price with correct decimals.
+		///
+		/// TODO: the decimals at the moment are USDT (6 decimals). It needs to be changed when FRAG pool will be available and the second token will be known.
 		pub fn get_price() -> Result<u128, &'static str> {
 			let price = <Price<T>>::get() as f64 / 1e6; // 1e6 is the number of decimal of USDT
 			let price = format!("{:.0}", price);
@@ -355,7 +356,7 @@ pub mod pallet {
 			Ok(price)
 		}
 
-		/// A helper function to fetch the price, sign payload and send an unsigned transaction
+		/// A helper function to fetch the price, sign payload and send an unsigned transaction.
 		pub fn fetch_price_from_oracle(block_number: T::BlockNumber) {
 			let is_oracle_stopped = <IsOracleStopped<T>>::get();
 			if !is_oracle_stopped {
@@ -434,72 +435,87 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Get the smart contract function of the selected oracle provider
+		/// Get the data needed to execute **eth_call** to the selected oracle provider.
+		///
+		/// For **Chainlink** it encodes the call to `latestRoundData()` function from ChainLink Feed Price contract.
+		/// It uses the first 4 bytes of `keccak_256(latestRoundData())`, padded - Use https://emn178.github.io/online-tools/keccak_256.html.
+		///
+		/// For **Uniswap** it encodes the call to `quoteExactInputSingle` function in the Quoter smart contracts that _returns the amount out received for a given exact input but for a swap of a single pool_:
+		/// https://docs.uniswap.org/contracts/v3/reference/periphery/lens/Quoter#quoteexactinputsingle.
+		///
+		/// The pool used at this moment is ETH/USDT. (TODO: it needs to be changed when the FRAG pool will be available).
+		///
+		// ```
+		// function quoteExactInputSingle(
+		// 		address tokenIn,
+		// 		address tokenOut,
+		// 		uint24 fee,
+		// 		uint256 amountIn,
+		// 		uint160 sqrtPriceLimitX96
+		// ) public returns (uint256 amountOut)
+		// ```
+		// Using web3 library we can obtain the function encoding as follows:
+		// ```
+		// web3.eth.abi.encodeFunctionCall({
+		// 					name: 'quoteExactInputSingle',
+		// 					type: 'function',
+		// 					inputs: [{
+		// 								type: 'address',
+		// 								name: 'tokenIn'
+		// 				 			},{
+		// 								type: 'address',
+		// 								name: 'tokenOut'
+		// 				 			},{
+		// 								type: 'uint24',
+		// 					 			name: 'fee'
+	    // 					 		},{
+		// 								type: 'uint256',
+		// 								name: 'amountIn'
+	    // 				  	 		},{
+		// 								type: 'uint160',
+		// 								name: 'sqrtPriceLimitX96'
+		// 							}]
+		// 				  	}, [
+		// 					  "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",  // ETH
+		// 					  "0xdac17f958d2ee523a2206206994597c13d831ec7", // USDT
+		// 					  "500", // fee. There are three fee tiers: 500, 3000, 10000.
+		// 					  "1000000000000000000", // 1 ETH (expressed with 18 decimals)
+		// 					  "0"
+		// ]);
+		// ```
+		//
+		// The result is: `0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000`
+		// The first 4 bytes are the function selector, the rest are the parameters.
+		//
+		// Using the above result and knowing the address of the Quoter contracts on ethereum mainnet, we can call `eth_call`:
+		//
+		// ```
+		// curl --url https://mainnet.infura.io/v3/<API-TOKEN> -X POST -H "Content-Type: application/json" \
+		// 		-d '{"jsonrpc": 2,"method": "eth_call","params": \
+		// 			[{\
+		// 				"to": "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",\ // Quoter smart contract address in mainnet
+		// 				"data": "<the result above>"},\
+		// 				latest"],"id":1}'
+		//```
+		// Response:
+		// ```
+		// {"jsonrpc":"2.0","id":1,"result":"0x000000000000000000000000000000000000000000000000000000004c0fbc35"}
+		// ```
+		//
+		// Using web3 library we can decode the result as follows:
+		// ```
+		// ethers.utils.formatUnits(
+		// 				0x000000000000000000000000000000000000000000000000000000004c0fbc35, // the response above
+		//					6) // the decimals of the tokenOut (USDT)
+		// ```
+		//
+		// `1276.099637` // the price of 1 ETH in USDT
 		pub fn get_eth_call_data(provider: &OracleProvider) -> &'static str {
 			match provider {
-				// call `latestRoundData()` function from ChainLink Feed Price contract
-				// `data` is first 4 bytes of `keccak_256(latestRoundData())`, padded - Use https://emn178.github.io/online-tools/keccak_256.html
+
 				OracleProvider::Chainlink(_) =>
 					"0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
 
-				/*
-				Uniswap provides a function in the Quoter smart contracts that "returns the amount out received for a given exact input but for a swap of a single pool":
-				https://docs.uniswap.org/contracts/v3/reference/periphery/lens/Quoter#quoteexactinputsingle
-				 function quoteExactInputSingle(
-					address tokenIn,
-					address tokenOut,
-					uint24 fee,
-					uint256 amountIn,
-					uint160 sqrtPriceLimitX96
-				  ) public returns (uint256 amountOut)
-
-			  	Using web3 library we can obtain the function encoding as follows:
-				  web3.eth.abi.encodeFunctionCall({
-					  name: 'quoteExactInputSingle',
-					  type: 'function',
-					  inputs: [{
-						  type: 'address',
-						  name: 'tokenIn'
-					  },{
-						  type: 'address',
-						  name: 'tokenOut'
-					  },{
-						  type: 'uint24',
-						  name: 'fee'
-					  },{
-						type: 'uint256',
-						name: 'amountIn'
-					  },{
-						type: 'uint160',
-						name: 'sqrtPriceLimitX96'
-					  }]
-				  }, [
-					  "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",  // ETH
-					  "0xdac17f958d2ee523a2206206994597c13d831ec7", // USDT
-					  "500", // fee. There are three fee tiers: 500, 3000, 10000.
-					  "1000000000000000000", // 1 ETH (expressed with 18 decimals)
-					  "0"
-				  ]);
-				  The result is: 0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000
-				  The first 4 bytes are the function selector, the rest are the parameters.
-
-				  Using the above result and knowing the address of the Quoter contracts on ethereum mainnet, we can call eth_call:
-				  curl --url https://mainnet.infura.io/v3/48a1226dccb4437f9f89005e62140779 -X POST -H "Content-Type: application/json" \
-				  -d '{"jsonrpc": 2,"method": "eth_call","params": \
-					[{\
-					"to": "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",\ // Quoter smart contract address in mainnet
-					"data": "<the result above>"},\
-					"latest"],"id":1}'
-
-				  Response: {"jsonrpc":"2.0","id":1,"result":"0x000000000000000000000000000000000000000000000000000000004c0fbc35"}
-
-				  Using web3 library we can decode the result as follows:
-				  > ethers.utils.formatUnits(
-								0x000000000000000000000000000000000000000000000000000000004c0fbc35, // the response above
-								6) // the decimals of the tokenOut (USDT)
-					'1276.099637' // the price of 1 ETH in USDT
-
-				*/
 				OracleProvider::Uniswap(_) =>
 					// encoding of quoteExactInputSingle to ETH/USDT pool. TODO to change when FRAG pool will be known
 					"0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000",
