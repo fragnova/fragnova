@@ -8,7 +8,7 @@ use codec::{Decode, Encode};
 use frame_support::BoundedVec;
 pub use pallet::*;
 use sp_clamor::Hash128;
-use sp_std::{vec, vec::Vec};
+use sp_std::{vec, vec::Vec, collections::btree_map::BTreeMap};
 
 #[cfg(test)]
 mod mock;
@@ -33,11 +33,9 @@ pub struct RoleSetting {
 
 /// **Struct** of **Role** belonging to a **Cluster**.
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct Role<TAccountId> {
+pub struct Role {
 	/// Name of the role
 	pub name: Vec<u8>,
-	/// The list of Members associated with the role
-	pub members: Vec<TAccountId>,
 	/// The optional list of Rules associated to the Role
 	pub rules: Option<Rule>,
 	/// The settings of the Role
@@ -60,10 +58,8 @@ pub struct Cluster<TAccountId> {
 	pub name: Vec<u8>,
 	/// The ID of the cluster
 	pub cluster_id: Hash128,
-	/// The list of Roles associated to the Cluster
-	pub roles: Vec<Role<TAccountId>>,
-	/// The list of Members of the Cluster
-	pub members: Vec<TAccountId>,
+	/// The map that contains the list of Roles in Cluster, each associated with an index
+	pub roles: BTreeMap<u64, Role>,
 }
 
 /// **Struct** representing the details about accounts created off-chain by various parties and integrations.
@@ -130,6 +126,28 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ClustersByOwner<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash128>>;
 
+	/// **StorageDoubleMap** that maps a (**AccountId**, **Cluster hash**) with a list of **Role** indexes.
+	#[pallet::storage]
+	pub type Members<T: Config> =
+		StorageDoubleMap<_, Twox64Concat, T::AccountId, Identity, Hash128, Vec<u64>>;
+
+	/// **StorageMap** that maps a **(Cluster hash, role name)** to an **index number**
+	#[pallet::storage]
+	pub type ClusterRoleKeys<T: Config> = StorageMap<_, Twox64Concat, (Hash128, Vec<u8>), u64>;
+
+	/// **StorageValue** that **equals** the **total number of unique ClusterKeys in the blockchain**
+	#[pallet::storage]
+	pub type ClusterRoleKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	/// Enum that indicates the different types of actions that user can do when call `edit_role`.
+	#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+	pub enum Action {
+		/// Delete from the Role
+		DELETE,
+		/// Add into the Role
+		ADD,
+	}
+
 	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -138,13 +156,16 @@ pub mod pallet {
 			cluster_hash: Hash128,
 		},
 		RoleCreated {
-			role_hash: Hash128,
+			cluster_hash: Hash128,
+			role_name: Vec<u8>,
 		},
 		RoleEdited {
-			role_hash: Hash128,
+			cluster_hash: Hash128,
+			role_name: Vec<u8>,
 		},
 		RoleDeleted {
-			role_hash: Hash128,
+			cluster_hash: Hash128,
+			role_name: Vec<u8>,
 		},
 		/// A new sponsored account was added
 		ProxyAccountAdded {
@@ -177,7 +198,7 @@ pub mod pallet {
 		/// The member already exists in the cluster
 		MemberExists,
 		/// Too many members
-		MembersLimitReached,
+		ClusterMembersLimitReached,
 		/// Member not found in the cluster
 		MemberNotFound,
 		/// Account proxy already associated with the cluster account
@@ -190,7 +211,10 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Create a **Cluster** passing a name as input.
+
+		/// Create a new **Cluster**.
+		///
+		/// - `name`: name of the cluster.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn create_cluster(
 			origin: OriginFor<T>,
@@ -221,8 +245,7 @@ pub mod pallet {
 				owner: who.clone(),
 				name: name.into_inner(), // `self.0`
 				cluster_id,
-				roles: vec![],
-				members: vec![],
+				roles: BTreeMap::new(),
 			};
 
 			let minimum_balance =
@@ -254,7 +277,6 @@ pub mod pallet {
 			pallet_proxy::Proxies::<T>::insert(&vault, (bounded_proxies, deposit));
 
 			<Clusters<T>>::insert(cluster_id, cluster);
-			// Don't clone, it's the last usage so let it move!
 			<ClustersByOwner<T>>::append(who, &cluster_id);
 
 			Self::deposit_event(Event::ClusterCreated { cluster_hash: cluster_id });
@@ -264,6 +286,10 @@ pub mod pallet {
 		}
 
 		/// Create a **Role** and assign it to an existing **Cluster**.
+		///
+		/// - `cluster_id`: hash of the cluster
+		/// - `role_name`: name of the role to add into the cluster (BoundedVec limited to T::NameLimit).
+		/// - `settings`: settings of the role (BoundedVec limited to T::RoleSettingsLimit).
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn create_role(
 			origin: OriginFor<T>,
@@ -276,84 +302,131 @@ pub mod pallet {
 			ensure!(!cluster_id.len().is_zero(), Error::<T>::InvalidInput);
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
-			let role_hash = blake2_128(&[&cluster_id.as_slice(), role_name.as_slice()].concat());
+			let role_name = role_name.into_inner();
+			ensure!(
+				!<ClusterRoleKeys<T>>::contains_key((&cluster_id, &role_name)),
+				Error::<T>::RoleExists
+			);
+
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 
 			// Check that the caller is the owner of the cluster
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			// At creation there are no Members and no Rules assigned to a Role
-			let new_role = Role {
-				name: role_name.into_inner(),
-				members: vec![],
-				rules: None,
-				settings: settings.into_inner(),
-			};
-
-			// Check that the role does not exists already in the cluster
-			if cluster.roles.iter().any(|role| new_role.name.eq(&role.name)) {
-				return Err(Error::<T>::RoleExists.into())
-			}
+			let new_role =
+				Role { name: role_name.clone(), rules: None, settings: settings.into_inner() };
 
 			// write
+			let next_index = <ClusterRoleKeysIndex<T>>::try_get().unwrap_or_default() + 1;
+			<ClusterRoleKeys<T>>::insert((&cluster_id, &role_name), next_index);
+			<ClusterRoleKeysIndex<T>>::put(next_index);
+
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let cluster = cluster.as_mut().expect("Should find the cluster");
-				cluster.roles.push(new_role);
+				cluster.roles.insert(next_index, new_role);
 			});
 
-			Self::deposit_event(Event::RoleCreated { role_hash });
-			log::trace!("Role {:?} created and associated to cluster {:?}", role_hash, cluster_id);
+			Self::deposit_event(Event::RoleCreated {
+				cluster_hash: cluster_id,
+				role_name: role_name.clone(),
+			});
+			log::trace!("Role {:?} created and associated to cluster {:?}", &role_name, cluster_id);
 
 			Ok(())
 		}
 
 		/// Edit a **Role**.
+		///
+		/// Adds new members to the role (BoundedVec limited to T::MembersList).
+		/// Adds new settings to the role (BoundedVec limited to T::RoleSettingsLimit).
+		///
+		/// - `role_name`: name of the role to edit.
+		/// - `cluster_id`: hash of the cluster that the role belongs to.
+		/// - `action`: DELETE or ADD
+		/// - `members`: new list of members to be added to the existing list.
+		/// - `settings`: new list of settings to be added to the existing list.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn edit_role(
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
 			cluster_id: Hash128,
-			new_members_list: BoundedVec<T::AccountId, T::MembersLimit>,
-			new_settings: BoundedVec<RoleSetting, T::RoleSettingsLimit>,
+			action: Action,
+			members: BoundedVec<T::AccountId, T::MembersLimit>,
+			settings: BoundedVec<RoleSetting, T::RoleSettingsLimit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
-			if new_members_list.len().is_zero() && (new_settings.len().is_zero()) {
-				return Err(Error::<T>::InvalidInput.into())
-			}
-
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::SystematicFailure)?;
-
 			// Check that the caller is the owner of the cluster;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
-			// Check that the role exists in the cluster and in storage
-			if !cluster.roles.iter().any(|role| role_name.eq(&role.name)) {
-				return Err(Error::<T>::RoleNotFound.into())
+			// Either the list of members or the list of new settings must have values.
+			if members.len().is_zero() && (settings.len().is_zero()) {
+				return Err(Error::<T>::InvalidInput.into());
 			}
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name.as_slice()].concat());
-			let role_name_vec = role_name.into_inner();
+			let role_name = role_name.into_inner();
+
+			ensure!(
+				<ClusterRoleKeys<T>>::contains_key((&cluster_id, &role_name)),
+				Error::<T>::RoleNotFound
+			);
+
+			let role_index = <ClusterRoleKeys<T>>::get((&cluster_id, &role_name))
+				.ok_or(Error::<T>::SystematicFailure)?;
 
 			// write
-			<Clusters<T>>::mutate(&cluster_id, |cluster| {
-				let cluster = cluster.as_mut().expect("Should find the cluster");
-				cluster.roles.iter().position(|x| x.name == role_name_vec).map(|index| {
-					let role = cluster.roles.get_mut(index).expect("Should find the cluster");
-					role.members.extend(new_members_list.into_inner());
-					role.settings.extend(new_settings.into_inner());
-				});
-			});
+			match action {
+				Action::ADD => {
+					<Clusters<T>>::mutate(&cluster_id, |cluster| {
+						let cluster = cluster.as_mut().expect("Should find the cluster");
+						let role = cluster
+							.roles
+							.get_mut(&role_index)
+							.expect("Should find the role")
+							.settings
+							.extend(settings.into_inner());
+					});
+					for member in members {
+						// new members have no roles
+						<Members<T>>::insert(member, cluster_id, vec![role_index]);
+					}
+				},
+				Action::DELETE => {
+					<Clusters<T>>::mutate(&cluster_id, |cluster| {
+						let cluster = cluster.as_mut().expect("Should find the cluster");
+						let role_settings = &mut cluster
+							.roles
+							.get_mut(&role_index)
+							.expect("Should find the role")
+							.settings;
+						for setting in settings.into_inner() {
+							role_settings
+								.retain(|role_setting| !role_setting.name.eq(&setting.name));
+						}
+					});
+					for member in members {
+						<Members<T>>::insert(member, cluster_id, vec![role_index]);
+					}
+				},
+			}
 
-			Self::deposit_event(Event::RoleEdited { role_hash });
-			log::trace!("Role edited: {:?}", role_hash);
+			Self::deposit_event(Event::RoleEdited {
+				cluster_hash: cluster_id,
+				role_name: role_name.clone(),
+			});
+			log::trace!("Role edited: {:?}", &role_name);
 
 			Ok(())
 		}
 
 		/// Delete a **Role**.
+		///
+		/// - `role_name`: name of the role to delete.
+		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn delete_role(
 			origin: OriginFor<T>,
@@ -368,38 +441,46 @@ pub mod pallet {
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
-			let role_name_vec = role_name.into_inner();
+			let role_name = role_name.into_inner();
 
-			// Check that the role exists in the cluster and in storage
-			if !cluster.roles.iter().any(|role| role_name_vec.eq(&role.name)) {
-				return Err(Error::<T>::RoleNotFound.into())
-			}
+			// Check that the role exists in the cluster
+			ensure!(
+				<ClusterRoleKeys<T>>::contains_key((&cluster_id, &role_name)),
+				Error::<T>::RoleNotFound
+			);
 
 			// write
 			// Remove Role from Cluster
+			let role_index = <ClusterRoleKeys<T>>::get((&cluster_id, &role_name))
+				.ok_or(Error::<T>::SystematicFailure)?;
+
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				if let Some(cluster) = cluster {
-					let index = cluster.roles.iter().position(|role| role.name == role_name_vec);
-					if let Some(index) = index {
-						cluster.roles.remove(index);
-					}
+					cluster.roles.remove(&role_index);
 				}
 			});
 
-			let role_hash = blake2_128(&[&cluster_id[..], &role_name_vec.as_slice()].concat());
-
-			Self::deposit_event(Event::RoleDeleted { role_hash });
-			log::trace!("Role deleted: {:?}", role_hash);
+			Self::deposit_event(Event::RoleDeleted {
+				cluster_hash: cluster_id,
+				role_name: role_name.clone(),
+			});
+			log::trace!("Role deleted: {:?}", &role_name);
 
 			Ok(())
 		}
 
-		/// Create a **Member**, give it a set of existing **Role** and assign it to an existing **Cluster**.
+		/// Add a **Member** into a cluster.
+		///
+		/// It also assigns a list of **Role** to the new member.
+		///
+		/// - `cluster_id`: hash of the cluster where to add the new member.
+		/// - `roles`: list of role names to be assigned to the new member.
+		/// - `member`: AccountId of the new member.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn add_member(
 			origin: OriginFor<T>,
 			cluster_id: Hash128,
-			roles: Vec<Vec<u8>>,
+			roles_names: Vec<Vec<u8>>,
 			member: T::AccountId,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -409,42 +490,42 @@ pub mod pallet {
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			// Check that the cluster does not already contain the member
-			ensure!(!cluster.members.contains(&member), Error::<T>::MemberExists);
-
 			ensure!(
-				cluster.members.len() < T::MembersLimit::get() as usize,
-				Error::<T>::MembersLimitReached
+				!<Members<T>>::contains_key(&member, &cluster_id),
+				Error::<T>::MemberExists
 			);
 
-			// Check that the roles for the member already exists in the cluster
-			let roles_in_cluster =
-				cluster.roles.iter().map(|role| &role.name).collect::<Vec<&Vec<u8>>>();
-
-			for role in &roles {
-				ensure!(roles_in_cluster.contains(&role), Error::<T>::RoleNotFound);
+			for role in &roles_names {
+				// Check that the roles actually exist in the cluster
+				ensure!(
+					<ClusterRoleKeys<T>>::contains_key((&cluster_id, &role)),
+					Error::<T>::RoleNotFound
+				);
 			}
 
 			// write
-			<Clusters<T>>::mutate(&cluster_id, |cluster| {
-				let cluster = cluster.as_mut().expect("Should find the cluster");
-				// Add member into the cluster
-				cluster.members.push(member.clone());
-
-				// Associate the member with its roles in the cluster
-				for role in roles {
-					cluster
-						.roles
-						.iter()
-						.position(|x| x.name == role)
-						.and_then(|index| cluster.roles.get_mut(index))
-						.map(|role| role.members.push(member.clone()));
+			let mut role_indexes = Vec::new();
+			for role_name in roles_names {
+				let index = <ClusterRoleKeys<T>>::get((&cluster_id, &role_name));
+				if let Some(index) = index {
+					role_indexes.push(index);
+				} else {
+					let next_index = <ClusterRoleKeysIndex<T>>::try_get().unwrap_or_default() + 1;
+					<ClusterRoleKeys<T>>::insert((&cluster_id, &role_name), next_index);
+					<ClusterRoleKeysIndex<T>>::put(next_index);
+					role_indexes.push(next_index);
 				}
-			});
+			}
+
+			<Members<T>>::insert(member, cluster_id, role_indexes);
 
 			Ok(())
 		}
 
-		/// Delete a **Member** from an existing **Cluster**.
+		/// Delete a **Member** from a **Cluster**.
+		///
+		/// - `cluster_id`: hash of the cluster.
+		/// - `member`: AccountId of the member to be removed.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn delete_member(
 			origin: OriginFor<T>,
@@ -456,19 +537,14 @@ pub mod pallet {
 			let cluster = <Clusters<T>>::get(cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 			// Check that the member is in the cluster
-			ensure!(cluster.members.contains(&member), Error::<T>::MemberNotFound);
+			ensure!(
+				<Members<T>>::contains_key(&member, &cluster_id),
+				Error::<T>::MemberExists
+			);
 
 			// write
 			// Delete member from Cluster
-			<Clusters<T>>::mutate(&cluster_id, |cluster| {
-				let cluster = cluster.as_mut().expect("Should find the cluster");
-
-				cluster
-					.members
-					.iter()
-					.position(|x| x == &member)
-					.map(|index| cluster.members.remove(index));
-			});
+			<Members<T>>::remove(member, cluster_id);
 
 			Ok(())
 		}

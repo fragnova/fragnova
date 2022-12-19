@@ -72,19 +72,21 @@ mod create_tests {
 		signer: <Test as frame_system::Config>::AccountId,
 		role_name: Vec<u8>,
 		cluster_id: Hash128,
-		new_members_list: Vec<<Test as frame_system::Config>::AccountId>,
-		new_settings: Vec<RoleSetting>,
+		action: Action,
+		members: Vec<<Test as frame_system::Config>::AccountId>,
+		settings: Vec<RoleSetting>,
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			role_name.clone().try_into().expect("role name is too long");
 		let bounded_members: BoundedVec<<Test as frame_system::Config>::AccountId, <Test as Config>::MembersLimit> =
-			new_members_list.clone().try_into().expect("role name is too long");
+			members.clone().try_into().expect("role name is too long");
 		let bounded_settings: BoundedVec<RoleSetting, <Test as Config>::RoleSettingsLimit> =
-			new_settings.clone().try_into().expect("role settings is too long");
+			settings.clone().try_into().expect("role settings is too long");
 		ClustersPallet::edit_role(
 			Origin::signed(signer),
 			bounded_name,
 			cluster_id,
+			action,
 			bounded_members,
 			bounded_settings,
 		)
@@ -108,8 +110,7 @@ mod create_tests {
 				owner: account_id,
 				name: cluster_name.clone(),
 				cluster_id,
-				roles: vec![],
-				members: Default::default(),
+				roles: BTreeMap::new(),
 			};
 			let result = <Clusters<Test>>::get(&cluster_id.clone()).unwrap();
 			assert_eq!(cluster, result);
@@ -172,15 +173,16 @@ mod create_tests {
 			));
 
 
-			let expected_role = Role { name: role.clone(), members: vec![], rules: None, settings: vec![settings] };
-
+			let expected_role = Role { name: role.clone(), rules: None, settings: vec![settings] };
+			let role_index = <ClusterRoleKeys<Test>>::get((&cluster_id, &role)).unwrap();
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
-			assert!(roles_in_cluster.contains(&expected_role));
 
-			let role_hash = get_role_hash(cluster_id, role.clone());
+			assert_eq!(roles_in_cluster.get(&role_index).unwrap(), &expected_role);
+
 			System::assert_has_event(
 				ClusterEvent::RoleCreated {
-					role_hash,
+					cluster_hash: cluster_id,
+					role_name: role,
 				}
 				.into(),
 			);
@@ -214,6 +216,7 @@ mod create_tests {
 					account_id.clone(),
 					role_name.clone(),
 					cluster_id,
+					Action::ADD,
 					Vec::new(),
 					vec![]
 				),
@@ -244,6 +247,7 @@ mod create_tests {
 					account_id.clone(),
 					role.clone(),
 					cluster_id,
+					Action::ADD,
 					Vec::new(),
 					vec![settings],
 				),
@@ -274,8 +278,6 @@ mod create_tests {
 				vec![settings]
 			));
 
-			let role_hash = get_role_hash(cluster_id.clone(), role.clone());
-
 			assert_ok!(delete_role_(account_id.clone(), role.clone(), cluster_id.clone()));
 
 			let roles_in_cluster = <Clusters<Test>>::get(&cluster_id).unwrap().roles;
@@ -283,7 +285,8 @@ mod create_tests {
 
 			System::assert_has_event(
 				ClusterEvent::RoleDeleted {
-					role_hash,
+					cluster_hash: cluster_id,
+					role_name: role,
 				}
 				.into(),
 			);
@@ -318,15 +321,16 @@ mod create_tests {
 				account_id.clone(),
 				role.clone(),
 				cluster_id.clone(),
+				Action::ADD,
 				Vec::new(),
 				vec![new_settings.clone()],
 			));
 
 			let expected_role =
-				Role { name: role.clone(), members: vec![], rules: None, settings: vec![settings, new_settings] };
-
+				Role { name: role.clone(), rules: None, settings: vec![settings, new_settings] };
+			let role_index = <ClusterRoleKeys<Test>>::get((&cluster_id, &role)).unwrap();
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
-			assert!(roles_in_cluster.contains(&expected_role));
+			assert_eq!(roles_in_cluster.get(&role_index).unwrap(), &expected_role);
 
 		});
 	}
@@ -364,10 +368,7 @@ mod create_tests {
 				member.clone()
 			));
 
-			assert!(<Clusters<Test>>::get(&cluster_id)
-				.unwrap()
-				.members
-				.contains(&member));
+			assert!(<Members<Test>>::contains_key(&member, &cluster_id));
 		});
 	}
 }
