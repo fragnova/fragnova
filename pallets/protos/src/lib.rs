@@ -27,7 +27,6 @@ use protos::{categories::Categories, traits::Trait};
 use sp_core::{crypto::UncheckedFrom, ecdsa, H160, U256};
 
 use codec::{Compact, Decode, Encode};
-pub use pallet::*;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -168,6 +167,17 @@ pub enum UsageLicense<TContractAddress> {
 	Contract(TContractAddress),
 }
 
+/// **Enum** that indicates **how a Proto-Fragment data can be fetched**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub enum ProtoData {
+	/// Data is stored on this chain's blocks directly, this is the most safe way of storing data.
+	Local(Vec<u8>),
+	/// Data is stored on the Arweave chain, we use content_hash to guarantee unique-ness of data, when data is fetched this hash should be checked, if check fails assume data is invalid
+	Arweave { content_hash: Hash256, arweave_tx: Hash256 },
+	/// Data is maybe somewhere on the IPFS network, this is unsafe cos the IPFS network is all about caching and content delivery, offering no guarantee of permanent storage, not allowed on mainnet
+	Ipfs([u8; 64]),
+}
+
 /// **Struct** of a **Proto-Fragment**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct Proto<TAccountId, TBlockNumber> {
@@ -199,13 +209,12 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
+	use pallet_clusters::Cluster;
 	use pallet_detach::{
 		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
 	};
 	use sp_clamor::CID_PREFIX;
 	use sp_runtime::SaturatedConversion;
-	use pallet_clusters::Cluster;
-
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -405,7 +414,7 @@ pub mod pallet {
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
 		///   **Proto-Fragment** *<u>can't be included</u>* into **other Proto-Fragments**
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.len() as u32))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.encode().len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -418,7 +427,7 @@ pub mod pallet {
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
-			data: Vec<u8>,
+			data: ProtoData,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -431,8 +440,15 @@ pub mod pallet {
 			// hash the immutable data, this is also the unique proto id
 			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
 			// "0x0155a0e40220"))
-			let proto_hash = blake2_256(&data);
-			let data_len = data.len();
+		  // Doesn't work, we need to store on state non Local data...!!
+			let (proto_hash, data_size) = match &data {
+				ProtoData::Local(data) => (blake2_256(data), data.len()),
+				ProtoData::Arweave { content_hash, arweave_tx } => (*content_hash, 0),
+				ProtoData::Ipfs(cid) => {
+					// Check if this is a testnet, if so we need to FAIL!!
+					blake2_256(cid);
+				},
+			};
 
 			// make sure the proto does not exist already!
 			ensure!(!<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoExists);
@@ -450,6 +466,11 @@ pub mod pallet {
 			// Store Trait if trait, also hash properly the data and decode name
 			let category = match category {
 				Categories::Trait(_) => {
+					let data = match &data {
+						ProtoData::Local(data) => Ok(data),
+						_ => Err(Error::<T>::SystematicFailure.into()),
+					}?;
+
 					let trait_id = twox_64(&data);
 					ensure!(!<Traits<T>>::contains_key(&trait_id), Error::<T>::ProtoExists);
 
@@ -519,15 +540,24 @@ pub mod pallet {
 			// store by owner
 			<ProtosByOwner<T>>::append(owner, proto_hash);
 
-			// index immutable data for IPFS discovery
-			transaction_index::index(extrinsic_index, data_len as u32, proto_hash);
+			match &data {
+				ProtoData::Local(data) => {
+					// index immutable data for IPFS discovery
+					transaction_index::index(extrinsic_index, data_size as u32, proto_hash);
 
-			let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
-			let cid = cid.to_base58();
-			let cid = [&b"z"[..], cid.as_bytes()].concat();
+					let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
+					let cid = cid.to_base58();
+					let cid = [&b"z"[..], cid.as_bytes()].concat();
 
-			// also emit event
-			Self::deposit_event(Event::Uploaded { proto_hash, cid });
+					// also emit event
+					Self::deposit_event(Event::Uploaded { proto_hash, cid });
+				},
+				_ => {
+					let empty = vec![];
+					// also emit event
+					Self::deposit_event(Event::Uploaded { proto_hash, empty });
+				},
+			};
 
 			log::debug!("Uploaded proto: {:?}", proto_hash);
 
@@ -557,7 +587,7 @@ pub mod pallet {
 			new_references: Vec<Hash256>,
 			tags: Option<BoundedVec::<BoundedVec::<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
-			data: Vec<u8>,
+			data: ProtoData,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -747,7 +777,7 @@ pub mod pallet {
 			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
 			metadata_key: BoundedVec<u8, <T as pallet::Config>::StringLimit>,
 			// data we want to update last because of the way we store blocks (storage chain)
-			data: Vec<u8>,
+			data: ProtoData,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
