@@ -592,19 +592,6 @@ mod detach_tests {
 		});
 	}
 
-	#[test]
-	fn detach_should_not_work_if_the_detach_request_already_exists() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let detach = dd.detach;
-
-			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
-			assert_ok!(detach_(dd.account_id, &detach));
-			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::DetachRequestAlreadyExists);
-		});
-	}
-
 	// TODO
 	#[test]
 	#[ignore = "I have no idea how the enum `LinkedAssset` even works right now!"]

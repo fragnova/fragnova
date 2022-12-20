@@ -2610,19 +2610,6 @@ mod detach_tests {
 		});
 	}
 
-	#[test]
-	fn detach_should_not_work_if_the_detach_request_already_exists() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let detach = dd.detach;
-
-			mint_detach_instance(dd.account_id, &detach);
-			assert_ok!(detach_(dd.account_id, &detach));
-			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::DetachRequestAlreadyExists);
-		});
-	}
-
 }
 
 

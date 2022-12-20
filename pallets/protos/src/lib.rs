@@ -356,8 +356,6 @@ pub mod pallet {
 		ProtoNotFound,
 		/// Proto already uploaded
 		ProtoExists,
-		/// Detach Request Already Submitted
-		DetachRequestAlreadyExists,
 		/// Already detached
 		Detached,
 		/// Not the owner of the proto
@@ -790,6 +788,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// TODO Review - Should we ensure that a Detach Request doesn't already exist with the same Proto-Fragment?
 		/// Request to detach a **Proto-Fragment** from **Clamor**.
 		///
 		/// Note: The Proto-Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
@@ -800,41 +799,44 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - **ID of the Proto-Fragment** to **detach**
+		/// * `proto_hashes` - **IDs** of the **Proto-Fragments to detach**
 		/// * `target_chain` - **External Blockchain** to attach the Proto-Fragment into
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
 		pub fn detach(
 			origin: OriginFor<T>,
-			proto_hash: Hash256,
+			proto_hashes: Vec<Hash256>,
 			target_chain: SupportedChains,
 			target_account: BoundedVec<u8, T::DetachAccountLimit>, // an eth address or so
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			// make sure the proto exists
-			let proto: Proto<T::AccountId, T::BlockNumber> =
-				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+			proto_hashes.iter().try_for_each(|proto_hash| -> DispatchResult {
+				// make sure the proto exists
+				let proto: Proto<T::AccountId, T::BlockNumber> =
+					<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 
-			match proto.owner {
-				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
-				ProtoOwner::ExternalAsset(_ext_asset) =>
-				// We don't allow detaching external assets
-				{
-					ensure!(false, Error::<T>::Unauthorized)
-				},
+				match proto.owner {
+					ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+					ProtoOwner::ExternalAsset(_ext_asset) =>
+					// We don't allow detaching external assets
+						{
+							ensure!(false, Error::<T>::Unauthorized)
+						},
+				};
+
+				let detach_hash = DetachHash::Proto(*proto_hash);
+				ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
+
+				Ok(())
+			})?;
+
+			let detach_request = DetachRequest {
+				hashes: proto_hashes.into_iter().map(|proto_hash| DetachHash::Proto(proto_hash)).collect::<Vec<DetachHash>>(),
+				target_chain,
+				target_account: target_account.into()
 			};
-
-			let detach_hash = DetachHash::Proto(proto_hash);
-			let detach_request =
-				DetachRequest { hash: detach_hash.clone(), target_chain, target_account: target_account.into() };
-
-			ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
-			ensure!(
-				!<DetachRequests<T>>::get().contains(&detach_request),
-				Error::<T>::DetachRequestAlreadyExists
-			);
 
 			<DetachRequests<T>>::mutate(|requests| {
 				requests.push(detach_request);

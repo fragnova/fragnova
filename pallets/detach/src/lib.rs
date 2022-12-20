@@ -85,7 +85,10 @@ use frame_system::offchain::{
 	SigningTypes,
 };
 
-/// Enum representing a Proto-Fragment or a Fragment Instance that the User wants to detach from the Clamor Blockchain
+use beefy_merkle_tree::{merkle_root, Keccak256};
+
+// TODO Review - Should `DetachHash` implement the trait `Copy`?
+/// Enum representing the **different types of "things"** that can be **detached from the Clamor Blockchain**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum DetachHash {
 	/// A Proto-Fragment (identified by its Hash)
@@ -116,18 +119,21 @@ pub enum SupportedChains {
 	EthereumGoerli,
 }
 
-/// **Struct** that represents a **request to detach a "detachable thing" (e.g a Proto-Fragment or a Fragment Instance)** from the Clamor Blockchain
+/// **Struct** that represents a **request to detach a list of "detachable thing"s (see enum `DetachHash` to see what type of things can be detached)** from the Clamor Blockchain
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct DetachRequest {
-	/// ID of the "detachable thing"
-	pub hash: DetachHash,
-	/// **External Blockchain** in which the "detachable thing" can be attached into, after the "detachable thing" is detached
+	// TODO Review - Maybe write a custom constructor for initializing `DetachRequest` which ensures that all the "detachble things" are of one type
+	/// **IDs of the "detachable thing"s**
+	///
+	/// Note: All the "detachable things" must be of a single type
+	pub hashes: Vec<DetachHash>,
+	/// **External Blockchain** in which the "detachable thing"s can be attached into, after the "detachable thing"s are detached
 	pub target_chain: SupportedChains,
-	/// Public Account Address in the External Blockchain to transfer the ownership of the "detachable thing" to
+	/// Public Account Address in the External Blockchain to transfer the ownership of the "detachable thing"s to
 	pub target_account: Vec<u8>, // an eth address or so
 }
 
-/// Payload represents information about a "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) that will be detached
+/// Payload represents information about a list of "detachable thing"s (see enum `DetachHash` to see what type of things can be detached) that will be detached
 ///
 /// Note: This Payload that will be attached to the unsigned transaction `Call::internal_finalize_detach` which will be sent on-chain
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -136,8 +142,10 @@ pub struct DetachInternalData<TPublic> {
 	///
 	/// See this struct's implementation of `SignedPayload` for more information.
 	pub public: TPublic,
-	/// ID of the "detachable thing"
-	pub hash: DetachHash,
+	/// IDs of the "detachable thing"s
+	pub hashes: Vec<DetachHash>,
+	/// **Merkle Root** of a **Binary Merkle Tree created using `hashes`**
+	pub merkle_root: Hash256,
 	/// **External Blockchain** in which the "detachable thing" can be attached into, after the "detachable thing" is detached
 	pub target_chain: SupportedChains,
 	/// Public Account Address in the External Blockchain to transfer the ownership of the "detachable thing" to
@@ -225,7 +233,7 @@ pub mod pallet {
 
 	/// **StorageDoubleMap** that maps an **account address on an external blockchain and the external blockchain**
 	/// to a **nonce**.
-	/// This nonce indicates the number of times the account address was specified as the new owner when a "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) was detached.
+	/// This nonce indicates the number of times the account address was specified as the new owner when a "detachable thing" (see enum `DetachHash` to see what type of things can be detached) was detached.
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
 		StorageDoubleMap<_, Twox64Concat, Vec<u8>, Twox64Concat, SupportedChains, u64>;
@@ -253,8 +261,10 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// A Proto-Fragment or a Fragment Instance was detached
+		/// A "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) was detached
 		Detached { hash: DetachHash, remote_signature: Vec<u8> },
+		/// A collection of "detachable thing"s was detached
+		CollectionDetached { merkle_root: Hash256, remote_signature: Vec<u8> },
 	}
 
 	// Errors inform users that something went wrong.
@@ -359,14 +369,21 @@ pub mod pallet {
 			};
 
 			// add to Detached protos map
-			<DetachedHashes<T>>::insert(data.hash.clone(), export_data);
+			data.hashes.into_iter().for_each(|detach_hash| {
+				<DetachedHashes<T>>::insert(detach_hash.clone(), export_data.clone()); // TODO Review - Should `DetachHash` implement the trait `Copy`?
 
-			Self::deposit_event(Event::Detached {
-				hash: data.hash.clone(),
-				remote_signature: data.remote_signature.clone(),
+				Self::deposit_event(Event::Detached {
+					hash: detach_hash.clone(), // TODO Review - Should `DetachHash` implement the trait `Copy`?
+					remote_signature: data.remote_signature.clone(),
+				});
+
+				log::debug!("Detached hash: {:?} signature: {:?}", detach_hash, data.remote_signature);
 			});
 
-			log::debug!("Detached hash: {:?} signature: {:?}", data.hash, data.remote_signature);
+			Self::deposit_event(Event::CollectionDetached {
+				merkle_root: data.merkle_root,
+				remote_signature: data.remote_signature.clone(),
+			});
 
 			Ok(())
 		}
@@ -486,7 +503,8 @@ pub mod pallet {
 					// We can still have multiple transactions compete for the same "spot",
 					// and the one with higher priority will replace other one in the pool.
 					.and_provides((
-						data.hash.clone(),
+						data.hashes.clone(), // TODO Review - Isn't it redundant to have `data.hashes` as part of the "provides" tag? Isn't `data.merkle_root` enough?
+						data.merkle_root,
 						data.target_chain,
 						data.target_account.clone(),
 						data.nonce,
@@ -575,6 +593,11 @@ pub mod pallet {
 			}
 		}
 
+		fn get_merkle_root(detach_hashes: &Vec<DetachHash>) -> Hash256 {
+			let detach_hashes = detach_hashes.iter().map(|detach_hash| detach_hash.get_signable_hash()).collect::<Vec<Vec<u8>>>();
+			merkle_root::<Keccak256, _, _>(detach_hashes)
+		}
+
 		/// Returns a Tuple of the following things:
 		/// 1. A **Signature** obtained by **signing the detach request `request` using a Fragnova-authorized account**.
 		///
@@ -582,7 +605,9 @@ pub mod pallet {
 		/// to attach the "detached thing" (e.g a detached Proto-Fragment or a detached Fragment Instance) to the External Blockchain.
 		///
 		/// 2. The Detach-Nonce of the detach request's target account. (See `DetachNonces` for more information).
-		fn get_detach_signature_and_detach_nonce(request: &DetachRequest) -> Result<(Vec<u8>, u64), Error<T>> {
+		///
+		/// 3. **Merkle Root** of a **Binary Merkle Tree created using `request.hashes`**
+		fn get_detach_signature_and_detach_nonce_and_merkle_root(request: &DetachRequest) -> Result<(Vec<u8>, u64, Hash256), Error<T>> {
 			match request.target_chain {
 				SupportedChains::EthereumMainnet
 				| SupportedChains::EthereumRinkeby
@@ -600,6 +625,7 @@ pub mod pallet {
 						.iter()
 						.find(|k| <EthereumAuthorities<T>>::get().contains(k)).ok_or(Error::<T>::NoValidator)?;
 
+					let merkle_root = Self::get_merkle_root(&request.hashes);
 					let nonce =
 						<DetachNonces<T>>::get(&request.target_account, request.target_chain).unwrap_or_default().checked_add(1).unwrap();
 					let mut chain_id_be: [u8; 32] = [0u8; 32]; // "be" stands for big-endian
@@ -610,7 +636,7 @@ pub mod pallet {
 					}.to_big_endian(&mut chain_id_be);
 
 					let payload = [
-						&request.hash.get_signable_hash()[..],
+						&merkle_root[..], // &request.hash.get_signable_hash()[..],
 						&chain_id_be,
 						&TryInto::<[u8; 20]>::try_into(request.target_account.clone()).map_err(|_| Error::<T>::TargetAccountLengthIsIncorrect)?,
 						&nonce.to_be_bytes(), // "be" stands for big-endian
@@ -624,7 +650,7 @@ pub mod pallet {
 					// Get the Ethereum specific signature of the payload
 					let signature = Self::eth_sign_payload(&ethereum_authority, &payload).ok_or(Error::<T>::SigningFailed)?;
 
-					Ok((signature.0.to_vec(), nonce))
+					Ok((signature.0.to_vec(), nonce, merkle_root))
 				},
 			}
 
@@ -633,7 +659,7 @@ pub mod pallet {
 		/// Signs the list of detach requests using a Fragnova-authorized account.
 		/// Then, for each of the signed detach requests - send an unsigned transaction on-chain
 		/// that will cause an event to be emitted which will contain the detach request's signature.
-		/// This signature can be then used in the target chain to attach the "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) to the target chain.
+		/// This signature can be then used in the target chain to attach the "detachable thing" (see enum `DetachHash` to see what type of things can be detached) to the target chain.
 		///
 		/// The format of each detach request (which is then signed by a Fragnova-authorized account) is as follows:
 		/// keccak_256(<Proto-Fragment Hash> ‖ <Target Chain ID> ‖ <Public Account Address in Target Chain to assign ownership of Proto-Fragment to> ‖ <Detach Nonce of Public Account Address in Target Chain (see `DetachNonces`)>)
@@ -663,14 +689,14 @@ pub mod pallet {
 						log::debug!("Got {} detach requests", requests.len());
 						for request in requests { // Iterate through the list of detach requests
 
-							let tuple_signature_nonce = Self::get_detach_signature_and_detach_nonce(&request);
+							let tuple_signature_nonce_merkle_root = Self::get_detach_signature_and_detach_nonce_and_merkle_root(&request);
 
-							match tuple_signature_nonce {
+							match tuple_signature_nonce_merkle_root {
 								Err(e) => {
 									log::debug!("Failed to detach with error {:?}", e)
 								},
 								// begin process to send unsigned transaction from here
-								Ok((signature, nonce)) => {
+								Ok((signature, nonce, merkle_root)) => {
 									log::debug!(
 										"Executing unsigned transaction for detach; signature: {:x?}, nonce: {}",
 										signature,
@@ -699,7 +725,8 @@ pub mod pallet {
 												// Public key that is expected to have a matching key in the keystore, which should be used to sign the payload
 												// Note: See the implementation of `SignedPayload` for `DetachInternalData` to understand more
 												public: account.public.clone(),
-												hash: request.hash.clone(),
+												hashes: request.hashes.clone(),
+												merkle_root,
 												target_chain: request.target_chain,
 												target_account: request.target_account.clone(),
 												remote_signature: signature.clone(),
