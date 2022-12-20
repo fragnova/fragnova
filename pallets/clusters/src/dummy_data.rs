@@ -21,10 +21,6 @@ pub struct DummyData {
 	pub account_id_2: Public,
 }
 
-pub fn get_role_hash(cluster_id: Hash128, role: Vec<u8>) -> Hash128 {
-	blake2_128(&[&cluster_id[..], &role.clone()[..]].concat())
-}
-
 pub fn get_cluster_id(cluster_name: Vec<u8>, account_id: sp_core::ed25519::Public, index: u32) -> Hash128 {
 	let extrinsic_index = 2;
 	System::set_extrinsic_index(extrinsic_index);
