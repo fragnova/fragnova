@@ -356,6 +356,14 @@ pub mod pallet {
 		ProtoNotFound,
 		/// Proto already uploaded
 		ProtoExists,
+		/// Proto data is empty
+		ProtoDataIsEmpty,
+		/// Duplicate Proto tag found
+		DuplicateProtoTagExists,
+		/// Proto-Fragment's Metadata key is empty
+		MetadataKeyIsEmpty,
+		/// Detach Request's Target Account is empty
+		DetachAccountIsEmpty,
 		/// Already detached
 		Detached,
 		/// Not the owner of the proto
@@ -411,6 +419,10 @@ pub mod pallet {
 			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(!data.is_empty(), Error::<T>::ProtoDataIsEmpty);
+
+			ensure!(!tags.iter().enumerate().any(|(index, tag)| tags.iter().enumerate().any(|(i, t)| t == tag && i != index)), Error::<T>::DuplicateProtoTagExists); // TODO Review - Is `O(n ^ 2)` good? (Alternatively we can **use HashMap** or **sort the tags then check for equal consecutive elements** -  but I don't think it's worth it since `T::MaxTags` is small
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
@@ -546,6 +558,12 @@ pub mod pallet {
 			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(!data.is_empty(), Error::<T>::ProtoDataIsEmpty);
+
+			if let Some(tags) = &tags {
+				ensure!(!tags.iter().enumerate().any(|(index, tag)| tags.iter().enumerate().any(|(i, t)| t == tag && i != index)), Error::<T>::DuplicateProtoTagExists); // TODO Review - Is `O(n ^ 2)` good? (Alternatively we can **use HashMap** or **sort the tags then check for equal consecutive elements** -  but I don't think it's worth it since `T::MaxTags` is small
+			}
 
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
@@ -731,6 +749,8 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			ensure!(!metadata_key.is_empty(), Error::<T>::MetadataKeyIsEmpty);
+
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 
@@ -811,6 +831,8 @@ pub mod pallet {
 			target_account: BoundedVec<u8, T::DetachAccountLimit>, // an eth address or so
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(!target_account.is_empty(), Error::<T>::DetachAccountIsEmpty);
 
 			proto_hashes.iter().try_for_each(|proto_hash| -> DispatchResult {
 				// make sure the proto exists
