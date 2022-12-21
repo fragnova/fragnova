@@ -1462,6 +1462,11 @@
 <span id="1462">1462</span>
 <span id="1463">1463</span>
 <span id="1464">1464</span>
+<span id="1465">1465</span>
+<span id="1466">1466</span>
+<span id="1467">1467</span>
+<span id="1468">1468</span>
+<span id="1469">1469</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
@@ -1545,7 +1550,7 @@
 
 	<span class="comment">// implemented for mock runtime in test
 	</span><span class="kw">impl </span>frame_system::offchain::AppCrypto&lt;&lt;Ed25519Signature <span class="kw">as </span>Verify&gt;::Signer, Ed25519Signature&gt;
-	<span class="kw">for </span>FragAuthId
+		<span class="kw">for </span>FragAuthId
 	{
 		<span class="kw">type </span>RuntimeAppPublic = Public;
 		<span class="kw">type </span>GenericSignature = sp_core::ed25519::Signature;
@@ -1654,10 +1659,10 @@
 
 <span class="attribute">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
-	<span class="kw">use </span>core::str::FromStr;
-	<span class="kw">use </span>ethabi::Address;
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span><span class="kw">crate</span>::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
+	<span class="kw">use </span>core::str::FromStr;
+	<span class="kw">use </span>ethabi::Address;
 	<span class="kw">use </span>frame_support::{
 		dispatch::DispatchResult,
 		pallet_prelude::<span class="kw-2">*</span>,
@@ -1667,7 +1672,7 @@
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>sp_runtime::{
 		traits::{CheckedAdd, Saturating, Zero},
-		SaturatedConversion,
+		Percent, SaturatedConversion,
 	};
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -1681,6 +1686,7 @@
 	+ pallet_proxy::Config
 	+ pallet_timestamp::Config
 	+ pallet_assets::Config
+	+ pallet_oracle::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
 		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
@@ -1714,11 +1720,11 @@
 
 		<span class="doccomment">/// Initial amount of Tickets that are converted as soon as FRAG are locked
 		</span><span class="attribute">#[pallet::constant]
-		</span><span class="kw">type </span>InitialPercentageTickets: Get&lt;u128&gt;;
+		</span><span class="kw">type </span>InitialPercentageTickets: Get&lt;u8&gt;;
 
 		<span class="doccomment">/// Initial amount of NOVA that are converted as soon as FRAG are locked
 		</span><span class="attribute">#[pallet::constant]
-		</span><span class="kw">type </span>InitialPercentageNova: Get&lt;u128&gt;;
+		</span><span class="kw">type </span>InitialPercentageNova: Get&lt;u8&gt;;
 
 		<span class="doccomment">/// Amount of Tickets/NOVA equal to 1 USD
 		</span><span class="attribute">#[pallet::constant]
@@ -1770,12 +1776,12 @@
 	<span class="doccomment">/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>EthReservedTickets&lt;T: Config&gt; =
-	StorageMap&lt;<span class="kw">_</span>, Identity, H160, &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance&gt;;
+		StorageMap&lt;<span class="kw">_</span>, Identity, H160, &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance&gt;;
 
 	<span class="doccomment">/// This **StorageMap** maps an Ethereum AccountID to an amount of NOVA received until a Clamor Account ID is not linked.
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>EthReservedNova&lt;T: Config&gt; =
-	StorageMap&lt;<span class="kw">_</span>, Identity, H160, &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance&gt;;
+		StorageMap&lt;<span class="kw">_</span>, Identity, H160, &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
@@ -1816,7 +1822,7 @@
 	/// the External Account ID&#39;s linked Clamor Account ID, amongst other things**.
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>ExternalID2Account&lt;T: Config&gt; =
-	StorageMap&lt;<span class="kw">_</span>, Twox64Concat, ExternalID, AccountInfo&lt;T::AccountId, T::Moment&gt;&gt;;
+		StorageMap&lt;<span class="kw">_</span>, Twox64Concat, ExternalID, AccountInfo&lt;T::AccountId, T::Moment&gt;&gt;;
 
 	<span class="doccomment">/// The authorities able to sponsor accounts and link them to external accounts.
 	</span><span class="attribute">#[pallet::storage]
@@ -1977,8 +1983,9 @@
 
 			<span class="macro">log::trace!</span>(<span class="string">&quot;encoded message: {}&quot;</span>, hex::encode(<span class="kw-2">&amp;</span>encoded_message));
 
-			<span class="kw">let </span>ecdsa_public_key = Crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>signature.<span class="number">0</span>, <span class="kw-2">&amp;</span>keccak_256(<span class="kw-2">&amp;</span>encoded_message))
-				.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::VerificationFailed)<span class="question-mark">?</span>;
+			<span class="kw">let </span>ecdsa_public_key =
+				Crypto::secp256k1_ecdsa_recover(<span class="kw-2">&amp;</span>signature.<span class="number">0</span>, <span class="kw-2">&amp;</span>keccak_256(<span class="kw-2">&amp;</span>encoded_message))
+					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::VerificationFailed)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>eth_key = H160::from_slice(<span class="kw-2">&amp;</span>keccak_256(<span class="kw-2">&amp;</span>ecdsa_public_key[..])[<span class="number">12</span>..]);
 
@@ -2088,7 +2095,8 @@
 			</span><span class="kw">let </span>message = <span class="kw">if </span>data.lock { <span class="string">b&quot;FragLock&quot;</span>.to_vec() } <span class="kw">else </span>{ <span class="string">b&quot;FragUnlock&quot;</span>.to_vec() }; <span class="comment">// Add b&quot;FragLock&quot; or b&quot;FragUnlock&quot; to message
 			</span><span class="kw">let </span>contract = T::EthFragContract::get_partner_contracts();
 			<span class="kw">let </span>contract = contract[<span class="number">0</span>].as_str();
-			<span class="kw">let </span>contract = Address::from_str(<span class="kw-2">&amp;</span>contract[<span class="number">2</span>..]).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid sender&quot;</span>)<span class="question-mark">?</span>;
+			<span class="kw">let </span>contract = Address::from_str(<span class="kw-2">&amp;</span>contract[<span class="number">2</span>..])
+				.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid sender&quot;</span>)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span><span class="kw-2">mut </span>hash_struct = <span class="macro">vec!</span>[
 				<span class="comment">// This is the `typeHash`
@@ -2128,7 +2136,7 @@
 				<span class="macro">ensure!</span>(data_amount &gt; <span class="number">0</span>, Error::&lt;T&gt;::SystematicFailure);
 			}
 
-			<span class="kw">let </span>threshold = T::Threshold::get();
+			<span class="kw">let </span>threshold = &lt;T <span class="kw">as </span>pallet::Config&gt;::Threshold::get();
 			<span class="kw">if </span>threshold &gt; <span class="number">1 </span>{
 				<span class="kw">let </span>current_votes = &lt;EVMLinkVoting&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>data_hash);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(current_votes) = current_votes {
@@ -2157,7 +2165,7 @@
 				data.lock_period.try_into().map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
 			<span class="kw">let </span>frag_amount: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance = data_amount.saturated_into();
 
-			<span class="kw">let </span>current_frag_price = <span class="self">Self</span>::get_oracle_price();
+			<span class="kw">let </span>current_frag_price = <span class="self">Self</span>::get_oracle_price()<span class="question-mark">?</span>;
 			<span class="comment">// Calculate the initial amount of Tickets and NOVA to convert based on
 			// 1) the amount of FRAG locked, 2) the initial percentages defined in Config, 3) the current FRAG price
 			</span><span class="kw">let </span>initial_nova_amount = <span class="self">Self</span>::initial_amount(
@@ -2253,7 +2261,6 @@
 
 			<span class="comment">// also record link hash
 			</span>&lt;EVMLinkVotingClosed&lt;T&gt;&gt;::insert(data_hash, current_block_number); <span class="comment">// Declare that the `data_hash`&#39;s voting has ended
-
 
 			</span><span class="prelude-val">Ok</span>(())
 		}
@@ -2427,9 +2434,10 @@
 
 				<span class="comment">// most expensive bit last
 				// Check whether a provided signature matches the public key used to sign the payload
-				</span><span class="kw">let </span>signature_valid =
-					SignedPayload::&lt;T&gt;::verify::&lt;T::AuthorityId&gt;(data, signature.clone()); <span class="comment">// Verifying a Data with a Signature Returns a Public Key (if valid)
-				// The provided signature does not match the public key used to sign the payload
+				</span><span class="kw">let </span>signature_valid = SignedPayload::&lt;T&gt;::verify::&lt;
+					&lt;T <span class="kw">as </span>pallet::Config&gt;::AuthorityId,
+				&gt;(data, signature.clone()); <span class="comment">// Verifying a Data with a Signature Returns a Public Key (if valid)
+							// The provided signature does not match the public key used to sign the payload
 				</span><span class="kw">if </span>!signature_valid {
 					<span class="comment">// Return TransactionValidityError if the call is not allowed.
 					</span><span class="kw">return </span>InvalidTransaction::BadProof.into();
@@ -2492,7 +2500,7 @@
 			<span class="kw">let </span>req = serde_json::to_string(<span class="kw-2">&amp;</span>req).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid request&quot;</span>)<span class="question-mark">?</span>;
 			<span class="macro">log::trace!</span>(<span class="string">&quot;Request: {}&quot;</span>, req);
 
-			<span class="kw">let </span>response_body = http_json_post(geth_uri, req.as_bytes()); <span class="comment">// Get the latest block number of the Ethereum Blockchain
+			<span class="kw">let </span>response_body = http_json_post(geth_uri, req.as_bytes(), <span class="prelude-val">None</span>); <span class="comment">// Get the latest block number of the Ethereum Blockchain
 			</span><span class="kw">let </span>response_body = <span class="kw">if let </span><span class="prelude-val">Ok</span>(response) = response_body {
 				response
 			} <span class="kw">else </span>{
@@ -2541,7 +2549,7 @@
 			<span class="kw">let </span>req = serde_json::to_string(<span class="kw-2">&amp;</span>req).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid request&quot;</span>)<span class="question-mark">?</span>;
 			<span class="macro">log::trace!</span>(<span class="string">&quot;Request: {}&quot;</span>, req);
 
-			<span class="kw">let </span>response_body = http_json_post(geth_uri, req.as_bytes()); <span class="comment">// Make HTTP POST request with `req` to URL `get_uri`
+			<span class="kw">let </span>response_body = http_json_post(geth_uri, req.as_bytes(), <span class="prelude-val">None</span>); <span class="comment">// Make HTTP POST request with `req` to URL `get_uri`
 			</span><span class="kw">let </span>response_body = <span class="kw">if let </span><span class="prelude-val">Ok</span>(response) = response_body {
 				response
 			} <span class="kw">else </span>{
@@ -2571,7 +2579,7 @@
 					<span class="kw-2">&amp;</span>[ParamType::Bytes, ParamType::Uint(<span class="number">256</span>), ParamType::Uint(<span class="number">8</span>)],
 					<span class="kw-2">&amp;</span>data,
 				) <span class="comment">// First parameter is a signature, the second parameter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
-					</span>.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid eth data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `data` is the decoded list of the params of the event log `topic`
+				</span>.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid eth data&quot;</span>)<span class="question-mark">?</span>; <span class="comment">// `data` is the decoded list of the params of the event log `topic`
 				</span><span class="kw">let </span>locked = <span class="kw">match </span>topic {
 					<span class="comment">// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
 					</span>LOCK_EVENT =&gt; <span class="bool-val">true</span>,
@@ -2622,7 +2630,7 @@
 				//   - `None`: no account is available for sending transaction
 				//   - `Some((account, Ok(())))`: transaction is successfully sent
 				//   - `Some((account, Err(())))`: error occurred when sending the transaction
-				</span>Signer::&lt;T, T::AuthorityId&gt;::any_account() <span class="comment">// `Signer::&lt;T, T::AuthorityId&gt;::any_account()` is the signer that signs the payload
+				</span>Signer::&lt;T, &lt;T <span class="kw">as </span>pallet::Config&gt;::AuthorityId&gt;::any_account() <span class="comment">// `Signer::&lt;T, T::AuthorityId&gt;::any_account()` is the signer that signs the payload
 					</span>.send_unsigned_transaction(
 						<span class="comment">// this line is to prepare and return payload to be used
 						</span>|account| EthLockUpdate {
@@ -2754,7 +2762,7 @@
 					) / lock_period_in_weeks.clone() <span class="kw">as </span>u128;
 
 					<span class="comment">// price of 1 FRAG in USD
-					</span><span class="kw">let </span>current_frag_price = <span class="self">Self</span>::get_oracle_price();
+					</span><span class="kw">let </span>current_frag_price = <span class="self">Self</span>::get_oracle_price()<span class="question-mark">?</span>;
 					<span class="comment">// The amount of Tickets and NOVA depend on the price of 1 FRAG at the time of withdraw
 					// considering that 1 FRAG = 100 Tickets, 100 NOVA
 					</span><span class="kw">let </span>tickets_amount_per_week_at_current_price = current_frag_price
@@ -2859,7 +2867,7 @@
 			}
 		}
 
-		<span class="kw">fn </span>initial_amount(amount: u128, percent: u128, current_frag_price: u128) -&gt; u128 {
+		<span class="kw">fn </span>initial_amount(amount: u128, percent: u8, current_frag_price: u128) -&gt; u128 {
 			<span class="kw">if </span>amount == <span class="number">0 </span>{
 				<span class="kw">return </span><span class="number">0</span>;
 			}
@@ -2868,24 +2876,26 @@
 		</span>}
 
 		<span class="doccomment">/// Calculate a percentage
-		</span><span class="kw">pub fn </span>apply_percent(amount: u128, percent: u128) -&gt; u128 {
+		</span><span class="kw">pub fn </span>apply_percent(amount: u128, percent: u8) -&gt; u128 {
 			<span class="kw">if </span>amount == <span class="number">0 </span>{
 				<span class="kw">return </span><span class="number">0</span>;
 			}
-			amount * percent / <span class="number">100
-		</span>}
+			<span class="comment">//amount * percent / 100
+			</span>Percent::from_percent(percent).mul_ceil(amount) <span class="kw">as </span>u128
+		}
 
 		<span class="doccomment">/// Get the price of FRAG from pallet-oracle
-		</span><span class="kw">pub fn </span>get_oracle_price() -&gt; u128 {
-			<span class="number">1 </span><span class="comment">// Assume the current price of 1 FRAG = 1 USD
-			// TODO implement pallet Oracle
-		</span>}
+		</span><span class="kw">pub fn </span>get_oracle_price() -&gt; <span class="prelude-ty">Result</span>&lt;u128, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
+			<span class="kw">let </span>price = pallet_oracle::Pallet::&lt;T&gt;::get_price().map_err(|<span class="kw">_</span>| <span class="string">&quot;Error while retrieving price from oracle&quot;</span>)<span class="question-mark">?</span>;
+
+			<span class="prelude-val">Ok</span>(price)
+		}
 
 		<span class="doccomment">/// Convert the lock period integer retrieved from Ethereum event into the number of weeks.
 		/// Refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 		</span><span class="kw">pub fn </span>eth_lock_period_to_weeks(lock_period: u8) -&gt; <span class="prelude-ty">Result</span>&lt;u8, Error&lt;T&gt;&gt; {
 			<span class="kw">let </span>sec = <span class="kw">match </span>lock_period {
-				<span class="number">0 </span>=&gt; <span class="number">2</span>,  <span class="comment">// 2 weeksu64
+				<span class="number">0 </span>=&gt; <span class="number">2</span>,  <span class="comment">// 2 weeks
 				</span><span class="number">1 </span>=&gt; <span class="number">4</span>,  <span class="comment">// 1 month
 				</span><span class="number">2 </span>=&gt; <span class="number">13</span>, <span class="comment">// 3 months
 				</span><span class="number">3 </span>=&gt; <span class="number">26</span>, <span class="comment">// 6 months

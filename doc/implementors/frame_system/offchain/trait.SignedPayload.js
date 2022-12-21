@@ -1,4 +1,5 @@
 (function() {var implementors = {
 "pallet_accounts":[["impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_accounts/struct.EthLockUpdate.html\" title=\"struct pallet_accounts::EthLockUpdate\">EthLockUpdate</a>&lt;T::Public&gt;"]],
-"pallet_detach":[["impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_detach/struct.DetachInternalData.html\" title=\"struct pallet_detach::DetachInternalData\">DetachInternalData</a>&lt;T::Public&gt;"]]
+"pallet_detach":[["impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_detach/struct.DetachInternalData.html\" title=\"struct pallet_detach::DetachInternalData\">DetachInternalData</a>&lt;T::Public&gt;"]],
+"pallet_oracle":[["impl&lt;T:&nbsp;SigningTypes&gt; SignedPayload&lt;T&gt; for <a class=\"struct\" href=\"pallet_oracle/pallet/struct.OraclePrice.html\" title=\"struct pallet_oracle::pallet::OraclePrice\">OraclePrice</a>&lt;T::Public, T::BlockNumber&gt;"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -457,14 +457,14 @@
 }
 
 <span class="attribute">#[cfg(test)]
-</span><span class="kw">pub fn </span>get_initial_percentage_tickets() -&gt; u128 {
+</span><span class="kw">pub fn </span>get_initial_percentage_tickets() -&gt; u8 {
 	<span class="kw">use </span><span class="kw">crate</span>::mock::Test;
 	<span class="kw">use </span>frame_support::traits::TypedGet;
 	&lt;Test <span class="kw">as </span>Config&gt;::InitialPercentageTickets::get()
 }
 
 <span class="attribute">#[cfg(test)]
-</span><span class="kw">pub fn </span>get_initial_percentage_nova() -&gt; u128 {
+</span><span class="kw">pub fn </span>get_initial_percentage_nova() -&gt; u8 {
 	<span class="kw">use </span><span class="kw">crate</span>::mock::Test;
 	<span class="kw">use </span>frame_support::traits::TypedGet;
 	&lt;Test <span class="kw">as </span>Config&gt;::InitialPercentageNova::get()

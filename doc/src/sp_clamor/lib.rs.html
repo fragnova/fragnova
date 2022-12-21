@@ -224,6 +224,10 @@
 <span id="224">224</span>
 <span id="225">225</span>
 <span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Helper Functions and Types that are used in other Packages of the this Workspace
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
@@ -233,7 +237,7 @@
 // extern crate chainblocks;
 
 </span><span class="kw">use </span>codec::{Decode, Encode, Error <span class="kw">as </span>CodecError};
-<span class="kw">use </span>sp_core::offchain::HttpRequestStatus;
+<span class="kw">use </span>sp_core::offchain::{HttpRequestStatus, Timestamp};
 <span class="kw">use </span>sp_io::{hashing::blake2_256, offchain};
 <span class="kw">use </span>sp_std::vec::Vec;
 
@@ -386,7 +390,7 @@
 </span>}
 
 <span class="doccomment">/// Make an HTTP POST Request with data `body` to the URL `url`
-</span><span class="kw">pub fn </span>http_json_post(url: <span class="kw-2">&amp;</span>str, body: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
+</span><span class="kw">pub fn </span>http_json_post(url: <span class="kw-2">&amp;</span>str, body: <span class="kw-2">&amp;</span>[u8], wait: <span class="prelude-ty">Option</span>&lt;Timestamp&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
 	<span class="macro">log::debug!</span>(<span class="string">&quot;sp_clamor http_request called...&quot;</span>);
 
 	<span class="kw">let </span>request =
@@ -400,7 +404,7 @@
 	<span class="comment">// send off the request
 	</span>offchain::http_request_write_body(request, <span class="kw-2">&amp;</span>[], <span class="prelude-val">None</span>).unwrap();
 
-	<span class="kw">let </span>results = offchain::http_response_wait(<span class="kw-2">&amp;</span>[request], <span class="prelude-val">None</span>);
+	<span class="kw">let </span>results = offchain::http_response_wait(<span class="kw-2">&amp;</span>[request], wait);
 	<span class="kw">let </span>status = results[<span class="number">0</span>];
 
 	<span class="kw">match </span>status {
@@ -423,6 +427,10 @@
 				<span class="macro">log::error!</span>(<span class="string">&quot;request had unexpected status: {}&quot;</span>, status);
 				<span class="prelude-val">Err</span>(<span class="string">&quot;request had unexpected status&quot;</span>)
 			},
+		},
+		HttpRequestStatus::DeadlineReached =&gt; {
+			<span class="macro">log::error!</span>(<span class="string">&quot;request failed for reached timeout&quot;</span>);
+			<span class="prelude-val">Err</span>(<span class="string">&quot;timeout reached&quot;</span>)
 		},
 		<span class="kw">_ </span>=&gt; {
 			<span class="macro">log::error!</span>(<span class="string">&quot;request failed with status: {:?}&quot;</span>, status);

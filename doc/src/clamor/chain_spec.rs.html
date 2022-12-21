@@ -268,6 +268,9 @@
 <span id="268">268</span>
 <span id="269">269</span>
 <span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
 </pre><pre class="rust"><code><span class="doccomment">//! In Substrate, a chain specification is the collection of information that describes a Substrate-based blockchain network.
 //! For example, the chain specification identifies the network that a blockchain node connects to,
 //! the other nodes that it initially communicates with, and the initial state that nodes must agree on to produce blocks.
@@ -286,7 +289,8 @@
 // See for more info: https://docs.substrate.io/reference/how-to-guides/basics/configure-genesis-state/
 </span><span class="kw">use </span>clamor_runtime::{
 	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
-	GenesisConfig, GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+	GenesisConfig, GrandpaConfig, IndicesConfig, OracleConfig, Signature, SudoConfig, SystemConfig,
+	WASM_BINARY,
 };
 <span class="kw">use </span>sc_service::ChainType;
 <span class="kw">use </span>serde_json;
@@ -475,6 +479,7 @@
 				detach: DetachConfig::default(),
 				assets: AssetsConfig::default(),
 				accounts: AccountsConfig::default(),
+				oracle: OracleConfig::default(),
 			}
 		},
 		<span class="comment">// Bootnodes
@@ -536,6 +541,7 @@
 		accounts: AccountsConfig {
 			keys: initial_authorities.iter().map(|x| (x.<span class="number">4</span>.clone())).collect(),
 		},
+		oracle: OracleConfig { keys: initial_authorities.iter().map(|x| (x.<span class="number">4</span>.clone())).collect() },
 	}
 }
 </code></pre></div>

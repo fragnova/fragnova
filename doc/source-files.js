@@ -7,6 +7,7 @@ var sourcesIndex = JSON.parse('{\
 "pallet_fragments":["",[],["lib.rs","weights.rs"]],\
 "pallet_fragments_rpc":["",[],["lib.rs"]],\
 "pallet_fragments_rpc_runtime_api":["",[],["lib.rs"]],\
+"pallet_oracle":["",[],["lib.rs"]],\
 "pallet_protos":["",[],["lib.rs","weights.rs"]],\
 "pallet_protos_rpc":["",[],["lib.rs"]],\
 "pallet_protos_rpc_runtime_api":["",[],["lib.rs"]],\
