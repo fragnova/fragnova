@@ -1,7 +1,6 @@
 use std::str::FromStr;
 use crate::*;
 
-use codec::Encode;
 use ethabi::ethereum_types::{Address};
 
 use sp_core::{
@@ -55,6 +54,7 @@ fn get_ethereum_chain_id() -> u64 {
 
 #[cfg(test)]
 fn get_genesis_hash() -> sp_core::H256 {
+	use sp_runtime::traits::Zero;
 	use crate::mock::Test;
 	<frame_system::Pallet<Test>>::block_hash(<Test as frame_system::Config>::BlockNumber::zero())
 }

@@ -27,6 +27,7 @@ mod copied_from_pallet_accounts {
 }
 
 mod upload_tests {
+	use sp_runtime::BoundedVec;
 	use super::*;
 
 	pub fn upload(
@@ -37,7 +38,14 @@ mod upload_tests {
 			Origin::signed(signer),
 			proto.references.clone(),
 			proto.category.clone(),
-			proto.tags.clone(),
+			TryInto::<BoundedVec<BoundedVec<_, _>, <Test as pallet_protos::Config>::MaxTags>>::try_into(
+				proto
+					.tags
+					.clone()
+					.into_iter()
+					.map(|tag: Vec<u8>| TryInto::<BoundedVec<u8, <Test as pallet_protos::Config>::StringLimit>>::try_into(tag).unwrap())
+					.collect::<Vec<BoundedVec<_, _>>>()
+			).unwrap(),
 			proto.linked_asset.clone(),
 			proto
 				.include_cost
@@ -452,7 +460,7 @@ mod set_metadata_tests {
 		ProtosPallet::set_metadata(
 			Origin::signed(signer),
 			metadata.proto_fragment.get_proto_hash(),
-			metadata.metadata_key.clone(),
+			metadata.metadata_key.clone().try_into().unwrap(),
 			metadata.data.clone(),
 		)
 	}
@@ -488,7 +496,7 @@ mod set_metadata_tests {
 				event,
 				mock::Event::from(pallet_protos::Event::MetadataChanged {
 					proto_hash: metadata.proto_fragment.get_proto_hash(),
-					cid: metadata.metadata_key.clone()
+					metadata_key: metadata.metadata_key.clone()
 				})
 			);
 		});
@@ -534,7 +542,7 @@ mod detach_tests {
 			Origin::signed(signer),
 			detach.proto_fragment.get_proto_hash(),
 			detach.target_chain,
-			detach.target_account.clone()
+			detach.target_account.clone().try_into().unwrap()
 		)
 	}
 
