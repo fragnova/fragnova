@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/protos/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../pallet_protos/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../pallet_protos/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../pallet_protos/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `pallets/protos/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../pallet_protos/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -1479,6 +1479,41 @@
 <span id="1479">1479</span>
 <span id="1480">1480</span>
 <span id="1481">1481</span>
+<span id="1482">1482</span>
+<span id="1483">1483</span>
+<span id="1484">1484</span>
+<span id="1485">1485</span>
+<span id="1486">1486</span>
+<span id="1487">1487</span>
+<span id="1488">1488</span>
+<span id="1489">1489</span>
+<span id="1490">1490</span>
+<span id="1491">1491</span>
+<span id="1492">1492</span>
+<span id="1493">1493</span>
+<span id="1494">1494</span>
+<span id="1495">1495</span>
+<span id="1496">1496</span>
+<span id="1497">1497</span>
+<span id="1498">1498</span>
+<span id="1499">1499</span>
+<span id="1500">1500</span>
+<span id="1501">1501</span>
+<span id="1502">1502</span>
+<span id="1503">1503</span>
+<span id="1504">1504</span>
+<span id="1505">1505</span>
+<span id="1506">1506</span>
+<span id="1507">1507</span>
+<span id="1508">1508</span>
+<span id="1509">1509</span>
+<span id="1510">1510</span>
+<span id="1511">1511</span>
+<span id="1512">1512</span>
+<span id="1513">1513</span>
+<span id="1514">1514</span>
+<span id="1515">1515</span>
+<span id="1516">1516</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1521,6 +1556,7 @@
 	collections::{btree_map::BTreeMap, vec_deque::VecDeque},
 	vec,
 	vec::Vec,
+	ops::Deref
 };
 
 <span class="kw">pub use </span>weights::WeightInfo;
@@ -1701,6 +1737,15 @@
 		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
 		<span class="doccomment">/// Weight functions needed for pallet_protos.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
+		<span class="doccomment">/// The **maximum length** of a **metadata key** or a **proto-fragment&#39;s tag** or a **fragment definition&#39;s name** that is **stored on-chain**.
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>StringLimit: Get&lt;u32&gt;;
+		<span class="doccomment">/// The **maximum length** of an **Public Account Address on an External Blockchain** that can be **given sole ownership of a Proto-Fragment or a Fragment Instance**.
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>DetachAccountLimit: Get&lt;u32&gt;;
+		<span class="doccomment">/// The **maximum number of tags** that a **single Proto-Fragment** can be **tagged with**.
+		</span><span class="attribute">#[pallet::constant]
+		</span><span class="kw">type </span>MaxTags: Get&lt;u32&gt;;
 
 		<span class="doccomment">/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
 		</span><span class="attribute">#[pallet::constant]
@@ -1713,6 +1758,7 @@
 		<span class="doccomment">/// Asset ID of the fungible asset &quot;TICKET&quot;
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>TicketsAssetId: Get&lt;&lt;<span class="self">Self </span><span class="kw">as </span>pallet_assets::Config&gt;::AssetId&gt;;
+
 	}
 
 	<span class="attribute">#[pallet::pallet]
@@ -1798,7 +1844,7 @@
 		<span class="doccomment">/// A Proto-Fragment was patched
 		</span>Patched { proto_hash: Hash256, cid: Vec&lt;u8&gt; },
 		<span class="doccomment">/// A Proto-Fragment metadata has changed
-		</span>MetadataChanged { proto_hash: Hash256, cid: Vec&lt;u8&gt; },
+		</span>MetadataChanged { proto_hash: Hash256, metadata_key: Vec&lt;u8&gt; },
 		<span class="doccomment">/// A Proto-Fragment was detached
 		</span>Detached { proto_hash: Hash256, cid: Vec&lt;u8&gt; },
 		<span class="doccomment">/// A Proto-Fragment was transferred
@@ -1826,6 +1872,14 @@
 		</span>ProtoNotFound,
 		<span class="doccomment">/// Proto already uploaded
 		</span>ProtoExists,
+		<span class="doccomment">/// Proto data is empty
+		</span>ProtoDataIsEmpty,
+		<span class="doccomment">/// Duplicate Proto tag found
+		</span>DuplicateProtoTagExists,
+		<span class="doccomment">/// Proto-Fragment&#39;s Metadata key is empty
+		</span>MetadataKeyIsEmpty,
+		<span class="doccomment">/// Detach Request&#39;s Target Account is empty
+		</span>DetachAccountIsEmpty,
 		<span class="doccomment">/// Detach Request Already Submitted
 		</span>DetachRequestAlreadyExists,
 		<span class="doccomment">/// Already detached
@@ -1873,7 +1927,7 @@
 			<span class="comment">// we store this in the state as well
 			</span>references: Vec&lt;Hash256&gt;,
 			category: Categories,
-			tags: Vec&lt;Vec&lt;u8&gt;&gt;,
+			tags: BoundedVec::&lt;BoundedVec::&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::StringLimit&gt;, T::MaxTags&gt;,
 			linked_asset: <span class="prelude-ty">Option</span>&lt;LinkedAsset&gt;,
 			license: UsageLicense&lt;T::AccountId&gt;,
 			cluster: <span class="prelude-ty">Option</span>&lt;Cluster&lt;T::AccountId&gt;&gt;,
@@ -1884,7 +1938,11 @@
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
-			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
+			<span class="macro">ensure!</span>(!data.is_empty(), Error::&lt;T&gt;::ProtoDataIsEmpty);
+
+			<span class="macro">ensure!</span>(!tags.iter().enumerate().any(|(index, tag)| tags.iter().enumerate().any(|(i, t)| t == tag &amp;&amp; i != index)), Error::&lt;T&gt;::DuplicateProtoTagExists); <span class="comment">// TODO Review - Is `O(n ^ 2)` good? (Alternatively we can **use HashMap** or **sort the tags then check for equal consecutive elements** -  but I don&#39;t think it&#39;s worth it since `T::MaxTags` is small
+
+			</span><span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
 
 			<span class="comment">// hash the immutable data, this is also the unique proto id
 			// to compose the V1 Cid add this prefix to the hash: (str &quot;z&quot; (base58
@@ -1933,6 +1991,7 @@
 			<span class="kw">let </span>tags = tags
 				.iter()
 				.map(|s| {
+					<span class="kw">let </span>s = s.deref();
 					<span class="kw">let </span>tag_index = &lt;Tags&lt;T&gt;&gt;::get(s);
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(tag_index) = tag_index {
 						&lt;Compact&lt;u64&gt;&gt;::from(tag_index)
@@ -2012,11 +2071,17 @@
 			</span>proto_hash: Hash256,
 			license: <span class="prelude-ty">Option</span>&lt;UsageLicense&lt;T::AccountId&gt;&gt;,
 			new_references: Vec&lt;Hash256&gt;,
-			tags: <span class="prelude-ty">Option</span>&lt;Vec&lt;Vec&lt;u8&gt;&gt;&gt;,
+			tags: <span class="prelude-ty">Option</span>&lt;BoundedVec::&lt;BoundedVec::&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::StringLimit&gt;, T::MaxTags&gt;&gt;,
 			<span class="comment">// data we want to patch last because of the way we store blocks (storage chain)
 			</span>data: Vec&lt;u8&gt;,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
+
+			<span class="macro">ensure!</span>(!data.is_empty(), Error::&lt;T&gt;::ProtoDataIsEmpty);
+
+			<span class="kw">if let </span><span class="prelude-val">Some</span>(tags) = <span class="kw-2">&amp;</span>tags {
+				<span class="macro">ensure!</span>(!tags.iter().enumerate().any(|(index, tag)| tags.iter().enumerate().any(|(i, t)| t == tag &amp;&amp; i != index)), Error::&lt;T&gt;::DuplicateProtoTagExists); <span class="comment">// TODO Review - Is `O(n ^ 2)` good? (Alternatively we can **use HashMap** or **sort the tags then check for equal consecutive elements** -  but I don&#39;t think it&#39;s worth it since `T::MaxTags` is small
+			</span>}
 
 			<span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
 				&lt;Protos&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>proto_hash).ok_or(Error::&lt;T&gt;::ProtoNotFound)<span class="question-mark">?</span>;
@@ -2075,6 +2140,7 @@
 					<span class="kw">let </span>tags = tags
 						.iter()
 						.map(|s| {
+							<span class="kw">let </span>s = s.deref();
 							<span class="kw">let </span>tag_index = &lt;Tags&lt;T&gt;&gt;::get(s);
 							<span class="kw">if let </span><span class="prelude-val">Some</span>(tag_index) = tag_index {
 								&lt;Compact&lt;u64&gt;&gt;::from(tag_index)
@@ -2195,11 +2261,13 @@
 			<span class="comment">// proto hash we want to update
 			</span>proto_hash: Hash256,
 			<span class="comment">// Think of &quot;Vec&lt;u8&gt;&quot; as String (something to do with WASM - that&#39;s why we use Vec&lt;u8&gt;)
-			</span>metadata_key: Vec&lt;u8&gt;,
+			</span>metadata_key: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::StringLimit&gt;,
 			<span class="comment">// data we want to update last because of the way we store blocks (storage chain)
 			</span>data: Vec&lt;u8&gt;,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
+
+			<span class="macro">ensure!</span>(!metadata_key.is_empty(), Error::&lt;T&gt;::MetadataKeyIsEmpty);
 
 			<span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
 				&lt;Protos&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>proto_hash).ok_or(Error::&lt;T&gt;::ProtoNotFound)<span class="question-mark">?</span>;
@@ -2251,7 +2319,7 @@
 			</span>transaction_index::index(extrinsic_index, data.len() <span class="kw">as </span>u32, data_hash);
 
 			<span class="comment">// also emit event
-			</span><span class="self">Self</span>::deposit_event(Event::MetadataChanged { proto_hash, cid: metadata_key.clone() });
+			</span><span class="self">Self</span>::deposit_event(Event::MetadataChanged { proto_hash, metadata_key: metadata_key.clone().into() });
 
 			<span class="macro">log::debug!</span>(<span class="string">&quot;Added metadata to proto: {:x?} with key: {:x?}&quot;</span>, proto_hash, metadata_key);
 
@@ -2277,9 +2345,11 @@
 			origin: OriginFor&lt;T&gt;,
 			proto_hash: Hash256,
 			target_chain: SupportedChains,
-			target_account: Vec&lt;u8&gt;, <span class="comment">// an eth address or so
+			target_account: BoundedVec&lt;u8, T::DetachAccountLimit&gt;, <span class="comment">// an eth address or so
 		</span>) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
+
+			<span class="macro">ensure!</span>(!target_account.is_empty(), Error::&lt;T&gt;::DetachAccountIsEmpty);
 
 			<span class="comment">// make sure the proto exists
 			</span><span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
@@ -2296,7 +2366,7 @@
 
 			<span class="kw">let </span>detach_hash = DetachHash::Proto(proto_hash);
 			<span class="kw">let </span>detach_request =
-				DetachRequest { hash: detach_hash.clone(), target_chain, target_account };
+				DetachRequest { hash: detach_hash.clone(), target_chain, target_account: target_account.into() };
 
 			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>detach_hash), Error::&lt;T&gt;::Detached);
 			<span class="macro">ensure!</span>(
@@ -2961,4 +3031,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_protos" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0 (69f9c33d7 2022-12-12)" ></div></body></html>
