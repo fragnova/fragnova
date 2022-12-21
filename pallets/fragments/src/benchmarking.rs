@@ -57,7 +57,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -89,7 +90,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -132,7 +134,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -177,7 +180,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -227,7 +231,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -276,7 +281,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -342,7 +348,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -406,7 +413,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -471,7 +479,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 

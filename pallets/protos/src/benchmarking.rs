@@ -47,7 +47,8 @@ benchmarks! {
 				Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 				None,
 				UsageLicense::Closed,
-				proto_data.clone()
+				None,
+				proto_data.clone(),
 			)?;
 			let proto_hash = blake2_256(&proto_data);
 			Ok(proto_hash)
@@ -60,7 +61,7 @@ benchmarks! {
 		let license = UsageLicense::Closed;
 		let data = vec![7u8; d as usize];
 
-	}: upload(RawOrigin::Signed(caller), references, category, tags, linked_asset, license, data.clone())
+	}: upload(RawOrigin::Signed(caller), references, category, tags, linked_asset, license, None, data.clone())
 	verify {
 		let proto_hash = blake2_256(&data);
 		let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
@@ -82,7 +83,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(), // Vec::<Vec<u8>>::new(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -95,7 +97,8 @@ benchmarks! {
 				Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 				None,
 				UsageLicense::Closed,
-				proto_data.clone()
+				None,
+				proto_data.clone(),
 			)?;
 			let proto_hash = blake2_256(&proto_data);
 			Ok(proto_hash)
@@ -157,7 +160,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -180,7 +184,8 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
-			proto_data.clone()
+			None,
+			proto_data.clone(),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
