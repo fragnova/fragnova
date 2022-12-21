@@ -12,11 +12,10 @@ use frame_system;
 
 use sp_core::{ed25519::Signature, H256};
 
-use sp_runtime::traits::{
-	BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
-};
+use sp_runtime::traits::{BlakeTwo256, ConstU128, ConstU8, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify};
 
 use sp_runtime::testing::{Header, TestXt};
+use pallet_oracle::{OracleContract, OracleProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -50,6 +49,7 @@ frame_support::construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>},
 		Clusters: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -161,8 +161,8 @@ impl pallet_accounts::Config for Test {
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU128<80>;
-	type InitialPercentageNova = ConstU128<20>;
+	type InitialPercentageTickets = sp_runtime::traits::ConstU8<80>;
+	type InitialPercentageNova = sp_runtime::traits::ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
 }
 
@@ -236,6 +236,20 @@ impl pallet_proxy::Config for Test {
 	type CallHasher = BlakeTwo256;
 	type AnnouncementDepositBase = ConstU32<1>;
 	type AnnouncementDepositFactor = ConstU32<1>;
+}
+
+impl OracleContract for Test {
+	/// get the default oracle provider
+	fn get_provider() -> pallet_oracle::OracleProvider {
+		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+	}
+}
+
+impl pallet_oracle::Config for Test {
+	type AuthorityId = pallet_oracle::crypto::FragAuthId;
+	type Event = Event;
+	type OracleProvider = Test;
+	type Threshold = ConstU64<1>;
 }
 
 parameter_types! {

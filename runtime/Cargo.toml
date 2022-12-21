@@ -220,6 +220,10 @@ default-features = false
 path = '../pallets/detach'
 version = '0.0.1'
 
+[dependencies.pallet-oracle]
+default-features = false
+path = '../pallets/oracle'
+
 [dependencies.pallet-clusters]
 default-features = false
 path = '../pallets/clusters'
@@ -342,5 +346,6 @@ std = [
     "pallet-proxy/std",
     "pallet-identity/std",
     "pallet-utility/std",
+    "pallet-oracle/std",
     "protos/std"
 ]

@@ -106,6 +106,10 @@ git = 'https://github.com/fragcolor-xyz/substrate.git'
 tag = 'fragnova-v0.0.6'
 version = '4.0.0-dev'
 
+[dependencies.pallet-oracle]
+default-features = false
+path = '../oracle'
+
 [dependencies.pallet-clusters]
 default-features = false
 path = '../clusters'

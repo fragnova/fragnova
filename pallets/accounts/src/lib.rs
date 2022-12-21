@@ -81,7 +81,7 @@ pub mod crypto {
 
 	// implemented for mock runtime in test
 	impl frame_system::offchain::AppCrypto<<Ed25519Signature as Verify>::Signer, Ed25519Signature>
-	for FragAuthId
+		for FragAuthId
 	{
 		type RuntimeAppPublic = Public;
 		type GenericSignature = sp_core::ed25519::Signature;
@@ -190,10 +190,10 @@ pub struct AccountInfo<TAccountID, TMoment> {
 
 #[frame_support::pallet]
 pub mod pallet {
-	use core::str::FromStr;
-	use ethabi::Address;
 	use super::*;
 	use crate::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
+	use core::str::FromStr;
+	use ethabi::Address;
 	use frame_support::{
 		dispatch::DispatchResult,
 		pallet_prelude::*,
@@ -203,7 +203,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::{
 		traits::{CheckedAdd, Saturating, Zero},
-		SaturatedConversion,
+		Percent, SaturatedConversion,
 	};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -217,6 +217,7 @@ pub mod pallet {
 	+ pallet_proxy::Config
 	+ pallet_timestamp::Config
 	+ pallet_assets::Config
+	+ pallet_oracle::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -250,11 +251,11 @@ pub mod pallet {
 
 		/// Initial amount of Tickets that are converted as soon as FRAG are locked
 		#[pallet::constant]
-		type InitialPercentageTickets: Get<u128>;
+		type InitialPercentageTickets: Get<u8>;
 
 		/// Initial amount of NOVA that are converted as soon as FRAG are locked
 		#[pallet::constant]
-		type InitialPercentageNova: Get<u128>;
+		type InitialPercentageNova: Get<u8>;
 
 		/// Amount of Tickets/NOVA equal to 1 USD
 		#[pallet::constant]
@@ -306,12 +307,12 @@ pub mod pallet {
 	/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
 	#[pallet::storage]
 	pub type EthReservedTickets<T: Config> =
-	StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
+		StorageMap<_, Identity, H160, <T as pallet_assets::Config>::Balance>;
 
 	/// This **StorageMap** maps an Ethereum AccountID to an amount of NOVA received until a Clamor Account ID is not linked.
 	#[pallet::storage]
 	pub type EthReservedNova<T: Config> =
-	StorageMap<_, Identity, H160, <T as pallet_balances::Config>::Balance>;
+		StorageMap<_, Identity, H160, <T as pallet_balances::Config>::Balance>;
 
 	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
@@ -352,7 +353,7 @@ pub mod pallet {
 	/// the External Account ID's linked Clamor Account ID, amongst other things**.
 	#[pallet::storage]
 	pub type ExternalID2Account<T: Config> =
-	StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
+		StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
 
 	/// The authorities able to sponsor accounts and link them to external accounts.
 	#[pallet::storage]
@@ -513,8 +514,9 @@ pub mod pallet {
 
 			log::trace!("encoded message: {}", hex::encode(&encoded_message));
 
-			let ecdsa_public_key = Crypto::secp256k1_ecdsa_recover(&signature.0, &keccak_256(&encoded_message))
-				.map_err(|_| Error::<T>::VerificationFailed)?;
+			let ecdsa_public_key =
+				Crypto::secp256k1_ecdsa_recover(&signature.0, &keccak_256(&encoded_message))
+					.map_err(|_| Error::<T>::VerificationFailed)?;
 
 			let eth_key = H160::from_slice(&keccak_256(&ecdsa_public_key[..])[12..]);
 
@@ -624,7 +626,8 @@ pub mod pallet {
 			let message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
 			let contract = T::EthFragContract::get_partner_contracts();
 			let contract = contract[0].as_str();
-			let contract = Address::from_str(&contract[2..]).map_err(|_| "Invalid response - invalid sender")?;
+			let contract = Address::from_str(&contract[2..])
+				.map_err(|_| "Invalid response - invalid sender")?;
 
 			let mut hash_struct = vec![
 				// This is the `typeHash`
@@ -664,7 +667,7 @@ pub mod pallet {
 				ensure!(data_amount > 0, Error::<T>::SystematicFailure);
 			}
 
-			let threshold = T::Threshold::get();
+			let threshold = <T as pallet::Config>::Threshold::get();
 			if threshold > 1 {
 				let current_votes = <EVMLinkVoting<T>>::get(&data_hash);
 				if let Some(current_votes) = current_votes {
@@ -693,7 +696,7 @@ pub mod pallet {
 				data.lock_period.try_into().map_err(|_| Error::<T>::SystematicFailure)?;
 			let frag_amount: <T as pallet_assets::Config>::Balance = data_amount.saturated_into();
 
-			let current_frag_price = Self::get_oracle_price();
+			let current_frag_price = Self::get_oracle_price()?;
 			// Calculate the initial amount of Tickets and NOVA to convert based on
 			// 1) the amount of FRAG locked, 2) the initial percentages defined in Config, 3) the current FRAG price
 			let initial_nova_amount = Self::initial_amount(
@@ -789,7 +792,6 @@ pub mod pallet {
 
 			// also record link hash
 			<EVMLinkVotingClosed<T>>::insert(data_hash, current_block_number); // Declare that the `data_hash`'s voting has ended
-
 
 			Ok(())
 		}
@@ -963,9 +965,10 @@ pub mod pallet {
 
 				// most expensive bit last
 				// Check whether a provided signature matches the public key used to sign the payload
-				let signature_valid =
-					SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key (if valid)
-				// The provided signature does not match the public key used to sign the payload
+				let signature_valid = SignedPayload::<T>::verify::<
+					<T as pallet::Config>::AuthorityId,
+				>(data, signature.clone()); // Verifying a Data with a Signature Returns a Public Key (if valid)
+							// The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
 					return InvalidTransaction::BadProof.into();
@@ -1028,7 +1031,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri, req.as_bytes()); // Get the latest block number of the Ethereum Blockchain
+			let response_body = http_json_post(geth_uri, req.as_bytes(), None); // Get the latest block number of the Ethereum Blockchain
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -1077,7 +1080,7 @@ pub mod pallet {
 			let req = serde_json::to_string(&req).map_err(|_| "Invalid request")?;
 			log::trace!("Request: {}", req);
 
-			let response_body = http_json_post(geth_uri, req.as_bytes()); // Make HTTP POST request with `req` to URL `get_uri`
+			let response_body = http_json_post(geth_uri, req.as_bytes(), None); // Make HTTP POST request with `req` to URL `get_uri`
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
@@ -1107,7 +1110,7 @@ pub mod pallet {
 					&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(8)],
 					&data,
 				) // First parameter is a signature, the second parameter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
-					.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
+				.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
 				let locked = match topic {
 					// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
 					LOCK_EVENT => true,
@@ -1158,7 +1161,7 @@ pub mod pallet {
 				//   - `None`: no account is available for sending transaction
 				//   - `Some((account, Ok(())))`: transaction is successfully sent
 				//   - `Some((account, Err(())))`: error occurred when sending the transaction
-				Signer::<T, T::AuthorityId>::any_account() // `Signer::<T, T::AuthorityId>::any_account()` is the signer that signs the payload
+				Signer::<T, <T as pallet::Config>::AuthorityId>::any_account() // `Signer::<T, T::AuthorityId>::any_account()` is the signer that signs the payload
 					.send_unsigned_transaction(
 						// this line is to prepare and return payload to be used
 						|account| EthLockUpdate {
@@ -1290,7 +1293,7 @@ pub mod pallet {
 					) / lock_period_in_weeks.clone() as u128;
 
 					// price of 1 FRAG in USD
-					let current_frag_price = Self::get_oracle_price();
+					let current_frag_price = Self::get_oracle_price()?;
 					// The amount of Tickets and NOVA depend on the price of 1 FRAG at the time of withdraw
 					// considering that 1 FRAG = 100 Tickets, 100 NOVA
 					let tickets_amount_per_week_at_current_price = current_frag_price
@@ -1395,7 +1398,7 @@ pub mod pallet {
 			}
 		}
 
-		fn initial_amount(amount: u128, percent: u128, current_frag_price: u128) -> u128 {
+		fn initial_amount(amount: u128, percent: u8, current_frag_price: u128) -> u128 {
 			if amount == 0 {
 				return 0;
 			}
@@ -1404,24 +1407,26 @@ pub mod pallet {
 		}
 
 		/// Calculate a percentage
-		pub fn apply_percent(amount: u128, percent: u128) -> u128 {
+		pub fn apply_percent(amount: u128, percent: u8) -> u128 {
 			if amount == 0 {
 				return 0;
 			}
-			amount * percent / 100
+			//amount * percent / 100
+			Percent::from_percent(percent).mul_ceil(amount) as u128
 		}
 
 		/// Get the price of FRAG from pallet-oracle
-		pub fn get_oracle_price() -> u128 {
-			1 // Assume the current price of 1 FRAG = 1 USD
-			// TODO implement pallet Oracle
+		pub fn get_oracle_price() -> Result<u128, &'static str> {
+			let price = pallet_oracle::Pallet::<T>::get_price().map_err(|_| "Error while retrieving price from oracle")?;
+
+			Ok(price)
 		}
 
 		/// Convert the lock period integer retrieved from Ethereum event into the number of weeks.
 		/// Refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
 		pub fn eth_lock_period_to_weeks(lock_period: u8) -> Result<u8, Error<T>> {
 			let sec = match lock_period {
-				0 => 2,  // 2 weeksu64
+				0 => 2,  // 2 weeks
 				1 => 4,  // 1 month
 				2 => 13, // 3 months
 				3 => 26, // 6 months
