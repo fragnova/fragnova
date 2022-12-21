@@ -608,7 +608,7 @@ pub mod pallet {
 		/// * `unique` (*optional*) - **Whether** the **Fragment Definiton** is **unique**
 		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)**
 		/// that **can be created** using the **Fragment Definition**
-		#[pallet::weight(< T as Config >::WeightInfo::create(metadata.name.len() as u32))]
+		#[pallet::weight(<T as Config>::WeightInfo::create(metadata.name.len() as u32))]
 		pub fn create(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
@@ -902,7 +902,7 @@ pub mod pallet {
 		/// * `expires` (*optional*) - **Block number** that the sale ends at (*optional*)
 		/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// the **number of items** to **top up** in the **stack of stackable items**
-		#[pallet::weight(< T as Config >::WeightInfo::publish())]
+		#[pallet::weight(<T as Config>::WeightInfo::publish())]
 		pub fn publish(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -977,7 +977,7 @@ pub mod pallet {
 		///
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `definition_hash` - **ID** of the **Fragment Definition** to take off sale
-		#[pallet::weight(< T as Config >::WeightInfo::unpublish())]
+		#[pallet::weight(<T as Config>::WeightInfo::unpublish())]
 		pub fn unpublish(origin: OriginFor<T>, definition_hash: Hash128) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -1029,8 +1029,8 @@ pub mod pallet {
 		///
 		/// TODO - `*q as u32` might cause problems if q is too big (since q is u64)!!!
 		#[pallet::weight(match options {
-		FragmentBuyOptions::Quantity(q) => < T as Config >::WeightInfo::mint_definition_that_has_non_unique_capability(* q as u32),
-		FragmentBuyOptions::UniqueData(d) => < T as Config >::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
+		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(* q as u32),
+		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
 		})]
 		pub fn mint(
 			origin: OriginFor<T>,
@@ -1099,8 +1099,8 @@ pub mod pallet {
 		///
 		/// TODO - `*=q as u32` might cause problems if q is too big (since q is u64)!!!
 		#[pallet::weight(match options {
-		FragmentBuyOptions::Quantity(q) => < T as Config >::WeightInfo::buy_definition_that_has_non_unique_capability(* q as u32),
-		FragmentBuyOptions::UniqueData(d) => < T as Config >::WeightInfo::buy_definition_that_has_unique_capability(d.len() as u32)
+		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::buy_definition_that_has_non_unique_capability(* q as u32),
+		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::buy_definition_that_has_unique_capability(d.len() as u32)
 		})]
 		pub fn buy(
 			origin: OriginFor<T>,
@@ -1172,8 +1172,8 @@ pub mod pallet {
 		/// * `new_permissions` (*optional*) - The permitted set of actions that the account that is given the Fragment instance can do with it. Note: `new_permissions` must be a subset of the current `permissions` field of the Fragment Instance.
 		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is practically irrelevant.
 		#[pallet::weight(
-		< T as Config >::WeightInfo::benchmark_give_instance_that_has_copy_perms()
-		.max(< T as Config >::WeightInfo::benchmark_give_instance_that_does_not_have_copy_perms())
+		<T as Config>::WeightInfo::benchmark_give_instance_that_has_copy_perms()
+		.max(<T as Config>::WeightInfo::benchmark_give_instance_that_does_not_have_copy_perms())
 		)] // Since both weight functions return a static value, we should not be doing a `max()` and just manually choose the one with a greater weight!
 		pub fn give(
 			origin: OriginFor<T>,
