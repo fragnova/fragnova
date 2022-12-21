@@ -2541,8 +2541,7 @@ mod detach_tests {
 		FragmentsPallet::detach(
 			Origin::signed(signer),
 			detach.mint.definition.get_definition_id(),
-			detach.edition_id,
-			detach.copy_id,
+			detach.edition_ids.clone(),
 			detach.target_chain,
 			detach.target_account.clone().try_into().unwrap()
 		)
@@ -2567,16 +2566,17 @@ mod detach_tests {
 			mint_detach_instance(dd.account_id, &detach);
 			assert_ok!(detach_(dd.account_id, &detach));
 
-
 			assert_eq!(
 				pallet_detach::DetachRequests::<Test>::get(),
 				vec![
 					pallet_detach::DetachRequest {
-						hash: pallet_detach::DetachHash::Instance(
-							detach.mint.definition.get_definition_id(),
-							Compact(detach.edition_id),
-							Compact(detach.copy_id),
-						),
+						hashes: detach.edition_ids.into_iter().map(|edition_id|
+							pallet_detach::DetachHash::Instance(
+								detach.mint.definition.get_definition_id(),
+								Compact(edition_id),
+								Compact(1),
+							)
+						).collect(),
 						target_chain: detach.target_chain,
 						target_account: detach.target_account,
 					},
@@ -2605,8 +2605,7 @@ mod detach_tests {
 
 			let detach = dd.detach;
 
-			// REVIEW - error name
-			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NoPermission);
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NotFound);
 		});
 	}
 
