@@ -30,6 +30,12 @@ pub mod tests;
 /// The keys can be inserted manually via RPC (see `author_insertKey`).
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"orac");
 
+/// The encoded function in the Chainlink smart contract to call in eth_call (see README)
+const CHAINLINK_CONTRACT_FUNCTION: &'static str = "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000";
+/// The encoded function in the Uniswap smart contract to call in eth_call (see README)
+const UNISWAP_CONTRACT_FUNCTION: &'static str = "0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000";
+
+
 /// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
 /// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
 /// the types with this pallet-specific identifier.
@@ -444,81 +450,15 @@ pub mod pallet {
 		/// https://docs.uniswap.org/contracts/v3/reference/periphery/lens/Quoter#quoteexactinputsingle.
 		///
 		/// The pool used at this moment is ETH/USDT. (TODO: it needs to be changed when the FRAG pool will be available).
-		///
-		// ```
-		// function quoteExactInputSingle(
-		// 		address tokenIn,
-		// 		address tokenOut,
-		// 		uint24 fee,
-		// 		uint256 amountIn,
-		// 		uint160 sqrtPriceLimitX96
-		// ) public returns (uint256 amountOut)
-		// ```
-		// Using web3 library we can obtain the function encoding as follows:
-		// ```
-		// web3.eth.abi.encodeFunctionCall({
-		// 					name: 'quoteExactInputSingle',
-		// 					type: 'function',
-		// 					inputs: [{
-		// 								type: 'address',
-		// 								name: 'tokenIn'
-		// 				 			},{
-		// 								type: 'address',
-		// 								name: 'tokenOut'
-		// 				 			},{
-		// 								type: 'uint24',
-		// 					 			name: 'fee'
-	    // 					 		},{
-		// 								type: 'uint256',
-		// 								name: 'amountIn'
-	    // 				  	 		},{
-		// 								type: 'uint160',
-		// 								name: 'sqrtPriceLimitX96'
-		// 							}]
-		// 				  	}, [
-		// 					  "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",  // ETH
-		// 					  "0xdac17f958d2ee523a2206206994597c13d831ec7", // USDT
-		// 					  "500", // fee. There are three fee tiers: 500, 3000, 10000.
-		// 					  "1000000000000000000", // 1 ETH (expressed with 18 decimals)
-		// 					  "0"
-		// ]);
-		// ```
-		//
-		// The result is: `0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000`
-		// The first 4 bytes are the function selector, the rest are the parameters.
-		//
-		// Using the above result and knowing the address of the Quoter contracts on ethereum mainnet, we can call `eth_call`:
-		//
-		// ```
-		// curl --url https://mainnet.infura.io/v3/<API-TOKEN> -X POST -H "Content-Type: application/json" \
-		// 		-d '{"jsonrpc": 2,"method": "eth_call","params": \
-		// 			[{\
-		// 				"to": "0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6",\ // Quoter smart contract address in mainnet
-		// 				"data": "<the result above>"},\
-		// 				latest"],"id":1}'
-		//```
-		// Response:
-		// ```
-		// {"jsonrpc":"2.0","id":1,"result":"0x000000000000000000000000000000000000000000000000000000004c0fbc35"}
-		// ```
-		//
-		// Using web3 library we can decode the result as follows:
-		// ```
-		// ethers.utils.formatUnits(
-		// 				0x000000000000000000000000000000000000000000000000000000004c0fbc35, // the response above
-		//					6) // the decimals of the tokenOut (USDT)
-		// ```
-		//
-		// `1276.099637` // the price of 1 ETH in USDT
 		pub fn get_eth_call_data(provider: &OracleProvider) -> &'static str {
 			match provider {
 
 				OracleProvider::Chainlink(_) =>
-					"0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000",
+					CHAINLINK_CONTRACT_FUNCTION,
 
 				OracleProvider::Uniswap(_) =>
 					// encoding of quoteExactInputSingle to ETH/USDT pool. TODO to change when FRAG pool will be known
-					"0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000",
+					UNISWAP_CONTRACT_FUNCTION,
 			}
 		}
 

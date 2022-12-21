@@ -477,6 +477,9 @@ impl pallet_oracle::Config for Runtime {
 impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
+	type StringLimit = StringLimit;
+	type DetachAccountLimit = ConstU32<20>; // An ethereum public account address has a length of 20.
+	type MaxTags = ConstU32<10>;
 	type StorageBytesMultiplier = StorageBytesMultiplier;
 	type CurationExpiration = ConstU64<100800>; // one week
 	type TicketsAssetId = TicketsAssetId;

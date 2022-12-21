@@ -56,7 +56,7 @@ pub struct Definition {
 	// "Definition" is short for "Fragment Definition"
 	pub proto_fragment: ProtoFragment,
 
-	pub metadata: DefinitionMetadata<u64>,
+	pub metadata: DefinitionMetadata<Vec<u8>, u64>,
 	pub permissions: FragmentPerms,
 
 	pub unique: Option<UniqueOptions>,
