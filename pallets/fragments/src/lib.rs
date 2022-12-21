@@ -544,6 +544,8 @@ pub mod pallet {
 		ProtoOwnerNotFound,
 		/// No Permission
 		NoPermission,
+		/// Detach Request's Fragment-Instances List is empty
+		InstancesToDetachIsEmpty,
 		/// Detach Request's Target Account is empty
 		DetachAccountIsEmpty,
 		/// Already detached
@@ -1397,6 +1399,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			ensure!(!edition_ids.is_empty(), Error::<T>::InstancesToDetachIsEmpty);
 			ensure!(!target_account.is_empty(), Error::<T>::DetachAccountIsEmpty);
 
 			// let current_block_number = <frame_system::Pallet<T>>::block_number();

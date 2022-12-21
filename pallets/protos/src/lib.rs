@@ -362,6 +362,8 @@ pub mod pallet {
 		DuplicateProtoTagExists,
 		/// Proto-Fragment's Metadata key is empty
 		MetadataKeyIsEmpty,
+		/// Detach Request's Proto-Fragments List is empty
+		ProtosToDetachIsEmpty,
 		/// Detach Request's Target Account is empty
 		DetachAccountIsEmpty,
 		/// Already detached
@@ -832,6 +834,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			ensure!(!proto_hashes.is_empty(), Error::<T>::ProtosToDetachIsEmpty);
 			ensure!(!target_account.is_empty(), Error::<T>::DetachAccountIsEmpty);
 
 			proto_hashes.iter().try_for_each(|proto_hash| -> DispatchResult {
