@@ -19,7 +19,7 @@ use frame_support::{
 	traits::{ConstU16, ConstU128, ConstU32, ConstU64},
 	weights::DispatchClass,
 };
-use frame_system::{EnsureRoot, EnsureSigned, limits::{BlockLength, BlockWeights},};
+use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights},};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -60,7 +60,6 @@ pub use sp_runtime::{Perbill, Permill};
 use scale_info::prelude::string::String;
 
 use codec::Encode;
-use frame_support::traits::AsEnsureOriginWithArg;
 use sp_runtime::traits::{SaturatedConversion, StaticLookup};
 
 use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
@@ -452,6 +451,9 @@ impl pallet_accounts::Config for Runtime {
 impl pallet_protos::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
+	type StringLimit = StringLimit;
+	type DetachAccountLimit = ConstU32<20>; // An ethereum public account address has a length of 20.
+	type MaxTags = ConstU32<10>;
 	type StorageBytesMultiplier = StorageBytesMultiplier;
 	type CurationExpiration = ConstU64<100800>; // one week
 	type TicketsAssetId = TicketsAssetId;

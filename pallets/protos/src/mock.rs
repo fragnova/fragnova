@@ -193,6 +193,9 @@ impl pallet_assets::Config for Test {
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
+	type StringLimit = StringLimit;
+	type DetachAccountLimit = ConstU32<20>;
+	type MaxTags = ConstU32<10>;
 	type StorageBytesMultiplier = StorageBytesMultiplier;
 	type CurationExpiration = ConstU64<5>;
 	type TicketsAssetId = TicketsAssetId;

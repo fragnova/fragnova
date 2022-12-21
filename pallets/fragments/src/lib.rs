@@ -166,9 +166,9 @@ pub enum Currency<TFungibleAsset> {
 
 /// **Struct** of a **Fragment Definition's Metadata**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct DefinitionMetadata<TFungibleAsset> {
+pub struct DefinitionMetadata<TU8Vector, TFungibleAsset> {
 	/// **Name** of the **Fragment Definition**
-	pub name: Vec<u8>,
+	pub name: TU8Vector,
 	/// **Currency** that must be used to buy **any and all Fragment Instances created from the Fragment Definition**
 	pub currency: Currency<TFungibleAsset>,
 }
@@ -183,11 +183,11 @@ pub struct UniqueOptions {
 
 /// **Struct** of a **Fragment Definition**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentDefinition<TFungibleAsset, TAccountId, TBlockNum> {
+pub struct FragmentDefinition<TU8Array, TFungibleAsset, TAccountId, TBlockNum> {
 	/// **Proto-Fragment used** to **create** the **Fragment**
 	pub proto_hash: Hash256,
 	/// ***DefinitionMetadata* Struct** (the **struct** contains the **Fragment Definition's name**, among other things)
-	pub metadata: DefinitionMetadata<TFungibleAsset>,
+	pub metadata: DefinitionMetadata<TU8Array, TFungibleAsset>,
 	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to
 	/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)
 	///
@@ -343,7 +343,7 @@ pub mod pallet {
 		_,
 		Identity,
 		Hash128,
-		FragmentDefinition<T::AssetId, T::AccountId, T::BlockNumber>,
+		FragmentDefinition<Vec<u8>, T::AssetId, T::AccountId, T::BlockNumber>,
 	>;
 
 	/// **StorageMap** that maps a **Fragment Definition ID**
@@ -544,6 +544,8 @@ pub mod pallet {
 		ProtoOwnerNotFound,
 		/// No Permission
 		NoPermission,
+		/// Detach Request's Target Account is empty
+		DetachAccountIsEmpty,
 		/// Detach Request Already Submitted
 		DetachRequestAlreadyExists,
 		/// Already detached
@@ -576,6 +578,10 @@ pub mod pallet {
 		UniqueDataExists,
 		/// Currency not found
 		CurrencyNotFound,
+		/// Fragment Definition's Metadata key is empty
+		DefinitionMetadataKeyIsEmpty,
+		/// Fragment Instance's Metadata key is empty
+		InstanceMetadataKeyIsEmpty,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -608,12 +614,18 @@ pub mod pallet {
 		pub fn create(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
-			metadata: DefinitionMetadata<T::AssetId>,
+			metadata: DefinitionMetadata<BoundedVec<u8, <T as pallet_protos::Config>::StringLimit>, T::AssetId>,
 			permissions: FragmentPerms,
 			unique: Option<UniqueOptions>,
 			max_supply: Option<InstanceUnit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			let metadata = DefinitionMetadata::<Vec<u8>, T::AssetId> {
+				name: metadata.name.into(),
+				currency: metadata.currency,
+			};
+
 			let proto: Proto<T::AccountId, T::BlockNumber> =
 				<Protos<T>>::get(proto_hash).ok_or(Error::<T>::ProtoNotFound)?; // Get `Proto` struct from `proto_hash`
 
@@ -705,11 +717,13 @@ pub mod pallet {
 			// fragment hash we want to update
 			definition_hash: Hash128,
 			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
-			metadata_key: Vec<u8>,
+			metadata_key: BoundedVec<u8, <T as pallet_protos::Config>::StringLimit>,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(!metadata_key.is_empty(), Error::<T>::DefinitionMetadataKeyIsEmpty);
 
 			let proto_hash =
 				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?.proto_hash; // Get `proto_hash` from `definition_hash`
@@ -760,7 +774,7 @@ pub mod pallet {
 			// also emit event
 			Self::deposit_event(Event::DefinitionMetadataChanged {
 				definition_hash,
-				metadata_key: metadata_key.clone(),
+				metadata_key: metadata_key.clone().into(),
 			});
 
 			log::debug!(
@@ -791,11 +805,13 @@ pub mod pallet {
 			edition_id: InstanceUnit,
 			copy_id: InstanceUnit,
 			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
-			metadata_key: Vec<u8>,
+			metadata_key: BoundedVec<u8, <T as pallet_protos::Config>::StringLimit>,
 			// data we want to update last because of the way we store blocks (storage chain)
 			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
+
+			ensure!(!metadata_key.is_empty(), Error::<T>::InstanceMetadataKeyIsEmpty);
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&DetachHash::Instance(definition_hash, Compact(edition_id), Compact(copy_id))), Error::<T>::Detached);
 
@@ -861,7 +877,7 @@ pub mod pallet {
 				definition_hash: definition_hash,
 				edition_id,
 				copy_id,
-				metadata_key: metadata_key.clone(),
+				metadata_key: metadata_key.clone().into(),
 			});
 
 			log::debug!(
@@ -1378,10 +1394,12 @@ pub mod pallet {
 			edition_id: InstanceUnit,
 			copy_id: InstanceUnit,
 			target_chain: SupportedChains,
-			target_account: Vec<u8>, // an eth address or so
+			target_account: BoundedVec<u8, T::DetachAccountLimit>, // an eth address or so
 		) -> DispatchResult {
 
 			let who = ensure_signed(origin)?;
+
+			ensure!(!target_account.is_empty(), Error::<T>::DetachAccountIsEmpty);
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
@@ -1400,7 +1418,7 @@ pub mod pallet {
 			}
 
 			let detach_hash = DetachHash::Instance(definition_hash, Compact(edition_id), Compact(copy_id));
-			let detach_request = DetachRequest { hash: detach_hash.clone(), target_chain, target_account};
+			let detach_request = DetachRequest { hash: detach_hash.clone(), target_chain, target_account: target_account.into() };
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash),Error::<T>::Detached);
 			ensure!(!<DetachRequests<T>>::get().contains(&detach_request), Error::<T>::DetachRequestAlreadyExists);

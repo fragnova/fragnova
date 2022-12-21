@@ -7,7 +7,7 @@ use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
 use sp_io::hashing::keccak_256;
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{SaturatedConversion, traits::Zero};
 use sp_std::collections::btree_set::BTreeSet;
 
 use crate::Pallet as Accounts;
