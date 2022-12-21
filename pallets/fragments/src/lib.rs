@@ -1029,7 +1029,7 @@ pub mod pallet {
 		///
 		/// TODO - `*q as u32` might cause problems if q is too big (since q is u64)!!!
 		#[pallet::weight(match options {
-		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(* q as u32),
+		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(*q as u32),
 		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
 		})]
 		pub fn mint(
@@ -1099,7 +1099,7 @@ pub mod pallet {
 		///
 		/// TODO - `*=q as u32` might cause problems if q is too big (since q is u64)!!!
 		#[pallet::weight(match options {
-		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::buy_definition_that_has_non_unique_capability(* q as u32),
+		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::buy_definition_that_has_non_unique_capability(*q as u32),
 		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::buy_definition_that_has_unique_capability(d.len() as u32)
 		})]
 		pub fn buy(
