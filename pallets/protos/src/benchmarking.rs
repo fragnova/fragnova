@@ -132,6 +132,7 @@ benchmarks! {
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(),
 			None,
 			UsageLicense::Closed,
+			None,
 			proto_data.clone()
 		)?;
 		let proto_hash = blake2_256(&proto_data);
