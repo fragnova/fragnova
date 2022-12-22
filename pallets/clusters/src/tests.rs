@@ -196,13 +196,10 @@ mod create_tests {
 			let account_id = dummy.account_id;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			assert_ok!(create_cluster_(account_id, b"cluster2".to_vec()));
 
 			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
-
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
-			let name_index = take_name_index_(&cluster);
 			let name_setting_index = take_name_index_(&settings.name);
 			let role_setting = RoleSetting { name: name_setting_index, data: settings.data };
 
@@ -213,10 +210,10 @@ mod create_tests {
 				vec![role_setting]
 			));
 
-			//let expected_role = Role { name: name_index, settings: vec![role_setting] };
+			let role_name_index = take_name_index_(&role);
 
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
-			assert!(roles_in_cluster.contains(&name_index));
+			assert!(roles_in_cluster.contains(&role_name_index));
 			//assert_eq!(<Roles<Test>>::get(&cluster_id, &name_index).unwrap(), expected_role);
 
 			System::assert_has_event(
@@ -374,6 +371,7 @@ mod create_tests {
 
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
+			let role_name_index = take_name_index_(&role);
 			let name_setting_index = take_name_index_(&settings.name);
 			let role_setting1 = RoleSetting { name: name_setting_index, data: settings.data };
 			// associate the role to the cluster
@@ -382,6 +380,13 @@ mod create_tests {
 				cluster_id.clone(),
 				role.clone(),
 				vec![role_setting1.clone()]
+			));
+
+			assert_ok!(add_role_settings_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![role_setting1.clone()],
 			));
 
 			let name_setting_index2 = take_name_index_(&settings2.name);
@@ -394,11 +399,11 @@ mod create_tests {
 				vec![role_setting2.clone()],
 			));
 
-			assert!(!<Roles<Test>>::get(&cluster_id, &name_setting_index)
+			assert!(<Roles<Test>>::get(&cluster_id, &role_name_index)
 				.unwrap()
 				.settings
 				.contains(&role_setting1));
-			assert!(!<Roles<Test>>::get(&cluster_id, &name_setting_index2)
+			assert!(<Roles<Test>>::get(&cluster_id, &role_name_index)
 				.unwrap()
 				.settings
 				.contains(&role_setting2));

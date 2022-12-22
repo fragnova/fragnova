@@ -124,13 +124,16 @@ pub mod pallet {
 
 	/// **StorageDoubleMap** that maps a (**Cluster hash**, **Role ID**) with a **Role**.
 	#[pallet::storage]
-	pub type Roles<T: Config> = StorageDoubleMap<_, Identity, Hash128, Twox64Concat, Compact<u64>, Role>;
+	pub type Roles<T: Config> =
+		StorageDoubleMap<_, Identity, Hash128, Twox64Concat, Compact<u64>, Role>;
 
-	/// **StorageMap** that maps a **Names (of type `Vec<u8>`)** to an **index number**.
+	/// **StorageMap** that maps a **Name (of type `Vec<u8>`)** to an **index**.
+	/// This ensures no duplicated names are used.
 	#[pallet::storage]
 	pub type Names<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, Compact<u64>>;
 
-	/// **StorageValue** that **equals** the **total number of unique names** used for Roles in the chain.
+	/// **StorageValue** that **equals** the **total number of unique names** used for Roles and Clusters
+	/// in the chain.
 	#[pallet::storage]
 	pub type NamesIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
@@ -233,12 +236,8 @@ pub mod pallet {
 			let name_index = Self::take_name_index(&cluster_name);
 
 			// At creation there are no roles and no members assigned to the cluster
-			let cluster = Cluster {
-				owner: who.clone(),
-				name: name_index,
-				cluster_id,
-				roles: Vec::new(),
-			};
+			let cluster =
+				Cluster { owner: who.clone(), name: name_index, cluster_id, roles: Vec::new() };
 
 			let minimum_balance =
 				<pallet_balances::Pallet<T> as fungible::Inspect<T::AccountId>>::minimum_balance();
@@ -304,8 +303,7 @@ pub mod pallet {
 			ensure!(!<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleExists);
 
 			// At creation there are no Members assigned to a Role
-			let new_role =
-				Role { name: name_index.clone(), settings: settings.into_inner() };
+			let new_role = Role { name: name_index.clone(), settings: settings.into_inner() };
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
@@ -526,8 +524,10 @@ pub mod pallet {
 			// Remove Role from Cluster
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
 				let roles = &mut cluster.as_mut().expect("should find cluster").roles;
-				roles.retain(|x| x.eq(&name_index));
+				roles.retain(|x| !x.eq(&name_index));
 			});
+
+			<Roles<T>>::remove(&cluster_id, &name_index);
 
 			Self::deposit_event(Event::RoleDeleted {
 				cluster_hash: cluster_id,
@@ -564,7 +564,10 @@ pub mod pallet {
 			for role in &roles_names {
 				// Check that the roles actually exist in the cluster
 				let name_index = Self::take_name_index(role);
-				ensure!(<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleNotFound);
+				ensure!(
+					<Roles<T>>::contains_key(&cluster_id, &name_index),
+					Error::<T>::RoleNotFound
+				);
 			}
 
 			// write
@@ -604,7 +607,6 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-
 		pub fn take_name_index(name: &Vec<u8>) -> Compact<u64> {
 			let name_index = <Names<T>>::get(name);
 			if let Some(name_index) = name_index {
