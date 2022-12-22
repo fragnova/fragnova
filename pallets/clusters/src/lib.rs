@@ -607,6 +607,12 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
+		/// Utility function that checks for the existence of a name in storage and return its index.
+		///
+		/// - `name`: the reference of the name to lookup
+		///
+		/// Returns:
+		/// - `Compact<u64>`: the index of the name in storage
 		pub fn take_name_index(name: &Vec<u8>) -> Compact<u64> {
 			let name_index = <Names<T>>::get(name);
 			if let Some(name_index) = name_index {
