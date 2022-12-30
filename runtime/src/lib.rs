@@ -500,6 +500,11 @@ impl pallet_clusters::Config for Runtime {
 	type RoleSettingsLimit = ConstU32<20>;
 }
 
+impl pallet_aliases::Config for Runtime {
+	type Event = Event;
+	type Price = ConstU128<100>;
+}
+
 impl pallet_multisig::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
@@ -761,6 +766,7 @@ construct_runtime!(
 		Utility: pallet_utility,
 		Accounts: pallet_accounts,
 		Oracle: pallet_oracle,
+		Aliases: pallet_aliases,
 	}
 );
 
