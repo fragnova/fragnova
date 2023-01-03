@@ -74,7 +74,15 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
-		NamespaceCreated { who: T::AccountId, namespace: Vec<u8> },
+		NamespaceCreated {
+			who: T::AccountId,
+			namespace: Vec<u8>,
+		},
+		NamespaceTransferred {
+			namespace: Vec<u8>,
+			from: T::AccountId,
+			to: T::AccountId,
+		},
 	}
 
 	// Errors inform users that something went wrong.
@@ -83,6 +91,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		InvalidInput,
 		NamespaceExists,
+		NamespaceNotFound,
+		NotAllowed,
 	}
 
 	#[pallet::call]
@@ -104,7 +114,7 @@ pub mod pallet {
 
 			let namespace = namespace.into_inner();
 
-			// Check that the cluster does not exist already
+			// Check that the namespace does not exist already
 			ensure!(!<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceExists);
 
 			// burn NOVA from account's balance. The amount is set in Config.
@@ -117,6 +127,38 @@ pub mod pallet {
 			<Namespaces<T>>::insert(&namespace, &who);
 
 			Self::deposit_event(Event::NamespaceCreated { who, namespace });
+
+			Ok(())
+		}
+
+		/// Tranfer the **Namespace ownership** to another AccountId.
+		///
+		/// Only the owner of the Namespace can execute this.
+		///
+		/// - `namespace`: namespace to create
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn transfer_namespace(
+			origin: OriginFor<T>,
+			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+			new_owner: T::AccountId,
+		) -> DispatchResult {
+			let who = ensure_signed(origin.clone())?;
+
+			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
+
+			let namespace = namespace.into_inner();
+
+			// Check that the caller is the owner of the namespace
+			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
+			ensure!(&who == &owner, Error::<T>::NotAllowed);
+
+			<Namespaces<T>>::insert(&namespace, &new_owner);
+
+			Self::deposit_event(Event::NamespaceTransferred {
+				namespace,
+				from: who,
+				to: new_owner,
+			});
 
 			Ok(())
 		}
