@@ -1,9 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://docs.substrate.io/reference/frame-pallets/>
+extern crate core;
+
+use codec::{Decode, Encode};
+use frame_support::traits::tokens::fungible;
 pub use pallet::*;
+use pallet_clusters::Cluster;
+use pallet_fragments::GetInstanceOwnerParams;
+use sp_clamor::{Hash128, Hash256};
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod mock;
@@ -11,12 +16,28 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+mod dummy_data;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+/// Enum that indicates the different types of target of an alias
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+pub enum LinkTarget<TAccountId, TString> {
+	Proto(Hash256),
+	Fragment(GetInstanceOwnerParams<TString>),
+	Account(TAccountId),
+	Cluster(Hash128),
+}
+
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
+	use super::*;
+	use frame_support::{
+		pallet_prelude::*,
+		sp_runtime::{traits::Zero, SaturatedConversion},
+	};
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
@@ -37,38 +58,67 @@ pub mod pallet {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// The price (in native NOVA) for a Namespace
-		type Price: Get<u128>;
+		#[pallet::constant]
+		type NamespacePrice: Get<u128>;
+
+		/// The max size of namespace string
+		#[pallet::constant]
+		type NameLimit: Get<u32>;
 	}
 
-	// Pallets use events to inform users when important changes are made.
-	// https://docs.substrate.io/main-docs/build/events-errors/
+	/// **StorageMap** that maps a **Cluster** ID to its data.
+	#[pallet::storage]
+	pub type Namespaces<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, T::AccountId>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. [something, who]
-		SomethingStored { something: u32, who: T::AccountId },
+		NamespaceCreated { who: T::AccountId, namespace: Vec<u8> },
 	}
 
 	// Errors inform users that something went wrong.
+	#[allow(missing_docs)]
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Error names should be descriptive.
-		NoneValue,
+		InvalidInput,
+		NamespaceExists,
 	}
 
-	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
-	// These functions materialize as "extrinsics", which are often compared to transactions.
-	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// An example dispatchable that takes a singles value as a parameter, writes the value to
-		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
+		/// Create a new **Namespace**, a unique string that identifies an owner of assets.
+		///
+		/// The creation of a namespace burns NOVA from the caller's balance.
+		/// The amount is set in Config `NamespacePrice`.
+		///
+		/// - `namespace`: namespace to create
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
+		pub fn create_namespace(
+			origin: OriginFor<T>,
+			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin.clone())?;
+
+			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
+
+			let namespace = namespace.into_inner();
+
+			// Check that the cluster does not exist already
+			ensure!(!<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceExists);
+
+			// burn NOVA from account's balance. The amount is set in Config.
+			let amount: <T as pallet_balances::Config>::Balance =
+				<T as Config>::NamespacePrice::get().saturated_into();
+			<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::burn_from(
+				&who, amount,
+			)?;
+
+			<Namespaces<T>>::insert(&namespace, &who);
+
+			Self::deposit_event(Event::NamespaceCreated { who, namespace });
 
 			Ok(())
 		}
-
 	}
 }

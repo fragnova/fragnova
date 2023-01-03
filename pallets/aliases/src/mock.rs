@@ -265,7 +265,8 @@ impl pallet_clusters::Config for Test {
 
 impl pallet_aliases::Config for Test {
 	type Event = Event;
-	type Price = ConstU128<100>;
+	type NamespacePrice = ConstU128<100>;
+	type NameLimit = ConstU32<20>;
 }
 
 impl pallet_balances::Config for Test {
@@ -280,5 +281,17 @@ impl pallet_balances::Config for Test {
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	type IsTransferable = IsTransferable;
+}
+
+// Build genesis storage according to the mock runtime.
+pub fn new_test_ext() -> sp_io::TestExternalities {
+	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+
+	let mut ext = sp_io::TestExternalities::new(t);
+
+	ext.execute_with(|| System::set_extrinsic_index(2));
+	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
+
+	ext
 }
 

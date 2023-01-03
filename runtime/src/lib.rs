@@ -502,7 +502,8 @@ impl pallet_clusters::Config for Runtime {
 
 impl pallet_aliases::Config for Runtime {
 	type Event = Event;
-	type Price = ConstU128<100>;
+	type NamespacePrice = ConstU128<100>;
+	type NameLimit = ConstU32<20>;
 }
 
 impl pallet_multisig::Config for Runtime {
