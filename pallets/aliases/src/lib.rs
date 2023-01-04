@@ -2,12 +2,13 @@
 
 extern crate core;
 
-use codec::{Decode, Encode};
+use codec::{Compact, Decode, Encode};
 use frame_support::traits::tokens::fungible;
 pub use pallet::*;
-use pallet_clusters::Cluster;
+use pallet_clusters::Clusters;
 use pallet_fragments::GetInstanceOwnerParams;
-use sp_clamor::{Hash128, Hash256};
+use pallet_protos::{Proto, ProtoOwner, Protos};
+use sp_clamor::{Hash128, Hash256, InstanceUnit};
 use sp_std::vec::Vec;
 
 #[cfg(test)]
@@ -22,11 +23,11 @@ mod dummy_data;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-/// Enum that indicates the different types of target of an alias
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
-pub enum LinkTarget<TAccountId, TString> {
+/// Enum that indicates the types of target assets linked to an alias
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub enum LinkTarget<TAccountId> {
 	Proto(Hash256),
-	Fragment(GetInstanceOwnerParams<TString>),
+	Fragment { definition_hash: Vec<u8>, edition_id: InstanceUnit, copy_id: InstanceUnit }, // struct variant allows a nicer UX on polkadotJS
 	Account(TAccountId),
 	Cluster(Hash128),
 }
@@ -66,9 +67,29 @@ pub mod pallet {
 		type NameLimit: Get<u32>;
 	}
 
-	/// **StorageMap** that maps a **Cluster** ID to its data.
+	/// **StorageMap** that maps a **Alias** name to its owner.
 	#[pallet::storage]
 	pub type Namespaces<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, T::AccountId>;
+
+	/// **StorageMap** that maps a **Name (of type `Vec<u8>`)** to an **index**.
+	/// This ensures no duplicated aliases are used.
+	#[pallet::storage]
+	pub type Names<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, Compact<u64>>;
+
+	/// **StorageValue** that **equals** the **total number of unique names** used for aliases in the chain.
+	#[pallet::storage]
+	pub type NamesIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
+
+	/// **StorageDoubleMap** that maps a (**AccountId**, **Alias** name index) with a **TargetLink**.
+	#[pallet::storage]
+	pub type Aliases<T: Config> = StorageDoubleMap<
+		_,
+		Twox64Concat,
+		T::AccountId, // owner of the alias
+		Twox64Concat,
+		Compact<u64>,             // alias name index
+		LinkTarget<T::AccountId>, // target asset
+	>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -90,9 +111,11 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		InvalidInput,
-		NamespaceExists,
+		NamespaceAlreadyExists,
 		NamespaceNotFound,
 		NotAllowed,
+		SystematicFailure,
+		AliasAlreadyOwned,
 	}
 
 	#[pallet::call]
@@ -115,7 +138,7 @@ pub mod pallet {
 			let namespace = namespace.into_inner();
 
 			// Check that the namespace does not exist already
-			ensure!(!<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceExists);
+			ensure!(!<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceAlreadyExists);
 
 			// burn NOVA from account's balance. The amount is set in Config.
 			let amount: <T as pallet_balances::Config>::Balance =
@@ -144,6 +167,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin.clone())?;
 
+			ensure!(who != new_owner, Error::<T>::NotAllowed);
 			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
 
 			let namespace = namespace.into_inner();
@@ -161,6 +185,89 @@ pub mod pallet {
 			});
 
 			Ok(())
+		}
+
+		/// Create an **Alias** that links to a target asset.
+		///
+		/// Only the owner of the asset can create its alias.
+		/// Alias names can be reused by multiple users, but a user can have only one alias with the same name.
+		///
+		/// - `namespace`: namespace to create
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn create_alias(
+			origin: OriginFor<T>,
+			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+			target: LinkTarget<T::AccountId>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin.clone())?;
+
+			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
+
+			let namespace = namespace.into_inner();
+
+			// Check that the caller is the owner of the namespace
+			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
+			ensure!(&who == &owner, Error::<T>::NotAllowed);
+
+			// check that the caller is the owner of the target asset
+			match target {
+				LinkTarget::Fragment { definition_hash, edition_id, copy_id } => {
+					let owner = pallet_fragments::Pallet::<T>::get_instance_owner_account_id(
+						GetInstanceOwnerParams { definition_hash, edition_id, copy_id },
+					)
+					.map_err(|_| Error::<T>::SystematicFailure)?;
+					ensure!(who == owner, Error::<T>::NotAllowed);
+				},
+				LinkTarget::Proto(proto_hash) => {
+					let proto: Proto<T::AccountId, T::BlockNumber> = <Protos<T>>::get(&proto_hash)
+						.ok_or(pallet_protos::Error::<T>::ProtoNotFound)?;
+					match proto.owner {
+						ProtoOwner::User(owner) => ensure!(who == owner, Error::<T>::NotAllowed),
+						_ => {
+							ensure!(false, Error::<T>::NotAllowed)
+						},
+					};
+				},
+				LinkTarget::Cluster(cluster_id) => {
+					let cluster = <Clusters<T>>::get(&cluster_id)
+						.ok_or(pallet_clusters::Error::<T>::ClusterNotFound)?;
+					ensure!(who == cluster.owner, Error::<T>::NotAllowed);
+				},
+				LinkTarget::Account(account_id) => {
+					ensure!(who == account_id, Error::<T>::NotAllowed)
+				},
+			}
+
+			let alias_index = Self::take_name_index(&alias);
+			// check that the caller does not already own this alias
+			ensure!(!<Aliases<T>>::contains_key(&who, &alias_index), Error::<T>::AliasAlreadyOwned);
+
+			Ok(())
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		/// Utility function that checks for the existence of a name in storage and return its index.
+		///
+		/// - `name`: the reference of the name to lookup
+		///
+		/// Returns:
+		/// - `Compact<u64>`: the index of the name in storage
+		pub fn take_name_index(name: &Vec<u8>) -> Compact<u64> {
+			let name_index = <Names<T>>::get(name);
+			if let Some(name_index) = name_index {
+				<Compact<u64>>::from(name_index)
+			} else {
+				let next_name_index = <NamesIndex<T>>::try_get().unwrap_or_default() + 1;
+				let next_name_index_compact = <Compact<u64>>::from(next_name_index);
+				<Names<T>>::insert(name, next_name_index_compact);
+				// storing is dangerous inside a closure
+				// but after this call we start storing..
+				// so it's fine here
+				<NamesIndex<T>>::put(next_name_index);
+				next_name_index_compact
+			}
 		}
 	}
 }

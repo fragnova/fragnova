@@ -2,8 +2,12 @@
 
 use crate::*;
 
-mod create_tests {
-	use crate::{dummy_data::DummyData, mock::{new_test_ext, AliasesPallet, Origin, System, Test}, Config, Event as AliasesEvent, Namespaces};
+mod tests {
+	use crate::{
+		dummy_data::DummyData,
+		mock::{new_test_ext, AliasesPallet, Origin, System, Test},
+		Config, Event as AliasesEvent, LinkTarget, Namespaces,
+	};
 	use frame_support::{assert_ok, dispatch::DispatchResult, traits::Currency};
 	use sp_runtime::BoundedVec;
 
@@ -30,6 +34,25 @@ mod create_tests {
 		AliasesPallet::transfer_namespace(Origin::signed(signer), bounded_name, new_owner)
 	}
 
+	pub fn create_alias_(
+		signer: <Test as frame_system::Config>::AccountId,
+		namespace: Vec<u8>,
+		alias: Vec<u8>,
+		target: LinkTarget<<Test as frame_system::Config>::AccountId>,
+	) -> DispatchResult {
+		let bounded_namespace: BoundedVec<u8, <Test as Config>::NameLimit> =
+			namespace.clone().try_into().expect("namespace is too long");
+		let bounded_alias: BoundedVec<u8, <Test as Config>::NameLimit> =
+			alias.clone().try_into().expect("alias is too long");
+
+		AliasesPallet::create_alias(
+			Origin::signed(signer),
+			bounded_namespace,
+			bounded_alias,
+			target,
+		)
+	}
+
 	#[test]
 	fn create_namespace_should_work() {
 		new_test_ext().execute_with(|| {
@@ -39,8 +62,9 @@ mod create_tests {
 
 			assert_ok!(create_namespace_(account_id, namespace.clone()));
 
-			System::assert_has_event(AliasesEvent::NamespaceCreated {
-				who: account_id, namespace: namespace.clone() }.into(),
+			System::assert_has_event(
+				AliasesEvent::NamespaceCreated { who: account_id, namespace: namespace.clone() }
+					.into(),
 			);
 		});
 	}
@@ -50,7 +74,7 @@ mod create_tests {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
 			let account_id = dummy.account_id;
-			let new_owner = dummy.account_id;
+			let new_owner = dummy.account_id_2;
 			let namespace = b"DC".to_vec();
 
 			assert_ok!(create_namespace_(account_id.clone(), namespace.clone()));
@@ -60,8 +84,13 @@ mod create_tests {
 				new_owner.clone()
 			));
 
-			System::assert_has_event(AliasesEvent::NamespaceTransferred {
-				namespace: namespace.clone(), from: account_id.clone(), to: new_owner.clone()}.into(),
+			System::assert_has_event(
+				AliasesEvent::NamespaceTransferred {
+					namespace: namespace.clone(),
+					from: account_id.clone(),
+					to: new_owner.clone(),
+				}
+				.into(),
 			);
 			assert_eq!(<Namespaces<Test>>::get(&namespace).unwrap(), new_owner);
 		});

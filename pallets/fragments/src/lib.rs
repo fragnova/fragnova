@@ -1922,6 +1922,35 @@ pub mod pallet {
 			Ok(())
 
 		}
+
+		pub fn get_instance_owner_account_id(
+			params: GetInstanceOwnerParams<Vec<u8>>,
+		) -> Result<T::AccountId, Vec<u8>> {
+			let definition_hash: Hash128 = hex::decode(params.definition_hash)
+				.map_err(|_| "Failed to convert string to u8 slice")?
+				.try_into()
+				.map_err(|_| "Failed to convert u8 slice to Hash128")?;
+
+			if params.copy_id
+				> CopiesCount::<T>::get((definition_hash, params.edition_id))
+				.unwrap_or(Compact(0))
+				.into()
+			{
+				return Err("Instance not found".into());
+			}
+
+			let owner = Owners::<T>::iter_prefix(definition_hash)
+				.find(|(_owner, vec_instances)| {
+					vec_instances.iter().any(|(edition_id, copy_id)| {
+						Compact(params.edition_id) == *edition_id
+							&& Compact(params.copy_id) == *copy_id
+					})
+				})
+				.ok_or("Owner not found (this should never happen)")?
+				.0;
+
+			Ok(owner)
+		}
 	}
 
 	/// Implementation Block of `Pallet` specifically for RPC-related functions
@@ -2238,28 +2267,7 @@ pub mod pallet {
 		pub fn get_instance_owner(
 			params: GetInstanceOwnerParams<Vec<u8>>,
 		) -> Result<Vec<u8>, Vec<u8>> {
-			let definition_hash: Hash128 = hex::decode(params.definition_hash)
-				.map_err(|_| "Failed to convert string to u8 slice")?
-				.try_into()
-				.map_err(|_| "Failed to convert u8 slice to Hash128")?;
-
-			if params.copy_id
-				> CopiesCount::<T>::get((definition_hash, params.edition_id))
-				.unwrap_or(Compact(0))
-				.into()
-			{
-				return Err("Instance not found".into());
-			}
-
-			let owner = Owners::<T>::iter_prefix(definition_hash)
-				.find(|(_owner, vec_instances)| {
-					vec_instances.iter().any(|(edition_id, copy_id)| {
-						Compact(params.edition_id) == *edition_id
-							&& Compact(params.copy_id) == *copy_id
-					})
-				})
-				.ok_or("Owner not found (this should never happen)")?
-				.0;
+			let owner = Self::get_instance_owner_account_id(params)?;
 
 			Ok(hex::encode(owner).into_bytes())
 		}
