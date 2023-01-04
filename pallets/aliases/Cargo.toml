@@ -133,9 +133,6 @@ git = 'https://github.com/fragcolor-xyz/substrate.git'
 tag = 'fragnova-v0.0.6'
 version = '4.0.0-dev'
 
-[dev-dependencies]
-pallet-fragments = {path = '../fragments', default-features = false, features=['cross-testing']}
-
 [features]
 default = ["std"]
 std = [

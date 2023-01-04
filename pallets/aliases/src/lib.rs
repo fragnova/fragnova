@@ -85,9 +85,9 @@ pub mod pallet {
 	pub type Aliases<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
-		T::AccountId, // owner of the alias
+		Vec<u8>, // namespace
 		Twox64Concat,
-		Compact<u64>,             // alias name index
+		Compact<u64>, // alias name index
 		LinkTarget<T::AccountId>, // target asset
 	>;
 
@@ -116,6 +116,7 @@ pub mod pallet {
 		NotAllowed,
 		SystematicFailure,
 		AliasAlreadyOwned,
+		AliasNotExists,
 	}
 
 	#[pallet::call]
@@ -159,6 +160,7 @@ pub mod pallet {
 		/// Only the owner of the Namespace can execute this.
 		///
 		/// - `namespace`: namespace to create
+		/// - `new_owner`: the AccountId to transfer ownership to
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn transfer_namespace(
 			origin: OriginFor<T>,
@@ -210,38 +212,40 @@ pub mod pallet {
 			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
 			ensure!(&who == &owner, Error::<T>::NotAllowed);
 
-			// check that the caller is the owner of the target asset
-			match target {
-				LinkTarget::Fragment { definition_hash, edition_id, copy_id } => {
-					let owner = pallet_fragments::Pallet::<T>::get_instance_owner_account_id(
-						GetInstanceOwnerParams { definition_hash, edition_id, copy_id },
-					)
-					.map_err(|_| Error::<T>::SystematicFailure)?;
-					ensure!(who == owner, Error::<T>::NotAllowed);
-				},
-				LinkTarget::Proto(proto_hash) => {
-					let proto: Proto<T::AccountId, T::BlockNumber> = <Protos<T>>::get(&proto_hash)
-						.ok_or(pallet_protos::Error::<T>::ProtoNotFound)?;
-					match proto.owner {
-						ProtoOwner::User(owner) => ensure!(who == owner, Error::<T>::NotAllowed),
-						_ => {
-							ensure!(false, Error::<T>::NotAllowed)
-						},
-					};
-				},
-				LinkTarget::Cluster(cluster_id) => {
-					let cluster = <Clusters<T>>::get(&cluster_id)
-						.ok_or(pallet_clusters::Error::<T>::ClusterNotFound)?;
-					ensure!(who == cluster.owner, Error::<T>::NotAllowed);
-				},
-				LinkTarget::Account(account_id) => {
-					ensure!(who == account_id, Error::<T>::NotAllowed)
-				},
-			}
-
 			let alias_index = Self::take_name_index(&alias);
 			// check that the caller does not already own this alias
-			ensure!(!<Aliases<T>>::contains_key(&who, &alias_index), Error::<T>::AliasAlreadyOwned);
+			ensure!(!<Aliases<T>>::contains_key(&namespace, &alias_index), Error::<T>::AliasAlreadyOwned);
+
+			// check that the caller is the owner of the target asset
+			Self::is_target_owner(who, target);
+
+			Ok(())
+		}
+
+		/// Replace the **LinkTarget** of an alias with another LinkTarget.
+		///
+		/// Only the root can execute this.
+		///
+		/// - `namespace`: namespace related to the alias to update
+		/// - `alias`: the alias to update
+		/// - `new_target`: the new LinkTarget to link the alias to
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn update_alias_target(
+			origin: OriginFor<T>,
+			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+			new_target: LinkTarget<T::AccountId>,
+		) -> DispatchResult {
+			ensure_root(origin.clone())?;
+
+			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
+			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
+
+			let namespace = namespace.into_inner();
+
+			let alias_index = Self::take_name_index(&alias);
+			ensure!(<Aliases<T>>::contains_key(&namespace, &alias_index), Error::<T>::AliasNotExists);
+			<Aliases<T>>::insert(&namespace, &alias_index, new_target);
 
 			Ok(())
 		}
@@ -267,6 +271,40 @@ pub mod pallet {
 				// so it's fine here
 				<NamesIndex<T>>::put(next_name_index);
 				next_name_index_compact
+			}
+		}
+
+		pub fn is_target_owner(who: T::AccountId, target: LinkTarget<T::AccountId>) -> DispatchResult {
+			match target {
+				LinkTarget::Fragment { definition_hash, edition_id, copy_id } => {
+					let owner = pallet_fragments::Pallet::<T>::get_instance_owner_account_id(
+						GetInstanceOwnerParams { definition_hash, edition_id, copy_id },
+					)
+						.map_err(|_| Error::<T>::SystematicFailure)?;
+					ensure!(who == owner, Error::<T>::NotAllowed);
+					Ok(())
+				},
+				LinkTarget::Proto(proto_hash) => {
+					let proto: Proto<T::AccountId, T::BlockNumber> = <Protos<T>>::get(&proto_hash)
+						.ok_or(pallet_protos::Error::<T>::ProtoNotFound)?;
+					match proto.owner {
+						ProtoOwner::User(owner) => ensure!(who == owner, Error::<T>::NotAllowed),
+						_ => {
+							ensure!(false, Error::<T>::NotAllowed)
+						},
+					};
+					Ok(())
+				},
+				LinkTarget::Cluster(cluster_id) => {
+					let cluster = <Clusters<T>>::get(&cluster_id)
+						.ok_or(pallet_clusters::Error::<T>::ClusterNotFound)?;
+					ensure!(who == cluster.owner, Error::<T>::NotAllowed);
+					Ok(())
+				},
+				LinkTarget::Account(account_id) => {
+					ensure!(who == account_id, Error::<T>::NotAllowed);
+					Ok(())
+				},
 			}
 		}
 	}
