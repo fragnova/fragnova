@@ -67,7 +67,7 @@ pub mod pallet {
 		type NameLimit: Get<u32>;
 	}
 
-	/// **StorageMap** that maps a **Alias** name to its owner.
+	/// **StorageMap** that maps a **Namespace** to its owner.
 	#[pallet::storage]
 	pub type Namespaces<T: Config> = StorageMap<_, Twox64Concat, Vec<u8>, T::AccountId>;
 
@@ -80,7 +80,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type NamesIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// **StorageDoubleMap** that maps a (**AccountId**, **Alias** name index) with a **TargetLink**.
+	/// **StorageDoubleMap** that maps a (**Namespace**, **Alias** name index) with a **LinkTarget**.
 	#[pallet::storage]
 	pub type Aliases<T: Config> = StorageDoubleMap<
 		_,
@@ -91,10 +91,10 @@ pub mod pallet {
 		LinkTarget<T::AccountId>, // target asset
 	>;
 
+	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event documentation should end with an array that provides descriptive names for event
 		NamespaceCreated {
 			who: T::AccountId,
 			namespace: Vec<u8>,
@@ -103,6 +103,9 @@ pub mod pallet {
 			namespace: Vec<u8>,
 			from: T::AccountId,
 			to: T::AccountId,
+		},
+		NamespaceDeleted {
+			namespace: Vec<u8>,
 		},
 	}
 
@@ -155,7 +158,37 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Tranfer the **Namespace ownership** to another AccountId.
+		/// Delete a new **Namespace**.
+		///
+		/// This also deletes all the aliases linked to this namespace
+		///
+		/// - `namespace`: namespace to delete
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn delete_namespace(
+			origin: OriginFor<T>,
+			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin.clone())?;
+
+			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
+
+			let namespace = namespace.into_inner();
+
+			// Check that the namespace exists
+			ensure!(<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceAlreadyExists);
+			// check that the caller is the owner of the namespace
+			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
+			ensure!(&who == &owner, Error::<T>::NotAllowed);
+
+			<Namespaces<T>>::remove(&namespace);
+			let _ = <Aliases<T>>::clear_prefix(&namespace, u32::MAX, None);
+
+			Self::deposit_event(Event::NamespaceDeleted { namespace });
+
+			Ok(())
+		}
+
+		/// Transfer the **Namespace ownership** to another AccountId.
 		///
 		/// Only the owner of the Namespace can execute this.
 		///
@@ -216,7 +249,9 @@ pub mod pallet {
 			ensure!(!<Aliases<T>>::contains_key(&namespace, &alias_index), Error::<T>::AliasAlreadyOwned);
 
 			// check that the caller is the owner of the target asset
-			Self::is_target_owner(who, target);
+			Self::is_target_owner(who, target.clone())?;
+
+			<Aliases<T>>::insert(&namespace, &alias_index, &target);
 
 			Ok(())
 		}
@@ -248,6 +283,36 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Delete an alias.
+		///
+		/// Only the owner of the namespace linked to the alias can execute this.
+		///
+		/// - `namespace`: namespace related to the alias to delete
+		/// - `alias`: the alias to delete
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn delete_alias(
+			origin: OriginFor<T>,
+			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin.clone())?;
+
+			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
+			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
+
+			let namespace = namespace.into_inner();
+
+			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
+			ensure!(&who == &owner, Error::<T>::NotAllowed);
+
+			let alias_index = Self::take_name_index(&alias);
+			ensure!(<Aliases<T>>::contains_key(&namespace, &alias_index), Error::<T>::AliasNotExists);
+
+			<Aliases<T>>::remove(&namespace, &alias_index);
+
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -273,6 +338,10 @@ pub mod pallet {
 			}
 		}
 
+		/// Utility function that checks if an AccountId is the owner of the assets in the LinkTarget
+		///
+		/// - `who`: the AccountId
+		/// - `target`: the LinkTarget containing the asset to check ownership
 		pub fn is_target_owner(who: T::AccountId, target: LinkTarget<T::AccountId>) -> DispatchResult {
 			match target {
 				LinkTarget::Fragment { definition_hash, edition_id, copy_id } => {
