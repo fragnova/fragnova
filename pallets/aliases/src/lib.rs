@@ -192,7 +192,6 @@ pub mod pallet {
 		/// Create an **Alias** that links to a target asset.
 		///
 		/// Only the owner of the asset can create its alias.
-		/// Alias names can be reused by multiple users, but a user can have only one alias with the same name.
 		///
 		/// - `namespace`: namespace to create
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
