@@ -26,9 +26,13 @@ mod benchmarking;
 /// Enum that indicates the types of target assets linked to an alias
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 pub enum LinkTarget<TAccountId> {
+	/// A Proto defined by its hash
 	Proto(Hash256),
+	/// A Fragment instance defined by (definition_hash, edition_id, copy_id)
 	Fragment { definition_hash: Vec<u8>, edition_id: InstanceUnit, copy_id: InstanceUnit }, // struct variant allows a nicer UX on polkadotJS
+	/// An AccountId
 	Account(TAccountId),
+	/// A Cluster defined by its hash
 	Cluster(Hash128),
 }
 
@@ -134,7 +138,6 @@ pub mod pallet {
 
 			// Check that the namespace does not exist already
 			ensure!(!<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceAlreadyExists);
-
 			// reduce NOVA balance from caller's account. The amount is set in Config.
 			let amount: <T as pallet_balances::Config>::Balance =
 				<T as Config>::NamespacePrice::get().saturated_into();

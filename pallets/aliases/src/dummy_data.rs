@@ -1,5 +1,4 @@
 use sp_core::ed25519::Public;
-use crate::{mock::*, *};
 
 pub struct DummyData {
 	pub account_id: Public,

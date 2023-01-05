@@ -1923,6 +1923,7 @@ pub mod pallet {
 
 		}
 
+		/// Query the owner of a Fragment Instance. The return type is AccountId
 		pub fn get_instance_owner_account_id(
 			params: GetInstanceOwnerParams<Vec<u8>>,
 		) -> Result<T::AccountId, Vec<u8>> {
