@@ -3,7 +3,7 @@
 extern crate core;
 
 use codec::{Compact, Decode, Encode};
-use frame_support::traits::tokens::fungible;
+use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement};
 pub use pallet::*;
 use pallet_clusters::Clusters;
 use pallet_fragments::GetInstanceOwnerParams;
@@ -62,7 +62,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type NamespacePrice: Get<u128>;
 
-		/// The max size of namespace string
+		/// The max size of namespace and alias strings
 		#[pallet::constant]
 		type NameLimit: Get<u32>;
 	}
@@ -87,7 +87,7 @@ pub mod pallet {
 		Twox64Concat,
 		Vec<u8>, // namespace
 		Twox64Concat,
-		Compact<u64>, // alias name index
+		Compact<u64>,             // alias name index
 		LinkTarget<T::AccountId>, // target asset
 	>;
 
@@ -95,18 +95,9 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		NamespaceCreated {
-			who: T::AccountId,
-			namespace: Vec<u8>,
-		},
-		NamespaceTransferred {
-			namespace: Vec<u8>,
-			from: T::AccountId,
-			to: T::AccountId,
-		},
-		NamespaceDeleted {
-			namespace: Vec<u8>,
-		},
+		NamespaceCreated { who: T::AccountId, namespace: Vec<u8> },
+		NamespaceTransferred { namespace: Vec<u8>, from: T::AccountId, to: T::AccountId },
+		NamespaceDeleted { namespace: Vec<u8> },
 	}
 
 	// Errors inform users that something went wrong.
@@ -144,11 +135,14 @@ pub mod pallet {
 			// Check that the namespace does not exist already
 			ensure!(!<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceAlreadyExists);
 
-			// burn NOVA from account's balance. The amount is set in Config.
+			// reduce NOVA balance from caller's account. The amount is set in Config.
 			let amount: <T as pallet_balances::Config>::Balance =
 				<T as Config>::NamespacePrice::get().saturated_into();
-			<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::burn_from(
-				&who, amount,
+			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::withdraw(
+				&who,
+				amount,
+				WithdrawReasons::TRANSACTION_PAYMENT,
+				ExistenceRequirement::KeepAlive,
 			)?;
 
 			<Namespaces<T>>::insert(&namespace, &who);
@@ -246,7 +240,10 @@ pub mod pallet {
 
 			let alias_index = Self::take_name_index(&alias);
 			// check that the caller does not already own this alias
-			ensure!(!<Aliases<T>>::contains_key(&namespace, &alias_index), Error::<T>::AliasAlreadyOwned);
+			ensure!(
+				!<Aliases<T>>::contains_key(&namespace, &alias_index),
+				Error::<T>::AliasAlreadyOwned
+			);
 
 			// check that the caller is the owner of the target asset
 			Self::is_target_owner(who, target.clone())?;
@@ -278,7 +275,10 @@ pub mod pallet {
 			let namespace = namespace.into_inner();
 
 			let alias_index = Self::take_name_index(&alias);
-			ensure!(<Aliases<T>>::contains_key(&namespace, &alias_index), Error::<T>::AliasNotExists);
+			ensure!(
+				<Aliases<T>>::contains_key(&namespace, &alias_index),
+				Error::<T>::AliasNotExists
+			);
 			<Aliases<T>>::insert(&namespace, &alias_index, new_target);
 
 			Ok(())
@@ -307,7 +307,10 @@ pub mod pallet {
 			ensure!(&who == &owner, Error::<T>::NotAllowed);
 
 			let alias_index = Self::take_name_index(&alias);
-			ensure!(<Aliases<T>>::contains_key(&namespace, &alias_index), Error::<T>::AliasNotExists);
+			ensure!(
+				<Aliases<T>>::contains_key(&namespace, &alias_index),
+				Error::<T>::AliasNotExists
+			);
 
 			<Aliases<T>>::remove(&namespace, &alias_index);
 
@@ -342,13 +345,16 @@ pub mod pallet {
 		///
 		/// - `who`: the AccountId
 		/// - `target`: the LinkTarget containing the asset to check ownership
-		pub fn is_target_owner(who: T::AccountId, target: LinkTarget<T::AccountId>) -> DispatchResult {
+		pub fn is_target_owner(
+			who: T::AccountId,
+			target: LinkTarget<T::AccountId>,
+		) -> DispatchResult {
 			match target {
 				LinkTarget::Fragment { definition_hash, edition_id, copy_id } => {
 					let owner = pallet_fragments::Pallet::<T>::get_instance_owner_account_id(
 						GetInstanceOwnerParams { definition_hash, edition_id, copy_id },
 					)
-						.map_err(|_| Error::<T>::SystematicFailure)?;
+					.map_err(|_| Error::<T>::SystematicFailure)?;
 					ensure!(who == owner, Error::<T>::NotAllowed);
 					Ok(())
 				},
