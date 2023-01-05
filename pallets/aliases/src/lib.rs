@@ -1,3 +1,19 @@
+//! This pallet `aliases` allows users to create human readable aliases to address their owned existing assets.
+//! Example:
+//!
+//! A user owns a Proto that represents an image of "batman" on chain.
+//! This asset is addressable using its hash, which is not human readable and impossible to remember.
+//! This pallet-aliases allows the user to create an alias like "DC/batman" that links to that hash
+//! and can be used by the owner to demonstrate ownership without the need to use the hash of the asset.
+//!
+//! "DC/batman" --> f9480f9ead9b82690fodf65546kjmyg730f12763ca2f50ce1792
+//!
+//! An alias is composed of two parts: <namespace>/<alias>.
+//! The namespace is a unique string that identifies the owner.
+//! The alias is a string that identifies the asset.
+//!
+//! The user must be owner of the linked asset in order to create the alias.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate core;
