@@ -28,8 +28,14 @@ mod benchmarking;
 pub enum LinkTarget<TAccountId> {
 	/// A Proto defined by its hash
 	Proto(Hash256),
-	/// A Fragment instance defined by (definition_hash, edition_id, copy_id)
-	Fragment { definition_hash: Vec<u8>, edition_id: InstanceUnit, copy_id: InstanceUnit }, // struct variant allows a nicer UX on polkadotJS
+	/// A Fragment instance defined by
+	Fragment {
+		/// definition_hash of the Fragment target
+		definition_hash: Vec<u8>,
+		/// edition_id of the Fragment target
+		edition_id: InstanceUnit,
+		/// copy_id of the Fragment target
+		copy_id: InstanceUnit }, // struct variant allows a nicer UX on polkadotJS
 	/// An AccountId
 	Account(TAccountId),
 	/// A Cluster defined by its hash
