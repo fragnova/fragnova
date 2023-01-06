@@ -1,0 +1,159 @@
+[package]
+authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
+description = 'Aliases pallet.'
+edition = '2021'
+license = 'BUSL-1.1'
+name = 'pallet-aliases'
+readme = 'README.md'
+version = '0.0.1'
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '3.0.0'
+
+[dependencies.frame-benchmarking]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+optional = true
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+
+[dependencies.scale-info]
+default-features = false
+features = ['derive']
+version = '2.0'
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '6.0.0'
+
+[dependencies.sp-io]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '6.0.0'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '6.0.0'
+
+[dependencies.pallet-protos]
+default-features = false
+path = '../protos'
+
+[dependencies.pallet-fragments]
+default-features = false
+path = '../fragments'
+
+[dependencies.pallet-detach]
+default-features = false
+path = '../detach'
+
+[dependencies.pallet-assets]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+
+[dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+
+[dependencies.pallet-accounts]
+default-features = false
+path = '../accounts'
+
+[dependencies.pallet-proxy]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+
+[dependencies.pallet-timestamp]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+
+[dependencies.pallet-contracts]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+
+[dependencies.pallet-oracle]
+default-features = false
+path = '../oracle'
+
+[dependencies.pallet-clusters]
+default-features = false
+path = '../clusters'
+
+[dependencies]
+sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
+hex = { version = "0.4.3", default-features = false }
+serde = { version = "1.0.136", default-features = false, features = ["derive"], optional = true }
+serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
+protos = { version = "0.1.16", default-features = false }
+log = { version = "0.4.14", default-features = false }
+bitflags = "1.3.2"
+
+[dependencies.pallet-randomness-collective-flip]
+default-features = false
+git = 'https://github.com/fragcolor-xyz/substrate.git'
+tag = 'fragnova-v0.0.6'
+version = '4.0.0-dev'
+
+[features]
+default = ["std"]
+std = [
+	'serde',
+	"codec/std",
+	"scale-info/std",
+	"pallet-protos/std",
+	"pallet-fragments/std",
+	"pallet-clusters/std",
+	"frame-support/std",
+	"frame-system/std",
+	"frame-benchmarking/std",
+	"sp-io/std",
+	"sp-std/std",
+	"sp-runtime/std",
+	"sp-core/std",
+	"pallet-randomness-collective-flip/std",
+	'pallet-balances/std',
+	'pallet-assets/std',
+	'pallet-contracts/std',
+	'protos/std'
+]
+runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
+try-runtime = ["frame-support/try-runtime"]

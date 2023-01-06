@@ -500,6 +500,17 @@ impl pallet_clusters::Config for Runtime {
 	type RoleSettingsLimit = ConstU32<20>;
 }
 
+parameter_types! {
+	pub RootNamespace: Vec<u8> = b"Frag".to_vec();
+}
+
+impl pallet_aliases::Config for Runtime {
+	type Event = Event;
+	type NamespacePrice = ConstU128<100>;
+	type NameLimit = ConstU32<20>;
+	type RootNamespace = RootNamespace;
+}
+
 impl pallet_multisig::Config for Runtime {
 	type Event = Event;
 	type Call = Call;
@@ -761,6 +772,7 @@ construct_runtime!(
 		Utility: pallet_utility,
 		Accounts: pallet_accounts,
 		Oracle: pallet_oracle,
+		Aliases: pallet_aliases,
 	}
 );
 
