@@ -132,6 +132,8 @@ pub mod pallet {
 		AliasDeleted { namespace: Vec<u8>, alias: Vec<u8> },
 		AliasTargetUpdated { namespace: Vec<u8>, alias: Vec<u8> },
 		RootAliasCreated { root_namespace: Vec<u8>, alias: Vec<u8> },
+		RootAliasDeleted { root_namespace: Vec<u8>, alias: Vec<u8> },
+		RootAliasUpdated { root_namespace: Vec<u8>, alias: Vec<u8> },
 	}
 
 	// Errors inform users that something went wrong.
@@ -356,6 +358,39 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Replace the **LinkTarget** of a root alias with another LinkTarget.
+		///
+		/// Only the root can execute this.
+		///
+		/// There is no ownership check of the linked new_target.
+		///
+		/// - `alias`: the alias to update
+		/// - `new_target`: the new LinkTarget to link the alias to
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn update_root_alias_target(
+			origin: OriginFor<T>,
+			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+			new_target: LinkTarget<T::AccountId>,
+		) -> DispatchResult {
+			ensure_root(origin.clone())?;
+
+			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
+
+			let root_namespace = T::RootNamespace::get();
+			let alias_index = Self::take_name_index(&alias);
+
+			ensure!(
+				<Aliases<T>>::contains_key(&root_namespace, &alias_index),
+				Error::<T>::AliasNotFound
+			);
+
+			<Aliases<T>>::insert(&root_namespace, &alias_index, &new_target);
+
+			Self::deposit_event(Event::RootAliasUpdated { root_namespace, alias: alias.into_inner() });
+
+			Ok(())
+		}
+
 		/// Delete an alias.
 		///
 		/// Only the owner of the namespace linked to the alias can execute this.
@@ -387,6 +422,35 @@ pub mod pallet {
 			<Aliases<T>>::remove(&namespace, &alias_index);
 
 			Self::deposit_event(Event::AliasDeleted { namespace, alias: alias.into_inner() });
+
+			Ok(())
+		}
+
+		/// Delete a root alias.
+		///
+		/// Only the root can execute this.
+		///
+		/// - `alias`: the root alias to delete
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn delete_root_alias(
+			origin: OriginFor<T>,
+			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+		) -> DispatchResult {
+			ensure_root(origin.clone())?;
+
+			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
+
+			let root_namespace = T::RootNamespace::get();
+			let alias_index = Self::take_name_index(&alias);
+
+			ensure!(
+				<Aliases<T>>::contains_key(&root_namespace, &alias_index),
+				Error::<T>::AliasNotFound
+			);
+
+			<Aliases<T>>::remove(&root_namespace, &alias_index);
+
+			Self::deposit_event(Event::RootAliasDeleted{ root_namespace, alias: alias.into_inner() });
 
 			Ok(())
 		}
