@@ -22,7 +22,7 @@ use codec::{Compact, Decode, Encode};
 use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement};
 pub use pallet::*;
 use pallet_clusters::Clusters;
-use pallet_fragments::GetInstanceOwnerParams;
+use pallet_fragments::Owners;
 use pallet_protos::{Proto, ProtoOwner, Protos};
 use sp_clamor::{Hash128, Hash256, InstanceUnit};
 use sp_std::vec::Vec;
@@ -47,11 +47,11 @@ pub enum LinkTarget<TAccountId> {
 	/// A Fragment instance defined by
 	Fragment {
 		/// definition_hash of the Fragment target
-		definition_hash: Vec<u8>,
+		definition_hash: Hash128,
 		/// edition_id of the Fragment target
-		edition_id: InstanceUnit,
+		edition: InstanceUnit,
 		/// copy_id of the Fragment target
-		copy_id: InstanceUnit }, // struct variant allows a nicer UX on polkadotJS
+		copy: InstanceUnit }, // struct variant allows a nicer UX on polkadotJS
 	/// An AccountId
 	Account(TAccountId),
 	/// A Cluster defined by its hash
@@ -91,6 +91,10 @@ pub mod pallet {
 		/// The max size of namespace and alias strings
 		#[pallet::constant]
 		type NameLimit: Get<u32>;
+
+		/// The root namespace
+		#[pallet::constant]
+		type RootNamespace: Get<Vec<u8>>;
 	}
 
 	/// **StorageMap** that maps a **Namespace** to its owner.
@@ -124,6 +128,10 @@ pub mod pallet {
 		NamespaceCreated { who: T::AccountId, namespace: Vec<u8> },
 		NamespaceTransferred { namespace: Vec<u8>, from: T::AccountId, to: T::AccountId },
 		NamespaceDeleted { namespace: Vec<u8> },
+		AliasCreated { who: T::AccountId, namespace: Vec<u8>, alias: Vec<u8> },
+		AliasDeleted { namespace: Vec<u8>, alias: Vec<u8> },
+		AliasTargetUpdated { namespace: Vec<u8>, alias: Vec<u8> },
+		RootAliasCreated { root_namespace: Vec<u8>, alias: Vec<u8> },
 	}
 
 	// Errors inform users that something went wrong.
@@ -131,12 +139,12 @@ pub mod pallet {
 	#[pallet::error]
 	pub enum Error<T> {
 		InvalidInput,
-		NamespaceAlreadyExists,
+		NamespaceExists,
 		NamespaceNotFound,
 		NotAllowed,
 		SystematicFailure,
-		AliasAlreadyOwned,
-		AliasNotExists,
+		AliasExists,
+		AliasNotFound,
 	}
 
 	#[pallet::call]
@@ -159,7 +167,7 @@ pub mod pallet {
 			let namespace = namespace.into_inner();
 
 			// Check that the namespace does not exist already
-			ensure!(!<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceAlreadyExists);
+			ensure!(!<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceExists);
 			// reduce NOVA balance from caller's account. The amount is set in Config.
 			let amount: <T as pallet_balances::Config>::Balance =
 				<T as Config>::NamespacePrice::get().saturated_into();
@@ -194,7 +202,7 @@ pub mod pallet {
 			let namespace = namespace.into_inner();
 
 			// Check that the namespace exists
-			ensure!(<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceAlreadyExists);
+			ensure!(<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceExists);
 			// check that the caller is the owner of the namespace
 			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
 			ensure!(&who == &owner, Error::<T>::NotAllowed);
@@ -267,13 +275,48 @@ pub mod pallet {
 			// check that the caller does not already own this alias
 			ensure!(
 				!<Aliases<T>>::contains_key(&namespace, &alias_index),
-				Error::<T>::AliasAlreadyOwned
+				Error::<T>::AliasExists
 			);
 
 			// check that the caller is the owner of the target asset
-			Self::is_target_owner(who, target.clone())?;
+			Self::is_target_owner(&who, target.clone())?;
 
 			<Aliases<T>>::insert(&namespace, &alias_index, &target);
+
+			Self::deposit_event(Event::AliasCreated { who, namespace, alias: alias.into_inner() });
+
+			Ok(())
+		}
+
+		/// Create a root **Alias** that links to a target asset.
+		///
+		/// Only the root can execute this.
+		///
+		/// The Namespace is set in Config.
+		///
+		/// There is no ownership check of the linked asset.
+		///
+		/// - `alias`: root alias to create
+		/// - `target`: LinkTarget to link the alias to
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn create_root_alias(
+			origin: OriginFor<T>,
+			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
+			target: LinkTarget<T::AccountId>,
+		) -> DispatchResult {
+			ensure_root(origin.clone())?;
+
+			let root_namespace = T::RootNamespace::get();
+			let alias_index = Self::take_name_index(&alias);
+			// check that the caller does not already own this alias
+			ensure!(
+				!<Aliases<T>>::contains_key(&root_namespace, &alias_index),
+				Error::<T>::AliasExists
+			);
+
+			<Aliases<T>>::insert(&root_namespace, &alias_index, &target);
+
+			Self::deposit_event(Event::RootAliasCreated { root_namespace, alias: alias.into_inner() });
 
 			Ok(())
 		}
@@ -281,6 +324,8 @@ pub mod pallet {
 		/// Replace the **LinkTarget** of an alias with another LinkTarget.
 		///
 		/// Only the root can execute this.
+		///
+		/// There is no ownership check of the linked new_target.
 		///
 		/// - `namespace`: namespace related to the alias to update
 		/// - `alias`: the alias to update
@@ -302,9 +347,11 @@ pub mod pallet {
 			let alias_index = Self::take_name_index(&alias);
 			ensure!(
 				<Aliases<T>>::contains_key(&namespace, &alias_index),
-				Error::<T>::AliasNotExists
+				Error::<T>::AliasNotFound
 			);
 			<Aliases<T>>::insert(&namespace, &alias_index, new_target);
+
+			Self::deposit_event(Event::AliasTargetUpdated { namespace, alias: alias.into_inner() });
 
 			Ok(())
 		}
@@ -334,10 +381,12 @@ pub mod pallet {
 			let alias_index = Self::take_name_index(&alias);
 			ensure!(
 				<Aliases<T>>::contains_key(&namespace, &alias_index),
-				Error::<T>::AliasNotExists
+				Error::<T>::AliasNotFound
 			);
 
 			<Aliases<T>>::remove(&namespace, &alias_index);
+
+			Self::deposit_event(Event::AliasDeleted { namespace, alias: alias.into_inner() });
 
 			Ok(())
 		}
@@ -371,23 +420,28 @@ pub mod pallet {
 		/// - `who`: the AccountId
 		/// - `target`: the LinkTarget containing the asset to check ownership
 		pub fn is_target_owner(
-			who: T::AccountId,
+			who: &T::AccountId,
 			target: LinkTarget<T::AccountId>,
 		) -> DispatchResult {
 			match target {
-				LinkTarget::Fragment { definition_hash, edition_id, copy_id } => {
-					let owner = pallet_fragments::Pallet::<T>::get_instance_owner_account_id(
-						GetInstanceOwnerParams { definition_hash, edition_id, copy_id },
-					)
-					.map_err(|_| Error::<T>::SystematicFailure)?;
-					ensure!(who == owner, Error::<T>::NotAllowed);
+				LinkTarget::Fragment { definition_hash, edition, copy } => {
+					let owner = Owners::<T>::iter_prefix(definition_hash)
+						.find(|(_owner, vec_instances)| {
+							vec_instances.iter().any(|(edition_id, copy_id)| {
+								Compact(edition) == *edition_id
+									&& Compact(copy) == *copy_id
+							})
+						})
+						.ok_or("Fragment instance owner not found.")?
+						.0;
+					ensure!(*who == owner, Error::<T>::NotAllowed);
 					Ok(())
 				},
 				LinkTarget::Proto(proto_hash) => {
 					let proto: Proto<T::AccountId, T::BlockNumber> = <Protos<T>>::get(&proto_hash)
 						.ok_or(pallet_protos::Error::<T>::ProtoNotFound)?;
 					match proto.owner {
-						ProtoOwner::User(owner) => ensure!(who == owner, Error::<T>::NotAllowed),
+						ProtoOwner::User(owner) => ensure!(*who == owner, Error::<T>::NotAllowed),
 						_ => {
 							ensure!(false, Error::<T>::NotAllowed)
 						},
@@ -397,11 +451,11 @@ pub mod pallet {
 				LinkTarget::Cluster(cluster_id) => {
 					let cluster = <Clusters<T>>::get(&cluster_id)
 						.ok_or(pallet_clusters::Error::<T>::ClusterNotFound)?;
-					ensure!(who == cluster.owner, Error::<T>::NotAllowed);
+					ensure!(*who == cluster.owner, Error::<T>::NotAllowed);
 					Ok(())
 				},
 				LinkTarget::Account(account_id) => {
-					ensure!(who == account_id, Error::<T>::NotAllowed);
+					ensure!(*who == account_id, Error::<T>::NotAllowed);
 					Ok(())
 				},
 			}

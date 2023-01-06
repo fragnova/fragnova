@@ -2,7 +2,7 @@
 
 mod tests {
 	use crate::{
-		dummy_data::DummyData,
+		dummy_data::{get_root_namespace, DummyData},
 		mock::{new_test_ext, AliasesPallet, Origin, System, Test},
 		Config, Event as AliasesEvent, LinkTarget, Namespaces, *,
 	};
@@ -52,18 +52,23 @@ mod tests {
 		namespace: Vec<u8>,
 		alias: Vec<u8>,
 		target: LinkTarget<<Test as frame_system::Config>::AccountId>,
+		as_root: bool,
 	) -> DispatchResult {
 		let bounded_namespace: BoundedVec<u8, <Test as Config>::NameLimit> =
 			namespace.clone().try_into().expect("namespace is too long");
 		let bounded_alias: BoundedVec<u8, <Test as Config>::NameLimit> =
 			alias.clone().try_into().expect("alias is too long");
 
-		AliasesPallet::create_alias(
-			Origin::signed(signer),
-			bounded_namespace,
-			bounded_alias,
-			target,
-		)
+		if as_root {
+			AliasesPallet::create_root_alias(Origin::root(), bounded_alias, target)
+		} else {
+			AliasesPallet::create_alias(
+				Origin::signed(signer),
+				bounded_namespace,
+				bounded_alias,
+				target,
+			)
+		}
 	}
 
 	pub fn update_alias_target_(
@@ -130,7 +135,7 @@ mod tests {
 			assert_ok!(create_namespace_(account_id, namespace.clone(), true));
 			assert_err!(
 				create_namespace_(account_id.clone(), namespace.clone(), true),
-				Error::<Test>::NamespaceAlreadyExists
+				Error::<Test>::NamespaceExists
 			);
 			assert_eq!(<Namespaces<Test>>::get(&namespace).len(), 1);
 		});
@@ -146,6 +151,13 @@ mod tests {
 			assert_ok!(create_namespace_(account_id, namespace.clone(), true));
 			assert_ok!(delete_namespace_(account_id, namespace.clone()));
 			assert!(!<Namespaces<Test>>::contains_key(&namespace));
+
+			System::assert_has_event(
+				AliasesEvent::NamespaceDeleted {
+					namespace: namespace.clone(),
+				}
+					.into(),
+			);
 		});
 	}
 
@@ -159,7 +171,13 @@ mod tests {
 			let target = LinkTarget::Account(account_id);
 
 			assert_ok!(create_namespace_(account_id.clone(), namespace.clone(), true));
-			assert_ok!(create_alias_(account_id.clone(), namespace.clone(), alias.clone(), target));
+			assert_ok!(create_alias_(
+				account_id.clone(),
+				namespace.clone(),
+				alias.clone(),
+				target,
+				false
+			));
 			assert_ok!(delete_namespace_(account_id, namespace.clone()));
 			assert!(!<Namespaces<Test>>::contains_key(&namespace));
 			let alias_index = Pallet::<Test>::take_name_index(&alias);
@@ -204,7 +222,45 @@ mod tests {
 			let target = LinkTarget::Account(account_id);
 
 			assert_ok!(create_namespace_(account_id.clone(), namespace.clone(), true));
-			assert_ok!(create_alias_(account_id.clone(), namespace.clone(), alias, target));
+			assert_ok!(create_alias_(account_id.clone(), namespace.clone(), alias.clone(), target, false));
+
+			System::assert_has_event(
+				AliasesEvent::AliasCreated {
+					who: account_id.clone(),
+					namespace: namespace.clone(),
+					alias: alias.clone(),
+				}.into(),
+			);
+		});
+	}
+
+	#[test]
+	fn create_root_alias_should_work() {
+		new_test_ext().execute_with(|| {
+			let dummy = DummyData::new();
+			let account_id = dummy.account_id;
+			let alias = b"batman".to_vec();
+			let namespace = b"DC".to_vec();
+			let target = LinkTarget::Account(account_id);
+			let root_namespace = get_root_namespace();
+
+			assert_ok!(create_alias_(
+				account_id.clone(),
+				namespace.clone(),
+				alias.clone(),
+				target,
+				true // as root
+			));
+
+			let alias_index = Pallet::<Test>::take_name_index(&alias);
+			assert!(<Aliases<Test>>::contains_key(&root_namespace, &alias_index));
+
+			System::assert_has_event(
+				AliasesEvent::RootAliasCreated {
+					root_namespace,
+					alias: alias.clone(),
+				}.into(),
+			);
 		});
 	}
 
@@ -224,7 +280,8 @@ mod tests {
 				account_id.clone(),
 				namespace.clone(),
 				alias.clone(),
-				target.clone()
+				target.clone(),
+				false
 			));
 			assert_err!(
 				update_alias_target_(

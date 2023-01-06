@@ -263,10 +263,15 @@ impl pallet_clusters::Config for Test {
 	type RoleSettingsLimit = ConstU32<20>;
 }
 
+parameter_types! {
+	pub RootNamespace: Vec<u8> = b"Frag".to_vec();
+}
+
 impl pallet_aliases::Config for Test {
 	type Event = Event;
 	type NamespacePrice = ConstU128<100>;
 	type NameLimit = ConstU32<20>;
+	type RootNamespace = RootNamespace;
 }
 
 impl pallet_balances::Config for Test {
