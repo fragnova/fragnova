@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["LinkTarget","Enum that indicates the types of target assets linked to an alias"]],"mod":[["pallet","The module that hosts all the FRAME types needed to add this pallet to a runtime."]]};

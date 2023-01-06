@@ -1,5 +1,6 @@
 (function() {var implementors = {
 "pallet_accounts":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_accounts/pallet/enum.Error.html\" title=\"enum pallet_accounts::pallet::Error\">Error</a>&lt;T&gt;"]],
+"pallet_aliases":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_aliases/pallet/enum.Error.html\" title=\"enum pallet_aliases::pallet::Error\">Error</a>&lt;T&gt;"]],
 "pallet_clusters":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_clusters/pallet/enum.Error.html\" title=\"enum pallet_clusters::pallet::Error\">Error</a>&lt;T&gt;"]],
 "pallet_detach":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_detach/pallet/enum.Error.html\" title=\"enum pallet_detach::pallet::Error\">Error</a>&lt;T&gt;"]],
 "pallet_fragments":[["impl&lt;T&gt; PalletError for <a class=\"enum\" href=\"pallet_fragments/pallet/enum.Error.html\" title=\"enum pallet_fragments::pallet::Error\">Error</a>&lt;T&gt;"]],
