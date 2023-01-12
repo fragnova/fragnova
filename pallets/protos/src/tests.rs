@@ -3,12 +3,12 @@
 use crate as pallet_protos;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Compact;
+use copied_from_pallet_accounts::{link_, lock_};
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
+use protos::categories::TextCategories;
 use stake_tests::stake_;
 use std::collections::BTreeMap;
 use upload_tests::upload;
-use copied_from_pallet_accounts::{link_, lock_};
-use protos::categories::TextCategories;
 
 mod copied_from_pallet_accounts {
 	use super::*;
@@ -109,7 +109,6 @@ mod upload_tests {
 				event,
 				mock::Event::from(pallet_protos::Event::Uploaded {
 					proto_hash: proto.get_proto_hash(),
-					cid: proto.get_proto_cid()
 				})
 			);
 		});
@@ -124,7 +123,6 @@ mod upload_tests {
 			assert_noop!(upload(dd.account_id, &proto), Error::<Test>::ProtoExists);
 		});
 	}
-
 
 	// TODO
 	#[test]
@@ -193,7 +191,7 @@ mod patch_tests {
 			patch.include_cost.map(|cost| UsageLicense::Tickets(Compact::from(cost))),
 			patch.new_references.clone(),
 			None, // TODO
-			patch.new_data.clone(),
+			Some(ProtoData::Local(patch.new_data.clone())),
 		)
 	}
 
@@ -220,7 +218,8 @@ mod patch_tests {
 			assert!(proto_struct.patches.contains(&ProtoPatch {
 				block: block_number,
 				data_hash: patch.get_data_hash(),
-				references: patch.new_references.clone()
+				references: patch.new_references.clone(),
+				data: ProtoData::Local(patch.new_data.clone())
 			}));
 
 			let event = <frame_system::Pallet<Test>>::events()
@@ -231,7 +230,6 @@ mod patch_tests {
 				event,
 				mock::Event::from(pallet_protos::Event::Patched {
 					proto_hash: patch.proto_fragment.get_proto_hash(),
-					cid: patch.get_data_cid()
 				})
 			);
 		});
@@ -559,15 +557,12 @@ mod detach_tests {
 
 			assert_eq!(
 				pallet_detach::DetachRequests::<Test>::get(),
-				vec![
-					pallet_detach::DetachRequest {
-						hash: pallet_detach::DetachHash::Proto(detach.proto_fragment.get_proto_hash()),
-						target_chain: detach.target_chain,
-						target_account: detach.target_account,
-					},
-				]
+				vec![pallet_detach::DetachRequest {
+					hash: pallet_detach::DetachHash::Proto(detach.proto_fragment.get_proto_hash()),
+					target_chain: detach.target_chain,
+					target_account: detach.target_account,
+				},]
 			);
-
 		});
 	}
 
@@ -602,7 +597,10 @@ mod detach_tests {
 
 			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
 			assert_ok!(detach_(dd.account_id, &detach));
-			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::DetachRequestAlreadyExists);
+			assert_noop!(
+				detach_(dd.account_id, &detach),
+				Error::<Test>::DetachRequestAlreadyExists
+			);
 		});
 	}
 
@@ -612,7 +610,6 @@ mod detach_tests {
 	fn detach_should_not_work_if_proto_is_owned_by_external_asset() {
 		todo!("I have no idea how the enum `LinkedAssset` even works right now!");
 	}
-
 }
 
 mod stake_tests {
@@ -623,11 +620,7 @@ mod stake_tests {
 		proto: &ProtoFragment,
 		stake_amount: &<Test as pallet_assets::Config>::Balance,
 	) -> DispatchResult {
-		ProtosPallet::curate(
-			Origin::signed(signer),
-			proto.get_proto_hash(),
-			stake_amount.clone(),
-		)
+		ProtosPallet::curate(Origin::signed(signer), proto.get_proto_hash(), stake_amount.clone())
 	}
 
 	// TODO
@@ -713,7 +706,6 @@ mod stake_tests {
 	#[ignore]
 	fn stake_should_work_if_user_has_sufficient_balance() {
 		new_test_ext().execute_with(|| {
-
 			todo!();
 
 			// let dd = DummyData::new();
@@ -744,7 +736,6 @@ mod stake_tests {
 	#[ignore]
 	fn stake_should_not_work_if_user_does_has_insufficient_balance() {
 		new_test_ext().execute_with(|| {
-
 			todo!();
 
 			// let dd = DummyData::new();
@@ -849,7 +840,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -892,7 +883,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -937,7 +928,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -983,7 +974,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1060,7 +1051,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1116,7 +1107,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1193,7 +1184,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id_second)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1248,7 +1239,7 @@ mod get_protos_tests {
 						"value": hex::encode(dd.account_id)
 					},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1301,7 +1292,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1395,7 +1386,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1445,7 +1436,7 @@ mod get_protos_tests {
 					"value": hex::encode(dd.account_id)
 				},
 			}})
-				.to_string();
+			.to_string();
 
 			assert_eq!(result_string, json_expected);
 		});
@@ -1470,9 +1461,9 @@ mod get_protos_tests {
 						limit: u64::MAX,
 						..Default::default()
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): {},
 					hex::encode(proto_second.get_proto_hash()): {},
@@ -1486,9 +1477,9 @@ mod get_protos_tests {
 						exclude_tags: proto_second.tags, // exclude tags!
 						..Default::default()
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): {},
 				})
@@ -1523,9 +1514,9 @@ mod get_genealogy_tests {
 						proto_hash: hex::encode(proto_third.get_proto_hash()).into_bytes(),
 						get_ancestors: true,
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					hex::encode(proto_third.get_proto_hash()): [
 						hex::encode(proto_second.get_proto_hash())
@@ -1561,9 +1552,9 @@ mod get_genealogy_tests {
 						proto_hash: hex::encode(proto.get_proto_hash()).into_bytes(),
 						get_ancestors: false,
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					hex::encode(proto.get_proto_hash()): [
 						hex::encode(proto_second.get_proto_hash())
