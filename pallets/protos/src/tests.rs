@@ -52,7 +52,7 @@ mod upload_tests {
 				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
 				.unwrap_or(UsageLicense::Closed),
 			None,
-			proto.data.clone(),
+			ProtoData::Local(proto.data.clone()),
 		)
 	}
 
@@ -85,6 +85,7 @@ mod upload_tests {
 				tags: Vec::new(), // proto.tags,
 				metadata: BTreeMap::new(),
 				accounts_info: AccountsInfo::default(),
+				data: ProtoData::Local(proto.data.clone()),
 			};
 
 			// Ensure that this test case fails if a new field is ever added to the `Proto` struct

@@ -52,8 +52,6 @@ use scale_info::prelude::{
 };
 use serde_json::{json, Map, Value};
 
-use base58::ToBase58;
-
 use frame_support::traits::tokens::fungibles::{Inspect, Mutate};
 
 /// TODO: Documentation
@@ -143,6 +141,8 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub data_hash: Hash256,
 	/// **List of New Proto-Fragments** that was **used** to **create** the **patch** (INCDT)
 	pub references: Vec<Hash256>,
+	/// **Data** of the **patch** (Only valid if not Local)
+	pub data: ProtoData,
 }
 
 /// Struct that represents the account information of a Proto-Fragment
@@ -172,8 +172,8 @@ pub enum UsageLicense<TContractAddress> {
 pub enum ProtoData {
 	/// Data is stored on this chain's blocks directly, this is the most safe way of storing data.
 	Local(Vec<u8>),
-	/// Data is stored on the Arweave chain, we use content_hash to guarantee unique-ness of data, when data is fetched this hash should be checked, if check fails assume data is invalid
-	Arweave { content_hash: Hash256, arweave_tx: Hash256 },
+	/// Data is stored on the Arweave chain, store tx hash, no way to guarantee exact 100% uniqueness of data
+	Arweave(Hash256),
 	/// Data is maybe somewhere on the IPFS network, this is unsafe cos the IPFS network is all about caching and content delivery, offering no guarantee of permanent storage, not allowed on mainnet
 	Ipfs([u8; 64]),
 }
@@ -202,6 +202,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
 	/// Accounts information for this proto.
 	pub accounts_info: AccountsInfo,
+	/// **Data** of the **Proto-Fragment** (valid only if not Local)
+	pub data: ProtoData,
 }
 
 #[frame_support::pallet]
@@ -213,7 +215,6 @@ pub mod pallet {
 	use pallet_detach::{
 		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
 	};
-	use sp_clamor::CID_PREFIX;
 	use sp_runtime::SaturatedConversion;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -333,9 +334,9 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A Proto-Fragment was uploaded
-		Uploaded { proto_hash: Hash256, cid: Vec<u8> },
+		Uploaded { proto_hash: Hash256 },
 		/// A Proto-Fragment was patched
-		Patched { proto_hash: Hash256, cid: Vec<u8> },
+		Patched { proto_hash: Hash256 },
 		/// A Proto-Fragment metadata has changed
 		MetadataChanged { proto_hash: Hash256, metadata_key: Vec<u8> },
 		/// A Proto-Fragment was detached
@@ -423,7 +424,7 @@ pub mod pallet {
 			tags: BoundedVec::<BoundedVec::<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>,
 			linked_asset: Option<LinkedAsset>,
 			license: UsageLicense<T::AccountId>,
-			cluster: Option<Cluster<T::AccountId>>,
+			_cluster: Option<Cluster<T::AccountId>>,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -440,13 +441,12 @@ pub mod pallet {
 			// hash the immutable data, this is also the unique proto id
 			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
 			// "0x0155a0e40220"))
-		  // Doesn't work, we need to store on state non Local data...!!
-			let (proto_hash, data_size) = match &data {
-				ProtoData::Local(data) => (blake2_256(data), data.len()),
-				ProtoData::Arweave { content_hash, arweave_tx } => (*content_hash, 0),
+			let (proto_hash, data_size, data_stored) = match &data {
+				ProtoData::Local(data) => (blake2_256(data), data.len(), ProtoData::Local(vec![])),
+				ProtoData::Arweave(data) => (blake2_256(data), 0usize, ProtoData::Arweave(*data)),
 				ProtoData::Ipfs(cid) => {
 					// Check if this is a testnet, if so we need to FAIL!!
-					blake2_256(cid);
+					(blake2_256(cid), 0usize, ProtoData::Ipfs(*cid))
 				},
 			};
 
@@ -466,9 +466,9 @@ pub mod pallet {
 			// Store Trait if trait, also hash properly the data and decode name
 			let category = match category {
 				Categories::Trait(_) => {
-					let data = match &data {
+					let data: &Vec<u8> = match &data {
 						ProtoData::Local(data) => Ok(data),
-						_ => Err(Error::<T>::SystematicFailure.into()),
+						_ => Err(Error::<T>::SystematicFailure),
 					}?;
 
 					let trait_id = twox_64(&data);
@@ -524,6 +524,7 @@ pub mod pallet {
 				tags,
 				metadata: BTreeMap::new(),
 				accounts_info: AccountsInfo::default(),
+				data: data_stored,
 			};
 
 			// store proto
@@ -541,23 +542,15 @@ pub mod pallet {
 			<ProtosByOwner<T>>::append(owner, proto_hash);
 
 			match &data {
-				ProtoData::Local(data) => {
+				ProtoData::Local(_data) => {
 					// index immutable data for IPFS discovery
 					transaction_index::index(extrinsic_index, data_size as u32, proto_hash);
-
-					let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
-					let cid = cid.to_base58();
-					let cid = [&b"z"[..], cid.as_bytes()].concat();
-
-					// also emit event
-					Self::deposit_event(Event::Uploaded { proto_hash, cid });
 				},
-				_ => {
-					let empty = vec![];
-					// also emit event
-					Self::deposit_event(Event::Uploaded { proto_hash, empty });
-				},
+				_ => {},
 			};
+
+			// also emit event
+			Self::deposit_event(Event::Uploaded { proto_hash });
 
 			log::debug!("Uploaded proto: {:?}", proto_hash);
 
@@ -578,7 +571,7 @@ pub mod pallet {
 		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment's current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len() as u32,
-		tags.as_ref().map(|tags| tags.len() as u32).unwrap_or_default(), data.len() as u32))]
+		tags.as_ref().map(|tags| tags.len() as u32).unwrap_or_default(), data.encode().len() as u32))]
 		pub fn patch(
 			origin: OriginFor<T>,
 			// proto hash we want to patch
@@ -587,7 +580,7 @@ pub mod pallet {
 			new_references: Vec<Hash256>,
 			tags: Option<BoundedVec::<BoundedVec::<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>>,
 			// data we want to patch last because of the way we store blocks (storage chain)
-			data: ProtoData,
+			data: Option<ProtoData>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -616,8 +609,6 @@ pub mod pallet {
 				Error::<T>::Detached
 			);
 
-			let data_hash = blake2_256(&data);
-
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			// we need this to index transactions
@@ -630,18 +621,31 @@ pub mod pallet {
 			Self::check_license(&new_references, &who)?;
 
 			<Protos<T>>::mutate(&proto_hash, |proto| {
-				let proto = proto.as_mut().unwrap();
+				let proto = proto.as_mut().expect("Proto exists from above check; qed");
 
-				// Add a data patch if not empty
-				if !data.is_empty() {
-					// No failures from here on out
+				// No failures from here on out
+
+				if let Some(data) = data {
+					let (data_hash, data_stored) = match &data {
+						ProtoData::Local(data) => {
+							let data_hash = blake2_256(data);
+							// index mutable data for IPFS discovery as well
+							transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
+							(data_hash, ProtoData::Local(vec![]))
+						},
+						ProtoData::Arweave(data) => (blake2_256(data), ProtoData::Arweave(*data)),
+						ProtoData::Ipfs(cid) => {
+							// Check if this is a testnet, if so we need to FAIL!!
+							(blake2_256(cid), ProtoData::Ipfs(*cid))
+						},
+					};
+
 					proto.patches.push(ProtoPatch {
 						block: current_block_number,
 						data_hash,
 						references: new_references.clone(),
+						data: data_stored,
 					});
-					// index mutable data for IPFS discovery as well
-					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 				}
 
 				// Overwrite license if not None
@@ -678,12 +682,8 @@ pub mod pallet {
 				<ProtosByParent<T>>::append(new_reference, proto_hash);
 			}
 
-			let cid = [&CID_PREFIX[..], &data_hash[..]].concat();
-			let cid = cid.to_base58();
-			let cid = [&b"z"[..], cid.as_bytes()].concat();
-
 			// also emit event
-			Self::deposit_event(Event::Patched { proto_hash, cid });
+			Self::deposit_event(Event::Patched { proto_hash });
 
 			log::debug!("Updated proto: {:?}", proto_hash);
 
@@ -777,7 +777,7 @@ pub mod pallet {
 			// Think of "Vec<u8>" as String (something to do with WASM - that's why we use Vec<u8>)
 			metadata_key: BoundedVec<u8, <T as pallet::Config>::StringLimit>,
 			// data we want to update last because of the way we store blocks (storage chain)
-			data: ProtoData,
+			data: Vec<u8>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -1009,7 +1009,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue
+							continue;
 						}
 					}
 
@@ -1027,7 +1027,7 @@ pub mod pallet {
 								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
 							} else {
 								// Curation not found
-								return Err(Error::<T>::CurationNotFound.into())
+								return Err(Error::<T>::CurationNotFound.into());
 							}
 						},
 						UsageLicense::Contract(contract_address) => {
@@ -1052,19 +1052,19 @@ pub mod pallet {
 								let allowed = bool::decode(&mut &res.data[..]);
 								if let Ok(allowed) = allowed {
 									if !allowed {
-										return Err(Error::<T>::Unauthorized.into())
+										return Err(Error::<T>::Unauthorized.into());
 									}
 								} else {
-									return Err(Error::<T>::Unauthorized.into())
+									return Err(Error::<T>::Unauthorized.into());
 								}
 							} else {
-								return Err(Error::<T>::Unauthorized.into())
+								return Err(Error::<T>::Unauthorized.into());
 							}
 						},
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into())
+					return Err(Error::<T>::ReferenceNotFound.into());
 				}
 			}
 			Ok(())
@@ -1080,16 +1080,16 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.license == UsageLicense::Closed {
-						return false
+						return false;
 					} else if !avail && struct_proto.license != UsageLicense::Closed {
-						return false
+						return false;
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto, exclude_tags)
+					return Self::filter_tags(tags, &struct_proto, exclude_tags);
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories, exclude_tags)
+					return Self::filter_category(tags, &struct_proto, categories, exclude_tags);
 				}
 			} else {
 				false
@@ -1127,39 +1127,40 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto, exclude_tags)
+									return Self::filter_tags(tags, struct_proto, exclude_tags);
 								} else {
-									return false
+									return false;
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec) &&
-								param_script_info.requiring.contains(&zero_vec) &&
-								param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec)
+								&& param_script_info.requiring.contains(&zero_vec)
+								&& param_script_info.format == stored_script_info.format
 							{
-								return Self::filter_tags(tags, struct_proto, exclude_tags)
+								return Self::filter_tags(tags, struct_proto, exclude_tags);
 							} else {
-								return false
+								return false;
 							}
 						} else {
 							// it should never go here
-							return false
+							return false;
 						}
 					},
-					_ =>
+					_ => {
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto, exclude_tags)
+							return Self::filter_tags(tags, struct_proto, exclude_tags);
 						} else {
-							return false
-						},
+							return false;
+						}
+					},
 				})
 				.collect();
 
 			if found.is_empty() {
-				return false
+				return false;
 			} else {
-				return true
+				return true;
 			}
 		}
 
@@ -1219,38 +1220,39 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return true
+									return true;
 								} else {
-									return false
+									return false;
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec) &&
-								param_script_info.requiring.contains(&zero_vec) &&
-								param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec)
+								&& param_script_info.requiring.contains(&zero_vec)
+								&& param_script_info.format == stored_script_info.format
 							{
-								return true
+								return true;
 							} else if !(&cat == &category) {
-								return false
+								return false;
 							} else {
-								return false
+								return false;
 							}
 						} else {
-							return false
+							return false;
 						}
 					},
 					// for all other types of Categories
-					_ =>
+					_ => {
 						if !(&cat == &category) {
-							return false
+							return false;
 						} else {
-							return true
-						},
+							return true;
+						}
+					},
 				})
 				.collect();
 
-			return found
+			return found;
 		}
 
 		/// Converts a `ProtoOwner` struct into a JSON
@@ -1394,7 +1396,7 @@ pub mod pallet {
 						// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						if found.is_empty() {
-							continue
+							continue;
 						}
 					}
 					// Found the category.
