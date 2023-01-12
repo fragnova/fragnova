@@ -28,6 +28,8 @@ use sp_core::{crypto::UncheckedFrom, ecdsa, H160, U256};
 
 use codec::{Compact, Decode, Encode};
 
+pub use pallet::*;
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
