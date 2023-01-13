@@ -174,9 +174,10 @@ pub enum UsageLicense<TContractAddress> {
 pub enum ProtoData {
 	/// Data is stored on this chain's blocks directly, this is the most safe way of storing data.
 	Local(Vec<u8>),
-	/// Data is stored on the Arweave chain, store tx hash, no way to guarantee exact 100% uniqueness of data
+	/// Data is stored on the Arweave chain, store tx hash, no way to guarantee exact 100% uniqueness of data.
 	Arweave(Hash256),
-	/// Data is maybe somewhere on the IPFS network, this is unsafe cos the IPFS network is all about caching and content delivery, offering no guarantee of permanent storage, not allowed on mainnet
+	/// Data is maybe somewhere on the IPFS network, this is unsafe cos the IPFS network is all about caching and content delivery, offering no guarantee of permanent storage
+	/// With that said there are some ways to guarantee the data is stored on IPFS via stuff like FileCoin + Lighthouse but they are relatively not as popular as Arweave so it's not recommended.
 	Ipfs([u8; 64]),
 }
 
@@ -452,10 +453,7 @@ pub mod pallet {
 					(blake2_256(data), data.len(), ProtoData::Local(vec![]))
 				},
 				ProtoData::Arweave(data) => (blake2_256(data), 0usize, ProtoData::Arweave(*data)),
-				ProtoData::Ipfs(cid) => {
-					// Check if this is a testnet, if so we need to FAIL!!
-					(blake2_256(cid), 0usize, ProtoData::Ipfs(*cid))
-				},
+				ProtoData::Ipfs(cid) => (blake2_256(cid), 0usize, ProtoData::Ipfs(*cid)),
 			};
 
 			// make sure the proto does not exist already!
@@ -657,10 +655,7 @@ pub mod pallet {
 							(data_hash, ProtoData::Local(vec![]))
 						},
 						ProtoData::Arweave(data) => (blake2_256(data), ProtoData::Arweave(*data)),
-						ProtoData::Ipfs(cid) => {
-							// Check if this is a testnet, if so we need to FAIL!!
-							(blake2_256(cid), ProtoData::Ipfs(*cid))
-						},
+						ProtoData::Ipfs(cid) => (blake2_256(cid), ProtoData::Ipfs(*cid)),
 					};
 
 					proto.patches.push(ProtoPatch {
@@ -1038,7 +1033,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue;
+							continue
 						}
 					}
 
@@ -1056,7 +1051,7 @@ pub mod pallet {
 								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
 							} else {
 								// Curation not found
-								return Err(Error::<T>::CurationNotFound.into());
+								return Err(Error::<T>::CurationNotFound.into())
 							}
 						},
 						UsageLicense::Contract(contract_address) => {
@@ -1081,19 +1076,19 @@ pub mod pallet {
 								let allowed = bool::decode(&mut &res.data[..]);
 								if let Ok(allowed) = allowed {
 									if !allowed {
-										return Err(Error::<T>::Unauthorized.into());
+										return Err(Error::<T>::Unauthorized.into())
 									}
 								} else {
-									return Err(Error::<T>::Unauthorized.into());
+									return Err(Error::<T>::Unauthorized.into())
 								}
 							} else {
-								return Err(Error::<T>::Unauthorized.into());
+								return Err(Error::<T>::Unauthorized.into())
 							}
 						},
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into());
+					return Err(Error::<T>::ReferenceNotFound.into())
 				}
 			}
 			Ok(())
@@ -1109,16 +1104,16 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.license == UsageLicense::Closed {
-						return false;
+						return false
 					} else if !avail && struct_proto.license != UsageLicense::Closed {
-						return false;
+						return false
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto, exclude_tags);
+					return Self::filter_tags(tags, &struct_proto, exclude_tags)
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories, exclude_tags);
+					return Self::filter_category(tags, &struct_proto, categories, exclude_tags)
 				}
 			} else {
 				false
@@ -1156,40 +1151,39 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto, exclude_tags);
+									return Self::filter_tags(tags, struct_proto, exclude_tags)
 								} else {
-									return false;
+									return false
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec)
-								&& param_script_info.requiring.contains(&zero_vec)
-								&& param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec) &&
+								param_script_info.requiring.contains(&zero_vec) &&
+								param_script_info.format == stored_script_info.format
 							{
-								return Self::filter_tags(tags, struct_proto, exclude_tags);
+								return Self::filter_tags(tags, struct_proto, exclude_tags)
 							} else {
-								return false;
+								return false
 							}
 						} else {
 							// it should never go here
-							return false;
+							return false
 						}
 					},
-					_ => {
+					_ =>
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto, exclude_tags);
+							return Self::filter_tags(tags, struct_proto, exclude_tags)
 						} else {
-							return false;
-						}
-					},
+							return false
+						},
 				})
 				.collect();
 
 			if found.is_empty() {
-				return false;
+				return false
 			} else {
-				return true;
+				return true
 			}
 		}
 
@@ -1249,39 +1243,38 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return true;
+									return true
 								} else {
-									return false;
+									return false
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec)
-								&& param_script_info.requiring.contains(&zero_vec)
-								&& param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec) &&
+								param_script_info.requiring.contains(&zero_vec) &&
+								param_script_info.format == stored_script_info.format
 							{
-								return true;
+								return true
 							} else if !(&cat == &category) {
-								return false;
+								return false
 							} else {
-								return false;
+								return false
 							}
 						} else {
-							return false;
+							return false
 						}
 					},
 					// for all other types of Categories
-					_ => {
+					_ =>
 						if !(&cat == &category) {
-							return false;
+							return false
 						} else {
-							return true;
-						}
-					},
+							return true
+						},
 				})
 				.collect();
 
-			return found;
+			return found
 		}
 
 		/// Converts a `ProtoOwner` struct into a JSON
@@ -1425,7 +1418,7 @@ pub mod pallet {
 						// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						if found.is_empty() {
-							continue;
+							continue
 						}
 					}
 					// Found the category.
