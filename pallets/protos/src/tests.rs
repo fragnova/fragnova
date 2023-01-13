@@ -85,7 +85,7 @@ mod upload_tests {
 				tags: Vec::new(), // proto.tags,
 				metadata: BTreeMap::new(),
 				accounts_info: AccountsInfo::default(),
-				data: ProtoData::Local(proto.data.clone()),
+				data: ProtoData::Local(vec![]), // empty here if local
 			};
 
 			// Ensure that this test case fails if a new field is ever added to the `Proto` struct
@@ -219,7 +219,7 @@ mod patch_tests {
 				block: block_number,
 				data_hash: patch.get_data_hash(),
 				references: patch.new_references.clone(),
-				data: ProtoData::Local(patch.new_data.clone())
+				data: ProtoData::Local(vec![]) // this is empty if local
 			}));
 
 			let event = <frame_system::Pallet<Test>>::events()

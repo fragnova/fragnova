@@ -569,7 +569,7 @@ pub mod pallet {
 		/// * `proto_hash` - Existing Proto-Fragment's hash
 		/// * `license` (optional) - If **this value** is **not None**, the **existing Proto-Fragment's current license** is overwritten to **this value**
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the
-		///   **patch**
+		///   **patch** (data needs to be populated, or it has no effect)
 		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment's current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len() as u32,
@@ -648,6 +648,10 @@ pub mod pallet {
 						references: new_references.clone(),
 						data: data_stored,
 					});
+
+					for new_reference in new_references.into_iter() {
+						<ProtosByParent<T>>::append(new_reference, proto_hash);
+					}
 				}
 
 				// Overwrite license if not None
@@ -679,10 +683,6 @@ pub mod pallet {
 					proto.tags = tags;
 				}
 			});
-
-			for new_reference in new_references.into_iter() {
-				<ProtosByParent<T>>::append(new_reference, proto_hash);
-			}
 
 			// also emit event
 			Self::deposit_event(Event::Patched { proto_hash });
