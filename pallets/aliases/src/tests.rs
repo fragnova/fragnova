@@ -12,6 +12,7 @@ mod tests {
 		traits::{Currency, Len},
 	};
 	use sp_runtime::{traits::TypedGet, BoundedVec, DispatchError::BadOrigin};
+	use sp_runtime::traits::Zero;
 
 	pub fn create_namespace_(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -231,6 +232,11 @@ mod tests {
 					alias: alias.clone(),
 				}.into(),
 			);
+			let alias_index = Pallet::<Test>::take_name_index(&alias);
+			let stored_alias =
+				<Aliases<Test>>::get(&namespace, &alias_index).unwrap();
+			assert_eq!(stored_alias.cur_block_number, System::block_number());
+			assert_eq!(stored_alias.prev_block_number, 0)
 		});
 	}
 
@@ -302,7 +308,16 @@ mod tests {
 			));
 
 			let alias_index = Pallet::<Test>::take_name_index(&alias);
-			assert_eq!(<Aliases<Test>>::get(&namespace, &alias_index).unwrap(), new_target);
+			let stored_alias =
+				<Aliases<Test>>::get(&namespace, &alias_index).unwrap();
+
+			let current_block_number = <frame_system::Pallet<Test>>::block_number();
+			let new_target_versioned = LinkTargetVersioned {
+				link_target: new_target.clone(),
+				prev_block_number: stored_alias.cur_block_number,
+				cur_block_number: current_block_number,
+			};
+			assert_eq!(<Aliases<Test>>::get(&namespace, &alias_index).unwrap(), new_target_versioned);
 		});
 	}
 }

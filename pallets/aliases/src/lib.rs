@@ -19,7 +19,7 @@
 extern crate core;
 
 use codec::{Compact, Decode, Encode};
-use frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement};
+use frame_support::traits::{Currency, ExistenceRequirement, WithdrawReasons};
 pub use pallet::*;
 use pallet_clusters::Clusters;
 use pallet_fragments::Owners;
@@ -51,11 +51,23 @@ pub enum LinkTarget<TAccountId> {
 		/// edition_id of the Fragment target
 		edition: InstanceUnit,
 		/// copy_id of the Fragment target
-		copy: InstanceUnit }, // struct variant allows a nicer UX on polkadotJS
+		copy: InstanceUnit,
+	}, // struct variant allows a nicer UX on polkadotJS
 	/// An AccountId
 	Account(TAccountId),
 	/// A Cluster defined by its hash
 	Cluster(Hash128),
+}
+
+/// Struct that add versioning to a LinkTarget using block number as version number.
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+pub struct LinkTargetVersioned<TAccountId, TBlockNum> {
+	/// The linked asset.
+	pub link_target: LinkTarget<TAccountId>,
+	/// The previous block number indicating the previous version of the linked asset.
+	pub prev_block_number: TBlockNum,
+	/// The block number indicating the current version of the linked asset.
+	pub cur_block_number: TBlockNum,
 }
 
 #[frame_support::pallet]
@@ -117,8 +129,8 @@ pub mod pallet {
 		Twox64Concat,
 		Vec<u8>, // namespace
 		Twox64Concat,
-		Compact<u64>,             // alias name index
-		LinkTarget<T::AccountId>, // target asset
+		Compact<u64>,                                      // alias name index
+		LinkTargetVersioned<T::AccountId, T::BlockNumber>, // target asset
 	>;
 
 	#[allow(missing_docs)]
@@ -275,15 +287,18 @@ pub mod pallet {
 
 			let alias_index = Self::take_name_index(&alias);
 			// check that the caller does not already own this alias
-			ensure!(
-				!<Aliases<T>>::contains_key(&namespace, &alias_index),
-				Error::<T>::AliasExists
-			);
+			ensure!(!<Aliases<T>>::contains_key(&namespace, &alias_index), Error::<T>::AliasExists);
 
 			// check that the caller is the owner of the target asset
 			Self::is_target_owner(&who, target.clone())?;
 
-			<Aliases<T>>::insert(&namespace, &alias_index, &target);
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			let target_versioned = LinkTargetVersioned {
+				link_target: target,
+				prev_block_number: T::BlockNumber::zero(),
+				cur_block_number: current_block_number,
+			};
+			<Aliases<T>>::insert(&namespace, &alias_index, target_versioned);
 
 			Self::deposit_event(Event::AliasCreated { who, namespace, alias: alias.into_inner() });
 
@@ -316,9 +331,18 @@ pub mod pallet {
 				Error::<T>::AliasExists
 			);
 
-			<Aliases<T>>::insert(&root_namespace, &alias_index, &target);
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			let target_versioned = LinkTargetVersioned {
+				link_target: target,
+				prev_block_number: T::BlockNumber::zero(),
+				cur_block_number: current_block_number,
+			};
+			<Aliases<T>>::insert(&root_namespace, &alias_index, target_versioned);
 
-			Self::deposit_event(Event::RootAliasCreated { root_namespace, alias: alias.into_inner() });
+			Self::deposit_event(Event::RootAliasCreated {
+				root_namespace,
+				alias: alias.into_inner(),
+			});
 
 			Ok(())
 		}
@@ -345,13 +369,19 @@ pub mod pallet {
 			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
 
 			let namespace = namespace.into_inner();
-
 			let alias_index = Self::take_name_index(&alias);
-			ensure!(
-				<Aliases<T>>::contains_key(&namespace, &alias_index),
-				Error::<T>::AliasNotFound
-			);
-			<Aliases<T>>::insert(&namespace, &alias_index, new_target);
+
+			let stored_alias =
+				<Aliases<T>>::get(&namespace, &alias_index).ok_or(Error::<T>::AliasNotFound)?;
+			// get stored current block number and set it as previous
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			let new_target_versioned = LinkTargetVersioned {
+				link_target: new_target,
+				prev_block_number: stored_alias.cur_block_number,
+				cur_block_number: current_block_number,
+			};
+
+			<Aliases<T>>::insert(&namespace, &alias_index, new_target_versioned);
 
 			Self::deposit_event(Event::AliasTargetUpdated { namespace, alias: alias.into_inner() });
 
@@ -379,14 +409,22 @@ pub mod pallet {
 			let root_namespace = T::RootNamespace::get();
 			let alias_index = Self::take_name_index(&alias);
 
-			ensure!(
-				<Aliases<T>>::contains_key(&root_namespace, &alias_index),
-				Error::<T>::AliasNotFound
-			);
+			let stored_alias = <Aliases<T>>::get(&root_namespace, &alias_index)
+				.ok_or(Error::<T>::AliasNotFound)?;
+			// get stored current block number and set it as previous
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			let new_target_versioned = LinkTargetVersioned {
+				link_target: new_target,
+				prev_block_number: stored_alias.cur_block_number,
+				cur_block_number: current_block_number,
+			};
 
-			<Aliases<T>>::insert(&root_namespace, &alias_index, &new_target);
+			<Aliases<T>>::insert(&root_namespace, &alias_index, new_target_versioned);
 
-			Self::deposit_event(Event::RootAliasUpdated { root_namespace, alias: alias.into_inner() });
+			Self::deposit_event(Event::RootAliasUpdated {
+				root_namespace,
+				alias: alias.into_inner(),
+			});
 
 			Ok(())
 		}
@@ -450,7 +488,10 @@ pub mod pallet {
 
 			<Aliases<T>>::remove(&root_namespace, &alias_index);
 
-			Self::deposit_event(Event::RootAliasDeleted{ root_namespace, alias: alias.into_inner() });
+			Self::deposit_event(Event::RootAliasDeleted {
+				root_namespace,
+				alias: alias.into_inner(),
+			});
 
 			Ok(())
 		}
@@ -492,8 +533,7 @@ pub mod pallet {
 					let owner = Owners::<T>::iter_prefix(definition_hash)
 						.find(|(_owner, vec_instances)| {
 							vec_instances.iter().any(|(edition_id, copy_id)| {
-								Compact(edition) == *edition_id
-									&& Compact(copy) == *copy_id
+								Compact(edition) == *edition_id && Compact(copy) == *copy_id
 							})
 						})
 						.ok_or("Fragment instance owner not found.")?
