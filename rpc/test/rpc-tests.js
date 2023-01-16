@@ -16,7 +16,7 @@ const upload = async (signer, data, references=[], category={text: "plain"}, tag
     linkedAsset,
     license,
     cluster,
-    data,
+    {local: data},
   ).signAndSend(signer);
   console.log(arguments.callee.name, 'sent with transaction hash', txHash.toHex());
   await sleep(6000);
