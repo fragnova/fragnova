@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["LinkTarget","Enum that indicates the types of target assets linked to an alias"]],"mod":[["pallet","The module that hosts all the FRAME types needed to add this pallet to a runtime."]]};
+window.SIDEBAR_ITEMS = {"enum":[["LinkTarget","Enum that indicates the types of target assets linked to an alias"]],"mod":[["pallet","The module that hosts all the FRAME types needed to add this pallet to a runtime."]],"struct":[["LinkTargetVersioned","Struct that add versioning to a LinkTarget using block number as version number."]]};

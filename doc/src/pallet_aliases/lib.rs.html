@@ -526,6 +526,46 @@
 <span id="526">526</span>
 <span id="527">527</span>
 <span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
+<span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
+<span id="557">557</span>
+<span id="558">558</span>
+<span id="559">559</span>
+<span id="560">560</span>
+<span id="561">561</span>
+<span id="562">562</span>
+<span id="563">563</span>
+<span id="564">564</span>
+<span id="565">565</span>
+<span id="566">566</span>
+<span id="567">567</span>
+<span id="568">568</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `aliases` allows users to create human readable aliases to address their owned existing assets.
 //! Example:
 //!
@@ -547,7 +587,7 @@
 </span><span class="kw">extern crate </span>core;
 
 <span class="kw">use </span>codec::{Compact, Decode, Encode};
-<span class="kw">use </span>frame_support::traits::{Currency, WithdrawReasons, ExistenceRequirement};
+<span class="kw">use </span>frame_support::traits::{Currency, ExistenceRequirement, WithdrawReasons};
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 <span class="kw">use </span>pallet_clusters::Clusters;
 <span class="kw">use </span>pallet_fragments::Owners;
@@ -579,11 +619,23 @@
 		<span class="doccomment">/// edition_id of the Fragment target
 		</span>edition: InstanceUnit,
 		<span class="doccomment">/// copy_id of the Fragment target
-		</span>copy: InstanceUnit }, <span class="comment">// struct variant allows a nicer UX on polkadotJS
+		</span>copy: InstanceUnit,
+	}, <span class="comment">// struct variant allows a nicer UX on polkadotJS
 	</span><span class="doccomment">/// An AccountId
 	</span>Account(TAccountId),
 	<span class="doccomment">/// A Cluster defined by its hash
 	</span>Cluster(Hash128),
+}
+
+<span class="doccomment">/// Struct that add versioning to a LinkTarget using block number as version number.
+</span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
+</span><span class="kw">pub struct </span>LinkTargetVersioned&lt;TAccountId, TBlockNum&gt; {
+	<span class="doccomment">/// The linked asset.
+	</span><span class="kw">pub </span>link_target: LinkTarget&lt;TAccountId&gt;,
+	<span class="doccomment">/// The previous block number indicating the previous version of the linked asset.
+	</span><span class="kw">pub </span>prev_block_number: TBlockNum,
+	<span class="doccomment">/// The block number indicating the current version of the linked asset.
+	</span><span class="kw">pub </span>cur_block_number: TBlockNum,
 }
 
 <span class="attribute">#[frame_support::pallet]
@@ -645,8 +697,8 @@
 		Twox64Concat,
 		Vec&lt;u8&gt;, <span class="comment">// namespace
 		</span>Twox64Concat,
-		Compact&lt;u64&gt;,             <span class="comment">// alias name index
-		</span>LinkTarget&lt;T::AccountId&gt;, <span class="comment">// target asset
+		Compact&lt;u64&gt;,                                      <span class="comment">// alias name index
+		</span>LinkTargetVersioned&lt;T::AccountId, T::BlockNumber&gt;, <span class="comment">// target asset
 	</span>&gt;;
 
 	<span class="attribute">#[allow(missing_docs)]
@@ -803,15 +855,18 @@
 
 			<span class="kw">let </span>alias_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>alias);
 			<span class="comment">// check that the caller does not already own this alias
-			</span><span class="macro">ensure!</span>(
-				!&lt;Aliases&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index),
-				Error::&lt;T&gt;::AliasExists
-			);
+			</span><span class="macro">ensure!</span>(!&lt;Aliases&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index), Error::&lt;T&gt;::AliasExists);
 
 			<span class="comment">// check that the caller is the owner of the target asset
 			</span><span class="self">Self</span>::is_target_owner(<span class="kw-2">&amp;</span>who, target.clone())<span class="question-mark">?</span>;
 
-			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index, <span class="kw-2">&amp;</span>target);
+			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
+			<span class="kw">let </span>target_versioned = LinkTargetVersioned {
+				link_target: target,
+				prev_block_number: T::BlockNumber::zero(),
+				cur_block_number: current_block_number,
+			};
+			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index, target_versioned);
 
 			<span class="self">Self</span>::deposit_event(Event::AliasCreated { who, namespace, alias: alias.into_inner() });
 
@@ -844,9 +899,18 @@
 				Error::&lt;T&gt;::AliasExists
 			);
 
-			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index, <span class="kw-2">&amp;</span>target);
+			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
+			<span class="kw">let </span>target_versioned = LinkTargetVersioned {
+				link_target: target,
+				prev_block_number: T::BlockNumber::zero(),
+				cur_block_number: current_block_number,
+			};
+			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index, target_versioned);
 
-			<span class="self">Self</span>::deposit_event(Event::RootAliasCreated { root_namespace, alias: alias.into_inner() });
+			<span class="self">Self</span>::deposit_event(Event::RootAliasCreated {
+				root_namespace,
+				alias: alias.into_inner(),
+			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -873,13 +937,19 @@
 			<span class="macro">ensure!</span>(!alias.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
 
 			<span class="kw">let </span>namespace = namespace.into_inner();
-
 			<span class="kw">let </span>alias_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>alias);
-			<span class="macro">ensure!</span>(
-				&lt;Aliases&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index),
-				Error::&lt;T&gt;::AliasNotFound
-			);
-			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index, new_target);
+
+			<span class="kw">let </span>stored_alias =
+				&lt;Aliases&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index).ok_or(Error::&lt;T&gt;::AliasNotFound)<span class="question-mark">?</span>;
+			<span class="comment">// get stored current block number and set it as previous
+			</span><span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
+			<span class="kw">let </span>new_target_versioned = LinkTargetVersioned {
+				link_target: new_target,
+				prev_block_number: stored_alias.cur_block_number,
+				cur_block_number: current_block_number,
+			};
+
+			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index, new_target_versioned);
 
 			<span class="self">Self</span>::deposit_event(Event::AliasTargetUpdated { namespace, alias: alias.into_inner() });
 
@@ -907,14 +977,22 @@
 			<span class="kw">let </span>root_namespace = T::RootNamespace::get();
 			<span class="kw">let </span>alias_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>alias);
 
-			<span class="macro">ensure!</span>(
-				&lt;Aliases&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index),
-				Error::&lt;T&gt;::AliasNotFound
-			);
+			<span class="kw">let </span>stored_alias = &lt;Aliases&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index)
+				.ok_or(Error::&lt;T&gt;::AliasNotFound)<span class="question-mark">?</span>;
+			<span class="comment">// get stored current block number and set it as previous
+			</span><span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
+			<span class="kw">let </span>new_target_versioned = LinkTargetVersioned {
+				link_target: new_target,
+				prev_block_number: stored_alias.cur_block_number,
+				cur_block_number: current_block_number,
+			};
 
-			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index, <span class="kw-2">&amp;</span>new_target);
+			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index, new_target_versioned);
 
-			<span class="self">Self</span>::deposit_event(Event::RootAliasUpdated { root_namespace, alias: alias.into_inner() });
+			<span class="self">Self</span>::deposit_event(Event::RootAliasUpdated {
+				root_namespace,
+				alias: alias.into_inner(),
+			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -978,7 +1056,10 @@
 
 			&lt;Aliases&lt;T&gt;&gt;::remove(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index);
 
-			<span class="self">Self</span>::deposit_event(Event::RootAliasDeleted{ root_namespace, alias: alias.into_inner() });
+			<span class="self">Self</span>::deposit_event(Event::RootAliasDeleted {
+				root_namespace,
+				alias: alias.into_inner(),
+			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -1020,8 +1101,7 @@
 					<span class="kw">let </span>owner = Owners::&lt;T&gt;::iter_prefix(definition_hash)
 						.find(|(_owner, vec_instances)| {
 							vec_instances.iter().any(|(edition_id, copy_id)| {
-								Compact(edition) == <span class="kw-2">*</span>edition_id
-									&amp;&amp; Compact(copy) == <span class="kw-2">*</span>copy_id
+								Compact(edition) == <span class="kw-2">*</span>edition_id &amp;&amp; Compact(copy) == <span class="kw-2">*</span>copy_id
 							})
 						})
 						.ok_or(<span class="string">&quot;Fragment instance owner not found.&quot;</span>)<span class="question-mark">?
@@ -1055,4 +1135,4 @@
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_aliases" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0 (69f9c33d7 2022-12-12)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="pallet_aliases" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.1 (90743e729 2023-01-10)" ></div></body></html>
