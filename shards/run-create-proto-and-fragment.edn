@@ -12,12 +12,13 @@
 (defwire upload-proto
 
   UPLOAD-CALL-DATA-EXCL-DATA-PARAM (HexToBytes) >= .call-data
-  .proto-data >> .seq .seq (Substrate.Encode [nil]) (AppendTo .call-data)
+  "0x0" (HexToBytes) >> .seq ; prefix ProtoData::Local
+  .proto-data >> .seq
+  .seq (Substrate.Encode [u8 nil]) (AppendTo .call-data)
 
   .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of protos.upload() is")
 
-  .proto-data (Hash.Blake2-256) (| (ToHex) (Log "Uploaded Proto With Proto Hash"))
-  )
+  .proto-data (Hash.Blake2-256) (| (ToHex) (Log "Uploaded Proto With Proto Hash")))
 
 (defwire set-metadata
   SET-METADATA-CALL-INDEX (HexToBytes) >= .call-data
@@ -37,8 +38,7 @@
 
   .proto-hash >= .definition
   CREATE-FRAGMENT-SERIALIZED-METADATA-STRUCT (HexToBytes) (AppendTo .definition)
-  .definition (Hash.Blake2-128) (| (ToHex) (Log "Created Definition's Hash"))
-  )
+  .definition (Hash.Blake2-128) (| (ToHex) (Log "Created Definition's Hash")))
 
 (defwire mint-fragment-instance
   MINT-INSTANCE-CALL-INDEX (HexToBytes) >= .call-data

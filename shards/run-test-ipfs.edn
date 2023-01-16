@@ -8,7 +8,9 @@
   .proto-data (ExpectBytes)
 
   UPLOAD-CALL-DATA-EXCL-DATA-PARAM (HexToBytes) >= .call-data
-  .proto-data >> .seq .seq (Substrate.Encode [nil]) (AppendTo .call-data)
+  "0x0" (HexToBytes) >> .seq ; prefix ProtoData::Local
+  .proto-data >> .seq 
+  .seq (Substrate.Encode [u8 nil]) (AppendTo .call-data)
 
   .call-data (Do (get Fragnova-Node :send-signed-extrinsic-as-http-request)) (Log "HTTP Response of protos.upload() is")
 
