@@ -27,6 +27,7 @@ use protos::{categories::Categories, traits::Trait};
 use sp_core::{crypto::UncheckedFrom, ecdsa, H160, U256};
 
 use codec::{Compact, Decode, Encode};
+
 pub use pallet::*;
 
 #[cfg(feature = "std")]
@@ -38,9 +39,9 @@ use sp_io::{
 };
 use sp_std::{
 	collections::{btree_map::BTreeMap, vec_deque::VecDeque},
+	ops::Deref,
 	vec,
 	vec::Vec,
-	ops::Deref
 };
 
 pub use weights::WeightInfo;
@@ -52,8 +53,6 @@ use scale_info::prelude::{
 	string::{String, ToString},
 };
 use serde_json::{json, Map, Value};
-
-use base58::ToBase58;
 
 use frame_support::traits::tokens::fungibles::{Inspect, Mutate};
 
@@ -144,6 +143,8 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub data_hash: Hash256,
 	/// **List of New Proto-Fragments** that was **used** to **create** the **patch** (INCDT)
 	pub references: Vec<Hash256>,
+	/// **Data** of the **patch** (Only valid if not Local)
+	pub data: ProtoData,
 }
 
 /// Struct that represents the account information of a Proto-Fragment
@@ -166,6 +167,18 @@ pub enum UsageLicense<TContractAddress> {
 	Tickets(Compact<u64>),
 	/// Proto-Fragment is available for use if a custom contract returns true
 	Contract(TContractAddress),
+}
+
+/// **Enum** that indicates **how a Proto-Fragment data can be fetched**
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
+pub enum ProtoData {
+	/// Data is stored on this chain's blocks directly, this is the most safe way of storing data.
+	Local(Vec<u8>),
+	/// Data is stored on the Arweave chain, store tx hash, no way to guarantee exact 100% uniqueness of data.
+	Arweave(Hash256),
+	/// Data is maybe somewhere on the IPFS network, this is unsafe cos the IPFS network is all about caching and content delivery, offering no guarantee of permanent storage
+	/// With that said there are some ways to guarantee the data is stored on IPFS via stuff like FileCoin + Lighthouse but they are relatively not as popular as Arweave so it's not recommended.
+	Ipfs([u8; 64]),
 }
 
 /// **Struct** of a **Proto-Fragment**
@@ -192,6 +205,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
 	/// Accounts information for this proto.
 	pub accounts_info: AccountsInfo,
+	/// **Data** of the **Proto-Fragment** (valid only if not Local)
+	pub data: ProtoData,
 }
 
 #[frame_support::pallet]
@@ -199,13 +214,11 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
+	use pallet_clusters::Cluster;
 	use pallet_detach::{
 		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
 	};
-	use sp_clamor::CID_PREFIX;
 	use sp_runtime::SaturatedConversion;
-	use pallet_clusters::Cluster;
-
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -242,7 +255,6 @@ pub mod pallet {
 		/// Asset ID of the fungible asset "TICKET"
 		#[pallet::constant]
 		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
-
 	}
 
 	#[pallet::pallet]
@@ -324,9 +336,9 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A Proto-Fragment was uploaded
-		Uploaded { proto_hash: Hash256, cid: Vec<u8> },
+		Uploaded { proto_hash: Hash256 },
 		/// A Proto-Fragment was patched
-		Patched { proto_hash: Hash256, cid: Vec<u8> },
+		Patched { proto_hash: Hash256 },
 		/// A Proto-Fragment metadata has changed
 		MetadataChanged { proto_hash: Hash256, metadata_key: Vec<u8> },
 		/// A Proto-Fragment was detached
@@ -405,34 +417,44 @@ pub mod pallet {
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
 		///   **Proto-Fragment** *<u>can't be included</u>* into **other Proto-Fragments**
 		/// * `data` - **Data** of the **Proto-Fragment**
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.len() as u32))]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.encode().len() as u32))]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
 			references: Vec<Hash256>,
 			category: Categories,
-			tags: BoundedVec::<BoundedVec::<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>,
+			tags: BoundedVec<BoundedVec<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>,
 			linked_asset: Option<LinkedAsset>,
 			license: UsageLicense<T::AccountId>,
-			cluster: Option<Cluster<T::AccountId>>,
+			_cluster: Option<Cluster<T::AccountId>>,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
-			data: Vec<u8>,
+			data: ProtoData,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			ensure!(!data.is_empty(), Error::<T>::ProtoDataIsEmpty);
-
-			ensure!(!tags.iter().enumerate().any(|(index, tag)| tags.iter().enumerate().any(|(i, t)| t == tag && i != index)), Error::<T>::DuplicateProtoTagExists); // TODO Review - Is `O(n ^ 2)` good? (Alternatively we can **use HashMap** or **sort the tags then check for equal consecutive elements** -  but I don't think it's worth it since `T::MaxTags` is small
+			ensure!(
+				!tags.iter().enumerate().any(|(index, tag)| tags
+					.iter()
+					.enumerate()
+					.any(|(i, t)| t == tag && i != index)),
+				Error::<T>::DuplicateProtoTagExists
+			); // TODO Review - Is `O(n ^ 2)` good? (Alternatively we can **use HashMap** or **sort the tags then check for equal consecutive elements** -  but I don't think it's worth it since `T::MaxTags` is small
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 
 			// hash the immutable data, this is also the unique proto id
 			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
 			// "0x0155a0e40220"))
-			let proto_hash = blake2_256(&data);
-			let data_len = data.len();
+			let (proto_hash, data_size, data_stored) = match &data {
+				ProtoData::Local(data) => {
+					ensure!(!data.is_empty(), Error::<T>::ProtoDataIsEmpty);
+					(blake2_256(data), data.len(), ProtoData::Local(vec![]))
+				},
+				ProtoData::Arweave(data) => (blake2_256(data), 0usize, ProtoData::Arweave(*data)),
+				ProtoData::Ipfs(cid) => (blake2_256(cid), 0usize, ProtoData::Ipfs(*cid)),
+			};
 
 			// make sure the proto does not exist already!
 			ensure!(!<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoExists);
@@ -450,6 +472,11 @@ pub mod pallet {
 			// Store Trait if trait, also hash properly the data and decode name
 			let category = match category {
 				Categories::Trait(_) => {
+					let data: &Vec<u8> = match &data {
+						ProtoData::Local(data) => Ok(data),
+						_ => Err(Error::<T>::SystematicFailure),
+					}?;
+
 					let trait_id = twox_64(&data);
 					ensure!(!<Traits<T>>::contains_key(&trait_id), Error::<T>::ProtoExists);
 
@@ -503,6 +530,7 @@ pub mod pallet {
 				tags,
 				metadata: BTreeMap::new(),
 				accounts_info: AccountsInfo::default(),
+				data: data_stored,
 			};
 
 			// store proto
@@ -519,15 +547,16 @@ pub mod pallet {
 			// store by owner
 			<ProtosByOwner<T>>::append(owner, proto_hash);
 
-			// index immutable data for IPFS discovery
-			transaction_index::index(extrinsic_index, data_len as u32, proto_hash);
-
-			let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
-			let cid = cid.to_base58();
-			let cid = [&b"z"[..], cid.as_bytes()].concat();
+			match &data {
+				ProtoData::Local(_data) => {
+					// index immutable data for IPFS discovery
+					transaction_index::index(extrinsic_index, data_size as u32, proto_hash);
+				},
+				_ => {},
+			};
 
 			// also emit event
-			Self::deposit_event(Event::Uploaded { proto_hash, cid });
+			Self::deposit_event(Event::Uploaded { proto_hash });
 
 			log::debug!("Uploaded proto: {:?}", proto_hash);
 
@@ -544,27 +573,33 @@ pub mod pallet {
 		/// * `proto_hash` - Existing Proto-Fragment's hash
 		/// * `license` (optional) - If **this value** is **not None**, the **existing Proto-Fragment's current license** is overwritten to **this value**
 		/// * `new_references` - **List of New Proto-Fragments** that was **used** to **create** the
-		///   **patch**
+		///   **patch** (data needs to be populated, or it has no effect)
 		/// * `tags` (optional) - **List of tags** to **overwrite** the **Proto-Fragment's current list of tags** with, if not None.
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len() as u32,
-		tags.as_ref().map(|tags| tags.len() as u32).unwrap_or_default(), data.len() as u32))]
+		tags.as_ref().map(|tags| tags.len() as u32).unwrap_or_default(), data.encode().len() as u32))]
 		pub fn patch(
 			origin: OriginFor<T>,
 			// proto hash we want to patch
 			proto_hash: Hash256,
 			license: Option<UsageLicense<T::AccountId>>,
 			new_references: Vec<Hash256>,
-			tags: Option<BoundedVec::<BoundedVec::<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>>,
+			tags: Option<
+				BoundedVec<BoundedVec<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>,
+			>,
 			// data we want to patch last because of the way we store blocks (storage chain)
-			data: Vec<u8>,
+			data: Option<ProtoData>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			ensure!(!data.is_empty(), Error::<T>::ProtoDataIsEmpty);
-
 			if let Some(tags) = &tags {
-				ensure!(!tags.iter().enumerate().any(|(index, tag)| tags.iter().enumerate().any(|(i, t)| t == tag && i != index)), Error::<T>::DuplicateProtoTagExists); // TODO Review - Is `O(n ^ 2)` good? (Alternatively we can **use HashMap** or **sort the tags then check for equal consecutive elements** -  but I don't think it's worth it since `T::MaxTags` is small
+				ensure!(
+					!tags.iter().enumerate().any(|(index, tag)| tags
+						.iter()
+						.enumerate()
+						.any(|(i, t)| t == tag && i != index)),
+					Error::<T>::DuplicateProtoTagExists
+				); // TODO Review - Is `O(n ^ 2)` good? (Alternatively we can **use HashMap** or **sort the tags then check for equal consecutive elements** -  but I don't think it's worth it since `T::MaxTags` is small
 			}
 
 			let proto: Proto<T::AccountId, T::BlockNumber> =
@@ -586,32 +621,53 @@ pub mod pallet {
 				Error::<T>::Detached
 			);
 
-			let data_hash = blake2_256(&data);
+			// Check license requirements
+			Self::check_license(&new_references, &who)?;
 
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			if let Some(data) = &data {
+				match &data {
+					ProtoData::Local(data) => {
+						ensure!(!data.is_empty(), Error::<T>::ProtoDataIsEmpty);
+					},
+					_ => {},
+				};
+			}
 
 			// we need this to index transactions
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?;
 
+			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
 			// Write STATE from now, ensure no errors from now...
 
-			// Check license requirements
-			Self::check_license(&new_references, &who)?;
-
 			<Protos<T>>::mutate(&proto_hash, |proto| {
-				let proto = proto.as_mut().unwrap();
+				let proto = proto.as_mut().expect("Proto exists from above check; qed");
 
-				// Add a data patch if not empty
-				if !data.is_empty() {
-					// No failures from here on out
+				// No failures from here on out
+
+				if let Some(data) = data {
+					let (data_hash, data_stored) = match &data {
+						ProtoData::Local(data) => {
+							let data_hash = blake2_256(data);
+							// index mutable data for IPFS discovery as well
+							transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
+							(data_hash, ProtoData::Local(vec![]))
+						},
+						ProtoData::Arweave(data) => (blake2_256(data), ProtoData::Arweave(*data)),
+						ProtoData::Ipfs(cid) => (blake2_256(cid), ProtoData::Ipfs(*cid)),
+					};
+
 					proto.patches.push(ProtoPatch {
 						block: current_block_number,
 						data_hash,
 						references: new_references.clone(),
+						data: data_stored,
 					});
-					// index mutable data for IPFS discovery as well
-					transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
+
+					for new_reference in new_references.into_iter() {
+						<ProtosByParent<T>>::append(new_reference, proto_hash);
+					}
 				}
 
 				// Overwrite license if not None
@@ -644,16 +700,8 @@ pub mod pallet {
 				}
 			});
 
-			for new_reference in new_references.into_iter() {
-				<ProtosByParent<T>>::append(new_reference, proto_hash);
-			}
-
-			let cid = [&CID_PREFIX[..], &data_hash[..]].concat();
-			let cid = cid.to_base58();
-			let cid = [&b"z"[..], cid.as_bytes()].concat();
-
 			// also emit event
-			Self::deposit_event(Event::Patched { proto_hash, cid });
+			Self::deposit_event(Event::Patched { proto_hash });
 
 			log::debug!("Updated proto: {:?}", proto_hash);
 
@@ -803,7 +851,10 @@ pub mod pallet {
 			transaction_index::index(extrinsic_index, data.len() as u32, data_hash);
 
 			// also emit event
-			Self::deposit_event(Event::MetadataChanged { proto_hash, metadata_key: metadata_key.clone().into() });
+			Self::deposit_event(Event::MetadataChanged {
+				proto_hash,
+				metadata_key: metadata_key.clone().into(),
+			});
 
 			log::debug!("Added metadata to proto: {:x?} with key: {:x?}", proto_hash, metadata_key);
 
@@ -849,8 +900,11 @@ pub mod pallet {
 			};
 
 			let detach_hash = DetachHash::Proto(proto_hash);
-			let detach_request =
-				DetachRequest { hash: detach_hash.clone(), target_chain, target_account: target_account.into() };
+			let detach_request = DetachRequest {
+				hash: detach_hash.clone(),
+				target_chain,
+				target_account: target_account.into(),
+			};
 
 			ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
 			ensure!(

@@ -4,9 +4,9 @@
 
 use super::*;
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
+use frame_support::{traits::Get, BoundedVec};
 use frame_system::RawOrigin;
-use frame_support::{BoundedVec, traits::Get};
-use pallet_protos::UsageLicense;
+use pallet_protos::{ProtoData, UsageLicense};
 use protos::{
 	categories::{Categories, TextCategories},
 	permissions::FragmentPerms,
@@ -58,7 +58,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -91,7 +91,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -135,7 +135,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -181,7 +181,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -232,7 +232,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -282,7 +282,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -349,7 +349,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -414,7 +414,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -480,7 +480,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 

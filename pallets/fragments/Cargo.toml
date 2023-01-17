@@ -119,7 +119,7 @@ sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-featu
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.136", default-features = false, features = ["derive"], optional = true }
 serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
-protos = { version = "0.1.16", default-features = false }
+protos = { version = "0.1.18", default-features = false }
 log = { version = "0.4.14", default-features = false }
 bitflags = "1.3.2"
 

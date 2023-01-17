@@ -1,10 +1,9 @@
-use std::str::FromStr;
-use ethabi::ethereum_types::Address;
 use crate::*;
+use ethabi::ethereum_types::Address;
+use std::str::FromStr;
 
 pub use pallet_accounts::dummy_data::{
-	create_link_signature, create_lock_signature, get_ethereum_public_address,
-	Link, Lock,
+	create_link_signature, create_lock_signature, get_ethereum_public_address, Link, Lock,
 };
 
 use sp_core::{
@@ -17,21 +16,11 @@ use sp_clamor::{Hash256, CID_PREFIX};
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
-use protos::traits::{RecordInfo, Trait, VariableType, VariableTypeInfo};
 use pallet_detach::SupportedChains;
+use protos::traits::{RecordInfo, Trait, VariableType, VariableTypeInfo};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
-}
-
-pub fn compute_data_cid(data: &Vec<u8>) -> Vec<u8> {
-	let hash = compute_data_hash(data);
-
-	let cid = [&CID_PREFIX[..], &hash[..]].concat();
-	let cid = cid.to_base58();
-	let cid = [&b"z"[..], cid.as_bytes()].concat();
-
-	cid
 }
 
 #[derive(Clone)]
@@ -47,10 +36,6 @@ impl ProtoFragment {
 	pub fn get_proto_hash(&self) -> Hash256 {
 		compute_data_hash(&self.data)
 	}
-
-	pub fn get_proto_cid(&self) -> Vec<u8> {
-		compute_data_cid(&self.data)
-	}
 }
 
 pub struct Patch {
@@ -62,9 +47,6 @@ pub struct Patch {
 impl Patch {
 	pub fn get_data_hash(&self) -> Hash256 {
 		compute_data_hash(&self.new_data)
-	}
-	pub fn get_data_cid(&self) -> Vec<u8> {
-		compute_data_cid(&self.new_data)
 	}
 }
 
@@ -281,7 +263,9 @@ impl DummyData {
 		};
 
 		let contracts = vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")];
-		let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
+		let contract = Address::from_str(&contracts[0].as_str()[2..])
+			.map_err(|_| "Invalid response - invalid sender")
+			.unwrap();
 		let stake = Stake {
 			proto_fragment: proto.clone(),
 			lock: Lock {
@@ -289,16 +273,14 @@ impl DummyData {
 					public: sp_core::ed25519::Public([69u8; 32]),
 					amount: U256::from(69u32),
 					lock_period: 1,
-					sender: get_ethereum_public_address(
-						&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
-					),
+					sender: get_ethereum_public_address(&sp_core::ecdsa::Pair::from_seed(
+						&[1u8; 32],
+					)),
 					signature: create_lock_signature(
 						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
 						U256::from(69u32),
 						1,
-						get_ethereum_public_address(
-							&sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
-						),
+						get_ethereum_public_address(&sp_core::ecdsa::Pair::from_seed(&[1u8; 32])),
 						contract,
 					),
 					lock: true, // yes, please lock it!

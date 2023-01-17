@@ -16,7 +16,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
-	traits::{ConstU16, ConstU128, ConstU32, ConstU64},
+	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 	weights::DispatchClass,
 };
 use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights},};
@@ -93,8 +93,7 @@ pub type Index = u32;
 pub type Hash = sp_core::H256;
 
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
@@ -894,12 +893,12 @@ impl_runtime_apis! {
 					// TODO
 				},
 				#[allow(unused_variables)]
-				Call::Protos(ProtosCall::patch{ref data, ..}) |
+				Call::Protos(ProtosCall::patch{ref data, ..}) => {
+					// TODO
+				},
+				#[allow(unused_variables)]
 				Call::Protos(ProtosCall::set_metadata{ref data, ..}) => {
 					// TODO
-					// if let Err(_) = <pallet_protos::Pallet<Runtime>>::ensure_valid_auth(auth) {
-					// 	return InvalidTransaction::BadProof.into();
-					// }
 				},
 				_ => {},
 			}
