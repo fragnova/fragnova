@@ -1219,7 +1219,6 @@
 <span id="1219">1219</span>
 <span id="1220">1220</span>
 <span id="1221">1221</span>
-<span id="1222">1222</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -1238,7 +1237,7 @@
 </span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
 
 <span class="kw">use </span>frame_support::{
-	traits::{ConstU16, ConstU128, ConstU32, ConstU64},
+	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 	weights::DispatchClass,
 };
 <span class="kw">use </span>frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights},};
@@ -1315,8 +1314,7 @@
 </span><span class="kw">pub type </span>Hash = sp_core::H256;
 
 <span class="doccomment">/// Unchecked extrinsic type as expected by this runtime.
-</span><span class="kw">pub type </span>UncheckedExtrinsic =
-	generic::UncheckedExtrinsic&lt;Address, Call, Signature, SignedExtra&gt;;
+</span><span class="kw">pub type </span>UncheckedExtrinsic = generic::UncheckedExtrinsic&lt;Address, Call, Signature, SignedExtra&gt;;
 
 <span class="doccomment">/// The payload being signed in transactions.
 </span><span class="kw">pub type </span>SignedPayload = generic::SignedPayload&lt;Call, SignedExtra&gt;;
@@ -2116,12 +2114,12 @@
 					<span class="comment">// TODO
 				</span>},
 				<span class="attribute">#[allow(unused_variables)]
-				</span>Call::Protos(ProtosCall::patch{<span class="kw-2">ref </span>data, ..}) |
-				Call::Protos(ProtosCall::set_metadata{<span class="kw-2">ref </span>data, ..}) =&gt; {
+				</span>Call::Protos(ProtosCall::patch{<span class="kw-2">ref </span>data, ..}) =&gt; {
 					<span class="comment">// TODO
-					// if let Err(_) = &lt;pallet_protos::Pallet&lt;Runtime&gt;&gt;::ensure_valid_auth(auth) {
-					// 	return InvalidTransaction::BadProof.into();
-					// }
+				</span>},
+				<span class="attribute">#[allow(unused_variables)]
+				</span>Call::Protos(ProtosCall::set_metadata{<span class="kw-2">ref </span>data, ..}) =&gt; {
+					<span class="comment">// TODO
 				</span>},
 				<span class="kw">_ </span>=&gt; {},
 			}
