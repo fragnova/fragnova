@@ -5431,14 +5431,15 @@ dependencies = [
 
 [[package]]
 name = "protos"
-version = "0.1.18"
+version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18a062885d6a6671a2e13667c28b620254fdc38e2815a91b69c32a0b0f67f21b"
+checksum = "b4c7f1abdccb6fdbd5e4be68f4727206b82524698f2bbbbec79d2b52018d2b55"
 dependencies = [
  "bitflags",
  "parity-scale-codec 3.2.1",
  "scale-info 2.3.1",
  "serde",
+ "serde_json",
 ]
 
 [[package]]
