@@ -740,7 +740,7 @@ impl pallet_assets::Config for Runtime {
 // IMP NOTE 2: The population of the genesis storage depends on the order of pallets.
 // So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
 //
-// V IMP NOTE 3: The order that the pallets appear in this macro determines its pallet index
+// V IMP NOTE 3: The order that the pallets appear in this macro determines its pallet index. Thus, new additions should be appended to avoid breaking changes.
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block, //  Block is the block type that is used in the runtime
@@ -764,12 +764,12 @@ construct_runtime!(
 		Protos: pallet_protos,
 		Fragments: pallet_fragments,
 		Detach: pallet_detach,
-		Clusters: pallet_clusters,
 		Multisig: pallet_multisig,
 		Proxy: pallet_proxy,
 		Identity: pallet_identity,
 		Utility: pallet_utility,
 		Accounts: pallet_accounts,
+		Clusters: pallet_clusters,
 		Oracle: pallet_oracle,
 		Aliases: pallet_aliases,
 	}
