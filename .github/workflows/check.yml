@@ -76,8 +76,12 @@ jobs:
         run: |
           cargo install cargo-tarpaulin
           cargo tarpaulin --features runtime-benchmarks --out Xml
-          bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
 
+      - uses: codecov/codecov-action@v3
+        with:
+          env_vars: OS
+          fail_ci_if_error: true
+          
       - name: Check if Rustdoc Builds
         run: |
           cargo doc --no-deps
