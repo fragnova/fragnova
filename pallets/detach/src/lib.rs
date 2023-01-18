@@ -16,6 +16,8 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+mod uomo_contento;
+
 #[allow(missing_docs)]
 mod weights;
 
@@ -85,10 +87,9 @@ use frame_system::offchain::{
 	SigningTypes,
 };
 
-use beefy_merkle_tree::{merkle_root, Keccak256};
+use uomo_contento::{merkle_root, Keccak256};
 
-// TODO Review - Should `DetachHash` implement the trait `Copy`?
-/// Enum representing the **different types of "things"** that can be **detached from the Clamor Blockchain**
+/// Enum representing a "detachable thing" (i.e a Proto-Fragment or a Fragment Instance) that the User wants to detach from the Clamor Blockchain
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum DetachHash {
 	/// A Proto-Fragment (identified by its Hash)
@@ -96,14 +97,39 @@ pub enum DetachHash {
 	/// A Fragment Instance (identified as a tuple of its Fragment Definition Hash, its Edition ID and its Copy ID)
 	Instance(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>),
 }
-impl DetachHash {
 
-	fn get_signable_hash(&self) -> Vec<u8> {
+/// Enum representing a collection of "detachable things" that the User wants to detach from the Clamor Blockchain
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum DetachCollection {
+	/// List of Proto-Fragments (identified by its Hash)
+	Protos(Vec<Hash256>),
+	/// List of Fragment Instances (identified as a tuple of its Fragment Definition Hash, its Edition ID and its Copy ID)
+	Instances(Vec<(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>)>),
+}
+impl DetachCollection {
+
+	/// Get the Collection type
+	fn get_type(&self) -> Vec<u8> {
 		match self {
-			Self::Proto(proto_hash) => [b"Proto-Fragment", &proto_hash[..]].concat(),
-			Self::Instance(definition_hash, Compact(edition_id), Compact(copy_id)) => {
-				[b"Fragment Instance", &definition_hash[..], &edition_id.to_be_bytes(), &copy_id.to_be_bytes()].concat()
-			}
+			Self::Protos(_) => b"Proto-Fragment".to_vec(),
+			Self::Instances(_) => b"Fragment Instance".to_vec(),
+		}
+	}
+
+	/// Get the ABI-encoded list of hashes
+	///
+	/// For Proto-Fragments, the encoding is: `abi.encodePacked(protoHash)`, where `protoHash` is of type `bytes32`
+	/// For Fragment Instances, the encoding is: `abi.encodePacked(definitionHash, editionId, copyId)`, where:
+	/// 	- `definitionHash` is of type `bytes16`
+	/// 	- `editionId` is of type `uint64`
+	/// 	- `copyId` is of type `uint64`
+	fn get_abi_encoded_hashes(&self) -> Vec<Vec<u8>> {
+		match self {
+			Self::Protos(proto_hashes) => proto_hashes.iter().map(|proto_hash| proto_hash.to_vec()).collect(),
+			Self::Instances(instances) => instances.iter().map(
+				|(definition_hash, Compact(edition_id), Compact(copy_id))|
+					[&definition_hash[..], &edition_id.to_be_bytes()[..], &copy_id.to_be_bytes()[..]].concat()
+			).collect()
 		}
 	}
 }
@@ -119,21 +145,18 @@ pub enum SupportedChains {
 	EthereumGoerli,
 }
 
-/// **Struct** that represents a **request to detach a list of "detachable thing"s (see enum `DetachHash` to see what type of things can be detached)** from the Clamor Blockchain
+/// **Struct** that represents a **request to detach a collection of "detachable thing"s (see enum `DetachHashes` to see what type of collections can be detached)** from the Clamor Blockchain
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct DetachRequest {
-	// TODO Review - Maybe write a custom constructor for initializing `DetachRequest` which ensures that all the "detachble things" are of one type
-	/// **IDs of the "detachable thing"s**
-	///
-	/// Note: All the "detachable things" must be of a single type
-	pub hashes: Vec<DetachHash>,
+	/// Collection of "detachable thing"s
+	pub collection: DetachCollection,
 	/// **External Blockchain** in which the "detachable thing"s can be attached into, after the "detachable thing"s are detached
 	pub target_chain: SupportedChains,
 	/// Public Account Address in the External Blockchain to transfer the ownership of the "detachable thing"s to
 	pub target_account: Vec<u8>, // an eth address or so
 }
 
-/// Payload represents information about a list of "detachable thing"s (see enum `DetachHash` to see what type of things can be detached) that will be detached
+/// Payload represents information about a collection of "detachable thing"s (see enum `DetachHash` to see what type of collections can be detached) that will be detached
 ///
 /// Note: This Payload that will be attached to the unsigned transaction `Call::internal_finalize_detach` which will be sent on-chain
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
@@ -142,8 +165,8 @@ pub struct DetachInternalData<TPublic> {
 	///
 	/// See this struct's implementation of `SignedPayload` for more information.
 	pub public: TPublic,
-	/// IDs of the "detachable thing"s
-	pub hashes: Vec<DetachHash>,
+	/// Collection of "detachable thing"s
+	pub collection: DetachCollection,
 	/// **Merkle Root** of a **Binary Merkle Tree created using `hashes`**
 	pub merkle_root: Hash256,
 	/// **External Blockchain** in which the "detachable thing" can be attached into, after the "detachable thing" is detached
@@ -234,6 +257,8 @@ pub mod pallet {
 	/// **StorageDoubleMap** that maps an **account address on an external blockchain and the external blockchain**
 	/// to a **nonce**.
 	/// This nonce indicates the number of times the account address was specified as the new owner when a "detachable thing" (see enum `DetachHash` to see what type of things can be detached) was detached.
+	///
+	/// Note: In Fragnova's Smart Contract `CollectionFactory.sol`, the mapping state variable `nonces`'s (`mapping(address => uint64) nonces`) nonce type is also `uint64`
 	#[pallet::storage]
 	pub type DetachNonces<T: Config> =
 		StorageDoubleMap<_, Twox64Concat, Vec<u8>, Twox64Concat, SupportedChains, u64>;
@@ -246,6 +271,8 @@ pub mod pallet {
 	/// **authorized by Fragnova's Ethereum Smart Contract** to attach Proto-Fragment(s) into the aforementioned Smart Contract
 	///
 	/// Note: Only the Sudo User can edit `EthereumAuthorities`
+	///
+	/// Note 2: All the ECDSA public keys in `EthereumAuthorities` have been deterministically computed using the Ed25519 keys in the StorageValue `DetachKeys`
 	#[pallet::storage]
 	pub type EthereumAuthorities<T: Config> = StorageValue<_, BTreeSet<ecdsa::Public>, ValueQuery>;
 
@@ -261,10 +288,8 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// A "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) was detached
-		Detached { hash: DetachHash, remote_signature: Vec<u8> },
 		/// A collection of "detachable thing"s was detached
-		CollectionDetached { merkle_root: Hash256, remote_signature: Vec<u8> },
+		CollectionDetached { merkle_root: Hash256, remote_signature: Vec<u8>, collection_type: Vec<u8>, collection: DetachCollection },
 	}
 
 	// Errors inform users that something went wrong.
@@ -368,21 +393,36 @@ pub mod pallet {
 				nonce: data.nonce,
 			};
 
-			// add to Detached protos map
-			data.hashes.into_iter().for_each(|detach_hash| {
-				<DetachedHashes<T>>::insert(detach_hash.clone(), export_data.clone()); // TODO Review - Should `DetachHash` implement the trait `Copy`?
+			// add to `DetachedHashes` map
+			match &data.collection {
+				DetachCollection::Protos(proto_hashes) => {
+					proto_hashes.iter().for_each(|proto_hash| {
 
-				Self::deposit_event(Event::Detached {
-					hash: detach_hash.clone(), // TODO Review - Should `DetachHash` implement the trait `Copy`?
-					remote_signature: data.remote_signature.clone(),
-				});
+						let detach_hash = DetachHash::Proto(*proto_hash);
 
-				log::debug!("Detached hash: {:?} signature: {:?}", detach_hash, data.remote_signature);
-			});
+						<DetachedHashes<T>>::insert(detach_hash.clone(), export_data.clone()); // TODO Review - Should `DetachHash` implement the trait `Copy`?
+
+						log::debug!("Detached hash: {:?} signature: {:?}", detach_hash, data.remote_signature);
+					});
+				},
+				DetachCollection::Instances(instances) => {
+					instances.iter().for_each(|(definition_hash, edition_id, copy_id)| {
+
+						let detach_hash = DetachHash::Instance(*definition_hash, *edition_id, *copy_id);
+
+						<DetachedHashes<T>>::insert(detach_hash.clone(), export_data.clone()); // TODO Review - Should `DetachHash` implement the trait `Copy`?
+
+						log::debug!("Detached hash: {:?} signature: {:?}", detach_hash, data.remote_signature);
+					});
+
+				}
+			}
 
 			Self::deposit_event(Event::CollectionDetached {
 				merkle_root: data.merkle_root,
-				remote_signature: data.remote_signature.clone(),
+				remote_signature: data.remote_signature,
+				collection_type: data.collection.get_type(),
+				collection: data.collection,
 			});
 
 			Ok(())
@@ -503,8 +543,7 @@ pub mod pallet {
 					// We can still have multiple transactions compete for the same "spot",
 					// and the one with higher priority will replace other one in the pool.
 					.and_provides((
-						data.hashes.clone(), // TODO Review - Isn't it redundant to have `data.hashes` as part of the "provides" tag? Isn't `data.merkle_root` enough?
-						data.merkle_root,
+						data.merkle_root, // TODO Review - what if by co-incidence two collections that contain different things have the same merkle-root?
 						data.target_chain,
 						data.target_account.clone(),
 						data.nonce,
@@ -593,9 +632,11 @@ pub mod pallet {
 			}
 		}
 
-		fn get_merkle_root(detach_hashes: &Vec<DetachHash>) -> Hash256 {
-			let detach_hashes = detach_hashes.iter().map(|detach_hash| detach_hash.get_signable_hash()).collect::<Vec<Vec<u8>>>();
-			merkle_root::<Keccak256, _, _>(detach_hashes)
+		fn get_merkle_root(detach_collection: &DetachCollection) -> Hash256 {
+			let detach_hashes = detach_collection.get_abi_encoded_hashes();
+			// TODO Review - Should we sort the leaves?
+			// detach_hashes.sort_by(|a, b| Keccak256::hash(a).cmp(&Keccak256::hash(b)));
+			merkle_root::<Keccak256, _>(detach_hashes).into()
 		}
 
 		/// Returns a Tuple of the following things:
@@ -625,9 +666,11 @@ pub mod pallet {
 						.iter()
 						.find(|k| <EthereumAuthorities<T>>::get().contains(k)).ok_or(Error::<T>::NoValidator)?;
 
-					let merkle_root = Self::get_merkle_root(&request.hashes);
+					let merkle_root = Self::get_merkle_root(&request.collection);
+					// Note: In Fragnova's Smart Contract `CollectionFactory.sol`, the mapping state variable `nonces`'s (`mapping(address => uint64) nonces`) nonce type is also `uint64`
 					let nonce =
 						<DetachNonces<T>>::get(&request.target_account, request.target_chain).unwrap_or_default().checked_add(1).unwrap();
+					// Note: In Solidity, `block.chainid` is of type `uint256`
 					let mut chain_id_be: [u8; 32] = [0u8; 32]; // "be" stands for big-endian
 					match request.target_chain {
 						SupportedChains::EthereumMainnet => U256::from(1),
@@ -636,7 +679,8 @@ pub mod pallet {
 					}.to_big_endian(&mut chain_id_be);
 
 					let payload = [
-						&merkle_root[..], // &request.hash.get_signable_hash()[..],
+						&request.collection.get_type()[..],
+						&merkle_root[..],
 						&chain_id_be,
 						&TryInto::<[u8; 20]>::try_into(request.target_account.clone()).map_err(|_| Error::<T>::TargetAccountLengthIsIncorrect)?,
 						&nonce.to_be_bytes(), // "be" stands for big-endian
@@ -707,7 +751,7 @@ pub mod pallet {
 									Sign using any account
 
 									Footnote:
-									Since this pallet only has one key type in the keystore (i.e `KeyTypeId(*b"frag")`),
+									Since this pallet only has one key type in the keystore (i.e `KeyTypeId(*b"deta")`),
 									we can just use `any_account() to retrieve a key (that is of the aforementioned key type).
 									Reference: https://paritytech.github.io/substrate/master/frame_system/offchain/struct.Signer.html
 									*/
@@ -725,7 +769,7 @@ pub mod pallet {
 												// Public key that is expected to have a matching key in the keystore, which should be used to sign the payload
 												// Note: See the implementation of `SignedPayload` for `DetachInternalData` to understand more
 												public: account.public.clone(),
-												hashes: request.hashes.clone(),
+												collection: request.collection.clone(),
 												merkle_root,
 												target_chain: request.target_chain,
 												target_account: request.target_account.clone(),

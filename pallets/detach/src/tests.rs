@@ -15,9 +15,7 @@ mod process_detach_requests_tests {
 
 	fn eth_sign_detach_request(key_type: KeyTypeId, ecdsa_key: ecdsa::Public, detach_request: DetachRequest, nonce: u64) -> Vec<u8> {
 
-		let merkle_root = merkle_root::<Keccak256, _, _>(
-			detach_request.hashes.iter().map(|detach_hash| detach_hash.get_signable_hash()).collect::<Vec<Vec<u8>>>()
-		);
+		let merkle_root: Hash256 = merkle_root::<Keccak256, _>(detach_request.collection.get_abi_encoded_hashes()).into();
 		let mut chain_id_be: [u8; 32] = [0u8; 32]; // "be" stands for big-endian
 		match detach_request.target_chain {
 			SupportedChains::EthereumMainnet => U256::from(1),
@@ -33,6 +31,7 @@ mod process_detach_requests_tests {
 					b"\x19Ethereum Signed Message:\n32",
 					&keccak_256(
 						&[
+							&detach_request.collection.get_type()[..],
 							&merkle_root[..],
 							&chain_id_be[..],
 							&detach_request.target_account.clone()[..],
@@ -116,10 +115,8 @@ mod process_detach_requests_tests {
 				data,
 				DetachInternalData {
 					public: MultiSigner::Ed25519(ed25519_public_key),
-					hashes: process_detach_requests.detach_requests[0].hashes.clone(),
-					merkle_root: merkle_root::<Keccak256, _, _>(
-						process_detach_requests.detach_requests[0].hashes.iter().map(|detach_hash| detach_hash.get_signable_hash()).collect::<Vec<Vec<u8>>>()
-					),
+					collection: process_detach_requests.detach_requests[0].collection.clone(),
+					merkle_root: merkle_root::<Keccak256, _>(process_detach_requests.detach_requests[0].collection.get_abi_encoded_hashes()).into(),
 					target_chain: process_detach_requests.detach_requests[0].target_chain,
 					target_account: process_detach_requests.detach_requests[0].target_account.clone(),
 					remote_signature: eth_sign_detach_request(

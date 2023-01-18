@@ -312,7 +312,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
 	use sp_clamor::get_vault_id;
-	use pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachedHashes, SupportedChains};
+	use pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachCollection, DetachedHashes, SupportedChains};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -1435,9 +1435,10 @@ pub mod pallet {
 			})?;
 
 			let detach_request = DetachRequest {
-				hashes: edition_ids.into_iter()
-					.map(|edition_id| DetachHash::Instance(definition_hash, Compact(edition_id), Compact(1)))
-					.collect::<Vec<DetachHash>>(),
+				collection: DetachCollection::Instances(
+					edition_ids.into_iter().map(|edition_id| (definition_hash, Compact(edition_id), Compact(1)))
+						.collect::<Vec<(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>)>>()
+				),
 				target_chain,
 				target_account: target_account.into(),
 			};

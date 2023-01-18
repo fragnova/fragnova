@@ -31,7 +31,7 @@ impl DummyData {
 		let process_detach_requests = ProcessDetachRequests {
 			detach_requests: vec![
 				DetachRequest {
-					hashes: vec![DetachHash::Proto([7u8; 32]), DetachHash::Proto([77u8; 32])],
+					collection: DetachCollection::Protos(vec![[7u8; 32], [77u8; 32]]),
 					target_chain: SupportedChains::EthereumMainnet,
 					target_account: [7u8; 20].to_vec(),
 				}
@@ -40,10 +40,8 @@ impl DummyData {
 
 		let data = DetachInternalData::<MultiSigner> {
 			public: MultiSigner::Ed25519(ed25519::Pair::from_seed_slice(&[7u8; 32]).unwrap().public()), // ed25519::Pair::from_seed_slice(&[7u8; 32]).unwrap().public(),
-			hashes: process_detach_requests.detach_requests[0].hashes.clone(),
-			merkle_root: merkle_root::<Keccak256, _, _>(
-				process_detach_requests.detach_requests[0].hashes.iter().map(|detach_hash| detach_hash.get_signable_hash()).collect::<Vec<Vec<u8>>>()
-			),
+			collection: process_detach_requests.detach_requests[0].collection.clone(),
+			merkle_root: merkle_root::<Keccak256, _>(process_detach_requests.detach_requests[0].collection.get_abi_encoded_hashes()).into(),
 			target_chain: process_detach_requests.detach_requests[0].target_chain,
 			target_account: process_detach_requests.detach_requests[0].target_account.clone(),
 			remote_signature: [7u8; 65].to_vec(), // REVIEW - this doesn't match the `hash`, `nonce`, `target_account` and `target_chain`
@@ -60,10 +58,8 @@ impl DummyData {
 		let finalize_detach = FinalizeDetach {
 			data: DetachInternalData {
 				public: sp_core::ed25519::Public([7u8; 32]),
-				hashes: process_detach_requests.detach_requests[0].hashes.clone(),
-				merkle_root: merkle_root::<Keccak256, _, _>(
-					process_detach_requests.detach_requests[0].hashes.iter().map(|detach_hash| detach_hash.get_signable_hash()).collect::<Vec<Vec<u8>>>()
-				),
+				collection: process_detach_requests.detach_requests[0].collection.clone(),
+				merkle_root: merkle_root::<Keccak256, _>(process_detach_requests.detach_requests[0].collection.get_abi_encoded_hashes()).into(),
 				target_chain: process_detach_requests.detach_requests[0].target_chain,
 				target_account: process_detach_requests.detach_requests[0].target_account.clone(),
 				remote_signature:  [7u8; 65].to_vec(), // REVIEW - this doesn't match the `hash`, `nonce`, `target_account` and `target_chain`

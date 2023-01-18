@@ -199,9 +199,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
-	use pallet_detach::{
-		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
-	};
+	use pallet_detach::{DetachCollection, DetachRequest, DetachRequests, DetachedHashes, SupportedChains, DetachHash};
 	use sp_clamor::CID_PREFIX;
 	use sp_runtime::SaturatedConversion;
 	use pallet_clusters::Cluster;
@@ -858,7 +856,7 @@ pub mod pallet {
 			})?;
 
 			let detach_request = DetachRequest {
-				hashes: proto_hashes.into_iter().map(|proto_hash| DetachHash::Proto(proto_hash)).collect::<Vec<DetachHash>>(),
+				collection: DetachCollection::Protos(proto_hashes),
 				target_chain,
 				target_account: target_account.into()
 			};

@@ -2532,6 +2532,7 @@ mod secondary_buy_tests {
 
 
 mod detach_tests {
+	use pallet_detach::DetachCollection;
 	use super::*;
 
 	pub fn detach_(
@@ -2570,13 +2571,15 @@ mod detach_tests {
 				pallet_detach::DetachRequests::<Test>::get(),
 				vec![
 					pallet_detach::DetachRequest {
-						hashes: detach.edition_ids.into_iter().map(|edition_id|
-							pallet_detach::DetachHash::Instance(
-								detach.mint.definition.get_definition_id(),
-								Compact(edition_id),
-								Compact(1),
-							)
-						).collect(),
+						collection: DetachCollection::Instances(
+							detach.edition_ids.into_iter().map(|edition_id|
+								(
+									detach.mint.definition.get_definition_id(),
+									Compact(edition_id),
+									Compact(1)
+								)
+							).collect()
+						),
 						target_chain: detach.target_chain,
 						target_account: detach.target_account,
 					},
