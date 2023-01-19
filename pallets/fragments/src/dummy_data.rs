@@ -31,7 +31,6 @@ mod copied_from_pallet_protos {
 		pub category: Categories,
 		pub tags: Vec<Vec<u8>>,
 		pub linked_asset: Option<pallet_protos::LinkedAsset>,
-		pub include_cost: Option<u64>,
 		pub data: Vec<u8>,
 	}
 	impl ProtoFragment {
@@ -207,7 +206,6 @@ impl DummyData {
 				category: Categories::Text(TextCategories::Plain),
 				tags: Vec::new(),
 				linked_asset: None,
-				include_cost: Some(111),
 				data: "0x111".as_bytes().to_vec(),
 			},
 			metadata: DefinitionMetadata { name: b"Il Nome".to_vec(), currency: Currency::Native },

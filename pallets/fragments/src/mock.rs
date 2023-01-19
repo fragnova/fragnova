@@ -212,8 +212,6 @@ impl pallet_protos::Config for Test {
 	type DetachAccountLimit = ConstU32<20>;
 	type MaxTags = ConstU32<10>;
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type CurationExpiration = ConstU64<5>;
-	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_accounts::Config for Test {

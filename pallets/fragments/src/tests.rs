@@ -37,10 +37,7 @@ mod copied_from_pallet_protos {
 					.collect::<Vec<BoundedVec<_, _>>>()
 			).unwrap(),
 			proto.linked_asset.clone(),
-			proto
-				.include_cost
-				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
-				.unwrap_or(UsageLicense::Closed),
+			UsageLicense::Closed,
 			None,
 			ProtoData::Local(proto.data.clone()),
 		)
