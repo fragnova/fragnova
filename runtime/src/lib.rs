@@ -473,6 +473,7 @@ mod validation_logic {
 				BinaryCategories::WasmReactor => false,
 				BinaryCategories::BlendFile => false,
 				BinaryCategories::OnnxModel => false,
+				BinaryCategories::SafeTensors => false,
 			},
 		}
 	}
@@ -483,13 +484,20 @@ mod validation_logic {
 	pub fn is_the_immediate_call_valid(c: &Call) -> bool {
 		match c {
 			Call::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
-				is_valid(category, data, references)
+				match data {
+					pallet_protos::ProtoData::Local(ref data) => is_valid(category, data, references),
+					_ => false, // TODO Review
+				}
 			},
 			Call::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
 				let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
 					return false;
 				};
-				is_valid(&proto_struct.category, data, new_references)
+				match data {
+					None => true,
+					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data, new_references),
+					_ => false, // TODO Review
+				}
 			},
 			Call::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
 			Call::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
@@ -570,10 +578,11 @@ mod validation_logic {
 					&Call::Protos(pallet_protos::Call::upload { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
 						references: vec![],
 						category: category.clone(),
-						tags: vec![],
+						tags: vec![].try_into().unwrap(),
 						linked_asset: None,
 						license: pallet_protos::UsageLicense::Closed,
-						data: valid_data
+						cluster: None,
+						data: pallet_protos::ProtoData::Local(valid_data)
 					})
 				),
 				true
@@ -583,10 +592,11 @@ mod validation_logic {
 					&Call::Protos(pallet_protos::Call::upload {
 						references: vec![],
 						category: category.clone(),
-						tags: vec![],
+						tags: vec![].try_into().unwrap(),
 						linked_asset: None,
 						license: pallet_protos::UsageLicense::Closed,
-						data: invalid_data
+						cluster: None,
+						data: pallet_protos::ProtoData::Local(invalid_data)
 					}),
 				),
 				false
@@ -606,7 +616,7 @@ mod validation_logic {
 				is_the_immediate_call_valid(
 					&Call::Protos(pallet_protos::Call::set_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
 						proto_hash: [7u8; 32],
-						metadata_key: metadata_key.clone(),
+						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
 					})
 				),
@@ -616,7 +626,7 @@ mod validation_logic {
 				is_the_immediate_call_valid(
 					&Call::Protos(pallet_protos::Call::set_metadata {
 						proto_hash: [7u8; 32],
-						metadata_key: b"invalid_key".to_vec(),
+						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
 						data: data.clone()
 					})
 				),
@@ -627,7 +637,7 @@ mod validation_logic {
 				is_the_immediate_call_valid(
 					&Call::Fragments(pallet_fragments::Call::set_definition_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
 						definition_hash: [7u8; 16],
-						metadata_key: metadata_key.clone(),
+						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
 					})
 				),
@@ -637,7 +647,7 @@ mod validation_logic {
 				is_the_immediate_call_valid(
 					&Call::Fragments(pallet_fragments::Call::set_definition_metadata {
 						definition_hash: [7u8; 16],
-						metadata_key: b"invalid_key".to_vec(),
+						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
 						data: data.clone()
 					})
 				),
@@ -650,7 +660,7 @@ mod validation_logic {
 						definition_hash: [7u8; 16],
 						edition_id: 1,
 						copy_id: 1,
-						metadata_key: metadata_key.clone(),
+						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
 					})
 				),
@@ -662,7 +672,7 @@ mod validation_logic {
 						definition_hash: [7u8; 16],
 						edition_id: 1,
 						copy_id: 1,
-						metadata_key: b"invalid_key".to_vec(),
+						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
 						data: data.clone()
 					})
 				),
@@ -682,7 +692,7 @@ mod validation_logic {
 				is_the_immediate_call_valid(
 					&Call::Protos(pallet_protos::Call::set_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
 						proto_hash: [7u8; 32],
-						metadata_key: metadata_key.clone(),
+						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
 					})
 				),
@@ -692,7 +702,7 @@ mod validation_logic {
 				is_the_immediate_call_valid(
 					&Call::Protos(pallet_protos::Call::set_metadata {
 						proto_hash: [7u8; 32],
-						metadata_key: metadata_key.clone(),
+						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
 					})
 				),
@@ -703,7 +713,7 @@ mod validation_logic {
 				is_the_immediate_call_valid(
 					&Call::Fragments(pallet_fragments::Call::set_definition_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
 						definition_hash: [7u8; 16],
-						metadata_key: metadata_key.clone(),
+						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone() // Invalid UTF-8 Text
 					})
 				),
@@ -713,7 +723,7 @@ mod validation_logic {
 				is_the_immediate_call_valid(
 					&Call::Fragments(pallet_fragments::Call::set_definition_metadata {
 						definition_hash: [7u8; 16],
-						metadata_key: metadata_key.clone(),
+						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
 					})
 				),
@@ -726,7 +736,7 @@ mod validation_logic {
 						definition_hash: [7u8; 16],
 						edition_id: 1,
 						copy_id: 1,
-						metadata_key: metadata_key.clone(),
+						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
 					})
 				),
@@ -738,7 +748,7 @@ mod validation_logic {
 						definition_hash: [7u8; 16],
 						edition_id: 1,
 						copy_id: 1,
-						metadata_key: metadata_key,
+						metadata_key: metadata_key.try_into().unwrap(),
 						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
 					})
 				),
@@ -770,10 +780,11 @@ mod validation_logic {
 						Call::Protos(pallet_protos::Call::upload {
 							references: vec![],
 							category: Categories::Text(TextCategories::Plain),
-							tags: vec![],
+							tags: vec![].try_into().unwrap(),
 							linked_asset: None,
 							license: pallet_protos::UsageLicense::Closed,
-							data: b"Bonjour".to_vec()
+							cluster: None,
+							data: pallet_protos::ProtoData::Local(b"Bonjour".to_vec())
 						})
 					]
 				}),
