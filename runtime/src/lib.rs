@@ -1591,7 +1591,7 @@ impl_runtime_apis! {
 			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
 			// We want to prevent nodes from gossiping extrinsics that have invalid calls.
-			if validation_logic::is_the_immediate_call_valid(&tx.function) {
+			if !validation_logic::is_the_immediate_call_valid(&tx.function) {
 				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)); // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
 			}
 			// Always run normally anyways
