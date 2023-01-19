@@ -86,6 +86,7 @@ mod upload_tests {
 				metadata: BTreeMap::new(),
 				accounts_info: AccountsInfo::default(),
 				data: ProtoData::Local(vec![]), // empty here if local
+				cluster: None,
 			};
 
 			// Ensure that this test case fails if a new field is ever added to the `Proto` struct

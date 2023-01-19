@@ -55,6 +55,7 @@ use scale_info::prelude::{
 use serde_json::{json, Map, Value};
 
 use frame_support::traits::tokens::fungibles::{Inspect, Mutate};
+use pallet_clusters::Cluster;
 
 /// TODO: Documentation
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -207,6 +208,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub accounts_info: AccountsInfo,
 	/// **Data** of the **Proto-Fragment** (valid only if not Local)
 	pub data: ProtoData,
+	/// **Cluster** of the Proto
+	pub cluster: Option<Cluster<TAccountId>>,
 }
 
 #[frame_support::pallet]
@@ -426,7 +429,7 @@ pub mod pallet {
 			tags: BoundedVec<BoundedVec<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>,
 			linked_asset: Option<LinkedAsset>,
 			license: UsageLicense<T::AccountId>,
-			_cluster: Option<Cluster<T::AccountId>>,
+			cluster: Option<Cluster<T::AccountId>>,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -531,6 +534,7 @@ pub mod pallet {
 				metadata: BTreeMap::new(),
 				accounts_info: AccountsInfo::default(),
 				data: data_stored,
+				cluster: cluster,
 			};
 
 			// store proto
