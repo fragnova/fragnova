@@ -1,4 +1,4 @@
-//! Everything in this crate was copied from: https://crates.io/crates/beefy-merkle-tree/10.0.0 (which is also used in Substrate)
+//! Everything in this crate was copied from: https://crates.io/crates/beefy-merkle-tree/10.0.0 (which is also used in Substrate (https://paritytech.github.io/substrate/master/beefy_merkle_tree/index.html) )
 //!
 //! The reason we copy-pasted the function `merkle_root` from the crate `beefy_merkle_tree` rather than using it as a dependency in our Cargo.toml file
 //! is because we want to use the latest version of `beefy_merkle_tree` (which has the most updated `merkle_root` function)
