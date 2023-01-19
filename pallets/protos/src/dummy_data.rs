@@ -29,7 +29,6 @@ pub struct ProtoFragment {
 	pub category: Categories,
 	pub tags: Vec<Vec<u8>>,
 	pub linked_asset: Option<LinkedAsset>,
-	pub include_cost: Option<u64>,
 	pub data: Vec<u8>,
 }
 impl ProtoFragment {
@@ -40,7 +39,6 @@ impl ProtoFragment {
 
 pub struct Patch {
 	pub proto_fragment: ProtoFragment,
-	pub include_cost: Option<u64>,
 	pub new_references: Vec<Hash256>,
 	pub new_data: Vec<u8>,
 }
@@ -58,16 +56,6 @@ pub struct Metadata {
 impl Metadata {
 	pub fn get_data_hash(&self) -> Hash256 {
 		compute_data_hash(&self.data)
-	}
-}
-
-pub struct Stake {
-	pub proto_fragment: ProtoFragment,
-	pub lock: Lock,
-}
-impl Stake {
-	pub fn get_stake_amount(&self) -> u128 {
-		self.proto_fragment.include_cost.unwrap().into()
 	}
 }
 
@@ -91,7 +79,6 @@ pub struct DummyData {
 	pub patch: Patch,
 	pub metadata: Metadata,
 	pub detach: Detach,
-	pub stake: Stake,
 	pub account_id: sp_core::ed25519::Public,
 	pub account_id_second: sp_core::ed25519::Public,
 	pub ethereum_account_id: H160,
@@ -104,7 +91,6 @@ impl DummyData {
 			category: Categories::Text(TextCategories::Plain),
 			tags: Vec::new(),
 			linked_asset: None,
-			include_cost: Some(867),
 			data: "0x111".as_bytes().to_vec(),
 		};
 
@@ -113,7 +99,6 @@ impl DummyData {
 			category: Categories::Text(TextCategories::Plain),
 			tags: Vec::new(),
 			linked_asset: None,
-			include_cost: Some(2),
 			data: "0x222".as_bytes().to_vec(),
 		};
 
@@ -133,7 +118,6 @@ impl DummyData {
 			category: Categories::Trait(Some(data_trait)),
 			tags: Vec::new(),
 			linked_asset: None,
-			include_cost: Some(2),
 			data: trait1.encode(),
 		};
 
@@ -154,7 +138,6 @@ impl DummyData {
 			category: Categories::Trait(Some(data_trait_2)),
 			tags: Vec::new(),
 			linked_asset: None,
-			include_cost: Some(2),
 			data: trait2.encode(),
 		};
 
@@ -174,7 +157,6 @@ impl DummyData {
 			category: Categories::Trait(Some(data_trait_3)),
 			tags: Vec::new(),
 			linked_asset: None,
-			include_cost: Some(2),
 			data: trait3.encode(),
 		};
 
@@ -191,7 +173,6 @@ impl DummyData {
 			category: Categories::Shards(shard_script_1),
 			tags: Vec::new(),
 			linked_asset: None,
-			include_cost: Some(2),
 			data: "0x661".as_bytes().to_vec(),
 		};
 
@@ -207,7 +188,6 @@ impl DummyData {
 			category: Categories::Shards(shard_script_2),
 			tags: Vec::new(),
 			linked_asset: None,
-			include_cost: Some(2),
 			data: "0x667".as_bytes().to_vec(),
 		};
 
@@ -224,7 +204,6 @@ impl DummyData {
 			category: Categories::Shards(shard_script_3),
 			tags: Vec::new(),
 			linked_asset: None,
-			include_cost: Some(2),
 			data: "0x669".as_bytes().to_vec(),
 		};
 
@@ -239,13 +218,11 @@ impl DummyData {
 			category: Categories::Shards(shard_script_4),
 			tags: Vec::new(),
 			linked_asset: None,
-			include_cost: Some(2),
 			data: "0x670".as_bytes().to_vec(),
 		};
 
 		let patch = Patch {
 			proto_fragment: proto.clone(),
-			include_cost: Some(123),
 			new_references: Vec::new(),
 			new_data: b"<Insert Anything Here>".to_vec(),
 		};
@@ -266,37 +243,6 @@ impl DummyData {
 		let contract = Address::from_str(&contracts[0].as_str()[2..])
 			.map_err(|_| "Invalid response - invalid sender")
 			.unwrap();
-		let stake = Stake {
-			proto_fragment: proto.clone(),
-			lock: Lock {
-				data: pallet_accounts::EthLockUpdate {
-					public: sp_core::ed25519::Public([69u8; 32]),
-					amount: U256::from(69u32),
-					lock_period: 1,
-					sender: get_ethereum_public_address(&sp_core::ecdsa::Pair::from_seed(
-						&[1u8; 32],
-					)),
-					signature: create_lock_signature(
-						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
-						U256::from(69u32),
-						1,
-						get_ethereum_public_address(&sp_core::ecdsa::Pair::from_seed(&[1u8; 32])),
-						contract,
-					),
-					lock: true, // yes, please lock it!
-					block_number: 69,
-				},
-				link: Link {
-					clamor_account_id: sp_core::ed25519::Public::from_raw([255u8; 32]),
-					link_signature: create_link_signature(
-						sp_core::ed25519::Public::from_raw([3u8; 32]),
-						sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
-					),
-					_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
-				},
-				ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
-			},
-		};
 
 		Self {
 			proto_fragment: proto,
@@ -311,7 +257,6 @@ impl DummyData {
 			patch,
 			metadata,
 			detach,
-			stake,
 			account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			account_id_second: sp_core::ed25519::Public::from_raw([2u8; 32]),
 			ethereum_account_id: H160::random(),

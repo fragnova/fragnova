@@ -19,20 +19,6 @@ fn get_ethereum_chain_id() -> u64 {
 }
 
 #[cfg(test)]
-pub fn get_ticket_asset_id() -> u64 {
-	use crate::mock::Test;
-	use frame_support::traits::TypedGet;
-	<Test as Config>::TicketsAssetId::get()
-}
-
-#[cfg(test)]
-pub fn get_initial_percentage_tickets() -> u8 {
-	use crate::mock::Test;
-	use frame_support::traits::TypedGet;
-	<Test as Config>::InitialPercentageTickets::get()
-}
-
-#[cfg(test)]
 pub fn get_initial_percentage_nova() -> u8 {
 	use crate::mock::Test;
 	use frame_support::traits::TypedGet;

@@ -6,7 +6,6 @@ use codec::Compact;
 use copied_from_pallet_accounts::{link_, lock_};
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
 use protos::categories::TextCategories;
-use stake_tests::stake_;
 use std::collections::BTreeMap;
 use upload_tests::upload;
 
@@ -47,10 +46,7 @@ mod upload_tests {
 					.collect::<Vec<BoundedVec<_, _>>>()
 			).unwrap(),
 			proto.linked_asset.clone(),
-			proto
-				.include_cost
-				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
-				.unwrap_or(UsageLicense::Closed),
+			UsageLicense::Open,
 			None,
 			ProtoData::Local(proto.data.clone()),
 		)
@@ -74,10 +70,7 @@ mod upload_tests {
 			let correct_proto_struct = Proto {
 				block: block_number,
 				patches: Vec::new(),
-				license: proto
-					.include_cost
-					.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
-					.unwrap_or(UsageLicense::Closed),
+				license: UsageLicense::Open,
 				creator: dd.account_id,
 				owner: ProtoOwner::User(dd.account_id),
 				references: proto.references.clone(),
@@ -123,62 +116,6 @@ mod upload_tests {
 			assert_noop!(upload(dd.account_id, &proto), Error::<Test>::ProtoExists);
 		});
 	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn upload_should_not_work_if_user_did_not_stake_enough() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let stake = dd.stake;
-
-			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-
-			assert_ok!(stake_(
-				stake.lock.link.clamor_account_id,
-				&stake.proto_fragment,
-				&(stake.get_stake_amount() - 1),
-			));
-
-			let proto_with_refs = ProtoFragment {
-				references: vec![stake.proto_fragment.get_proto_hash()],
-				..dd.proto_fragment
-			};
-
-			assert_noop!(
-				upload(stake.lock.link.clamor_account_id, &proto_with_refs),
-				Error::<Test>::NotEnoughTickets
-			);
-		});
-	}
-
-	#[test]
-	fn upload_should_not_work_if_user_did_not_stake_() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let stake = dd.stake;
-
-			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-
-			let proto_with_refs = ProtoFragment {
-				references: vec![stake.proto_fragment.get_proto_hash()],
-				..dd.proto_fragment_second
-			};
-
-			assert_noop!(
-				upload(stake.lock.link.clamor_account_id, &proto_with_refs),
-				Error::<Test>::CurationNotFound
-			);
-		});
-	}
 }
 
 mod patch_tests {
@@ -188,7 +125,7 @@ mod patch_tests {
 		ProtosPallet::patch(
 			Origin::signed(signer),
 			patch.proto_fragment.clone().get_proto_hash(),
-			patch.include_cost.map(|cost| UsageLicense::Tickets(Compact::from(cost))),
+			Some(UsageLicense::Open),
 			patch.new_references.clone(),
 			None, // TODO
 			Some(ProtoData::Local(patch.new_data.clone())),
@@ -210,10 +147,7 @@ mod patch_tests {
 			let proto_struct = <Protos<Test>>::get(patch.proto_fragment.get_proto_hash()).unwrap();
 			assert_eq!(
 				proto_struct.license,
-				patch
-					.include_cost
-					.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
-					.unwrap_or(UsageLicense::Closed)
+				UsageLicense::Open,
 			);
 			assert!(proto_struct.patches.contains(&ProtoPatch {
 				block: block_number,
@@ -254,103 +188,6 @@ mod patch_tests {
 			let dd = DummyData::new();
 			let patch = dd.patch;
 			assert_noop!(patch_(dd.account_id, &patch), Error::<Test>::ProtoNotFound);
-		});
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn patch_should_work_if_user_staked_enough() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let stake = dd.stake;
-
-			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-
-			assert_ok!(stake_(
-				stake.lock.link.clamor_account_id,
-				&stake.proto_fragment,
-				&stake.get_stake_amount(),
-			));
-
-			assert_ok!(upload(stake.lock.link.clamor_account_id, &dd.proto_fragment));
-
-			let patch_with_refs = Patch {
-				proto_fragment: dd.proto_fragment,
-				include_cost: None,
-				new_references: vec![stake.proto_fragment.get_proto_hash()],
-				new_data: b"<insert anything here>".to_vec(),
-			};
-
-			assert_ok!(patch_(stake.lock.link.clamor_account_id, &patch_with_refs));
-		});
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn patch_should_not_work_if_user_did_not_stake_enough() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let stake = dd.stake;
-
-			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-
-			assert_ok!(stake_(
-				stake.lock.link.clamor_account_id,
-				&stake.proto_fragment,
-				&(stake.get_stake_amount() - 1),
-			));
-
-			assert_ok!(upload(stake.lock.link.clamor_account_id, &dd.proto_fragment));
-
-			let patch_with_refs = Patch {
-				proto_fragment: dd.proto_fragment,
-				include_cost: None,
-				new_references: vec![stake.proto_fragment.get_proto_hash()],
-				new_data: b"<insert anything here>".to_vec(),
-			};
-
-			assert_noop!(
-				patch_(stake.lock.link.clamor_account_id, &patch_with_refs),
-				Error::<Test>::NotEnoughTickets
-			);
-		});
-	}
-
-	#[test]
-	fn patch_should_not_work_if_user_did_not_stake_() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let stake = dd.stake;
-
-			assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-
-			assert_ok!(upload(stake.lock.link.clamor_account_id, &dd.proto_fragment_second));
-
-			let patch_with_refs = Patch {
-				proto_fragment: dd.proto_fragment_second,
-				include_cost: None,
-				new_references: vec![stake.proto_fragment.get_proto_hash()],
-				new_data: b"<insert anything here>".to_vec(),
-			};
-
-			assert_noop!(
-				patch_(stake.lock.link.clamor_account_id, &patch_with_refs),
-				Error::<Test>::CurationNotFound
-			);
 		});
 	}
 
@@ -612,159 +449,6 @@ mod detach_tests {
 	}
 }
 
-mod stake_tests {
-	use super::*;
-
-	pub fn stake_(
-		signer: <Test as frame_system::Config>::AccountId,
-		proto: &ProtoFragment,
-		stake_amount: &<Test as pallet_assets::Config>::Balance,
-	) -> DispatchResult {
-		ProtosPallet::curate(Origin::signed(signer), proto.get_proto_hash(), stake_amount.clone())
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn stake_should_work() {
-		new_test_ext().execute_with(|| {
-			todo!();
-
-			// let dd = DummyData::new();
-			//
-			// let stake = dd.stake;
-			//
-			// assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-			//
-			// let frag_staked =
-			// 	<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
-			// 		.unwrap_or_default();
-			//
-			// let current_block_number = System::block_number(); //@sinkingsugar
-			//
-			// assert_ok!(lock_(&stake.lock));
-			// assert_ok!(link_(&stake.lock.link));
-			// assert_ok!(stake_(
-			// 	stake.lock.link.clamor_account_id,
-			// 	&stake.proto_fragment,
-			// 	&stake.get_stake_amount()
-			// ));
-			//
-			// assert_eq!(
-			// 	<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id).unwrap(),
-			// 	frag_staked.saturating_add(stake.get_stake_amount())
-			// );
-			//
-			// assert_eq!(
-			// 	<ProtoCurations<Test>>::get(stake.proto_fragment.get_proto_hash(), dd.account_id)
-			// 		.unwrap(),
-			// 	(stake.get_stake_amount(), current_block_number)
-			// );
-			// assert!(<AccountCurations<Test>>::get(dd.account_id)
-			// 	.unwrap()
-			// 	.contains(&stake.proto_fragment.get_proto_hash()));
-			//
-			// let event = <frame_system::Pallet<Test>>::events()
-			// 	.pop()
-			// 	.expect("Expected at least one EventRecord to be found")
-			// 	.event;
-			// assert_eq!(
-			// 	event,
-			// 	mock::Event::from(pallet_protos::Event::Staked {
-			// 		proto_hash: stake.proto_fragment.get_proto_hash(),
-			// 		account_id: dd.account_id,
-			// 		balance: stake.get_stake_amount()
-			// 	})
-			// );
-		});
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn stake_should_not_work_if_proto_not_found() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-			let stake = dd.stake;
-
-			assert_ok!(lock_(&stake.lock));
-			assert_ok!(link_(&stake.lock.link));
-
-			assert_noop!(
-				stake_(
-					stake.lock.link.clamor_account_id,
-					&stake.proto_fragment,
-					&stake.get_stake_amount()
-				),
-				Error::<Test>::ProtoNotFound
-			);
-		});
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn stake_should_work_if_user_has_sufficient_balance() {
-		new_test_ext().execute_with(|| {
-			todo!();
-
-			// let dd = DummyData::new();
-			//
-			// let stake = dd.stake;
-			//
-			// assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-			//
-			// assert_ok!(lock_(&stake.lock));
-			// assert_ok!(link_(&stake.lock.link));
-			//
-			// let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
-			// 	stake.lock.link.get_ethereum_public_address_of_signer(),
-			// )
-			// 	.unwrap()
-			// 	.amount;
-			// let frag_staked =
-			// 	<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
-			// 		.unwrap_or_default();
-			// let balance = frag_locked - frag_staked;
-			//
-			// assert_ok!(stake_(stake.lock.link.clamor_account_id, &stake.proto_fragment, &balance));
-		});
-	}
-
-	// TODO
-	#[test]
-	#[ignore]
-	fn stake_should_not_work_if_user_does_has_insufficient_balance() {
-		new_test_ext().execute_with(|| {
-			todo!();
-
-			// let dd = DummyData::new();
-			//
-			// let stake = dd.stake;
-			//
-			// assert_ok!(upload(dd.account_id, &stake.proto_fragment));
-			//
-			// assert_ok!(lock_(&stake.lock));
-			// assert_ok!(link_(&stake.lock.link));
-			//
-			// let frag_locked = <pallet_accounts::EthLockedFrag<Test>>::get(
-			// 	stake.lock.link.get_ethereum_public_address_of_signer(),
-			// )
-			// 	.unwrap()
-			// 	.amount;
-			// let frag_staked =
-			// 	<pallet_accounts::FragUsage<Test>>::get(stake.lock.link.clamor_account_id)
-			// 		.unwrap_or_default();
-			// let balance = frag_locked - frag_staked;
-			//
-			// assert_noop!(
-			// 	stake_(stake.lock.link.clamor_account_id, &stake.proto_fragment, &(balance - 1)),
-			// 	Error::<Test>::InsufficientBalance
-			// );
-		});
-	}
-}
-
 mod get_protos_tests {
 	use super::*;
 	use protos::categories::{ShardsFormat, ShardsScriptInfo};
@@ -834,7 +518,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -877,7 +561,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -922,7 +606,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -968,7 +652,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto2.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -1033,19 +717,19 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto1.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
 			}, encoded2: {
-				"tickets": Some(proto_shard_script.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
 			}, encoded3: {
-				"tickets": Some(proto_text.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -1101,7 +785,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded2: {
-				"tickets": Some(proto_shard_script_3.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -1166,19 +850,19 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto1.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
 			}, encoded2: {
-				"tickets": Some(proto_shard_script.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				},
 			}, encoded3: {
-				"tickets": Some(proto_text.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id_second)
@@ -1228,12 +912,12 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
 				}}, encoded2: {
-					"tickets": Some(proto2.include_cost),
+					"license": "open",
 					"owner": {
 						"type": "internal",
 						"value": hex::encode(dd.account_id)
@@ -1286,7 +970,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto_shard_script.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -1380,7 +1064,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto_shard_script.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)
@@ -1430,7 +1114,7 @@ mod get_protos_tests {
 
 			let json_expected = json!({
 				encoded: {
-				"tickets": Some(proto_shard_script.include_cost),
+				"license": "open",
 				"owner": {
 					"type": "internal",
 					"value": hex::encode(dd.account_id)

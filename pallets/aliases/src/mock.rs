@@ -121,8 +121,6 @@ impl pallet_protos::Config for Test {
 	type DetachAccountLimit = ConstU32<20>;
 	type MaxTags = ConstU32<10>;
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type CurationExpiration = ConstU64<5>;
-	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_fragments::Config for Test {
@@ -138,10 +136,6 @@ impl pallet_detach::Config for Test {
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
-parameter_types! {
-	pub const TicketsAssetId: u64 = 1337;
-}
-
 impl pallet_accounts::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -150,8 +144,6 @@ impl pallet_accounts::Config for Test {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = sp_runtime::traits::ConstU8<80>;
 	type InitialPercentageNova = sp_runtime::traits::ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
 }

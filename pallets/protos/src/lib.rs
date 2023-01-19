@@ -163,8 +163,6 @@ pub enum UsageLicense<TContractAddress> {
 	Closed,
 	/// Proto-Fragment is available for use freely
 	Open,
-	/// Proto-Fragment is available for use if an amount of tickets is under curation
-	Tickets(Compact<u64>),
 	/// Proto-Fragment is available for use if a custom contract returns true
 	Contract(TContractAddress),
 }
@@ -247,14 +245,6 @@ pub mod pallet {
 		/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
 		#[pallet::constant]
 		type StorageBytesMultiplier: Get<u64>;
-
-		/// The number of blocks after which a curation period is over
-		#[pallet::constant]
-		type CurationExpiration: Get<u64>;
-
-		/// Asset ID of the fungible asset "TICKET"
-		#[pallet::constant]
-		type TicketsAssetId: Get<<Self as pallet_assets::Config>::AssetId>;
 	}
 
 	#[pallet::pallet]
@@ -305,32 +295,6 @@ pub mod pallet {
 	pub type ProtosByOwner<T: Config> =
 		StorageMap<_, Twox64Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
 
-	/// **StorageDoubleMap** that maps a **Proto-Fragment and a Clamor Account ID** to a **tuple
-	/// that contains the Curated Amount (tickets burned by the aforementioned Clamor Account ID)
-	/// and the Block Number**
-	// Curation management
-	// (Amount burned, Last burn time)
-	#[pallet::storage]
-	pub type ProtoCurations<T: Config> = StorageDoubleMap<
-		_,
-		Identity,
-		Hash256,
-		Twox64Concat,
-		T::AccountId,
-		(<T as pallet_assets::Config>::Balance, T::BlockNumber),
-	>;
-
-	/// **StorageMap** that maps a **Clamor Account ID** to a **list of Proto-Fragments that was
-	/// staked on by the aforementioned Clamor Account ID**
-	#[pallet::storage]
-	pub type AccountCurations<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, Vec<Hash256>>;
-
-	/// **StorageMap** that maps a **Block number** to a list of accounts that have curations
-	/// expiring on that block number
-	#[pallet::storage]
-	pub type ExpiringCurations<T: Config> =
-		StorageMap<_, Twox64Concat, T::BlockNumber, Vec<T::AccountId>>;
-
 	#[allow(missing_docs)]
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -345,18 +309,6 @@ pub mod pallet {
 		Detached { proto_hash: Hash256, cid: Vec<u8> },
 		/// A Proto-Fragment was transferred
 		Transferred { proto_hash: Hash256, owner_id: T::AccountId },
-		/// Stake was created
-		Staked {
-			proto_hash: Hash256,
-			account_id: T::AccountId,
-			balance: <T as pallet_assets::Config>::Balance,
-		},
-		/// Stake was unlocked
-		Unstaked {
-			proto_hash: Hash256,
-			account_id: T::AccountId,
-			balance: <T as pallet_assets::Config>::Balance,
-		},
 	}
 
 	// Errors inform users that something went wrong.
@@ -382,10 +334,6 @@ pub mod pallet {
 		Detached,
 		/// Not the owner of the proto
 		Unauthorized,
-		/// Not enough tickets burned on the proto
-		NotEnoughTickets,
-		/// Curation not found
-		CurationNotFound,
 		/// Reference not found
 		ReferenceNotFound,
 		/// Not enough tokens to stake
@@ -919,52 +867,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Curate, burning tickets on a Proto-Fragment
-		///
-		/// # Arguments
-		///
-		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - **Hash of the Proto-Fragment** to **stake on**
-		/// * `amount` - **Amount of tickets** to **burn**
-		#[pallet::weight(50_000)]
-		pub fn curate(
-			origin: OriginFor<T>,
-			proto_hash: Hash256,
-			amount: <T as pallet_assets::Config>::Balance,
-		) -> DispatchResult {
-			let who = ensure_signed(origin.clone())?;
-
-			// make sure the proto exists
-			ensure!(<Protos<T>>::contains_key(&proto_hash), Error::<T>::ProtoNotFound);
-
-			// make sure the user has enough tickets
-			let balance = <pallet_assets::Pallet<T> as Inspect<T::AccountId>>::balance(
-				<T as pallet::Config>::TicketsAssetId::get(),
-				&who,
-			);
-			ensure!(balance >= amount, Error::<T>::InsufficientBalance);
-
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
-
-			// ! from now we write...
-
-			// Burn tickets from account and record the stake locally
-			let _ = <pallet_assets::Pallet<T> as Mutate<T::AccountId>>::burn_from(
-				<T as pallet::Config>::TicketsAssetId::get(),
-				&who,
-				amount.saturated_into(),
-			)?;
-
-			// take record of the stake
-			<ProtoCurations<T>>::insert(proto_hash, &who, (amount, current_block_number));
-			<AccountCurations<T>>::append(who.clone(), proto_hash.clone());
-
-			// also emit event
-			Self::deposit_event(Event::Staked { proto_hash, account_id: who, balance: amount }); // 问Gio
-
-			Ok(())
-		}
-
 		/// Delete Proto-Fragment `proto_hash` from all relevant Storage Items
 		#[pallet::weight(50_000)]
 		pub fn ban(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
@@ -984,35 +886,6 @@ pub mod pallet {
 			});
 
 			Ok(())
-		}
-	}
-
-	#[pallet::hooks]
-	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		/// During the block finalization phase
-		fn on_finalize(n: T::BlockNumber) {
-			// drain expired curations
-			let expiring = <ExpiringCurations<T>>::take(n);
-			if let Some(expiring) = expiring {
-				for account in &expiring {
-					let curations = <AccountCurations<T>>::get(account);
-					if let Some(curations) = curations {
-						for proto in curations {
-							let curation = <ProtoCurations<T>>::get(proto, account);
-							if let Some(curation) = curation {
-								if curation.1 + T::CurationExpiration::get().saturated_into() >= n {
-									<ProtoCurations<T>>::remove(proto, account);
-									<AccountCurations<T>>::mutate(account, |curations| {
-										if let Some(curations) = curations {
-											curations.retain(|p| p != &proto);
-										}
-									});
-								}
-							}
-						}
-					}
-				}
-			}
 		}
 	}
 
@@ -1041,19 +914,6 @@ pub mod pallet {
 					match license {
 						UsageLicense::Closed => return Err(Error::<T>::Unauthorized.into()),
 						UsageLicense::Open => continue,
-						UsageLicense::Tickets(amount) => {
-							let amount: u64 = amount.into();
-							let amount = amount.saturated_into();
-
-							let curation = <ProtoCurations<T>>::get(reference, who.clone());
-							if let Some(curation) = curation {
-								// Check if the user curated enough tickets
-								ensure!(curation.0 >= amount, Error::<T>::NotEnoughTickets);
-							} else {
-								// Curation not found
-								return Err(Error::<T>::CurationNotFound.into())
-							}
-						},
 						UsageLicense::Contract(contract_address) => {
 							let data = (reference, who.clone()).encode();
 							let res: Result<pallet_contracts_primitives::ExecReturnValue, _> =
@@ -1485,12 +1345,14 @@ pub mod pallet {
 						<Protos<T>>::get(array_proto_id).ok_or("Failed to get proto")?;
 
 					match proto_struct.license {
-						UsageLicense::Tickets(amount) => {
-							let n: u64 = amount.into();
-							(*map_proto).insert(String::from("tickets"), Value::Number(n.into()));
+						UsageLicense::Open => {
+							(*map_proto).insert(String::from("license"), Value::String(String::from("open")));
 						},
-						_ => {
-							(*map_proto).insert(String::from("tickets"), Value::Null);
+						UsageLicense::Closed => {
+							(*map_proto).insert(String::from("license"), Value::String(String::from("closed")));
+						},
+						UsageLicense::Contract(contract) => {
+							(*map_proto).insert(String::from("license"), Value::String(hex::encode(contract)));
 						},
 					}
 

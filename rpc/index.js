@@ -122,7 +122,6 @@ const connectToLocalNode = async () => {
         _enum: {
           "Closed": null,
           "Open": null,
-          "Tickets": "Compact<u64>",
           "Contract": "AccountId",
         }
       },

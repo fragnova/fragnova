@@ -73,7 +73,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
-	// Storage: Accounts EthReservedTickets (r:1 w:0)
 	// Storage: Accounts EthReservedNova (r:1 w:0)
 	fn link() -> Weight {
 		(58_668_000 as Weight)
@@ -91,7 +90,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Accounts EVMLinkVotingClosed (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:0)
 	// Storage: Accounts EthReservedNova (r:0 w:1)
-	// Storage: Accounts EthReservedTickets (r:0 w:1)
 	// Storage: Accounts EthLockedFrag (r:0 w:1)
 	fn internal_lock_update() -> Weight {
 		(67_671_000 as Weight)
@@ -137,7 +135,6 @@ impl WeightInfo for () {
 	}
 	// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
-	// Storage: Accounts EthReservedTickets (r:1 w:0)
 	// Storage: Accounts EthReservedNova (r:1 w:0)
 	fn link() -> Weight {
 		(58_668_000 as Weight)
@@ -155,7 +152,6 @@ impl WeightInfo for () {
 	// Storage: Accounts EVMLinkVotingClosed (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:0)
 	// Storage: Accounts EthReservedNova (r:0 w:1)
-	// Storage: Accounts EthReservedTickets (r:0 w:1)
 	// Storage: Accounts EthLockedFrag (r:0 w:1)
 	fn internal_lock_update() -> Weight {
 		(67_671_000 as Weight)

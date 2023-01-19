@@ -431,10 +431,6 @@ impl pallet_accounts::EthFragContract for Runtime {
 	}
 }
 
-parameter_types! {
-	pub const TicketsAssetId: u64 = 1337;
-}
-
 impl pallet_accounts::Config for Runtime {
 	type Event = Event;
 	type WeightInfo = ();
@@ -443,8 +439,6 @@ impl pallet_accounts::Config for Runtime {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = sp_runtime::traits::ConstU8<80>;
 	type InitialPercentageNova = ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
 }
@@ -481,8 +475,6 @@ impl pallet_protos::Config for Runtime {
 	type DetachAccountLimit = ConstU32<20>; // An ethereum public account address has a length of 20.
 	type MaxTags = ConstU32<10>;
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type CurationExpiration = ConstU64<100800>; // one week
-	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_detach::Config for Runtime {
