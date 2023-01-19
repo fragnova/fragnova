@@ -378,19 +378,6 @@ mod validation_logic {
 		)
 	}
 
-	/// Return the list of `Call` that will be directly called by the call `c`, if any.
-	fn get_child_calls(c: &Call) -> &[Call] {
-		match c {
-			// TODO - Add `multisig.***` and `utility.***`
-			Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
-			Call::Utility(pallet_utility::Call::batch_all { calls }) |
-			Call::Utility(pallet_utility::Call::force_batch { calls }) => calls,
-			// `sp_std::slice::from_ref()` converts a reference to T into a slice of length 1 (without copying). Source: https://paritytech.github.io/substrate/master/sp_std/slice/fn.from_ref.html#
-			Call::Proxy(pallet_proxy::Call::proxy { call, .. }) => sp_std::slice::from_ref(call), // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
-			_ => &[]
-		}
-	}
-
 	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
 		match category {
 			Categories::Text(sub_categories) => match sub_categories {
@@ -526,27 +513,272 @@ mod validation_logic {
 		}
 	}
 
-	/// Returns true if the **call `c` is a Nesting Call whose Depth Level is greater than `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`**
-	/// or if the **call `c` or one of `c`'s descendants is invalid**.
-	pub fn does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(xt: &<Block as BlockT>::Extrinsic) -> bool {
+	// We have decided not to restrict an Extrinsic's Call Depth Level, so therefore these functions below have been commented out (since they will not be used):
+	// /// Returns true if the **call `c` is a Nesting Call whose Depth Level is greater than `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`**
+	// /// or if the **call `c` or one of `c`'s descendants is invalid**.
+	// pub fn does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(xt: &<Block as BlockT>::Extrinsic) -> bool {
+	//
+	// 	let c = &xt.function;
+	//
+	// 	let mut stack  = Vec::<(&Call, u8)>::new();
+	// 	stack.push((c, 0));
+	//
+	// 	while let Some((call, depth_level)) = stack.pop() {
+	// 		if !is_the_immediate_call_valid(call) {
+	// 			return true;
+	// 		}
+	// 		let child_calls = get_child_calls(call);
+	// 		if child_calls.len() > 0 && depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
+	// 			return true;
+	// 		}
+	// 		child_calls.iter().for_each(|call| stack.push((call, depth_level + 1)));
+	// 	}
+	//
+	// 	false
+	// }
+	//
+	// /// Return the list of `Call` that will be directly called by the call `c`, if any.
+	// fn get_child_calls(c: &Call) -> &[Call] {
+	// 	match c {
+	// 		// TODO - Add `multisig.***` and `utility.***`
+	// 		Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
+	// 		Call::Utility(pallet_utility::Call::batch_all { calls }) |
+	// 		Call::Utility(pallet_utility::Call::force_batch { calls }) => calls,
+	// 		Call::Utility(pallet_utility::Call::as_derivative { call, .. }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
+	// 		Call::Utility(pallet_utility::Call::dispatch_as { call, .. }) |
+	// 		Call::Utility(pallet_utility::Call::with_weight { call, .. }) |
+	// 		Call::Proxy(pallet_proxy::Call::proxy { call, .. }) | // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
+	// 		Call::Proxy(pallet_proxy::Call::proxy_announced { call, .. }) |
+	// 		Call::Multisig(pallet_multisig::Call::as_multi_threshold_1 { call, .. }) | // https://paritytech.github.io/substrate/master/pallet_multisig/pallet/enum.Call.html#
+	// 		Call::Multisig(pallet_multisig::Call::as_multi { call, .. }) => sp_std::slice::from_ref(call), // `sp_std::slice::from_ref()` converts a reference to T into a slice of length 1 (without copying). Source: https://paritytech.github.io/substrate/master/sp_std/slice/fn.from_ref.html#
+	// 		_ => &[]
+	// 	}
+	// }
 
-		let c = &xt.function;
+	#[test]
+	fn is_the_immediate_call_valid_should_not_work_if_proto_category_is_invalid() {
 
-		let mut stack  = Vec::<(&Call, u8)>::new();
-		stack.push((c, 0));
-
-		while let Some((call, depth_level)) = stack.pop() {
-			if !is_the_immediate_call_valid(call) {
-				return true;
-			}
-			let child_calls = get_child_calls(call);
-			if child_calls.len() > 0 && depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
-				return true;
-			}
-			child_calls.iter().for_each(|call| stack.push((call, depth_level + 1)));
+		for (category, (valid_data, invalid_data)) in [
+			(Categories::Text(TextCategories::Plain), (b"I am valid UTF-8 text!".to_vec(), vec![0xF0, 0x9F, 0x98])),
+			(Categories::Text(TextCategories::Json), (b"{\"key\": \"value\"}".to_vec(), b"I am not JSON text!".to_vec())),
+			(Categories::Texture(TextureCategories::PngFile), (vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], vec![7u8; 10])),
+			(Categories::Texture(TextureCategories::JpgFile), (vec![0xFF, 0xD8, 0xFF, 0xE0], vec![7u8; 10]))
+		] {
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Protos(pallet_protos::Call::upload { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						references: vec![],
+						category: category.clone(),
+						tags: vec![],
+						linked_asset: None,
+						license: pallet_protos::UsageLicense::Closed,
+						data: valid_data
+					})
+				),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Protos(pallet_protos::Call::upload {
+						references: vec![],
+						category: category.clone(),
+						tags: vec![],
+						linked_asset: None,
+						license: pallet_protos::UsageLicense::Closed,
+						data: invalid_data
+					}),
+				),
+				false
+			);
 		}
 
-		false
+	}
+
+	#[test]
+	fn is_the_immediate_call_valid_should_not_work_if_metadata_key_is_invalid() {
+		for (metadata_key, data) in [
+			(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
+			(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
+			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0])
+		] {
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Protos(pallet_protos::Call::set_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						proto_hash: [7u8; 32],
+						metadata_key: metadata_key.clone(),
+						data: data.clone()
+					})
+				),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Protos(pallet_protos::Call::set_metadata {
+						proto_hash: [7u8; 32],
+						metadata_key: b"invalid_key".to_vec(),
+						data: data.clone()
+					})
+				),
+				false
+			);
+
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Fragments(pallet_fragments::Call::set_definition_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+						definition_hash: [7u8; 16],
+						metadata_key: metadata_key.clone(),
+						data: data.clone()
+					})
+				),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Fragments(pallet_fragments::Call::set_definition_metadata {
+						definition_hash: [7u8; 16],
+						metadata_key: b"invalid_key".to_vec(),
+						data: data.clone()
+					})
+				),
+				false
+			);
+
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Fragments(pallet_fragments::Call::set_instance_metadata {
+						definition_hash: [7u8; 16],
+						edition_id: 1,
+						copy_id: 1,
+						metadata_key: metadata_key.clone(),
+						data: data.clone()
+					})
+				),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Fragments(pallet_fragments::Call::set_instance_metadata {
+						definition_hash: [7u8; 16],
+						edition_id: 1,
+						copy_id: 1,
+						metadata_key: b"invalid_key".to_vec(),
+						data: data.clone()
+					})
+				),
+				false
+			);
+		}
+	}
+
+	#[test]
+	fn is_the_immediate_call_valid_should_not_work_if_metadata_data_is_invalid() {
+		for (metadata_key, data) in [
+			(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
+			(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
+			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0])
+		] {
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Protos(pallet_protos::Call::set_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						proto_hash: [7u8; 32],
+						metadata_key: metadata_key.clone(),
+						data: data.clone()
+					})
+				),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Protos(pallet_protos::Call::set_metadata {
+						proto_hash: [7u8; 32],
+						metadata_key: metadata_key.clone(),
+						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+					})
+				),
+				false
+			);
+
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Fragments(pallet_fragments::Call::set_definition_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+						definition_hash: [7u8; 16],
+						metadata_key: metadata_key.clone(),
+						data: data.clone() // Invalid UTF-8 Text
+					})
+				),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Fragments(pallet_fragments::Call::set_definition_metadata {
+						definition_hash: [7u8; 16],
+						metadata_key: metadata_key.clone(),
+						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+					})
+				),
+				false
+			);
+
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Fragments(pallet_fragments::Call::set_instance_metadata {
+						definition_hash: [7u8; 16],
+						edition_id: 1,
+						copy_id: 1,
+						metadata_key: metadata_key.clone(),
+						data: data.clone()
+					})
+				),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(
+					&Call::Fragments(pallet_fragments::Call::set_instance_metadata {
+						definition_hash: [7u8; 16],
+						edition_id: 1,
+						copy_id: 1,
+						metadata_key: metadata_key,
+						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+					})
+				),
+				false
+			);
+		}
+	}
+
+	#[test]
+	fn is_the_immediate_call_valid_should_not_work_if_a_batch_call_contains_a_call_that_indexes_the_transaction() {
+
+		assert_eq!(
+			is_the_immediate_call_valid(
+				&Call::Utility(pallet_utility::Call::batch {
+					calls: vec![
+						Call::Protos(pallet_protos::Call::ban { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+							proto_hash: [7u8; 32],
+						})
+					]
+				}),
+			),
+			true
+		);
+
+		assert_eq!(
+			is_the_immediate_call_valid(
+				&Call::Utility(pallet_utility::Call::batch {
+					calls: vec![
+						Call::Protos(pallet_protos::Call::upload {
+							references: vec![],
+							category: Categories::Text(TextCategories::Plain),
+							tags: vec![],
+							linked_asset: None,
+							license: pallet_protos::UsageLicense::Closed,
+							data: b"Bonjour".to_vec()
+						})
+					]
+				}),
+			),
+			false
+		);
 	}
 }
 
@@ -554,7 +786,6 @@ mod validation_logic {
 pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
 	fn contains(c: &Call) -> bool {
-		// This is completely redundant since the exact same thing is done in `apply_extrinsic()` by `does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level()`
 		validation_logic::is_the_immediate_call_valid(c)
 	}
 }
@@ -1265,9 +1496,6 @@ impl_runtime_apis! {
 		/// while the error `transaction_validity::TransactionValidityError` refers to the types of errors (represented as a enum)
 		/// that are thrown **when the extrinsic is being verified (which obviously always happens before the extrinsic is executed)**
 		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
-			if validation_logic::does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(&extrinsic) {
-				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)) // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
-			}
 			Executive::apply_extrinsic(extrinsic)
 		}
 
@@ -1308,8 +1536,8 @@ impl_runtime_apis! {
 			tx: <Block as BlockT>::Extrinsic,
 			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
-			// We want to prevent polluting blocks with a lot of useless invalid data.
-			if validation_logic::does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(&tx) {
+			// We want to prevent nodes from gossiping extrinsics that have invalid calls.
+			if validation_logic::is_the_immediate_call_valid(&tx.function) {
 				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)); // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
 			}
 			// Always run normally anyways

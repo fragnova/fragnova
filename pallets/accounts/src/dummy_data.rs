@@ -10,6 +10,7 @@ use sp_core::{
 	H160, // size of an Ethereum Account Address
 	U256,
 };
+use sp_runtime::traits::Zero;
 
 #[cfg(test)]
 fn get_ethereum_chain_id() -> u64 {
