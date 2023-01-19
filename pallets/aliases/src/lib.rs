@@ -159,6 +159,7 @@ pub mod pallet {
 		SystematicFailure,
 		AliasExists,
 		AliasNotFound,
+		LinkTargetOwnerNotFound,
 	}
 
 	#[pallet::call]
@@ -536,7 +537,7 @@ pub mod pallet {
 								Compact(edition) == *edition_id && Compact(copy) == *copy_id
 							})
 						})
-						.ok_or("Fragment instance owner not found.")?
+						.ok_or(Error::<T>::LinkTargetOwnerNotFound)?
 						.0;
 					ensure!(*who == owner, Error::<T>::NotAllowed);
 					Ok(())
