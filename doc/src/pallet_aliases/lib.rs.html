@@ -566,6 +566,7 @@
 <span id="566">566</span>
 <span id="567">567</span>
 <span id="568">568</span>
+<span id="569">569</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `aliases` allows users to create human readable aliases to address their owned existing assets.
 //! Example:
 //!
@@ -727,6 +728,7 @@
 		SystematicFailure,
 		AliasExists,
 		AliasNotFound,
+		LinkTargetOwnerNotFound,
 	}
 
 	<span class="attribute">#[pallet::call]
@@ -1104,7 +1106,7 @@
 								Compact(edition) == <span class="kw-2">*</span>edition_id &amp;&amp; Compact(copy) == <span class="kw-2">*</span>copy_id
 							})
 						})
-						.ok_or(<span class="string">&quot;Fragment instance owner not found.&quot;</span>)<span class="question-mark">?
+						.ok_or(Error::&lt;T&gt;::LinkTargetOwnerNotFound)<span class="question-mark">?
 						</span>.<span class="number">0</span>;
 					<span class="macro">ensure!</span>(<span class="kw-2">*</span>who == owner, Error::&lt;T&gt;::NotAllowed);
 					<span class="prelude-val">Ok</span>(())
