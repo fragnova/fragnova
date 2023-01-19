@@ -5,6 +5,7 @@
 **/*.rs.bk
 
 .idea/
+.fleet/
 
 .DS_Store
 

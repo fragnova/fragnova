@@ -8,8 +8,8 @@ use frame_support::{assert_ok, dispatch::DispatchResult};
 mod create_tests {
 	use super::*;
 	use crate::dummy_data::DummyData;
-	use frame_support::{assert_noop, traits::fungible};
 	use frame_support::traits::Currency;
+	use frame_support::{assert_noop, traits::fungible};
 
 	pub fn create_cluster_(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -32,12 +32,7 @@ mod create_tests {
 			role.clone().try_into().expect("role name is too long");
 		let bounded_settings: BoundedVec<RoleSetting, <Test as Config>::RoleSettingsLimit> =
 			settings.clone().try_into().expect("role settings is too long");
-		ClustersPallet::create_role(
-			Origin::signed(signer),
-			cluster,
-			bounded_name,
-			bounded_settings,
-		)
+		ClustersPallet::create_role(Origin::signed(signer), cluster, bounded_name, bounded_settings)
 	}
 
 	pub fn delete_role_(
@@ -47,11 +42,7 @@ mod create_tests {
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			role_name.clone().try_into().expect("role name is too long");
-		ClustersPallet::delete_role(
-			Origin::signed(signer),
-			bounded_name,
-			cluster_id,
-		)
+		ClustersPallet::delete_role(Origin::signed(signer), bounded_name, cluster_id)
 	}
 
 	pub fn add_member_(
@@ -60,32 +51,85 @@ mod create_tests {
 		roles_names: Vec<Vec<u8>>,
 		member: <Test as frame_system::Config>::AccountId,
 	) -> DispatchResult {
-		ClustersPallet::add_member(
-			Origin::signed(signer),
-			cluster_id,
-			roles_names,
-			member,
-		)
+		ClustersPallet::add_member(Origin::signed(signer), cluster_id, roles_names, member)
 	}
 
-	pub fn edit_role_(
+	pub fn add_role_members_(
 		signer: <Test as frame_system::Config>::AccountId,
-		role_name: Vec<u8>,
 		cluster_id: Hash128,
-		new_members_list: Vec<<Test as frame_system::Config>::AccountId>,
-		new_settings: Vec<RoleSetting>,
+		role_name: Vec<u8>,
+		members: Vec<<Test as frame_system::Config>::AccountId>,
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			role_name.clone().try_into().expect("role name is too long");
-		let bounded_members: BoundedVec<<Test as frame_system::Config>::AccountId, <Test as Config>::MembersLimit> =
-			new_members_list.clone().try_into().expect("role name is too long");
-		let bounded_settings: BoundedVec<RoleSetting, <Test as Config>::RoleSettingsLimit> =
-			new_settings.clone().try_into().expect("role settings is too long");
-		ClustersPallet::edit_role(
+		let bounded_members_list: BoundedVec<
+			<Test as frame_system::Config>::AccountId,
+			<Test as Config>::MembersLimit,
+		> = members.clone().try_into().expect("too many accounts");
+
+		ClustersPallet::add_role_members(
 			Origin::signed(signer),
 			bounded_name,
 			cluster_id,
-			bounded_members,
+			bounded_members_list,
+		)
+	}
+
+	pub fn delete_role_members_(
+		signer: <Test as frame_system::Config>::AccountId,
+		cluster_id: Hash128,
+		role_name: Vec<u8>,
+		members: Vec<<Test as frame_system::Config>::AccountId>,
+	) -> DispatchResult {
+		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
+			role_name.clone().try_into().expect("role name is too long");
+		let bounded_members_list: BoundedVec<
+			<Test as frame_system::Config>::AccountId,
+			<Test as Config>::MembersLimit,
+		> = members.clone().try_into().expect("too many accounts");
+
+		ClustersPallet::delete_role_members(
+			Origin::signed(signer),
+			bounded_name,
+			cluster_id,
+			bounded_members_list,
+		)
+	}
+
+	pub fn add_role_settings_(
+		signer: <Test as frame_system::Config>::AccountId,
+		cluster_id: Hash128,
+		role_name: Vec<u8>,
+		settings: Vec<RoleSetting>,
+	) -> DispatchResult {
+		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
+			role_name.clone().try_into().expect("role name is too long");
+		let bounded_settings: BoundedVec<RoleSetting, <Test as Config>::RoleSettingsLimit> =
+			settings.clone().try_into().expect("too many settings");
+
+		ClustersPallet::add_role_settings(
+			Origin::signed(signer),
+			bounded_name,
+			cluster_id,
+			bounded_settings,
+		)
+	}
+
+	pub fn delete_role_settings_(
+		signer: <Test as frame_system::Config>::AccountId,
+		cluster_id: Hash128,
+		role_name: Vec<u8>,
+		settings: Vec<Vec<u8>>,
+	) -> DispatchResult {
+		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
+			role_name.clone().try_into().expect("role name is too long");
+		let bounded_settings: BoundedVec<Vec<u8>, <Test as Config>::RoleSettingsLimit> =
+			settings.clone().try_into().expect("too many settings");
+
+		ClustersPallet::delete_role_settings(
+			Origin::signed(signer),
+			bounded_name,
+			cluster_id,
 			bounded_settings,
 		)
 	}
@@ -104,13 +148,10 @@ mod create_tests {
 
 			assert!(<Clusters<Test>>::contains_key(&cluster_id.clone()));
 
-			let cluster = Cluster {
-				owner: account_id,
-				name: cluster_name.clone(),
-				cluster_id,
-				roles: vec![],
-				members: Default::default(),
-			};
+			let name_index = take_name_index_(&cluster_name);
+
+			let cluster =
+				Cluster { owner: account_id, name: name_index, cluster_id, roles: Vec::new() };
 			let result = <Clusters<Test>>::get(&cluster_id.clone()).unwrap();
 			assert_eq!(cluster, result);
 
@@ -118,10 +159,7 @@ mod create_tests {
 			assert!(clusters.contains(&cluster_id));
 
 			System::assert_has_event(
-				ClusterEvent::ClusterCreated {
-					cluster_hash: cluster_id.clone(),
-				}
-				.into(),
+				ClusterEvent::ClusterCreated { cluster_hash: cluster_id.clone() }.into(),
 			);
 
 			let minimum_balance = <Balances as fungible::Inspect<
@@ -158,37 +196,34 @@ mod create_tests {
 			let account_id = dummy.account_id;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
-			assert_ok!(create_cluster_(account_id, b"cluster2".to_vec()));
 
 			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
-
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
+
+			let name_setting_index = take_name_index_(&settings.name);
+			let role_setting = RoleSetting { name: name_setting_index, data: settings.data };
 
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				vec![settings.clone()]
+				vec![role_setting]
 			));
 
-
-			let expected_role = Role { name: role.clone(), members: vec![], rules: None, settings: vec![settings] };
+			let role_name_index = take_name_index_(&role);
 
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
-			assert!(roles_in_cluster.contains(&expected_role));
+			assert!(roles_in_cluster.contains(&role_name_index));
+			//assert_eq!(<Roles<Test>>::get(&cluster_id, &name_index).unwrap(), expected_role);
 
-			let role_hash = get_role_hash(cluster_id, role.clone());
 			System::assert_has_event(
-				ClusterEvent::RoleCreated {
-					role_hash,
-				}
-				.into(),
+				ClusterEvent::RoleCreated { cluster_hash: cluster_id, role_name: role }.into(),
 			);
 		});
 	}
 
 	#[test]
-	fn edit_role_with_invalid_inputs_fails() {
+	fn delete_role_with_invalid_inputs_fails() {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
@@ -202,33 +237,28 @@ mod create_tests {
 
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
+			let name_setting_index = take_name_index_(&role_settings.name);
+			let role_setting = RoleSetting { name: name_setting_index, data: role_settings.data };
+
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
 				role_name.clone(),
-				vec![role_settings.clone()]
+				vec![role_setting]
 			));
 
 			assert_noop!(
-				edit_role_(
-					account_id.clone(),
-					role_name.clone(),
-					cluster_id,
-					Vec::new(),
-					vec![]
-				),
+				delete_role_(account_id.clone(), Vec::new(), cluster_id,),
 				Error::<Test>::InvalidInput
 			);
 		});
 	}
 
 	#[test]
-	fn edit_role_that_not_exist_fails() {
+	fn delete_role_that_not_exist_fails() {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
-			let role = dummy.role.name;
-			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
@@ -236,17 +266,10 @@ mod create_tests {
 			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
 
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
-			// do not create any role
 
 			// assert there is no role
 			assert_noop!(
-				edit_role_(
-					account_id.clone(),
-					role.clone(),
-					cluster_id,
-					Vec::new(),
-					vec![settings],
-				),
+				delete_role_(account_id.clone(), b"NotExistingRole".to_vec(), cluster_id,),
 				Error::<Test>::RoleNotFound
 			);
 		});
@@ -267,37 +290,78 @@ mod create_tests {
 
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
+			let name_index = take_name_index_(&role);
+			let name_setting_index = take_name_index_(&settings.name);
+			let role_setting = RoleSetting { name: name_setting_index, data: settings.data };
+
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				vec![settings]
+				vec![role_setting]
 			));
-
-			let role_hash = get_role_hash(cluster_id.clone(), role.clone());
 
 			assert_ok!(delete_role_(account_id.clone(), role.clone(), cluster_id.clone()));
 
 			let roles_in_cluster = <Clusters<Test>>::get(&cluster_id).unwrap().roles;
 			assert!(roles_in_cluster.is_empty());
+			assert!(!<Roles<Test>>::contains_key(&cluster_id, &name_index));
 
 			System::assert_has_event(
-				ClusterEvent::RoleDeleted {
-					role_hash,
-				}
-				.into(),
+				ClusterEvent::RoleDeleted { cluster_hash: cluster_id, role_name: role }.into(),
 			);
 		});
 	}
 
 	#[test]
-	fn edit_role_works() {
+	fn delete_role_settings_works() {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
 			let role = dummy.role.name;
 			let settings = dummy.role_settings;
-			let new_settings = dummy.role_settings_2;
+			let account_id = dummy.account_id;
+			let name_index = take_name_index_(&role);
+
+			// create a cluster
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
+
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+
+			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
+
+			let name_setting_index = take_name_index_(&settings.name);
+			let role_setting = RoleSetting { name: name_setting_index, data: settings.data };
+			// associate the role to the cluster
+			assert_ok!(create_role_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![role_setting.clone()]
+			));
+
+			assert_ok!(delete_role_settings_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![settings.name],
+			));
+
+			assert!(!<Roles<Test>>::get(&cluster_id, &name_index)
+				.unwrap()
+				.settings
+				.contains(&role_setting));
+		});
+	}
+
+	#[test]
+	fn add_role_settings_works() {
+		new_test_ext().execute_with(|| {
+			let dummy = DummyData::new();
+			let cluster = dummy.cluster.name;
+			let role = dummy.role.name;
+			let settings = dummy.role_settings;
+			let settings2 = dummy.role_settings_2;
 			let account_id = dummy.account_id;
 
 			// create a cluster
@@ -306,28 +370,129 @@ mod create_tests {
 			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
 
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
+
+			let role_name_index = take_name_index_(&role);
+			let name_setting_index = take_name_index_(&settings.name);
+			let role_setting1 = RoleSetting { name: name_setting_index, data: settings.data };
 			// associate the role to the cluster
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				vec![settings.clone()]
+				vec![role_setting1.clone()]
 			));
 
-			assert_ok!(edit_role_(
+			assert_ok!(add_role_settings_(
 				account_id.clone(),
-				role.clone(),
 				cluster_id.clone(),
-				Vec::new(),
-				vec![new_settings.clone()],
+				role.clone(),
+				vec![role_setting1.clone()],
 			));
 
-			let expected_role =
-				Role { name: role.clone(), members: vec![], rules: None, settings: vec![settings, new_settings] };
+			let name_setting_index2 = take_name_index_(&settings2.name);
+			let role_setting2 = RoleSetting { name: name_setting_index2, data: settings2.data };
 
-			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
-			assert!(roles_in_cluster.contains(&expected_role));
+			assert_ok!(add_role_settings_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![role_setting2.clone()],
+			));
 
+			assert!(<Roles<Test>>::get(&cluster_id, &role_name_index)
+				.unwrap()
+				.settings
+				.contains(&role_setting1));
+			assert!(<Roles<Test>>::get(&cluster_id, &role_name_index)
+				.unwrap()
+				.settings
+				.contains(&role_setting2));
+		});
+	}
+
+	#[test]
+	fn add_role_members_works() {
+		new_test_ext().execute_with(|| {
+			let dummy = DummyData::new();
+			let cluster = dummy.cluster.name;
+			let role = dummy.role.name;
+			let settings = dummy.role_settings;
+			let account_id = dummy.account_id;
+			let account_id_2 = dummy.account_id_2;
+
+			// create a cluster
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
+
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+
+			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
+
+			let name_setting_index = take_name_index_(&settings.name);
+			let role_setting = RoleSetting { name: name_setting_index, data: settings.data };
+			// associate the role to the cluster
+			assert_ok!(create_role_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![role_setting.clone()]
+			));
+
+			assert_ok!(add_role_members_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![account_id.clone(), account_id_2],
+			));
+
+			assert!(<Members<Test>>::contains_key(&cluster_id, &account_id));
+			assert!(<Members<Test>>::contains_key(&cluster_id, &account_id));
+		});
+	}
+
+	#[test]
+	#[ignore]
+	fn delete_role_members_works() {
+		new_test_ext().execute_with(|| {
+			let dummy = DummyData::new();
+			let cluster = dummy.cluster.name;
+			let role = dummy.role.name;
+			let settings = dummy.role_settings;
+			let account_id = dummy.account_id;
+			let account_id_2 = dummy.account_id_2;
+
+			// create a cluster
+			assert_ok!(create_cluster_(account_id, cluster.clone()));
+
+			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
+
+			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
+
+			let name_setting_index = take_name_index_(&settings.name);
+			let role_setting = RoleSetting { name: name_setting_index, data: settings.data };
+			// associate the role to the cluster
+			assert_ok!(create_role_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![role_setting.clone()]
+			));
+
+			assert_ok!(add_role_members_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![account_id.clone(), account_id_2],
+			));
+
+			assert_ok!(delete_role_members_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![account_id_2.clone()],
+			));
+
+			assert!(<Members<Test>>::contains_key(&cluster_id, &account_id));
+			assert!(!<Members<Test>>::contains_key(&cluster_id, &account_id_2));
 		});
 	}
 
@@ -347,13 +512,15 @@ mod create_tests {
 			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
 
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
+			let name_setting_index = take_name_index_(&settings.name);
+			let role_setting = RoleSetting { name: name_setting_index, data: settings.data };
 
 			// create a role for the cluster
 			assert_ok!(create_role_(
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				vec![settings.clone()]
+				vec![role_setting.clone()]
 			));
 
 			// add member into the cluster
@@ -364,10 +531,7 @@ mod create_tests {
 				member.clone()
 			));
 
-			assert!(<Clusters<Test>>::get(&cluster_id)
-				.unwrap()
-				.members
-				.contains(&member));
+			assert!(<Members<Test>>::contains_key(&cluster_id, &member));
 		});
 	}
 }

@@ -16,7 +16,7 @@ use sp_runtime::BoundedVec;
 
 use copied_from_pallet_protos::upload;
 mod copied_from_pallet_protos {
-	use pallet_protos::UsageLicense;
+	use pallet_protos::{UsageLicense, ProtoData};
 
 	use super::*;
 
@@ -42,7 +42,7 @@ mod copied_from_pallet_protos {
 				.map(|cost| UsageLicense::Tickets(Compact::from(cost)))
 				.unwrap_or(UsageLicense::Closed),
 			None,
-			proto.data.clone(),
+			ProtoData::Local(proto.data.clone()),
 		)
 	}
 }

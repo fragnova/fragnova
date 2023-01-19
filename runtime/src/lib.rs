@@ -16,7 +16,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
-	traits::{ConstU16, ConstU128, ConstU32, ConstU64},
+	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 	weights::DispatchClass,
 };
 use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights},};
@@ -60,12 +60,14 @@ pub use sp_runtime::{Perbill, Permill};
 use scale_info::prelude::string::String;
 
 use codec::Encode;
-use sp_runtime::traits::{SaturatedConversion, StaticLookup};
+
+use sp_runtime::traits::{ConstU8, SaturatedConversion, StaticLookup};
 
 use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 use pallet_protos::{GetGenealogyParams, GetProtosParams};
 
 pub use pallet_contracts::Schedule;
+use pallet_oracle::OracleProvider;
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.
@@ -91,8 +93,7 @@ pub type Index = u32;
 pub type Hash = sp_core::H256;
 
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
@@ -443,9 +444,34 @@ impl pallet_accounts::Config for Runtime {
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
 	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU128<80>;
-	type InitialPercentageNova = ConstU128<20>;
+	type InitialPercentageTickets = sp_runtime::traits::ConstU8<80>;
+	type InitialPercentageNova = ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
+}
+
+impl pallet_oracle::OracleContract for Runtime {
+	fn get_provider() -> pallet_oracle::OracleProvider {
+		/* https://docs.uniswap.org/contracts/v3/reference/deployments
+		 The contract of the Quoter smart contract on Ethereum mainnet that provides quotes for swaps.
+		 It allows getting the expected amount out or amount in for a given swap by optimistically executing the swap
+		 and checking the amounts in the callback.
+		*/
+		OracleProvider::Uniswap("0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6".encode())
+
+		/*
+		OracleProvider::Chainlink("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode())
+		// https://docs.chain.link/docs/data-feeds/price-feeds/addresses/
+		"0x547a514d5e3769680Ce22B2361c10Ea13619e8a9" // the address of the price feed contract of AAVE/USD on Ethereum mainnet.
+		TODO to change when FRAG pool will be known
+		*/
+	}
+}
+
+impl pallet_oracle::Config for Runtime {
+	type AuthorityId = pallet_oracle::crypto::FragAuthId;
+	type Event = Event;
+	type OracleProvider = Runtime; // the contract address determines the network to connect (mainnet, goerli, etc.)
+	type Threshold = ConstU64<1>;
 }
 
 impl pallet_protos::Config for Runtime {
@@ -471,6 +497,17 @@ impl pallet_clusters::Config for Runtime {
 	type DataLimit = ConstU32<300>;
 	type MembersLimit = ConstU32<20>;
 	type RoleSettingsLimit = ConstU32<20>;
+}
+
+parameter_types! {
+	pub RootNamespace: Vec<u8> = b"Frag".to_vec();
+}
+
+impl pallet_aliases::Config for Runtime {
+	type Event = Event;
+	type NamespacePrice = ConstU128<100>;
+	type NameLimit = ConstU32<20>;
+	type RootNamespace = RootNamespace;
 }
 
 impl pallet_multisig::Config for Runtime {
@@ -703,7 +740,7 @@ impl pallet_assets::Config for Runtime {
 // IMP NOTE 2: The population of the genesis storage depends on the order of pallets.
 // So, if one of your pallets depends on another pallet, the pallet that is depended upon needs to come before the pallet depending on it.
 //
-// V IMP NOTE 3: The order that the pallets appear in this macro determines its pallet index
+// V IMP NOTE 3: The order that the pallets appear in this macro determines its pallet index. Thus, new pallets should be added at the end to avoid breaking changes.
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block, //  Block is the block type that is used in the runtime
@@ -727,12 +764,14 @@ construct_runtime!(
 		Protos: pallet_protos,
 		Fragments: pallet_fragments,
 		Detach: pallet_detach,
-		Clusters: pallet_clusters,
 		Multisig: pallet_multisig,
 		Proxy: pallet_proxy,
 		Identity: pallet_identity,
 		Utility: pallet_utility,
 		Accounts: pallet_accounts,
+		Clusters: pallet_clusters,
+		Oracle: pallet_oracle,
+		Aliases: pallet_aliases,
 	}
 );
 
@@ -854,12 +893,12 @@ impl_runtime_apis! {
 					// TODO
 				},
 				#[allow(unused_variables)]
-				Call::Protos(ProtosCall::patch{ref data, ..}) |
+				Call::Protos(ProtosCall::patch{ref data, ..}) => {
+					// TODO
+				},
+				#[allow(unused_variables)]
 				Call::Protos(ProtosCall::set_metadata{ref data, ..}) => {
 					// TODO
-					// if let Err(_) = <pallet_protos::Pallet<Runtime>>::ensure_valid_auth(auth) {
-					// 	return InvalidTransaction::BadProof.into();
-					// }
 				},
 				_ => {},
 			}

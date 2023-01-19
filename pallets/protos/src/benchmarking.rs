@@ -6,12 +6,12 @@
 
 use super::*;
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
+use frame_support::{traits::Get, BoundedVec};
 use frame_system::RawOrigin;
 use pallet_detach::Pallet as Detach;
 use protos::categories::{Categories, TextCategories};
 use sp_clamor::CID_PREFIX;
 use sp_io::hashing::blake2_256;
-use frame_support::{BoundedVec, traits::Get};
 
 use crate::Pallet as Protos;
 
@@ -48,7 +48,7 @@ benchmarks! {
 				None,
 				UsageLicense::Closed,
 				None,
-				proto_data.clone(),
+				ProtoData::Local(proto_data.clone()),
 			)?;
 			let proto_hash = blake2_256(&proto_data);
 			Ok(proto_hash)
@@ -61,13 +61,10 @@ benchmarks! {
 		let license = UsageLicense::Closed;
 		let data = vec![7u8; d as usize];
 
-	}: upload(RawOrigin::Signed(caller), references, category, tags, linked_asset, license, None, data.clone())
+	}: upload(RawOrigin::Signed(caller), references, category, tags, linked_asset, license, None, ProtoData::Local(data.clone()))
 	verify {
 		let proto_hash = blake2_256(&data);
-		let cid = [&CID_PREFIX[..], &proto_hash[..]].concat();
-		let cid = cid.to_base58();
-		let cid = [&b"z"[..], cid.as_bytes()].concat();
-		assert_last_event::<T>(Event::<T>::Uploaded { proto_hash: proto_hash, cid: cid }.into())
+		assert_last_event::<T>(Event::<T>::Uploaded { proto_hash: proto_hash }.into())
 	}
 
 	patch {
@@ -84,7 +81,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -98,7 +95,7 @@ benchmarks! {
 				None,
 				UsageLicense::Closed,
 				None,
-				proto_data.clone(),
+				ProtoData::Local(proto_data.clone()),
 			)?;
 			let proto_hash = blake2_256(&proto_data);
 			Ok(proto_hash)
@@ -111,13 +108,10 @@ benchmarks! {
 		let license = Some(UsageLicense::Tickets(Compact(100))); // we do this since this will trigger an extra DB write (so it lets us simulate the worst-case scenario)
 		let data = vec![7u8; d as usize];
 
-	}: patch(RawOrigin::Signed(caller), proto_hash, license, new_references, new_tags, data.clone())
+	}: patch(RawOrigin::Signed(caller), proto_hash, license, new_references, new_tags, Some(ProtoData::Local(data.clone())))
 	verify {
 		let patch_hash = blake2_256(&data);
-		let cid = [&CID_PREFIX[..], &patch_hash[..]].concat();
-		let cid = cid.to_base58();
-		let cid = [&b"z"[..], cid.as_bytes()].concat();
-		assert_last_event::<T>(Event::<T>::Patched { proto_hash: proto_hash, cid: cid }.into())
+		assert_last_event::<T>(Event::<T>::Patched { proto_hash: proto_hash }.into())
 	}
 
 	// TODO - Redo this benchmark after `detach()` is refactored to detach Fragments rather than Proto-Fragments
@@ -133,7 +127,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone()
+			ProtoData::Local(proto_data.clone())
 		)?;
 		let proto_hashes = vec![blake2_256(&proto_data)];
 
@@ -162,7 +156,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
@@ -186,7 +180,7 @@ benchmarks! {
 			None,
 			UsageLicense::Closed,
 			None,
-			proto_data.clone(),
+			ProtoData::Local(proto_data.clone()),
 		)?;
 		let proto_hash = blake2_256(&proto_data);
 
