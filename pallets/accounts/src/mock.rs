@@ -166,10 +166,6 @@ impl pallet_accounts::EthFragContract for Test {
 	}
 }
 
-parameter_types! {
-	pub const TicketsAssetId: u64 = 1337;
-}
-
 impl pallet_accounts::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -178,8 +174,6 @@ impl pallet_accounts::Config for Test {
 	type EthFragContract = Test;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU8<80>;
 	type InitialPercentageNova = ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
 }
@@ -231,23 +225,6 @@ fn create_public_key(keystore: &KeyStore) -> sp_core::ed25519::Public {
 	)
 	.unwrap();
 	keystore.ed25519_public_keys(crate::crypto::Public::ID).get(0).unwrap().clone()
-}
-
-pub fn new_test_ext_with_nova() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
-
-	let keystore = KeyStore::new();
-	let ed25519_public_key = create_public_key(&keystore);
-	let config: pallet_assets::GenesisConfig<Test> = pallet_assets::GenesisConfig {
-		assets: vec![(1337, ed25519_public_key, true, 1, false)], // Genesis assets: id, owner, is_sufficient, min_balance, is_tradeable
-		metadata: vec![(1337, Vec::from("Fragnova Network Tickets"), Vec::from("TICKET"), 0)], // Genesis metadata: id, name, symbol, decimals
-		accounts: vec![], // Genesis accounts: id, account_id, balance
-	};
-
-	config.assimilate_storage(&mut t).unwrap();
-	let mut ext: sp_io::TestExternalities = t.into();
-	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
-	ext
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

@@ -105,7 +105,7 @@ benchmarks! {
 				format!("{}", i).repeat(<T as pallet::Config>::StringLimit::get() as usize).into_bytes()[0..<T as pallet::Config>::StringLimit::get() as usize].to_vec().try_into().unwrap()
 			}).collect::<Vec<BoundedVec<u8, _>>>().try_into().unwrap()
 		);
-		let license = Some(UsageLicense::Tickets(Compact(100))); // we do this since this will trigger an extra DB write (so it lets us simulate the worst-case scenario)
+		let license = Some(UsageLicense::Open);
 		let data = vec![7u8; d as usize];
 
 	}: patch(RawOrigin::Signed(caller), proto_hash, license, new_references, new_tags, Some(ProtoData::Local(data.clone())))

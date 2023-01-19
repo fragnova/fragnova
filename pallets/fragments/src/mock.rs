@@ -201,10 +201,6 @@ impl pallet_contracts::Config for Test {
 	type MaxStorageKeyLen = ConstU32<128>;
 }
 
-parameter_types! {
-	pub const TicketsAssetId: u64 = 1337;
-}
-
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -222,8 +218,6 @@ impl pallet_accounts::Config for Test {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU8<80>;
 	type InitialPercentageNova = ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
 }
