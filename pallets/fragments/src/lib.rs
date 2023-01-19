@@ -1402,16 +1402,6 @@ pub mod pallet {
 			ensure!(!edition_ids.is_empty(), Error::<T>::InstancesToDetachIsEmpty);
 			ensure!(!target_account.is_empty(), Error::<T>::DetachAccountIsEmpty);
 
-			// let current_block_number = <frame_system::Pallet<T>>::block_number();
-
-			let definition_permissions =
-				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?.permissions;
-
-			ensure!(
-				(definition_permissions & FragmentPerms::COPY) != FragmentPerms::COPY,
-				Error::<T>::NoPermission
-			);
-
 			let owned_instances = <Inventory<T>>::get(&who, definition_hash).ok_or(Error::<T>::NoPermission)?;
 
 			edition_ids.iter().try_for_each(|edition_id| -> DispatchResult {
@@ -1421,12 +1411,11 @@ pub mod pallet {
 					Error::<T>::NoPermission
 				);
 
-				// IMPORTANT NOTE: We do not need to check if the FI expires since the FD does not have the copyable permission
-				// let instance = <Fragments<T>>::get((definition_hash, edition_id, 1))
-				// 	.ok_or(Error::<T>::NotFound)?;
-				// if let Some(expiring_at) = instance.expiring_at {
-				// 	ensure!(current_block_number < expiring_at, Error::<T>::NotFound);
-				// }
+				// A Fragment Instance that is copyable or that expires cannot be detached
+				let instance = <Fragments<T>>::get((definition_hash, edition_id, 1))
+					.ok_or(Error::<T>::NotFound)?;
+				ensure!((instance.permissions & FragmentPerms::COPY) != FragmentPerms::COPY, Error::<T>::NoPermission);
+				ensure!(instance.expiring_at.is_none(), Error::<T>::NoPermission);
 
 				let detach_hash = DetachHash::Instance(definition_hash, Compact(*edition_id), Compact(1));
 				ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
