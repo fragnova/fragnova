@@ -2608,7 +2608,7 @@ mod detach_tests {
 
 			let detach = dd.detach;
 
-			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NotFound);
+			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NoPermission);
 		});
 	}
 
