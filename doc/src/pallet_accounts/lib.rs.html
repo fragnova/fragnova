@@ -1378,95 +1378,6 @@
 <span id="1378">1378</span>
 <span id="1379">1379</span>
 <span id="1380">1380</span>
-<span id="1381">1381</span>
-<span id="1382">1382</span>
-<span id="1383">1383</span>
-<span id="1384">1384</span>
-<span id="1385">1385</span>
-<span id="1386">1386</span>
-<span id="1387">1387</span>
-<span id="1388">1388</span>
-<span id="1389">1389</span>
-<span id="1390">1390</span>
-<span id="1391">1391</span>
-<span id="1392">1392</span>
-<span id="1393">1393</span>
-<span id="1394">1394</span>
-<span id="1395">1395</span>
-<span id="1396">1396</span>
-<span id="1397">1397</span>
-<span id="1398">1398</span>
-<span id="1399">1399</span>
-<span id="1400">1400</span>
-<span id="1401">1401</span>
-<span id="1402">1402</span>
-<span id="1403">1403</span>
-<span id="1404">1404</span>
-<span id="1405">1405</span>
-<span id="1406">1406</span>
-<span id="1407">1407</span>
-<span id="1408">1408</span>
-<span id="1409">1409</span>
-<span id="1410">1410</span>
-<span id="1411">1411</span>
-<span id="1412">1412</span>
-<span id="1413">1413</span>
-<span id="1414">1414</span>
-<span id="1415">1415</span>
-<span id="1416">1416</span>
-<span id="1417">1417</span>
-<span id="1418">1418</span>
-<span id="1419">1419</span>
-<span id="1420">1420</span>
-<span id="1421">1421</span>
-<span id="1422">1422</span>
-<span id="1423">1423</span>
-<span id="1424">1424</span>
-<span id="1425">1425</span>
-<span id="1426">1426</span>
-<span id="1427">1427</span>
-<span id="1428">1428</span>
-<span id="1429">1429</span>
-<span id="1430">1430</span>
-<span id="1431">1431</span>
-<span id="1432">1432</span>
-<span id="1433">1433</span>
-<span id="1434">1434</span>
-<span id="1435">1435</span>
-<span id="1436">1436</span>
-<span id="1437">1437</span>
-<span id="1438">1438</span>
-<span id="1439">1439</span>
-<span id="1440">1440</span>
-<span id="1441">1441</span>
-<span id="1442">1442</span>
-<span id="1443">1443</span>
-<span id="1444">1444</span>
-<span id="1445">1445</span>
-<span id="1446">1446</span>
-<span id="1447">1447</span>
-<span id="1448">1448</span>
-<span id="1449">1449</span>
-<span id="1450">1450</span>
-<span id="1451">1451</span>
-<span id="1452">1452</span>
-<span id="1453">1453</span>
-<span id="1454">1454</span>
-<span id="1455">1455</span>
-<span id="1456">1456</span>
-<span id="1457">1457</span>
-<span id="1458">1458</span>
-<span id="1459">1459</span>
-<span id="1460">1460</span>
-<span id="1461">1461</span>
-<span id="1462">1462</span>
-<span id="1463">1463</span>
-<span id="1464">1464</span>
-<span id="1465">1465</span>
-<span id="1466">1466</span>
-<span id="1467">1467</span>
-<span id="1468">1468</span>
-<span id="1469">1469</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
@@ -1660,7 +1571,7 @@
 <span class="attribute">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::Event::{NOVAAssigned, NOVAReserved, TicketsMinted, TicketsReserved};
+	<span class="kw">use </span><span class="kw">crate</span>::Event::{NOVAAssigned, NOVAReserved};
 	<span class="kw">use </span>core::str::FromStr;
 	<span class="kw">use </span>ethabi::Address;
 	<span class="kw">use </span>frame_support::{
@@ -1714,19 +1625,11 @@
 		<span class="doccomment">/// The identifier type for an offchain worker.
 		</span><span class="kw">type </span>AuthorityId: AppCrypto&lt;<span class="self">Self</span>::Public, <span class="self">Self</span>::Signature&gt;;
 
-		<span class="doccomment">/// Asset ID of the fungible asset &quot;TICKET&quot;
-		</span><span class="attribute">#[pallet::constant]
-		</span><span class="kw">type </span>TicketsAssetId: Get&lt;&lt;<span class="self">Self </span><span class="kw">as </span>pallet_assets::Config&gt;::AssetId&gt;;
-
-		<span class="doccomment">/// Initial amount of Tickets that are converted as soon as FRAG are locked
-		</span><span class="attribute">#[pallet::constant]
-		</span><span class="kw">type </span>InitialPercentageTickets: Get&lt;u8&gt;;
-
 		<span class="doccomment">/// Initial amount of NOVA that are converted as soon as FRAG are locked
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>InitialPercentageNova: Get&lt;u8&gt;;
 
-		<span class="doccomment">/// Amount of Tickets/NOVA equal to 1 USD
+		<span class="doccomment">/// Amount of NOVA equal to 1 USD
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>USDEquivalentAmount: Get&lt;u128&gt;;
 	}
@@ -1772,11 +1675,6 @@
 		T::BlockNumber,
 		&lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance,
 	&gt;;
-
-	<span class="doccomment">/// This **StorageMap** maps an Ethereum AccountID to an amount of Tickets received until a Clamor Account ID is not linked.
-	</span><span class="attribute">#[pallet::storage]
-	</span><span class="kw">pub type </span>EthReservedTickets&lt;T: Config&gt; =
-		StorageMap&lt;<span class="kw">_</span>, Identity, H160, &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance&gt;;
 
 	<span class="doccomment">/// This **StorageMap** maps an Ethereum AccountID to an amount of NOVA received until a Clamor Account ID is not linked.
 	</span><span class="attribute">#[pallet::storage]
@@ -1836,12 +1734,8 @@
 		</span>Linked { sender: T::AccountId, eth_key: H160 },
 		<span class="doccomment">/// A link was removed between native and ethereum account.
 		</span>Unlinked { sender: T::AccountId, eth_key: H160 },
-		<span class="doccomment">/// Tickets were reserved for an unlinked ethereum account.
-		</span>TicketsReserved { eth_key: H160, balance: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance },
 		<span class="doccomment">/// NOVA were reserved for an unlinked ethereum account.
 		</span>NOVAReserved { eth_key: H160, balance: &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance },
-		<span class="doccomment">/// Tickets were minted into an account.
-		</span>TicketsMinted { sender: T::AccountId, balance: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance },
 		<span class="doccomment">/// NOVA were assigned to an account balance.
 		</span>NOVAAssigned { sender: T::AccountId, balance: &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance },
 		<span class="doccomment">/// ETH side lock was updated
@@ -1929,9 +1823,9 @@
 		/// the message `keccak_256(b&quot;EVM2Fragnova&quot;, T::EthChainId::get(), sender)`** (NOTE: The
 		/// returned public account address is of the account that signed the signature
 		/// `signature`).
-		/// This function also checks whether or not the linked account has some reserved Tickets or NOVA
+		/// This function also checks whether or not the linked account has some reserved NOVA
 		/// from any previous lock of FRAG. If there are, then they are minted.
-		/// After linking and minting, it emit events indicating that the two accounts were linked and that Tickets and NOVA were minted.
+		/// After linking and minting, it emit events indicating that the two accounts were linked and NOVA were minted.
 		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::link())]
 		</span><span class="kw">pub fn </span>link(origin: OriginFor&lt;T&gt;, signature: ecdsa::Signature) -&gt; DispatchResult {
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
@@ -1992,12 +1886,6 @@
 			<span class="macro">ensure!</span>(!&lt;EVMLinks&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>sender), Error::&lt;T&gt;::AccountAlreadyLinked);
 			<span class="macro">ensure!</span>(!&lt;EVMLinksReverse&lt;T&gt;&gt;::contains_key(eth_key), Error::&lt;T&gt;::AccountAlreadyLinked);
 
-			<span class="kw">if </span>&lt;EthReservedTickets&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>eth_key) {
-				<span class="kw">let </span>tickets_amount = &lt;EthReservedTickets&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>eth_key);
-				<span class="kw">if let </span><span class="prelude-val">Some</span>(amount) = tickets_amount {
-					<span class="macro">ensure!</span>(!amount.is_zero(), Error::&lt;T&gt;::SystematicFailure);
-				}
-			}
 			<span class="kw">if </span>&lt;EthReservedNova&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>eth_key) {
 				<span class="kw">let </span>nova_amount = &lt;EthReservedNova&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>eth_key);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(amount) = nova_amount {
@@ -2016,22 +1904,6 @@
 				}
 			}
 
-			<span class="comment">// Check if the Ethereum account has already some tickets and nova registered when it was not linked
-			</span><span class="kw">if </span>&lt;EthReservedTickets&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>eth_key) {
-				<span class="kw">let </span>tickets_amount = &lt;EthReservedTickets&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>eth_key);
-				<span class="kw">if let </span><span class="prelude-val">Some</span>(amount) = tickets_amount {
-					<span class="comment">// mint tickets
-					</span>&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>Mutate&lt;T::AccountId&gt;&gt;::mint_into(
-						T::TicketsAssetId::get(),
-						<span class="kw-2">&amp;</span>sender.clone(),
-						amount,
-					)<span class="question-mark">?</span>;
-
-					&lt;EthReservedTickets&lt;T&gt;&gt;::remove(<span class="kw-2">&amp;</span>eth_key);
-					<span class="comment">// also emit event
-					</span><span class="self">Self</span>::deposit_event(TicketsMinted { sender: sender.clone(), balance: amount });
-				}
-			}
 			<span class="kw">if </span>&lt;EthReservedNova&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>eth_key) {
 				<span class="kw">let </span>nova_amount = &lt;EthReservedNova&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>eth_key);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(amount) = nova_amount {
@@ -2166,23 +2038,17 @@
 			<span class="kw">let </span>frag_amount: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance = data_amount.saturated_into();
 
 			<span class="kw">let </span>current_frag_price = <span class="self">Self</span>::get_oracle_price()<span class="question-mark">?</span>;
-			<span class="comment">// Calculate the initial amount of Tickets and NOVA to convert based on
+			<span class="comment">// Calculate the initial amount of NOVA to convert based on
 			// 1) the amount of FRAG locked, 2) the initial percentages defined in Config, 3) the current FRAG price
 			</span><span class="kw">let </span>initial_nova_amount = <span class="self">Self</span>::initial_amount(
 				data_amount,
 				T::InitialPercentageNova::get(),
 				current_frag_price,
 			);
-			<span class="kw">let </span>initial_tickets_amount = <span class="self">Self</span>::initial_amount(
-				data_amount,
-				T::InitialPercentageTickets::get(),
-				current_frag_price,
-			);
 
 			<span class="kw">let </span>nova_amount: &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance =
 				initial_nova_amount.saturated_into();
-			<span class="kw">let </span>tickets_amount: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance =
-				initial_tickets_amount.saturated_into();
+
 
 			<span class="kw">if </span>data.lock {
 				<span class="comment">// If FRAG tokens were locked on Ethereum
@@ -2200,13 +2066,6 @@
 						Error::&lt;T&gt;::SystematicFailure
 					);
 
-					<span class="comment">// Checks passed. Now write.
-					// mint Tickets for the linked user
-					</span>&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>Mutate&lt;T::AccountId&gt;&gt;::mint_into(
-						T::TicketsAssetId::get(),
-						<span class="kw-2">&amp;</span>linked,
-						tickets_amount, <span class="comment">// amount already ensured to be &gt; 0 in case of Lock
-					</span>)<span class="question-mark">?</span>;
 
 					<span class="kw">let _ </span>=
 						&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
@@ -2214,24 +2073,15 @@
 							nova_amount, <span class="comment">// amount already ensured to be &gt; 0 in case of Lock
 						</span>)<span class="question-mark">?</span>;
 
-					<span class="self">Self</span>::deposit_event(TicketsMinted {
-						sender: linked.clone(),
-						balance: tickets_amount,
-					});
 					<span class="self">Self</span>::deposit_event(NOVAAssigned {
 						sender: linked.clone(),
 						balance: nova_amount,
 					});
 				} <span class="kw">else </span>{
 					<span class="comment">// Ethereum Account ID (H160) not linked to Clamor Account ID
-					// So, register the amount of tickets and NOVA owned by the H160 account for later linking
-					</span>&lt;EthReservedTickets&lt;T&gt;&gt;::insert(sender.clone(), tickets_amount);
-					&lt;EthReservedNova&lt;T&gt;&gt;::insert(sender.clone(), nova_amount);
+					// So, register the amount of NOVA owned by the H160 account for later linking
+					</span>&lt;EthReservedNova&lt;T&gt;&gt;::insert(sender.clone(), nova_amount);
 
-					<span class="self">Self</span>::deposit_event(TicketsReserved {
-						eth_key: sender.clone(),
-						balance: tickets_amount,
-					});
 					<span class="self">Self</span>::deposit_event(NOVAReserved {
 						eth_key: sender.clone(),
 						balance: nova_amount,
@@ -2346,11 +2196,11 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Withdraw vested tickets and NOVA
+		<span class="doccomment">/// Withdraw vested NOVA
 		</span><span class="attribute">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>withdraw(origin: OriginFor&lt;T&gt;) -&gt; DispatchResult {
 			<span class="kw">let </span>account = ensure_signed(origin)<span class="question-mark">?</span>;
-			<span class="self">Self</span>::withdraw_tickets_and_nova(account)
+			<span class="self">Self</span>::withdraw_nova(account)
 		}
 	}
 
@@ -2706,17 +2556,17 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// This function allows the account to withdraw the vested amount of Tickets and NOVA.
+		<span class="doccomment">/// This function allows the account to withdraw the vested amount of NOVA.
 		///
 		/// An account can decide to withdraw before or after the FRAG lock period is over.
 		/// The amount is calculated with this formula:
-		/// amount = (num of weeks since FRAG lock) * (tickets/NOVA available each week) * (FRAG price in USD).
+		/// amount = (num of weeks since FRAG lock) * (NOVA available each week) * (FRAG price in USD).
 		///
-		/// To be noted that an initial amount of Tickets and NOVA have been already given to the account
+		/// To be noted that an initial amount of NOVA have been already given to the account
 		/// when FRAG have been locked (see internal_lock_update). The initial amount is a percentage of the amount
-		/// of FRAG locked (percentage that is set in Config for both Tickets and NOVA).
+		/// of FRAG locked (percentage that is set in Config).
 		///
-		</span><span class="kw">fn </span>withdraw_tickets_and_nova(account: T::AccountId) -&gt; DispatchResult {
+		</span><span class="kw">fn </span>withdraw_nova(account: T::AccountId) -&gt; DispatchResult {
 			<span class="kw">let </span>seconds_in_week = <span class="number">3600 </span>* <span class="number">24 </span>* <span class="number">7</span>;
 			<span class="kw">let </span>seconds_in_block = <span class="number">6</span>;
 			<span class="kw">let </span>current_block_number =
@@ -2729,7 +2579,6 @@
 					Error::&lt;T&gt;::NothingToWithdraw
 				);
 
-				<span class="kw">let </span><span class="kw-2">mut </span>tickets_amount: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance = (<span class="number">0 </span><span class="kw">as </span>u32).into();
 				<span class="kw">let </span><span class="kw-2">mut </span>nova_amount: &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance = (<span class="number">0 </span><span class="kw">as </span>u32).into();
 
 				<span class="comment">// Since an account can do multiple locks of FRAG, all these locks are linked to the same
@@ -2749,26 +2598,19 @@
 					</span><span class="kw">let </span>lock_period_in_weeks =
 						<span class="self">Self</span>::eth_lock_period_to_weeks(frag_lock_period).unwrap(); <span class="comment">// unwrap here is safe
 
-					// Example: 100 FRAG locked =&gt; &lt;80 FRAG convertible to Tickets immediately, 20 vested&gt;
-					// If vesting period = 4 weeks =&gt; 20 / 4 = 5 FRAG convertible each week.
-					</span><span class="kw">let </span>tickets_convertible_per_week = <span class="self">Self</span>::apply_percent(
-						total_frag_locked_on_eth,
-						<span class="number">100 </span>- T::InitialPercentageTickets::get(),
-					) / lock_period_in_weeks <span class="kw">as </span>u128;
+					// Example: 100 FRAG locked =&gt; &lt;20 FRAG convertible to NOVA immediately, 80 vested&gt;
+					// If vesting period = 4 weeks =&gt; 80 / 4 = 20 FRAG convertible each week.
 
-					<span class="kw">let </span>nova_convertible_per_week = <span class="self">Self</span>::apply_percent(
+					</span><span class="kw">let </span>nova_convertible_per_week = <span class="self">Self</span>::apply_percent(
 						total_frag_locked_on_eth.clone(),
 						<span class="number">100 </span>- T::InitialPercentageNova::get(),
 					) / lock_period_in_weeks.clone() <span class="kw">as </span>u128;
 
 					<span class="comment">// price of 1 FRAG in USD
 					</span><span class="kw">let </span>current_frag_price = <span class="self">Self</span>::get_oracle_price()<span class="question-mark">?</span>;
-					<span class="comment">// The amount of Tickets and NOVA depend on the price of 1 FRAG at the time of withdraw
-					// considering that 1 FRAG = 100 Tickets, 100 NOVA
-					</span><span class="kw">let </span>tickets_amount_per_week_at_current_price = current_frag_price
-						* T::USDEquivalentAmount::get()
-						* tickets_convertible_per_week;
-					<span class="kw">let </span>nova_amount_per_week_at_current_price = current_frag_price.clone()
+					<span class="comment">// The amount of NOVA depend on the price of 1 FRAG at the time of withdraw
+					// considering that 1 FRAG = 100 NOVA
+					</span><span class="kw">let </span>nova_amount_per_week_at_current_price = current_frag_price.clone()
 						* T::USDEquivalentAmount::get()
 						* nova_convertible_per_week;
 
@@ -2790,38 +2632,25 @@
 						num_weeks_since_lock_frag = lock_period_in_weeks.clone() <span class="kw">as </span>u128;
 					}
 
-					<span class="kw">let </span>tickets_amount_to_withdraw = tickets_amount_per_week_at_current_price
-						* (num_weeks_since_lock_frag.clone() - last_withdraw_week.clone());
-
 					<span class="kw">let </span>nova_amount_to_withdraw = nova_amount_per_week_at_current_price
 						* (num_weeks_since_lock_frag.clone() - last_withdraw_week.clone());
 
-					<span class="macro">log::trace!</span>(<span class="string">&quot;Tickets available per week: {}&quot;</span>, tickets_convertible_per_week);
 					<span class="macro">log::trace!</span>(<span class="string">&quot;NOVA available per week: {}&quot;</span>, nova_convertible_per_week);
 					<span class="macro">log::trace!</span>(
 						<span class="string">&quot;Weeks passed since FRAG was locked: {}&quot;</span>,
 						num_weeks_since_lock_frag
 					);
 					<span class="macro">log::trace!</span>(
-						<span class="string">&quot;Tickets available per week at current price: {}&quot;</span>,
-						tickets_amount_per_week_at_current_price
-					);
-					<span class="macro">log::trace!</span>(
 						<span class="string">&quot;NOVA available per week at current price: {}&quot;</span>,
 						nova_amount_per_week_at_current_price
 					);
-					<span class="macro">log::trace!</span>(<span class="string">&quot;Tickets to be withdrawn: {}&quot;</span>, tickets_amount_to_withdraw);
 					<span class="macro">log::trace!</span>(<span class="string">&quot;NOVA to be withdrawn: {}&quot;</span>, nova_amount_to_withdraw);
 
-					<span class="kw">let </span>tickets_amount_to_mint: &lt;T <span class="kw">as </span>pallet_assets::Config&gt;::Balance =
-						tickets_amount_to_withdraw.saturated_into();
 					<span class="kw">let </span>nova_amount_to_deposit: &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance =
 						nova_amount_to_withdraw.saturated_into();
 
-					<span class="macro">ensure!</span>(tickets_amount_to_withdraw &gt; <span class="number">0</span>, Error::&lt;T&gt;::SystematicFailure);
 					<span class="macro">ensure!</span>(nova_amount_to_withdraw &gt; <span class="number">0</span>, Error::&lt;T&gt;::SystematicFailure);
 
-					tickets_amount = tickets_amount.saturating_add(tickets_amount_to_mint);
 					nova_amount = nova_amount.saturating_add(nova_amount_to_deposit);
 
 					<span class="kw">let </span>nova_old_balance =
@@ -2849,14 +2678,7 @@
 				}
 
 				<span class="comment">// Checks completed, now write
-				// mint tickets
-				</span>&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>Mutate&lt;T::AccountId&gt;&gt;::mint_into(
-					T::TicketsAssetId::get(),
-					<span class="kw-2">&amp;</span>account.clone(),
-					tickets_amount,
-				)<span class="question-mark">?</span>;
-
-				<span class="comment">// Assign NOVA
+				// Mint NOVA
 				</span>&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
 					<span class="kw-2">&amp;</span>account.clone(),
 					nova_amount,

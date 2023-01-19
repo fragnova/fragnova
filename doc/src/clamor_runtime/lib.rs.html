@@ -1211,14 +1211,6 @@
 <span id="1211">1211</span>
 <span id="1212">1212</span>
 <span id="1213">1213</span>
-<span id="1214">1214</span>
-<span id="1215">1215</span>
-<span id="1216">1216</span>
-<span id="1217">1217</span>
-<span id="1218">1218</span>
-<span id="1219">1219</span>
-<span id="1220">1220</span>
-<span id="1221">1221</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -1652,10 +1644,6 @@
 	}
 }
 
-<span class="macro">parameter_types! </span>{
-	<span class="kw">pub const </span>TicketsAssetId: u64 = <span class="number">1337</span>;
-}
-
 <span class="kw">impl </span>pallet_accounts::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Event = Event;
 	<span class="kw">type </span>WeightInfo = ();
@@ -1664,8 +1652,6 @@
 	<span class="kw">type </span>EthConfirmations = ConstU64&lt;<span class="number">1</span>&gt;;
 	<span class="kw">type </span>Threshold = ConstU64&lt;<span class="number">1</span>&gt;;
 	<span class="kw">type </span>AuthorityId = pallet_accounts::crypto::FragAuthId;
-	<span class="kw">type </span>TicketsAssetId = TicketsAssetId;
-	<span class="kw">type </span>InitialPercentageTickets = sp_runtime::traits::ConstU8&lt;<span class="number">80</span>&gt;;
 	<span class="kw">type </span>InitialPercentageNova = ConstU8&lt;<span class="number">20</span>&gt;;
 	<span class="kw">type </span>USDEquivalentAmount = ConstU128&lt;<span class="number">100</span>&gt;;
 }
@@ -1702,8 +1688,6 @@
 	<span class="kw">type </span>DetachAccountLimit = ConstU32&lt;<span class="number">20</span>&gt;; <span class="comment">// An ethereum public account address has a length of 20.
 	</span><span class="kw">type </span>MaxTags = ConstU32&lt;<span class="number">10</span>&gt;;
 	<span class="kw">type </span>StorageBytesMultiplier = StorageBytesMultiplier;
-	<span class="kw">type </span>CurationExpiration = ConstU64&lt;<span class="number">100800</span>&gt;; <span class="comment">// one week
-	</span><span class="kw">type </span>TicketsAssetId = TicketsAssetId;
 }
 
 <span class="kw">impl </span>pallet_detach::Config <span class="kw">for </span>Runtime {
