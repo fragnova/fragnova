@@ -56,7 +56,7 @@ describe("Testing Maximum Block Length for Normal Extrinsics", () => {
         linkedAsset,
         license,
         cluster,
-        data
+        {local: data}
       );
 
       tx.signAndSend(caller, ({events = [], status}) => {
