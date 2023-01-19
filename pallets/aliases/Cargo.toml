@@ -1,9 +1,9 @@
 [package]
 authors = ['Fragcolor <https://github.com/fragcolor-xyz>']
-description = 'Protos Fragment pallet.'
+description = 'Aliases pallet.'
 edition = '2021'
 license = 'BUSL-1.1'
-name = 'pallet-fragments'
+name = 'pallet-aliases'
 readme = 'README.md'
 version = '0.0.1'
 
@@ -68,6 +68,10 @@ version = '6.0.0'
 default-features = false
 path = '../protos'
 
+[dependencies.pallet-fragments]
+default-features = false
+path = '../fragments'
+
 [dependencies.pallet-detach]
 default-features = false
 path = '../detach'
@@ -129,9 +133,6 @@ git = 'https://github.com/fragcolor-xyz/substrate.git'
 tag = 'fragnova-v0.0.6'
 version = '4.0.0-dev'
 
-[dev-dependencies]
-itertools = "0.10.3"
-
 [features]
 default = ["std"]
 std = [
@@ -139,6 +140,8 @@ std = [
 	"codec/std",
 	"scale-info/std",
 	"pallet-protos/std",
+	"pallet-fragments/std",
+	"pallet-clusters/std",
 	"frame-support/std",
 	"frame-system/std",
 	"frame-benchmarking/std",
@@ -148,10 +151,9 @@ std = [
 	"sp-core/std",
 	"pallet-randomness-collective-flip/std",
 	'pallet-balances/std',
-  	'pallet-assets/std',
+	'pallet-assets/std',
 	'pallet-contracts/std',
 	'protos/std'
 ]
-
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 try-runtime = ["frame-support/try-runtime"]

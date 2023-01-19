@@ -16,7 +16,8 @@
 // See for more info: https://docs.substrate.io/reference/how-to-guides/basics/configure-genesis-state/
 use clamor_runtime::{
 	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
-	GenesisConfig, GrandpaConfig, IndicesConfig, Signature, SudoConfig, SystemConfig, WASM_BINARY,
+	GenesisConfig, GrandpaConfig, IndicesConfig, OracleConfig, Signature, SudoConfig, SystemConfig,
+	WASM_BINARY,
 };
 use sc_service::ChainType;
 use serde_json;
@@ -205,6 +206,7 @@ pub fn live_config() -> Result<ChainSpec, String> {
 				detach: DetachConfig::default(),
 				assets: AssetsConfig::default(),
 				accounts: AccountsConfig::default(),
+				oracle: OracleConfig::default(),
 			}
 		},
 		// Bootnodes
@@ -259,12 +261,13 @@ fn testnet_genesis(
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
 		assets: AssetsConfig {
-			assets: vec![(1337, root_key.clone(), true, 1, false)], // Genesis assets: id, owner, is_sufficient, min_balance, is_tradeable
-			metadata: vec![(1337, "Fragnova Network Tickets".into(), "TICKET".into(), 0)], // Genesis metadata: id, name, symbol, decimals
-			accounts: vec![], // Genesis accounts: id, account_id, balance
+			assets: vec![],
+			metadata: vec![],
+			accounts: vec![],
 		},
 		accounts: AccountsConfig {
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
+		oracle: OracleConfig { keys: initial_authorities.iter().map(|x| (x.4.clone())).collect() },
 	}
 }

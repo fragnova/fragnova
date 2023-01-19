@@ -31,7 +31,6 @@ mod copied_from_pallet_protos {
 		pub category: Categories,
 		pub tags: Vec<Vec<u8>>,
 		pub linked_asset: Option<pallet_protos::LinkedAsset>,
-		pub include_cost: Option<u64>,
 		pub data: Vec<u8>,
 	}
 	impl ProtoFragment {
@@ -56,7 +55,7 @@ pub struct Definition {
 	// "Definition" is short for "Fragment Definition"
 	pub proto_fragment: ProtoFragment,
 
-	pub metadata: DefinitionMetadata<u64>,
+	pub metadata: DefinitionMetadata<Vec<u8>, u64>,
 	pub permissions: FragmentPerms,
 
 	pub unique: Option<UniqueOptions>,
@@ -77,7 +76,7 @@ impl Definition {
 	}
 
 	pub fn get_vault_account_id(&self) -> sp_core::ed25519::Public {
-		let hash = blake2_256(&[&b"fragments-vault"[..], &self.get_definition_id()].concat());
+		let hash = blake2_256(&[&b"fragnova-vault"[..], &self.get_definition_id()].concat());
 		sp_core::ed25519::Public::from_raw(hash)
 	}
 }
@@ -207,7 +206,6 @@ impl DummyData {
 				category: Categories::Text(TextCategories::Plain),
 				tags: Vec::new(),
 				linked_asset: None,
-				include_cost: Some(111),
 				data: "0x111".as_bytes().to_vec(),
 			},
 			metadata: DefinitionMetadata { name: b"Il Nome".to_vec(), currency: Currency::Native },

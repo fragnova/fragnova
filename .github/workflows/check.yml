@@ -4,35 +4,49 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
+    branches:
+      - devel
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  # exit early when the PR is a draft
+  setup:
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: exit 0
+
   check:
+    needs: setup
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
 
       - name: Install the Necessary Packages
         run: |
+          sudo apt update -y
           sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
 
       - name: Install Rustup
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source ~/.cargo/env
-          rustup default stable
+          rustup default nightly
           rustup update nightly
           rustup update stable
           rustup target add wasm32-unknown-unknown --toolchain nightly
 
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
 
       - uses: actions/setup-node@v3
         with:
@@ -62,8 +76,12 @@ jobs:
         run: |
           cargo install cargo-tarpaulin
           cargo tarpaulin --features runtime-benchmarks --out Xml
-          bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
 
+      - uses: codecov/codecov-action@v3
+        with:
+          env_vars: OS
+          fail_ci_if_error: true
+          
       - name: Check if Rustdoc Builds
         run: |
           cargo doc --no-deps

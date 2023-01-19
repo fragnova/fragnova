@@ -7,7 +7,7 @@
 // extern crate chainblocks;
 
 use codec::{Decode, Encode, Error as CodecError};
-use sp_core::offchain::HttpRequestStatus;
+use sp_core::offchain::{HttpRequestStatus, Timestamp};
 use sp_io::{hashing::blake2_256, offchain};
 use sp_std::vec::Vec;
 
@@ -160,7 +160,7 @@ pub fn init(geth_url: Option<String>) {
 }
 
 /// Make an HTTP POST Request with data `body` to the URL `url`
-pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
+pub fn http_json_post(url: &str, body: &[u8], wait: Option<Timestamp>) -> Result<Vec<u8>, &'static str> {
 	log::debug!("sp_clamor http_request called...");
 
 	let request =
@@ -174,7 +174,7 @@ pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
 	// send off the request
 	offchain::http_request_write_body(request, &[], None).unwrap();
 
-	let results = offchain::http_response_wait(&[request], None);
+	let results = offchain::http_response_wait(&[request], wait);
 	let status = results[0];
 
 	match status {
@@ -198,6 +198,10 @@ pub fn http_json_post(url: &str, body: &[u8]) -> Result<Vec<u8>, &'static str> {
 				Err("request had unexpected status")
 			},
 		},
+		HttpRequestStatus::DeadlineReached => {
+			log::error!("request failed for reached timeout");
+			Err("timeout reached")
+		},
 		_ => {
 			log::error!("request failed with status: {:?}", status);
 			Err("request failed")
@@ -215,4 +219,12 @@ pub fn get_locked_frag_account<TAccountId: Encode + Decode>(
 	who.append(&mut b"frag-locked-account".to_vec());
 	let who = blake2_256(&who);
 	TAccountId::decode(&mut &who[..])
+}
+
+/// **Get** an **Account ID** deterministically computed from an input `hash`**.
+pub fn get_vault_id<TAccountId: Encode + Decode>(
+	hash: Hash128
+) -> TAccountId {
+	let hash = blake2_256(&[&b"fragnova-vault"[..], &hash].concat());
+	TAccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 }

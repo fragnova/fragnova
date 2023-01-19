@@ -1,7 +1,7 @@
 (deftrait Fragnova-Account :private-key "//Alice")
 (load-file "fragnova.edn")
 
-(def UPLOAD-CALL-DATA-EXCL-DATA-PARAM "0x0b00000000000000") ; encoded call data that defines a call to `protos.upload()` with certain hardcoded parameters. See: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws.fragnova.network#/extrinsics/decode/0x0b0000000000000000
+(def UPLOAD-CALL-DATA-EXCL-DATA-PARAM "0x0b000000000000000000") ; encoded call data that defines a call to `protos.upload()` with certain hardcoded parameters. See: https://polkadot.js.org/apps/?rpc=wss%3A%2F%2Fws.fragnova.network#/extrinsics/decode/0x0b0000000000000000
 
 (defwire upload-proto
 

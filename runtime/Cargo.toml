@@ -220,6 +220,20 @@ default-features = false
 path = '../pallets/detach'
 version = '0.0.1'
 
+[dependencies.pallet-oracle]
+default-features = false
+path = '../pallets/oracle'
+
+[dependencies.pallet-clusters]
+default-features = false
+path = '../pallets/clusters'
+version = '0.0.1'
+
+[dependencies.pallet-aliases]
+default-features = false
+path = '../pallets/aliases'
+version = '0.0.1'
+
 [dependencies.pallet-indices]
 default-features = false
 git = 'https://github.com/fragcolor-xyz/substrate.git'
@@ -272,7 +286,7 @@ version = '4.0.0-dev'
 sp-clamor = { version = '0.1.0', path = '../primitives/clamor', default-features = false }
 log = { version = "0.4.14", default-features = false }
 hex = { version = "0.4.3", default-features = false }
-protos = { version = "0.1.16", default-features = false }
+protos = { version = "0.1.20", default-features = false }
 
 # These use `std`:
 #unic-emoji-char = {version = "0.9.0", default-features = false }
@@ -304,6 +318,8 @@ runtime-benchmarks = [
     'pallet-fragments/runtime-benchmarks',
     'pallet-detach/runtime-benchmarks',
 	'pallet-accounts/runtime-benchmarks',
+	'pallet-clusters/runtime-benchmarks',
+	'pallet-aliases/runtime-benchmarks',
     'pallet-multisig/runtime-benchmarks',
     'pallet-proxy/runtime-benchmarks',
     'pallet-identity/runtime-benchmarks',
@@ -341,6 +357,8 @@ std = [
     'pallet-fragments/std',
     'pallet-fragments-rpc-runtime-api/std',
     'pallet-detach/std',
+	'pallet-clusters/std',
+	'pallet-aliases/std',
     'pallet-indices/std',
     'pallet-contracts/std',
     'pallet-contracts-primitives/std',
@@ -349,5 +367,6 @@ std = [
     "pallet-proxy/std",
     "pallet-identity/std",
     "pallet-utility/std",
+    "pallet-oracle/std",
     "protos/std"
 ]

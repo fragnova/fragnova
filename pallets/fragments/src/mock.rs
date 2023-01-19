@@ -13,6 +13,8 @@ use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
 };
+use sp_runtime::traits::ConstU8;
+use pallet_oracle::{OracleContract, OracleProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -42,6 +44,8 @@ frame_support::construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>},
+		Clusters: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -197,16 +201,13 @@ impl pallet_contracts::Config for Test {
 	type MaxStorageKeyLen = ConstU32<128>;
 }
 
-parameter_types! {
-	pub const TicketsAssetId: u64 = 1337;
-}
-
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
+	type StringLimit = StringLimit;
+	type DetachAccountLimit = ConstU32<20>;
+	type MaxTags = ConstU32<10>;
 	type StorageBytesMultiplier = StorageBytesMultiplier;
-	type CurationExpiration = ConstU64<5>;
-	type TicketsAssetId = TicketsAssetId;
 }
 
 impl pallet_accounts::Config for Test {
@@ -217,9 +218,7 @@ impl pallet_accounts::Config for Test {
 	type EthConfirmations = ConstU64<1>;
 	type Threshold = ConstU64<1>;
 	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type TicketsAssetId = TicketsAssetId;
-	type InitialPercentageTickets = ConstU128<80>;
-	type InitialPercentageNova = ConstU128<20>;
+	type InitialPercentageNova = ConstU8<20>;
 	type USDEquivalentAmount = ConstU128<100>;
 }
 
@@ -255,6 +254,29 @@ impl pallet_timestamp::Config for Test {
 	type OnTimestampSet = ();
 	type MinimumPeriod = ();
 	type WeightInfo = ();
+}
+
+impl OracleContract for Test {
+	/// get the default oracle provider
+	fn get_provider() -> pallet_oracle::OracleProvider {
+		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+	}
+}
+
+impl pallet_oracle::Config for Test {
+	type AuthorityId = pallet_oracle::crypto::FragAuthId;
+	type Event = Event;
+	type OracleProvider = Test;
+	type Threshold = ConstU64<1>;
+}
+
+impl pallet_clusters::Config for Test {
+	type Event = Event;
+	type NameLimit = ConstU32<10>;
+	type DataLimit = ConstU32<100>;
+	type MembersLimit = ConstU32<10>;
+	type RoleSettingsLimit = ConstU32<20>;
+
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
