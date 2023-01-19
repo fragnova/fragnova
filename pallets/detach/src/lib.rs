@@ -16,7 +16,7 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-mod uomo_contento;
+mod copy_pasted_beefy_merkle_tree;
 
 #[allow(missing_docs)]
 mod weights;
@@ -87,7 +87,7 @@ use frame_system::offchain::{
 	SigningTypes,
 };
 
-use uomo_contento::{merkle_root, Keccak256};
+use copy_pasted_beefy_merkle_tree::{merkle_root, Keccak256};
 
 /// Enum representing a "detachable thing" (i.e a Proto-Fragment or a Fragment Instance) that the User wants to detach from the Clamor Blockchain
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
