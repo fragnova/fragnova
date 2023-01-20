@@ -103,7 +103,7 @@ describe("Testing Maximum Block Length for Normal Extrinsics", () => {
 
       this.timeout(200_000);
 
-      let data = [...new Uint8Array(lengthData)];
+      let data = [...new Uint8Array(lengthData).fill(65)];
       await upload(alice, data); // This should resolve
 
     });

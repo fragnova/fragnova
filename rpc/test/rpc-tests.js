@@ -77,7 +77,7 @@ describe("RPCs", () => {
     const alice = keyring.addFromUri('//Alice');
 
     protoHash = await upload(alice, [...Buffer.from('Proto-Indo-European')], []);
-    jsonDescriptionHash = await setMetadata(alice, protoHash, "json_description", {name: "monalisa", desc: "iconic, priceless, renaissance art"});
+    jsonDescriptionHash = await setMetadata(alice, protoHash, "json_description", '{name: "monalisa", desc: "iconic, priceless, renaissance art"}');
     const imageData = await fs.readFile("monalisa.jpeg", "binary");
     imageHash = await setMetadata(alice, protoHash, "image", imageData);
     definitionHash = await create(alice, protoHash, api.createType("FragmentMetadata", {name: "Dummy Name", currency: null}));
