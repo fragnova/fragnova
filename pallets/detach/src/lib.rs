@@ -77,7 +77,7 @@ pub use weights::WeightInfo;
 
 use codec::{Decode, Encode, Compact};
 use sp_io::{crypto as Crypto, hashing::keccak_256, offchain_index};
-use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner};
+use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner, traits::Hash};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use sp_clamor::{Hash128, Hash256, InstanceUnit};
@@ -98,6 +98,16 @@ pub enum DetachHash {
 	Instance(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>),
 }
 
+
+/// Enum representing the different Collection Types
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub enum DetachCollectionType {
+	/// Every element in the collection represents a Proto-Fragment
+	Proto,
+	/// Every element in the collection represents a Fragment Instance
+	Instance
+}
+
 /// Enum representing a collection of "detachable things" that the User wants to detach from the Clamor Blockchain
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum DetachCollection {
@@ -109,10 +119,10 @@ pub enum DetachCollection {
 impl DetachCollection {
 
 	/// Get the Collection type
-	fn get_type(&self) -> Vec<u8> {
+	fn get_type(&self) -> DetachCollectionType {
 		match self {
-			Self::Protos(_) => b"Proto-Fragment".to_vec(),
-			Self::Instances(_) => b"Fragment Instance".to_vec(),
+			Self::Protos(_) => DetachCollectionType::Proto,
+			Self::Instances(_) => DetachCollectionType::Instance,
 		}
 	}
 
@@ -289,7 +299,7 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A collection of "detachable thing"s was detached
-		CollectionDetached { merkle_root: Hash256, remote_signature: Vec<u8>, collection_type: Vec<u8>, collection: DetachCollection },
+		CollectionDetached { merkle_root: Hash256, remote_signature: Vec<u8>, collection_type: DetachCollectionType, collection: DetachCollection },
 	}
 
 	// Errors inform users that something went wrong.
@@ -543,7 +553,8 @@ pub mod pallet {
 					// We can still have multiple transactions compete for the same "spot",
 					// and the one with higher priority will replace other one in the pool.
 					.and_provides((
-						data.merkle_root, // TODO Review - what if by co-incidence two collections that contain different things have the same merkle-root?
+						data.collection.get_type(),
+						data.merkle_root,
 						data.target_chain,
 						data.target_account.clone(),
 						data.nonce,
@@ -633,9 +644,9 @@ pub mod pallet {
 		}
 
 		fn get_merkle_root(detach_collection: &DetachCollection) -> Hash256 {
-			let detach_hashes = detach_collection.get_abi_encoded_hashes();
+			let mut detach_hashes = detach_collection.get_abi_encoded_hashes();
 			// TODO Review - Should we sort the leaves?
-			// detach_hashes.sort_by(|a, b| Keccak256::hash(a).cmp(&Keccak256::hash(b)));
+			detach_hashes.sort_by(|a, b| Keccak256::hash(a).cmp(&Keccak256::hash(b)));
 			merkle_root::<Keccak256, _>(detach_hashes).into()
 		}
 
@@ -679,7 +690,10 @@ pub mod pallet {
 					}.to_big_endian(&mut chain_id_be);
 
 					let payload = [
-						&request.collection.get_type()[..],
+						// TODO Review - In `CollectionFactory.sol` - should we have converted the enum `CollectionType` to `uint8` or `uint64`/`uint256`?
+						// In Fragnova's Smart Contract `CollectionFactory.sol`, we convert the enum `CollectionType` to `uint8` when verifying the signature.
+						// Therefore, when constructing the signature - we are also converting it to `u8`.
+						&(request.collection.get_type() as u8).to_be_bytes()[..],
 						&merkle_root[..],
 						&chain_id_be,
 						&TryInto::<[u8; 20]>::try_into(request.target_account.clone()).map_err(|_| Error::<T>::TargetAccountLengthIsIncorrect)?,
