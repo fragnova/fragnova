@@ -46,7 +46,7 @@ use sp_std::{
 
 pub use weights::WeightInfo;
 
-use sp_clamor::{Hash256, Hash64};
+use sp_clamor::{Hash128, Hash256, Hash64};
 
 use scale_info::prelude::{
 	format,
@@ -208,8 +208,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub accounts_info: AccountsInfo,
 	/// **Data** of the **Proto-Fragment** (valid only if not Local)
 	pub data: ProtoData,
-	/// **Cluster** of the Proto
-	pub cluster: Option<Cluster<TAccountId>>,
+	/// **Cluster** ID where the Proto belongs to (Optional)
+	pub cluster: Option<Hash128>,
 }
 
 #[frame_support::pallet]
@@ -429,7 +429,7 @@ pub mod pallet {
 			tags: BoundedVec<BoundedVec<u8, <T as pallet::Config>::StringLimit>, T::MaxTags>,
 			linked_asset: Option<LinkedAsset>,
 			license: UsageLicense<T::AccountId>,
-			cluster: Option<Cluster<T::AccountId>>,
+			cluster: Option<Hash128>,
 			// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
