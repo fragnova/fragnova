@@ -4,11 +4,10 @@ use crate as pallet_accounts;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Encode;
 use ethabi::Token;
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::TypedGet};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
 use frame_system::offchain::{SignedPayload, SigningTypes};
-use serde_json::json;
-use sp_core::{offchain::testing, H256, Pair};
-use sp_runtime::{offchain::storage::StorageValueRef, Percent, SaturatedConversion};
+use sp_core::H256;
+use sp_runtime::SaturatedConversion;
 
 pub use internal_lock_update_tests::lock_;
 pub use link_tests::link_;
@@ -215,118 +214,9 @@ mod unlink_tests {
 mod sync_partner_contracts_tests {
 	use super::*;
 
-	fn hardcode_expected_request_and_response(
-		state: &mut testing::OffchainState,
-		lock: Lock,
-	) -> u64 {
-		let geth_url = Some(String::from("https://www.dummywebsite.com/"));
-
-		sp_clamor::init(geth_url);
-
-		let latest_block_number = lock
-			.data
-			.block_number // ensure that `lock.block_number` exists by making `latest_block_number` greater than or equal to it
-			.saturating_add(<Test as pallet_accounts::Config>::EthConfirmations::get())
-			.saturating_add(69)
-			.saturating_add(1234567890);
-
-		state.expect_request(testing::PendingRequest {
-			method: String::from("POST"),
-			uri: String::from_utf8(sp_clamor::clamor::get_geth_url().unwrap()).unwrap(),
-			headers: vec![(String::from("Content-Type"), String::from("application/json"))],
-			body: json!({
-				"jsonrpc": "2.0",
-				"method": "eth_blockNumber",
-				"id": 1u64,
-			})
-				.to_string()
-				.into_bytes(),
-			response: Some(
-				json!({
-					"id": 69u64,
-					"jsonrpc": "2.0",
-					"result": format!("0x{:x}", latest_block_number),
-				})
-					.to_string()
-					.into_bytes(),
-			),
-			sent: true,
-			..Default::default()
-		});
-
-		let from_block = 0;
-		let to_block = latest_block_number
-			.saturating_sub(<Test as pallet_accounts::Config>::EthConfirmations::get());
-
-		state.expect_request(testing::PendingRequest {
-			method: String::from("POST"),
-			uri: String::from_utf8(sp_clamor::clamor::get_geth_url().unwrap()).unwrap(),
-			headers: vec![(String::from("Content-Type"), String::from("application/json"))],
-			body: json!({
-				"jsonrpc": "2.0",
-				"method": "eth_getLogs", // i.e get the event logs of the smart contract (more info: https://docs.alchemy.com/alchemy/guides/eth_getlogs#what-are-logs)
-				"id": "0", // WHY IS THIS A STRING @sinkingsugar  MOLTO IMPORTANTE!
-				"params": [{
-					"fromBlock": format!("0x{:x}", from_block),
-					"toBlock": format!("0x{:x}", to_block), // Give us the event logs that were emitted (if any) from the block number `from_block` to the block number `to_block`, inclusive
-					"address": <
-					<Test as pallet_accounts::Config>::EthFragContract as pallet_accounts::EthFragContract
-					>::get_partner_contracts()[0],
-					"topics": [
-						// [] to OR
-						[pallet_accounts::LOCK_EVENT, pallet_accounts::UNLOCK_EVENT]
-					],
-				}]
-			})
-				.to_string()
-				.into_bytes(),
-			response: Some(
-				json!({
-					"id": 69u64,
-					"jsonrpc": "2.0",
-					"result": [
-						{
-							"address": <
-							<Test as pallet_accounts::Config>::EthFragContract as pallet_accounts::EthFragContract
-							>::get_partner_contracts()[0],
-							"topics": [
-								pallet_accounts::LOCK_EVENT,
-								format!("0x{}", hex::encode(ethabi::encode(&[Token::Address(lock.data.sender)])))
-							],
-							"data": format!("0x{}", hex::encode(
-								ethabi::encode(
-									&[
-										Token::Bytes(lock.data.signature.0.to_vec()),
-										Token::Uint(lock.data.amount),
-										Token::Uint(U256::from(lock.data.lock_period))
-									]
-								),
-							)),
-							"blockNumber": format!("0x{:x}", lock.data.block_number),
-
-							// Following key-values were blindly copied from https://docs.alchemy.com/alchemy/apis/ethereum/eth-getlogs (since they won't aren't even looked at in the function `sync_frag_locks`):
-							// So they are all wrong
-							"transactionHash": "0xab059a62e22e230fe0f56d8555340a29b2e9532360368f810595453f6fdd213b",
-							"transactionIndex": "0xac",
-							"blockHash": "0x8243343df08b9751f5ca0c5f8c9c0460d8a9b6351066fae0acbd4d3e776de8bb",
-							"logIndex": "0x56",
-							"removed": false,
-						},
-					]
-				})
-					.to_string()
-					.into_bytes(),
-			),
-			sent: true,
-			..Default::default()
-		});
-
-		to_block
-	}
-
 	#[test] #[ignore]
 	fn sync_frag_locks_should_work() {
-		let (mut t, pool_state, offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
+		let (mut t, pool_state, _offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
 
 		let dd = DummyData::new();
 		let lock = dd.lock;
@@ -363,7 +253,6 @@ mod internal_lock_update_tests {
 	use core::str::FromStr;
 	use ethabi::Address;
 	use sp_core::keccak_256;
-	use pallet_oracle::OraclePrice;
 	use super::*;
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {

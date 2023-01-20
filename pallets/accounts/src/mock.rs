@@ -18,10 +18,6 @@ use sp_core::{
 	},
 	H256,
 };
-
-use frame_support::traits::{AsEnsureOriginWithArg, GenesisBuild};
-use frame_system::EnsureSigned;
-
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},

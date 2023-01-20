@@ -4,7 +4,6 @@ use crate::Config;
 #[cfg(test)]
 pub fn get_root_namespace() -> Vec<u8> {
 	use crate::mock::Test;
-	use frame_support::traits::TypedGet;
 	<Test as Config>::RootNamespace::get()
 }
 

@@ -54,8 +54,6 @@ use scale_info::prelude::{
 };
 use serde_json::{json, Map, Value};
 
-use frame_support::traits::tokens::fungibles::{Inspect, Mutate};
-
 /// TODO: Documentation
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum LinkSource {
