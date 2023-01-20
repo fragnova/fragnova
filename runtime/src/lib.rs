@@ -798,6 +798,7 @@ mod validation_logic {
 pub struct BaseCallFilter;
 impl Contains<Call> for BaseCallFilter {
 	fn contains(c: &Call) -> bool {
+		// log::info!("The call {:?} is {}", c, validation_logic::is_the_immediate_call_valid(c));
 		validation_logic::is_the_immediate_call_valid(c)
 	}
 }
@@ -1591,6 +1592,7 @@ impl_runtime_apis! {
 			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
 			// We want to prevent nodes from gossiping extrinsics that have invalid calls.
+			// log::info!("The call to gossip {:?} is {}", &tx.function, validation_logic::is_the_immediate_call_valid(&tx.function));
 			if !validation_logic::is_the_immediate_call_valid(&tx.function) {
 				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)); // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
 			}
