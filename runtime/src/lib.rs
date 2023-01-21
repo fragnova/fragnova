@@ -482,6 +482,15 @@ mod validation_logic {
 	pub fn is_the_immediate_call_valid(c: &Call) -> bool {
 		match c {
 			Call::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
+				// `Categories::Shards`, `Categories::Traits` and `Categories::Text`
+				// must have `data` that is of the enum variant type `ProtoData::Local`
+				match category {
+					Categories::Shards(_) | Categories::Trait(_) | Categories::Text(_) => match data {
+						pallet_protos::ProtoData::Local(_) => (),
+						_ => return false,
+					},
+					_ => (),
+				};
 				match data {
 					pallet_protos::ProtoData::Local(ref data) => is_valid(category, data, references),
 					_ => true,
