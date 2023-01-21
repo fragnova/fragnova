@@ -645,7 +645,6 @@ pub mod pallet {
 
 		fn get_merkle_root(detach_collection: &DetachCollection) -> Hash256 {
 			let mut detach_hashes = detach_collection.get_abi_encoded_hashes();
-			// TODO Review - Should we sort the leaves?
 			detach_hashes.sort_by(|a, b| Keccak256::hash(a).cmp(&Keccak256::hash(b)));
 			merkle_root::<Keccak256, _>(detach_hashes).into()
 		}
@@ -690,7 +689,6 @@ pub mod pallet {
 					}.to_big_endian(&mut chain_id_be);
 
 					let payload = [
-						// TODO Review - In `CollectionFactory.sol` - should we have converted the enum `CollectionType` to `uint8` or `uint64`/`uint256`?
 						// In Fragnova's Smart Contract `CollectionFactory.sol`, we convert the enum `CollectionType` to `uint8` when verifying the signature.
 						// Therefore, when constructing the signature - we are also converting it to `u8`.
 						&(request.collection.get_type() as u8).to_be_bytes()[..],
