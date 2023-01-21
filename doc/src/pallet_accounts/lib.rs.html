@@ -1894,7 +1894,8 @@
 						pallet_balances::Pallet::&lt;T&gt;::free_balance(<span class="kw-2">&amp;</span>sender.clone());
 					<span class="macro">ensure!</span>(
 						nova_old_balance + amount &gt;=
-							&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>Currency&lt;T::AccountId&gt;&gt;::minimum_balance(),
+							&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>Currency&lt;T::AccountId&gt;&gt;::minimum_balance(
+							),
 						Error::&lt;T&gt;::BelowMinimumBalance
 					);
 					<span class="macro">ensure!</span>(
@@ -2016,7 +2017,7 @@
 					</span><span class="kw">if </span>current_votes + <span class="number">1u64 </span>&lt; threshold {
 						<span class="comment">// Current Votes has not passed the threshold
 						</span>&lt;EVMLinkVoting&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>data_hash, current_votes + <span class="number">1</span>);
-						<span class="kw">return </span><span class="prelude-val">Ok</span>(());
+						<span class="kw">return </span><span class="prelude-val">Ok</span>(())
 					} <span class="kw">else </span>{
 						<span class="comment">// Current votes passes the threshold, let&#39;s remove EVMLinkVoting perque perque non! (问Gio)
 						// we are good to go, but let&#39;s remove the record
@@ -2025,7 +2026,7 @@
 				} <span class="kw">else </span>{
 					<span class="comment">// If key `data_hash` doesn&#39;t exist in EVMLinkVoting
 					</span>&lt;EVMLinkVoting&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>data_hash, <span class="number">1</span>);
-					<span class="kw">return </span><span class="prelude-val">Ok</span>(());
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(())
 				}
 			}
 
@@ -2049,7 +2050,6 @@
 			<span class="kw">let </span>nova_amount: &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance =
 				initial_nova_amount.saturated_into();
 
-
 			<span class="kw">if </span>data.lock {
 				<span class="comment">// If FRAG tokens were locked on Ethereum
 				</span><span class="kw">let </span>linked = &lt;EVMLinksReverse&lt;T&gt;&gt;::get(sender.clone()); <span class="comment">// Get the Clamor Account linked with the Ethereum Account `sender`
@@ -2065,7 +2065,6 @@
 						!nova_old_balance.checked_add(<span class="kw-2">&amp;</span>nova_amount).is_none(),
 						Error::&lt;T&gt;::SystematicFailure
 					);
-
 
 					<span class="kw">let _ </span>=
 						&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
@@ -2256,7 +2255,7 @@
 					<span class="kw">_ </span>=&gt; {
 						<span class="macro">log::debug!</span>(<span class="string">&quot;Not a local transaction&quot;</span>);
 						<span class="comment">// Return TransactionValidityError˘ if the call is not allowed.
-						</span><span class="kw">return </span>InvalidTransaction::Call.into();
+						</span><span class="kw">return </span>InvalidTransaction::Call.into()
 					},
 				}
 
@@ -2273,13 +2272,13 @@
 						pub_key
 					} <span class="kw">else </span>{
 						<span class="comment">// Return TransactionValidityError if the call is not allowed.
-						</span><span class="kw">return </span>InvalidTransaction::BadSigner.into(); <span class="comment">// // 问Gio
+						</span><span class="kw">return </span>InvalidTransaction::BadSigner.into() <span class="comment">// // 问Gio
 					</span>}
 				};
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Public key: {:?}&quot;</span>, pub_key);
 				<span class="kw">if </span>!valid_keys.contains(<span class="kw-2">&amp;</span>pub_key) {
 					<span class="comment">// return TransactionValidityError if the call is not allowed.
-					</span><span class="kw">return </span>InvalidTransaction::BadSigner.into();
+					</span><span class="kw">return </span>InvalidTransaction::BadSigner.into()
 				}
 
 				<span class="comment">// most expensive bit last
@@ -2290,7 +2289,7 @@
 							// The provided signature does not match the public key used to sign the payload
 				</span><span class="kw">if </span>!signature_valid {
 					<span class="comment">// Return TransactionValidityError if the call is not allowed.
-					</span><span class="kw">return </span>InvalidTransaction::BadProof.into();
+					</span><span class="kw">return </span>InvalidTransaction::BadProof.into()
 				}
 
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Sending frag lock update extrinsic&quot;</span>);
@@ -2354,7 +2353,7 @@
 			</span><span class="kw">let </span>response_body = <span class="kw">if let </span><span class="prelude-val">Ok</span>(response) = response_body {
 				response
 			} <span class="kw">else </span>{
-				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
+				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>)
 			};
 
 			<span class="kw">let </span>response = String::from_utf8(response_body).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
@@ -2403,7 +2402,7 @@
 			</span><span class="kw">let </span>response_body = <span class="kw">if let </span><span class="prelude-val">Ok</span>(response) = response_body {
 				response
 			} <span class="kw">else </span>{
-				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>);
+				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to get response from geth&quot;</span>)
 			};
 
 			<span class="kw">let </span>response = String::from_utf8(response_body).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
@@ -2523,7 +2522,7 @@
 				String::from_utf8(geth).unwrap()
 			} <span class="kw">else </span>{
 				<span class="macro">log::debug!</span>(<span class="string">&quot;No geth url found, skipping sync&quot;</span>);
-				<span class="kw">return</span>; <span class="comment">// It is fine to have a node not syncing with eth
+				<span class="kw">return </span><span class="comment">// It is fine to have a node not syncing with eth
 			</span>};
 
 			<span class="kw">let </span>contracts = T::EthFragContract::get_partner_contracts();
@@ -2539,10 +2538,10 @@
 		/// account address `account`**
 		</span><span class="kw">fn </span>unlink_account(sender: T::AccountId, account: H160) -&gt; DispatchResult {
 			<span class="kw">if </span>&lt;EVMLinks&lt;T&gt;&gt;::get(sender.clone()).ok_or(Error::&lt;T&gt;::AccountNotLinked)<span class="question-mark">? </span>!= account {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into())
 			}
 			<span class="kw">if </span>&lt;EVMLinksReverse&lt;T&gt;&gt;::get(account).ok_or(Error::&lt;T&gt;::AccountNotLinked)<span class="question-mark">? </span>!= sender {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::DifferentAccountLinked.into())
 			}
 
 			&lt;EVMLinks&lt;T&gt;&gt;::remove(sender.clone());
@@ -2610,20 +2609,20 @@
 					</span><span class="kw">let </span>current_frag_price = <span class="self">Self</span>::get_oracle_price()<span class="question-mark">?</span>;
 					<span class="comment">// The amount of NOVA depend on the price of 1 FRAG at the time of withdraw
 					// considering that 1 FRAG = 100 NOVA
-					</span><span class="kw">let </span>nova_amount_per_week_at_current_price = current_frag_price.clone()
-						* T::USDEquivalentAmount::get()
-						* nova_convertible_per_week;
+					</span><span class="kw">let </span>nova_amount_per_week_at_current_price = current_frag_price.clone() *
+						T::USDEquivalentAmount::get() *
+						nova_convertible_per_week;
 
 					<span class="comment">// Weeks passed since FRAG was locked
-					</span><span class="kw">let </span><span class="kw-2">mut </span>num_weeks_since_lock_frag: u128 =
-						((current_block_number - frag_lock_block_number)
-							* seconds_in_block.clone()) / seconds_in_week.clone()
-							+ <span class="number">1</span>;
+					</span><span class="kw">let </span><span class="kw-2">mut </span>num_weeks_since_lock_frag: u128 = ((current_block_number -
+						frag_lock_block_number) *
+						seconds_in_block.clone()) /
+						seconds_in_week.clone() + <span class="number">1</span>;
 
 					<span class="comment">// The week number of the last withdraw is stored,
 					// so this checks the case of subsequent withdraws done in the same week when nothing has been yielded.
 					</span><span class="kw">if </span>num_weeks_since_lock_frag - last_withdraw_week == <span class="number">0 </span>{
-						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NothingToWithdraw.into());
+						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NothingToWithdraw.into())
 					}
 
 					<span class="comment">// This is for the case of withdraw performed when the FRAG lock period is already over.
@@ -2632,8 +2631,8 @@
 						num_weeks_since_lock_frag = lock_period_in_weeks.clone() <span class="kw">as </span>u128;
 					}
 
-					<span class="kw">let </span>nova_amount_to_withdraw = nova_amount_per_week_at_current_price
-						* (num_weeks_since_lock_frag.clone() - last_withdraw_week.clone());
+					<span class="kw">let </span>nova_amount_to_withdraw = nova_amount_per_week_at_current_price *
+						(num_weeks_since_lock_frag.clone() - last_withdraw_week.clone());
 
 					<span class="macro">log::trace!</span>(<span class="string">&quot;NOVA available per week: {}&quot;</span>, nova_convertible_per_week);
 					<span class="macro">log::trace!</span>(
@@ -2656,10 +2655,10 @@
 					<span class="kw">let </span>nova_old_balance =
 						pallet_balances::Pallet::&lt;T&gt;::free_balance(<span class="kw-2">&amp;</span>account.clone());
 					<span class="macro">ensure!</span>(
-					nova_old_balance + nova_amount &gt;=
-						&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>Currency&lt;T::AccountId&gt;&gt;::minimum_balance(
-						),
-					Error::&lt;T&gt;::SystematicFailure <span class="comment">// this should never happen
+						nova_old_balance + nova_amount &gt;=
+							&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>Currency&lt;T::AccountId&gt;&gt;::minimum_balance(
+							),
+						Error::&lt;T&gt;::SystematicFailure <span class="comment">// this should never happen
 					</span>);
 
 					<span class="kw">if </span>num_weeks_since_lock_frag == lock_period_in_weeks.clone() <span class="kw">as </span>u128 {
@@ -2685,14 +2684,14 @@
 				)<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>(())
 			} <span class="kw">else </span>{
-				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NothingToWithdraw.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::NothingToWithdraw.into())
 			}
 		}
 
 		<span class="kw">fn </span>initial_amount(amount: u128, percent: u8, current_frag_price: u128) -&gt; u128 {
 			<span class="kw">if </span>amount == <span class="number">0 </span>{
-				<span class="kw">return </span><span class="number">0</span>;
-			}
+				<span class="kw">return </span><span class="number">0
+			</span>}
 			<span class="kw">let </span>percentage_amount = <span class="self">Self</span>::apply_percent(amount, percent);
 			percentage_amount * current_frag_price * <span class="number">100
 		</span>}
@@ -2700,15 +2699,16 @@
 		<span class="doccomment">/// Calculate a percentage
 		</span><span class="kw">pub fn </span>apply_percent(amount: u128, percent: u8) -&gt; u128 {
 			<span class="kw">if </span>amount == <span class="number">0 </span>{
-				<span class="kw">return </span><span class="number">0</span>;
-			}
+				<span class="kw">return </span><span class="number">0
+			</span>}
 			<span class="comment">//amount * percent / 100
 			</span>Percent::from_percent(percent).mul_ceil(amount) <span class="kw">as </span>u128
 		}
 
 		<span class="doccomment">/// Get the price of FRAG from pallet-oracle
 		</span><span class="kw">pub fn </span>get_oracle_price() -&gt; <span class="prelude-ty">Result</span>&lt;u128, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
-			<span class="kw">let </span>price = pallet_oracle::Pallet::&lt;T&gt;::get_price().map_err(|<span class="kw">_</span>| <span class="string">&quot;Error while retrieving price from oracle&quot;</span>)<span class="question-mark">?</span>;
+			<span class="kw">let </span>price = pallet_oracle::Pallet::&lt;T&gt;::get_price()
+				.map_err(|<span class="kw">_</span>| <span class="string">&quot;Error while retrieving price from oracle&quot;</span>)<span class="question-mark">?</span>;
 
 			<span class="prelude-val">Ok</span>(price)
 		}

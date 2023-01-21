@@ -267,10 +267,6 @@
 <span id="267">267</span>
 <span id="268">268</span>
 <span id="269">269</span>
-<span id="270">270</span>
-<span id="271">271</span>
-<span id="272">272</span>
-<span id="273">273</span>
 </pre><pre class="rust"><code><span class="doccomment">//! In Substrate, a chain specification is the collection of information that describes a Substrate-based blockchain network.
 //! For example, the chain specification identifies the network that a blockchain node connects to,
 //! the other nodes that it initially communicates with, and the initial state that nodes must agree on to produce blocks.
@@ -533,11 +529,7 @@
 			eth_authorities: initial_authorities.iter().map(|x| (x.<span class="number">3</span>.clone())).collect(),
 			keys: initial_authorities.iter().map(|x| (x.<span class="number">4</span>.clone())).collect(),
 		},
-		assets: AssetsConfig {
-			assets: <span class="macro">vec!</span>[],
-			metadata: <span class="macro">vec!</span>[],
-			accounts: <span class="macro">vec!</span>[],
-		},
+		assets: AssetsConfig { assets: <span class="macro">vec!</span>[], metadata: <span class="macro">vec!</span>[], accounts: <span class="macro">vec!</span>[] },
 		accounts: AccountsConfig {
 			keys: initial_authorities.iter().map(|x| (x.<span class="number">4</span>.clone())).collect(),
 		},

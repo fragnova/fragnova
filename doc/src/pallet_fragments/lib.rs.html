@@ -2273,6 +2273,86 @@
 <span id="2273">2273</span>
 <span id="2274">2274</span>
 <span id="2275">2275</span>
+<span id="2276">2276</span>
+<span id="2277">2277</span>
+<span id="2278">2278</span>
+<span id="2279">2279</span>
+<span id="2280">2280</span>
+<span id="2281">2281</span>
+<span id="2282">2282</span>
+<span id="2283">2283</span>
+<span id="2284">2284</span>
+<span id="2285">2285</span>
+<span id="2286">2286</span>
+<span id="2287">2287</span>
+<span id="2288">2288</span>
+<span id="2289">2289</span>
+<span id="2290">2290</span>
+<span id="2291">2291</span>
+<span id="2292">2292</span>
+<span id="2293">2293</span>
+<span id="2294">2294</span>
+<span id="2295">2295</span>
+<span id="2296">2296</span>
+<span id="2297">2297</span>
+<span id="2298">2298</span>
+<span id="2299">2299</span>
+<span id="2300">2300</span>
+<span id="2301">2301</span>
+<span id="2302">2302</span>
+<span id="2303">2303</span>
+<span id="2304">2304</span>
+<span id="2305">2305</span>
+<span id="2306">2306</span>
+<span id="2307">2307</span>
+<span id="2308">2308</span>
+<span id="2309">2309</span>
+<span id="2310">2310</span>
+<span id="2311">2311</span>
+<span id="2312">2312</span>
+<span id="2313">2313</span>
+<span id="2314">2314</span>
+<span id="2315">2315</span>
+<span id="2316">2316</span>
+<span id="2317">2317</span>
+<span id="2318">2318</span>
+<span id="2319">2319</span>
+<span id="2320">2320</span>
+<span id="2321">2321</span>
+<span id="2322">2322</span>
+<span id="2323">2323</span>
+<span id="2324">2324</span>
+<span id="2325">2325</span>
+<span id="2326">2326</span>
+<span id="2327">2327</span>
+<span id="2328">2328</span>
+<span id="2329">2329</span>
+<span id="2330">2330</span>
+<span id="2331">2331</span>
+<span id="2332">2332</span>
+<span id="2333">2333</span>
+<span id="2334">2334</span>
+<span id="2335">2335</span>
+<span id="2336">2336</span>
+<span id="2337">2337</span>
+<span id="2338">2338</span>
+<span id="2339">2339</span>
+<span id="2340">2340</span>
+<span id="2341">2341</span>
+<span id="2342">2342</span>
+<span id="2343">2343</span>
+<span id="2344">2344</span>
+<span id="2345">2345</span>
+<span id="2346">2346</span>
+<span id="2347">2347</span>
+<span id="2348">2348</span>
+<span id="2349">2349</span>
+<span id="2350">2350</span>
+<span id="2351">2351</span>
+<span id="2352">2352</span>
+<span id="2353">2353</span>
+<span id="2354">2354</span>
+<span id="2355">2355</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -2337,11 +2417,7 @@
 <span class="kw">use </span>frame_support::dispatch::DispatchResult;
 <span class="kw">use </span>sp_runtime::traits::StaticLookup;
 
-<span class="kw">use </span>frame_support::traits::tokens::{
-	fungible,
-	fungibles,
-	ExistenceRequirement,
-};
+<span class="kw">use </span>frame_support::traits::tokens::{fungible, fungibles, ExistenceRequirement};
 
 <span class="kw">use </span>sp_runtime::SaturatedConversion;
 
@@ -2585,9 +2661,12 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
+	<span class="kw">use </span>pallet_detach::{
+		DetachCollection, DetachHash, DetachRequest, DetachRequests, DetachedHashes,
+		SupportedChains,
+	};
 	<span class="kw">use </span>pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
 	<span class="kw">use </span>sp_clamor::get_vault_id;
-	<span class="kw">use </span>pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachCollection, DetachedHashes, SupportedChains};
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
 	</span><span class="attribute">#[pallet::config]
@@ -2626,7 +2705,7 @@
 	/// ***PublishingData* struct (of the aforementioned Fragment Definition)**
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>Publishing&lt;T: Config&gt; =
-	StorageMap&lt;<span class="kw">_</span>, Identity, Hash128, PublishingData&lt;T::BlockNumber&gt;&gt;;
+		StorageMap&lt;<span class="kw">_</span>, Identity, Hash128, PublishingData&lt;T::BlockNumber&gt;&gt;;
 
 	<span class="doccomment">/// **StorageNMap** that maps a
 	/// **Fragment Instance&#39;s Fragment Definition ID, Edition ID and Copy ID**
@@ -2657,7 +2736,8 @@
 	/// to the
 	/// **total number of Fragment Instances that have the Fragment Definition ID and the Edition ID**
 	</span><span class="attribute">#[pallet::storage]
-	</span><span class="kw">pub type </span>CopiesCount&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, (Hash128, InstanceUnit), Compact&lt;InstanceUnit&gt;&gt;;
+	</span><span class="kw">pub type </span>CopiesCount&lt;T: Config&gt; =
+		StorageMap&lt;<span class="kw">_</span>, Identity, (Hash128, InstanceUnit), Compact&lt;InstanceUnit&gt;&gt;;
 
 	<span class="doccomment">/// **StorageNMap** that maps a
 	/// **Fragment Instance&#39;s Fragment Definition ID, Edition ID and Copy ID**
@@ -2692,8 +2772,8 @@
 		Identity,
 		Hash128, <span class="comment">// Fragment Definition ID
 		</span>Identity,
-		Hash256, <span class="comment">// Unique Data&#39;s Hash
-		</span>InstanceUnit,    <span class="comment">// Edition ID
+		Hash256,      <span class="comment">// Unique Data&#39;s Hash
+		</span>InstanceUnit, <span class="comment">// Edition ID
 	</span>&gt;;
 
 	<span class="doccomment">/// StorageDoubleMap that maps a **Fragment Definition and a Clamor Account ID**
@@ -2744,13 +2824,17 @@
 	///
 	///  Fragment Instances can expire, we process expirations every `on_finalize`
 	</span><span class="attribute">#[pallet::storage]
-	</span><span class="kw">pub type </span>Expirations&lt;T: Config&gt; =
-	StorageMap&lt;<span class="kw">_</span>, Twox64Concat, T::BlockNumber, Vec&lt;(Hash128, Compact&lt;InstanceUnit&gt;, Compact&lt;InstanceUnit&gt;)&gt;&gt;;
+	</span><span class="kw">pub type </span>Expirations&lt;T: Config&gt; = StorageMap&lt;
+		<span class="kw">_</span>,
+		Twox64Concat,
+		T::BlockNumber,
+		Vec&lt;(Hash128, Compact&lt;InstanceUnit&gt;, Compact&lt;InstanceUnit&gt;)&gt;,
+	&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **Fragment Definition ID and a Number** to a **Data Hash**
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>DataHashMap&lt;T: Config&gt; =
-	StorageDoubleMap&lt;<span class="kw">_</span>, Identity, Hash128, Identity, Compact&lt;u64&gt;, Hash256&gt;;
+		StorageDoubleMap&lt;<span class="kw">_</span>, Identity, Hash128, Identity, Compact&lt;u64&gt;, Hash256&gt;;
 	<span class="doccomment">/// **StorageMap** that maps a **Fragment Definition ID** to the **total number of &quot;Numbers&quot; (see `DataHashMap` to understand what &quot;Numbers&quot; means) that fall under it**
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>DataHashMapIndex&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash128, u64&gt;;
@@ -2799,15 +2883,9 @@
 			fragment_id: (InstanceUnit, InstanceUnit),
 		},
 		<span class="doccomment">/// Resell Instance
-		</span>Resell {
-			definition_hash: Hash128,
-			fragment_id: (InstanceUnit, InstanceUnit),
-		},
+		</span>Resell { definition_hash: Hash128, fragment_id: (InstanceUnit, InstanceUnit) },
 		<span class="doccomment">/// End Resale of Instance
-		</span>EndResale {
-			definition_hash: Hash128,
-			fragment_id: (InstanceUnit, InstanceUnit),
-		},
+		</span>EndResale { definition_hash: Hash128, fragment_id: (InstanceUnit, InstanceUnit) },
 	}
 
 	<span class="comment">// Errors inform users that something went wrong.
@@ -2889,7 +2967,10 @@
 		</span><span class="kw">pub fn </span>create(
 			origin: OriginFor&lt;T&gt;,
 			proto_hash: Hash256,
-			metadata: DefinitionMetadata&lt;BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet_protos::Config&gt;::StringLimit&gt;, T::AssetId&gt;,
+			metadata: DefinitionMetadata&lt;
+				BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet_protos::Config&gt;::StringLimit&gt;,
+				T::AssetId,
+			&gt;,
 			permissions: FragmentPerms,
 			unique: <span class="prelude-ty">Option</span>&lt;UniqueOptions&gt;,
 			max_supply: <span class="prelude-ty">Option</span>&lt;InstanceUnit&gt;,
@@ -2912,7 +2993,10 @@
 
 			<span class="macro">ensure!</span>(who == proto_owner, Error::&lt;T&gt;::NoPermission); <span class="comment">// Only proto owner can create a fragment definition from proto
 
-			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached); <span class="comment">// proto must not have been detached
+			</span><span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)),
+				Error::&lt;T&gt;::Detached
+			); <span class="comment">// proto must not have been detached
 
 			</span><span class="macro">ensure!</span>(metadata.name.len() &gt; <span class="number">0</span>, Error::&lt;T&gt;::MetadataNameIsEmpty);
 
@@ -2940,22 +3024,24 @@
 
 			<span class="kw">match </span>metadata.currency {
 				Currency::Native =&gt; {
-					<span class="kw">let </span>minimum_balance =
-						&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance();
+					<span class="kw">let </span>minimum_balance = &lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;
+						T::AccountId,
+					&gt;&gt;::minimum_balance();
 					&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
 						<span class="kw-2">&amp;</span>vault,
 						minimum_balance,
 					)<span class="question-mark">?</span>;
 				},
 				Currency::Custom(currency) =&gt; {
-					<span class="kw">let </span>minimum_balance =
-						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance(currency);
+					<span class="kw">let </span>minimum_balance = &lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;
+						T::AccountId,
+					&gt;&gt;::minimum_balance(currency);
 					&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
 						currency,
 						<span class="kw-2">&amp;</span>vault,
 						minimum_balance,
 					)<span class="question-mark">?</span>;
-				}
+				},
 			};
 
 			<span class="kw">let </span>fragment_data = FragmentDefinition {
@@ -3012,7 +3098,10 @@
 			<span class="macro">ensure!</span>(who == proto_owner, Error::&lt;T&gt;::NoPermission); <span class="comment">// Ensure `who` is `proto_owner`
 
 			// TO REVIEW
-			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
+			</span><span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)),
+				Error::&lt;T&gt;::Detached
+			); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
 
 			</span><span class="kw">let </span>data_hash = blake2_256(<span class="kw-2">&amp;</span>data);
 
@@ -3088,7 +3177,14 @@
 
 			<span class="macro">ensure!</span>(!metadata_key.is_empty(), Error::&lt;T&gt;::InstanceMetadataKeyIsEmpty);
 
-			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Instance(definition_hash, Compact(edition_id), Compact(copy_id))), Error::&lt;T&gt;::Detached);
+			<span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Instance(
+					definition_hash,
+					Compact(edition_id),
+					Compact(copy_id)
+				)),
+				Error::&lt;T&gt;::Detached
+			);
 
 			<span class="kw">let </span>instance_struct = &lt;Fragments&lt;T&gt;&gt;::get((definition_hash, edition_id, copy_id))
 				.ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
@@ -3149,7 +3245,7 @@
 
 			<span class="comment">// also emit event
 			</span><span class="self">Self</span>::deposit_event(Event::InstanceMetadataChanged {
-				definition_hash: definition_hash,
+				definition_hash,
 				edition_id,
 				copy_id,
 				metadata_key: metadata_key.clone().into(),
@@ -3204,7 +3300,10 @@
 			<span class="macro">ensure!</span>(who == proto_owner, Error::&lt;T&gt;::NoPermission); <span class="comment">// Ensure `who` is `proto_owner`
 
 			// TO REVIEW
-			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
+			</span><span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)),
+				Error::&lt;T&gt;::Detached
+			); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
 
 			</span><span class="macro">ensure!</span>(!&lt;Publishing&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>definition_hash), Error::&lt;T&gt;::SaleAlreadyOpen); <span class="comment">// Ensure `definition_hash` isn&#39;t already published
 
@@ -3217,14 +3316,14 @@
 					&lt;EditionsCount&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>definition_hash).unwrap_or(Compact(<span class="number">0</span>)).into();
 				<span class="kw">let </span>left = max.saturating_sub(existing); <span class="comment">// `left` = `max` - `existing`
 				</span><span class="kw">if </span>left == <span class="number">0 </span>{
-					<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::MaxSupplyReached.into());
+					<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::MaxSupplyReached.into())
 				}
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(quantity) = quantity {
 					<span class="kw">let </span>quantity: InstanceUnit = quantity.into();
 					<span class="macro">ensure!</span>(quantity &lt;= left, Error::&lt;T&gt;::MaxSupplyReached); <span class="comment">// Ensure that the function parameter `quantity` is smaller than or equal to `left`
 				</span>} <span class="kw">else </span>{
 					<span class="comment">// Ensure that if `fragment_data.max_supply` exists, the function parameter `quantity` must also exist
-					</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ParamsNotValid.into());
+					</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ParamsNotValid.into())
 				}
 			}
 
@@ -3272,7 +3371,10 @@
 			<span class="macro">ensure!</span>(who == proto_owner, Error::&lt;T&gt;::NoPermission); <span class="comment">// Ensure `who` is `proto_owner`
 
 			// TO REVIEW
-			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
+			</span><span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)),
+				Error::&lt;T&gt;::Detached
+			); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
 
 			</span><span class="macro">ensure!</span>(&lt;Publishing&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>definition_hash), Error::&lt;T&gt;::NotFound); <span class="comment">// Ensure `definition_hash` is currently published
 
@@ -3333,7 +3435,10 @@
 			<span class="macro">ensure!</span>(who == proto_owner, Error::&lt;T&gt;::NoPermission); <span class="comment">// Ensure `who` is `proto_owner`
 
 			// TO REVIEW
-			</span><span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)), Error::&lt;T&gt;::Detached); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
+			</span><span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Proto(proto_hash)),
+				Error::&lt;T&gt;::Detached
+			); <span class="comment">// Ensure `proto_hash` isn&#39;t detached
 
 			</span><span class="kw">let </span>quantity = <span class="kw">match </span>options {
 				<span class="comment">// Number of fragment instances to mint
@@ -3463,12 +3568,27 @@
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
-			<span class="self">Self</span>::can_transfer_instance(<span class="kw-2">&amp;</span>who, <span class="kw-2">&amp;</span>definition_hash, edition_id, copy_id, new_permissions, expiration)<span class="question-mark">?</span>;
+			<span class="self">Self</span>::can_transfer_instance(
+				<span class="kw-2">&amp;</span>who,
+				<span class="kw-2">&amp;</span>definition_hash,
+				edition_id,
+				copy_id,
+				new_permissions,
+				expiration,
+			)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>to = T::Lookup::lookup(to)<span class="question-mark">?</span>;
 
 			<span class="comment">// now we take two different paths if item can be copied or not
-			</span><span class="self">Self</span>::transfer_instance(<span class="kw-2">&amp;</span>who, <span class="kw-2">&amp;</span>to, <span class="kw-2">&amp;</span>definition_hash, edition_id, copy_id, new_permissions, expiration)<span class="question-mark">?</span>;
+			</span><span class="self">Self</span>::transfer_instance(
+				<span class="kw-2">&amp;</span>who,
+				<span class="kw-2">&amp;</span>to,
+				<span class="kw-2">&amp;</span>definition_hash,
+				edition_id,
+				copy_id,
+				new_permissions,
+				expiration,
+			)<span class="question-mark">?</span>;
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -3513,7 +3633,6 @@
 			</span><span class="prelude-val">Ok</span>(())
 		}
 
-
 		<span class="doccomment">/// Put a Fragment Instance on sale.
 		///
 		///
@@ -3537,30 +3656,39 @@
 			copy_id: InstanceUnit,
 			new_permissions: <span class="prelude-ty">Option</span>&lt;FragmentPerms&gt;,
 			expiration: <span class="prelude-ty">Option</span>&lt;T::BlockNumber&gt;,
-			secondary_sale_type: SecondarySaleType
+			secondary_sale_type: SecondarySaleType,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(
-				!&lt;Definition2SecondarySales&lt;T&gt;&gt;::contains_key((definition_hash, edition_id, copy_id)),
+				!&lt;Definition2SecondarySales&lt;T&gt;&gt;::contains_key((
+					definition_hash,
+					edition_id,
+					copy_id
+				)),
 				Error::&lt;T&gt;::SaleAlreadyOpen
 			);
 
-			<span class="self">Self</span>::can_transfer_instance(<span class="kw-2">&amp;</span>who, <span class="kw-2">&amp;</span>definition_hash, edition_id, copy_id, new_permissions, expiration)<span class="question-mark">?</span>;
+			<span class="self">Self</span>::can_transfer_instance(
+				<span class="kw-2">&amp;</span>who,
+				<span class="kw-2">&amp;</span>definition_hash,
+				edition_id,
+				copy_id,
+				new_permissions,
+				expiration,
+			)<span class="question-mark">?</span>;
 
 			<span class="comment">// ! Writing
 
 			</span>Definition2SecondarySales::&lt;T&gt;::insert(
 				(definition_hash, edition_id, copy_id),
-				SecondarySaleData {
-					owner: who,
-					new_permissions,
-					expiration,
-					secondary_sale_type
-				}
+				SecondarySaleData { owner: who, new_permissions, expiration, secondary_sale_type },
 			);
 
-			<span class="self">Self</span>::deposit_event(Event::Resell { definition_hash, fragment_id: (edition_id, copy_id) });
+			<span class="self">Self</span>::deposit_event(Event::Resell {
+				definition_hash,
+				fragment_id: (edition_id, copy_id),
+			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -3583,7 +3711,9 @@
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(
-				who == &lt;Definition2SecondarySales&lt;T&gt;&gt;::get((definition_hash, edition_id, copy_id)).ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>.owner,
+				who == &lt;Definition2SecondarySales&lt;T&gt;&gt;::get((definition_hash, edition_id, copy_id))
+					.ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?
+					</span>.owner,
 				Error::&lt;T&gt;::NoPermission
 			);
 
@@ -3591,7 +3721,10 @@
 
 			</span>Definition2SecondarySales::&lt;T&gt;::remove((definition_hash, edition_id, copy_id));
 
-			<span class="self">Self</span>::deposit_event(Event::EndResale { definition_hash, fragment_id: (edition_id, copy_id) });
+			<span class="self">Self</span>::deposit_event(Event::EndResale {
+				definition_hash,
+				fragment_id: (edition_id, copy_id),
+			});
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -3611,14 +3744,18 @@
 			definition_hash: Hash128,
 			edition_id: InstanceUnit,
 			copy_id: InstanceUnit,
-			options: SecondarySaleBuyOptions
+			options: SecondarySaleBuyOptions,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
-			<span class="kw">let </span>secondary_sale_data = Definition2SecondarySales::&lt;T&gt;::get((definition_hash, edition_id, copy_id))
-				.ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
+			<span class="kw">let </span>secondary_sale_data =
+				Definition2SecondarySales::&lt;T&gt;::get((definition_hash, edition_id, copy_id))
+					.ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
 
-			<span class="kw">let </span>currency = Definitions::&lt;T&gt;::get(definition_hash).ok_or(Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>.metadata.currency;
+			<span class="kw">let </span>currency = Definitions::&lt;T&gt;::get(definition_hash)
+				.ok_or(Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?
+				</span>.metadata
+				.currency;
 
 			<span class="kw">match </span>(secondary_sale_data.secondary_sale_type, options) {
 				(SecondarySaleType::Normal(price), SecondarySaleBuyOptions::Normal) =&gt; {
@@ -3634,12 +3771,12 @@
 						edition_id,
 						copy_id,
 						secondary_sale_data.new_permissions,
-						secondary_sale_data.expiration
+						secondary_sale_data.expiration,
 					)<span class="question-mark">?</span>;
 
 					<span class="comment">// remove secondary sale data from `Definition2SecondarySales`
 					</span>Definition2SecondarySales::&lt;T&gt;::remove((definition_hash, edition_id, copy_id));
-				}
+				},
 				<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ParamsNotValid.into()),
 			};
 
@@ -3677,7 +3814,8 @@
 			<span class="macro">ensure!</span>(!edition_ids.is_empty(), Error::&lt;T&gt;::InstancesToDetachIsEmpty);
 			<span class="macro">ensure!</span>(!target_account.is_empty(), Error::&lt;T&gt;::DetachAccountIsEmpty);
 
-			<span class="kw">let </span>owned_instances = &lt;Inventory&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>who, definition_hash).ok_or(Error::&lt;T&gt;::NoPermission)<span class="question-mark">?</span>;
+			<span class="kw">let </span>owned_instances =
+				&lt;Inventory&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>who, definition_hash).ok_or(Error::&lt;T&gt;::NoPermission)<span class="question-mark">?</span>;
 
 			edition_ids.iter().try_for_each(|edition_id| -&gt; DispatchResult {
 				<span class="comment">// owner must own instances
@@ -3689,10 +3827,14 @@
 				<span class="comment">// A Fragment Instance that is copyable or that expires cannot be detached
 				</span><span class="kw">let </span>instance = &lt;Fragments&lt;T&gt;&gt;::get((definition_hash, edition_id, <span class="number">1</span>))
 					.ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
-				<span class="macro">ensure!</span>((instance.permissions &amp; FragmentPerms::COPY) != FragmentPerms::COPY, Error::&lt;T&gt;::NoPermission);
+				<span class="macro">ensure!</span>(
+					(instance.permissions &amp; FragmentPerms::COPY) != FragmentPerms::COPY,
+					Error::&lt;T&gt;::NoPermission
+				);
 				<span class="macro">ensure!</span>(instance.expiring_at.is_none(), Error::&lt;T&gt;::NoPermission);
 
-				<span class="kw">let </span>detach_hash = DetachHash::Instance(definition_hash, Compact(<span class="kw-2">*</span>edition_id), Compact(<span class="number">1</span>));
+				<span class="kw">let </span>detach_hash =
+					DetachHash::Instance(definition_hash, Compact(<span class="kw-2">*</span>edition_id), Compact(<span class="number">1</span>));
 				<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>detach_hash), Error::&lt;T&gt;::Detached);
 
 				<span class="prelude-val">Ok</span>(())
@@ -3700,8 +3842,10 @@
 
 			<span class="kw">let </span>detach_request = DetachRequest {
 				collection: DetachCollection::Instances(
-					edition_ids.into_iter().map(|edition_id| (definition_hash, Compact(edition_id), Compact(<span class="number">1</span>)))
-						.collect::&lt;Vec&lt;(Hash128, Compact&lt;InstanceUnit&gt;, Compact&lt;InstanceUnit&gt;)&gt;&gt;()
+					edition_ids
+						.into_iter()
+						.map(|edition_id| (definition_hash, Compact(edition_id), Compact(<span class="number">1</span>)))
+						.collect::&lt;Vec&lt;(Hash128, Compact&lt;InstanceUnit&gt;, Compact&lt;InstanceUnit&gt;)&gt;&gt;(),
 				),
 				target_chain,
 				target_account: target_account.into(),
@@ -3754,8 +3898,8 @@
 							});
 
 							<span class="comment">// fragments are unique so we are done here
-							</span><span class="kw">break</span>;
-						}
+							</span><span class="kw">break
+						</span>}
 					}
 				}
 			}
@@ -3821,7 +3965,7 @@
 			<span class="kw">let </span>(data_hash, data_len) = <span class="kw">match </span>options {
 				FragmentBuyOptions::UniqueData(data) =&gt; {
 					<span class="kw">if </span>fragment_data.unique.is_none() || quantity != <span class="number">1 </span>{
-						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ParamsNotValid.into());
+						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ParamsNotValid.into())
 					}
 
 					<span class="kw">let </span>data_hash = blake2_256(<span class="kw-2">&amp;</span>data);
@@ -3835,7 +3979,7 @@
 				},
 				FragmentBuyOptions::Quantity(<span class="kw">_</span>) =&gt; {
 					<span class="kw">if </span>fragment_data.unique.is_some() {
-						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ParamsNotValid.into());
+						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ParamsNotValid.into())
 					}
 
 					(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
@@ -3849,7 +3993,7 @@
 				<span class="comment">// if limited amount let&#39;s reduce the amount of units left
 				</span><span class="kw">if let </span><span class="prelude-val">Some</span>(units_left) = sale.units_left {
 					<span class="kw">if </span>quantity &gt; units_left.into() {
-						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::PublishedQuantityReached.into());
+						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::PublishedQuantityReached.into())
 					} <span class="kw">else </span>{
 						&lt;Publishing&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;*</span>definition_hash, |sale| {
 							<span class="kw">if let </span><span class="prelude-val">Some</span>(sale) = sale {
@@ -3866,7 +4010,7 @@
 					<span class="kw">let </span>left = max.saturating_sub(existing); <span class="comment">// `left` = `max` - `existing`
 					</span><span class="kw">if </span>quantity &gt; left {
 						<span class="comment">// Ensure the function parameter `quantity` is smaller than or equal to `left`
-						</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::MaxSupplyReached.into());
+						</span><span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::MaxSupplyReached.into())
 					}
 				}
 			}
@@ -3930,32 +4074,35 @@
 			from: <span class="kw-2">&amp;</span>T::AccountId,
 			to: <span class="kw-2">&amp;</span>T::AccountId,
 			amount: u128,
-			currency: Currency&lt;T::AssetId&gt;
+			currency: Currency&lt;T::AssetId&gt;,
 		) -&gt; DispatchResult {
-
 			<span class="kw">match </span>currency {
 				Currency::Custom(currency) =&gt; {
 					<span class="kw">let </span>minimum_balance_needed_to_exist =
 						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance(currency);
-					<span class="kw">let </span>price_balance: &lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::Balance =
-						amount.saturated_into();
+					<span class="kw">let </span>price_balance: &lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;
+						T::AccountId,
+					&gt;&gt;::Balance = amount.saturated_into();
 
 					<span class="macro">ensure!</span>(
-						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::balance(currency, from) &gt;=
-							price_balance + minimum_balance_needed_to_exist,
+						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::balance(
+							currency, from
+						) &gt;= price_balance + minimum_balance_needed_to_exist,
 						Error::&lt;T&gt;::InsufficientBalance
 					);
 					<span class="macro">ensure!</span>(
-						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::balance(currency, to) +
-							price_balance &gt;= minimum_balance_needed_to_exist,
+						&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Inspect&lt;T::AccountId&gt;&gt;::balance(
+							currency, to
+						) + price_balance &gt;= minimum_balance_needed_to_exist,
 						Error::&lt;T&gt;::ReceiverBelowMinimumBalance
 					);
 				},
 				Currency::Native =&gt; {
 					<span class="kw">let </span>minimum_balance_needed_to_exist =
 						&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance();
-					<span class="kw">let </span>price_balance: &lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::Balance =
-						amount.saturated_into();
+					<span class="kw">let </span>price_balance: &lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;
+						T::AccountId,
+					&gt;&gt;::Balance = amount.saturated_into();
 
 					<span class="macro">ensure!</span>(
 						pallet_balances::Pallet::&lt;T&gt;::free_balance(from) &gt;=
@@ -3963,11 +4110,11 @@
 						Error::&lt;T&gt;::InsufficientBalance
 					);
 					<span class="macro">ensure!</span>(
-						pallet_balances::Pallet::&lt;T&gt;::free_balance(to) +
-							price_balance &gt;= minimum_balance_needed_to_exist,
+						pallet_balances::Pallet::&lt;T&gt;::free_balance(to) + price_balance &gt;=
+							minimum_balance_needed_to_exist,
 						Error::&lt;T&gt;::ReceiverBelowMinimumBalance
 					);
-				}
+				},
 			}
 
 			<span class="prelude-val">Ok</span>(())
@@ -3978,9 +4125,8 @@
 			from: <span class="kw-2">&amp;</span>T::AccountId,
 			to: <span class="kw-2">&amp;</span>T::AccountId,
 			amount: u128,
-			currency: Currency&lt;T::AssetId&gt;
+			currency: Currency&lt;T::AssetId&gt;,
 		) -&gt; DispatchResult {
-
 			<span class="kw">match </span>currency {
 				Currency::Custom(currency) =&gt; {
 					&lt;pallet_assets::Pallet&lt;T&gt; <span class="kw">as </span>fungibles::Transfer&lt;T::AccountId&gt;&gt;::transfer(
@@ -3991,7 +4137,7 @@
 						amount.saturated_into(),
 						<span class="bool-val">true</span>, <span class="comment">// The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
 					</span>)
-						.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
+					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
 				},
 				Currency::Native =&gt; {
 					pallet_balances::Pallet::&lt;T&gt;::do_transfer(
@@ -4001,8 +4147,8 @@
 						amount.saturated_into(),
 						ExistenceRequirement::KeepAlive,
 					)
-						.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
-				}
+					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
+				},
 			}
 
 			<span class="prelude-val">Ok</span>(())
@@ -4024,8 +4170,14 @@
 			new_permissions: <span class="prelude-ty">Option</span>&lt;FragmentPerms&gt;,
 			expiration: <span class="prelude-ty">Option</span>&lt;T::BlockNumber&gt;,
 		) -&gt; DispatchResult {
-
-			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Instance(<span class="kw-2">*</span>definition_hash, Compact(edition_id), Compact(copy_id))), Error::&lt;T&gt;::Detached);
+			<span class="macro">ensure!</span>(
+				!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>DetachHash::Instance(
+					<span class="kw-2">*</span>definition_hash,
+					Compact(edition_id),
+					Compact(copy_id)
+				)),
+				Error::&lt;T&gt;::Detached
+			);
 
 			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
 
@@ -4042,10 +4194,13 @@
 			}
 
 			<span class="comment">// Only the owner of this fragment can transfer it
-			</span><span class="kw">let </span>ids =
-				&lt;Inventory&lt;T&gt;&gt;::get(from.clone(), definition_hash).ok_or(Error::&lt;T&gt;::NoPermission)<span class="question-mark">?</span>;
+			</span><span class="kw">let </span>ids = &lt;Inventory&lt;T&gt;&gt;::get(from.clone(), definition_hash)
+				.ok_or(Error::&lt;T&gt;::NoPermission)<span class="question-mark">?</span>;
 
-			<span class="macro">ensure!</span>(ids.contains(<span class="kw-2">&amp;</span>(Compact(edition_id), Compact(copy_id))), Error::&lt;T&gt;::NoPermission);
+			<span class="macro">ensure!</span>(
+				ids.contains(<span class="kw-2">&amp;</span>(Compact(edition_id), Compact(copy_id))),
+				Error::&lt;T&gt;::NoPermission
+			);
 
 			<span class="comment">// first of all make sure the item can be transferred
 			</span><span class="macro">ensure!</span>(
@@ -4076,7 +4231,6 @@
 			}
 
 			<span class="prelude-val">Ok</span>(())
-
 		}
 
 		<span class="doccomment">/// Transfer a Fragment Instance from `from` to `to`
@@ -4097,7 +4251,6 @@
 			new_permissions: <span class="prelude-ty">Option</span>&lt;FragmentPerms&gt;,
 			expiration: <span class="prelude-ty">Option</span>&lt;T::BlockNumber&gt;,
 		) -&gt; DispatchResult {
-
 			<span class="kw">let </span><span class="kw-2">mut </span>item_data = &lt;Fragments&lt;T&gt;&gt;::get((definition_hash, edition_id, copy_id))
 				.ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
 
@@ -4121,7 +4274,11 @@
 
 				&lt;CopiesCount&lt;T&gt;&gt;::insert((definition_hash, edition_id), Compact(copy));
 
-				&lt;Owners&lt;T&gt;&gt;::append(definition_hash, to.clone(), (Compact(edition_id), Compact(copy)));
+				&lt;Owners&lt;T&gt;&gt;::append(
+					definition_hash,
+					to.clone(),
+					(Compact(edition_id), Compact(copy)),
+				);
 
 				&lt;Inventory&lt;T&gt;&gt;::append(
 					to.clone(),
@@ -4180,7 +4337,11 @@
 					fragment_id: (edition_id, copy_id),
 				});
 
-				&lt;Owners&lt;T&gt;&gt;::append(definition_hash, to.clone(), (Compact(edition_id), Compact(copy_id)));
+				&lt;Owners&lt;T&gt;&gt;::append(
+					definition_hash,
+					to.clone(),
+					(Compact(edition_id), Compact(copy_id)),
+				);
 
 				&lt;Inventory&lt;T&gt;&gt;::append(
 					to.clone(),
@@ -4203,14 +4364,13 @@
 			}
 
 			<span class="prelude-val">Ok</span>(())
-
 		}
 	}
 
 	<span class="doccomment">/// Implementation Block of `Pallet` specifically for RPC-related functions
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt;
-		<span class="kw">where
-			</span>T::AccountId: UncheckedFrom&lt;T::Hash&gt; + AsRef&lt;[u8]&gt;,
+	<span class="kw">where
+		</span>T::AccountId: UncheckedFrom&lt;T::Hash&gt; + AsRef&lt;[u8]&gt;,
 	{
 		<span class="comment">// pub fn get_definitions_old(params: GetDefinitionsParams&lt;T::AccountId, Vec&lt;u8&gt;&gt;) -&gt; Result&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
 		//
@@ -4526,19 +4686,19 @@
 				</span>.try_into()
 				.map_err(|<span class="kw">_</span>| <span class="string">&quot;Failed to convert u8 slice to Hash128&quot;</span>)<span class="question-mark">?</span>;
 
-			<span class="kw">if </span>params.copy_id
-				&gt; CopiesCount::&lt;T&gt;::get((definition_hash, params.edition_id))
-				.unwrap_or(Compact(<span class="number">0</span>))
-				.into()
+			<span class="kw">if </span>params.copy_id &gt;
+				CopiesCount::&lt;T&gt;::get((definition_hash, params.edition_id))
+					.unwrap_or(Compact(<span class="number">0</span>))
+					.into()
 			{
-				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Instance not found&quot;</span>.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Instance not found&quot;</span>.into())
 			}
 
 			<span class="kw">let </span>owner = Owners::&lt;T&gt;::iter_prefix(definition_hash)
 				.find(|(_owner, vec_instances)| {
 					vec_instances.iter().any(|(edition_id, copy_id)| {
-						Compact(params.edition_id) == <span class="kw-2">*</span>edition_id
-							&amp;&amp; Compact(params.copy_id) == <span class="kw-2">*</span>copy_id
+						Compact(params.edition_id) == <span class="kw-2">*</span>edition_id &amp;&amp;
+							Compact(params.copy_id) == <span class="kw-2">*</span>copy_id
 					})
 				})
 				.ok_or(<span class="string">&quot;Owner not found (this should never happen)&quot;</span>)<span class="question-mark">?

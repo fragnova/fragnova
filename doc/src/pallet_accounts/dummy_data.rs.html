@@ -412,13 +412,10 @@
 <span id="412">412</span>
 <span id="413">413</span>
 <span id="414">414</span>
-<span id="415">415</span>
-<span id="416">416</span>
-<span id="417">417</span>
-</pre><pre class="rust"><code><span class="kw">use </span>std::str::FromStr;
-<span class="kw">use crate</span>::<span class="kw-2">*</span>;
+</pre><pre class="rust"><code><span class="kw">use crate</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span>std::str::FromStr;
 
-<span class="kw">use </span>ethabi::ethereum_types::{Address};
+<span class="kw">use </span>ethabi::ethereum_types::Address;
 
 <span class="kw">use </span>sp_core::{
 	ecdsa,
@@ -427,6 +424,7 @@
 	H160, <span class="comment">// size of an Ethereum Account Address
 	</span>U256,
 };
+<span class="kw">use </span>sp_runtime::traits::Zero;
 
 <span class="attribute">#[cfg(test)]
 </span><span class="kw">fn </span>get_ethereum_chain_id() -&gt; u64 {
@@ -457,8 +455,8 @@
 
 <span class="attribute">#[cfg(test)]
 </span><span class="kw">fn </span>get_genesis_hash() -&gt; sp_core::H256 {
-	<span class="kw">use </span>sp_runtime::traits::Zero;
 	<span class="kw">use </span><span class="kw">crate</span>::mock::Test;
+	<span class="kw">use </span>sp_runtime::traits::Zero;
 	&lt;frame_system::Pallet&lt;Test&gt;&gt;::block_hash(&lt;Test <span class="kw">as </span>frame_system::Config&gt;::BlockNumber::zero())
 }
 <span class="comment">// (If pallet_accounts::dummy_data is being built in another pallet)
@@ -472,7 +470,6 @@
 	clamor_account_id: sp_core::ed25519::Public,
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 ) -&gt; sp_core::ecdsa::Signature {
-
 	<span class="kw">let </span>sender_string = <span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(clamor_account_id));
 	<span class="kw">let </span>genesis_hash_string = <span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(get_genesis_hash()));
 
@@ -521,7 +518,6 @@
 	sender: H160,
 	contract: H160,
 ) -&gt; sp_core::ecdsa::Signature {
-
 	<span class="kw">let </span>message = <span class="string">b&quot;FragLock&quot;</span>.to_vec();
 	<span class="kw">let </span>message: Vec&lt;u8&gt; = [<span class="kw-2">&amp;</span>[<span class="number">0x19</span>, <span class="number">0x01</span>],
 		<span class="comment">// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
@@ -568,7 +564,6 @@
 	sender: H160,
 	contract: H160,
 ) -&gt; sp_core::ecdsa::Signature {
-
 	<span class="kw">let </span>message = <span class="string">b&quot;FragUnlock&quot;</span>.to_vec();
 	<span class="kw">let </span>message: Vec&lt;u8&gt; = [<span class="kw-2">&amp;</span>[<span class="number">0x19</span>, <span class="number">0x01</span>],
 		<span class="comment">// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
@@ -609,10 +604,7 @@
 	ethereum_account_pair.sign_prehashed(<span class="kw-2">&amp;</span>hashed_message)
 }
 
-<span class="kw">pub fn </span>get_ethereum_public_address(
-	ecdsa_pair_struct: <span class="kw-2">&amp;</span>ecdsa::Pair,
-) -&gt; H160 {
-
+<span class="kw">pub fn </span>get_ethereum_public_address(ecdsa_pair_struct: <span class="kw-2">&amp;</span>ecdsa::Pair) -&gt; H160 {
 	<span class="kw">let </span>ecdsa_public_struct = ecdsa_pair_struct.public();
 
 	<span class="kw">let </span>compressed_public_key = ecdsa_public_struct.<span class="number">0</span>;
@@ -700,7 +692,9 @@
 		};
 
 		<span class="kw">let </span>contracts = <span class="macro">vec!</span>[String::from(<span class="string">&quot;0x8a819F380ff18240B5c11010285dF63419bdb2d5&quot;</span>)];
-		<span class="kw">let </span>contract = Address::from_str(<span class="kw-2">&amp;</span>contracts[<span class="number">0</span>].as_str()[<span class="number">2</span>..]).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid sender&quot;</span>).unwrap();
+		<span class="kw">let </span>contract = Address::from_str(<span class="kw-2">&amp;</span>contracts[<span class="number">0</span>].as_str()[<span class="number">2</span>..])
+			.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response - invalid sender&quot;</span>)
+			.unwrap();
 		<span class="kw">let </span>lock = Lock {
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([<span class="number">69u8</span>; <span class="number">32</span>]),
@@ -727,7 +721,7 @@
 					sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
 					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
 				),
-				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>])
+				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
 			},
 			ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
 		};
@@ -762,7 +756,7 @@
 					sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
 					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
 				),
-				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>])
+				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
 			},
 			ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
 		};
@@ -794,7 +788,7 @@
 						sp_core::ed25519::Public::from_raw([<span class="number">4u8</span>; <span class="number">32</span>]),
 						sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
 					),
-					_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>])
+					_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
 				},
 				ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),
 			},

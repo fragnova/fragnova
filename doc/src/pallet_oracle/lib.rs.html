@@ -581,8 +581,6 @@
 <span id="581">581</span>
 <span id="582">582</span>
 <span id="583">583</span>
-<span id="584">584</span>
-<span id="585">585</span>
 </pre><pre class="rust"><code><span class="doccomment">//! pallet-oracle queries the ChainLink Price Feed smart contract on Ethereum to fetch the price of FRAG/USD.
 //!
 //! It works as an Offchain Worker that will be triggered after every block, to fetch the current price.
@@ -616,10 +614,10 @@
 </span><span class="kw">pub const </span>KEY_TYPE: KeyTypeId = KeyTypeId(<span class="kw-2">*</span><span class="string">b&quot;orac&quot;</span>);
 
 <span class="doccomment">/// The encoded function in the Chainlink smart contract to call in eth_call (see README)
-</span><span class="kw">const </span>CHAINLINK_CONTRACT_FUNCTION: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000&quot;</span>;
+</span><span class="kw">const </span>CHAINLINK_CONTRACT_FUNCTION: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str =
+	<span class="string">&quot;0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000&quot;</span>;
 <span class="doccomment">/// The encoded function in the Uniswap smart contract to call in eth_call (see README)
 </span><span class="kw">const </span>UNISWAP_CONTRACT_FUNCTION: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str = <span class="string">&quot;0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000&quot;</span>;
-
 
 <span class="doccomment">/// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
 /// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
@@ -688,16 +686,17 @@
 <span class="attribute">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>core::str::FromStr;
 	<span class="kw">use </span>ethabi::{ethereum_types::U256, ParamType};
 	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>scale_info::prelude::{format, string::String};
-	<span class="kw">use </span>core::str::FromStr;
 	<span class="kw">use </span>sp_core::{ed25519, offchain::Timestamp, H256};
 	<span class="kw">use </span>sp_runtime::{
-		traits::ValidateUnsigned, transaction_validity::TransactionSource, MultiSigner,
+		traits::{ValidateUnsigned, Zero},
+		transaction_validity::TransactionSource,
+		MultiSigner,
 	};
-	<span class="kw">use </span>sp_runtime::traits::Zero;
 
 	<span class="kw">const </span>FETCH_TIMEOUT_PERIOD: u64 = <span class="number">3000</span>; <span class="comment">// in milli-seconds
 
@@ -942,7 +941,8 @@
 		</span><span class="kw">pub fn </span>get_price() -&gt; <span class="prelude-ty">Result</span>&lt;u128, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
 			<span class="kw">let </span>price = &lt;Price&lt;T&gt;&gt;::get() <span class="kw">as </span>f64 / <span class="number">1e6</span>; <span class="comment">// 1e6 is the number of decimal of USDT
 			</span><span class="kw">let </span>price = <span class="macro">format!</span>(<span class="string">&quot;{:.0}&quot;</span>, price);
-			<span class="kw">let </span>price = u128::from_str(<span class="kw-2">&amp;</span>price).map_err(|<span class="kw">_</span>| <span class="string">&quot;Error while parsing price from oracle&quot;</span>)<span class="question-mark">?</span>;
+			<span class="kw">let </span>price =
+				u128::from_str(<span class="kw-2">&amp;</span>price).map_err(|<span class="kw">_</span>| <span class="string">&quot;Error while parsing price from oracle&quot;</span>)<span class="question-mark">?</span>;
 
 			<span class="prelude-val">Ok</span>(price)
 		}
@@ -1037,12 +1037,10 @@
 		/// The pool used at this moment is ETH/USDT. (TODO: it needs to be changed when the FRAG pool will be available).
 		</span><span class="kw">pub fn </span>get_eth_call_data(provider: <span class="kw-2">&amp;</span>OracleProvider) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str {
 			<span class="kw">match </span>provider {
-
-				OracleProvider::Chainlink(<span class="kw">_</span>) =&gt;
-					CHAINLINK_CONTRACT_FUNCTION,
+				OracleProvider::Chainlink(<span class="kw">_</span>) =&gt; CHAINLINK_CONTRACT_FUNCTION,
 
 				OracleProvider::Uniswap(<span class="kw">_</span>) =&gt;
-					<span class="comment">// encoding of quoteExactInputSingle to ETH/USDT pool. TODO to change when FRAG pool will be known
+				<span class="comment">// encoding of quoteExactInputSingle to ETH/USDT pool. TODO to change when FRAG pool will be known
 					</span>UNISWAP_CONTRACT_FUNCTION,
 			}
 		}
@@ -1093,10 +1091,8 @@
 				},
 
 				OracleProvider::Uniswap(<span class="kw">_</span>) =&gt; {
-					<span class="kw">let </span>data = ethabi::decode(
-						<span class="kw-2">&amp;</span>[ParamType::Uint(<span class="number">256</span>)],
-						<span class="kw-2">&amp;</span>data,
-					).map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
+					<span class="kw">let </span>data = ethabi::decode(<span class="kw-2">&amp;</span>[ParamType::Uint(<span class="number">256</span>)], <span class="kw-2">&amp;</span>data)
+						.map_err(|<span class="kw">_</span>| <span class="string">&quot;Invalid response&quot;</span>)<span class="question-mark">?</span>;
 
 					<span class="kw">let </span>price: U256 = data[<span class="number">0</span>].clone().into_uint().ok_or_else(|| <span class="string">&quot;Invalid token&quot;</span>)<span class="question-mark">?</span>;
 					<span class="macro">ensure!</span>(price.gt(<span class="kw-2">&amp;</span>U256::zero()), <span class="string">&quot;Price from oracle is &lt;= 0&quot;</span>);

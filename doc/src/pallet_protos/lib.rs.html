@@ -1431,6 +1431,36 @@
 <span id="1431">1431</span>
 <span id="1432">1432</span>
 <span id="1433">1433</span>
+<span id="1434">1434</span>
+<span id="1435">1435</span>
+<span id="1436">1436</span>
+<span id="1437">1437</span>
+<span id="1438">1438</span>
+<span id="1439">1439</span>
+<span id="1440">1440</span>
+<span id="1441">1441</span>
+<span id="1442">1442</span>
+<span id="1443">1443</span>
+<span id="1444">1444</span>
+<span id="1445">1445</span>
+<span id="1446">1446</span>
+<span id="1447">1447</span>
+<span id="1448">1448</span>
+<span id="1449">1449</span>
+<span id="1450">1450</span>
+<span id="1451">1451</span>
+<span id="1452">1452</span>
+<span id="1453">1453</span>
+<span id="1454">1454</span>
+<span id="1455">1455</span>
+<span id="1456">1456</span>
+<span id="1457">1457</span>
+<span id="1458">1458</span>
+<span id="1459">1459</span>
+<span id="1460">1460</span>
+<span id="1461">1461</span>
+<span id="1462">1462</span>
+<span id="1463">1463</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1645,9 +1675,12 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
-	<span class="kw">use </span>pallet_detach::{DetachCollection, DetachRequest, DetachRequests, DetachedHashes, SupportedChains, DetachHash};
-	<span class="kw">use </span>sp_clamor::CID_PREFIX;
 	<span class="kw">use </span>pallet_clusters::Cluster;
+	<span class="kw">use </span>pallet_detach::{
+		DetachCollection, DetachHash, DetachRequest, DetachRequests, DetachedHashes,
+		SupportedChains,
+	};
+	<span class="kw">use </span>sp_clamor::CID_PREFIX;
 	<span class="kw">use </span>sp_runtime::SaturatedConversion;
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -1701,9 +1734,15 @@
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>MetaKeysIndex&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, u64, ValueQuery&gt;;
 
-	<span class="doccomment">/// **StorageMap** that maps a **Trait ID** to the name of the Trait itself
+	<span class="doccomment">/// **StorageMap** that maps a **Trait ID** to the **name of the Trait**
 	</span><span class="attribute">#[pallet::storage]
 	</span><span class="kw">pub type </span>Traits&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash64, Vec&lt;u8&gt;, ValueQuery&gt;;
+
+	<span class="doccomment">/// **StorageMap** that maps a **Shards-Proto** (i.e a Proto-Fragment that is a Shards Script) to
+	/// **all the traits** that are
+	/// **in the &quot;implementing&quot; field (`ShardsScriptInfo::implementing`) of the Shards-Proto&#39;s category** or **in the &quot;implementing&quot; field of one Shard-Proto&#39;s Shard-Proto ancestor&#39;s category**
+	</span><span class="attribute">#[pallet::storage]
+	</span><span class="kw">pub type </span>TraitImplsByShard&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, Hash256, Vec&lt;Hash64&gt;&gt;;
 
 	<span class="doccomment">/// **StorageMap** that maps a **Proto-Fragment&#39;s data&#39;s hash** to a ***Proto* struct (of the
 	/// aforementioned Proto-Fragment)**
@@ -1869,6 +1908,18 @@
 					</span>&lt;Traits&lt;T&gt;&gt;::insert(trait_id, info.name.encode());
 
 					Categories::Trait(<span class="prelude-val">Some</span>(trait_id))
+				},
+				Categories::Shards(shards_script_info_struct) =&gt; {
+					<span class="comment">// let format = &amp;shards_script_info_struct.format;
+
+					</span><span class="kw">let </span>trait_implementations = [
+						<span class="kw-2">&amp;</span>shards_script_info_struct.requiring[..],
+						<span class="kw-2">&amp;</span>shards_script_info_struct.implementing[..],
+					]
+					.concat();
+					TraitImplsByShard::&lt;T&gt;::insert(proto_hash, trait_implementations);
+
+					Categories::Shards(shards_script_info_struct)
 				},
 				<span class="kw">_ </span>=&gt; category,
 			};
@@ -2277,9 +2328,9 @@
 					ProtoOwner::User(owner) =&gt; <span class="macro">ensure!</span>(owner == who, Error::&lt;T&gt;::Unauthorized),
 					ProtoOwner::ExternalAsset(_ext_asset) =&gt;
 					<span class="comment">// We don&#39;t allow detaching external assets
-						</span>{
-							<span class="macro">ensure!</span>(<span class="bool-val">false</span>, Error::&lt;T&gt;::Unauthorized)
-						},
+					</span>{
+						<span class="macro">ensure!</span>(<span class="bool-val">false</span>, Error::&lt;T&gt;::Unauthorized)
+					},
 				};
 
 				<span class="kw">let </span>detach_hash = DetachHash::Proto(<span class="kw-2">*</span>proto_hash);
@@ -2291,7 +2342,7 @@
 			<span class="kw">let </span>detach_request = DetachRequest {
 				collection: DetachCollection::Protos(proto_hashes),
 				target_chain,
-				target_account: target_account.into()
+				target_account: target_account.into(),
 			};
 
 			&lt;DetachRequests&lt;T&gt;&gt;::mutate(|requests| {
@@ -2780,13 +2831,22 @@
 
 					<span class="kw">match </span>proto_struct.license {
 						UsageLicense::Open =&gt; {
-							(<span class="kw-2">*</span>map_proto).insert(String::from(<span class="string">&quot;license&quot;</span>), Value::String(String::from(<span class="string">&quot;open&quot;</span>)));
+							(<span class="kw-2">*</span>map_proto).insert(
+								String::from(<span class="string">&quot;license&quot;</span>),
+								Value::String(String::from(<span class="string">&quot;open&quot;</span>)),
+							);
 						},
 						UsageLicense::Closed =&gt; {
-							(<span class="kw-2">*</span>map_proto).insert(String::from(<span class="string">&quot;license&quot;</span>), Value::String(String::from(<span class="string">&quot;closed&quot;</span>)));
+							(<span class="kw-2">*</span>map_proto).insert(
+								String::from(<span class="string">&quot;license&quot;</span>),
+								Value::String(String::from(<span class="string">&quot;closed&quot;</span>)),
+							);
 						},
 						UsageLicense::Contract(contract) =&gt; {
-							(<span class="kw-2">*</span>map_proto).insert(String::from(<span class="string">&quot;license&quot;</span>), Value::String(hex::encode(contract)));
+							(<span class="kw-2">*</span>map_proto).insert(
+								String::from(<span class="string">&quot;license&quot;</span>),
+								Value::String(hex::encode(contract)),
+							);
 						},
 					}
 

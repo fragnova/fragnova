@@ -228,6 +228,8 @@
 <span id="228">228</span>
 <span id="229">229</span>
 <span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Helper Functions and Types that are used in other Packages of the this Workspace
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
@@ -390,7 +392,11 @@
 </span>}
 
 <span class="doccomment">/// Make an HTTP POST Request with data `body` to the URL `url`
-</span><span class="kw">pub fn </span>http_json_post(url: <span class="kw-2">&amp;</span>str, body: <span class="kw-2">&amp;</span>[u8], wait: <span class="prelude-ty">Option</span>&lt;Timestamp&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
+</span><span class="kw">pub fn </span>http_json_post(
+	url: <span class="kw-2">&amp;</span>str,
+	body: <span class="kw-2">&amp;</span>[u8],
+	wait: <span class="prelude-ty">Option</span>&lt;Timestamp&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
 	<span class="macro">log::debug!</span>(<span class="string">&quot;sp_clamor http_request called...&quot;</span>);
 
 	<span class="kw">let </span>request =
@@ -417,8 +423,8 @@
 					<span class="kw">let </span>len =
 						offchain::http_response_read_body(request, <span class="kw-2">&amp;mut </span>buffer, <span class="prelude-val">None</span>).unwrap();
 					<span class="kw">if </span>len == <span class="number">0 </span>{
-						<span class="kw">break</span>;
-					}
+						<span class="kw">break
+					</span>}
 					response_body.extend_from_slice(<span class="kw-2">&amp;</span>buffer[..len <span class="kw">as </span>usize]);
 				}
 				<span class="prelude-val">Ok</span>(response_body)
@@ -452,9 +458,7 @@
 }
 
 <span class="doccomment">/// **Get** an **Account ID** deterministically computed from an input `hash`**.
-</span><span class="kw">pub fn </span>get_vault_id&lt;TAccountId: Encode + Decode&gt;(
-	hash: Hash128
-) -&gt; TAccountId {
+</span><span class="kw">pub fn </span>get_vault_id&lt;TAccountId: Encode + Decode&gt;(hash: Hash128) -&gt; TAccountId {
 	<span class="kw">let </span>hash = blake2_256(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="string">b&quot;fragnova-vault&quot;</span>[..], <span class="kw-2">&amp;</span>hash].concat());
 	TAccountId::decode(<span class="kw-2">&amp;mut &amp;</span>hash[..]).expect(<span class="string">&quot;T::AccountId should decode&quot;</span>)
 }
