@@ -212,9 +212,12 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
-	use pallet_detach::{DetachCollection, DetachRequest, DetachRequests, DetachedHashes, SupportedChains, DetachHash};
-	use sp_clamor::CID_PREFIX;
 	use pallet_clusters::Cluster;
+	use pallet_detach::{
+		DetachCollection, DetachHash, DetachRequest, DetachRequests, DetachedHashes,
+		SupportedChains,
+	};
+	use sp_clamor::CID_PREFIX;
 	use sp_runtime::SaturatedConversion;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -268,9 +271,15 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MetaKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// **StorageMap** that maps a **Trait ID** to the name of the Trait itself
+	/// **StorageMap** that maps a **Trait ID** to the **name of the Trait**
 	#[pallet::storage]
 	pub type Traits<T: Config> = StorageMap<_, Identity, Hash64, Vec<u8>, ValueQuery>;
+
+	/// **StorageMap** that maps a **Shards-Proto** (i.e a Proto-Fragment that is a Shards Script) to
+	/// **all the traits** that are
+	/// **in the "implementing" field (`ShardsScriptInfo::implementing`) of the Shards-Proto's category** or **in the "implementing" field of one Shard-Proto's Shard-Proto ancestor's category**
+	#[pallet::storage]
+	pub type TraitImplsByShard<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash64>>;
 
 	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the
 	/// aforementioned Proto-Fragment)**
@@ -436,6 +445,18 @@ pub mod pallet {
 					<Traits<T>>::insert(trait_id, info.name.encode());
 
 					Categories::Trait(Some(trait_id))
+				},
+				Categories::Shards(shards_script_info_struct) => {
+					// let format = &shards_script_info_struct.format;
+
+					let trait_implementations = [
+						&shards_script_info_struct.requiring[..],
+						&shards_script_info_struct.implementing[..],
+					]
+					.concat();
+					TraitImplsByShard::<T>::insert(proto_hash, trait_implementations);
+
+					Categories::Shards(shards_script_info_struct)
 				},
 				_ => category,
 			};
@@ -844,9 +865,9 @@ pub mod pallet {
 					ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
 					ProtoOwner::ExternalAsset(_ext_asset) =>
 					// We don't allow detaching external assets
-						{
-							ensure!(false, Error::<T>::Unauthorized)
-						},
+					{
+						ensure!(false, Error::<T>::Unauthorized)
+					},
 				};
 
 				let detach_hash = DetachHash::Proto(*proto_hash);
@@ -858,7 +879,7 @@ pub mod pallet {
 			let detach_request = DetachRequest {
 				collection: DetachCollection::Protos(proto_hashes),
 				target_chain,
-				target_account: target_account.into()
+				target_account: target_account.into(),
 			};
 
 			<DetachRequests<T>>::mutate(|requests| {
@@ -1347,13 +1368,22 @@ pub mod pallet {
 
 					match proto_struct.license {
 						UsageLicense::Open => {
-							(*map_proto).insert(String::from("license"), Value::String(String::from("open")));
+							(*map_proto).insert(
+								String::from("license"),
+								Value::String(String::from("open")),
+							);
 						},
 						UsageLicense::Closed => {
-							(*map_proto).insert(String::from("license"), Value::String(String::from("closed")));
+							(*map_proto).insert(
+								String::from("license"),
+								Value::String(String::from("closed")),
+							);
 						},
 						UsageLicense::Contract(contract) => {
-							(*map_proto).insert(String::from("license"), Value::String(hex::encode(contract)));
+							(*map_proto).insert(
+								String::from("license"),
+								Value::String(hex::encode(contract)),
+							);
 						},
 					}
 

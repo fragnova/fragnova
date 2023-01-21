@@ -344,7 +344,7 @@ pub mod pallet {
 
 			// Either the list of members or the list of new settings must have values.
 			if members.len().is_zero() {
-				return Err(Error::<T>::InvalidInput.into());
+				return Err(Error::<T>::InvalidInput.into())
 			}
 
 			let role_name = role_name.into_inner();
@@ -388,7 +388,7 @@ pub mod pallet {
 
 			// Either the list of members or the list of new settings must have values.
 			if members.len().is_zero() {
-				return Err(Error::<T>::InvalidInput.into());
+				return Err(Error::<T>::InvalidInput.into())
 			}
 
 			let role_name = role_name.into_inner();

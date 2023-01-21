@@ -26,8 +26,8 @@ mod copied_from_pallet_accounts {
 }
 
 mod upload_tests {
-	use sp_runtime::BoundedVec;
 	use super::*;
+	use sp_runtime::BoundedVec;
 
 	pub fn upload(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -145,10 +145,7 @@ mod patch_tests {
 
 			assert_ok!(patch_(dd.account_id, &patch));
 			let proto_struct = <Protos<Test>>::get(patch.proto_fragment.get_proto_hash()).unwrap();
-			assert_eq!(
-				proto_struct.license,
-				UsageLicense::Open,
-			);
+			assert_eq!(proto_struct.license, UsageLicense::Open,);
 			assert!(proto_struct.patches.contains(&ProtoPatch {
 				block: block_number,
 				data_hash: patch.get_data_hash(),
@@ -368,8 +365,8 @@ mod set_metadata_tests {
 }
 
 mod detach_tests {
-	use pallet_detach::DetachCollection;
 	use super::*;
+	use pallet_detach::DetachCollection;
 
 	pub fn detach_(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -377,9 +374,13 @@ mod detach_tests {
 	) -> DispatchResult {
 		ProtosPallet::detach(
 			Origin::signed(signer),
-			detach.proto_fragments.iter().map(|proto_fragment| proto_fragment.get_proto_hash()).collect::<Vec<Hash256>>(),
+			detach
+				.proto_fragments
+				.iter()
+				.map(|proto_fragment| proto_fragment.get_proto_hash())
+				.collect::<Vec<Hash256>>(),
 			detach.target_chain,
-			detach.target_account.clone().try_into().unwrap()
+			detach.target_account.clone().try_into().unwrap(),
 		)
 	}
 
@@ -397,13 +398,17 @@ mod detach_tests {
 
 			assert_eq!(
 				pallet_detach::DetachRequests::<Test>::get(),
-				vec![
-					pallet_detach::DetachRequest {
-						collection: DetachCollection::Protos(detach.proto_fragments.iter().map(|proto_fragment| proto_fragment.get_proto_hash()).collect()),
-						target_chain: detach.target_chain,
-						target_account: detach.target_account,
-					},
-				]
+				vec![pallet_detach::DetachRequest {
+					collection: DetachCollection::Protos(
+						detach
+							.proto_fragments
+							.iter()
+							.map(|proto_fragment| proto_fragment.get_proto_hash())
+							.collect()
+					),
+					target_chain: detach.target_chain,
+					target_account: detach.target_account,
+				},]
 			);
 		});
 	}

@@ -1,7 +1,9 @@
 use crate as pallet_clusters;
 use crate::*;
-use frame_support::parameter_types;
-use frame_support::traits::{ConstU64, ConstU128, ConstU32};
+use frame_support::{
+	parameter_types,
+	traits::{ConstU128, ConstU32, ConstU64},
+};
 use frame_system;
 use sp_core::H256;
 use sp_runtime::{
@@ -52,7 +54,7 @@ impl frame_system::Config for Test {
 	type DbWeight = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData =pallet_balances::AccountData<u128>;
+	type AccountData = pallet_balances::AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();

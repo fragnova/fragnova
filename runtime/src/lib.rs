@@ -2,6 +2,50 @@
 //!
 //! The runtime for a Substrate node contains all of the business logic
 //! for executing transactions, saving state transitions, and interacting with the outer node.
+//!
+//! # Footnotes
+//!
+//! ## Weights
+//!
+//! In Substrate, **weight** is a **unit of measurement** to measure **computation time**.
+//!
+//! "Built into FRAME, it is hardcoded that 10**12 weight is equivalent to 1 second of computation time [on the reference hardware]" - https://www.youtube.com/watch?v=i3zW4wGexAc&t=138s
+//!
+//! Therefore, one unit of weight is one picosecond of computation time on the reference hardware. Source: https://docs.substrate.io/reference/glossary/#weight
+//!
+//! ### What does "Maximum Block Weight" mean?
+//!
+//! The **maximum block weight** is the **maximum amount of computation time** that a Node is **allowed to spend in constructing a block**.
+//!
+//! In Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** with an allocation of:
+//! - One third for block construction
+//! - One third for network propagation
+//! - One third for import and verification
+//!
+//! Source: https://docs.substrate.io/reference/glossary/#weight
+//!
+//! ## Transaction lifecycle (i.e the sequence of events that happens when a transaction/extrinsic is sent to a Substrate Blockchain):
+//!
+//! 1. The transaction (i.e the payload) is sent to a **single Substrate Node** using an RPC
+//! 2. The transaction enters the transaction pool of this Substrate Node
+//! 2a. In the transaction pool, the payload is checked to be valid in `validate_transaction()`
+//!
+//! 3. The Substrate Node gossips this transaction to peer nodes using libp2p
+//! 3a. The peer nodes also check if this transaction is valid by running `validate_transaction()`
+//!
+//! 4. One of the nodes creates a block which will include the transaction.
+//! 5. This "block author node" will gossip the block to peer nodes using libp2p
+//!
+//! 6. The gossiped block will be imported by the peer nodes (and surprisingly by the "block author node" also).
+//! 6a. All the transactions of the imported block will be executed. (This includes the transaction-in-question obviously)
+//!
+//! Source: https://www.youtube.com/watch?v=3pfM0GOp02c&ab_channel=ParityTech
+//!
+//! TODO - Giovanni & Alessandro, notice that once the block is imported (i.e step 6a) - all its transactions/extrinsics get executed right-away (if we take what the presenter said in the YouTube video completely literally). It does not validate the transactions (i.e perform `validate_transaction` on them) in the block before executing them!!! Isn't this a problem !?!?
+//!
+//! # Transaction Format
+//!
+//! Please see the types `UncheckedExtrinsic` and `SignedExtra` below to know what the transaction format should be when submitting a transaction to a **Node of this Blockchain** via RPC
 
 // Some of the Substrate Macros in this file throw missing_docs warnings.
 // That's why we allow this file to have missing_docs.
@@ -19,7 +63,10 @@ use frame_support::{
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 	weights::DispatchClass,
 };
-use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights},};
+use frame_system::{
+	limits::{BlockLength, BlockWeights},
+	EnsureRoot,
+};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -31,10 +78,12 @@ use sp_runtime::{
 	traits::{
 		BlakeTwo256, Block as BlockT, Extrinsic as ExtrinsicT, IdentifyAccount, NumberFor, Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
+	},
 	ApplyExtrinsicResult, MultiSignature,
 };
-use sp_std::prelude::*;
+use sp_std::{prelude::*, str};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -50,6 +99,7 @@ pub use frame_support::{
 	StorageValue,
 };
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_fragments::Call as FragmentsCall;
 pub use pallet_protos::Call as ProtosCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
@@ -59,8 +109,7 @@ pub use sp_runtime::{Perbill, Permill};
 
 use scale_info::prelude::string::String;
 
-use codec::Encode;
-
+use codec::{Decode, Encode};
 use sp_runtime::traits::{ConstU8, SaturatedConversion, StaticLookup};
 
 use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
@@ -68,6 +117,23 @@ use pallet_protos::{GetGenealogyParams, GetProtosParams};
 
 pub use pallet_contracts::Schedule;
 use pallet_oracle::OracleProvider;
+
+// IMPORTS BELOW ARE USED IN the module `validation_logic`
+use protos::categories::{
+	AudioCategories,
+	BinaryCategories,
+	Categories,
+	ModelCategories,
+	ShardsFormat,
+	// ShardsScriptInfo,
+	// ShardsTrait,
+	TextCategories,
+	TextureCategories,
+	VectorCategories,
+	VideoCategories,
+};
+use protos::traits::Trait;
+use sp_clamor::Hash256;
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.
@@ -91,12 +157,6 @@ pub type Index = u32;
 
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
-
-/// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
-
-/// The payload being signed in transactions.
-pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 
 /// Related to Index pallet
 pub type AccountIndex = u64;
@@ -190,11 +250,18 @@ pub fn native_version() -> NativeVersion {
 /// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
 /// This is used to limit the maximal weight of a single extrinsic.
 const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
-/// We allow `Normal` extrinsics to fill up the block up to 75%, the rest can be used
-/// by  Operational  extrinsics.
+/// We allow `Normal` extrinsics to fill up the block up to 75% (i.e up to 75% of the block length and block weight of a block can be filled up by Normal extrinsics).
+/// The rest can be used by Operational extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-/// We allow for 2 seconds of compute with a 6 second average block time.
+/// TODO Documentation - It is actually the "target block weight", not "maximum block weight".
+/// The **maximum block weight** is the **maximum amount of computation time** (assuming no extrinsic class uses its `reserved` space - please see the type `RuntimeBlockWeights` below to understand what `reserved` is)
+/// that is **allowed to be spent in constructing a block** by a Node.
+///
+/// Here, we set this to 2 seconds because we want a 6 second average block time. (since in Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** - see the crate documentation above for more information)
 const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+
+/// The maximum possible length (in bytes) that a Clamor Block can be
+pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
 
 // When to use:
 //
@@ -207,25 +274,80 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 //
 // Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
-	/// TODO: Documentation
+	/// Version of the runtime.
 	pub const Version: RuntimeVersion = VERSION;
-	/// TODO: Documentation
+	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	pub const BlockHashCount: BlockNumber = 2400;
-	/// TODO: Documentation
+	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	pub const SS58Prefix: u8 = 93;
 
-	/// We allow for 2 seconds of compute with a 6 second average block time.
+	/// `max_with_normal_ratio(max: u32, normal: Perbill)` creates a new `BlockLength` with `max` for `Operational` & `Mandatory` and `normal * max` for `Normal`.
+	///
+	/// Note: `BlockLength` is a struct that specifies the maximum total length (in bytes) each extrinsic class can have in a block.
+	/// The maximum possible length that a block can be is the maximum of these maximums - i.e `MAX(BlockLength::max)`.
+	///
+	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockLength.html#
 	pub RuntimeBlockLength: BlockLength = BlockLength
-		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
 
+	/// Set the "target block weight" for the Clamor Blockchain.
+	///
+	/// # Footnotes
+	///
+	/// ## `BlockWeights::builder()`
+	///
+	/// `BlockWeights::builder()` is called to start constructing a new `BlockWeights` object. By default all kinds except of Mandatory extrinsics are disallowed.
+	///
+	/// ## `BlockWeights` struct
+	///
+	/// A `BlockWeights` struct contains the following information for each extrinsic class:
+	/// 1. **Base weight of any extrinsic** of the **extrinsic class** (`WeightsPerClass::base_extrinsic`): The "overhead cost" (i.e overhead computation time) when running any extrinsic of the extrinsic class.
+	/// 2. **Maximum possible weight** that can be **consumed by a single extrinsic** of the **extrinsic class**: `WeightsPerClass::max_extrinsic`.
+	/// 3. **Maximum possible weight in a block** that can be **consumed by the extrinsic class** (to compute extrinsics): `WeightsPerClass::max_total`.
+	///    - If this is `None`, an unlimited amount of weight can be consumed by the extrinsic class. This is generally highly recommended for `Mandatory` dispatch class, while it can be dangerous for `Normal` class and should only be done with extra care and consideration.
+	///    - In the worst case, the total weight consumed by the extrinsic class is going to be: `MAX(max_total) + MAX(reserved)`. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.WeightsPerClass.html#structfield.max_total
+	/// 4. **Maximum additional amount of weight that can always be consumed by an extrinsic class**, **once a block's target block weight (`BlockWeights::max_block`)
+	///	   has been reached** (`WeightsPerClass::reserved`): "Often it's desirable for some class of transactions to be added to the block despite it being full.
+	///    For instance one might want to prevent high-priority `Normal` transactions from pushing out lower-priority `Operational` transactions.
+	///    In such cases you might add a `reserved` capacity for given class.".
+	///    Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
+	///    - Note that the `max_total` limit applies to `reserved` space as well.
+	///		 For example, in the diagram (https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# - click the "src" button - since the diagram gets cut off on the
+	///		 webpage), "the sum of weights of `Ext7` & `Ext8` (which are `Operational` extrinsics) mustn't exceed the `max_total` (of the `Operational` extrinsic)".
+	///      Please do see the diagram for complete understanding.
+	///    - Setting `reserved` to `Some(x)`, guarantees that at least `x` weight can be consumed by the extrinsic class in every block.
+	///    	  - Note: `x` can be zero obviously. It doesn't have to only be non-zero integers (obviously!).
+	///    - Setting `reserved` to `None` guarantees that at least `max_total` weight can be consumed by the extrinsic class in every block.
+	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrisnic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
+	/// Furthermore, a `BlockWeights` struct also contains information about the block:
+	/// 1. **Maximum total amount of weight that can be consumed by all kinds of extrinsics in a block (assuming no extrinsic class uses its `reserved` space)** (`BlockWeights::max_block`)
+	/// 2. **Base weight of a block (i.e the computation time to execute an empty block)** (`BlockWeights::base_block`).
+	///
+	///
+	/// Note: Even though each extrinsic class has its own separate limit `max_total`,
+	/// in an actual block the total weight consumed by each extrinsic class cannot not exceed `max_block` (except for `reserved`).
+	///
+	/// Note 2: As a consequence of `reserved` space, total consumed block weight might exceed `max_block` value,
+	/// so this parameter (i.e `max_block`) should rather be thought of as "target block weight" than a hard limit.
+	///
+	/// Note 3: Each block starts with `BlockWeights::base_block` weight being consumed right away **as part of the Mandatory extrinsic class**. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	///
+	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
 	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
+		// `BlockWeightsBuilder::base_block()` sets the base weight of the block (i.e `BlockWeights::base_block`) to
+		// `frame_support::weights::constants::BlockExecutionWeight` which is defined as the "Time to execute an empty block" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.BlockExecutionWeight.html#).
 		.base_block(BlockExecutionWeight::get())
+		// Set the base weight (i.e `WeightsPerClass::base_extrinsic`) for each extrinsic class to `ExtrinsicBaseWeight::get()`.
+		//
+		// Note: `frame_support::weights::constants::ExtrinsicBaseWeight` is the "Time to execute a NO-OP extrinsic, for example `System::remark`" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.ExtrinsicBaseWeight.html#).
 		.for_class(DispatchClass::all(), |weights| {
 			weights.base_extrinsic = ExtrinsicBaseWeight::get();
 		})
+		// Set the maximum block weight for the `Normal` extrinsic class to `NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT`.
 		.for_class(DispatchClass::Normal, |weights| {
 			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
 		})
+		// Set the maximum block weight and the reserved weight for the `Operational` extrinsic class to `MAXIMUM_BLOCK_WEIGHT` and `MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT` respectively.
 		.for_class(DispatchClass::Operational, |weights| {
 			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
 			// Operational transactions have some extra reserved space, so that they
@@ -238,11 +360,456 @@ parameter_types! {
 		.build_or_panic();
 }
 
-// Configure FRAME pallets to include in runtime.
+///  **Maximum permitted depth level** that a **descendant call** of the **outermost call of an extrinsic** can be
+pub const MAXIMUM_NESTED_CALL_DEPTH_LEVEL: u8 = 4;
+/// Maximum length (in bytes) that the metadata data of a Proto-Fragment / Fragment Definition / Fragment Instance can be
+pub const MAXIMUM_METADATA_DATA_LENGTH: usize = 1 * 1024 * 1024;
 
+mod validation_logic {
+
+	use super::*;
+
+	/// Does the call `c` use `transaction_index::index`.
+	fn does_call_index_the_transaction(c: &Call) -> bool {
+		matches!(
+			c,
+			Call::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+		Call::Protos(pallet_protos::Call::patch { .. }) |
+		Call::Protos(pallet_protos::Call::set_metadata { .. }) |
+		Call::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+		Call::Fragments(pallet_fragments::Call::set_instance_metadata { .. })
+		)
+	}
+
+	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
+		match category {
+			Categories::Text(sub_categories) => match sub_categories {
+				TextCategories::Plain => str::from_utf8(data).is_ok(),
+				// REVIEW - does a Json have to be a `serde_json::Map` or can it `serde_json::Value`?
+				TextCategories::Json =>
+					serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(&data[..])
+						.is_ok(),
+			},
+			Categories::Trait(trait_hash) => match trait_hash {
+				// Non Capisco Cosa Fare Qui!!!
+				Some(_) => false,
+				None => {
+					let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // TODO Review - is `&mut *data` safe?
+						return false;
+					};
+
+					if trait_struct.name.len() == 0 {
+						return false
+					}
+
+					trait_struct.records.windows(2).all(|window| {
+						let (record_1, record_2) = (&window[0], &window[1]);
+						let (Ok(a1), Ok(a2)) = (get_utf8_string(&record_1.0), get_utf8_string(&record_2.0)) else { // `a1` is short for `attribute_1`, `a2` is short for `attribute_2`
+							return false;
+						};
+
+						let (Some(first_char_a1), Some(first_char_a2)) = (a1.chars().next(), a2.chars().next()) else {
+							return false;
+						};
+
+						(first_char_a1.is_alphabetic() && first_char_a2.is_alphabetic()) // ensure first character is an alphabet
+							&&
+							(a1 == a1.to_lowercase() && a2 == a2.to_lowercase()) // ensure lowercase
+							&&
+							a1 <= a2 // ensure sorted. Note: "Strings are ordered lexicographically by their byte values ... This is not necessarily the same as “alphabetical” order, which varies by language and locale". Source: https://doc.rust-lang.org/std/primitive.str.html#impl-Ord-for-str
+							&&
+							a1 != a2 // ensure no duplicates
+					})
+				},
+			},
+			Categories::Shards(shards_script_info_struct) => {
+				let format = shards_script_info_struct.format;
+				let requiring = &shards_script_info_struct.requiring;
+				let implementing = &shards_script_info_struct.implementing;
+
+				let all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
+					proto_references.iter().any(|proto| {
+						if let Some(trait_impls) =
+							pallet_protos::TraitImplsByShard::<Runtime>::get(proto)
+						{
+							trait_impls.contains(shards_trait)
+						} else {
+							false
+						}
+					})
+				});
+
+				let all_traits_implemented_in_this_shards =
+					implementing.iter().all(|_shards_trait| match format {
+						ShardsFormat::Edn => false,
+						ShardsFormat::Binary => false,
+					});
+
+				all_required_trait_impls_found && all_traits_implemented_in_this_shards
+			},
+			Categories::Audio(sub_categories) => match sub_categories {
+				AudioCategories::OggFile => infer::is(data, "ogg"), // TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
+				AudioCategories::Mp3File => infer::is(data, "mp3"),
+			},
+			Categories::Texture(sub_categories) => match sub_categories {
+				TextureCategories::PngFile => infer::is(data, "png"), // png_decoder::decode(&data[..]).is_ok(),
+				TextureCategories::JpgFile => infer::is(data, "jpg"), // TODO Review - we do not include ".jpeg" images, only ".jpg" images
+			},
+			Categories::Vector(sub_categories) => match sub_categories {
+				VectorCategories::SvgFile => false,
+				VectorCategories::TtfFile => infer::is(data, "ttf"), // ttf_parser::Face::parse(&data[..], 0).is_ok(),
+			},
+			Categories::Video(sub_categories) => match sub_categories {
+				VideoCategories::MkvFile => infer::is(data, "mkv"),
+				VideoCategories::Mp4File => infer::is(data, "mp4"),
+			},
+			Categories::Model(sub_categories) => match sub_categories {
+				ModelCategories::GltfFile => false,
+				ModelCategories::Sdf => false,
+				ModelCategories::PhysicsCollider => false, // "This is a Fragnova/Fragcolor data type" - Giovanni Petrantoni
+			},
+			Categories::Binary(sub_categories) => match sub_categories {
+				BinaryCategories::WasmProgram => infer::is(data, "wasm"), // wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
+				BinaryCategories::WasmReactor => infer::is(data, "wasm"),
+				BinaryCategories::BlendFile => false,
+				BinaryCategories::OnnxModel => false,
+				BinaryCategories::SafeTensors => false,
+			},
+		}
+	}
+
+	/// Is the call `c` valid?
+	///
+	/// Note: This function does not check whether the child/descendant calls of `c` (if it has any) are valid.
+	pub fn is_the_immediate_call_valid(c: &Call) -> bool {
+		match c {
+			Call::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
+				// `Categories::Shards`, `Categories::Traits` and `Categories::Text`
+				// must have `data` that is of the enum variant type `ProtoData::Local`
+				match category {
+					Categories::Shards(_) | Categories::Trait(_) | Categories::Text(_) => match data {
+						pallet_protos::ProtoData::Local(_) => (),
+						_ => return false,
+					},
+					_ => (),
+				};
+				match data {
+					pallet_protos::ProtoData::Local(ref data) => is_valid(category, data, references),
+					_ => true,
+				}
+			},
+			Call::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
+				let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
+					return false;
+				};
+				match data {
+					None => true,
+					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data, new_references),
+					_ => true,
+				}
+			},
+			Call::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
+			Call::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
+			Call::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
+				if data.len() > MAXIMUM_METADATA_DATA_LENGTH {
+					return false;
+				}
+				match &metadata_key[..] {
+					b"title" => is_valid(&Categories::Text(TextCategories::Plain), data, &vec![]),
+					b"json_description" => is_valid(&Categories::Text(TextCategories::Json), data, &vec![]),
+					b"image" => is_valid(&Categories::Texture(TextureCategories::PngFile), data, &vec![]) || is_valid(&Categories::Texture(TextureCategories::JpgFile), data, &vec![]),
+					_ => false,
+				}
+			},
+			// Prevent batch calls from containing any call that uses `transaction_index::index`. The reason we do this is because "any e̶x̶t̶r̶i̶n̶s̶i̶c̶ call using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index." (https://github.com/paritytech/substrate/issues/12835)
+			Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
+			Call::Utility(pallet_utility::Call::batch_all { calls }) |
+			Call::Utility(pallet_utility::Call::force_batch { calls }) => {
+				calls.iter().all(|call| !does_call_index_the_transaction(call))
+			}
+			_ => true,
+		}
+	}
+
+	// We have decided not to restrict an Extrinsic's Call Depth Level, so therefore these functions below have been commented out (since they will not be used):
+	// /// Returns true if the **call `c` is a Nesting Call whose Depth Level is greater than `MAXIMUM_NESTED_CALL_DEPTH_LEVEL`**
+	// /// or if the **call `c` or one of `c`'s descendants is invalid**.
+	// pub fn does_extrinsic_contain_invalid_call_or_exceed_maximum_depth_level(xt: &<Block as BlockT>::Extrinsic) -> bool {
+	//
+	// 	let c = &xt.function;
+	//
+	// 	let mut stack  = Vec::<(&Call, u8)>::new();
+	// 	stack.push((c, 0));
+	//
+	// 	while let Some((call, depth_level)) = stack.pop() {
+	// 		if !is_the_immediate_call_valid(call) {
+	// 			return true;
+	// 		}
+	// 		let child_calls = get_child_calls(call);
+	// 		if child_calls.len() > 0 && depth_level + 1 > MAXIMUM_NESTED_CALL_DEPTH_LEVEL {
+	// 			return true;
+	// 		}
+	// 		child_calls.iter().for_each(|call| stack.push((call, depth_level + 1)));
+	// 	}
+	//
+	// 	false
+	// }
+	//
+	// /// Return the list of `Call` that will be directly called by the call `c`, if any.
+	// fn get_child_calls(c: &Call) -> &[Call] {
+	// 	match c {
+	// 		// TODO - Add `multisig.***` and `utility.***`
+	// 		Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
+	// 		Call::Utility(pallet_utility::Call::batch_all { calls }) |
+	// 		Call::Utility(pallet_utility::Call::force_batch { calls }) => calls,
+	// 		Call::Utility(pallet_utility::Call::as_derivative { call, .. }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html#
+	// 		Call::Utility(pallet_utility::Call::dispatch_as { call, .. }) |
+	// 		Call::Utility(pallet_utility::Call::with_weight { call, .. }) |
+	// 		Call::Proxy(pallet_proxy::Call::proxy { call, .. }) | // https://paritytech.github.io/substrate/master/pallet_proxy/pallet/enum.Call.html#
+	// 		Call::Proxy(pallet_proxy::Call::proxy_announced { call, .. }) |
+	// 		Call::Multisig(pallet_multisig::Call::as_multi_threshold_1 { call, .. }) | // https://paritytech.github.io/substrate/master/pallet_multisig/pallet/enum.Call.html#
+	// 		Call::Multisig(pallet_multisig::Call::as_multi { call, .. }) => sp_std::slice::from_ref(call), // `sp_std::slice::from_ref()` converts a reference to T into a slice of length 1 (without copying). Source: https://paritytech.github.io/substrate/master/sp_std/slice/fn.from_ref.html#
+	// 		_ => &[]
+	// 	}
+	// }
+
+	#[test]
+	fn is_the_immediate_call_valid_should_not_work_if_proto_category_is_invalid() {
+		for (category, (valid_data, invalid_data)) in [
+			(
+				Categories::Text(TextCategories::Plain),
+				(b"I am valid UTF-8 text!".to_vec(), vec![0xF0, 0x9F, 0x98]),
+			),
+			(
+				Categories::Text(TextCategories::Json),
+				(b"{\"key\": \"value\"}".to_vec(), b"I am not JSON text!".to_vec()),
+			),
+			(
+				Categories::Texture(TextureCategories::PngFile),
+				(vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], vec![7u8; 10]),
+			),
+			(
+				Categories::Texture(TextureCategories::JpgFile),
+				(vec![0xFF, 0xD8, 0xFF, 0xE0], vec![7u8; 10]),
+			),
+		] {
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
+					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+					references: vec![],
+					category: category.clone(),
+					tags: vec![].try_into().unwrap(),
+					linked_asset: None,
+					license: pallet_protos::UsageLicense::Closed,
+					cluster: None,
+					data: pallet_protos::ProtoData::Local(valid_data)
+				})),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
+					references: vec![],
+					category: category.clone(),
+					tags: vec![].try_into().unwrap(),
+					linked_asset: None,
+					license: pallet_protos::UsageLicense::Closed,
+					cluster: None,
+					data: pallet_protos::ProtoData::Local(invalid_data)
+				}),),
+				false
+			);
+		}
+	}
+
+	#[test]
+	fn is_the_immediate_call_valid_should_not_work_if_metadata_key_is_invalid() {
+		for (metadata_key, data) in [
+			(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
+			(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
+			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
+		] {
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+					proto_hash: [7u8; 32],
+					metadata_key: metadata_key.clone().try_into().unwrap(),
+					data: data.clone()
+				})),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+					proto_hash: [7u8; 32],
+					metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
+					data: data.clone()
+				})),
+				false
+			);
+
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_definition_metadata {
+						// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+						definition_hash: [7u8; 16],
+						metadata_key: metadata_key.clone().try_into().unwrap(),
+						data: data.clone()
+					}
+				)),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_definition_metadata {
+						definition_hash: [7u8; 16],
+						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
+						data: data.clone()
+					}
+				)),
+				false
+			);
+
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_instance_metadata {
+						definition_hash: [7u8; 16],
+						edition_id: 1,
+						copy_id: 1,
+						metadata_key: metadata_key.clone().try_into().unwrap(),
+						data: data.clone()
+					}
+				)),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_instance_metadata {
+						definition_hash: [7u8; 16],
+						edition_id: 1,
+						copy_id: 1,
+						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
+						data: data.clone()
+					}
+				)),
+				false
+			);
+		}
+	}
+
+	#[test]
+	fn is_the_immediate_call_valid_should_not_work_if_metadata_data_is_invalid() {
+		for (metadata_key, data) in [
+			(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
+			(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
+			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
+		] {
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+					proto_hash: [7u8; 32],
+					metadata_key: metadata_key.clone().try_into().unwrap(),
+					data: data.clone()
+				})),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+					proto_hash: [7u8; 32],
+					metadata_key: metadata_key.clone().try_into().unwrap(),
+					data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+				})),
+				false
+			);
+
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_definition_metadata {
+						// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+						definition_hash: [7u8; 16],
+						metadata_key: metadata_key.clone().try_into().unwrap(),
+						data: data.clone() // Invalid UTF-8 Text
+					}
+				)),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_definition_metadata {
+						definition_hash: [7u8; 16],
+						metadata_key: metadata_key.clone().try_into().unwrap(),
+						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+					}
+				)),
+				false
+			);
+
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_instance_metadata {
+						definition_hash: [7u8; 16],
+						edition_id: 1,
+						copy_id: 1,
+						metadata_key: metadata_key.clone().try_into().unwrap(),
+						data: data.clone()
+					}
+				)),
+				true
+			);
+			assert_eq!(
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_instance_metadata {
+						definition_hash: [7u8; 16],
+						edition_id: 1,
+						copy_id: 1,
+						metadata_key: metadata_key.try_into().unwrap(),
+						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+					}
+				)),
+				false
+			);
+		}
+	}
+
+	#[test]
+	fn is_the_immediate_call_valid_should_not_work_if_a_batch_call_contains_a_call_that_indexes_the_transaction(
+	) {
+		assert_eq!(
+			is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
+				calls: vec![Call::Protos(pallet_protos::Call::ban {
+					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+					proto_hash: [7u8; 32],
+				})]
+			}),),
+			true
+		);
+
+		assert_eq!(
+			is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
+				calls: vec![Call::Protos(pallet_protos::Call::upload {
+					references: vec![],
+					category: Categories::Text(TextCategories::Plain),
+					tags: vec![].try_into().unwrap(),
+					linked_asset: None,
+					license: pallet_protos::UsageLicense::Closed,
+					cluster: None,
+					data: pallet_protos::ProtoData::Local(b"Bonjour".to_vec())
+				})]
+			}),),
+			false
+		);
+	}
+}
+
+// Configure FRAME pallets to include in runtime.
+pub struct BaseCallFilter;
+impl Contains<Call> for BaseCallFilter {
+	fn contains(c: &Call) -> bool {
+		// log::info!("The call {:?} is {}", c, validation_logic::is_the_immediate_call_valid(c));
+		validation_logic::is_the_immediate_call_valid(c)
+	}
+}
 impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
-	type BaseCallFilter = frame_support::traits::Everything;
+	type BaseCallFilter = BaseCallFilter;
 	/// Block & extrinsics weights: base values and limits.
 	type BlockWeights = RuntimeBlockWeights;
 	/// The maximum length of a block (in bytes).
@@ -406,12 +973,36 @@ parameter_types! {
 	pub StorageBytesMultiplier: u64 = 10;
 }
 
+/// This pallet provides the basic logic needed to pay the absolute minimum amount needed for a
+/// transaction to be included. This includes:
+///   - _base fee_: This is the minimum amount a user pays for a transaction. It is declared
+/// 	as a base _weight_ in the runtime and converted to a fee using `WeightToFee`.
+///   - _weight fee_: A fee proportional to amount of weight a transaction consumes.
+///   - _length fee_: A fee proportional to the encoded length of the transaction.
+///   - _tip_: An optional tip. Tip increases the priority of the transaction, giving it a higher
+///     chance to be included by the transaction queue.
+///
+/// The base fee and adjusted weight and length fees constitute the _inclusion fee_, which is
+/// the minimum fee for a transaction to be included in a block.
+///
+/// The formula of final fee:
+///   ```ignore
+///   inclusion_fee = base_fee + length_fee + [targeted_fee_adjustment * weight_fee];
+///   final_fee = inclusion_fee + tip;
+///   ```
 impl pallet_transaction_payment::Config for Runtime {
 	type Event = Event;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
+	/// Convert a weight value into a deductible fee based on the currency type.
+	///
+	/// Footnote: The Struct `IdentityFee<T>` is an Implementor of trait `WeightToFee` that maps one unit of weight to one unit of fee. Source: https://paritytech.github.io/substrate/master/frame_support/weights/struct.IdentityFee.html
 	type WeightToFee = IdentityFee<Balance>;
+	/// Convert a length value into a deductible fee based on the currency type.
+	///
+	/// Footnote: The Struct `IdentityFee<T>` is an Implementor of trait `WeightToFee` that maps one unit of weight to one unit of fee. Source: https://paritytech.github.io/substrate/master/frame_support/weights/struct.IdentityFee.html
 	type LengthToFee = IdentityFee<Balance>;
+	/// Update the multiplier of the next block, based on the previous block's weight.
 	type FeeMultiplierUpdate = ();
 }
 
@@ -580,7 +1171,7 @@ where
 }
 
 /// Because you configured the Config trait for detach pallet and frag pallet
-/// to implement the CreateSignedTransaction trait, you also need to implement that trait for the runtime.
+/// to implement the `CreateSignedTransaction` trait, you also need to implement that trait for the runtime.
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
 where
 	Call: From<LocalCall>,
@@ -737,7 +1328,7 @@ construct_runtime!(
 	pub enum Runtime where
 		Block = Block, //  Block is the block type that is used in the runtime
 		NodeBlock = opaque::Block, // NodeBlock is the block type that is used in the node
-		UncheckedExtrinsic = UncheckedExtrinsic
+		UncheckedExtrinsic = UncheckedExtrinsic // UncheckedExtrinsic is the format in which the "outside world" must send an extrinsic to the node
 	{
 		// The System pallet is responsible for accumulating the weight of each block as it gets executed and making sure that it does not exceed the limit.
 		System: frame_system,
@@ -774,16 +1365,125 @@ pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 /// The SignedExtension to the basic transaction logic.
+///
+/// ## What is a Signed Extension?
+///
+/// Substrate provides the concept of **signed extensions** to extend an extrinsic with additional data, provided by the `SignedExtension` trait.
+///
+/// The transaction queue regularly calls signed extensions to keep checking that a transaction is valid before it gets put in the ready queue.
+/// This is a useful safeguard for verifying that transactions won't fail in a block.
+/// They are commonly used to enforce validation logic to protect the transaction pool from spam and replay attacks.
+///
+/// Source: https://docs.substrate.io/reference/transaction-format/
+///
+/// # Footnote
+///
+/// 1. Each element in the tuple implements the trait `SignedExtension`.
+/// 2. This tuple implements the trait `SignedExtension`. See: https://paritytech.github.io/substrate/master/sp_runtime/traits/trait.SignedExtension.html#impl-SignedExtension-for-(TupleElement0%2C%20TupleElement1%2C%20TupleElement2%2C%20TupleElement3%2C%20TupleElement4%2C%20TupleElement5%2C%20TupleElement6)
+///
+/// # Example
+///
+/// Notice that in any signed transaction/extrinsic that is sent to Clamor, it will the extra data🥕 "era", "nonce" and "tip": https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
+///
+/// The reason we see this additional data in the encoded extrinsic is because we have defined them here.
+///
 pub type SignedExtra = (
+	// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32` (and not `()`),
+	// the signing payload (i.e the payload that will be signed to generate the signature🥖) must contain the runtime version number.
 	frame_system::CheckSpecVersion<Runtime>,
+	// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `u32` (and not `()`),
+	// the signing payload must contain the transaction version number.
 	frame_system::CheckTxVersion<Runtime>,
+	// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash` (and not `()`),
+	// the signing payload must contain the Genesis Block's Block Hash.
 	frame_system::CheckGenesis<Runtime>,
+	// Since the `SignedExtension::AdditionalSigned` of this `SignedExtension` object is `Runtime::Hash` (and not `()`),
+	// the signing payload must contain <TODO>.
+	//
+	// Furthermore - since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" (i.e the enum `Era`),
+	// any encoded extrinsic sent to this blockchain must have the enum `Era` as part of its extra data🥕
 	frame_system::CheckEra<Runtime>,
+	// Since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" (i.e the `#[codec(compact)] pub Runtime::Index`),
+	// any encoded extrinsic sent to this blockchain must have the sender account's nonce (encoded as a `Comapct<Runtime::Index>`) as part of its extra data🥕
 	frame_system::CheckNonce<Runtime>,
+	// Since the `SigningExtension` object is a tuple struct with only `PhantomData`-typed element(s) AND since its `SignedExtension::AdditionalSigned` is `()`,
+	// this `SignedExtension` object will not have any impact on the signing payload and thus the signature🥖.
 	frame_system::CheckWeight<Runtime>,
+	// Since this `SignedExtension` object is a tuple struct that has a "non-`PhontomData` element" of type `#[codec(compact)] pub BalanceOf<Runtime>`,
+	// any encoded extrinsic sent to this blockchain must have a tip (encoded as a `Compact<BalanceOf<Runtime>>`) as part of its extra data🥕
+	//
+	// Footnote: `type BalanceOf<T> = <<T as Config>::OnChargeTransaction as OnChargeTransaction<T>>::Balance`
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
-
+/// The **type** (i.e "format") that an **unchecked extrinsic** must have.
+///
+/// # Footnote:
+///
+/// ## Definition of "Unchecked Extrinsic"
+///
+/// An Unchecked Extrinsic is a **signed transaction** that requires some validation check before they can be accepted in the transaction pool.
+/// Any unchecked extrinsic contains the signature for the data being sent plus some extra data.
+///
+/// Source: https://docs.substrate.io/reference/transaction-format/
+///
+/// ## How (signed) transactions are constructed
+///
+/// Substrate defines its transaction formats generically to allow developers to implement custom ways to define valid transactions.
+/// In a runtime built with FRAME however (assuming transaction version 4), a transaction must be constructed by submitting the following encoded data:
+///
+/// `<signing account ID> + <signature>🥖 + <additional data>🥕🥦`
+///
+/// When submitting a signed transaction, the signature🥖is constructed by signing:
+/// - The actual call, composed of:
+///   - The index of the pallet.
+///   - The index of the function call in the pallet.
+///   - The parameters required by the function call being targeted.
+/// - Some extra information🥕, verified by the signed extensions of the transaction:
+///   - What's the era for this transaction, i.e. how long should this call last in the transaction pool before it gets discarded?
+///	  - The nonce, i.e. how many prior transactions have occurred from this account? This helps protect against replay attacks or accidental double-submissions.
+///   - The tip amount paid to the block producer to help incentive it to include this transaction in the block.
+///
+/// Then, some additional data that's not part of what gets s̶i̶g̶n̶e̶d̶ sent (**Note from Karan: I think they meant to say "sent" here, not "signed"**),  which includes:
+/// - The spec version and the transaction version. This ensures the transaction is being submitted to a compatible runtime.
+/// - The genesis hash. This ensures that the transaction is valid for the correct chain.
+/// - The block hash. This corresponds to the hash of the checkpoint block, which enables the signature to verify that the transaction doesn't execute on the wrong fork, by checking against the block number provided by the era information.
+///
+/// **The SCALE encoded data is then signed (i.e. (`call`, `extra`, `additional`)) and the signature🥖, extra data🥕 and call data🥦
+/// is attached in the correct order and SCALE encoded, ready to send off to a node that will verify the signed payload.**
+/// If the payload to be signed is longer than 256 bytes, it is hashed just prior to being signed,
+/// to ensure that the size of the signed data does not grow beyond a certain size.
+///
+/// This process can be broken down into the following steps:
+///
+/// 1. Construct the unsigned payload.
+/// 2. Create a signing payload.
+/// 3. Sign the payload.
+/// 4. Serialize the signed payload.
+/// 5. Submit the serialized transaction.
+///
+/// An extrinsic is encoded into the following sequence of bytes just prior to being hex encoded:
+//
+/// `[ 1 ] + [ 2 ] + [ 3 ] + [ 4 ]`
+///
+/// where:
+///
+/// `[1]` contains the compact encoded length in bytes of all of the following data. (Learn how compact encoding works using SCALE here: https://docs.substrate.io/reference/scale-codec/)
+/// `[2]` is a `u8` containing 1 byte to indicate whether the transaction is signed or unsigned (1 bit), and the encoded transaction version ID (7 bits).
+/// `[3]`️ if a signature🥖️ is present, this field contains an account ID, an SR25519 signature🥖 and some extra data🥕. If unsigned this field contains 0 bytes.
+/// `[4]` is the encoded call data🥦. This comprises of 1 byte denoting the pallet to call into, 1 byte denoting the call to make in that pallet, and then as many bytes as needed to encode the arguments expected by that call.
+///
+/// Source: https://docs.substrate.io/reference/transaction-format/
+///
+/// # Example
+///
+/// For example - notice that the encoded transaction for `protos.upload()` has the order of first "signer", "signature"🥖, extra data🥕 (i.e "era", "nonce" and "tip") and finally the encoded call data🥦 (i.e "callIndex" and the arguments of `protos.upload()`): https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
+///
+pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+/// The payload being signed in transactions.
+///
+/// Note: This type is only needed if you want to enable an off-chain worker for the runtime,
+/// since it is only used when implementing the trait `frame_system::offchain::CreateSignedTransaction` for `Runtime`.
+pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -792,6 +1492,15 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllPalletsWithSystem,
 >;
+
+#[cfg(feature = "std")]
+fn get_utf8_string(string: &str) -> Result<&str, &str> {
+	Ok(string)
+}
+#[cfg(not(feature = "std"))]
+fn get_utf8_string(string: &Vec<u8>) -> Result<&str, &str> {
+	str::from_utf8(&string[..]).map_err(|_| "Lo siento")
+}
 
 // Marks the given trait implementations as runtime apis.
 //
@@ -836,6 +1545,15 @@ impl_runtime_apis! {
 		///
 		/// Returns an inclusion outcome which specifies if this extrinsic is included in
 		/// this block or not.
+		///
+		/// # Footnote from Karan:
+		///
+		/// `ApplyExtrinsicResult` is defined as `Result<DispatchOutcome, transaction_validity::TransactionValidityError>` (https://paritytech.github.io/substrate/master/sp_runtime/type.ApplyExtrinsicResult.html#),
+		/// where `DispatchOutcome` is defined as `Result<(), DispatchError>` (https://paritytech.github.io/substrate/master/sp_runtime/type.DispatchOutcome.html#).
+		///
+		/// Here the error `DispatchError` refers to types of errors (represented as a enum) thrown **while executing the extrinsic**,
+		/// while the error `transaction_validity::TransactionValidityError` refers to the types of errors (represented as a enum)
+		/// that are thrown **when the extrinsic is being verified (which obviously always happens before the extrinsic is executed)**
 		fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
 			Executive::apply_extrinsic(extrinsic)
 		}
@@ -877,22 +1595,10 @@ impl_runtime_apis! {
 			tx: <Block as BlockT>::Extrinsic,
 			block_hash: <Block as BlockT>::Hash,
 		) -> TransactionValidity {
-			match tx.function {
-				// We want to prevent polluting blocks with a lot of useless invalid data.
-				// TODO perform quick and preliminary data validation
-				#[allow(unused_variables)]
-				Call::Protos(ProtosCall::upload{ref data, ref category, ref tags, ..}) => {
-					// TODO
-				},
-				#[allow(unused_variables)]
-				Call::Protos(ProtosCall::patch{ref data, ..}) => {
-					// TODO
-				},
-				#[allow(unused_variables)]
-				Call::Protos(ProtosCall::set_metadata{ref data, ..}) => {
-					// TODO
-				},
-				_ => {},
+			// We want to prevent nodes from gossiping extrinsics that have invalid calls.
+			// log::info!("The call to gossip {:?} is {}", &tx.function, validation_logic::is_the_immediate_call_valid(&tx.function));
+			if !validation_logic::is_the_immediate_call_valid(&tx.function) {
+				return Err(TransactionValidityError::Invalid(InvalidTransaction::Call)); // TODO Review - Maybe change `InvalidTransaction::Call` to `InvalidTransaction::Custom(u8)`
 			}
 			// Always run normally anyways
 			Executive::validate_transaction(source, tx, block_hash)
@@ -1052,53 +1758,61 @@ impl_runtime_apis! {
 	/// The Runtime API used to dry-run contract interactions.
 	///
 	/// See: https://paritytech.github.io/substrate/master/pallet_contracts/trait.ContractsApi.html#
-	impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
-	for Runtime
-{
-	/// TODO: Documentation
-	fn call(
-		origin: AccountId,
-		dest: AccountId,
-		value: Balance,
-		gas_limit: u64,
-		storage_deposit_limit: Option<Balance>,
-		input_data: Vec<u8>,
-	) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-		Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
-	}
+	impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash> for Runtime {
+		/// Perform a call from a specified account to a given contract.
+		///
+		/// See [`crate::Pallet::bare_call`].
+		fn call(
+			origin: AccountId,
+			dest: AccountId,
+			value: Balance,
+			gas_limit: u64,
+			storage_deposit_limit: Option<Balance>,
+			input_data: Vec<u8>,
+		) -> pallet_contracts_primitives::ContractExecResult<Balance> {
+			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
+		}
 
-	/// TODO: Documentation
-	fn instantiate(
-		origin: AccountId,
-		value: Balance,
-		gas_limit: u64,
-		storage_deposit_limit: Option<Balance>,
-		code: pallet_contracts_primitives::Code<Hash>,
-		data: Vec<u8>,
-		salt: Vec<u8>,
-	) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
-	{
-		Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
-	}
+		/// Instantiate a new contract.
+		///
+		/// See `[crate::Pallet::bare_instantiate]`.
+		fn instantiate(
+			origin: AccountId,
+			value: Balance,
+			gas_limit: u64,
+			storage_deposit_limit: Option<Balance>,
+			code: pallet_contracts_primitives::Code<Hash>,
+			data: Vec<u8>,
+			salt: Vec<u8>,
+		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
+		{
+			Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+		}
 
-	/// TODO: Documentation
-	fn upload_code(
-		origin: AccountId,
-		code: Vec<u8>,
-		storage_deposit_limit: Option<Balance>,
-	) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
-	{
-		Contracts::bare_upload_code(origin, code, storage_deposit_limit)
-	}
+		/// Upload new code without instantiating a contract from it.
+		///
+		/// See [`crate::Pallet::bare_upload_code`].
+		fn upload_code(
+			origin: AccountId,
+			code: Vec<u8>,
+			storage_deposit_limit: Option<Balance>,
+		) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
+		{
+			Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+		}
 
-	/// TODO: Documentation
-	fn get_storage(
-		address: AccountId,
-		key: Vec<u8>,
-	) -> pallet_contracts_primitives::GetStorageResult {
-		Contracts::get_storage(address, key)
+		/// Query a given storage key in a given contract.
+		///
+		/// Returns `Ok(Some(Vec<u8>))` if the storage value exists under the given key in the
+		/// specified account and `Ok(None)` if it doesn't. If the account specified by the address
+		/// doesn't exist, or doesn't have a contract then `Err` is returned.
+		fn get_storage(
+			address: AccountId,
+			key: Vec<u8>,
+		) -> pallet_contracts_primitives::GetStorageResult {
+			Contracts::get_storage(address, key)
+		}
 	}
-}
 
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Protos
 	impl pallet_protos_rpc_runtime_api::ProtosRuntimeApi<Block, AccountId> for Runtime {

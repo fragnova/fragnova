@@ -7,7 +7,7 @@ use ethabi::Token;
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::TypedGet};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 use serde_json::json;
-use sp_core::{offchain::testing, H256, Pair};
+use sp_core::{offchain::testing, Pair, H256};
 use sp_runtime::{offchain::storage::StorageValueRef, Percent, SaturatedConversion};
 
 pub use internal_lock_update_tests::lock_;
@@ -16,7 +16,7 @@ use pallet_oracle::OraclePrice;
 
 fn apply_percent(amount: u128, percent: u8) -> u128 {
 	if amount == 0 {
-		return 0;
+		return 0
 	}
 	sp_runtime::Percent::from_percent(percent).mul_ceil(amount) as u128
 }
@@ -54,8 +54,15 @@ mod link_tests {
 
 			assert_ok!(link_(&link));
 
-			assert_eq!(<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap(), link.get_ethereum_public_address_of_signer());
-			assert_eq!(<EVMLinksReverse<Test>>::get(&link.get_ethereum_public_address_of_signer()).unwrap(), link.clamor_account_id);
+			assert_eq!(
+				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap(),
+				link.get_ethereum_public_address_of_signer()
+			);
+			assert_eq!(
+				<EVMLinksReverse<Test>>::get(&link.get_ethereum_public_address_of_signer())
+					.unwrap(),
+				link.clamor_account_id
+			);
 
 			let event = <frame_system::Pallet<Test>>::events()
 				.pop()
@@ -154,7 +161,12 @@ mod unlink_tests {
 			));
 
 			assert_eq!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id), false);
-			assert_eq!(<EVMLinksReverse<Test>>::contains_key(&link.get_ethereum_public_address_of_signer()), false);
+			assert_eq!(
+				<EVMLinksReverse<Test>>::contains_key(
+					&link.get_ethereum_public_address_of_signer()
+				),
+				false
+			);
 
 			assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
 
@@ -239,16 +251,16 @@ mod sync_partner_contracts_tests {
 				"method": "eth_blockNumber",
 				"id": 1u64,
 			})
-				.to_string()
-				.into_bytes(),
+			.to_string()
+			.into_bytes(),
 			response: Some(
 				json!({
 					"id": 69u64,
 					"jsonrpc": "2.0",
 					"result": format!("0x{:x}", latest_block_number),
 				})
-					.to_string()
-					.into_bytes(),
+				.to_string()
+				.into_bytes(),
 			),
 			sent: true,
 			..Default::default()
@@ -278,8 +290,8 @@ mod sync_partner_contracts_tests {
 					],
 				}]
 			})
-				.to_string()
-				.into_bytes(),
+			.to_string()
+			.into_bytes(),
 			response: Some(
 				json!({
 					"id": 69u64,
@@ -314,8 +326,8 @@ mod sync_partner_contracts_tests {
 						},
 					]
 				})
-					.to_string()
-					.into_bytes(),
+				.to_string()
+				.into_bytes(),
 			),
 			sent: true,
 			..Default::default()
@@ -324,7 +336,8 @@ mod sync_partner_contracts_tests {
 		to_block
 	}
 
-	#[test] #[ignore]
+	#[test]
+	#[ignore]
 	fn sync_frag_locks_should_work() {
 		let (mut t, pool_state, offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
 
@@ -343,9 +356,7 @@ mod sync_partner_contracts_tests {
 			let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
 			assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
 
-			if let Call::Accounts(crate::Call::internal_lock_update { data, signature }) =
-				tx.call
-			{
+			if let Call::Accounts(crate::Call::internal_lock_update { data, signature }) = tx.call {
 				assert_eq!(data, expected_data);
 
 				let signature_valid =
@@ -360,11 +371,11 @@ mod sync_partner_contracts_tests {
 }
 
 mod internal_lock_update_tests {
+	use super::*;
 	use core::str::FromStr;
 	use ethabi::Address;
-	use sp_core::keccak_256;
 	use pallet_oracle::OraclePrice;
-	use super::*;
+	use sp_core::keccak_256;
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
 		Accounts::internal_lock_update(
@@ -383,7 +394,7 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	fn test_eip_712_hash(){
+	fn test_eip_712_hash() {
 		new_test_ext().execute_with(|| {
 			let message = b"FragLock".to_vec();
 			let contract ="0x3AEEE3a4952C7d27917eA9dF70669cf5a7bD20df";
@@ -472,9 +483,9 @@ mod internal_lock_update_tests {
 				}
 			);
 			let initial_nova_amount =
-				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
-					* get_usd_equivalent_amount()
-					* get_oracle_price();
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
@@ -519,9 +530,8 @@ mod internal_lock_update_tests {
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(
-						apply_percent(lock.data.amount.as_u128(), get_initial_percentage_nova())
-							* get_usd_equivalent_amount()
-							* get_oracle_price()
+						apply_percent(lock.data.amount.as_u128(), get_initial_percentage_nova()) *
+							get_usd_equivalent_amount() * get_oracle_price()
 					)
 				})
 			);
@@ -552,9 +562,9 @@ mod internal_lock_update_tests {
 				}
 			);
 			let initial_nova_amount =
-				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
-					* get_usd_equivalent_amount()
-					* get_oracle_price();
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
 
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(U256::from(nova), U256::from(initial_nova_amount));
@@ -585,9 +595,9 @@ mod internal_lock_update_tests {
 			);
 
 			let initial_nova_amount =
-				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
-					* get_usd_equivalent_amount()
-					* get_oracle_price();
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
@@ -617,7 +627,9 @@ mod internal_lock_update_tests {
 			let dd = DummyData::new();
 
 			let contracts = <Test as Config>::EthFragContract::get_partner_contracts();
-			let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
+			let contract = Address::from_str(&contracts[0].as_str()[2..])
+				.map_err(|_| "Invalid response - invalid sender")
+				.unwrap();
 			let mut lock = dd.lock;
 			lock.data.amount = U256::from(0u32);
 			lock.data.lock_period = 1;
@@ -703,8 +715,8 @@ mod internal_lock_update_tests {
 			let initial_nova_amount = apply_percent(
 				unlock.lock.data.amount.clone().as_u128(),
 				get_initial_percentage_nova(),
-			) * get_usd_equivalent_amount()
-				* get_oracle_price();
+			) * get_usd_equivalent_amount() *
+				get_oracle_price();
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&unlock.lock.data.sender).unwrap(),
@@ -750,7 +762,9 @@ mod internal_lock_update_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 			let contracts = <Test as Config>::EthFragContract::get_partner_contracts();
-			let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
+			let contract = Address::from_str(&contracts[0].as_str()[2..])
+				.map_err(|_| "Invalid response - invalid sender")
+				.unwrap();
 			let mut unlock = dd.unlock;
 			unlock.data.amount = U256::from(69u32); // greater than zero
 			unlock.data.signature = create_unlock_signature(
@@ -775,15 +789,14 @@ mod withdraw_tests {
 	}
 
 	pub fn get_initial_amounts(lock: &Lock) -> u128 {
-			apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
-				* get_usd_equivalent_amount()
-				* get_oracle_price()
-
+		apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
+			get_usd_equivalent_amount() *
+			get_oracle_price()
 	}
 
 	pub fn expected_nova_amount(week_num: u64, lock_period: u64, data_amount: u128) -> u128 {
-		let nova_per_week = apply_percent(data_amount, 100 - get_initial_percentage_nova())
-			/ u128::try_from(lock_period).unwrap();
+		let nova_per_week = apply_percent(data_amount, 100 - get_initial_percentage_nova()) /
+			u128::try_from(lock_period).unwrap();
 		let expected_amount = nova_per_week
 			* get_usd_equivalent_amount() // NOVA per week and 1 FRAG = 100 NOVA. 80% of 100 / 4 weeks
 			* u128::try_from(week_num).unwrap()
@@ -848,7 +861,7 @@ mod withdraw_tests {
 			assert_ok!(link_(&link));
 			assert_ok!(lock_(&lock));
 
-			let initial_nova_amount= get_initial_amounts(&lock);
+			let initial_nova_amount = get_initial_amounts(&lock);
 
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova as u128, initial_nova_amount);
@@ -1090,7 +1103,7 @@ mod withdraw_tests {
 			let current_block = System::block_number();
 			assert_eq!(current_block, 1);
 
-			let initial_nova_amount= get_initial_amounts(&lock);
+			let initial_nova_amount = get_initial_amounts(&lock);
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova as u128, initial_nova_amount);
 
@@ -1101,7 +1114,7 @@ mod withdraw_tests {
 
 			assert_ok!(lock_(&lock2));
 
-			let initial_nova_amount2= get_initial_amounts(&lock2);
+			let initial_nova_amount2 = get_initial_amounts(&lock2);
 			let nova2 = pallet_balances::Pallet::<Test>::free_balance(&link2.clamor_account_id);
 			assert_eq!(nova2 as u128, initial_nova_amount2 + initial_nova_amount);
 
@@ -1122,9 +1135,9 @@ mod withdraw_tests {
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(
 				nova_new_balance as u128,
-				expected_amount
-					+ expected_amount2 + initial_nova_amount.clone()
-					+ initial_nova_amount2.clone()
+				expected_amount +
+					expected_amount2 + initial_nova_amount.clone() +
+					initial_nova_amount2.clone()
 			);
 
 			let next_week = (60 * 60 * 24 * 7 * lock_period_in_weeks as u64) / 6;
@@ -1146,9 +1159,9 @@ mod withdraw_tests {
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(
 				nova_new_balance as u128,
-				expected_amount
-					+ expected_amount2 + initial_nova_amount.clone()
-					+ initial_nova_amount2.clone()
+				expected_amount +
+					expected_amount2 + initial_nova_amount.clone() +
+					initial_nova_amount2.clone()
 			);
 		});
 	}

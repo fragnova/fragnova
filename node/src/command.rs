@@ -8,7 +8,8 @@
 use crate::{
 	chain_spec,
 	cli::{Cli, Subcommand},
-	service, service::new_partial
+	service,
+	service::new_partial,
 };
 use clamor_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
@@ -45,9 +46,8 @@ impl SubstrateCli for Cli {
 			"dev" => Box::new(chain_spec::development_config()?),
 			"" | "local" => Box::new(chain_spec::local_testnet_config()?),
 			"live" => Box::new(chain_spec::live_config()?),
-			path => {
-				Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?)
-			},
+			path =>
+				Box::new(chain_spec::ChainSpec::from_json_file(std::path::PathBuf::from(path))?),
 		})
 	}
 
@@ -103,8 +103,7 @@ pub fn run() -> sc_cli::Result<()> {
 		Some(Subcommand::Revert(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.async_run(|config| {
-				let PartialComponents { client, task_manager, backend, .. } =
-					new_partial(&config)?;
+				let PartialComponents { client, task_manager, backend, .. } = new_partial(&config)?;
 				let aux_revert = Box::new(|client, _, blocks| {
 					sc_finality_grandpa::revert(client, blocks)?;
 					Ok(())
@@ -125,7 +124,7 @@ pub fn run() -> sc_cli::Result<()> {
 								"Runtime benchmarking wasn't enabled when building the node. \
 							You can enable it with `--features runtime-benchmarks`."
 									.into(),
-							);
+							)
 						}
 
 						cmd.run::<Block, service::ExecutorDispatch>(config)
@@ -153,9 +152,8 @@ pub fn run() -> sc_cli::Result<()> {
 						// cmd.run(config, client, inherent_benchmark_data()?, Arc::new(ext_builder))
 						unimplemented!()
 					},
-					BenchmarkCmd::Machine(cmd) => {
-						cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone())
-					},
+					BenchmarkCmd::Machine(cmd) =>
+						cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()),
 					BenchmarkCmd::Extrinsic(_cmd) => {
 						unimplemented!()
 					},

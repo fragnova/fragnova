@@ -56,7 +56,7 @@
   (Do upload-proto) = .proto-hash
 
   "json_description" >= .metadata-key
-  {"name" "monalisa" "desc" "iconic, priceless, renaissance art"} (ToJson) (ToBytes) >= .metadata-data
+  {"name" "monalisa" "description" "iconic, priceless, renaissance art"} (ToJson) (ToBytes) >= .metadata-data
   (Do set-metadata)
   "image" > .metadata-key
   "monalisa.jpeg" (FS.Read :Bytes true) > .metadata-data

@@ -8,8 +8,10 @@ use frame_support::{assert_ok, dispatch::DispatchResult};
 mod create_tests {
 	use super::*;
 	use crate::dummy_data::DummyData;
-	use frame_support::traits::Currency;
-	use frame_support::{assert_noop, traits::fungible};
+	use frame_support::{
+		assert_noop,
+		traits::{fungible, Currency},
+	};
 
 	pub fn create_cluster_(
 		signer: <Test as frame_system::Config>::AccountId,

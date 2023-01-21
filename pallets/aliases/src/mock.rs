@@ -1,20 +1,21 @@
-use codec::Encode;
 use crate as pallet_aliases;
 use crate::*;
+use codec::Encode;
 use frame_support::{
 	parameter_types,
 	traits::ConstU64,
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system;
-use sp_core::ed25519::Signature;
-use sp_core::H256;
+use pallet_oracle::{OracleContract, OracleProvider};
+use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
 	testing::{Header, TestXt},
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{
+		BlakeTwo256, ConstU128, ConstU32, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup,
+		Verify,
+	},
 };
-use sp_runtime::traits::{ConstU128, ConstU32, Extrinsic as ExtrinsicT, IdentifyAccount, Verify};
-use pallet_oracle::{OracleContract, OracleProvider};
 
 /// Balance of an account.
 pub type Balance = u128;
@@ -75,7 +76,7 @@ impl frame_system::Config for Test {
 	type DbWeight = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData =pallet_balances::AccountData<u128>;
+	type AccountData = pallet_balances::AccountData<u128>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -93,16 +94,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-	where
-		Call: From<LocalCall>,
+where
+	Call: From<LocalCall>,
 {
 	type OverarchingCall = Call;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-	where
-		Call: From<LocalCall>,
+where
+	Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: Call,
@@ -291,4 +292,3 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	ext
 }
-

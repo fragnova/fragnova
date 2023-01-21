@@ -7,7 +7,7 @@ use frame_benchmarking::{account, benchmarks, whitelisted_caller};
 use frame_support::traits::{Currency, Get};
 use frame_system::RawOrigin;
 use sp_io::hashing::keccak_256;
-use sp_runtime::{SaturatedConversion, traits::Zero};
+use sp_runtime::{traits::Zero, SaturatedConversion};
 use sp_std::collections::btree_set::BTreeSet;
 
 use crate::Pallet as Accounts;
@@ -28,7 +28,7 @@ fn sign(
 		sixty_five_bit_signature
 	});
 
-	return signature;
+	return signature
 }
 
 fn get_ethereum_public_key(secret_key_struct: &libsecp256k1::SecretKey) -> H160 {
