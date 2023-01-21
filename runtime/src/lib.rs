@@ -435,10 +435,10 @@ mod validation_logic {
 				let all_traits_implemented_in_this_shards = implementing.iter().all(|_shards_trait| {
 					match format {
 						ShardsFormat::Edn => {
-							true
+							false
 						},
 						ShardsFormat::Binary => {
-							true
+							false
 						},
 					}
 				});
@@ -462,7 +462,7 @@ mod validation_logic {
 				VideoCategories::Mp4File => infer::is(data, "mp4"),
 			},
 			Categories::Model(sub_categories) => match sub_categories {
-				ModelCategories::GltfFile => true,
+				ModelCategories::GltfFile => false,
 				ModelCategories::Sdf => false,
 				ModelCategories::PhysicsCollider => false, // "This is a Fragnova/Fragcolor data type" - Giovanni Petrantoni
 			},
