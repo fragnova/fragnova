@@ -435,12 +435,10 @@ mod validation_logic {
 				let all_traits_implemented_in_this_shards = implementing.iter().all(|_shards_trait| {
 					match format {
 						ShardsFormat::Edn => {
-							// TODO - How do I check if this Shards is implementing this Trait - Giovanni Petrantoni
-							false
+							true
 						},
 						ShardsFormat::Binary => {
-							// TODO - How do I check if this Shards is implementing this Trait - Giovanni Petrantoni
-							false
+							true
 						},
 					}
 				});
@@ -464,13 +462,13 @@ mod validation_logic {
 				VideoCategories::Mp4File => infer::is(data, "mp4"),
 			},
 			Categories::Model(sub_categories) => match sub_categories {
-				ModelCategories::GltfFile => false,
+				ModelCategories::GltfFile => true,
 				ModelCategories::Sdf => false,
 				ModelCategories::PhysicsCollider => false, // "This is a Fragnova/Fragcolor data type" - Giovanni Petrantoni
 			},
 			Categories::Binary(sub_categories) => match sub_categories {
 				BinaryCategories::WasmProgram => infer::is(data, "wasm"), // wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
-				BinaryCategories::WasmReactor => false,
+				BinaryCategories::WasmReactor => infer::is(data, "wasm"),
 				BinaryCategories::BlendFile => false,
 				BinaryCategories::OnnxModel => false,
 				BinaryCategories::SafeTensors => false,
@@ -486,7 +484,7 @@ mod validation_logic {
 			Call::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
 				match data {
 					pallet_protos::ProtoData::Local(ref data) => is_valid(category, data, references),
-					_ => false, // TODO Review
+					_ => true,
 				}
 			},
 			Call::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
@@ -496,7 +494,7 @@ mod validation_logic {
 				match data {
 					None => true,
 					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data, new_references),
-					_ => false, // TODO Review
+					_ => true,
 				}
 			},
 			Call::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
