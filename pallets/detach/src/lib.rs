@@ -75,9 +75,9 @@ pub mod crypto {
 pub use pallet::*;
 pub use weights::WeightInfo;
 
-use codec::{Decode, Encode, Compact};
+use codec::{Compact, Decode, Encode};
 use sp_io::{crypto as Crypto, hashing::keccak_256, offchain_index};
-use sp_runtime::{offchain::storage::StorageValueRef, MultiSigner, traits::Hash};
+use sp_runtime::{offchain::storage::StorageValueRef, traits::Hash, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
 use sp_clamor::{Hash128, Hash256, InstanceUnit};
@@ -98,14 +98,13 @@ pub enum DetachHash {
 	Instance(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>),
 }
 
-
 /// Enum representing the different Collection Types
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub enum DetachCollectionType {
 	/// Every element in the collection represents a Proto-Fragment
 	Proto,
 	/// Every element in the collection represents a Fragment Instance
-	Instance
+	Instance,
 }
 
 /// Enum representing a collection of "detachable things" that the User wants to detach from the Clamor Blockchain
@@ -117,7 +116,6 @@ pub enum DetachCollection {
 	Instances(Vec<(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>)>),
 }
 impl DetachCollection {
-
 	/// Get the Collection type
 	fn get_type(&self) -> DetachCollectionType {
 		match self {
@@ -135,11 +133,19 @@ impl DetachCollection {
 	/// 	- `copyId` is of type `uint64`
 	fn get_abi_encoded_hashes(&self) -> Vec<Vec<u8>> {
 		match self {
-			Self::Protos(proto_hashes) => proto_hashes.iter().map(|proto_hash| proto_hash.to_vec()).collect(),
-			Self::Instances(instances) => instances.iter().map(
-				|(definition_hash, Compact(edition_id), Compact(copy_id))|
-					[&definition_hash[..], &edition_id.to_be_bytes()[..], &copy_id.to_be_bytes()[..]].concat()
-			).collect()
+			Self::Protos(proto_hashes) =>
+				proto_hashes.iter().map(|proto_hash| proto_hash.to_vec()).collect(),
+			Self::Instances(instances) => instances
+				.iter()
+				.map(|(definition_hash, Compact(edition_id), Compact(copy_id))| {
+					[
+						&definition_hash[..],
+						&edition_id.to_be_bytes()[..],
+						&copy_id.to_be_bytes()[..],
+					]
+					.concat()
+				})
+				.collect(),
 		}
 	}
 }
@@ -299,7 +305,12 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A collection of "detachable thing"s was detached
-		CollectionDetached { merkle_root: Hash256, remote_signature: Vec<u8>, collection_type: DetachCollectionType, collection: DetachCollection },
+		CollectionDetached {
+			merkle_root: Hash256,
+			remote_signature: Vec<u8>,
+			collection_type: DetachCollectionType,
+			collection: DetachCollection,
+		},
 	}
 
 	// Errors inform users that something went wrong.
@@ -407,25 +418,31 @@ pub mod pallet {
 			match &data.collection {
 				DetachCollection::Protos(proto_hashes) => {
 					proto_hashes.iter().for_each(|proto_hash| {
-
 						let detach_hash = DetachHash::Proto(*proto_hash);
 
 						<DetachedHashes<T>>::insert(detach_hash.clone(), export_data.clone()); // TODO Review - Should `DetachHash` implement the trait `Copy`?
 
-						log::debug!("Detached hash: {:?} signature: {:?}", detach_hash, data.remote_signature);
+						log::debug!(
+							"Detached hash: {:?} signature: {:?}",
+							detach_hash,
+							data.remote_signature
+						);
 					});
 				},
 				DetachCollection::Instances(instances) => {
 					instances.iter().for_each(|(definition_hash, edition_id, copy_id)| {
-
-						let detach_hash = DetachHash::Instance(*definition_hash, *edition_id, *copy_id);
+						let detach_hash =
+							DetachHash::Instance(*definition_hash, *edition_id, *copy_id);
 
 						<DetachedHashes<T>>::insert(detach_hash.clone(), export_data.clone()); // TODO Review - Should `DetachHash` implement the trait `Copy`?
 
-						log::debug!("Detached hash: {:?} signature: {:?}", detach_hash, data.remote_signature);
+						log::debug!(
+							"Detached hash: {:?} signature: {:?}",
+							detach_hash,
+							data.remote_signature
+						);
 					});
-
-				}
+				},
 			}
 
 			Self::deposit_event(Event::CollectionDetached {
@@ -500,28 +517,27 @@ pub mod pallet {
 		/// are being whitelisted and marked as valid.
 		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			// Firstly let's check that we call the right function.
-			if let Call::internal_finalize_detach {
-				ref data, ref signature
-			} = call {
+			if let Call::internal_finalize_detach { ref data, ref signature } = call {
 				// ensure it's a local transaction sent by an offchain worker
 				match source {
 					TransactionSource::InBlock | TransactionSource::Local => {},
 					_ => {
 						log::debug!("Not a local transaction");
-						return InvalidTransaction::Call.into();
+						return InvalidTransaction::Call.into()
 					},
 				}
 
 				// I'm sure there is a way to do this without serialization but I can't spend so
 				// much time fighting with rust
 				let signer = data.public.encode(); // Note: `signer` is public key of the signer that signed the signed payload `data` and thus produced the signature `signature`
-				// convert from `T::Public` to `ed25519::Public`
+								   // convert from `T::Public` to `ed25519::Public`
 				let signer: ed25519::Public = {
-					if let Ok(MultiSigner::Ed25519(signer)) = <MultiSigner>::decode(&mut &signer[..])
+					if let Ok(MultiSigner::Ed25519(signer)) =
+						<MultiSigner>::decode(&mut &signer[..])
 					{
 						signer
 					} else {
-						return InvalidTransaction::BadSigner.into();
+						return InvalidTransaction::BadSigner.into()
 					}
 				};
 				log::debug!("Public key: {:?}", signer);
@@ -529,7 +545,7 @@ pub mod pallet {
 				log::debug!("Valid keys: {:?}", <DetachKeys<T>>::get());
 				// signer must be in `DetachKeys`
 				if !<DetachKeys<T>>::get().contains(&signer) {
-					return InvalidTransaction::BadSigner.into();
+					return InvalidTransaction::BadSigner.into()
 				}
 
 				// most expensive bit last
@@ -538,7 +554,7 @@ pub mod pallet {
 				//
 				// Source: https://paritytech.github.io/substrate/master/frame_system/offchain/trait.SignedPayload.html#method.verify
 				if !SignedPayload::<T>::verify::<T::AuthorityId>(data, signature.clone()) {
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 				log::debug!("Sending detach finalization extrinsic");
 				// The tag prefix prevents other nodes to do the same transaction that have the same tag prefixes
@@ -600,13 +616,11 @@ pub mod pallet {
 			}
 		}
 
-
 		/// Adds newly-found Ed25519 keys to the persistent local storage under the key `b"detach-ecdsa-keys"`.
 		/// Furthermore, for each newly-found Ed25519 key - an ECDSA key is deterministically computed (using the Ed25519 key) which is then added to the keystore under the key id `KEY_TYPE`.
 		fn add_newly_found_ed25519_and_ecdsa_keys() {
 			// Get a storage value reference (i.e `StorageValueRef`) of the key `b"detach-ecdsa-keys"` in the persistent local storage
-			let storage_ref =
-				StorageValueRef::persistent(b"detach-ecdsa-keys");
+			let storage_ref = StorageValueRef::persistent(b"detach-ecdsa-keys");
 			let mut persisted_ed25119_keys =
 				Self::get_ed25519_keys_from_storage_value_reference(&storage_ref);
 
@@ -631,8 +645,7 @@ pub mod pallet {
 					//
 					// Very Important Note: Since this function "store[s] it [i.e the eccdsa key] in the keystore",
 					// the ecdsa key will be retrievable when doing `sp_io::crypto::ecdsa_public_keys(KEY_TYPE)`
-					let _public =
-						Crypto::ecdsa_generate(KEY_TYPE, Some(ecdsa_seed_hex));
+					let _public = Crypto::ecdsa_generate(KEY_TYPE, Some(ecdsa_seed_hex));
 					persisted_ed25119_keys.insert(*ed25519_key);
 					edited = true;
 				}
@@ -658,12 +671,13 @@ pub mod pallet {
 		/// 2. The Detach-Nonce of the detach request's target account. (See `DetachNonces` for more information).
 		///
 		/// 3. **Merkle Root** of a **Binary Merkle Tree created using `request.hashes`**
-		fn get_detach_signature_and_detach_nonce_and_merkle_root(request: &DetachRequest) -> Result<(Vec<u8>, u64, Hash256), Error<T>> {
+		fn get_detach_signature_and_detach_nonce_and_merkle_root(
+			request: &DetachRequest,
+		) -> Result<(Vec<u8>, u64, Hash256), Error<T>> {
 			match request.target_chain {
-				SupportedChains::EthereumMainnet
-				| SupportedChains::EthereumRinkeby
-				| SupportedChains::EthereumGoerli => {
-
+				SupportedChains::EthereumMainnet |
+				SupportedChains::EthereumRinkeby |
+				SupportedChains::EthereumGoerli => {
 					Self::add_newly_found_ed25519_and_ecdsa_keys();
 
 					// `sp_io::crypto::ecdsa_public_keys` returns all ecdsa public keys for the given key id from the keystore. (in our case the key id is `KEY_TYPE`).
@@ -674,19 +688,24 @@ pub mod pallet {
 					// make sure the local key is in the global authorities set!
 					let ethereum_authority = ecdsa_keys
 						.iter()
-						.find(|k| <EthereumAuthorities<T>>::get().contains(k)).ok_or(Error::<T>::NoValidator)?;
+						.find(|k| <EthereumAuthorities<T>>::get().contains(k))
+						.ok_or(Error::<T>::NoValidator)?;
 
 					let merkle_root = Self::get_merkle_root(&request.collection);
 					// Note: In Fragnova's Smart Contract `CollectionFactory.sol`, the mapping state variable `nonces`'s (`mapping(address => uint64) nonces`) nonce type is also `uint64`
 					let nonce =
-						<DetachNonces<T>>::get(&request.target_account, request.target_chain).unwrap_or_default().checked_add(1).unwrap();
+						<DetachNonces<T>>::get(&request.target_account, request.target_chain)
+							.unwrap_or_default()
+							.checked_add(1)
+							.unwrap();
 					// Note: In Solidity, `block.chainid` is of type `uint256`
 					let mut chain_id_be: [u8; 32] = [0u8; 32]; // "be" stands for big-endian
 					match request.target_chain {
 						SupportedChains::EthereumMainnet => U256::from(1),
 						SupportedChains::EthereumRinkeby => U256::from(4),
 						SupportedChains::EthereumGoerli => U256::from(5),
-					}.to_big_endian(&mut chain_id_be);
+					}
+					.to_big_endian(&mut chain_id_be);
 
 					let payload = [
 						// In Fragnova's Smart Contract `CollectionFactory.sol`, we convert the enum `CollectionType` to `uint8` when verifying the signature.
@@ -694,22 +713,20 @@ pub mod pallet {
 						&(request.collection.get_type() as u8).to_be_bytes()[..],
 						&merkle_root[..],
 						&chain_id_be,
-						&TryInto::<[u8; 20]>::try_into(request.target_account.clone()).map_err(|_| Error::<T>::TargetAccountLengthIsIncorrect)?,
+						&TryInto::<[u8; 20]>::try_into(request.target_account.clone())
+							.map_err(|_| Error::<T>::TargetAccountLengthIsIncorrect)?,
 						&nonce.to_be_bytes(), // "be" stands for big-endian
-					].concat();
-					log::debug!(
-						"payload: {:x?}, len: {}",
-						payload,
-						payload.len()
-					);
+					]
+					.concat();
+					log::debug!("payload: {:x?}, len: {}", payload, payload.len());
 
 					// Get the Ethereum specific signature of the payload
-					let signature = Self::eth_sign_payload(&ethereum_authority, &payload).ok_or(Error::<T>::SigningFailed)?;
+					let signature = Self::eth_sign_payload(&ethereum_authority, &payload)
+						.ok_or(Error::<T>::SigningFailed)?;
 
 					Ok((signature.0.to_vec(), nonce, merkle_root))
 				},
 			}
-
 		}
 
 		/// Signs the list of detach requests using a Fragnova-authorized account.
@@ -722,7 +739,6 @@ pub mod pallet {
 		///
 		/// Note: On the Target Chain, the "attach nonce" needs to be exactly the same as the detach nonce here.
 		pub fn process_detach_requests() {
-
 			const FAILED: () = ();
 
 			/*
@@ -736,76 +752,77 @@ pub mod pallet {
 
 			Reference: https://paritytech.github.io/substrate/master/sp_runtime/offchain/storage/struct.StorageValueRef.html#method.mutate)
 			 */
-			let _ =
-				StorageValueRef::persistent(b"detach-requests")
-					.mutate(|requests: Result<Option<Vec<DetachRequest>>, _>| {
+			let _ = StorageValueRef::persistent(b"detach-requests").mutate(
+				|requests: Result<Option<Vec<DetachRequest>>, _>| {
+					let requests = requests.map_err(|_| FAILED)?.ok_or(FAILED)?;
 
-						let requests = requests.map_err(|_| FAILED)?.ok_or(FAILED)?;
+					log::debug!("Got {} detach requests", requests.len());
+					for request in requests {
+						// Iterate through the list of detach requests
 
-						log::debug!("Got {} detach requests", requests.len());
-						for request in requests { // Iterate through the list of detach requests
+						let tuple_signature_nonce_merkle_root =
+							Self::get_detach_signature_and_detach_nonce_and_merkle_root(&request);
 
-							let tuple_signature_nonce_merkle_root = Self::get_detach_signature_and_detach_nonce_and_merkle_root(&request);
-
-							match tuple_signature_nonce_merkle_root {
-								Err(e) => {
-									log::debug!("Failed to detach with error {:?}", e)
-								},
-								// begin process to send unsigned transaction from here
-								Ok((signature, nonce, merkle_root)) => {
-									log::debug!(
+						match tuple_signature_nonce_merkle_root {
+							Err(e) => {
+								log::debug!("Failed to detach with error {:?}", e)
+							},
+							// begin process to send unsigned transaction from here
+							Ok((signature, nonce, merkle_root)) => {
+								log::debug!(
 										"Executing unsigned transaction for detach; signature: {:x?}, nonce: {}",
 										signature,
 										nonce
 									);
 
+								/*
+								Sign using any account
+
+								Footnote:
+								Since this pallet only has one key type in the keystore (i.e `KeyTypeId(*b"deta")`),
+								we can just use `any_account() to retrieve a key (that is of the aforementioned key type).
+								Reference: https://paritytech.github.io/substrate/master/frame_system/offchain/struct.Signer.html
+								*/
+								if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
 									/*
-									Sign using any account
-
-									Footnote:
-									Since this pallet only has one key type in the keystore (i.e `KeyTypeId(*b"deta")`),
-									we can just use `any_account() to retrieve a key (that is of the aforementioned key type).
-									Reference: https://paritytech.github.io/substrate/master/frame_system/offchain/struct.Signer.html
+									Send an unsigned transaction with a signed payload on-chain.
+									This method takes `f` and `f2` where:
+									- `f` is called for every account and is expected to return a `SignedPayload` object.
+									- `f2` is then called with the `SignedPayload` returned by `f` and the signature and is
+									expected to return a `Call` object to be embedded into transaction.
+									Source: https://paritytech.github.io/substrate/master/frame_system/offchain/trait.SendUnsignedTransaction.html#tymethod.send_unsigned_transaction
 									*/
-									if let Err(e) = Signer::<T, T::AuthorityId>::any_account()
-										/*
-										Send an unsigned transaction with a signed payload on-chain.
-										This method takes `f` and `f2` where:
-										- `f` is called for every account and is expected to return a `SignedPayload` object.
-										- `f2` is then called with the `SignedPayload` returned by `f` and the signature and is
-										expected to return a `Call` object to be embedded into transaction.
-										Source: https://paritytech.github.io/substrate/master/frame_system/offchain/trait.SendUnsignedTransaction.html#tymethod.send_unsigned_transaction
-										*/
-										.send_unsigned_transaction(
-											|account| DetachInternalData {
-												// Public key that is expected to have a matching key in the keystore, which should be used to sign the payload
-												// Note: See the implementation of `SignedPayload` for `DetachInternalData` to understand more
-												public: account.public.clone(),
-												collection: request.collection.clone(),
-												merkle_root,
-												target_chain: request.target_chain,
-												target_account: request.target_account.clone(),
-												remote_signature: signature.clone(),
-												nonce,
-											},
-											// Note: `Call` is an enum that gets generated by the macro `#[pallet::Call]`
-											// You can view it in Clamor's Rustdoc: https://fragcolor-xyz.github.io/clamor/doc/pallet_detach/pallet/enum.Call.html#
-											|payload, signature| Call::internal_finalize_detach {
-												data: payload,
-												signature,
-											},
-										)
-										.ok_or("No local accounts accounts available.") {
-										log::error!("Failed to send unsigned detach transaction with error: {:?}", e);
-									}
-								},
-							}
+									.send_unsigned_transaction(
+										|account| DetachInternalData {
+											// Public key that is expected to have a matching key in the keystore, which should be used to sign the payload
+											// Note: See the implementation of `SignedPayload` for `DetachInternalData` to understand more
+											public: account.public.clone(),
+											collection: request.collection.clone(),
+											merkle_root,
+											target_chain: request.target_chain,
+											target_account: request.target_account.clone(),
+											remote_signature: signature.clone(),
+											nonce,
+										},
+										// Note: `Call` is an enum that gets generated by the macro `#[pallet::Call]`
+										// You can view it in Clamor's Rustdoc: https://fragcolor-xyz.github.io/clamor/doc/pallet_detach/pallet/enum.Call.html#
+										|payload, signature| Call::internal_finalize_detach {
+											data: payload,
+											signature,
+										},
+									)
+									.ok_or("No local accounts accounts available.")
+								{
+									log::error!("Failed to send unsigned detach transaction with error: {:?}", e);
+								}
+							},
 						}
-
-						// We set the storage value to an empty vector after processing the vector of detach requests
-						Ok::<Vec<DetachRequest>, ()>(vec![])
 					}
-				);
+
+					// We set the storage value to an empty vector after processing the vector of detach requests
+					Ok::<Vec<DetachRequest>, ()>(vec![])
+				},
+			);
 		}
 
 		/// Deterministically compute an ECDSA Seed using the Ed25519 public key `ed25519_key`.
@@ -820,8 +837,10 @@ pub mod pallet {
 
 			let ecdsa_seed_hex = [
 				&b"0x"[..],
-				&TryInto::<[u8; 64]>::try_into(hex::encode(ecdsa_seed).into_bytes()).map_err(|_| FAILED)? // actually there's no need to throw any error I think...
-			].concat();
+				&TryInto::<[u8; 64]>::try_into(hex::encode(ecdsa_seed).into_bytes())
+					.map_err(|_| FAILED)?, // actually there's no need to throw any error I think...
+			]
+			.concat();
 
 			Ok(ecdsa_seed_hex)
 		}
@@ -836,22 +855,24 @@ pub mod pallet {
 
 			// Sign the given a pre-hashed msg `msg` with the ecdsa key that corresponds to the given public key `key` and key type `KEY_TYPE` in the keystore. Returns the signature.
 			// Source: https://paritytech.github.io/substrate/master/sp_io/crypto/fn.ecdsa_sign_prehashed.html#
-			let signature = Crypto::ecdsa_sign_prehashed(KEY_TYPE, key, &msg).map(|mut signature| {
-				signature.0[64] += 27u8; // fix signature ending for ethereum
-				signature
-			});
+			let signature =
+				Crypto::ecdsa_sign_prehashed(KEY_TYPE, key, &msg).map(|mut signature| {
+					signature.0[64] += 27u8; // fix signature ending for ethereum
+					signature
+				});
 
 			signature
 		}
 
 		/// Return the Set of Ed25519 public keys that are stored in the StorageValueRef `storage_ref`, if any. Otherwise, return an empty set.
-		fn get_ed25519_keys_from_storage_value_reference(storage_ref: &StorageValueRef) -> BTreeSet<ed25519::Public> {
+		fn get_ed25519_keys_from_storage_value_reference(
+			storage_ref: &StorageValueRef,
+		) -> BTreeSet<ed25519::Public> {
 			// If `stored_keys` doesn't exist, set it to `BTreeSet<ed25519::Public>`
 			let stored_keys = storage_ref.get::<BTreeSet<ed25519::Public>>().unwrap_or_default();
 			// If `keys` is None, set it to `BTreeSet<ed25519::Public>`
 			let keys = if let Some(keys) = stored_keys { keys } else { BTreeSet::new() };
 			keys
 		}
-
 	}
 }

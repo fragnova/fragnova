@@ -2,21 +2,19 @@
 
 use crate as pallet_fragments;
 
-use crate::*;
-use crate::dummy_data::*;
-use crate::mock::*;
+use crate::{dummy_data::*, mock::*, *};
 
 use crate::Event as FragmentsEvent;
 
 use frame_support::{assert_noop, assert_ok};
-use protos::permissions::FragmentPerms;
 use itertools::Itertools;
+use protos::permissions::FragmentPerms;
 
 use sp_runtime::BoundedVec;
 
 use copied_from_pallet_protos::upload;
 mod copied_from_pallet_protos {
-	use pallet_protos::{UsageLicense, ProtoData};
+	use pallet_protos::{ProtoData, UsageLicense};
 
 	use super::*;
 
@@ -81,26 +79,28 @@ mod create_tests {
 				<Test as frame_system::Config>::AccountId,
 			>>::minimum_balance();
 			System::assert_has_event(
-				frame_system::Event::NewAccount {
-					account: definition.get_vault_account_id(),
-				}.into()
+				frame_system::Event::NewAccount { account: definition.get_vault_account_id() }
+					.into(),
 			);
 			System::assert_has_event(
 				pallet_balances::Event::Endowed {
 					account: definition.get_vault_account_id(),
 					free_balance: minimum_balance,
-				}.into()
+				}
+				.into(),
 			);
 			System::assert_has_event(
 				pallet_balances::Event::Deposit {
 					who: definition.get_vault_account_id(),
 					amount: minimum_balance,
-				}.into()
+				}
+				.into(),
 			);
 			System::assert_last_event(
 				FragmentsEvent::DefinitionCreated {
-					definition_hash: definition.get_definition_id()
-				}.into()
+					definition_hash: definition.get_definition_id(),
+				}
+				.into(),
 			);
 
 			let correct_definition_struct = FragmentDefinition {
@@ -120,7 +120,6 @@ mod create_tests {
 			assert!(<Proto2Fragments<Test>>::get(&definition.proto_fragment.get_proto_hash())
 				.unwrap()
 				.contains(&definition.get_definition_id()));
-
 		});
 	}
 
@@ -193,9 +192,9 @@ mod create_tests {
 				Origin::root(),
 				asset_id, // The identifier of the new asset. This must not be currently in use to identify an existing asset.
 				dd.account_id, // The owner of this class of assets. The owner has full superuser permissions over this asset, but may later change and configure the permissions using transfer_ownership and set_team.
-				true, // Whether this asset needs users to have an existential deposit to hold this asset
+				true,          // Whether this asset needs users to have an existential deposit to hold this asset
 				69, // The minimum balance of this new asset that any single account must have. If an account’s balance is reduced below this, then it collapses to zero.
-				true // Whether the asset is transferable or not
+				true  // Whether the asset is transferable or not
 			));
 
 			assert_ok!(create(dd.account_id, &definition));
@@ -241,8 +240,9 @@ mod publish_tests {
 
 			System::assert_last_event(
 				FragmentsEvent::Publishing {
-					definition_hash: publish.definition.get_definition_id()
-				}.into()
+					definition_hash: publish.definition.get_definition_id(),
+				}
+				.into(),
 			);
 
 			let correct_publishing_data_struct = PublishingData {
@@ -255,7 +255,6 @@ mod publish_tests {
 				<Publishing<Test>>::get(&publish.definition.get_definition_id()).unwrap(),
 				correct_publishing_data_struct
 			);
-
 		});
 	}
 
@@ -384,15 +383,15 @@ mod unpublish_tests {
 
 			System::assert_last_event(
 				FragmentsEvent::Unpublishing {
-					definition_hash: publish.definition.get_definition_id()
-				}.into()
+					definition_hash: publish.definition.get_definition_id(),
+				}
+				.into(),
 			);
 
 			assert_eq!(
 				<Publishing<Test>>::contains_key(&publish.definition.get_definition_id()),
 				false
 			);
-
 		});
 	}
 
@@ -492,13 +491,13 @@ mod mint_tests {
 			};
 
 			for edition_id in 1..=quantity {
-
 				System::assert_has_event(
 					FragmentsEvent::InventoryAdded {
 						account_id: dd.account_id,
 						definition_hash: mint_non_unique.definition.get_definition_id(),
-						fragment_id: (edition_id, 1)
-					}.into()
+						fragment_id: (edition_id, 1),
+					}
+					.into(),
 				);
 
 				assert_eq!(
@@ -507,7 +506,7 @@ mod mint_tests {
 						edition_id,
 						1
 					))
-						.unwrap(),
+					.unwrap(),
 					correct_fragment_instance_struct
 				);
 				assert_eq!(
@@ -515,21 +514,21 @@ mod mint_tests {
 						mint_non_unique.definition.get_definition_id(),
 						edition_id
 					))
-						.unwrap(),
+					.unwrap(),
 					Compact(1)
 				);
 				assert!(<Inventory<Test>>::get(
 					dd.account_id,
 					mint_non_unique.definition.get_definition_id()
 				)
-					.unwrap()
-					.contains(&(Compact(edition_id), Compact(1))));
+				.unwrap()
+				.contains(&(Compact(edition_id), Compact(1))));
 				assert!(<Owners<Test>>::get(
 					mint_non_unique.definition.get_definition_id(),
 					dd.account_id
 				)
-					.unwrap()
-					.contains(&(Compact(edition_id), Compact(1))));
+				.unwrap()
+				.contains(&(Compact(edition_id), Compact(1))));
 			}
 
 			assert_eq!(
@@ -558,8 +557,9 @@ mod mint_tests {
 				FragmentsEvent::InventoryAdded {
 					account_id: dd.account_id,
 					definition_hash: mint_unique.definition.get_definition_id(),
-					fragment_id: (1, 1)
-				}.into()
+					fragment_id: (1, 1),
+				}
+				.into(),
 			);
 
 			let correct_fragment_instance_struct = FragmentInstance {
@@ -585,8 +585,8 @@ mod mint_tests {
 				dd.account_id,
 				mint_unique.definition.get_definition_id()
 			)
-				.unwrap()
-				.contains(&(Compact(1), Compact(1))));
+			.unwrap()
+			.contains(&(Compact(1), Compact(1))));
 			assert!(<Owners<Test>>::get(mint_unique.definition.get_definition_id(), dd.account_id)
 				.unwrap()
 				.contains(&(Compact(1), Compact(1))));
@@ -653,9 +653,7 @@ mod mint_tests {
 			assert_ok!(mint_(
 				dd.account_id,
 				&Mint {
-					buy_options: FragmentBuyOptions::Quantity(
-						mint.definition.max_supply.unwrap()
-					),
+					buy_options: FragmentBuyOptions::Quantity(mint.definition.max_supply.unwrap()),
 					..mint
 				}
 			));
@@ -787,7 +785,8 @@ mod buy_tests {
 					from: dd.account_id_second,
 					to: buy_non_unique.publish.definition.get_vault_account_id(),
 					amount: buy_non_unique.publish.price.saturating_mul(quantity as u128),
-				}.into()
+				}
+				.into(),
 			);
 
 			for edition_id in 1..=quantity {
@@ -795,8 +794,9 @@ mod buy_tests {
 					FragmentsEvent::InventoryAdded {
 						account_id: dd.account_id_second,
 						definition_hash: buy_non_unique.publish.definition.get_definition_id(),
-						fragment_id: (edition_id, 1)
-					}.into()
+						fragment_id: (edition_id, 1),
+					}
+					.into(),
 				);
 
 				// This `correct_fragment_instance_struct` is the same for every iteration btw!
@@ -805,7 +805,10 @@ mod buy_tests {
 					created_at: current_block_number,
 					custom_data: None,
 					expiring_at: None, // newly created Fragment Instance doesn't have an expiration date - confirm with @sinkingsugar
-					stack_amount: buy_non_unique.publish.stack_amount.map(|amount| Compact::from(amount)),
+					stack_amount: buy_non_unique
+						.publish
+						.stack_amount
+						.map(|amount| Compact::from(amount)),
 					metadata: BTreeMap::new(),
 				};
 				assert_eq!(
@@ -814,7 +817,7 @@ mod buy_tests {
 						edition_id,
 						1
 					))
-						.unwrap(),
+					.unwrap(),
 					correct_fragment_instance_struct
 				);
 				assert_eq!(
@@ -822,22 +825,22 @@ mod buy_tests {
 						buy_non_unique.publish.definition.get_definition_id(),
 						edition_id
 					))
-						.unwrap(),
+					.unwrap(),
 					Compact(1)
 				);
 				assert!(<Inventory<Test>>::get(
 					dd.account_id_second,
 					buy_non_unique.publish.definition.get_definition_id()
 				)
-					.unwrap()
-					.contains(&(Compact(edition_id), Compact(1))));
+				.unwrap()
+				.contains(&(Compact(edition_id), Compact(1))));
 
 				assert!(<Owners<Test>>::get(
 					buy_non_unique.publish.definition.get_definition_id(),
 					dd.account_id_second
 				)
-					.unwrap()
-					.contains(&(Compact(edition_id), Compact(1))));
+				.unwrap()
+				.contains(&(Compact(edition_id), Compact(1))));
 			}
 
 			assert_eq!(
@@ -879,15 +882,17 @@ mod buy_tests {
 				FragmentsEvent::InventoryAdded {
 					account_id: dd.account_id_second,
 					definition_hash: buy_unique.publish.definition.get_definition_id(),
-					fragment_id: (1, 1)
-				}.into()
+					fragment_id: (1, 1),
+				}
+				.into(),
 			);
 			System::assert_has_event(
 				pallet_balances::Event::Transfer {
 					from: dd.account_id_second,
 					to: buy_unique.publish.definition.get_vault_account_id(),
 					amount: buy_unique.publish.price.saturating_mul(quantity as u128),
-				}.into()
+				}
+				.into(),
 			);
 
 			let correct_fragment_instance_struct = FragmentInstance {
@@ -910,15 +915,15 @@ mod buy_tests {
 				dd.account_id_second,
 				buy_unique.publish.definition.get_definition_id()
 			)
-				.unwrap()
-				.contains(&(Compact(1), Compact(1))));
+			.unwrap()
+			.contains(&(Compact(1), Compact(1))));
 
 			assert!(<Owners<Test>>::get(
 				buy_unique.publish.definition.get_definition_id(),
 				dd.account_id_second
 			)
-				.unwrap()
-				.contains(&(Compact(1), Compact(1))));
+			.unwrap()
+			.contains(&(Compact(1), Compact(1))));
 			assert_eq!(
 				<EditionsCount<Test>>::get(buy_unique.publish.definition.get_definition_id())
 					.unwrap(),
@@ -929,7 +934,6 @@ mod buy_tests {
 					.unwrap(),
 				Compact(1)
 			);
-
 		});
 	}
 
@@ -976,7 +980,6 @@ mod buy_tests {
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			);
 			assert_ok!(buy_(dd.account_id_third, &buy));
-
 		});
 	}
 
@@ -1023,7 +1026,6 @@ mod buy_tests {
 				buy.publish.price.saturating_mul(quantity as u128) + minimum_balance,
 			));
 			assert_ok!(buy_(dd.account_id_third, &buy));
-
 		});
 	}
 
@@ -1311,10 +1313,7 @@ mod give_tests {
 		)
 	}
 
-	pub fn mint_give_instance(
-		signer: <Test as frame_system::Config>::AccountId,
-		give: &Give
-	) {
+	pub fn mint_give_instance(signer: <Test as frame_system::Config>::AccountId, give: &Give) {
 		assert_ok!(upload(signer, &give.mint.definition.proto_fragment));
 		assert_ok!(create(signer, &give.mint.definition));
 		assert_ok!(mint_(signer, &give.mint));
@@ -1335,14 +1334,16 @@ mod give_tests {
 					account_id: dd.account_id,
 					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id),
-				}.into()
+				}
+				.into(),
 			);
 			System::assert_has_event(
 				FragmentsEvent::InventoryAdded {
 					account_id: give.to,
 					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id),
-				}.into()
+				}
+				.into(),
 			);
 
 			assert_eq!(
@@ -1377,11 +1378,10 @@ mod give_tests {
 					give.edition_id,
 					give.copy_id
 				))
-					.unwrap()
-					.permissions,
+				.unwrap()
+				.permissions,
 				give.new_permissions.unwrap()
 			);
-
 		});
 	}
 
@@ -1400,7 +1400,8 @@ mod give_tests {
 					account_id: give.to,
 					definition_hash: give.mint.definition.get_definition_id(),
 					fragment_id: (give.edition_id, give.copy_id + 1),
-				}.into()
+				}
+				.into(),
 			);
 
 			assert_eq!(
@@ -1434,7 +1435,7 @@ mod give_tests {
 					give.mint.definition.get_definition_id(),
 					give.edition_id
 				))
-					.unwrap(),
+				.unwrap(),
 				Compact(2)
 			);
 
@@ -1444,8 +1445,8 @@ mod give_tests {
 					give.edition_id,
 					give.copy_id + 1
 				))
-					.unwrap()
-					.permissions,
+				.unwrap()
+				.permissions,
 				give.new_permissions.unwrap()
 			);
 			assert_eq!(
@@ -1454,8 +1455,8 @@ mod give_tests {
 					give.edition_id,
 					give.copy_id + 1
 				))
-					.unwrap()
-					.expiring_at,
+				.unwrap()
+				.expiring_at,
 				give.expiration
 			);
 
@@ -1464,7 +1465,6 @@ mod give_tests {
 				Compact(give.edition_id),
 				Compact(give.copy_id + 1)
 			)));
-
 		});
 	}
 
@@ -1477,28 +1477,27 @@ mod give_tests {
 
 			mint_give_instance(dd.account_id, &give);
 
-			assert_noop!(
-				give_(dd.account_id_second, &give),
-				Error::<Test>::NoPermission
-			);
+			assert_noop!(give_(dd.account_id_second, &give), Error::<Test>::NoPermission);
 		});
 	}
 
 	#[test]
 	fn give_should_not_work_if_the_new_permissions_are_less_restrictive() {
-
 		let vec_all_perms = vec![FragmentPerms::EDIT, FragmentPerms::TRANSFER, FragmentPerms::COPY];
 		assert_eq!(
 			vec_all_perms.iter().fold(FragmentPerms::NONE, |acc, &x| acc | x),
 			FragmentPerms::ALL
 		);
-		let vec_all_perms_excl_transfer = vec_all_perms.clone().into_iter().filter(
-			|&x| x != FragmentPerms::TRANSFER
-		).collect::<Vec<FragmentPerms>>();
+		let vec_all_perms_excl_transfer = vec_all_perms
+			.clone()
+			.into_iter()
+			.filter(|&x| x != FragmentPerms::TRANSFER)
+			.collect::<Vec<FragmentPerms>>();
 
 		for len_combo in 0..vec_all_perms_excl_transfer.len() {
-
-			for vec_perms_excl_transfer in vec_all_perms_excl_transfer.clone().into_iter().combinations(len_combo) {
+			for vec_perms_excl_transfer in
+				vec_all_perms_excl_transfer.clone().into_iter().combinations(len_combo)
+			{
 				let vec_perms = [vec_perms_excl_transfer, vec![FragmentPerms::TRANSFER]].concat(); // TRANSFER must be included, since we want to give it
 
 				let vec_possible_additional_perms = vec_all_perms
@@ -1510,16 +1509,16 @@ mod give_tests {
 				// Less Restrictive
 				for len_combo in 1..=vec_possible_additional_perms.len() {
 					for vec_new_perms in
-					vec_possible_additional_perms.clone().into_iter().combinations(len_combo)
+						vec_possible_additional_perms.clone().into_iter().combinations(len_combo)
 					{
-						let vec_new_permissions_parameter = [vec_perms.clone(), vec_new_perms.clone()].concat();
+						let vec_new_permissions_parameter =
+							[vec_perms.clone(), vec_new_perms.clone()].concat();
 
 						new_test_ext().execute_with(|| {
 							let dd = DummyData::new();
 							let mut give = dd.give_no_copy_perms;
-							give.mint.definition.permissions = vec_perms
-								.iter()
-								.fold(FragmentPerms::NONE, |acc, &x| acc | x);
+							give.mint.definition.permissions =
+								vec_perms.iter().fold(FragmentPerms::NONE, |acc, &x| acc | x);
 							give.new_permissions = Some(
 								vec_new_permissions_parameter
 									.iter()
@@ -1535,14 +1534,13 @@ mod give_tests {
 				// Equally or More Restrictive
 				for len_combo in 0..=vec_perms.len() {
 					for vec_new_permissions_parameter in
-					vec_perms.clone().into_iter().combinations(len_combo)
+						vec_perms.clone().into_iter().combinations(len_combo)
 					{
 						new_test_ext().execute_with(|| {
 							let dd = DummyData::new();
 							let mut give = dd.give_no_copy_perms;
-							give.mint.definition.permissions = vec_perms
-								.iter()
-								.fold(FragmentPerms::NONE, |acc, &x| acc | x);
+							give.mint.definition.permissions =
+								vec_perms.iter().fold(FragmentPerms::NONE, |acc, &x| acc | x);
 							give.new_permissions = Some(
 								vec_new_permissions_parameter
 									.iter()
@@ -1573,7 +1571,8 @@ mod give_tests {
 	}
 
 	#[test]
-	fn give_should_not_work_if_the_fragment_instance_expires_before_or_at_the_current_block_number() {
+	fn give_should_not_work_if_the_fragment_instance_expires_before_or_at_the_current_block_number()
+	{
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -1583,12 +1582,8 @@ mod give_tests {
 			mint_give_instance(dd.account_id, &give);
 			assert_ok!(give_(dd.account_id, &give));
 
-
-			let give_again = Give {
-				copy_id: give.copy_id + 1,
-				to: dd.account_id_second,
-				..give.clone()
-			};
+			let give_again =
+				Give { copy_id: give.copy_id + 1, to: dd.account_id_second, ..give.clone() };
 
 			run_to_block(give.expiration.unwrap() - 1);
 			assert_ok!(give_(give.to, &give_again));
@@ -1598,7 +1593,8 @@ mod give_tests {
 	}
 
 	#[test]
-	fn give_should_not_work_if_the_expiration_parameter_is_lesser_than_or_equal_to_the_current_block_number() {
+	fn give_should_not_work_if_the_expiration_parameter_is_lesser_than_or_equal_to_the_current_block_number(
+	) {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -1611,22 +1607,14 @@ mod give_tests {
 			assert_noop!(
 				give_(
 					dd.account_id,
-					&Give {
-						expiration: Some(current_block_number),
-						..give.clone()
-					}
+					&Give { expiration: Some(current_block_number), ..give.clone() }
 				),
 				Error::<Test>::ParamsNotValid
 			);
-			assert_ok!(
-				give_(
-					dd.account_id,
-					&Give {
-						expiration: Some(current_block_number + 1),
-						..give
-					}
-				)
-			);
+			assert_ok!(give_(
+				dd.account_id,
+				&Give { expiration: Some(current_block_number + 1), ..give }
+			));
 		});
 	}
 
@@ -1643,68 +1631,49 @@ mod give_tests {
 			mint_give_instance(dd.account_id, &give);
 			assert_ok!(give_(dd.account_id, &give));
 
-			assert_ok!(
-				give_(
-					give.to,
-					&Give {
-						copy_id: give.copy_id + 1,
-						to: dd.account_id_second,
-						expiration: Some(give.expiration.unwrap() - 1),
-						..give.clone()
-					}
-				)
-			);
-			assert!(
-				!<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(
-					&(
-						give.mint.definition.get_definition_id(),
-						Compact(give.edition_id),
-						Compact(give.copy_id + 2)
-					)
-				)
-			);
-			assert!(
-				<Expirations<Test>>::get(give.expiration.unwrap() - 1).unwrap().contains(
-					&(
-						give.mint.definition.get_definition_id(),
-						Compact(give.edition_id),
-						Compact(give.copy_id + 2)
-					)
-				)
-			);
+			assert_ok!(give_(
+				give.to,
+				&Give {
+					copy_id: give.copy_id + 1,
+					to: dd.account_id_second,
+					expiration: Some(give.expiration.unwrap() - 1),
+					..give.clone()
+				}
+			));
+			assert!(!<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(&(
+				give.mint.definition.get_definition_id(),
+				Compact(give.edition_id),
+				Compact(give.copy_id + 2)
+			)));
+			assert!(<Expirations<Test>>::get(give.expiration.unwrap() - 1).unwrap().contains(&(
+				give.mint.definition.get_definition_id(),
+				Compact(give.edition_id),
+				Compact(give.copy_id + 2)
+			)));
 
-			assert_ok!(
-				give_(
-					give.to,
-					&Give {
-						copy_id: give.copy_id + 1,
-						to: dd.account_id_second,
-						expiration: Some(give.expiration.unwrap() + 1),
-						..give.clone()
-					}
-				)
-			);
+			assert_ok!(give_(
+				give.to,
+				&Give {
+					copy_id: give.copy_id + 1,
+					to: dd.account_id_second,
+					expiration: Some(give.expiration.unwrap() + 1),
+					..give.clone()
+				}
+			));
 			assert!(!<Expirations<Test>>::contains_key(give.expiration.unwrap() + 1));
-			assert!(
-				<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(
-					&(
-						give.mint.definition.get_definition_id(),
-						Compact(give.edition_id),
-						Compact(give.copy_id + 3)
-					)
-				)
-			);
+			assert!(<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(&(
+				give.mint.definition.get_definition_id(),
+				Compact(give.edition_id),
+				Compact(give.copy_id + 3)
+			)));
 		});
 	}
-
 
 	#[test]
 	#[ignore]
 	fn give_should_not_work_if_the_instance_is_detached() {
 		todo!()
 	}
-
-
 }
 
 mod create_account_tests {
@@ -1762,7 +1731,7 @@ mod resell_tests {
 
 	pub fn resell_(
 		signer: <Test as frame_system::Config>::AccountId,
-		resell: &Resell
+		resell: &Resell,
 	) -> DispatchResult {
 		FragmentsPallet::resell(
 			Origin::signed(signer),
@@ -1771,15 +1740,14 @@ mod resell_tests {
 			resell.copy_id,
 			resell.new_permissions,
 			resell.expiration,
-			resell.secondary_sale_type.clone()
+			resell.secondary_sale_type.clone(),
 		)
 	}
 
 	pub fn mint_resell_instance(
 		signer: <Test as frame_system::Config>::AccountId,
-		resell: &Resell
+		resell: &Resell,
 	) {
-
 		assert_ok!(upload(signer, &resell.mint.definition.proto_fragment));
 		assert_ok!(create(signer, &resell.mint.definition));
 		assert_ok!(mint_(signer, &resell.mint));
@@ -1797,26 +1765,28 @@ mod resell_tests {
 				FragmentsEvent::Resell {
 					definition_hash: resell.mint.definition.get_definition_id(),
 					fragment_id: (resell.edition_id, resell.copy_id),
-				}.into()
+				}
+				.into(),
 			);
 
 			assert!(
-				Definition2SecondarySales::<Test>::get((resell.mint.definition.get_definition_id(), resell.edition_id, resell.copy_id)).unwrap()
-					==
-					SecondarySaleData {
-						owner: dd.account_id,
-						new_permissions: resell.new_permissions,
-						expiration: resell.expiration,
-						secondary_sale_type: resell.secondary_sale_type,
-					}
+				Definition2SecondarySales::<Test>::get((
+					resell.mint.definition.get_definition_id(),
+					resell.edition_id,
+					resell.copy_id
+				))
+				.unwrap() == SecondarySaleData {
+					owner: dd.account_id,
+					new_permissions: resell.new_permissions,
+					expiration: resell.expiration,
+					secondary_sale_type: resell.secondary_sale_type,
+				}
 			);
-
 		});
 	}
 
 	#[test]
 	fn resell_should_not_work_if_user_does_not_own_instance() {
-
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -1825,7 +1795,6 @@ mod resell_tests {
 			mint_resell_instance(dd.account_id, &resell);
 
 			assert_noop!(resell_(dd.account_id_second, &resell), Error::<Test>::NoPermission);
-
 		});
 	}
 
@@ -1840,22 +1809,23 @@ mod resell_tests {
 		});
 	}
 
-
 	#[test]
 	fn resell_should_not_work_if_the_new_permissions_are_less_restrictive() {
-
 		let vec_all_perms = vec![FragmentPerms::EDIT, FragmentPerms::TRANSFER, FragmentPerms::COPY];
 		assert_eq!(
 			vec_all_perms.iter().fold(FragmentPerms::NONE, |acc, &x| acc | x),
 			FragmentPerms::ALL
 		);
-		let vec_all_perms_excl_transfer = vec_all_perms.clone().into_iter().filter(
-			|&x| x != FragmentPerms::TRANSFER
-		).collect::<Vec<FragmentPerms>>();
+		let vec_all_perms_excl_transfer = vec_all_perms
+			.clone()
+			.into_iter()
+			.filter(|&x| x != FragmentPerms::TRANSFER)
+			.collect::<Vec<FragmentPerms>>();
 
 		for len_combo in 0..vec_all_perms_excl_transfer.len() {
-
-			for vec_perms_excl_transfer in vec_all_perms_excl_transfer.clone().into_iter().combinations(len_combo) {
+			for vec_perms_excl_transfer in
+				vec_all_perms_excl_transfer.clone().into_iter().combinations(len_combo)
+			{
 				let vec_perms = [vec_perms_excl_transfer, vec![FragmentPerms::TRANSFER]].concat(); // TRANSFER must be included, since we want to give it
 
 				let vec_possible_additional_perms = vec_all_perms
@@ -1867,16 +1837,16 @@ mod resell_tests {
 				// Less Restrictive
 				for len_combo in 1..=vec_possible_additional_perms.len() {
 					for vec_new_perms in
-					vec_possible_additional_perms.clone().into_iter().combinations(len_combo)
+						vec_possible_additional_perms.clone().into_iter().combinations(len_combo)
 					{
-						let vec_new_permissions_parameter = [vec_perms.clone(), vec_new_perms.clone()].concat();
+						let vec_new_permissions_parameter =
+							[vec_perms.clone(), vec_new_perms.clone()].concat();
 
 						new_test_ext().execute_with(|| {
 							let dd = DummyData::new();
 							let mut resell = dd.resell_normal;
-							resell.mint.definition.permissions = vec_perms
-								.iter()
-								.fold(FragmentPerms::NONE, |acc, &x| acc | x);
+							resell.mint.definition.permissions =
+								vec_perms.iter().fold(FragmentPerms::NONE, |acc, &x| acc | x);
 							resell.new_permissions = Some(
 								vec_new_permissions_parameter
 									.iter()
@@ -1884,7 +1854,10 @@ mod resell_tests {
 							);
 							// Should Not Work
 							mint_resell_instance(dd.account_id, &resell);
-							assert_noop!(resell_(dd.account_id, &resell), Error::<Test>::NoPermission);
+							assert_noop!(
+								resell_(dd.account_id, &resell),
+								Error::<Test>::NoPermission
+							);
 						});
 					}
 				}
@@ -1892,14 +1865,13 @@ mod resell_tests {
 				// Equally or More Restrictive
 				for len_combo in 0..=vec_perms.len() {
 					for vec_new_permissions_parameter in
-					vec_perms.clone().into_iter().combinations(len_combo)
+						vec_perms.clone().into_iter().combinations(len_combo)
 					{
 						new_test_ext().execute_with(|| {
 							let dd = DummyData::new();
 							let mut resell = dd.resell_normal;
-							resell.mint.definition.permissions = vec_perms
-								.iter()
-								.fold(FragmentPerms::NONE, |acc, &x| acc | x);
+							resell.mint.definition.permissions =
+								vec_perms.iter().fold(FragmentPerms::NONE, |acc, &x| acc | x);
 							resell.new_permissions = Some(
 								vec_new_permissions_parameter
 									.iter()
@@ -1928,7 +1900,8 @@ mod resell_tests {
 	}
 
 	#[test]
-	fn resell_should_not_work_if_the_fragment_instance_expires_before_or_at_the_current_block_number() {
+	fn resell_should_not_work_if_the_fragment_instance_expires_before_or_at_the_current_block_number(
+	) {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -1966,7 +1939,8 @@ mod resell_tests {
 	}
 
 	#[test]
-	fn resell_should_not_work_if_the_expiration_parameter_is_lesser_than_or_equal_to_the_current_block_number() {
+	fn resell_should_not_work_if_the_expiration_parameter_is_lesser_than_or_equal_to_the_current_block_number(
+	) {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -1979,22 +1953,14 @@ mod resell_tests {
 			assert_noop!(
 				resell_(
 					dd.account_id,
-					&Resell {
-						expiration: Some(current_block_number),
-						..resell.clone()
-					}
+					&Resell { expiration: Some(current_block_number), ..resell.clone() }
 				),
 				Error::<Test>::ParamsNotValid
 			);
-			assert_ok!(
-				resell_(
-					dd.account_id,
-					&Resell {
-						expiration: Some(current_block_number + 1),
-						..resell
-					}
-				)
-			);
+			assert_ok!(resell_(
+				dd.account_id,
+				&Resell { expiration: Some(current_block_number + 1), ..resell }
+			));
 		});
 	}
 
@@ -2013,60 +1979,43 @@ mod resell_tests {
 			assert_ok!(mint_(dd.account_id, &give.mint));
 			assert_ok!(give_(dd.account_id, &give));
 
-			assert_ok!(
-				give_(
-					give.to,
-					&Give {
-						copy_id: give.copy_id + 1,
-						to: dd.account_id_second,
-						expiration: Some(give.expiration.unwrap() - 1),
-						..give.clone()
-					}
-				)
-			);
-			assert!(
-				!<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(
-					&(
-						give.mint.definition.get_definition_id(),
-						Compact(give.edition_id),
-						Compact(give.copy_id + 2)
-					)
-				)
-			);
-			assert!(
-				<Expirations<Test>>::get(give.expiration.unwrap() - 1).unwrap().contains(
-					&(
-						give.mint.definition.get_definition_id(),
-						Compact(give.edition_id),
-						Compact(give.copy_id + 2)
-					)
-				)
-			);
+			assert_ok!(give_(
+				give.to,
+				&Give {
+					copy_id: give.copy_id + 1,
+					to: dd.account_id_second,
+					expiration: Some(give.expiration.unwrap() - 1),
+					..give.clone()
+				}
+			));
+			assert!(!<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(&(
+				give.mint.definition.get_definition_id(),
+				Compact(give.edition_id),
+				Compact(give.copy_id + 2)
+			)));
+			assert!(<Expirations<Test>>::get(give.expiration.unwrap() - 1).unwrap().contains(&(
+				give.mint.definition.get_definition_id(),
+				Compact(give.edition_id),
+				Compact(give.copy_id + 2)
+			)));
 
-			assert_ok!(
-				give_(
-					give.to,
-					&Give {
-						copy_id: give.copy_id + 1,
-						to: dd.account_id_second,
-						expiration: Some(give.expiration.unwrap() + 1),
-						..give.clone()
-					}
-				)
-			);
+			assert_ok!(give_(
+				give.to,
+				&Give {
+					copy_id: give.copy_id + 1,
+					to: dd.account_id_second,
+					expiration: Some(give.expiration.unwrap() + 1),
+					..give.clone()
+				}
+			));
 			assert!(!<Expirations<Test>>::contains_key(give.expiration.unwrap() + 1));
-			assert!(
-				<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(
-					&(
-						give.mint.definition.get_definition_id(),
-						Compact(give.edition_id),
-						Compact(give.copy_id + 3)
-					)
-				)
-			);
+			assert!(<Expirations<Test>>::get(give.expiration.unwrap()).unwrap().contains(&(
+				give.mint.definition.get_definition_id(),
+				Compact(give.edition_id),
+				Compact(give.copy_id + 3)
+			)));
 		});
 	}
-
 }
 
 mod end_resale_tests {
@@ -2074,7 +2023,7 @@ mod end_resale_tests {
 
 	pub fn end_resale_(
 		signer: <Test as frame_system::Config>::AccountId,
-		end_resale: &EndResale
+		end_resale: &EndResale,
 	) -> DispatchResult {
 		FragmentsPallet::end_resale(
 			Origin::signed(signer),
@@ -2086,15 +2035,13 @@ mod end_resale_tests {
 
 	pub fn resell_instance(
 		signer: <Test as frame_system::Config>::AccountId,
-		end_resale: &EndResale
+		end_resale: &EndResale,
 	) {
 		assert_ok!(upload(signer, &end_resale.resell.mint.definition.proto_fragment));
 		assert_ok!(create(signer, &end_resale.resell.mint.definition));
 		assert_ok!(mint_(signer, &end_resale.resell.mint));
 		assert_ok!(resell_(signer, &end_resale.resell));
 	}
-
-
 
 	#[test]
 	fn end_resale_should_work() {
@@ -2110,12 +2057,15 @@ mod end_resale_tests {
 				FragmentsEvent::EndResale {
 					definition_hash: end_resale.resell.mint.definition.get_definition_id(),
 					fragment_id: (end_resale.resell.edition_id, end_resale.resell.copy_id),
-				}.into()
+				}
+				.into(),
 			);
 
-			assert!(
-				!Definition2SecondarySales::<Test>::contains_key((end_resale.resell.mint.definition.get_definition_id(), end_resale.resell.edition_id, end_resale.resell.copy_id))
-			);
+			assert!(!Definition2SecondarySales::<Test>::contains_key((
+				end_resale.resell.mint.definition.get_definition_id(),
+				end_resale.resell.edition_id,
+				end_resale.resell.copy_id
+			)));
 		});
 	}
 
@@ -2128,7 +2078,10 @@ mod end_resale_tests {
 
 			resell_instance(dd.account_id, &end_resale);
 
-			assert_noop!(end_resale_(dd.account_id_second, &end_resale), Error::<Test>::NoPermission);
+			assert_noop!(
+				end_resale_(dd.account_id_second, &end_resale),
+				Error::<Test>::NoPermission
+			);
 		});
 	}
 
@@ -2153,20 +2106,20 @@ mod secondary_buy_tests {
 
 	pub fn secondary_buy_(
 		signer: <Test as frame_system::Config>::AccountId,
-		secondary_buy: &SecondaryBuy
+		secondary_buy: &SecondaryBuy,
 	) -> DispatchResult {
 		FragmentsPallet::secondary_buy(
 			Origin::signed(signer),
 			secondary_buy.resell.mint.definition.get_definition_id(),
 			secondary_buy.resell.edition_id,
 			secondary_buy.resell.copy_id,
-			secondary_buy.options.clone()
+			secondary_buy.options.clone(),
 		)
 	}
 
 	pub fn resell_instance(
 		signer: <Test as frame_system::Config>::AccountId,
-		secondary_buy: &SecondaryBuy
+		secondary_buy: &SecondaryBuy,
 	) {
 		assert_ok!(upload(signer, &secondary_buy.resell.mint.definition.proto_fragment));
 		assert_ok!(create(signer, &secondary_buy.resell.mint.definition));
@@ -2201,46 +2154,73 @@ mod secondary_buy_tests {
 					account_id: dd.account_id,
 					definition_hash: secondary_buy.resell.mint.definition.get_definition_id(),
 					fragment_id: (secondary_buy.resell.edition_id, secondary_buy.resell.copy_id),
-				}.into()
+				}
+				.into(),
 			);
 			System::assert_has_event(
 				FragmentsEvent::InventoryAdded {
 					account_id: dd.account_id_second,
 					definition_hash: secondary_buy.resell.mint.definition.get_definition_id(),
 					fragment_id: (secondary_buy.resell.edition_id, secondary_buy.resell.copy_id),
-				}.into()
+				}
+				.into(),
 			);
 			System::assert_has_event(
 				pallet_balances::Event::Transfer {
 					from: dd.account_id_second,
 					to: dd.account_id,
 					amount: price,
-				}.into()
+				}
+				.into(),
 			);
 
 			assert_eq!(
-				<Owners<Test>>::get(secondary_buy.resell.mint.definition.get_definition_id(), dd.account_id)
-					.unwrap()
-					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				<Owners<Test>>::get(
+					secondary_buy.resell.mint.definition.get_definition_id(),
+					dd.account_id
+				)
+				.unwrap()
+				.contains(&(
+					Compact(secondary_buy.resell.edition_id),
+					Compact(secondary_buy.resell.copy_id)
+				)),
 				false
 			);
 			assert_eq!(
-				<Inventory<Test>>::get(dd.account_id, secondary_buy.resell.mint.definition.get_definition_id())
-					.unwrap()
-					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				<Inventory<Test>>::get(
+					dd.account_id,
+					secondary_buy.resell.mint.definition.get_definition_id()
+				)
+				.unwrap()
+				.contains(&(
+					Compact(secondary_buy.resell.edition_id),
+					Compact(secondary_buy.resell.copy_id)
+				)),
 				false
 			);
 
 			assert_eq!(
-				<Owners<Test>>::get(secondary_buy.resell.mint.definition.get_definition_id(), dd.account_id_second)
-					.unwrap()
-					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				<Owners<Test>>::get(
+					secondary_buy.resell.mint.definition.get_definition_id(),
+					dd.account_id_second
+				)
+				.unwrap()
+				.contains(&(
+					Compact(secondary_buy.resell.edition_id),
+					Compact(secondary_buy.resell.copy_id)
+				)),
 				true
 			);
 			assert_eq!(
-				<Inventory<Test>>::get(dd.account_id_second, secondary_buy.resell.mint.definition.get_definition_id())
-					.unwrap()
-					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				<Inventory<Test>>::get(
+					dd.account_id_second,
+					secondary_buy.resell.mint.definition.get_definition_id()
+				)
+				.unwrap()
+				.contains(&(
+					Compact(secondary_buy.resell.edition_id),
+					Compact(secondary_buy.resell.copy_id)
+				)),
 				true
 			);
 
@@ -2250,8 +2230,8 @@ mod secondary_buy_tests {
 					secondary_buy.resell.edition_id,
 					secondary_buy.resell.copy_id
 				))
-					.unwrap()
-					.permissions,
+				.unwrap()
+				.permissions,
 				secondary_buy.resell.new_permissions.unwrap()
 			);
 		});
@@ -2283,40 +2263,69 @@ mod secondary_buy_tests {
 				FragmentsEvent::InventoryAdded {
 					account_id: dd.account_id_second,
 					definition_hash: secondary_buy.resell.mint.definition.get_definition_id(),
-					fragment_id: (secondary_buy.resell.edition_id, secondary_buy.resell.copy_id + 1),
-				}.into()
+					fragment_id: (
+						secondary_buy.resell.edition_id,
+						secondary_buy.resell.copy_id + 1,
+					),
+				}
+				.into(),
 			);
 			System::assert_has_event(
 				pallet_balances::Event::Transfer {
 					from: dd.account_id_second,
 					to: dd.account_id,
 					amount: price,
-				}.into()
+				}
+				.into(),
 			);
 
 			assert_eq!(
-				<Owners<Test>>::get(secondary_buy.resell.mint.definition.get_definition_id(), dd.account_id)
-					.unwrap()
-					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				<Owners<Test>>::get(
+					secondary_buy.resell.mint.definition.get_definition_id(),
+					dd.account_id
+				)
+				.unwrap()
+				.contains(&(
+					Compact(secondary_buy.resell.edition_id),
+					Compact(secondary_buy.resell.copy_id)
+				)),
 				true
 			);
 			assert_eq!(
-				<Inventory<Test>>::get(dd.account_id, secondary_buy.resell.mint.definition.get_definition_id())
-					.unwrap()
-					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id))),
+				<Inventory<Test>>::get(
+					dd.account_id,
+					secondary_buy.resell.mint.definition.get_definition_id()
+				)
+				.unwrap()
+				.contains(&(
+					Compact(secondary_buy.resell.edition_id),
+					Compact(secondary_buy.resell.copy_id)
+				)),
 				true
 			);
 
 			assert_eq!(
-				<Owners<Test>>::get(secondary_buy.resell.mint.definition.get_definition_id(), dd.account_id_second)
-					.unwrap()
-					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id + 1))),
+				<Owners<Test>>::get(
+					secondary_buy.resell.mint.definition.get_definition_id(),
+					dd.account_id_second
+				)
+				.unwrap()
+				.contains(&(
+					Compact(secondary_buy.resell.edition_id),
+					Compact(secondary_buy.resell.copy_id + 1)
+				)),
 				true
 			);
 			assert_eq!(
-				<Inventory<Test>>::get(dd.account_id_second, secondary_buy.resell.mint.definition.get_definition_id())
-					.unwrap()
-					.contains(&(Compact(secondary_buy.resell.edition_id), Compact(secondary_buy.resell.copy_id + 1))),
+				<Inventory<Test>>::get(
+					dd.account_id_second,
+					secondary_buy.resell.mint.definition.get_definition_id()
+				)
+				.unwrap()
+				.contains(&(
+					Compact(secondary_buy.resell.edition_id),
+					Compact(secondary_buy.resell.copy_id + 1)
+				)),
 				true
 			);
 
@@ -2325,7 +2334,7 @@ mod secondary_buy_tests {
 					secondary_buy.resell.mint.definition.get_definition_id(),
 					secondary_buy.resell.edition_id
 				))
-					.unwrap(),
+				.unwrap(),
 				Compact(2)
 			);
 
@@ -2335,8 +2344,8 @@ mod secondary_buy_tests {
 					secondary_buy.resell.edition_id,
 					secondary_buy.resell.copy_id + 1
 				))
-					.unwrap()
-					.permissions,
+				.unwrap()
+				.permissions,
 				secondary_buy.resell.new_permissions.unwrap()
 			);
 			assert_eq!(
@@ -2345,19 +2354,20 @@ mod secondary_buy_tests {
 					secondary_buy.resell.edition_id,
 					secondary_buy.resell.copy_id + 1
 				))
-					.unwrap()
-					.expiring_at,
+				.unwrap()
+				.expiring_at,
 				secondary_buy.resell.expiration
 			);
 
-			assert!(<Expirations<Test>>::get(&secondary_buy.resell.expiration.unwrap()).unwrap().contains(&(
-				secondary_buy.resell.mint.definition.get_definition_id(),
-				Compact(secondary_buy.resell.edition_id),
-				Compact(secondary_buy.resell.copy_id + 1)
-			)));
+			assert!(<Expirations<Test>>::get(&secondary_buy.resell.expiration.unwrap())
+				.unwrap()
+				.contains(&(
+					secondary_buy.resell.mint.definition.get_definition_id(),
+					Compact(secondary_buy.resell.edition_id),
+					Compact(secondary_buy.resell.copy_id + 1)
+				)));
 		});
 	}
-
 
 	#[ignore = "Currently there is only one sale type. So we can't test this"]
 	#[test]
@@ -2366,7 +2376,6 @@ mod secondary_buy_tests {
 			todo!("Currently there is only one sale type. So we can't test this");
 		});
 	}
-
 
 	#[test]
 	fn secondary_buy_should_not_work_if_user_has_insufficient_balance_in_pallet_balances() {
@@ -2388,14 +2397,16 @@ mod secondary_buy_tests {
 				&dd.account_id_second,
 				price + minimum_balance - 1,
 			);
-			assert_noop!(secondary_buy_(dd.account_id_second, &secondary_buy), Error::<Test>::InsufficientBalance);
+			assert_noop!(
+				secondary_buy_(dd.account_id_second, &secondary_buy),
+				Error::<Test>::InsufficientBalance
+			);
 
 			_ = <Balances as fungible::Mutate<<Test as frame_system::Config>::AccountId>>::mint_into(
 				&dd.account_id_third,
 				price + minimum_balance,
 			);
 			assert_ok!(secondary_buy_(dd.account_id_third, &secondary_buy));
-
 		});
 	}
 
@@ -2431,7 +2442,10 @@ mod secondary_buy_tests {
 				dd.account_id_second,
 				price + minimum_balance - 1,
 			));
-			assert_noop!(secondary_buy_(dd.account_id_second, &secondary_buy), Error::<Test>::InsufficientBalance);
+			assert_noop!(
+				secondary_buy_(dd.account_id_second, &secondary_buy),
+				Error::<Test>::InsufficientBalance
+			);
 
 			assert_ok!(Assets::mint(
 				Origin::signed(dd.account_id),
@@ -2440,7 +2454,6 @@ mod secondary_buy_tests {
 				price + minimum_balance,
 			));
 			assert_ok!(secondary_buy_(dd.account_id_third, &secondary_buy));
-
 		});
 	}
 
@@ -2524,13 +2537,11 @@ mod secondary_buy_tests {
 			);
 		});
 	}
-
 }
 
-
 mod detach_tests {
-	use pallet_detach::DetachCollection;
 	use super::*;
+	use pallet_detach::DetachCollection;
 
 	pub fn detach_(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -2541,13 +2552,13 @@ mod detach_tests {
 			detach.mint.definition.get_definition_id(),
 			detach.edition_ids.clone(),
 			detach.target_chain,
-			detach.target_account.clone().try_into().unwrap()
+			detach.target_account.clone().try_into().unwrap(),
 		)
 	}
 
 	pub fn mint_detach_instance(
 		signer: <Test as frame_system::Config>::AccountId,
-		detach: &Detach
+		detach: &Detach,
 	) {
 		assert_ok!(upload(signer, &detach.mint.definition.proto_fragment));
 		assert_ok!(create(signer, &detach.mint.definition));
@@ -2566,23 +2577,22 @@ mod detach_tests {
 
 			assert_eq!(
 				pallet_detach::DetachRequests::<Test>::get(),
-				vec![
-					pallet_detach::DetachRequest {
-						collection: DetachCollection::Instances(
-							detach.edition_ids.into_iter().map(|edition_id|
-								(
-									detach.mint.definition.get_definition_id(),
-									Compact(edition_id),
-									Compact(1)
-								)
-							).collect()
-						),
-						target_chain: detach.target_chain,
-						target_account: detach.target_account,
-					},
-				]
+				vec![pallet_detach::DetachRequest {
+					collection: DetachCollection::Instances(
+						detach
+							.edition_ids
+							.into_iter()
+							.map(|edition_id| (
+								detach.mint.definition.get_definition_id(),
+								Compact(edition_id),
+								Compact(1)
+							))
+							.collect()
+					),
+					target_chain: detach.target_chain,
+					target_account: detach.target_account,
+				},]
 			);
-
 		});
 	}
 
@@ -2608,9 +2618,7 @@ mod detach_tests {
 			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::NoPermission);
 		});
 	}
-
 }
-
 
 mod get_definitions_tests {
 	use super::*;
@@ -2632,9 +2640,9 @@ mod get_definitions_tests {
 						return_owners: true,
 						..Default::default()
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
 						"name": String::from_utf8(definition.metadata.name).unwrap(),
@@ -2665,9 +2673,9 @@ mod get_definitions_tests {
 						return_owners: true,
 						..Default::default()
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					hex::encode(definition.get_definition_id()): {
 						"name": String::from_utf8(definition.metadata.name).unwrap(),
@@ -2729,9 +2737,9 @@ mod get_instances_tests {
 						limit: u64::MAX,
 						..Default::default()
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!(correct_map_instances)
 			)
 		});
@@ -2756,9 +2764,9 @@ mod get_instances_tests {
 						only_return_first_copies: true,
 						..Default::default()
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					"1.1": {},
 				})
@@ -2785,9 +2793,9 @@ mod get_instances_tests {
 						only_return_first_copies: false,
 						..Default::default()
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					"1.1": {},
 					"1.2": {},
@@ -2815,9 +2823,9 @@ mod get_instances_tests {
 						owner: Some(give.to),
 						..Default::default()
 					})
-						.unwrap()
+					.unwrap()
 				)
-					.unwrap(),
+				.unwrap(),
 				json!({
 					format!("{}.{}", give.edition_id, give.copy_id): {}
 				})
@@ -2844,7 +2852,7 @@ mod get_instance_owner_tests {
 					edition_id: 1,
 					copy_id: 1,
 				})
-					.unwrap(),
+				.unwrap(),
 				hex::encode(dd.account_id).into_bytes()
 			);
 		});

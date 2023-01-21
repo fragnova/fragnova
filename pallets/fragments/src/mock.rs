@@ -6,13 +6,14 @@ use frame_support::{
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
 use frame_system;
+use pallet_oracle::{OracleContract, OracleProvider};
 use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
 	testing::{Header, TestXt},
-	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
+	traits::{
+		BlakeTwo256, ConstU8, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
+	},
 };
-use sp_runtime::traits::ConstU8;
-use pallet_oracle::{OracleContract, OracleProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -274,7 +275,6 @@ impl pallet_clusters::Config for Test {
 	type DataLimit = ConstU32<100>;
 	type MembersLimit = ConstU32<10>;
 	type RoleSettingsLimit = ConstU32<20>;
-
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

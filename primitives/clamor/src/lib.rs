@@ -160,7 +160,11 @@ pub fn init(geth_url: Option<String>) {
 }
 
 /// Make an HTTP POST Request with data `body` to the URL `url`
-pub fn http_json_post(url: &str, body: &[u8], wait: Option<Timestamp>) -> Result<Vec<u8>, &'static str> {
+pub fn http_json_post(
+	url: &str,
+	body: &[u8],
+	wait: Option<Timestamp>,
+) -> Result<Vec<u8>, &'static str> {
 	log::debug!("sp_clamor http_request called...");
 
 	let request =
@@ -187,7 +191,7 @@ pub fn http_json_post(url: &str, body: &[u8], wait: Option<Timestamp>) -> Result
 					let len =
 						offchain::http_response_read_body(request, &mut buffer, None).unwrap();
 					if len == 0 {
-						break;
+						break
 					}
 					response_body.extend_from_slice(&buffer[..len as usize]);
 				}
@@ -222,9 +226,7 @@ pub fn get_locked_frag_account<TAccountId: Encode + Decode>(
 }
 
 /// **Get** an **Account ID** deterministically computed from an input `hash`**.
-pub fn get_vault_id<TAccountId: Encode + Decode>(
-	hash: Hash128
-) -> TAccountId {
+pub fn get_vault_id<TAccountId: Encode + Decode>(hash: Hash128) -> TAccountId {
 	let hash = blake2_256(&[&b"fragnova-vault"[..], &hash].concat());
 	TAccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 }

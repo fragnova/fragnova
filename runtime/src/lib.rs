@@ -63,7 +63,10 @@ use frame_support::{
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 	weights::DispatchClass,
 };
-use frame_system::{EnsureRoot, limits::{BlockLength, BlockWeights},};
+use frame_system::{
+	limits::{BlockLength, BlockWeights},
+	EnsureRoot,
+};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -75,13 +78,12 @@ use sp_runtime::{
 	traits::{
 		BlakeTwo256, Block as BlockT, Extrinsic as ExtrinsicT, IdentifyAccount, NumberFor, Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError, InvalidTransaction},
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
+	},
 	ApplyExtrinsicResult, MultiSignature,
 };
-use sp_std::{
-	prelude::*,
-	str,
-};
+use sp_std::{prelude::*, str};
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -97,8 +99,8 @@ pub use frame_support::{
 	StorageValue,
 };
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_protos::Call as ProtosCall;
 pub use pallet_fragments::Call as FragmentsCall;
+pub use pallet_protos::Call as ProtosCall;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
 #[cfg(any(feature = "std", test))]
@@ -107,7 +109,7 @@ pub use sp_runtime::{Perbill, Permill};
 
 use scale_info::prelude::string::String;
 
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 use sp_runtime::traits::{ConstU8, SaturatedConversion, StaticLookup};
 
 use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
@@ -117,11 +119,10 @@ pub use pallet_contracts::Schedule;
 use pallet_oracle::OracleProvider;
 
 // IMPORTS BELOW ARE USED IN the module `validation_logic`
-use protos::traits::Trait;
 use protos::categories::{
-	Categories,
 	AudioCategories,
 	BinaryCategories,
+	Categories,
 	ModelCategories,
 	ShardsFormat,
 	// ShardsScriptInfo,
@@ -129,8 +130,9 @@ use protos::categories::{
 	TextCategories,
 	TextureCategories,
 	VectorCategories,
-	VideoCategories
+	VideoCategories,
 };
+use protos::traits::Trait;
 use sp_clamor::Hash256;
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
@@ -305,17 +307,17 @@ parameter_types! {
 	///    - If this is `None`, an unlimited amount of weight can be consumed by the extrinsic class. This is generally highly recommended for `Mandatory` dispatch class, while it can be dangerous for `Normal` class and should only be done with extra care and consideration.
 	///    - In the worst case, the total weight consumed by the extrinsic class is going to be: `MAX(max_total) + MAX(reserved)`. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.WeightsPerClass.html#structfield.max_total
 	/// 4. **Maximum additional amount of weight that can always be consumed by an extrinsic class**, **once a block's target block weight (`BlockWeights::max_block`)
-    ///	   has been reached** (`WeightsPerClass::reserved`): "Often it's desirable for some class of transactions to be added to the block despite it being full.
-    ///    For instance one might want to prevent high-priority `Normal` transactions from pushing out lower-priority `Operational` transactions.
-    ///    In such cases you might add a `reserved` capacity for given class.".
-    ///    Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
-    ///    - Note that the `max_total` limit applies to `reserved` space as well.
-    ///		 For example, in the diagram (https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# - click the "src" button - since the diagram gets cut off on the
-    ///		 webpage), "the sum of weights of `Ext7` & `Ext8` (which are `Operational` extrinsics) mustn't exceed the `max_total` (of the `Operational` extrinsic)".
-    ///      Please do see the diagram for complete understanding.
-    ///    - Setting `reserved` to `Some(x)`, guarantees that at least `x` weight can be consumed by the extrinsic class in every block.
-    ///    	  - Note: `x` can be zero obviously. It doesn't have to only be non-zero integers (obviously!).
-    ///    - Setting `reserved` to `None` guarantees that at least `max_total` weight can be consumed by the extrinsic class in every block.
+	///	   has been reached** (`WeightsPerClass::reserved`): "Often it's desirable for some class of transactions to be added to the block despite it being full.
+	///    For instance one might want to prevent high-priority `Normal` transactions from pushing out lower-priority `Operational` transactions.
+	///    In such cases you might add a `reserved` capacity for given class.".
+	///    Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
+	///    - Note that the `max_total` limit applies to `reserved` space as well.
+	///		 For example, in the diagram (https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# - click the "src" button - since the diagram gets cut off on the
+	///		 webpage), "the sum of weights of `Ext7` & `Ext8` (which are `Operational` extrinsics) mustn't exceed the `max_total` (of the `Operational` extrinsic)".
+	///      Please do see the diagram for complete understanding.
+	///    - Setting `reserved` to `Some(x)`, guarantees that at least `x` weight can be consumed by the extrinsic class in every block.
+	///    	  - Note: `x` can be zero obviously. It doesn't have to only be non-zero integers (obviously!).
+	///    - Setting `reserved` to `None` guarantees that at least `max_total` weight can be consumed by the extrinsic class in every block.
 	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrisnic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
 	/// Furthermore, a `BlockWeights` struct also contains information about the block:
 	/// 1. **Maximum total amount of weight that can be consumed by all kinds of extrinsics in a block (assuming no extrinsic class uses its `reserved` space)** (`BlockWeights::max_block`)
@@ -333,7 +335,7 @@ parameter_types! {
 	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
 	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
 		// `BlockWeightsBuilder::base_block()` sets the base weight of the block (i.e `BlockWeights::base_block`) to
-	    // `frame_support::weights::constants::BlockExecutionWeight` which is defined as the "Time to execute an empty block" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.BlockExecutionWeight.html#).
+		// `frame_support::weights::constants::BlockExecutionWeight` which is defined as the "Time to execute an empty block" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.BlockExecutionWeight.html#).
 		.base_block(BlockExecutionWeight::get())
 		// Set the base weight (i.e `WeightsPerClass::base_extrinsic`) for each extrinsic class to `ExtrinsicBaseWeight::get()`.
 		//
@@ -370,8 +372,8 @@ mod validation_logic {
 	/// Does the call `c` use `transaction_index::index`.
 	fn does_call_index_the_transaction(c: &Call) -> bool {
 		matches!(
-		c,
-		Call::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+			c,
+			Call::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
 		Call::Protos(pallet_protos::Call::patch { .. }) |
 		Call::Protos(pallet_protos::Call::set_metadata { .. }) |
 		Call::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
@@ -384,9 +386,12 @@ mod validation_logic {
 			Categories::Text(sub_categories) => match sub_categories {
 				TextCategories::Plain => str::from_utf8(data).is_ok(),
 				// REVIEW - does a Json have to be a `serde_json::Map` or can it `serde_json::Value`?
-				TextCategories::Json => serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(&data[..]).is_ok()
+				TextCategories::Json =>
+					serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(&data[..])
+						.is_ok(),
 			},
-			Categories::Trait(trait_hash) => match trait_hash { // Non Capisco Cosa Fare Qui!!!
+			Categories::Trait(trait_hash) => match trait_hash {
+				// Non Capisco Cosa Fare Qui!!!
 				Some(_) => false,
 				None => {
 					let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // TODO Review - is `&mut *data` safe?
@@ -394,7 +399,7 @@ mod validation_logic {
 					};
 
 					if trait_struct.name.len() == 0 {
-						return false;
+						return false
 					}
 
 					trait_struct.records.windows(2).all(|window| {
@@ -424,7 +429,9 @@ mod validation_logic {
 
 				let all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
 					proto_references.iter().any(|proto| {
-						if let Some(trait_impls) = pallet_protos::TraitImplsByShard::<Runtime>::get(proto) {
+						if let Some(trait_impls) =
+							pallet_protos::TraitImplsByShard::<Runtime>::get(proto)
+						{
 							trait_impls.contains(shards_trait)
 						} else {
 							false
@@ -432,21 +439,16 @@ mod validation_logic {
 					})
 				});
 
-				let all_traits_implemented_in_this_shards = implementing.iter().all(|_shards_trait| {
-					match format {
-						ShardsFormat::Edn => {
-							false
-						},
-						ShardsFormat::Binary => {
-							false
-						},
-					}
-				});
+				let all_traits_implemented_in_this_shards =
+					implementing.iter().all(|_shards_trait| match format {
+						ShardsFormat::Edn => false,
+						ShardsFormat::Binary => false,
+					});
 
 				all_required_trait_impls_found && all_traits_implemented_in_this_shards
 			},
 			Categories::Audio(sub_categories) => match sub_categories {
-				AudioCategories::OggFile => infer::is(data, "ogg"),  // TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
+				AudioCategories::OggFile => infer::is(data, "ogg"), // TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
 				AudioCategories::Mp3File => infer::is(data, "mp3"),
 			},
 			Categories::Texture(sub_categories) => match sub_categories {
@@ -573,43 +575,50 @@ mod validation_logic {
 
 	#[test]
 	fn is_the_immediate_call_valid_should_not_work_if_proto_category_is_invalid() {
-
 		for (category, (valid_data, invalid_data)) in [
-			(Categories::Text(TextCategories::Plain), (b"I am valid UTF-8 text!".to_vec(), vec![0xF0, 0x9F, 0x98])),
-			(Categories::Text(TextCategories::Json), (b"{\"key\": \"value\"}".to_vec(), b"I am not JSON text!".to_vec())),
-			(Categories::Texture(TextureCategories::PngFile), (vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], vec![7u8; 10])),
-			(Categories::Texture(TextureCategories::JpgFile), (vec![0xFF, 0xD8, 0xFF, 0xE0], vec![7u8; 10]))
+			(
+				Categories::Text(TextCategories::Plain),
+				(b"I am valid UTF-8 text!".to_vec(), vec![0xF0, 0x9F, 0x98]),
+			),
+			(
+				Categories::Text(TextCategories::Json),
+				(b"{\"key\": \"value\"}".to_vec(), b"I am not JSON text!".to_vec()),
+			),
+			(
+				Categories::Texture(TextureCategories::PngFile),
+				(vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], vec![7u8; 10]),
+			),
+			(
+				Categories::Texture(TextureCategories::JpgFile),
+				(vec![0xFF, 0xD8, 0xFF, 0xE0], vec![7u8; 10]),
+			),
 		] {
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Protos(pallet_protos::Call::upload { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-						references: vec![],
-						category: category.clone(),
-						tags: vec![].try_into().unwrap(),
-						linked_asset: None,
-						license: pallet_protos::UsageLicense::Closed,
-						cluster: None,
-						data: pallet_protos::ProtoData::Local(valid_data)
-					})
-				),
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
+					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+					references: vec![],
+					category: category.clone(),
+					tags: vec![].try_into().unwrap(),
+					linked_asset: None,
+					license: pallet_protos::UsageLicense::Closed,
+					cluster: None,
+					data: pallet_protos::ProtoData::Local(valid_data)
+				})),
 				true
 			);
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Protos(pallet_protos::Call::upload {
-						references: vec![],
-						category: category.clone(),
-						tags: vec![].try_into().unwrap(),
-						linked_asset: None,
-						license: pallet_protos::UsageLicense::Closed,
-						cluster: None,
-						data: pallet_protos::ProtoData::Local(invalid_data)
-					}),
-				),
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
+					references: vec![],
+					category: category.clone(),
+					tags: vec![].try_into().unwrap(),
+					linked_asset: None,
+					license: pallet_protos::UsageLicense::Closed,
+					cluster: None,
+					data: pallet_protos::ProtoData::Local(invalid_data)
+				}),),
 				false
 			);
 		}
-
 	}
 
 	#[test]
@@ -617,72 +626,70 @@ mod validation_logic {
 		for (metadata_key, data) in [
 			(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
 			(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
-			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0])
+			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
 		] {
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Protos(pallet_protos::Call::set_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-						proto_hash: [7u8; 32],
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: data.clone()
-					})
-				),
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+					proto_hash: [7u8; 32],
+					metadata_key: metadata_key.clone().try_into().unwrap(),
+					data: data.clone()
+				})),
 				true
 			);
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Protos(pallet_protos::Call::set_metadata {
-						proto_hash: [7u8; 32],
-						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
-						data: data.clone()
-					})
-				),
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+					proto_hash: [7u8; 32],
+					metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
+					data: data.clone()
+				})),
 				false
 			);
 
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Fragments(pallet_fragments::Call::set_definition_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_definition_metadata {
+						// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
 						definition_hash: [7u8; 16],
 						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
-					})
-				),
+					}
+				)),
 				true
 			);
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Fragments(pallet_fragments::Call::set_definition_metadata {
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_definition_metadata {
 						definition_hash: [7u8; 16],
 						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
 						data: data.clone()
-					})
-				),
+					}
+				)),
 				false
 			);
 
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Fragments(pallet_fragments::Call::set_instance_metadata {
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_instance_metadata {
 						definition_hash: [7u8; 16],
 						edition_id: 1,
 						copy_id: 1,
 						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
-					})
-				),
+					}
+				)),
 				true
 			);
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Fragments(pallet_fragments::Call::set_instance_metadata {
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_instance_metadata {
 						definition_hash: [7u8; 16],
 						edition_id: 1,
 						copy_id: 1,
 						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
 						data: data.clone()
-					})
-				),
+					}
+				)),
 				false
 			);
 		}
@@ -693,109 +700,100 @@ mod validation_logic {
 		for (metadata_key, data) in [
 			(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
 			(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
-			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0])
+			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
 		] {
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Protos(pallet_protos::Call::set_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-						proto_hash: [7u8; 32],
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: data.clone()
-					})
-				),
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+					proto_hash: [7u8; 32],
+					metadata_key: metadata_key.clone().try_into().unwrap(),
+					data: data.clone()
+				})),
 				true
 			);
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Protos(pallet_protos::Call::set_metadata {
-						proto_hash: [7u8; 32],
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
-					})
-				),
+				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+					proto_hash: [7u8; 32],
+					metadata_key: metadata_key.clone().try_into().unwrap(),
+					data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+				})),
 				false
 			);
 
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Fragments(pallet_fragments::Call::set_definition_metadata { // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_definition_metadata {
+						// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
 						definition_hash: [7u8; 16],
 						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone() // Invalid UTF-8 Text
-					})
-				),
+					}
+				)),
 				true
 			);
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Fragments(pallet_fragments::Call::set_definition_metadata {
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_definition_metadata {
 						definition_hash: [7u8; 16],
 						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
-					})
-				),
+					}
+				)),
 				false
 			);
 
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Fragments(pallet_fragments::Call::set_instance_metadata {
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_instance_metadata {
 						definition_hash: [7u8; 16],
 						edition_id: 1,
 						copy_id: 1,
 						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
-					})
-				),
+					}
+				)),
 				true
 			);
 			assert_eq!(
-				is_the_immediate_call_valid(
-					&Call::Fragments(pallet_fragments::Call::set_instance_metadata {
+				is_the_immediate_call_valid(&Call::Fragments(
+					pallet_fragments::Call::set_instance_metadata {
 						definition_hash: [7u8; 16],
 						edition_id: 1,
 						copy_id: 1,
 						metadata_key: metadata_key.try_into().unwrap(),
 						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
-					})
-				),
+					}
+				)),
 				false
 			);
 		}
 	}
 
 	#[test]
-	fn is_the_immediate_call_valid_should_not_work_if_a_batch_call_contains_a_call_that_indexes_the_transaction() {
-
+	fn is_the_immediate_call_valid_should_not_work_if_a_batch_call_contains_a_call_that_indexes_the_transaction(
+	) {
 		assert_eq!(
-			is_the_immediate_call_valid(
-				&Call::Utility(pallet_utility::Call::batch {
-					calls: vec![
-						Call::Protos(pallet_protos::Call::ban { // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-							proto_hash: [7u8; 32],
-						})
-					]
-				}),
-			),
+			is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
+				calls: vec![Call::Protos(pallet_protos::Call::ban {
+					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+					proto_hash: [7u8; 32],
+				})]
+			}),),
 			true
 		);
 
 		assert_eq!(
-			is_the_immediate_call_valid(
-				&Call::Utility(pallet_utility::Call::batch {
-					calls: vec![
-						Call::Protos(pallet_protos::Call::upload {
-							references: vec![],
-							category: Categories::Text(TextCategories::Plain),
-							tags: vec![].try_into().unwrap(),
-							linked_asset: None,
-							license: pallet_protos::UsageLicense::Closed,
-							cluster: None,
-							data: pallet_protos::ProtoData::Local(b"Bonjour".to_vec())
-						})
-					]
-				}),
-			),
+			is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
+				calls: vec![Call::Protos(pallet_protos::Call::upload {
+					references: vec![],
+					category: Categories::Text(TextCategories::Plain),
+					tags: vec![].try_into().unwrap(),
+					linked_asset: None,
+					license: pallet_protos::UsageLicense::Closed,
+					cluster: None,
+					data: pallet_protos::ProtoData::Local(b"Bonjour".to_vec())
+				})]
+			}),),
 			false
 		);
 	}
@@ -1503,7 +1501,6 @@ fn get_utf8_string(string: &str) -> Result<&str, &str> {
 fn get_utf8_string(string: &Vec<u8>) -> Result<&str, &str> {
 	str::from_utf8(&string[..]).map_err(|_| "Lo siento")
 }
-
 
 // Marks the given trait implementations as runtime apis.
 //

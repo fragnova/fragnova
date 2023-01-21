@@ -1,7 +1,7 @@
-use std::str::FromStr;
 use crate::*;
+use std::str::FromStr;
 
-use ethabi::ethereum_types::{Address};
+use ethabi::ethereum_types::Address;
 
 use sp_core::{
 	ecdsa,
@@ -41,8 +41,8 @@ fn get_ethereum_chain_id() -> u64 {
 
 #[cfg(test)]
 fn get_genesis_hash() -> sp_core::H256 {
-	use sp_runtime::traits::Zero;
 	use crate::mock::Test;
+	use sp_runtime::traits::Zero;
 	<frame_system::Pallet<Test>>::block_hash(<Test as frame_system::Config>::BlockNumber::zero())
 }
 // (If pallet_accounts::dummy_data is being built in another pallet)
@@ -56,7 +56,6 @@ pub fn create_link_signature(
 	clamor_account_id: sp_core::ed25519::Public,
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 ) -> sp_core::ecdsa::Signature {
-
 	let sender_string = format!("0x{}", hex::encode(clamor_account_id));
 	let genesis_hash_string = format!("0x{}", hex::encode(get_genesis_hash()));
 
@@ -105,7 +104,6 @@ pub fn create_lock_signature(
 	sender: H160,
 	contract: H160,
 ) -> sp_core::ecdsa::Signature {
-
 	let message = b"FragLock".to_vec();
 	let message: Vec<u8> = [&[0x19, 0x01],
 		// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
@@ -152,7 +150,6 @@ pub fn create_unlock_signature(
 	sender: H160,
 	contract: H160,
 ) -> sp_core::ecdsa::Signature {
-
 	let message = b"FragUnlock".to_vec();
 	let message: Vec<u8> = [&[0x19, 0x01],
 		// This is the `domainSeparator` (https://eips.ethereum.org/EIPS/eip-712#definition-of-domainseparator)
@@ -193,10 +190,7 @@ pub fn create_unlock_signature(
 	ethereum_account_pair.sign_prehashed(&hashed_message)
 }
 
-pub fn get_ethereum_public_address(
-	ecdsa_pair_struct: &ecdsa::Pair,
-) -> H160 {
-
+pub fn get_ethereum_public_address(ecdsa_pair_struct: &ecdsa::Pair) -> H160 {
 	let ecdsa_public_struct = ecdsa_pair_struct.public();
 
 	let compressed_public_key = ecdsa_public_struct.0;
@@ -284,7 +278,9 @@ impl DummyData {
 		};
 
 		let contracts = vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")];
-		let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
+		let contract = Address::from_str(&contracts[0].as_str()[2..])
+			.map_err(|_| "Invalid response - invalid sender")
+			.unwrap();
 		let lock = Lock {
 			data: EthLockUpdate {
 				public: sp_core::ed25519::Public([69u8; 32]),
@@ -311,7 +307,7 @@ impl DummyData {
 					sp_core::ed25519::Public::from_raw([3u8; 32]),
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 				),
-				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[3u8; 32])
+				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 			},
 			ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 		};
@@ -346,7 +342,7 @@ impl DummyData {
 					sp_core::ed25519::Public::from_raw([3u8; 32]),
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 				),
-				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[3u8; 32])
+				_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 			},
 			ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
 		};
@@ -378,7 +374,7 @@ impl DummyData {
 						sp_core::ed25519::Public::from_raw([4u8; 32]),
 						sp_core::ecdsa::Pair::from_seed(&[4u8; 32]),
 					),
-					_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[4u8; 32])
+					_ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[4u8; 32]),
 				},
 				ethereum_account_pair: sp_core::ecdsa::Pair::from_seed(&[4u8; 32]),
 			},

@@ -37,22 +37,22 @@ impl<T> Visitor<T> for () {
 ///
 /// In case an empty list of leaves is passed the function returns a 0-filled hash.
 pub fn merkle_root<H, I>(leaves: I) -> H::Output
-	where
-		H: HashT,
-		H::Output: Default + AsRef<[u8]> + PartialOrd,
-		I: IntoIterator,
-		I::Item: AsRef<[u8]>,
+where
+	H: HashT,
+	H::Output: Default + AsRef<[u8]> + PartialOrd,
+	I: IntoIterator,
+	I::Item: AsRef<[u8]>,
 {
 	let iter = leaves.into_iter().map(|l| <H as HashT>::hash(l.as_ref()));
 	merkelize::<H, _, _>(iter, &mut ()).into()
 }
 
 fn merkelize<H, V, I>(leaves: I, visitor: &mut V) -> H::Output
-	where
-		H: HashT,
-		H::Output: Default + AsRef<[u8]> + PartialOrd,
-		V: Visitor<H::Output>,
-		I: Iterator<Item = H::Output>,
+where
+	H: HashT,
+	H::Output: Default + AsRef<[u8]> + PartialOrd,
+	V: Visitor<H::Output>,
+	I: Iterator<Item = H::Output>,
 {
 	let upper = Vec::with_capacity((leaves.size_hint().1.unwrap_or(0).saturating_add(1)) / 2);
 	let mut next = match merkelize_row::<H, _, _>(leaves, upper, visitor) {
@@ -86,11 +86,11 @@ fn merkelize_row<H, V, I>(
 	mut next: Vec<H::Output>,
 	visitor: &mut V,
 ) -> Result<H::Output, Vec<H::Output>>
-	where
-		H: HashT,
-		H::Output: AsRef<[u8]> + PartialOrd,
-		V: Visitor<H::Output>,
-		I: Iterator<Item = H::Output>,
+where
+	H: HashT,
+	H::Output: AsRef<[u8]> + PartialOrd,
+	V: Visitor<H::Output>,
+	I: Iterator<Item = H::Output>,
 {
 	#[cfg(feature = "debug")]
 	log::debug!("[merkelize_row]");

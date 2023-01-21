@@ -26,14 +26,23 @@ pub struct DummyData {
 	pub account_id_2: Public,
 }
 
-pub fn get_cluster_id(cluster_name: Vec<u8>, account_id: sp_core::ed25519::Public, index: u32) -> Hash128 {
+pub fn get_cluster_id(
+	cluster_name: Vec<u8>,
+	account_id: sp_core::ed25519::Public,
+	index: u32,
+) -> Hash128 {
 	let extrinsic_index = 2;
 	System::set_extrinsic_index(extrinsic_index);
 	let block_number = System::block_number();
 
 	blake2_128(
-		&[&block_number.encode(), cluster_name.as_slice(), &index.to_be_bytes(), &account_id.encode()]
-			.concat(),
+		&[
+			&block_number.encode(),
+			cluster_name.as_slice(),
+			&index.to_be_bytes(),
+			&account_id.encode(),
+		]
+		.concat(),
 	)
 }
 
@@ -60,9 +69,12 @@ pub fn take_name_index_(name: &Vec<u8>) -> Compact<u64> {
 
 impl DummyData {
 	pub fn new() -> Self {
-		let role_settings = DummyRoleSetting { name: b"Setting One".to_vec(), data: b"Data One".to_vec() };
-		let role_settings_ = DummyRoleSetting { name: b"Setting One".to_vec(), data: b"Data One".to_vec() };
-		let role_settings_2 = DummyRoleSetting { name: b"Setting Two".to_vec(), data: b"Data Two".to_vec() };
+		let role_settings =
+			DummyRoleSetting { name: b"Setting One".to_vec(), data: b"Data One".to_vec() };
+		let role_settings_ =
+			DummyRoleSetting { name: b"Setting One".to_vec(), data: b"Data One".to_vec() };
+		let role_settings_2 =
+			DummyRoleSetting { name: b"Setting Two".to_vec(), data: b"Data Two".to_vec() };
 
 		let role = DummyRole { name: b"Role1".to_vec(), settings: vec![role_settings_] };
 
@@ -72,13 +84,6 @@ impl DummyData {
 		let account_id = sp_core::ed25519::Public::from_raw([1u8; 32]);
 		let account_id_2 = sp_core::ed25519::Public::from_raw([2u8; 32]);
 
-		Self {
-			cluster,
-			role,
-			role_settings,
-			role_settings_2,
-			account_id,
-			account_id_2
-		}
+		Self { cluster, role, role_settings, role_settings_2, account_id, account_id_2 }
 	}
 }

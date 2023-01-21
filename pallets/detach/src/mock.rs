@@ -1,28 +1,24 @@
 pub use crate as pallet_detach;
 use crate::*;
-use frame_support::{
-	parameter_types,
-	traits::{ ConstU32},
-};
+use frame_support::{parameter_types, traits::ConstU32};
 use frame_system;
 use sp_core::{
-	// ed25519::Signature,
-	H256,
 	offchain::{
-		testing::{self, TestOffchainExt, OffchainState, PoolState},
+		testing::{self, OffchainState, PoolState, TestOffchainExt},
 		OffchainDbExt, OffchainWorkerExt, TransactionPoolExt,
 	},
+	// ed25519::Signature,
+	H256,
 };
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
-	RuntimeAppPublic,
-	MultiSignature,
+	MultiSignature, RuntimeAppPublic,
 };
 
+use parking_lot::RwLock;
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
 use std::sync::Arc;
-use parking_lot::RwLock;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -92,15 +88,15 @@ impl frame_system::offchain::SigningTypes for Test {
 
 pub type Extrinsic = TestXt<Call, ()>;
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-	where
-		Call: From<LocalCall>,
+where
+	Call: From<LocalCall>,
 {
 	type OverarchingCall = Call;
 	type Extrinsic = Extrinsic;
 }
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-	where
-		Call: From<LocalCall>,
+where
+	Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: Call,
@@ -130,7 +126,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext
 }
 
-
 pub fn new_test_ext_with_ocw() -> (
 	sp_io::TestExternalities,
 	Arc<RwLock<PoolState>>,
@@ -145,11 +140,7 @@ pub fn new_test_ext_with_ocw() -> (
 
 	let keystore = KeyStore::new();
 
-	SyncCryptoStore::ed25519_generate_new(
-		&keystore,
-		KEY_TYPE,
-		Some(&format!("{}", PHRASE)),
-	)
+	SyncCryptoStore::ed25519_generate_new(&keystore, KEY_TYPE, Some(&format!("{}", PHRASE)))
 		.unwrap();
 
 	// Since the struct `KeyStore` stores cryptographic keys as bytes, it doesn't know whether it stored it stored an Ed25519 key or a ECDSA key or a Sr25519 key.

@@ -11,8 +11,11 @@ mod tests {
 		dispatch::DispatchResult,
 		traits::{Currency, Len},
 	};
-	use sp_runtime::{traits::TypedGet, BoundedVec, DispatchError::BadOrigin};
-	use sp_runtime::traits::Zero;
+	use sp_runtime::{
+		traits::{TypedGet, Zero},
+		BoundedVec,
+		DispatchError::BadOrigin,
+	};
 
 	pub fn create_namespace_(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -154,10 +157,7 @@ mod tests {
 			assert!(!<Namespaces<Test>>::contains_key(&namespace));
 
 			System::assert_has_event(
-				AliasesEvent::NamespaceDeleted {
-					namespace: namespace.clone(),
-				}
-					.into(),
+				AliasesEvent::NamespaceDeleted { namespace: namespace.clone() }.into(),
 			);
 		});
 	}
@@ -223,18 +223,24 @@ mod tests {
 			let target = LinkTarget::Account(account_id);
 
 			assert_ok!(create_namespace_(account_id.clone(), namespace.clone(), true));
-			assert_ok!(create_alias_(account_id.clone(), namespace.clone(), alias.clone(), target, false));
+			assert_ok!(create_alias_(
+				account_id.clone(),
+				namespace.clone(),
+				alias.clone(),
+				target,
+				false
+			));
 
 			System::assert_has_event(
 				AliasesEvent::AliasCreated {
 					who: account_id.clone(),
 					namespace: namespace.clone(),
 					alias: alias.clone(),
-				}.into(),
+				}
+				.into(),
 			);
 			let alias_index = Pallet::<Test>::take_name_index(&alias);
-			let stored_alias =
-				<Aliases<Test>>::get(&namespace, &alias_index).unwrap();
+			let stored_alias = <Aliases<Test>>::get(&namespace, &alias_index).unwrap();
 			assert_eq!(stored_alias.cur_block_number, System::block_number());
 			assert_eq!(stored_alias.prev_block_number, 0)
 		});
@@ -262,10 +268,7 @@ mod tests {
 			assert!(<Aliases<Test>>::contains_key(&root_namespace, &alias_index));
 
 			System::assert_has_event(
-				AliasesEvent::RootAliasCreated {
-					root_namespace,
-					alias: alias.clone(),
-				}.into(),
+				AliasesEvent::RootAliasCreated { root_namespace, alias: alias.clone() }.into(),
 			);
 		});
 	}
@@ -308,8 +311,7 @@ mod tests {
 			));
 
 			let alias_index = Pallet::<Test>::take_name_index(&alias);
-			let stored_alias =
-				<Aliases<Test>>::get(&namespace, &alias_index).unwrap();
+			let stored_alias = <Aliases<Test>>::get(&namespace, &alias_index).unwrap();
 
 			let current_block_number = <frame_system::Pallet<Test>>::block_number();
 			let new_target_versioned = LinkTargetVersioned {
@@ -317,7 +319,10 @@ mod tests {
 				prev_block_number: stored_alias.cur_block_number,
 				cur_block_number: current_block_number,
 			};
-			assert_eq!(<Aliases<Test>>::get(&namespace, &alias_index).unwrap(), new_target_versioned);
+			assert_eq!(
+				<Aliases<Test>>::get(&namespace, &alias_index).unwrap(),
+				new_target_versioned
+			);
 		});
 	}
 }

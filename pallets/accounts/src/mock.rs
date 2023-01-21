@@ -6,9 +6,9 @@ use frame_support::{
 	traits::{ConstU128, ConstU32, ConstU64},
 };
 
+use parking_lot::RwLock;
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
 use std::sync::Arc;
-use parking_lot::RwLock;
 
 use sp_core::{
 	ed25519::Signature,
@@ -22,13 +22,14 @@ use sp_core::{
 use frame_support::traits::{AsEnsureOriginWithArg, GenesisBuild};
 use frame_system::EnsureSigned;
 
+use pallet_oracle::{OracleContract, OracleProvider};
 use sp_runtime::{
 	testing::{Header, TestXt},
-	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
+	traits::{
+		BlakeTwo256, ConstU8, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
+	},
 	RuntimeAppPublic,
 };
-use sp_runtime::traits::ConstU8;
-use pallet_oracle::{OracleContract, OracleProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
