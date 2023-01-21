@@ -1430,6 +1430,7 @@
 <span id="1430">1430</span>
 <span id="1431">1431</span>
 <span id="1432">1432</span>
+<span id="1433">1433</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1644,10 +1645,9 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
+	<span class="kw">use </span>pallet_detach::{DetachCollection, DetachRequest, DetachRequests, DetachedHashes, SupportedChains, DetachHash};
+	<span class="kw">use </span>sp_clamor::CID_PREFIX;
 	<span class="kw">use </span>pallet_clusters::Cluster;
-	<span class="kw">use </span>pallet_detach::{
-		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
-	};
 	<span class="kw">use </span>sp_runtime::SaturatedConversion;
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
@@ -1758,10 +1758,10 @@
 		</span>DuplicateProtoTagExists,
 		<span class="doccomment">/// Proto-Fragment&#39;s Metadata key is empty
 		</span>MetadataKeyIsEmpty,
+		<span class="doccomment">/// Detach Request&#39;s Proto-Fragments List is empty
+		</span>ProtosToDetachIsEmpty,
 		<span class="doccomment">/// Detach Request&#39;s Target Account is empty
 		</span>DetachAccountIsEmpty,
-		<span class="doccomment">/// Detach Request Already Submitted
-		</span>DetachRequestAlreadyExists,
 		<span class="doccomment">/// Already detached
 		</span>Detached,
 		<span class="doccomment">/// Not the owner of the proto
@@ -2241,7 +2241,8 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Request to detach a **Proto-Fragment** from **Clamor**.
+		<span class="comment">// TODO Review - Should we ensure that a Detach Request doesn&#39;t already exist with the same Proto-Fragment?
+		</span><span class="doccomment">/// Request to detach a **Proto-Fragment** from **Clamor**.
 		///
 		/// Note: The Proto-Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
 		///
@@ -2251,46 +2252,47 @@
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - **ID of the Proto-Fragment** to **detach**
+		/// * `proto_hashes` - **IDs** of the **Proto-Fragments to detach**
 		/// * `target_chain` - **External Blockchain** to attach the Proto-Fragment into
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
 		</span><span class="attribute">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::detach())]
 		</span><span class="kw">pub fn </span>detach(
 			origin: OriginFor&lt;T&gt;,
-			proto_hash: Hash256,
+			proto_hashes: Vec&lt;Hash256&gt;,
 			target_chain: SupportedChains,
 			target_account: BoundedVec&lt;u8, T::DetachAccountLimit&gt;, <span class="comment">// an eth address or so
 		</span>) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
+			<span class="macro">ensure!</span>(!proto_hashes.is_empty(), Error::&lt;T&gt;::ProtosToDetachIsEmpty);
 			<span class="macro">ensure!</span>(!target_account.is_empty(), Error::&lt;T&gt;::DetachAccountIsEmpty);
 
-			<span class="comment">// make sure the proto exists
-			</span><span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
-				&lt;Protos&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>proto_hash).ok_or(Error::&lt;T&gt;::ProtoNotFound)<span class="question-mark">?</span>;
+			proto_hashes.iter().try_for_each(|proto_hash| -&gt; DispatchResult {
+				<span class="comment">// make sure the proto exists
+				</span><span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
+					&lt;Protos&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>proto_hash).ok_or(Error::&lt;T&gt;::ProtoNotFound)<span class="question-mark">?</span>;
 
-			<span class="kw">match </span>proto.owner {
-				ProtoOwner::User(owner) =&gt; <span class="macro">ensure!</span>(owner == who, Error::&lt;T&gt;::Unauthorized),
-				ProtoOwner::ExternalAsset(_ext_asset) =&gt;
-				<span class="comment">// We don&#39;t allow detaching external assets
-				</span>{
-					<span class="macro">ensure!</span>(<span class="bool-val">false</span>, Error::&lt;T&gt;::Unauthorized)
-				},
-			};
+				<span class="kw">match </span>proto.owner {
+					ProtoOwner::User(owner) =&gt; <span class="macro">ensure!</span>(owner == who, Error::&lt;T&gt;::Unauthorized),
+					ProtoOwner::ExternalAsset(_ext_asset) =&gt;
+					<span class="comment">// We don&#39;t allow detaching external assets
+						</span>{
+							<span class="macro">ensure!</span>(<span class="bool-val">false</span>, Error::&lt;T&gt;::Unauthorized)
+						},
+				};
 
-			<span class="kw">let </span>detach_hash = DetachHash::Proto(proto_hash);
+				<span class="kw">let </span>detach_hash = DetachHash::Proto(<span class="kw-2">*</span>proto_hash);
+				<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>detach_hash), Error::&lt;T&gt;::Detached);
+
+				<span class="prelude-val">Ok</span>(())
+			})<span class="question-mark">?</span>;
+
 			<span class="kw">let </span>detach_request = DetachRequest {
-				hash: detach_hash.clone(),
+				collection: DetachCollection::Protos(proto_hashes),
 				target_chain,
-				target_account: target_account.into(),
+				target_account: target_account.into()
 			};
-
-			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>detach_hash), Error::&lt;T&gt;::Detached);
-			<span class="macro">ensure!</span>(
-				!&lt;DetachRequests&lt;T&gt;&gt;::get().contains(<span class="kw-2">&amp;</span>detach_request),
-				Error::&lt;T&gt;::DetachRequestAlreadyExists
-			);
 
 			&lt;DetachRequests&lt;T&gt;&gt;::mutate(|requests| {
 				requests.push(detach_request);

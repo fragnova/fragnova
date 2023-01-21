@@ -2265,6 +2265,14 @@
 <span id="2265">2265</span>
 <span id="2266">2266</span>
 <span id="2267">2267</span>
+<span id="2268">2268</span>
+<span id="2269">2269</span>
+<span id="2270">2270</span>
+<span id="2271">2271</span>
+<span id="2272">2272</span>
+<span id="2273">2273</span>
+<span id="2274">2274</span>
+<span id="2275">2275</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -2579,7 +2587,7 @@
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 	<span class="kw">use </span>pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
 	<span class="kw">use </span>sp_clamor::get_vault_id;
-	<span class="kw">use </span>pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachedHashes, SupportedChains};
+	<span class="kw">use </span>pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachCollection, DetachedHashes, SupportedChains};
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
 	</span><span class="attribute">#[pallet::config]
@@ -2811,10 +2819,10 @@
 		</span>ProtoOwnerNotFound,
 		<span class="doccomment">/// No Permission
 		</span>NoPermission,
+		<span class="doccomment">/// Detach Request&#39;s Fragment-Instances List is empty
+		</span>InstancesToDetachIsEmpty,
 		<span class="doccomment">/// Detach Request&#39;s Target Account is empty
 		</span>DetachAccountIsEmpty,
-		<span class="doccomment">/// Detach Request Already Submitted
-		</span>DetachRequestAlreadyExists,
 		<span class="doccomment">/// Already detached
 		</span>Detached,
 		<span class="doccomment">/// Already exist
@@ -3531,7 +3539,6 @@
 			expiration: <span class="prelude-ty">Option</span>&lt;T::BlockNumber&gt;,
 			secondary_sale_type: SecondarySaleType
 		) -&gt; DispatchResult {
-
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(
@@ -3573,7 +3580,6 @@
 			edition_id: InstanceUnit,
 			copy_id: InstanceUnit,
 		) -&gt; DispatchResult {
-
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(
@@ -3640,7 +3646,10 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Request to detach a **Fragment** from **Clamor**.
+		<span class="comment">// TODO Review - Should we ensure that a Detach Request doesn&#39;t already exist with the same Fragment Instance?
+		</span><span class="doccomment">/// Request to detach **Fragment Instances** of a **single Fragment Definition** from the **Clamor Blockchain**.
+		///
+		/// Note: Copyable Fragment Instances (i.e Fragment Instances that are duplicatable) are not allowed to be detached from Clamor
 		///
 		/// Note: The Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
 		///
@@ -3650,7 +3659,8 @@
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
-		/// * `definition_hash` - **ID of the Fragment Definition** to **detach**
+		/// * `definition_hash` - **ID of the Fragment Definition**
+		/// * `edition_ids` - **Edition IDs** of the **Fragment Instances that will be detached**
 		/// * `target_chain` - **External Blockchain** to attach the Proto-Fragment into
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
@@ -3658,37 +3668,44 @@
 		</span><span class="kw">pub fn </span>detach(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
-			edition_id: InstanceUnit,
-			copy_id: InstanceUnit,
+			edition_ids: Vec&lt;InstanceUnit&gt;,
 			target_chain: SupportedChains,
 			target_account: BoundedVec&lt;u8, T::DetachAccountLimit&gt;, <span class="comment">// an eth address or so
 		</span>) -&gt; DispatchResult {
-
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
+			<span class="macro">ensure!</span>(!edition_ids.is_empty(), Error::&lt;T&gt;::InstancesToDetachIsEmpty);
 			<span class="macro">ensure!</span>(!target_account.is_empty(), Error::&lt;T&gt;::DetachAccountIsEmpty);
 
-			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
+			<span class="kw">let </span>owned_instances = &lt;Inventory&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>who, definition_hash).ok_or(Error::&lt;T&gt;::NoPermission)<span class="question-mark">?</span>;
 
-			<span class="comment">// owner must own instance
-			</span><span class="kw">let </span>owned_instances = &lt;Inventory&lt;T&gt;&gt;::get(who, definition_hash).ok_or(Error::&lt;T&gt;::NoPermission)<span class="question-mark">?</span>;
-			<span class="macro">ensure!</span>(
-				owned_instances.contains(<span class="kw-2">&amp;</span>(Compact(edition_id), Compact(copy_id))),
-				Error::&lt;T&gt;::NoPermission
-			);
+			edition_ids.iter().try_for_each(|edition_id| -&gt; DispatchResult {
+				<span class="comment">// owner must own instances
+				</span><span class="macro">ensure!</span>(
+					owned_instances.contains(<span class="kw-2">&amp;</span>(Compact(<span class="kw-2">*</span>edition_id), Compact(<span class="number">1</span>))),
+					Error::&lt;T&gt;::NoPermission
+				);
 
-			<span class="comment">// REVIEW - no go if will expire this block
-			</span><span class="kw">let </span>instance = &lt;Fragments&lt;T&gt;&gt;::get((definition_hash, edition_id, copy_id))
-				.ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
-			<span class="kw">if let </span><span class="prelude-val">Some</span>(expiring_at) = instance.expiring_at {
-				<span class="macro">ensure!</span>(current_block_number &lt; expiring_at, Error::&lt;T&gt;::NotFound);
-			}
+				<span class="comment">// A Fragment Instance that is copyable or that expires cannot be detached
+				</span><span class="kw">let </span>instance = &lt;Fragments&lt;T&gt;&gt;::get((definition_hash, edition_id, <span class="number">1</span>))
+					.ok_or(Error::&lt;T&gt;::NotFound)<span class="question-mark">?</span>;
+				<span class="macro">ensure!</span>((instance.permissions &amp; FragmentPerms::COPY) != FragmentPerms::COPY, Error::&lt;T&gt;::NoPermission);
+				<span class="macro">ensure!</span>(instance.expiring_at.is_none(), Error::&lt;T&gt;::NoPermission);
 
-			<span class="kw">let </span>detach_hash = DetachHash::Instance(definition_hash, Compact(edition_id), Compact(copy_id));
-			<span class="kw">let </span>detach_request = DetachRequest { hash: detach_hash.clone(), target_chain, target_account: target_account.into() };
+				<span class="kw">let </span>detach_hash = DetachHash::Instance(definition_hash, Compact(<span class="kw-2">*</span>edition_id), Compact(<span class="number">1</span>));
+				<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>detach_hash), Error::&lt;T&gt;::Detached);
 
-			<span class="macro">ensure!</span>(!&lt;DetachedHashes&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>detach_hash),Error::&lt;T&gt;::Detached);
-			<span class="macro">ensure!</span>(!&lt;DetachRequests&lt;T&gt;&gt;::get().contains(<span class="kw-2">&amp;</span>detach_request), Error::&lt;T&gt;::DetachRequestAlreadyExists);
+				<span class="prelude-val">Ok</span>(())
+			})<span class="question-mark">?</span>;
+
+			<span class="kw">let </span>detach_request = DetachRequest {
+				collection: DetachCollection::Instances(
+					edition_ids.into_iter().map(|edition_id| (definition_hash, Compact(edition_id), Compact(<span class="number">1</span>)))
+						.collect::&lt;Vec&lt;(Hash128, Compact&lt;InstanceUnit&gt;, Compact&lt;InstanceUnit&gt;)&gt;&gt;()
+				),
+				target_chain,
+				target_account: target_account.into(),
+			};
 
 			&lt;DetachRequests&lt;T&gt;&gt;::mutate(|requests| {
 				requests.push(detach_request);
@@ -3746,7 +3763,6 @@
 	}
 
 	<span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-
 		<span class="doccomment">/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `definition_hash`,
 		/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
 		///
