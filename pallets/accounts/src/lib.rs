@@ -143,7 +143,7 @@ impl EthFragContract for () {}
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct EthLockUpdate<TPublic> {
-	/// Public Account Address of What? (问Gio)
+	/// Public Account Address of
 	pub public: TPublic,
 	/// If the event was `Lock`, it represents the **total amount of FRAG token** that is **currently locked** (not just the newly locked FRAG token) on the **FRAG Token Smart Contract**
 	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
@@ -238,7 +238,7 @@ pub mod pallet {
 		/// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
 		type EthFragContract: EthFragContract;
 
-		/// Number of votes needed to do something (问Gio)
+		/// Number of votes needed to do something
 		#[pallet::constant]
 		type Threshold: Get<u64>;
 
@@ -639,7 +639,7 @@ pub mod pallet {
 						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
 						return Ok(())
 					} else {
-						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
+						// Current votes passes the threshold, let's remove EVMLinkVoting
 						// we are good to go, but let's remove the record
 						<EVMLinkVoting<T>>::remove(&data_hash);
 					}
@@ -855,7 +855,7 @@ pub mod pallet {
 		/// verify that when we put the signature parameter (written as `signature`) and the payload parameter (written as `data`) of the aforementioned call into an "Ethereum Verify function",
 		/// it returns the public key that is in the payload parameter.
 		///
-		/// Furthermore, also verify that `data.public` is in `FragKeys` - 问Gio
+		/// Furthermore, also verify that `data.public` is in `FragKeys`
 		///
 		/// If both the aforementioned, allow the call to execute. Otherwise, do not allow it to.
 		///
@@ -892,7 +892,7 @@ pub mod pallet {
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into() // // 问Gio
+						return InvalidTransaction::BadSigner.into()
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
@@ -952,7 +952,7 @@ pub mod pallet {
 		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
 		/// (NOTE: the signed payload consists of a payload and a signature.
 		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
-		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`) (问Gio)
+		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`)
 		///
 		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		fn sync_partner_contract(
@@ -1104,7 +1104,7 @@ pub mod pallet {
 						// this line is to prepare and return payload to be used
 						|account| EthLockUpdate {
 							// `account` is an account `Signer::<T, T::AuthorityId>::any_account()`
-							public: account.public.clone(), // 问Gio what is account.public and why is it supposed to be in FragKey
+							public: account.public.clone(),
 							amount,
 							lock_period,
 							sender,
@@ -1123,7 +1123,7 @@ pub mod pallet {
 					.map_err(|_| "Failed to send transaction")?;
 			}
 
-			last_block_ref.set(&to_block.as_bytes().to_vec()); // Recall that the `to_block` is the latest block that is considered final （问Gio）
+			last_block_ref.set(&to_block.as_bytes().to_vec()); // Recall that the `to_block` is the latest block that is considered final
 
 			Ok(())
 		}
@@ -1134,7 +1134,7 @@ pub mod pallet {
 		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
 		/// (NOTE: the signed payload consists of a payload and a signature.
 		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
-		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`) (问Gio)
+		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`)
 		///
 		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		pub fn sync_partner_contracts(block_number: T::BlockNumber) {

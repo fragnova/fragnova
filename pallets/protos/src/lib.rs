@@ -745,7 +745,7 @@ pub mod pallet {
 		/// of the **existing Proto-Fragment's Struct Instance**. Furthermore, this function also
 		/// indexes `data` in the Blockchain's Database and stores it in the IPFS To successfully
 		/// patch a Proto-Fragment, the `auth` provided must be valid. Otherwise, an error is
-		/// returned (问Gio - what happened to auth?)
+		/// returned
 		///
 		/// # Arguments
 		///

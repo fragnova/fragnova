@@ -1298,7 +1298,6 @@ mod give_tests {
 	use super::*;
 
 	pub fn give_(
-		// Review whether these many parameters are appropriate/needed @karan
 		signer: <Test as frame_system::Config>::AccountId,
 		give: &Give,
 	) -> DispatchResult {
