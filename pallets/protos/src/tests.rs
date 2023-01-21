@@ -368,6 +368,7 @@ mod set_metadata_tests {
 }
 
 mod detach_tests {
+	use pallet_detach::DetachCollection;
 	use super::*;
 
 	pub fn detach_(
@@ -376,7 +377,7 @@ mod detach_tests {
 	) -> DispatchResult {
 		ProtosPallet::detach(
 			Origin::signed(signer),
-			detach.proto_fragment.get_proto_hash(),
+			detach.proto_fragments.iter().map(|proto_fragment| proto_fragment.get_proto_hash()).collect::<Vec<Hash256>>(),
 			detach.target_chain,
 			detach.target_account.clone().try_into().unwrap()
 		)
@@ -389,16 +390,20 @@ mod detach_tests {
 
 			let detach = dd.detach;
 
-			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
+			detach.proto_fragments.iter().for_each(|proto_fragment| {
+				assert_ok!(upload(dd.account_id, &proto_fragment));
+			});
 			assert_ok!(detach_(dd.account_id, &detach));
 
 			assert_eq!(
 				pallet_detach::DetachRequests::<Test>::get(),
-				vec![pallet_detach::DetachRequest {
-					hash: pallet_detach::DetachHash::Proto(detach.proto_fragment.get_proto_hash()),
-					target_chain: detach.target_chain,
-					target_account: detach.target_account,
-				},]
+				vec![
+					pallet_detach::DetachRequest {
+						collection: DetachCollection::Protos(detach.proto_fragments.iter().map(|proto_fragment| proto_fragment.get_proto_hash()).collect()),
+						target_chain: detach.target_chain,
+						target_account: detach.target_account,
+					},
+				]
 			);
 		});
 	}
@@ -410,7 +415,9 @@ mod detach_tests {
 
 			let detach = dd.detach;
 
-			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
+			detach.proto_fragments.iter().for_each(|proto_fragment| {
+				assert_ok!(upload(dd.account_id, &proto_fragment));
+			});
 			assert_noop!(detach_(dd.account_id_second, &detach), Error::<Test>::Unauthorized);
 		});
 	}
@@ -422,22 +429,6 @@ mod detach_tests {
 			let detach = dd.detach;
 
 			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::ProtoNotFound);
-		});
-	}
-
-	#[test]
-	fn detach_should_not_work_if_the_detach_request_already_exists() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let detach = dd.detach;
-
-			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
-			assert_ok!(detach_(dd.account_id, &detach));
-			assert_noop!(
-				detach_(dd.account_id, &detach),
-				Error::<Test>::DetachRequestAlreadyExists
-			);
 		});
 	}
 

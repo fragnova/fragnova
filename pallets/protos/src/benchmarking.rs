@@ -129,7 +129,7 @@ benchmarks! {
 			None,
 			ProtoData::Local(proto_data.clone())
 		)?;
-		let proto_hash = blake2_256(&proto_data);
+		let proto_hashes = vec![blake2_256(&proto_data)];
 
 		let target_chain = pallet_detach::SupportedChains::EthereumMainnet;
 		let target_account: BoundedVec<u8, _> = vec![7u8; T::DetachAccountLimit::get() as usize].try_into().unwrap();
@@ -138,7 +138,7 @@ benchmarks! {
 
 		let pre_len: usize = <pallet_detach::DetachRequests<T>>::get().len();
 
-	}: _(RawOrigin::Signed(caller), proto_hash, target_chain, target_account)
+	}: _(RawOrigin::Signed(caller), proto_hashes, target_chain, target_account)
 	verify {
 		assert_eq!(<pallet_detach::DetachRequests<T>>::get().len(), pre_len + 1 as usize);
 	}

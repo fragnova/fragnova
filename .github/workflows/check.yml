@@ -58,7 +58,7 @@ jobs:
 
       - name: Check if all the Polkadot.js RPC tests pass
         run: |
-          RUST_LOG=bitswap=trace,runtime=trace,pallet_protos::pallet=trace,pallet_frag::pallet=trace,pallet_fragments::pallet=trace,pallet_accounts::pallet=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing true --rpc-methods=Unsafe --ipfs-server &
+          RUST_LOG=bitswap=trace,runtime=trace,pallet_protos::pallet=trace,pallet_fragments::pallet=trace,pallet_detach::pallet=trace,pallet_accounts::pallet=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing true --rpc-methods=Unsafe --ipfs-server &
           sleep 120 # sleep 10
           cd ./rpc &&
           npm install &&
@@ -68,7 +68,7 @@ jobs:
 
       - name: Check if a Proto-Fragment's Data is Downloadable via IPFS
         run: |
-          RUST_LOG=bitswap=trace,runtime=trace,pallet_protos::pallet=trace,pallet_frag::pallet=trace,pallet_fragments::pallet=trace,pallet_accounts::pallet=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing true --rpc-methods=Unsafe --ipfs-server &
+          RUST_LOG=bitswap=trace,runtime=trace,pallet_protos::pallet=trace,pallet_fragments::pallet=trace,pallet_detach::pallet=trace,pallet_accounts::pallet=trace target/debug/clamor --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing true --rpc-methods=Unsafe --ipfs-server &
           docker run --rm --user root --network host --volume ${{ github.workspace }}:/dummy_folder chainblocks/shards sh /dummy_folder/shards/test-ipfs.sh
           kill %1
 

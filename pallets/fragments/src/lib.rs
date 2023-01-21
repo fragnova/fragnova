@@ -312,7 +312,7 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
 	use sp_clamor::get_vault_id;
-	use pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachedHashes, SupportedChains};
+	use pallet_detach::{DetachRequest, DetachRequests, DetachHash, DetachCollection, DetachedHashes, SupportedChains};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -544,10 +544,10 @@ pub mod pallet {
 		ProtoOwnerNotFound,
 		/// No Permission
 		NoPermission,
+		/// Detach Request's Fragment-Instances List is empty
+		InstancesToDetachIsEmpty,
 		/// Detach Request's Target Account is empty
 		DetachAccountIsEmpty,
-		/// Detach Request Already Submitted
-		DetachRequestAlreadyExists,
 		/// Already detached
 		Detached,
 		/// Already exist
@@ -1264,7 +1264,6 @@ pub mod pallet {
 			expiration: Option<T::BlockNumber>,
 			secondary_sale_type: SecondarySaleType
 		) -> DispatchResult {
-
 			let who = ensure_signed(origin)?;
 
 			ensure!(
@@ -1306,7 +1305,6 @@ pub mod pallet {
 			edition_id: InstanceUnit,
 			copy_id: InstanceUnit,
 		) -> DispatchResult {
-
 			let who = ensure_signed(origin)?;
 
 			ensure!(
@@ -1373,7 +1371,10 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Request to detach a **Fragment** from **Clamor**.
+		// TODO Review - Should we ensure that a Detach Request doesn't already exist with the same Fragment Instance?
+		/// Request to detach **Fragment Instances** of a **single Fragment Definition** from the **Clamor Blockchain**.
+		///
+		/// Note: Copyable Fragment Instances (i.e Fragment Instances that are duplicatable) are not allowed to be detached from Clamor
 		///
 		/// Note: The Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
 		///
@@ -1383,7 +1384,8 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
-		/// * `definition_hash` - **ID of the Fragment Definition** to **detach**
+		/// * `definition_hash` - **ID of the Fragment Definition**
+		/// * `edition_ids` - **Edition IDs** of the **Fragment Instances that will be detached**
 		/// * `target_chain` - **External Blockchain** to attach the Proto-Fragment into
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
@@ -1391,37 +1393,44 @@ pub mod pallet {
 		pub fn detach(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
-			edition_id: InstanceUnit,
-			copy_id: InstanceUnit,
+			edition_ids: Vec<InstanceUnit>,
 			target_chain: SupportedChains,
 			target_account: BoundedVec<u8, T::DetachAccountLimit>, // an eth address or so
 		) -> DispatchResult {
-
 			let who = ensure_signed(origin)?;
 
+			ensure!(!edition_ids.is_empty(), Error::<T>::InstancesToDetachIsEmpty);
 			ensure!(!target_account.is_empty(), Error::<T>::DetachAccountIsEmpty);
 
-			let current_block_number = <frame_system::Pallet<T>>::block_number();
+			let owned_instances = <Inventory<T>>::get(&who, definition_hash).ok_or(Error::<T>::NoPermission)?;
 
-			// owner must own instance
-			let owned_instances = <Inventory<T>>::get(who, definition_hash).ok_or(Error::<T>::NoPermission)?;
-			ensure!(
-				owned_instances.contains(&(Compact(edition_id), Compact(copy_id))),
-				Error::<T>::NoPermission
-			);
+			edition_ids.iter().try_for_each(|edition_id| -> DispatchResult {
+				// owner must own instances
+				ensure!(
+					owned_instances.contains(&(Compact(*edition_id), Compact(1))),
+					Error::<T>::NoPermission
+				);
 
-			// REVIEW - no go if will expire this block
-			let instance = <Fragments<T>>::get((definition_hash, edition_id, copy_id))
-				.ok_or(Error::<T>::NotFound)?;
-			if let Some(expiring_at) = instance.expiring_at {
-				ensure!(current_block_number < expiring_at, Error::<T>::NotFound);
-			}
+				// A Fragment Instance that is copyable or that expires cannot be detached
+				let instance = <Fragments<T>>::get((definition_hash, edition_id, 1))
+					.ok_or(Error::<T>::NotFound)?;
+				ensure!((instance.permissions & FragmentPerms::COPY) != FragmentPerms::COPY, Error::<T>::NoPermission);
+				ensure!(instance.expiring_at.is_none(), Error::<T>::NoPermission);
 
-			let detach_hash = DetachHash::Instance(definition_hash, Compact(edition_id), Compact(copy_id));
-			let detach_request = DetachRequest { hash: detach_hash.clone(), target_chain, target_account: target_account.into() };
+				let detach_hash = DetachHash::Instance(definition_hash, Compact(*edition_id), Compact(1));
+				ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
 
-			ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash),Error::<T>::Detached);
-			ensure!(!<DetachRequests<T>>::get().contains(&detach_request), Error::<T>::DetachRequestAlreadyExists);
+				Ok(())
+			})?;
+
+			let detach_request = DetachRequest {
+				collection: DetachCollection::Instances(
+					edition_ids.into_iter().map(|edition_id| (definition_hash, Compact(edition_id), Compact(1)))
+						.collect::<Vec<(Hash128, Compact<InstanceUnit>, Compact<InstanceUnit>)>>()
+				),
+				target_chain,
+				target_account: target_account.into(),
+			};
 
 			<DetachRequests<T>>::mutate(|requests| {
 				requests.push(detach_request);
@@ -1479,7 +1488,6 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-
 		/// Get the **Account ID** of the **Fragment Instance whose Fragment Definition ID is `definition_hash`,
 		/// whose Edition ID is `edition`** and whose Copy ID is `copy`**
 		///
