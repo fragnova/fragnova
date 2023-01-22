@@ -52,7 +52,7 @@ impl Metadata {
 }
 
 pub struct Detach {
-	pub proto_fragment: ProtoFragment,
+	pub proto_fragments: Vec<ProtoFragment>,
 	pub target_chain: SupportedChains,
 	pub target_account: Vec<u8>,
 }
@@ -226,7 +226,7 @@ impl DummyData {
 		};
 
 		let detach = Detach {
-			proto_fragment: proto.clone(),
+			proto_fragments: vec![proto.clone(), proto_second.clone()],
 			target_chain: SupportedChains::EthereumMainnet,
 			target_account: [7u8; 20].to_vec(),
 		};

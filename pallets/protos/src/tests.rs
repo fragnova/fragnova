@@ -9,8 +9,8 @@ use std::collections::BTreeMap;
 use upload_tests::upload;
 
 mod upload_tests {
-	use sp_runtime::BoundedVec;
 	use super::*;
+	use sp_runtime::BoundedVec;
 
 	pub fn upload(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -128,10 +128,7 @@ mod patch_tests {
 
 			assert_ok!(patch_(dd.account_id, &patch));
 			let proto_struct = <Protos<Test>>::get(patch.proto_fragment.get_proto_hash()).unwrap();
-			assert_eq!(
-				proto_struct.license,
-				UsageLicense::Open,
-			);
+			assert_eq!(proto_struct.license, UsageLicense::Open,);
 			assert!(proto_struct.patches.contains(&ProtoPatch {
 				block: block_number,
 				data_hash: patch.get_data_hash(),
@@ -352,6 +349,7 @@ mod set_metadata_tests {
 
 mod detach_tests {
 	use super::*;
+	use pallet_detach::DetachCollection;
 
 	pub fn detach_(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -359,9 +357,13 @@ mod detach_tests {
 	) -> DispatchResult {
 		ProtosPallet::detach(
 			Origin::signed(signer),
-			detach.proto_fragment.get_proto_hash(),
+			detach
+				.proto_fragments
+				.iter()
+				.map(|proto_fragment| proto_fragment.get_proto_hash())
+				.collect::<Vec<Hash256>>(),
 			detach.target_chain,
-			detach.target_account.clone().try_into().unwrap()
+			detach.target_account.clone().try_into().unwrap(),
 		)
 	}
 
@@ -372,13 +374,21 @@ mod detach_tests {
 
 			let detach = dd.detach;
 
-			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
+			detach.proto_fragments.iter().for_each(|proto_fragment| {
+				assert_ok!(upload(dd.account_id, &proto_fragment));
+			});
 			assert_ok!(detach_(dd.account_id, &detach));
 
 			assert_eq!(
 				pallet_detach::DetachRequests::<Test>::get(),
 				vec![pallet_detach::DetachRequest {
-					hash: pallet_detach::DetachHash::Proto(detach.proto_fragment.get_proto_hash()),
+					collection: DetachCollection::Protos(
+						detach
+							.proto_fragments
+							.iter()
+							.map(|proto_fragment| proto_fragment.get_proto_hash())
+							.collect()
+					),
 					target_chain: detach.target_chain,
 					target_account: detach.target_account,
 				},]
@@ -393,7 +403,9 @@ mod detach_tests {
 
 			let detach = dd.detach;
 
-			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
+			detach.proto_fragments.iter().for_each(|proto_fragment| {
+				assert_ok!(upload(dd.account_id, &proto_fragment));
+			});
 			assert_noop!(detach_(dd.account_id_second, &detach), Error::<Test>::Unauthorized);
 		});
 	}
@@ -405,22 +417,6 @@ mod detach_tests {
 			let detach = dd.detach;
 
 			assert_noop!(detach_(dd.account_id, &detach), Error::<Test>::ProtoNotFound);
-		});
-	}
-
-	#[test]
-	fn detach_should_not_work_if_the_detach_request_already_exists() {
-		new_test_ext().execute_with(|| {
-			let dd = DummyData::new();
-
-			let detach = dd.detach;
-
-			assert_ok!(upload(dd.account_id, &detach.proto_fragment));
-			assert_ok!(detach_(dd.account_id, &detach));
-			assert_noop!(
-				detach_(dd.account_id, &detach),
-				Error::<Test>::DetachRequestAlreadyExists
-			);
 		});
 	}
 

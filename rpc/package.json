@@ -3,7 +3,7 @@
     "test": "mocha --exit"
   },
   "dependencies": {
-    "@polkadot/api": "^9.5.1",
+    "@polkadot/api": "^9.8.2",
     "@polkadot/util-crypto": "^10.1.10",
     "web3": "^1.8.0",
     "@metamask/eth-sig-util": "^5.0.0"

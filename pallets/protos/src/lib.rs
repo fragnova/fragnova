@@ -212,7 +212,8 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 	use pallet_clusters::Cluster;
 	use pallet_detach::{
-		DetachHash, DetachRequest, DetachRequests, DetachedHashes, SupportedChains,
+		DetachCollection, DetachHash, DetachRequest, DetachRequests, DetachedHashes,
+		SupportedChains,
 	};
 	use sp_runtime::SaturatedConversion;
 
@@ -267,9 +268,15 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MetaKeysIndex<T: Config> = StorageValue<_, u64, ValueQuery>;
 
-	/// **StorageMap** that maps a **Trait ID** to the name of the Trait itself
+	/// **StorageMap** that maps a **Trait ID** to the **name of the Trait**
 	#[pallet::storage]
 	pub type Traits<T: Config> = StorageMap<_, Identity, Hash64, Vec<u8>, ValueQuery>;
+
+	/// **StorageMap** that maps a **Shards-Proto** (i.e a Proto-Fragment that is a Shards Script) to
+	/// **all the traits** that are
+	/// **in the "implementing" field (`ShardsScriptInfo::implementing`) of the Shards-Proto's category** or **in the "implementing" field of one Shard-Proto's Shard-Proto ancestor's category**
+	#[pallet::storage]
+	pub type TraitImplsByShard<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash64>>;
 
 	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the
 	/// aforementioned Proto-Fragment)**
@@ -324,10 +331,10 @@ pub mod pallet {
 		DuplicateProtoTagExists,
 		/// Proto-Fragment's Metadata key is empty
 		MetadataKeyIsEmpty,
+		/// Detach Request's Proto-Fragments List is empty
+		ProtosToDetachIsEmpty,
 		/// Detach Request's Target Account is empty
 		DetachAccountIsEmpty,
-		/// Detach Request Already Submitted
-		DetachRequestAlreadyExists,
 		/// Already detached
 		Detached,
 		/// Not the owner of the proto
@@ -435,6 +442,18 @@ pub mod pallet {
 					<Traits<T>>::insert(trait_id, info.name.encode());
 
 					Categories::Trait(Some(trait_id))
+				},
+				Categories::Shards(shards_script_info_struct) => {
+					// let format = &shards_script_info_struct.format;
+
+					let trait_implementations = [
+						&shards_script_info_struct.requiring[..],
+						&shards_script_info_struct.implementing[..],
+					]
+					.concat();
+					TraitImplsByShard::<T>::insert(proto_hash, trait_implementations);
+
+					Categories::Shards(shards_script_info_struct)
 				},
 				_ => category,
 			};
@@ -807,6 +826,7 @@ pub mod pallet {
 			Ok(())
 		}
 
+		// TODO Review - Should we ensure that a Detach Request doesn't already exist with the same Proto-Fragment?
 		/// Request to detach a **Proto-Fragment** from **Clamor**.
 		///
 		/// Note: The Proto-Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
@@ -817,46 +837,47 @@ pub mod pallet {
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the extrinsic function
-		/// * `proto_hash` - **ID of the Proto-Fragment** to **detach**
+		/// * `proto_hashes` - **IDs** of the **Proto-Fragments to detach**
 		/// * `target_chain` - **External Blockchain** to attach the Proto-Fragment into
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
 		pub fn detach(
 			origin: OriginFor<T>,
-			proto_hash: Hash256,
+			proto_hashes: Vec<Hash256>,
 			target_chain: SupportedChains,
 			target_account: BoundedVec<u8, T::DetachAccountLimit>, // an eth address or so
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
+			ensure!(!proto_hashes.is_empty(), Error::<T>::ProtosToDetachIsEmpty);
 			ensure!(!target_account.is_empty(), Error::<T>::DetachAccountIsEmpty);
 
-			// make sure the proto exists
-			let proto: Proto<T::AccountId, T::BlockNumber> =
-				<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
+			proto_hashes.iter().try_for_each(|proto_hash| -> DispatchResult {
+				// make sure the proto exists
+				let proto: Proto<T::AccountId, T::BlockNumber> =
+					<Protos<T>>::get(&proto_hash).ok_or(Error::<T>::ProtoNotFound)?;
 
-			match proto.owner {
-				ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
-				ProtoOwner::ExternalAsset(_ext_asset) =>
-				// We don't allow detaching external assets
-				{
-					ensure!(false, Error::<T>::Unauthorized)
-				},
-			};
+				match proto.owner {
+					ProtoOwner::User(owner) => ensure!(owner == who, Error::<T>::Unauthorized),
+					ProtoOwner::ExternalAsset(_ext_asset) =>
+					// We don't allow detaching external assets
+					{
+						ensure!(false, Error::<T>::Unauthorized)
+					},
+				};
 
-			let detach_hash = DetachHash::Proto(proto_hash);
+				let detach_hash = DetachHash::Proto(*proto_hash);
+				ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
+
+				Ok(())
+			})?;
+
 			let detach_request = DetachRequest {
-				hash: detach_hash.clone(),
+				collection: DetachCollection::Protos(proto_hashes),
 				target_chain,
 				target_account: target_account.into(),
 			};
-
-			ensure!(!<DetachedHashes<T>>::contains_key(&detach_hash), Error::<T>::Detached);
-			ensure!(
-				!<DetachRequests<T>>::get().contains(&detach_request),
-				Error::<T>::DetachRequestAlreadyExists
-			);
 
 			<DetachRequests<T>>::mutate(|requests| {
 				requests.push(detach_request);
@@ -1344,13 +1365,22 @@ pub mod pallet {
 
 					match proto_struct.license {
 						UsageLicense::Open => {
-							(*map_proto).insert(String::from("license"), Value::String(String::from("open")));
+							(*map_proto).insert(
+								String::from("license"),
+								Value::String(String::from("open")),
+							);
 						},
 						UsageLicense::Closed => {
-							(*map_proto).insert(String::from("license"), Value::String(String::from("closed")));
+							(*map_proto).insert(
+								String::from("license"),
+								Value::String(String::from("closed")),
+							);
 						},
 						UsageLicense::Contract(contract) => {
-							(*map_proto).insert(String::from("license"), Value::String(hex::encode(contract)));
+							(*map_proto).insert(
+								String::from("license"),
+								Value::String(hex::encode(contract)),
+							);
 						},
 					}
 

@@ -71,7 +71,7 @@ impl Definition {
 				&self.metadata.name.encode(),
 				&self.metadata.currency.encode(),
 			]
-				.concat(),
+			.concat(),
 		)
 	}
 
@@ -147,18 +147,17 @@ pub struct Resell {
 }
 #[derive(Clone)]
 pub struct EndResale {
-	pub resell: Resell
+	pub resell: Resell,
 }
 #[derive(Clone)]
 pub struct SecondaryBuy {
 	pub resell: Resell,
-	pub options: SecondarySaleBuyOptions
+	pub options: SecondarySaleBuyOptions,
 }
 
 pub struct Detach {
 	pub mint: Mint,
-	pub edition_id: u64,
-	pub copy_id: u64,
+	pub edition_ids: Vec<u64>,
 	pub target_chain: SupportedChains,
 	pub target_account: Vec<u8>,
 }
@@ -301,9 +300,7 @@ impl DummyData {
 			secondary_sale_type: SecondarySaleType::Normal(777),
 		};
 
-		let end_resale = EndResale {
-			resell: resell_normal.clone(),
-		};
+		let end_resale = EndResale { resell: resell_normal.clone() };
 
 		let secondary_buy = SecondaryBuy {
 			resell: resell_normal.clone(),
@@ -317,14 +314,14 @@ impl DummyData {
 		};
 		let secondary_buy_copy_perms = {
 			let mut secondary_buy = secondary_buy.clone();
-			secondary_buy.resell.mint.definition.permissions = FragmentPerms::TRANSFER | FragmentPerms::COPY; // no copy perms
+			secondary_buy.resell.mint.definition.permissions =
+				FragmentPerms::TRANSFER | FragmentPerms::COPY; // no copy perms
 			secondary_buy
 		};
 
 		let detach = Detach {
 			mint: mint_unique.clone(),
-			edition_id: 1,
-			copy_id: 1,
+			edition_ids: vec![1],
 			target_chain: SupportedChains::EthereumMainnet,
 			target_account: [7u8; 20].to_vec(),
 		};

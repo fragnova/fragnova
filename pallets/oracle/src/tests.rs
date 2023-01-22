@@ -3,14 +3,20 @@
 use crate as pallet_oracle;
 use crate::*;
 use ethabi::Token;
-use frame_support::dispatch::DispatchResult;
-use frame_support::{assert_noop, assert_ok, parameter_types, traits::{ConstU32, ConstU64}};
+use frame_support::{
+	assert_noop, assert_ok,
+	dispatch::DispatchResult,
+	parameter_types,
+	traits::{ConstU32, ConstU64},
+};
 use parking_lot::RwLock;
-use sp_core::offchain::testing::{OffchainState, PoolState};
-use sp_core::offchain::OffchainDbExt;
 use sp_core::{
 	ed25519::Signature,
-	offchain::{testing, OffchainWorkerExt, TransactionPoolExt},
+	offchain::{
+		testing,
+		testing::{OffchainState, PoolState},
+		OffchainDbExt, OffchainWorkerExt, TransactionPoolExt,
+	},
 	H256, U256,
 };
 use std::sync::Arc;
@@ -238,13 +244,8 @@ pub fn store_price_(
 	)
 }
 
-pub fn stop_oracle_(
-	flag: bool,
-) -> DispatchResult {
-	Oracle::stop_oracle(
-		Origin::root(),
-		flag,
-	)
+pub fn stop_oracle_(flag: bool) -> DispatchResult {
+	Oracle::stop_oracle(Origin::root(), flag)
 }
 
 #[test]
@@ -327,7 +328,6 @@ fn fetch_price_zero_will_fail() {
 		};
 
 		assert_noop!(store_price_(expected_data.clone()), Error::<Test>::PriceIsZero);
-
 	});
 }
 

@@ -1,5 +1,5 @@
-use sp_core::ed25519::Public;
 use crate::Config;
+use sp_core::ed25519::Public;
 
 #[cfg(test)]
 pub fn get_root_namespace() -> Vec<u8> {
@@ -17,9 +17,6 @@ impl DummyData {
 		let account_id = sp_core::ed25519::Public::from_raw([1u8; 32]);
 		let account_id_2 = sp_core::ed25519::Public::from_raw([2u8; 32]);
 
-		Self {
-			account_id,
-			account_id_2,
-		}
+		Self { account_id, account_id_2 }
 	}
 }

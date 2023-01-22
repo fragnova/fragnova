@@ -30,10 +30,10 @@ pub mod tests;
 pub const KEY_TYPE: KeyTypeId = KeyTypeId(*b"orac");
 
 /// The encoded function in the Chainlink smart contract to call in eth_call (see README)
-const CHAINLINK_CONTRACT_FUNCTION: &'static str = "0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000";
+const CHAINLINK_CONTRACT_FUNCTION: &'static str =
+	"0xfeaf968c0000000000000000000000000000000000000000000000000000000000000000";
 /// The encoded function in the Uniswap smart contract to call in eth_call (see README)
 const UNISWAP_CONTRACT_FUNCTION: &'static str = "0xf7729d43000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000dac17f958d2ee523a2206206994597c13d831ec700000000000000000000000000000000000000000000000000000000000001f40000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000000";
-
 
 /// Based on the above `KeyTypeId` we need to generate a pallet-specific crypto type wrappers.
 /// We can use from supported crypto kinds (`sr25519`, `ed25519` and `ecdsa`) and augment
@@ -101,16 +101,17 @@ use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use core::str::FromStr;
 	use ethabi::{ethereum_types::U256, ParamType};
 	use frame_support::pallet_prelude::*;
 	use frame_system::pallet_prelude::*;
 	use scale_info::prelude::{format, string::String};
-	use core::str::FromStr;
 	use sp_core::{ed25519, offchain::Timestamp, H256};
 	use sp_runtime::{
-		traits::ValidateUnsigned, transaction_validity::TransactionSource, MultiSigner,
+		traits::{ValidateUnsigned, Zero},
+		transaction_validity::TransactionSource,
+		MultiSigner,
 	};
-	use sp_runtime::traits::Zero;
 
 	const FETCH_TIMEOUT_PERIOD: u64 = 3000; // in milli-seconds
 
@@ -355,7 +356,8 @@ pub mod pallet {
 		pub fn get_price() -> Result<u128, &'static str> {
 			let price = <Price<T>>::get() as f64 / 1e6; // 1e6 is the number of decimal of USDT
 			let price = format!("{:.0}", price);
-			let price = u128::from_str(&price).map_err(|_| "Error while parsing price from oracle")?;
+			let price =
+				u128::from_str(&price).map_err(|_| "Error while parsing price from oracle")?;
 
 			Ok(price)
 		}
@@ -450,12 +452,10 @@ pub mod pallet {
 		/// The pool used at this moment is ETH/USDT. (TODO: it needs to be changed when the FRAG pool will be available).
 		pub fn get_eth_call_data(provider: &OracleProvider) -> &'static str {
 			match provider {
-
-				OracleProvider::Chainlink(_) =>
-					CHAINLINK_CONTRACT_FUNCTION,
+				OracleProvider::Chainlink(_) => CHAINLINK_CONTRACT_FUNCTION,
 
 				OracleProvider::Uniswap(_) =>
-					// encoding of quoteExactInputSingle to ETH/USDT pool. TODO to change when FRAG pool will be known
+				// encoding of quoteExactInputSingle to ETH/USDT pool. TODO to change when FRAG pool will be known
 					UNISWAP_CONTRACT_FUNCTION,
 			}
 		}
@@ -506,10 +506,8 @@ pub mod pallet {
 				},
 
 				OracleProvider::Uniswap(_) => {
-					let data = ethabi::decode(
-						&[ParamType::Uint(256)],
-						&data,
-					).map_err(|_| "Invalid response")?;
+					let data = ethabi::decode(&[ParamType::Uint(256)], &data)
+						.map_err(|_| "Invalid response")?;
 
 					let price: U256 = data[0].clone().into_uint().ok_or_else(|| "Invalid token")?;
 					ensure!(price.gt(&U256::zero()), "Price from oracle is <= 0");

@@ -514,7 +514,8 @@ pub mod pallet {
 						pallet_balances::Pallet::<T>::free_balance(&sender.clone());
 					ensure!(
 						nova_old_balance + amount >=
-							<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(),
+							<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
+							),
 						Error::<T>::BelowMinimumBalance
 					);
 					ensure!(
@@ -636,7 +637,7 @@ pub mod pallet {
 					if current_votes + 1u64 < threshold {
 						// Current Votes has not passed the threshold
 						<EVMLinkVoting<T>>::insert(&data_hash, current_votes + 1);
-						return Ok(());
+						return Ok(())
 					} else {
 						// Current votes passes the threshold, let's remove EVMLinkVoting perque perque non! (问Gio)
 						// we are good to go, but let's remove the record
@@ -645,7 +646,7 @@ pub mod pallet {
 				} else {
 					// If key `data_hash` doesn't exist in EVMLinkVoting
 					<EVMLinkVoting<T>>::insert(&data_hash, 1);
-					return Ok(());
+					return Ok(())
 				}
 			}
 
@@ -669,7 +670,6 @@ pub mod pallet {
 			let nova_amount: <T as pallet_balances::Config>::Balance =
 				initial_nova_amount.saturated_into();
 
-
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
 				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
@@ -685,7 +685,6 @@ pub mod pallet {
 						!nova_old_balance.checked_add(&nova_amount).is_none(),
 						Error::<T>::SystematicFailure
 					);
-
 
 					let _ =
 						<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
@@ -876,7 +875,7 @@ pub mod pallet {
 					_ => {
 						log::debug!("Not a local transaction");
 						// Return TransactionValidityError˘ if the call is not allowed.
-						return InvalidTransaction::Call.into();
+						return InvalidTransaction::Call.into()
 					},
 				}
 
@@ -893,13 +892,13 @@ pub mod pallet {
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into(); // // 问Gio
+						return InvalidTransaction::BadSigner.into() // // 问Gio
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);
 				if !valid_keys.contains(&pub_key) {
 					// return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadSigner.into();
+					return InvalidTransaction::BadSigner.into()
 				}
 
 				// most expensive bit last
@@ -910,7 +909,7 @@ pub mod pallet {
 							// The provided signature does not match the public key used to sign the payload
 				if !signature_valid {
 					// Return TransactionValidityError if the call is not allowed.
-					return InvalidTransaction::BadProof.into();
+					return InvalidTransaction::BadProof.into()
 				}
 
 				log::debug!("Sending frag lock update extrinsic");
@@ -974,7 +973,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth");
+				return Err("Failed to get response from geth")
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -1023,7 +1022,7 @@ pub mod pallet {
 			let response_body = if let Ok(response) = response_body {
 				response
 			} else {
-				return Err("Failed to get response from geth");
+				return Err("Failed to get response from geth")
 			};
 
 			let response = String::from_utf8(response_body).map_err(|_| "Invalid response")?;
@@ -1143,7 +1142,7 @@ pub mod pallet {
 				String::from_utf8(geth).unwrap()
 			} else {
 				log::debug!("No geth url found, skipping sync");
-				return; // It is fine to have a node not syncing with eth
+				return // It is fine to have a node not syncing with eth
 			};
 
 			let contracts = T::EthFragContract::get_partner_contracts();
@@ -1159,10 +1158,10 @@ pub mod pallet {
 		/// account address `account`**
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
 			if <EVMLinks<T>>::get(sender.clone()).ok_or(Error::<T>::AccountNotLinked)? != account {
-				return Err(Error::<T>::DifferentAccountLinked.into());
+				return Err(Error::<T>::DifferentAccountLinked.into())
 			}
 			if <EVMLinksReverse<T>>::get(account).ok_or(Error::<T>::AccountNotLinked)? != sender {
-				return Err(Error::<T>::DifferentAccountLinked.into());
+				return Err(Error::<T>::DifferentAccountLinked.into())
 			}
 
 			<EVMLinks<T>>::remove(sender.clone());
@@ -1230,20 +1229,20 @@ pub mod pallet {
 					let current_frag_price = Self::get_oracle_price()?;
 					// The amount of NOVA depend on the price of 1 FRAG at the time of withdraw
 					// considering that 1 FRAG = 100 NOVA
-					let nova_amount_per_week_at_current_price = current_frag_price.clone()
-						* T::USDEquivalentAmount::get()
-						* nova_convertible_per_week;
+					let nova_amount_per_week_at_current_price = current_frag_price.clone() *
+						T::USDEquivalentAmount::get() *
+						nova_convertible_per_week;
 
 					// Weeks passed since FRAG was locked
-					let mut num_weeks_since_lock_frag: u128 =
-						((current_block_number - frag_lock_block_number)
-							* seconds_in_block.clone()) / seconds_in_week.clone()
-							+ 1;
+					let mut num_weeks_since_lock_frag: u128 = ((current_block_number -
+						frag_lock_block_number) *
+						seconds_in_block.clone()) /
+						seconds_in_week.clone() + 1;
 
 					// The week number of the last withdraw is stored,
 					// so this checks the case of subsequent withdraws done in the same week when nothing has been yielded.
 					if num_weeks_since_lock_frag - last_withdraw_week == 0 {
-						return Err(Error::<T>::NothingToWithdraw.into());
+						return Err(Error::<T>::NothingToWithdraw.into())
 					}
 
 					// This is for the case of withdraw performed when the FRAG lock period is already over.
@@ -1252,8 +1251,8 @@ pub mod pallet {
 						num_weeks_since_lock_frag = lock_period_in_weeks.clone() as u128;
 					}
 
-					let nova_amount_to_withdraw = nova_amount_per_week_at_current_price
-						* (num_weeks_since_lock_frag.clone() - last_withdraw_week.clone());
+					let nova_amount_to_withdraw = nova_amount_per_week_at_current_price *
+						(num_weeks_since_lock_frag.clone() - last_withdraw_week.clone());
 
 					log::trace!("NOVA available per week: {}", nova_convertible_per_week);
 					log::trace!(
@@ -1276,10 +1275,10 @@ pub mod pallet {
 					let nova_old_balance =
 						pallet_balances::Pallet::<T>::free_balance(&account.clone());
 					ensure!(
-					nova_old_balance + nova_amount >=
-						<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
-						),
-					Error::<T>::SystematicFailure // this should never happen
+						nova_old_balance + nova_amount >=
+							<pallet_balances::Pallet<T> as Currency<T::AccountId>>::minimum_balance(
+							),
+						Error::<T>::SystematicFailure // this should never happen
 					);
 
 					if num_weeks_since_lock_frag == lock_period_in_weeks.clone() as u128 {
@@ -1305,13 +1304,13 @@ pub mod pallet {
 				)?;
 				Ok(())
 			} else {
-				return Err(Error::<T>::NothingToWithdraw.into());
+				return Err(Error::<T>::NothingToWithdraw.into())
 			}
 		}
 
 		fn initial_amount(amount: u128, percent: u8, current_frag_price: u128) -> u128 {
 			if amount == 0 {
-				return 0;
+				return 0
 			}
 			let percentage_amount = Self::apply_percent(amount, percent);
 			percentage_amount * current_frag_price * 100
@@ -1320,7 +1319,7 @@ pub mod pallet {
 		/// Calculate a percentage
 		pub fn apply_percent(amount: u128, percent: u8) -> u128 {
 			if amount == 0 {
-				return 0;
+				return 0
 			}
 			//amount * percent / 100
 			Percent::from_percent(percent).mul_ceil(amount) as u128
@@ -1328,7 +1327,8 @@ pub mod pallet {
 
 		/// Get the price of FRAG from pallet-oracle
 		pub fn get_oracle_price() -> Result<u128, &'static str> {
-			let price = pallet_oracle::Pallet::<T>::get_price().map_err(|_| "Error while retrieving price from oracle")?;
+			let price = pallet_oracle::Pallet::<T>::get_price()
+				.map_err(|_| "Error while retrieving price from oracle")?;
 
 			Ok(price)
 		}

@@ -260,11 +260,7 @@ fn testnet_genesis(
 			eth_authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
-		assets: AssetsConfig {
-			assets: vec![],
-			metadata: vec![],
-			accounts: vec![],
-		},
+		assets: AssetsConfig { assets: vec![], metadata: vec![], accounts: vec![] },
 		accounts: AccountsConfig {
 			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
 		},
