@@ -1461,6 +1461,10 @@
 <span id="1461">1461</span>
 <span id="1462">1462</span>
 <span id="1463">1463</span>
+<span id="1464">1464</span>
+<span id="1465">1465</span>
+<span id="1466">1466</span>
+<span id="1467">1467</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1509,7 +1513,7 @@
 
 <span class="kw">pub use </span>weights::WeightInfo;
 
-<span class="kw">use </span>sp_clamor::{Hash256, Hash64};
+<span class="kw">use </span>sp_clamor::{Hash128, Hash256, Hash64};
 
 <span class="kw">use </span>scale_info::prelude::{
 	format,
@@ -1518,6 +1522,7 @@
 <span class="kw">use </span>serde_json::{json, Map, Value};
 
 <span class="kw">use </span>frame_support::traits::tokens::fungibles::{Inspect, Mutate};
+<span class="kw">use </span>pallet_clusters::Cluster;
 
 <span class="doccomment">/// TODO: Documentation
 </span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -1668,6 +1673,8 @@
 	</span><span class="kw">pub </span>accounts_info: AccountsInfo,
 	<span class="doccomment">/// **Data** of the **Proto-Fragment** (valid only if not Local)
 	</span><span class="kw">pub </span>data: ProtoData,
+	<span class="doccomment">/// **Cluster** ID where the Proto belongs to (Optional)
+	</span><span class="kw">pub </span>cluster: <span class="prelude-ty">Option</span>&lt;Hash128&gt;,
 }
 
 <span class="attribute">#[frame_support::pallet]
@@ -1845,7 +1852,7 @@
 			tags: BoundedVec&lt;BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::StringLimit&gt;, T::MaxTags&gt;,
 			linked_asset: <span class="prelude-ty">Option</span>&lt;LinkedAsset&gt;,
 			license: UsageLicense&lt;T::AccountId&gt;,
-			_cluster: <span class="prelude-ty">Option</span>&lt;Cluster&lt;T::AccountId&gt;&gt;,
+			cluster: <span class="prelude-ty">Option</span>&lt;Hash128&gt;,
 			<span class="comment">// let data come last as we record this size in blocks db (storage chain)
 			// and the offset is calculated like
 			// https://github.com/paritytech/substrate/blob/a57bc4445a4e0bfd5c79c111add9d0db1a265507/client/db/src/lib.rs#L1678
@@ -1962,6 +1969,7 @@
 				metadata: BTreeMap::new(),
 				accounts_info: AccountsInfo::default(),
 				data: data_stored,
+				cluster: cluster,
 			};
 
 			<span class="comment">// store proto
