@@ -4,9 +4,10 @@ use crate as pallet_accounts;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Encode;
 use ethabi::Token;
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::TypedGet};
 use frame_system::offchain::{SignedPayload, SigningTypes};
-use sp_core::H256;
+use serde_json::json;
+use sp_core::{offchain::testing, H256};
 use sp_runtime::SaturatedConversion;
 
 pub use internal_lock_update_tests::lock_;
@@ -15,7 +16,7 @@ use pallet_oracle::OraclePrice;
 
 fn apply_percent(amount: u128, percent: u8) -> u128 {
 	if amount == 0 {
-		return 0;
+		return 0
 	}
 	sp_runtime::Percent::from_percent(percent).mul_ceil(amount) as u128
 }
@@ -53,8 +54,15 @@ mod link_tests {
 
 			assert_ok!(link_(&link));
 
-			assert_eq!(<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap(), link.get_ethereum_public_address_of_signer());
-			assert_eq!(<EVMLinksReverse<Test>>::get(&link.get_ethereum_public_address_of_signer()).unwrap(), link.clamor_account_id);
+			assert_eq!(
+				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap(),
+				link.get_ethereum_public_address_of_signer()
+			);
+			assert_eq!(
+				<EVMLinksReverse<Test>>::get(&link.get_ethereum_public_address_of_signer())
+					.unwrap(),
+				link.clamor_account_id
+			);
 
 			let event = <frame_system::Pallet<Test>>::events()
 				.pop()
@@ -153,7 +161,12 @@ mod unlink_tests {
 			));
 
 			assert_eq!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id), false);
-			assert_eq!(<EVMLinksReverse<Test>>::contains_key(&link.get_ethereum_public_address_of_signer()), false);
+			assert_eq!(
+				<EVMLinksReverse<Test>>::contains_key(
+					&link.get_ethereum_public_address_of_signer()
+				),
+				false
+			);
 
 			assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
 
@@ -214,7 +227,117 @@ mod unlink_tests {
 mod sync_partner_contracts_tests {
 	use super::*;
 
-	#[test] #[ignore]
+	fn hardcode_expected_request_and_response(
+		state: &mut testing::OffchainState,
+		lock: Lock,
+	) -> u64 {
+		let geth_url = Some(String::from("https://www.dummywebsite.com/"));
+
+		sp_clamor::init(geth_url);
+
+		let latest_block_number = lock
+			.data
+			.block_number // ensure that `lock.block_number` exists by making `latest_block_number` greater than or equal to it
+			.saturating_add(<Test as pallet_accounts::Config>::EthConfirmations::get())
+			.saturating_add(69)
+			.saturating_add(1234567890);
+
+		state.expect_request(testing::PendingRequest {
+			method: String::from("POST"),
+			uri: String::from_utf8(sp_clamor::clamor::get_geth_url().unwrap()).unwrap(),
+			headers: vec![(String::from("Content-Type"), String::from("application/json"))],
+			body: json!({
+				"jsonrpc": "2.0",
+				"method": "eth_blockNumber",
+				"id": 1u64,
+			})
+			.to_string()
+			.into_bytes(),
+			response: Some(
+				json!({
+					"id": 69u64,
+					"jsonrpc": "2.0",
+					"result": format!("0x{:x}", latest_block_number),
+				})
+				.to_string()
+				.into_bytes(),
+			),
+			sent: true,
+			..Default::default()
+		});
+
+		let from_block = 0;
+		let to_block = latest_block_number
+			.saturating_sub(<Test as pallet_accounts::Config>::EthConfirmations::get());
+
+		state.expect_request(testing::PendingRequest {
+			method: String::from("POST"),
+			uri: String::from_utf8(sp_clamor::clamor::get_geth_url().unwrap()).unwrap(),
+			headers: vec![(String::from("Content-Type"), String::from("application/json"))],
+			body: json!({
+				"jsonrpc": "2.0",
+				"method": "eth_getLogs", // i.e get the event logs of the smart contract (more info: https://docs.alchemy.com/alchemy/guides/eth_getlogs#what-are-logs)
+				"id": "0", // WHY IS THIS A STRING @sinkingsugar  MOLTO IMPORTANTE!
+				"params": [{
+					"fromBlock": format!("0x{:x}", from_block),
+					"toBlock": format!("0x{:x}", to_block), // Give us the event logs that were emitted (if any) from the block number `from_block` to the block number `to_block`, inclusive
+					"address": <
+					<Test as pallet_accounts::Config>::EthFragContract as pallet_accounts::EthFragContract
+					>::get_partner_contracts()[0],
+					"topics": [
+						// [] to OR
+						[pallet_accounts::LOCK_EVENT, pallet_accounts::UNLOCK_EVENT]
+					],
+				}]
+			})
+			.to_string()
+			.into_bytes(),
+			response: Some(
+				json!({
+					"id": 69u64,
+					"jsonrpc": "2.0",
+					"result": [
+						{
+							"address": <
+							<Test as pallet_accounts::Config>::EthFragContract as pallet_accounts::EthFragContract
+							>::get_partner_contracts()[0],
+							"topics": [
+								pallet_accounts::LOCK_EVENT,
+								format!("0x{}", hex::encode(ethabi::encode(&[Token::Address(lock.data.sender)])))
+							],
+							"data": format!("0x{}", hex::encode(
+								ethabi::encode(
+									&[
+										Token::Bytes(lock.data.signature.0.to_vec()),
+										Token::Uint(lock.data.amount),
+										Token::Uint(U256::from(lock.data.lock_period))
+									]
+								),
+							)),
+							"blockNumber": format!("0x{:x}", lock.data.block_number),
+
+							// Following key-values were blindly copied from https://docs.alchemy.com/alchemy/apis/ethereum/eth-getlogs (since they won't aren't even looked at in the function `sync_frag_locks`):
+							// So they are all wrong
+							"transactionHash": "0xab059a62e22e230fe0f56d8555340a29b2e9532360368f810595453f6fdd213b",
+							"transactionIndex": "0xac",
+							"blockHash": "0x8243343df08b9751f5ca0c5f8c9c0460d8a9b6351066fae0acbd4d3e776de8bb",
+							"logIndex": "0x56",
+							"removed": false,
+						},
+					]
+				})
+				.to_string()
+				.into_bytes(),
+			),
+			sent: true,
+			..Default::default()
+		});
+
+		to_block
+	}
+
+	#[test]
+	#[ignore]
 	fn sync_frag_locks_should_work() {
 		let (mut t, pool_state, _offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
 
@@ -233,9 +356,7 @@ mod sync_partner_contracts_tests {
 			let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
 			assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
 
-			if let Call::Accounts(crate::Call::internal_lock_update { data, signature }) =
-				tx.call
-			{
+			if let Call::Accounts(crate::Call::internal_lock_update { data, signature }) = tx.call {
 				assert_eq!(data, expected_data);
 
 				let signature_valid =
@@ -250,10 +371,10 @@ mod sync_partner_contracts_tests {
 }
 
 mod internal_lock_update_tests {
+	use super::*;
 	use core::str::FromStr;
 	use ethabi::Address;
 	use sp_core::keccak_256;
-	use super::*;
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
 		Accounts::internal_lock_update(
@@ -272,7 +393,7 @@ mod internal_lock_update_tests {
 	}
 
 	#[test]
-	fn test_eip_712_hash(){
+	fn test_eip_712_hash() {
 		new_test_ext().execute_with(|| {
 			let message = b"FragLock".to_vec();
 			let contract ="0x3AEEE3a4952C7d27917eA9dF70669cf5a7bD20df";
@@ -361,9 +482,9 @@ mod internal_lock_update_tests {
 				}
 			);
 			let initial_nova_amount =
-				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
-					* get_usd_equivalent_amount()
-					* get_oracle_price();
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
@@ -408,9 +529,8 @@ mod internal_lock_update_tests {
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
 					>(
-						apply_percent(lock.data.amount.as_u128(), get_initial_percentage_nova())
-							* get_usd_equivalent_amount()
-							* get_oracle_price()
+						apply_percent(lock.data.amount.as_u128(), get_initial_percentage_nova()) *
+							get_usd_equivalent_amount() * get_oracle_price()
 					)
 				})
 			);
@@ -441,9 +561,9 @@ mod internal_lock_update_tests {
 				}
 			);
 			let initial_nova_amount =
-				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
-					* get_usd_equivalent_amount()
-					* get_oracle_price();
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
 
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(U256::from(nova), U256::from(initial_nova_amount));
@@ -474,9 +594,9 @@ mod internal_lock_update_tests {
 			);
 
 			let initial_nova_amount =
-				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
-					* get_usd_equivalent_amount()
-					* get_oracle_price();
+				apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
+					get_usd_equivalent_amount() *
+					get_oracle_price();
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&lock.data.sender).unwrap(),
@@ -506,7 +626,9 @@ mod internal_lock_update_tests {
 			let dd = DummyData::new();
 
 			let contracts = <Test as Config>::EthFragContract::get_partner_contracts();
-			let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
+			let contract = Address::from_str(&contracts[0].as_str()[2..])
+				.map_err(|_| "Invalid response - invalid sender")
+				.unwrap();
 			let mut lock = dd.lock;
 			lock.data.amount = U256::from(0u32);
 			lock.data.lock_period = 1;
@@ -592,8 +714,8 @@ mod internal_lock_update_tests {
 			let initial_nova_amount = apply_percent(
 				unlock.lock.data.amount.clone().as_u128(),
 				get_initial_percentage_nova(),
-			) * get_usd_equivalent_amount()
-				* get_oracle_price();
+			) * get_usd_equivalent_amount() *
+				get_oracle_price();
 
 			assert_eq!(
 				<EthReservedNova<Test>>::get(&unlock.lock.data.sender).unwrap(),
@@ -639,7 +761,9 @@ mod internal_lock_update_tests {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 			let contracts = <Test as Config>::EthFragContract::get_partner_contracts();
-			let contract = Address::from_str(&contracts[0].as_str()[2..]).map_err(|_| "Invalid response - invalid sender").unwrap();
+			let contract = Address::from_str(&contracts[0].as_str()[2..])
+				.map_err(|_| "Invalid response - invalid sender")
+				.unwrap();
 			let mut unlock = dd.unlock;
 			unlock.data.amount = U256::from(69u32); // greater than zero
 			unlock.data.signature = create_unlock_signature(
@@ -664,15 +788,14 @@ mod withdraw_tests {
 	}
 
 	pub fn get_initial_amounts(lock: &Lock) -> u128 {
-			apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova())
-				* get_usd_equivalent_amount()
-				* get_oracle_price()
-
+		apply_percent(lock.data.amount.clone().as_u128(), get_initial_percentage_nova()) *
+			get_usd_equivalent_amount() *
+			get_oracle_price()
 	}
 
 	pub fn expected_nova_amount(week_num: u64, lock_period: u64, data_amount: u128) -> u128 {
-		let nova_per_week = apply_percent(data_amount, 100 - get_initial_percentage_nova())
-			/ u128::try_from(lock_period).unwrap();
+		let nova_per_week = apply_percent(data_amount, 100 - get_initial_percentage_nova()) /
+			u128::try_from(lock_period).unwrap();
 		let expected_amount = nova_per_week
 			* get_usd_equivalent_amount() // NOVA per week and 1 FRAG = 100 NOVA. 80% of 100 / 4 weeks
 			* u128::try_from(week_num).unwrap()
@@ -737,7 +860,7 @@ mod withdraw_tests {
 			assert_ok!(link_(&link));
 			assert_ok!(lock_(&lock));
 
-			let initial_nova_amount= get_initial_amounts(&lock);
+			let initial_nova_amount = get_initial_amounts(&lock);
 
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova as u128, initial_nova_amount);
@@ -979,7 +1102,7 @@ mod withdraw_tests {
 			let current_block = System::block_number();
 			assert_eq!(current_block, 1);
 
-			let initial_nova_amount= get_initial_amounts(&lock);
+			let initial_nova_amount = get_initial_amounts(&lock);
 			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(nova as u128, initial_nova_amount);
 
@@ -990,7 +1113,7 @@ mod withdraw_tests {
 
 			assert_ok!(lock_(&lock2));
 
-			let initial_nova_amount2= get_initial_amounts(&lock2);
+			let initial_nova_amount2 = get_initial_amounts(&lock2);
 			let nova2 = pallet_balances::Pallet::<Test>::free_balance(&link2.clamor_account_id);
 			assert_eq!(nova2 as u128, initial_nova_amount2 + initial_nova_amount);
 
@@ -1011,9 +1134,9 @@ mod withdraw_tests {
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(
 				nova_new_balance as u128,
-				expected_amount
-					+ expected_amount2 + initial_nova_amount.clone()
-					+ initial_nova_amount2.clone()
+				expected_amount +
+					expected_amount2 + initial_nova_amount.clone() +
+					initial_nova_amount2.clone()
 			);
 
 			let next_week = (60 * 60 * 24 * 7 * lock_period_in_weeks as u64) / 6;
@@ -1035,9 +1158,9 @@ mod withdraw_tests {
 				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
 			assert_eq!(
 				nova_new_balance as u128,
-				expected_amount
-					+ expected_amount2 + initial_nova_amount.clone()
-					+ initial_nova_amount2.clone()
+				expected_amount +
+					expected_amount2 + initial_nova_amount.clone() +
+					initial_nova_amount2.clone()
 			);
 		});
 	}
