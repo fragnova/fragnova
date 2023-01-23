@@ -3,27 +3,10 @@
 use crate as pallet_protos;
 use crate::{dummy_data::*, mock, mock::*, *};
 use codec::Compact;
-use copied_from_pallet_accounts::{link_, lock_};
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
 use protos::categories::TextCategories;
 use std::collections::BTreeMap;
 use upload_tests::upload;
-
-mod copied_from_pallet_accounts {
-	use super::*;
-
-	pub fn lock_(lock: &Lock) -> DispatchResult {
-		Accounts::internal_lock_update(
-			Origin::none(),
-			lock.data.clone(),
-			sp_core::ed25519::Signature([69u8; 64]), // this can be anything and it will still work
-		)
-	}
-
-	pub fn link_(link: &Link) -> DispatchResult {
-		Accounts::link(Origin::signed(link.clamor_account_id), link.link_signature.clone())
-	}
-}
 
 mod upload_tests {
 	use super::*;

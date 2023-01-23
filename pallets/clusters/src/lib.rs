@@ -8,7 +8,7 @@ use codec::{Compact, Decode, Encode};
 use frame_support::BoundedVec;
 pub use pallet::*;
 use sp_clamor::Hash128;
-use sp_std::{collections::btree_map::BTreeMap, vec, vec::Vec};
+use sp_std::{vec, vec::Vec};
 
 #[cfg(test)]
 mod mock;

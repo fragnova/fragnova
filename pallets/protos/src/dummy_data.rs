@@ -1,18 +1,10 @@
 use crate::*;
-use ethabi::ethereum_types::Address;
-use std::str::FromStr;
-
 pub use pallet_accounts::dummy_data::{
 	create_link_signature, create_lock_signature, get_ethereum_public_address, Link, Lock,
 };
 
-use sp_core::{
-	Pair,
-	H160, // Ethereum Account Addresses use this type
-	U256,
-};
-
-use sp_clamor::{Hash256, CID_PREFIX};
+use sp_core::H160; // Ethereum Account Addresses use this type
+use sp_clamor::Hash256;
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
@@ -238,11 +230,6 @@ impl DummyData {
 			target_chain: SupportedChains::EthereumMainnet,
 			target_account: [7u8; 20].to_vec(),
 		};
-
-		let contracts = vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")];
-		let contract = Address::from_str(&contracts[0].as_str()[2..])
-			.map_err(|_| "Invalid response - invalid sender")
-			.unwrap();
 
 		Self {
 			proto_fragment: proto,

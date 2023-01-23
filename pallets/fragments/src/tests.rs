@@ -1,8 +1,8 @@
 #![cfg(test)]
 
-use crate as pallet_fragments;
-
-use crate::{dummy_data::*, mock::*, *};
+use crate::*;
+use crate::dummy_data::*;
+use crate::mock::*;
 
 use crate::Event as FragmentsEvent;
 

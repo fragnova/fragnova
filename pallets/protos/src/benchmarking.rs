@@ -8,9 +8,7 @@ use super::*;
 use frame_benchmarking::{account, benchmarks, vec, whitelisted_caller};
 use frame_support::{traits::Get, BoundedVec};
 use frame_system::RawOrigin;
-use pallet_detach::Pallet as Detach;
 use protos::categories::{Categories, TextCategories};
-use sp_clamor::CID_PREFIX;
 use sp_io::hashing::blake2_256;
 
 use crate::Pallet as Protos;

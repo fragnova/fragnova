@@ -1,7 +1,8 @@
 #![cfg(test)]
 
-use crate as pallet_detach;
-use crate::{dummy_data::*, mock, mock::*, *};
+use crate::*;
+use crate::dummy_data::*;
+use crate::mock::*;
 
 use frame_support::assert_ok;
 

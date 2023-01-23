@@ -11,11 +11,7 @@ mod tests {
 		dispatch::DispatchResult,
 		traits::{Currency, Len},
 	};
-	use sp_runtime::{
-		traits::{TypedGet, Zero},
-		BoundedVec,
-		DispatchError::BadOrigin,
-	};
+	use sp_runtime::{traits::TypedGet, BoundedVec, DispatchError::BadOrigin};
 
 	pub fn create_namespace_(
 		signer: <Test as frame_system::Config>::AccountId,

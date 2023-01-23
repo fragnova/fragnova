@@ -2,12 +2,10 @@
 
 use crate as pallet_oracle;
 use crate::*;
-use codec::Decode;
 use ethabi::Token;
 use frame_support::{
 	assert_noop, assert_ok,
 	dispatch::DispatchResult,
-	inherent::BlockT,
 	parameter_types,
 	traits::{ConstU32, ConstU64},
 };
@@ -25,7 +23,6 @@ use std::sync::Arc;
 
 use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
 use sp_runtime::{
-	offchain::storage::StorageValueRef,
 	testing::{Header, TestXt},
 	traits::{BlakeTwo256, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify},
 	RuntimeAppPublic,
@@ -123,10 +120,6 @@ impl OracleContract for Test {
 		//OracleProvider::Chainlink("0x547a514d5e3769680Ce22B2361c10Ea13619e8a9".encode())
 		OracleProvider::Uniswap("0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6".encode())
 	}
-}
-
-fn test_pub() -> sp_core::sr25519::Public {
-	sp_core::sr25519::Public::from_raw([1u8; 32])
 }
 
 pub fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {

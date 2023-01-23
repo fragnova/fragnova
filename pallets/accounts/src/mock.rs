@@ -19,9 +19,6 @@ use sp_core::{
 	H256,
 };
 
-use frame_support::traits::{AsEnsureOriginWithArg, GenesisBuild};
-use frame_system::EnsureSigned;
-
 use pallet_oracle::{OracleContract, OracleProvider};
 use sp_runtime::{
 	testing::{Header, TestXt},

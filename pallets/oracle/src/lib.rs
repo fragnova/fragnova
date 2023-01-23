@@ -5,7 +5,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use ethabi::ethereum_types::H160;
 use frame_support::traits::Get;
 use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
@@ -96,7 +95,6 @@ pub enum OracleProvider {
 
 pub use pallet::*;
 
-use scale_info::prelude::string::String;
 use sp_io::hashing::blake2_256;
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 

@@ -3,17 +3,14 @@ use crate::*;
 
 use frame_support::{
 	parameter_types,
-	traits::{AsEnsureOriginWithArg, ConstU32, ConstU64},
+	traits::{ConstU32, ConstU64},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
-use frame_system::{self, EnsureSigned};
+use frame_system;
 
 use sp_core::{ed25519::Signature, H256};
 
-use sp_runtime::traits::{
-	BlakeTwo256, ConstU128, ConstU8, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup,
-	Verify,
-};
+use sp_runtime::traits::{BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify};
 
 use pallet_oracle::{OracleContract, OracleProvider};
 use sp_runtime::testing::{Header, TestXt};

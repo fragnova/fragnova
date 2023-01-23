@@ -7,8 +7,8 @@ use ethabi::Token;
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult, traits::TypedGet};
 use frame_system::offchain::{SignedPayload, SigningTypes};
 use serde_json::json;
-use sp_core::{offchain::testing, Pair, H256};
-use sp_runtime::{offchain::storage::StorageValueRef, Percent, SaturatedConversion};
+use sp_core::{offchain::testing, H256};
+use sp_runtime::SaturatedConversion;
 
 pub use internal_lock_update_tests::lock_;
 pub use link_tests::link_;
@@ -337,20 +337,21 @@ mod sync_partner_contracts_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn sync_frag_locks_should_work() {
 		let (mut t, pool_state, offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
 
-		let dd = DummyData::new();
-		let lock = dd.lock;
-
-		let expected_data = EthLockUpdate {
-			public: <Test as SigningTypes>::Public::from(ed25519_public_key),
-			..lock.data
-		};
-
 		t.execute_with(|| {
+			let dd = DummyData::new();
+			let lock = dd.lock;
+
+			hardcode_expected_request_and_response(&mut offchain_state.write(), lock.clone());
+
 			Accounts::sync_partner_contracts(1);
+
+			let expected_data = EthLockUpdate {
+				public: <Test as SigningTypes>::Public::from(ed25519_public_key),
+				..lock.data
+			};
 
 			let tx = pool_state.write().transactions.pop().unwrap();
 			let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
@@ -374,7 +375,6 @@ mod internal_lock_update_tests {
 	use super::*;
 	use core::str::FromStr;
 	use ethabi::Address;
-	use pallet_oracle::OraclePrice;
 	use sp_core::keccak_256;
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {

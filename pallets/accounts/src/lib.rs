@@ -117,7 +117,7 @@ use serde::{Deserialize, Serialize};
 
 use ethabi::{ParamType, Token};
 
-use frame_support::traits::{tokens::fungibles::Mutate, ReservableCurrency};
+use frame_support::traits::ReservableCurrency;
 
 /// TODO: Documentation
 pub type DiscordID = u64;
