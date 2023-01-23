@@ -337,20 +337,21 @@ mod sync_partner_contracts_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn sync_frag_locks_should_work() {
-		let (mut t, pool_state, _offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
-
-		let dd = DummyData::new();
-		let lock = dd.lock;
-
-		let expected_data = EthLockUpdate {
-			public: <Test as SigningTypes>::Public::from(ed25519_public_key),
-			..lock.data
-		};
+		let (mut t, pool_state, offchain_state, ed25519_public_key) = new_test_ext_with_ocw();
 
 		t.execute_with(|| {
+			let dd = DummyData::new();
+			let lock = dd.lock;
+
+			hardcode_expected_request_and_response(&mut offchain_state.write(), lock.clone());
+
 			Accounts::sync_partner_contracts(1);
+
+			let expected_data = EthLockUpdate {
+				public: <Test as SigningTypes>::Public::from(ed25519_public_key),
+				..lock.data
+			};
 
 			let tx = pool_state.write().transactions.pop().unwrap();
 			let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
