@@ -1523,7 +1523,7 @@
 </span><span class="attribute">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(Serialize, Deserialize))]
 </span><span class="kw">pub struct </span>EthLockUpdate&lt;TPublic&gt; {
-	<span class="doccomment">/// Public Account Address of What? (问Gio)
+	<span class="doccomment">/// Public Account Address of
 	</span><span class="kw">pub </span>public: TPublic,
 	<span class="doccomment">/// If the event was `Lock`, it represents the **total amount of FRAG token** that is **currently locked** (not just the newly locked FRAG token) on the **FRAG Token Smart Contract**
 	/// Otherwise, if the event was `Unlock`, it must equal the ***total amount* of FRAG token that was previously locked** on the **FRAG Token Smart Contract**
@@ -1618,7 +1618,7 @@
 		<span class="doccomment">/// **Traits** of the **FRAG Token Smart Contract** on the **Ethereum Blockchain**
 		</span><span class="kw">type </span>EthFragContract: EthFragContract;
 
-		<span class="doccomment">/// Number of votes needed to do something (问Gio)
+		<span class="doccomment">/// Number of votes needed to do something
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>Threshold: Get&lt;u64&gt;;
 
@@ -2019,7 +2019,7 @@
 						</span>&lt;EVMLinkVoting&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>data_hash, current_votes + <span class="number">1</span>);
 						<span class="kw">return </span><span class="prelude-val">Ok</span>(())
 					} <span class="kw">else </span>{
-						<span class="comment">// Current votes passes the threshold, let&#39;s remove EVMLinkVoting perque perque non! (问Gio)
+						<span class="comment">// Current votes passes the threshold, let&#39;s remove EVMLinkVoting
 						// we are good to go, but let&#39;s remove the record
 						</span>&lt;EVMLinkVoting&lt;T&gt;&gt;::remove(<span class="kw-2">&amp;</span>data_hash);
 					}
@@ -2235,7 +2235,7 @@
 		/// verify that when we put the signature parameter (written as `signature`) and the payload parameter (written as `data`) of the aforementioned call into an &quot;Ethereum Verify function&quot;,
 		/// it returns the public key that is in the payload parameter.
 		///
-		/// Furthermore, also verify that `data.public` is in `FragKeys` - 问Gio
+		/// Furthermore, also verify that `data.public` is in `FragKeys`
 		///
 		/// If both the aforementioned, allow the call to execute. Otherwise, do not allow it to.
 		///
@@ -2272,8 +2272,8 @@
 						pub_key
 					} <span class="kw">else </span>{
 						<span class="comment">// Return TransactionValidityError if the call is not allowed.
-						</span><span class="kw">return </span>InvalidTransaction::BadSigner.into() <span class="comment">// // 问Gio
-					</span>}
+						</span><span class="kw">return </span>InvalidTransaction::BadSigner.into()
+					}
 				};
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Public key: {:?}&quot;</span>, pub_key);
 				<span class="kw">if </span>!valid_keys.contains(<span class="kw-2">&amp;</span>pub_key) {
@@ -2332,7 +2332,7 @@
 		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
 		/// (NOTE: the signed payload consists of a payload and a signature.
 		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
-		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::&lt;T, T::AuthorityId&gt;::any_account()`) (问Gio)
+		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::&lt;T, T::AuthorityId&gt;::any_account()`)
 		///
 		/// NOTE: `Signer::&lt;T, T::AuthorityId&gt;::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		</span><span class="kw">fn </span>sync_partner_contract(
@@ -2484,8 +2484,8 @@
 						<span class="comment">// this line is to prepare and return payload to be used
 						</span>|account| EthLockUpdate {
 							<span class="comment">// `account` is an account `Signer::&lt;T, T::AuthorityId&gt;::any_account()`
-							</span>public: account.public.clone(), <span class="comment">// 问Gio what is account.public and why is it supposed to be in FragKey
-							</span>amount,
+							</span>public: account.public.clone(),
+							amount,
 							lock_period,
 							sender,
 							signature: eth_signature.clone(),
@@ -2503,7 +2503,7 @@
 					</span>.map_err(|<span class="kw">_</span>| <span class="string">&quot;Failed to send transaction&quot;</span>)<span class="question-mark">?</span>;
 			}
 
-			last_block_ref.set(<span class="kw-2">&amp;</span>to_block.as_bytes().to_vec()); <span class="comment">// Recall that the `to_block` is the latest block that is considered final （问Gio）
+			last_block_ref.set(<span class="kw-2">&amp;</span>to_block.as_bytes().to_vec()); <span class="comment">// Recall that the `to_block` is the latest block that is considered final
 
 			</span><span class="prelude-val">Ok</span>(())
 		}
@@ -2514,7 +2514,7 @@
 		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
 		/// (NOTE: the signed payload consists of a payload and a signature.
 		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
-		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::&lt;T, T::AuthorityId&gt;::any_account()`) (问Gio)
+		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::&lt;T, T::AuthorityId&gt;::any_account()`)
 		///
 		/// NOTE: `Signer::&lt;T, T::AuthorityId&gt;::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		</span><span class="kw">pub fn </span>sync_partner_contracts(block_number: T::BlockNumber) {

@@ -708,7 +708,7 @@
 		<span class="doccomment">/// **Traits** that allows to set the Oracle provider for the price feed of FRAG token
 		</span><span class="kw">type </span>OracleProvider: OracleContract;
 
-		<span class="doccomment">/// Number of votes needed to do something (问Gio)
+		<span class="doccomment">/// Number of votes needed to do something
 		</span><span class="attribute">#[pallet::constant]
 		</span><span class="kw">type </span>Threshold: Get&lt;u64&gt;;
 	}
@@ -1131,8 +1131,8 @@
 						pub_key
 					} <span class="kw">else </span>{
 						<span class="comment">// Return TransactionValidityError if the call is not allowed.
-						</span><span class="kw">return </span>InvalidTransaction::BadSigner.into() <span class="comment">// // 问Gio
-					</span>}
+						</span><span class="kw">return </span>InvalidTransaction::BadSigner.into()
+					}
 				};
 				<span class="macro">log::debug!</span>(<span class="string">&quot;Public key: {:?}&quot;</span>, pub_key);
 				<span class="kw">if </span>!valid_keys.contains(<span class="kw-2">&amp;</span>pub_key) {

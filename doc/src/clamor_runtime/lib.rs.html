@@ -1924,7 +1924,6 @@
 <span id="1924">1924</span>
 <span id="1925">1925</span>
 <span id="1926">1926</span>
-<span id="1927">1927</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Clamor Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -1968,7 +1967,7 @@
 //!
 //! Source: https://www.youtube.com/watch?v=3pfM0GOp02c&amp;ab_channel=ParityTech
 //!
-//! TODO - Giovanni &amp; Alessandro, notice that once the block is imported (i.e step 6a) - all its transactions/extrinsics get executed right-away (if we take what the presenter said in the YouTube video completely literally). It does not validate the transactions (i.e perform `validate_transaction` on them) in the block before executing them!!! Isn&#39;t this a problem !?!?
+//! TODO Review - Notice that once the block is imported (i.e step 6a) - all its transactions/extrinsics get executed right-away (if we take what the presenter said in the YouTube video completely literally). It does not validate the transactions (i.e perform `validate_transaction` on them) in the block before executing them!
 //!
 //! # Transaction Format
 //!
@@ -2318,8 +2317,7 @@
 						.is_ok(),
 			},
 			Categories::Trait(trait_hash) =&gt; <span class="kw">match </span>trait_hash {
-				<span class="comment">// Non Capisco Cosa Fare Qui!!!
-				</span><span class="prelude-val">Some</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">false</span>,
+				<span class="prelude-val">Some</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">false</span>,
 				<span class="prelude-val">None </span>=&gt; {
 					<span class="kw">let </span><span class="prelude-val">Ok</span>(trait_struct) = Trait::decode(<span class="kw-2">&amp;mut &amp;</span>data[..]) <span class="kw">else </span>{ <span class="comment">// TODO Review - is `&amp;mut *data` safe?
 						</span><span class="kw">return </span><span class="bool-val">false</span>;
@@ -2393,7 +2391,7 @@
 			Categories::Model(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				ModelCategories::GltfFile =&gt; <span class="bool-val">false</span>,
 				ModelCategories::Sdf =&gt; <span class="bool-val">false</span>,
-				ModelCategories::PhysicsCollider =&gt; <span class="bool-val">false</span>, <span class="comment">// &quot;This is a Fragnova/Fragcolor data type&quot; - Giovanni Petrantoni
+				ModelCategories::PhysicsCollider =&gt; <span class="bool-val">false</span>, <span class="comment">// Note: &quot;This is a Fragnova/Fragcolor data type&quot;
 			</span>},
 			Categories::Binary(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				BinaryCategories::WasmProgram =&gt; infer::is(data, <span class="string">&quot;wasm&quot;</span>), <span class="comment">// wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn&#39;t I check if the last `payload` is `Payload::End`?

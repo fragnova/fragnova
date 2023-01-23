@@ -2351,8 +2351,6 @@
 <span id="2351">2351</span>
 <span id="2352">2352</span>
 <span id="2353">2353</span>
-<span id="2354">2354</span>
-<span id="2355">2355</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -2545,9 +2543,7 @@
 	/// These **allowed set of actions of the Fragment Instance** ***may change***
 	/// when the **Fragment Instance is given to another account ID** (see the `give()` extrinsic).
 	</span><span class="kw">pub </span>permissions: FragmentPerms,
-	<span class="comment">// Notes from Giovanni:
-	//
-	// If Fragment Instances (created from the Fragment Definition) must contain unique data when created (injected by buyers, validated by the system)
+	<span class="comment">// Note: If Fragment Instances (created from the Fragment Definition) must contain unique data when created (injected by buyers, validated by the system)
 	</span><span class="doccomment">/// Whether the **Fragment Definition** is **mutable**
 	</span><span class="kw">pub </span>unique: <span class="prelude-ty">Option</span>&lt;UniqueOptions&gt;,
 	<span class="doccomment">/// If scarce, the max supply of the Fragment
@@ -3466,7 +3462,7 @@
 		/// Note: Each created Fragment instance will have a different Edition ID and a Copy ID of &quot;1&quot;.
 		///
 		/// Note: The total fee that the buyer (i.e the Caller Account ID `origin`) must pay is the
-		/// specified price-per-instance multiplied by the total number of instance(s) that the buyer wants to create. (@karan)
+		/// specified price-per-instance multiplied by the total number of instance(s) that the buyer wants to create.
 		/// This amount will be transferred to the Fragment Definition&#39;s Vault&#39;s Account ID.
 		///
 		///
