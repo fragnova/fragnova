@@ -190,9 +190,7 @@ pub struct FragmentDefinition<TU8Array, TFungibleAsset, TAccountId, TBlockNum> {
 	/// These **allowed set of actions of the Fragment Instance** ***may change***
 	/// when the **Fragment Instance is given to another account ID** (see the `give()` extrinsic).
 	pub permissions: FragmentPerms,
-	// Notes from Giovanni:
-	//
-	// If Fragment Instances (created from the Fragment Definition) must contain unique data when created (injected by buyers, validated by the system)
+	// Note: If Fragment Instances (created from the Fragment Definition) must contain unique data when created (injected by buyers, validated by the system)
 	/// Whether the **Fragment Definition** is **mutable**
 	pub unique: Option<UniqueOptions>,
 	/// If scarce, the max supply of the Fragment
@@ -1111,7 +1109,7 @@ pub mod pallet {
 		/// Note: Each created Fragment instance will have a different Edition ID and a Copy ID of "1".
 		///
 		/// Note: The total fee that the buyer (i.e the Caller Account ID `origin`) must pay is the
-		/// specified price-per-instance multiplied by the total number of instance(s) that the buyer wants to create. (@karan)
+		/// specified price-per-instance multiplied by the total number of instance(s) that the buyer wants to create.
 		/// This amount will be transferred to the Fragment Definition's Vault's Account ID.
 		///
 		///

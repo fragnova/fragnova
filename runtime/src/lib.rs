@@ -41,7 +41,7 @@
 //!
 //! Source: https://www.youtube.com/watch?v=3pfM0GOp02c&ab_channel=ParityTech
 //!
-//! TODO - Giovanni & Alessandro, notice that once the block is imported (i.e step 6a) - all its transactions/extrinsics get executed right-away (if we take what the presenter said in the YouTube video completely literally). It does not validate the transactions (i.e perform `validate_transaction` on them) in the block before executing them!!! Isn't this a problem !?!?
+//! TODO Review - Notice that once the block is imported (i.e step 6a) - all its transactions/extrinsics get executed right-away (if we take what the presenter said in the YouTube video completely literally). It does not validate the transactions (i.e perform `validate_transaction` on them) in the block before executing them!
 //!
 //! # Transaction Format
 //!
@@ -391,7 +391,6 @@ mod validation_logic {
 						.is_ok(),
 			},
 			Categories::Trait(trait_hash) => match trait_hash {
-				// Non Capisco Cosa Fare Qui!!!
 				Some(_) => false,
 				None => {
 					let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // TODO Review - is `&mut *data` safe?
@@ -466,7 +465,7 @@ mod validation_logic {
 			Categories::Model(sub_categories) => match sub_categories {
 				ModelCategories::GltfFile => false,
 				ModelCategories::Sdf => false,
-				ModelCategories::PhysicsCollider => false, // "This is a Fragnova/Fragcolor data type" - Giovanni Petrantoni
+				ModelCategories::PhysicsCollider => false, // Note: "This is a Fragnova/Fragcolor data type"
 			},
 			Categories::Binary(sub_categories) => match sub_categories {
 				BinaryCategories::WasmProgram => infer::is(data, "wasm"), // wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?

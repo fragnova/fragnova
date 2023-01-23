@@ -127,7 +127,7 @@ pub mod pallet {
 		/// **Traits** that allows to set the Oracle provider for the price feed of FRAG token
 		type OracleProvider: OracleContract;
 
-		/// Number of votes needed to do something (问Gio)
+		/// Number of votes needed to do something
 		#[pallet::constant]
 		type Threshold: Get<u64>;
 	}
@@ -550,7 +550,7 @@ pub mod pallet {
 						pub_key
 					} else {
 						// Return TransactionValidityError if the call is not allowed.
-						return InvalidTransaction::BadSigner.into() // // 问Gio
+						return InvalidTransaction::BadSigner.into()
 					}
 				};
 				log::debug!("Public key: {:?}", pub_key);

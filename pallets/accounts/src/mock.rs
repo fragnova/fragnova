@@ -252,8 +252,6 @@ pub fn new_test_ext_with_ocw() -> (
 	t.register_extension(TransactionPoolExt::new(pool));
 	t.register_extension(KeystoreExt(Arc::new(keystore)));
 
-	// Karan Da Kiya Hua
-
 	t.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
 
 	(t, pool_state, offchain_state, ed25519_public_key) // copied from https://github.com/JoshOrndorff/recipes/blob/master/pallets/ocw-demo/src/tests.rs
