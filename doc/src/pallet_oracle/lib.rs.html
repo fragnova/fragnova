@@ -579,8 +579,6 @@
 <span id="579">579</span>
 <span id="580">580</span>
 <span id="581">581</span>
-<span id="582">582</span>
-<span id="583">583</span>
 </pre><pre class="rust"><code><span class="doccomment">//! pallet-oracle queries the ChainLink Price Feed smart contract on Ethereum to fetch the price of FRAG/USD.
 //!
 //! It works as an Offchain Worker that will be triggered after every block, to fetch the current price.
@@ -588,7 +586,6 @@
 </span><span class="attribute">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
 </span><span class="kw">use </span>codec::{Decode, Encode};
-<span class="kw">use </span>ethabi::ethereum_types::H160;
 <span class="kw">use </span>frame_support::traits::Get;
 <span class="kw">use </span>frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
@@ -679,7 +676,6 @@
 
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 
-<span class="kw">use </span>scale_info::prelude::string::String;
 <span class="kw">use </span>sp_io::hashing::blake2_256;
 <span class="kw">use </span>sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 

@@ -1460,11 +1460,6 @@
 <span id="1460">1460</span>
 <span id="1461">1461</span>
 <span id="1462">1462</span>
-<span id="1463">1463</span>
-<span id="1464">1464</span>
-<span id="1465">1465</span>
-<span id="1466">1466</span>
-<span id="1467">1467</span>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1520,9 +1515,6 @@
 	string::{String, ToString},
 };
 <span class="kw">use </span>serde_json::{json, Map, Value};
-
-<span class="kw">use </span>frame_support::traits::tokens::fungibles::{Inspect, Mutate};
-<span class="kw">use </span>pallet_clusters::Cluster;
 
 <span class="doccomment">/// TODO: Documentation
 </span><span class="attribute">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -1682,12 +1674,10 @@
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 	<span class="kw">use </span>frame_support::{dispatch::DispatchResult, pallet_prelude::<span class="kw-2">*</span>, Twox64Concat};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
-	<span class="kw">use </span>pallet_clusters::Cluster;
 	<span class="kw">use </span>pallet_detach::{
 		DetachCollection, DetachHash, DetachRequest, DetachRequests, DetachedHashes,
 		SupportedChains,
 	};
-	<span class="kw">use </span>sp_clamor::CID_PREFIX;
 	<span class="kw">use </span>sp_runtime::SaturatedConversion;
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
