@@ -1421,7 +1421,8 @@ pub mod pallet {
 
 					// remove secondary sale data from `Definition2SecondarySales`
 					Definition2SecondarySales::<T>::remove((definition_hash, edition_id, copy_id));
-				}
+				},
+				_ => return Err(Error::<T>::ParamsNotValid.into()),
 			};
 
 			Ok(())
