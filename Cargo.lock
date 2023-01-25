@@ -5474,9 +5474,9 @@ dependencies = [
 
 [[package]]
 name = "protos"
-version = "0.1.20"
+version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b4c7f1abdccb6fdbd5e4be68f4727206b82524698f2bbbbec79d2b52018d2b55"
+checksum = "347894860a41749dc414192b377ed87e13dd9bd5cd74e8108e607b1a42aa27dc"
 dependencies = [
  "bitflags",
  "parity-scale-codec 3.2.1",
