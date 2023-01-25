@@ -384,7 +384,7 @@ mod validation_logic {
 	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
 		match category {
 			Categories::Text(sub_categories) => match sub_categories {
-				TextCategories::Plain => str::from_utf8(data).is_ok(),
+				TextCategories::Plain | TextCategories::Wgsl => str::from_utf8(data).is_ok(),
 				// REVIEW - does a Json have to be a `serde_json::Map` or can it `serde_json::Value`?
 				TextCategories::Json =>
 					serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(&data[..])
