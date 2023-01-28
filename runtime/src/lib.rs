@@ -403,7 +403,7 @@ mod validation_logic {
 
 					trait_struct.records.windows(2).all(|window| {
 						let (record_1, record_2) = (&window[0], &window[1]);
-						let (Ok(a1), Ok(a2)) = (get_utf8_string(&record_1.0), get_utf8_string(&record_2.0)) else { // `a1` is short for `attribute_1`, `a2` is short for `attribute_2`
+						let (Ok(a1), Ok(a2)) = (get_utf8_string(&record_1.name), get_utf8_string(&record_2.name)) else { // `a1` is short for `attribute_1`, `a2` is short for `attribute_2`
 							return false;
 						};
 
