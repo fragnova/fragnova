@@ -3773,8 +3773,8 @@
 					<span class="comment">// remove secondary sale data from `Definition2SecondarySales`
 					</span>Definition2SecondarySales::&lt;T&gt;::remove((definition_hash, edition_id, copy_id));
 				},
-				<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::ParamsNotValid.into()),
-			};
+				<span class="comment">// _ =&gt; return Err(Error::&lt;T&gt;::ParamsNotValid.into()),
+			</span>};
 
 			<span class="prelude-val">Ok</span>(())
 		}
