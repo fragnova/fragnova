@@ -452,7 +452,6 @@ mod create_tests {
 	}
 
 	#[test]
-	#[ignore]
 	fn delete_role_members_works() {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
