@@ -24,7 +24,8 @@ pub use pallet::*;
 use pallet_clusters::Clusters;
 use pallet_fragments::Owners;
 use pallet_protos::{Proto, ProtoOwner, Protos};
-use sp_clamor::{Hash128, Hash256, InstanceUnit};
+use sp_clamor::{Hash128, Hash256};
+use sp_fragments::InstanceUnit;
 use sp_std::vec::Vec;
 
 #[cfg(test)]

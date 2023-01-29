@@ -9,18 +9,16 @@
 use codec::{Decode, Encode, Error as CodecError};
 use sp_core::offchain::{HttpRequestStatus, Timestamp};
 use sp_io::{hashing::blake2_256, offchain};
-use sp_std::vec::Vec;
+use sp_std::{
+	vec::Vec
+};
 
-/// 256 bytes u8-Array
-pub type Hash256 = [u8; 32];
-
-/// 128 bytes u8-Array
-pub type Hash128 = [u8; 16];
 /// 64 bytes u8-Array
 pub type Hash64 = [u8; 8];
-
-/// Type used to represent an Instance's Edition ID and an Instance's Copy ID
-pub type InstanceUnit = u64;
+/// 128 bytes u8-Array
+pub type Hash128 = [u8; 16];
+/// 256 bytes u8-Array
+pub type Hash256 = [u8; 32];
 
 /// The IPFS CID prefix used to use to obtain any data that is stored on the Fragnova Blockchain
 ///

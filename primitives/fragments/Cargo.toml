@@ -1,5 +1,5 @@
 [package]
-name = "sp-clamor"
+name = "sp-fragments"
 version = "0.1.0"
 authors = ["Fragcolor Pte. Ltd. <ask@fragcolor.com>"]
 edition = "2021"
@@ -12,33 +12,23 @@ description = "Runtime chainblocks utilities"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-sp-core = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-io = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 sp-std = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-runtime = { version = '6.0.0', optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-runtime-interface = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+sp-clamor = { version = '0.1.0', path = '../clamor', default-features = false }
 
 codec = { package = 'parity-scale-codec', version = '3.0.0', default-features = false, features = ['derive'] }
 scale-info = { version = '2.0', default-features = false, features = ['derive'] }
 
 log = { version = "0.4.14", default-features = false }
-lazy_static = { version = "1.4.0", optional = true }
-fragments = { default-features = false, git = "https://github.com/fragcolor-xyz/fragments.git" }
-hex-literal = { version = "0.3.4", default-features = false }
+protos = { version = "0.1.21", default-features = false }
 # chainblocks = { git = "https://github.com/fragcolor-xyz/chainblocks.git", default-features = false, optional = true, features = ["dllblock", "cblisp"] }
 # shards = { git = "https://github.com/fragcolor-xyz/shards.git", default-features = false, optional = true, features = ["dllshard", "scripting"] }
 
 [features]
 default = ["std"]
 std = [
-	"sp-core/std",
-	"sp-io/std",
 	"sp-std/std",
-	"sp-runtime/std",
-	"sp-runtime-interface/std",
 	'codec/std',
 	"scale-info/std",
 	"log/std",
-	"lazy_static",
-	"fragments/std",
+	"protos/std",
 ]

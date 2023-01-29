@@ -4375,6 +4375,7 @@ dependencies = [
  "serde_json",
  "sp-clamor",
  "sp-core",
+ "sp-fragments",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -4560,6 +4561,7 @@ dependencies = [
  "serde",
  "sp-clamor",
  "sp-core",
+ "sp-fragments",
  "sp-io",
  "sp-keystore",
  "sp-runtime",
@@ -4595,6 +4597,7 @@ dependencies = [
  "serde_json",
  "sp-clamor",
  "sp-core",
+ "sp-fragments",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -4756,8 +4759,10 @@ dependencies = [
  "serde_json",
  "sp-clamor",
  "sp-core",
+ "sp-fragments",
  "sp-io",
  "sp-keystore",
+ "sp-protos",
  "sp-runtime",
  "sp-std",
 ]
@@ -7584,6 +7589,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-fragments"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "parity-scale-codec 3.2.1",
+ "protos",
+ "scale-info 2.3.1",
+ "sp-clamor",
+ "sp-std",
+]
+
+[[package]]
 name = "sp-inherents"
 version = "4.0.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
@@ -7678,6 +7695,19 @@ dependencies = [
  "backtrace",
  "lazy_static",
  "regex",
+]
+
+[[package]]
+name = "sp-protos"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "parity-scale-codec 3.2.1",
+ "protos",
+ "scale-info 2.3.1",
+ "sp-clamor",
+ "sp-core",
+ "sp-std",
 ]
 
 [[package]]

@@ -10,106 +10,48 @@ version = '0.0.1'
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
-[dev-dependencies.serde]
-version = '1.0.119'
-
-[dependencies.sp-core]
-default-features = false
-git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.0.6'
-version = '6.0.0'
-
-[dependencies.sp-io]
-default-features = false
-git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.0.6'
-version = '6.0.0'
-
-[dependencies.sp-std]
-default-features = false
-git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.0.6'
-version = '4.0.0-dev'
-
-[dependencies.sp-runtime]
-default-features = false
-git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.0.6'
-version = '6.0.0'
-
-[dependencies.sp-keystore]
-default-features = false
-git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.0.6'
-version = '0.12.0'
-optional = true
-
-[dependencies.codec]
-default-features = false
-features = ['derive']
-package = 'parity-scale-codec'
-version = '3.0.0'
-
-[dependencies.frame-benchmarking]
-default-features = false
-git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.0.6'
-version = '4.0.0-dev'
-optional = true
-
-[dependencies.frame-support]
-default-features = false
-git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.0.6'
-version = '4.0.0-dev'
-
-[dependencies.frame-system]
-default-features = false
-git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.0.6'
-version = '4.0.0-dev'
-
-[dependencies.scale-info]
-default-features = false
-features = ['derive']
-version = '2.0'
-
-[dependencies.pallet-randomness-collective-flip]
-default-features = false
-git = 'https://github.com/fragcolor-xyz/substrate.git'
-tag = 'fragnova-v0.0.6'
-version = '4.0.0-dev'
-
-#[dependencies.beefy-merkle-tree]
-#default-features = false
-#features = ['keccak']
-#git = 'https://github.com/fragcolor-xyz/substrate.git'
-#tag = 'fragnova-v0.0.6'
-#version = '4.0.0-dev'
-
 [dependencies]
-log = { version = "0.4.14", default-features = false }
+sp-core = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+sp-io = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+sp-std = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+sp-runtime = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+sp-keystore = { version = '0.12.0', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 sp-clamor = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
+sp-fragments = { version = '0.1.0', path = '../../primitives/fragments', default-features = false }
+
+frame-benchmarking = { version = '4.0.0-dev', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+frame-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+frame-system = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+pallet-randomness-collective-flip = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+
+codec = { package = 'parity-scale-codec', version = '3.0.0', default-features = false, features = ['derive'] }
+scale-info = { version = '2.0', default-features = false, features = ['derive'] }
+
+log = { version = "0.4.14", default-features = false }
 hex = { version = "0.4", default-features = false }
+
+#beefy-merkle-tree = { version = '4.0.0-dev', default-features = false, features = ['keccak'], git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 
 [dev-dependencies]
 parking_lot = "0.12.1" # copied from https://github.com/JoshOrndorff/recipes/blob/master/pallets/ocw-demo/Cargo.toml#L11
+serde = '1.0.119'
 
 [features]
 default = ['std']
 runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks"]
 std = [
-#	'beefy-merkle-tree/std',
-    'codec/std',
+	'sp-core/std',
+	'sp-io/std',
+	'sp-std/std',
+	'sp-runtime/std',
+	'sp-keystore',
+	'frame-benchmarking/std',
     'frame-support/std',
     'frame-system/std',
-    'frame-benchmarking/std',
-    'sp-io/std',
-    'sp-std/std',
-	'sp-runtime/std',
     'pallet-randomness-collective-flip/std',
-    'log/std',
-	'sp-keystore',
-	'sp-core/std',
+	'codec/std',
+	"scale-info/std",
+	'log/std',
+#	'beefy-merkle-tree/std',
 ]
 try-runtime = ['frame-support/try-runtime']
