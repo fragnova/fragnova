@@ -139,7 +139,7 @@ pub fn hardcode_expected_request_and_response(state: &mut testing::OffchainState
 	*/
 	state.expect_request(testing::PendingRequest {
 		method: String::from("POST"),
-		uri: String::from_utf8(sp_fragnova::clamor::get_geth_url().unwrap()).unwrap(),
+		uri: String::from_utf8(sp_fragnova::fragnova::get_geth_url().unwrap()).unwrap(),
 		headers: vec![(String::from("Content-Type"), String::from("application/json"))],
 		body: json!({
 				"jsonrpc": "2.0",

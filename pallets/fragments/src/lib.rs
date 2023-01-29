@@ -343,9 +343,9 @@ pub mod pallet {
 		InstanceUnit, // Edition ID
 	>;
 
-	/// StorageDoubleMap that maps a **Fragment Definition and a Clamor Account ID**
+	/// StorageDoubleMap that maps a **Fragment Definition and a Fragnova Account ID**
 	/// to a
-	/// **list of Fragment Instances of the Fragment Definition that is owned by the Clamor Account ID**
+	/// **list of Fragment Instances of the Fragment Definition that is owned by the Fragnova Account ID**
 	///
 	/// This storage item stores the exact same thing as `Inventory`, except that the primary key and the secondary key are swapped
 	///
@@ -362,9 +362,9 @@ pub mod pallet {
 		Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)>,
 	>;
 
-	/// StorageDoubleMap that maps a **Clamor Account ID and a Fragment Definition**
+	/// StorageDoubleMap that maps a **Fragnova Account ID and a Fragment Definition**
 	/// to a
-	/// **list of Fragment Instances of the Fragment Definition that is owned by the Clamor Account ID**
+	/// **list of Fragment Instances of the Fragment Definition that is owned by the Fragnova Account ID**
 	///
 	/// This storage item stores the exact same thing as `Owners`, except that the primary key and the secondary key are swapped
 	///
@@ -1351,11 +1351,11 @@ pub mod pallet {
 		}
 
 		// TODO Review - Should we ensure that a Detach Request doesn't already exist with the same Fragment Instance?
-		/// Request to detach **Fragment Instances** of a **single Fragment Definition** from the **Clamor Blockchain**.
+		/// Request to detach **Fragment Instances** of a **single Fragment Definition** from the **Fragnova Blockchain**.
 		///
-		/// Note: Copyable Fragment Instances (i.e Fragment Instances that are duplicatable) are not allowed to be detached from Clamor
+		/// Note: Copyable Fragment Instances (i.e Fragment Instances that are duplicatable) are not allowed to be detached from Fragnova
 		///
-		/// Note: The Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
+		/// Note: The Fragment may actually get detached after one or more Fragnova blocks since when this extrinsic is called.
 		///
 		/// Note: **Once the Fragment is detached**, an **event is emitted that includes a signature**.
 		/// This signature can then be used to attach the Proto-Fragment to an External Blockchain `target_chain`.
@@ -1501,7 +1501,7 @@ pub mod pallet {
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
 		/// * `quantity` - **Number of Fragment Instances** to **create**
-		/// * `current_block_number` - **Current block number** of the **Clamor Blockchain**
+		/// * `current_block_number` - **Current block number** of the **Fragnova Blockchain**
 		/// * `expiring_at` (*optional*) - **Block Number** that the **Fragment Instance** will **expire at**
 		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
 		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
@@ -1723,7 +1723,7 @@ pub mod pallet {
 
 		/// Whether a Fragment Instance can be transferred
 		///
-		/// * `from` - Clamor Account ID to transfer the Fragment Instance from
+		/// * `from` - Fragnova Account ID to transfer the Fragment Instance from
 		/// * `definition_hash` - Fragment Definition of the Fragment Instance
 		/// * `edition_id` - Edition ID of the Fragment Instance
 		/// * `copy_id` - Copy ID of the Fragment Instance
@@ -1802,8 +1802,8 @@ pub mod pallet {
 
 		/// Transfer a Fragment Instance from `from` to `to`
 		///
-		/// * `from` - Clamor Account ID to transfer the Fragment Instance from
-		/// * `to` - Clamor Account ID to transfer the Fragment Instance to
+		/// * `from` - Fragnova Account ID to transfer the Fragment Instance from
+		/// * `to` - Fragnova Account ID to transfer the Fragment Instance to
 		/// * `definition_hash` - Fragment Definition of the Fragment Instance
 		/// * `edition_id` - Edition ID of the Fragment Instance
 		/// * `copy_id` - Copy ID of the Fragment Instance

@@ -15,7 +15,7 @@
 
 use std::sync::Arc;
 
-use clamor_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
+use fragnova_runtime::{opaque::Block, AccountId, Balance, BlockNumber, Hash, Index};
 use jsonrpsee::RpcModule;
 use sc_client_api::AuxStore;
 pub use sc_rpc_api::DenyUnsafe;

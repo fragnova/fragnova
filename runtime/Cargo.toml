@@ -1,5 +1,5 @@
 [package]
-name = 'clamor-runtime'
+name = 'fragnova-runtime'
 version = '4.0.0-dev'
 description = 'A fresh FRAME-based Substrate runtime, ready for hacking.'
 authors = ['Substrate DevHub <https://github.com/substrate-developer-hub>']
@@ -24,7 +24,7 @@ sp-session = { version = '4.0.0-dev', default-features = false, git = 'https://g
 sp-std = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 sp-transaction-pool = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 sp-version = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-fragnova = { version = '0.1.0', path = '../primitives/clamor', default-features = false }
+sp-fragnova = { version = '0.1.0', path = '../primitives/fragnova', default-features = false }
 
 frame-executive = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 frame-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }

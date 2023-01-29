@@ -1,4 +1,4 @@
-//! The Runtime of the Clamor Node.
+//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
 //! for executing transactions, saving state transitions, and interacting with the outer node.
@@ -260,7 +260,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// Here, we set this to 2 seconds because we want a 6 second average block time. (since in Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** - see the crate documentation above for more information)
 const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
-/// The maximum possible length (in bytes) that a Clamor Block can be
+/// The maximum possible length (in bytes) that a Fragnova Block can be
 pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
 
 // When to use:
@@ -290,7 +290,7 @@ parameter_types! {
 	pub RuntimeBlockLength: BlockLength = BlockLength
 		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
 
-	/// Set the "target block weight" for the Clamor Blockchain.
+	/// Set the "target block weight" for the Fragnova Blockchain.
 	///
 	/// # Footnotes
 	///
@@ -373,10 +373,10 @@ mod validation_logic {
 	fn does_call_index_the_transaction(c: &Call) -> bool {
 		matches!(
 			c,
-			Call::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+			Call::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
 		Call::Protos(pallet_protos::Call::patch { .. }) |
 		Call::Protos(pallet_protos::Call::set_metadata { .. }) |
-		Call::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+		Call::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
 		Call::Fragments(pallet_fragments::Call::set_instance_metadata { .. })
 		)
 	}
@@ -598,7 +598,7 @@ mod validation_logic {
 			] {
 				assert_eq!(
 					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
-						// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
 						references: vec![],
 						category: category.clone(),
 						tags: vec![].try_into().unwrap(),
@@ -633,7 +633,7 @@ mod validation_logic {
 			] {
 				assert_eq!(
 					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-						// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
 						proto_hash: [7u8; 32],
 						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
@@ -652,7 +652,7 @@ mod validation_logic {
 				assert_eq!(
 					is_the_immediate_call_valid(&Call::Fragments(
 						pallet_fragments::Call::set_definition_metadata {
-							// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+							// https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
 							definition_hash: [7u8; 16],
 							metadata_key: metadata_key.clone().try_into().unwrap(),
 							data: data.clone()
@@ -707,7 +707,7 @@ mod validation_logic {
 			] {
 				assert_eq!(
 					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-						// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
 						proto_hash: [7u8; 32],
 						metadata_key: metadata_key.clone().try_into().unwrap(),
 						data: data.clone()
@@ -726,7 +726,7 @@ mod validation_logic {
 				assert_eq!(
 					is_the_immediate_call_valid(&Call::Fragments(
 						pallet_fragments::Call::set_definition_metadata {
-							// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+							// https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
 							definition_hash: [7u8; 16],
 							metadata_key: metadata_key.clone().try_into().unwrap(),
 							data: data.clone() // Invalid UTF-8 Text
@@ -778,7 +778,7 @@ mod validation_logic {
 			assert_eq!(
 				is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
 					calls: vec![Call::Protos(pallet_protos::Call::ban {
-						// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
 						proto_hash: [7u8; 32],
 					})]
 				}),),
@@ -1387,7 +1387,7 @@ pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 ///
 /// # Example
 ///
-/// Notice that in any signed transaction/extrinsic that is sent to Clamor, it will the extra data🥕 "era", "nonce" and "tip": https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
+/// Notice that in any signed transaction/extrinsic that is sent to Fragnova, it will the extra data🥕 "era", "nonce" and "tip": https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
 ///
 /// The reason we see this additional data in the encoded extrinsic is because we have defined them here.
 ///

@@ -33,7 +33,7 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.github_token }}
-          CARGO_PACKAGE_NAME: "clamor"
+          CARGO_PACKAGE_NAME: "fragnova"
           BOT_NAME: "Fragcolor bot"
           BOT_EMAIL: "bot@fragcolor.xyz"
 

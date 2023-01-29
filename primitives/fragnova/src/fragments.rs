@@ -11,10 +11,10 @@ use protos::permissions::FragmentPerms;
 /// Type used to represent an Instance's Edition ID and an Instance's Copy ID
 pub type InstanceUnit = u64;
 
-/// Enum can be used to represent a currency that exists on the Clamor Blockchain
+/// Enum can be used to represent a currency that exists on the Fragnova Blockchain
 #[derive(Encode, Decode, Copy, Clone, scale_info::TypeInfo, Debug, PartialEq)] // REVIEW - should it implement the trait `Copy`?
 pub enum Currency<TFungibleAsset> {
-	/// Clamor's Native Currency (i.e NOVA token)
+	/// Fragnova's Native Currency (i.e NOVA token)
 	Native,
 	/// A Custom Currency
 	Custom(TFungibleAsset),

@@ -26,7 +26,7 @@ scale-info = { version = '2.0', default-features = false, features = ['derive'] 
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.136", features = ["derive"], optional = true }
 serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
-sp-fragnova = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
+sp-fragnova = { version = '0.1.0', path = '../../primitives/fragnova', default-features = false }
 log = { version = "0.4.17", default-features = false }
 ethabi = { version = "17.0.0", default-features = false }
 ethabi-contract = { version = "11.0.0", default-features = false }

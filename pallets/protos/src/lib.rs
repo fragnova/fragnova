@@ -739,9 +739,9 @@ pub mod pallet {
 		}
 
 		// TODO Review - Should we ensure that a Detach Request doesn't already exist with the same Proto-Fragment?
-		/// Request to detach a **Proto-Fragment** from **Clamor**.
+		/// Request to detach a **Proto-Fragment** from **Fragnova**.
 		///
-		/// Note: The Proto-Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
+		/// Note: The Proto-Fragment may actually get detached after one or more Fragnova blocks since when this extrinsic is called.
 		///
 		/// Note: **Once the Proto-Fragment is detached**, an **event is emitted that includes a signature**.
 		/// This signature can then be used to attach the Proto-Fragment to an External Blockchain `target_chain`.

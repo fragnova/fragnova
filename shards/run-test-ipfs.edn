@@ -24,20 +24,20 @@
   "z" (PrependTo .ipfs-cid)
   .ipfs-cid (Log "IPFS CID"))
 
-(defwire get-clamor-p2p-addresses
+(defwire get-fragnova-p2p-addresses
 
   {"id" 1 "jsonrpc" "2.0" "method" "system_localListenAddresses" "params" []} (ToJson) (Http.Post RPC-SERVER) ; `system_localListenAddresses` return the string representation of the addresses we listen on, including the trailing /p2p/.
   (FromJson) (ExpectTable) (Take "result")
-  (ExpectStringSeq) (Log "Clamor is listening to the following P2P addresses"))
+  (ExpectStringSeq) (Log "Fragnova is listening to the following P2P addresses"))
 
-(defwire connect-to-clamor-p2p-addresses
+(defwire connect-to-fragnova-p2p-addresses
 
-  .clamor-p2p-addresses (ExpectStringSeq)
+  .fragnova-p2p-addresses (ExpectStringSeq)
 
   ; Q: What is IPFS Swarm?
   ; A: 'ipfs swarm' is a tool to manipulate the network swarm. The swarm is the component that opens, listens for, and maintains connections to other ipfs peers in the internet.
 
-  .clamor-p2p-addresses
+  .fragnova-p2p-addresses
   (ForEach
    (->
     (Log "connecting to p2p address")
@@ -66,8 +66,8 @@
   "Proto-Indo-European" (ToBytes) = .proto-data
   (Do upload-proto) = .proto-hash
   (Do convert-blake256-hash-to-ipfs-cid) = .proto-hash-cid
-  (Do get-clamor-p2p-addresses) = .clamor-p2p-addresses
-  (Do connect-to-clamor-p2p-addresses) (Assert.IsNot 0)
+  (Do get-fragnova-p2p-addresses) = .fragnova-p2p-addresses
+  (Do connect-to-fragnova-p2p-addresses) (Assert.IsNot 0)
 
   ; not ideal but we need to wait transaction is done and CI can be slow
   (Pause 5.0)

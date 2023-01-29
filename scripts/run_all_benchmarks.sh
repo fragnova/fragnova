@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-# This Clamor bash script is inspired from: https://github.com/paritytech/substrate/blob/master/scripts/run_all_benchmarks.sh
+# This Fragnova bash script is inspired from: https://github.com/paritytech/substrate/blob/master/scripts/run_all_benchmarks.sh
 
 cargo build --profile=production --features runtime-benchmarks
 
 # The executable to use.
-CLAMOR=./target/production/clamor
+CLAMOR=./target/production/fragnova
 
 PALLETS=("pallet_accounts" "pallet_fragments" "pallet_protos") # "pallet_detach")
 

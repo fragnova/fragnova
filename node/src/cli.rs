@@ -13,12 +13,12 @@ pub struct Cli {
 	pub geth_url: Option<String>,
 }
 
-/// Possible subcommands of the main binary (i.e of the binary `/target/debug/clamor`).
+/// Possible subcommands of the main binary (i.e of the binary `/target/debug/fragnova`).
 ///
 /// The basic syntax for running a command:
 ///
 // ```sh
-// clamor [subcommand] [flags] [options]
+// fragnova [subcommand] [flags] [options]
 // ```
 ///
 /// # Example

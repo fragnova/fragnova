@@ -13,7 +13,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 sp-std = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 sp-runtime = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-fragnova = { version = '0.1.0', default-features = false, path = '../../../../primitives/clamor'}
+sp-fragnova = { version = '0.1.0', default-features = false, path = '../../../../primitives/fragnova'}
 sp-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 
 pallet-fragments = { version = '0.0.1', default-features = false, path = '../..' }

@@ -42,7 +42,7 @@ mod link_tests {
 	use super::*;
 
 	pub fn link_(link: &Link) -> DispatchResult {
-		Accounts::link(Origin::signed(link.clamor_account_id), link.link_signature.clone())
+		Accounts::link(Origin::signed(link.fragnova_account_id), link.link_signature.clone())
 	}
 
 	#[test]
@@ -55,13 +55,13 @@ mod link_tests {
 			assert_ok!(link_(&link));
 
 			assert_eq!(
-				<EVMLinks<Test>>::get(&link.clamor_account_id).unwrap(),
+				<EVMLinks<Test>>::get(&link.fragnova_account_id).unwrap(),
 				link.get_ethereum_public_address_of_signer()
 			);
 			assert_eq!(
 				<EVMLinksReverse<Test>>::get(&link.get_ethereum_public_address_of_signer())
 					.unwrap(),
-				link.clamor_account_id
+				link.fragnova_account_id
 			);
 
 			let event = <frame_system::Pallet<Test>>::events()
@@ -71,7 +71,7 @@ mod link_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_accounts::Event::Linked {
-					sender: link.clamor_account_id,
+					sender: link.fragnova_account_id,
 					eth_key: link.get_ethereum_public_address_of_signer()
 				})
 			);
@@ -90,7 +90,7 @@ mod link_tests {
 	}
 
 	#[test]
-	fn link_should_not_work_if_clamor_account_is_already_linked() {
+	fn link_should_not_work_if_fragnova_account_is_already_linked() {
 		new_test_ext().execute_with(|| {
 			let dd = DummyData::new();
 
@@ -99,9 +99,9 @@ mod link_tests {
 			assert_ok!(link_(&link));
 
 			let link_diff_ethereum_account_id = Link {
-				clamor_account_id: link.clamor_account_id,
+				fragnova_account_id: link.fragnova_account_id,
 				link_signature: create_link_signature(
-					link.clamor_account_id,
+					link.fragnova_account_id,
 					dd.ethereum_account_pair.clone(),
 				),
 				_ethereum_account_pair: dd.ethereum_account_pair,
@@ -120,7 +120,7 @@ mod link_tests {
 			let dd = DummyData::new();
 
 			let link = Link {
-				clamor_account_id: dd.account_id,
+				fragnova_account_id: dd.account_id,
 				link_signature: create_link_signature(
 					dd.account_id,
 					dd.ethereum_account_pair.clone(),
@@ -130,8 +130,8 @@ mod link_tests {
 
 			assert_ok!(link_(&link));
 
-			let link_diff_clamor_account_id = Link {
-				clamor_account_id: dd.account_id_second,
+			let link_diff_fragnova_account_id = Link {
+				fragnova_account_id: dd.account_id_second,
 				link_signature: create_link_signature(
 					dd.account_id_second,
 					dd.ethereum_account_pair.clone(),
@@ -139,7 +139,7 @@ mod link_tests {
 				_ethereum_account_pair: dd.ethereum_account_pair,
 			};
 
-			assert_noop!(link_(&link_diff_clamor_account_id), Error::<Test>::AccountAlreadyLinked);
+			assert_noop!(link_(&link_diff_fragnova_account_id), Error::<Test>::AccountAlreadyLinked);
 		});
 	}
 }
@@ -156,11 +156,11 @@ mod unlink_tests {
 			assert_ok!(link_(&link));
 
 			assert_ok!(Accounts::unlink(
-				Origin::signed(link.clamor_account_id),
+				Origin::signed(link.fragnova_account_id),
 				link.get_ethereum_public_address_of_signer()
 			));
 
-			assert_eq!(<EVMLinks<Test>>::contains_key(&link.clamor_account_id), false);
+			assert_eq!(<EVMLinks<Test>>::contains_key(&link.fragnova_account_id), false);
 			assert_eq!(
 				<EVMLinksReverse<Test>>::contains_key(
 					&link.get_ethereum_public_address_of_signer()
@@ -168,7 +168,7 @@ mod unlink_tests {
 				false
 			);
 
-			assert!(<PendingUnlinks<Test>>::get().contains(&link.clamor_account_id));
+			assert!(<PendingUnlinks<Test>>::get().contains(&link.fragnova_account_id));
 
 			let event = <frame_system::Pallet<Test>>::events()
 				.pop()
@@ -177,7 +177,7 @@ mod unlink_tests {
 			assert_eq!(
 				event,
 				mock::Event::from(pallet_accounts::Event::Unlinked {
-					sender: link.clamor_account_id,
+					sender: link.fragnova_account_id,
 					eth_key: link.get_ethereum_public_address_of_signer(),
 				})
 			);
@@ -192,7 +192,7 @@ mod unlink_tests {
 
 			assert_noop!(
 				Accounts::unlink(
-					Origin::signed(link.clamor_account_id),
+					Origin::signed(link.fragnova_account_id),
 					link.get_ethereum_public_address_of_signer()
 				),
 				Error::<Test>::AccountNotLinked
@@ -215,7 +215,7 @@ mod unlink_tests {
 
 			assert_noop!(
 				Accounts::unlink(
-					Origin::signed(link.clamor_account_id),
+					Origin::signed(link.fragnova_account_id),
 					link_second.get_ethereum_public_address_of_signer()
 				),
 				Error::<Test>::DifferentAccountLinked
@@ -244,7 +244,7 @@ mod sync_partner_contracts_tests {
 
 		state.expect_request(testing::PendingRequest {
 			method: String::from("POST"),
-			uri: String::from_utf8(sp_fragnova::clamor::get_geth_url().unwrap()).unwrap(),
+			uri: String::from_utf8(sp_fragnova::fragnova::get_geth_url().unwrap()).unwrap(),
 			headers: vec![(String::from("Content-Type"), String::from("application/json"))],
 			body: json!({
 				"jsonrpc": "2.0",
@@ -272,7 +272,7 @@ mod sync_partner_contracts_tests {
 
 		state.expect_request(testing::PendingRequest {
 			method: String::from("POST"),
-			uri: String::from_utf8(sp_fragnova::clamor::get_geth_url().unwrap()).unwrap(),
+			uri: String::from_utf8(sp_fragnova::fragnova::get_geth_url().unwrap()).unwrap(),
 			headers: vec![(String::from("Content-Type"), String::from("application/json"))],
 			body: json!({
 				"jsonrpc": "2.0",
@@ -549,7 +549,7 @@ mod internal_lock_update_tests {
 
 			assert_ok!(link_(&link));
 			assert_ok!(lock_(&lock));
-			// assert that Frag is locked in Clamor
+			// assert that Frag is locked in Fragnova
 			assert_eq!(
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block_number).unwrap(),
 				EthLock {
@@ -566,7 +566,7 @@ mod internal_lock_update_tests {
 					get_usd_equivalent_amount() *
 					get_oracle_price();
 
-			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(U256::from(nova), U256::from(initial_nova_amount));
 		});
 	}
@@ -581,7 +581,7 @@ mod internal_lock_update_tests {
 			let current_block_number = System::block_number();
 
 			assert_ok!(lock_(&lock));
-			// assert that Frag is locked in Clamor
+			// assert that Frag is locked in Fragnova
 			assert_eq!(
 				<EthLockedFrag<Test>>::get(&lock.data.sender, current_block_number).unwrap(),
 				EthLock {
@@ -606,15 +606,15 @@ mod internal_lock_update_tests {
 				)
 			);
 
-			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(nova, 0);
 
 			// now link the account to have the reserved nova minted and put in balance
-			// of Clamor account
+			// of Fragnova account
 			assert_ok!(link_(&link));
 
 			let nova_linked =
-				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+				pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 
 			assert_eq!(nova_linked as u128, initial_nova_amount);
 			assert_eq!(<EthReservedNova<Test>>::contains_key(&lock.data.sender), false);
@@ -671,7 +671,7 @@ mod internal_lock_update_tests {
 			assert_ok!(lock_(&unlock.lock));
 			assert_ok!(unlock_(&unlock));
 
-			// assert that Frag is locked in Clamor
+			// assert that Frag is locked in Fragnova
 			assert_eq!(
 				<EthLockedFrag<Test>>::get(&unlock.data.sender, current_block_number).unwrap(),
 				EthLock {
@@ -725,7 +725,7 @@ mod internal_lock_update_tests {
 				)
 			);
 
-			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(nova, 0);
 
 			let data_tuple = (
@@ -785,7 +785,7 @@ mod withdraw_tests {
 	use super::*;
 
 	fn withdraw_(lock: &Lock) -> DispatchResult {
-		Accounts::withdraw(Origin::signed(lock.link.clamor_account_id))
+		Accounts::withdraw(Origin::signed(lock.link.fragnova_account_id))
 	}
 
 	pub fn get_initial_amounts(lock: &Lock) -> u128 {
@@ -816,9 +816,9 @@ mod withdraw_tests {
 			assert_ok!(link_(&link));
 			assert_ok!(lock_(&lock));
 
-			// check the balance of the Clamor account
+			// check the balance of the Fragnova account
 			let nova_balance =
-				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+				pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 
 			// initial amounts of NOVA = 20%
 			let initial_nova_amount = get_initial_amounts(&lock);
@@ -844,7 +844,7 @@ mod withdraw_tests {
 				data_amount.clone(),
 			);
 			let nova_new_balance =
-				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+				pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);
 		});
 	}
@@ -863,7 +863,7 @@ mod withdraw_tests {
 
 			let initial_nova_amount = get_initial_amounts(&lock);
 
-			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(nova as u128, initial_nova_amount);
 
 			let lock_period = <EthLockedFrag<Test>>::get(&lock.data.sender, current_block)
@@ -883,7 +883,7 @@ mod withdraw_tests {
 				data_amount.clone(),
 			);
 			let nova_new_balance =
-				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+				pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);
 
 			assert_eq!(<EthLockedFrag<Test>>::get(&lock.data.sender, current_block), None);
@@ -918,7 +918,7 @@ mod withdraw_tests {
 
 			let initial_nova_amount = get_initial_amounts(&lock);
 
-			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(nova as u128, initial_nova_amount);
 
 			let lock_period = <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period;
@@ -949,7 +949,7 @@ mod withdraw_tests {
 			let data_amount: u128 = lock.data.amount.try_into().ok().unwrap();
 			let expected_amount = expected_nova_amount(weeks_after_first_lock.clone(), lock_period_in_weeks.into(), data_amount.clone());
 			let nova_new_balance =
-				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+				pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount);
 
 			System::set_block_number(60 * 60 * 24 * 7 * lock_period_in_weeks as u64/ 6);
@@ -962,7 +962,7 @@ mod withdraw_tests {
 
 			let expected_amount = expected_nova_amount(lock_period_in_weeks.into(), lock_period_in_weeks.into(), data_amount.clone());
 			let nova_new_balance =
-				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+				pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(nova_new_balance as u128, expected_amount + initial_nova_amount.clone());
 		});
 	}
@@ -1104,7 +1104,7 @@ mod withdraw_tests {
 			assert_eq!(current_block, 1);
 
 			let initial_nova_amount = get_initial_amounts(&lock);
-			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+			let nova = pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(nova as u128, initial_nova_amount);
 
 			// GO TWO WEEKS LATER FOR A WITHDRAW
@@ -1115,7 +1115,7 @@ mod withdraw_tests {
 			assert_ok!(lock_(&lock2));
 
 			let initial_nova_amount2 = get_initial_amounts(&lock2);
-			let nova2 = pallet_balances::Pallet::<Test>::free_balance(&link2.clamor_account_id);
+			let nova2 = pallet_balances::Pallet::<Test>::free_balance(&link2.fragnova_account_id);
 			assert_eq!(nova2 as u128, initial_nova_amount2 + initial_nova_amount);
 
 			assert_ok!(withdraw_(&lock)); // withdraw at week 2
@@ -1132,7 +1132,7 @@ mod withdraw_tests {
 			);
 
 			let nova_new_balance =
-				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+				pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(
 				nova_new_balance as u128,
 				expected_amount +
@@ -1156,7 +1156,7 @@ mod withdraw_tests {
 				data_amount2.clone(),
 			);
 			let nova_new_balance =
-				pallet_balances::Pallet::<Test>::free_balance(&link.clamor_account_id);
+				pallet_balances::Pallet::<Test>::free_balance(&link.fragnova_account_id);
 			assert_eq!(
 				nova_new_balance as u128,
 				expected_amount +

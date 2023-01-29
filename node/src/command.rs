@@ -11,7 +11,7 @@ use crate::{
 	service,
 	service::new_partial,
 };
-use clamor_runtime::Block;
+use fragnova_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
@@ -52,7 +52,7 @@ impl SubstrateCli for Cli {
 	}
 
 	fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		&clamor_runtime::VERSION
+		&fragnova_runtime::VERSION
 	}
 }
 

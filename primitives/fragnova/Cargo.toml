@@ -5,7 +5,7 @@ authors = ["Fragcolor Pte. Ltd. <ask@fragcolor.com>"]
 edition = "2021"
 license = "Apache-2.0"
 homepage = "https://fragcolor.com"
-repository = "https://github.com/fragcolor-xyz/clamor/"
+repository = "https://github.com/fragcolor-xyz/fragnova/"
 description = "Runtime chainblocks utilities"
 
 [package.metadata.docs.rs]

@@ -16,7 +16,7 @@ sp-io = { version = '6.0.0', default-features = false, git = 'https://github.com
 sp-std = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 sp-runtime = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 sp-keystore = { version = '0.12.0', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-fragnova = { version = '0.1.0', path = '../../primitives/clamor', default-features = false }
+sp-fragnova = { version = '0.1.0', path = '../../primitives/fragnova', default-features = false }
 
 frame-benchmarking = { version = '4.0.0-dev', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 frame-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }

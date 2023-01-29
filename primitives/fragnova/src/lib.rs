@@ -106,7 +106,7 @@ mod details {
 	}
 }
 
-/// A runtime interface for the Clamor Blockchain
+/// A runtime interface for the Fragnova Blockchain
 ///
 /// Background:
 ///
@@ -119,7 +119,7 @@ mod details {
 ///
 /// Source: https://paritytech.github.io/substrate/latest/sp_runtime_interface/attr.runtime_interface.html
 #[sp_runtime_interface::runtime_interface]
-pub trait Clamor {
+pub trait Fragnova {
 	// these are called NATIVE from even WASM
 	// that's the deal
 

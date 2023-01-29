@@ -8,7 +8,7 @@ mod cli;
 mod command;
 mod rpc;
 
-mod clamor;
+mod fragnova;
 
 fn main() -> sc_cli::Result<()> {
 	command::run()

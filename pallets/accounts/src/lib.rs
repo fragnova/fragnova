@@ -1,10 +1,10 @@
 //! This pallet `accounts` performs logic related to FRAG Token
 //!
-//! IMPORTANT NOTE: The term "lock" refers to the *"effective transfer"* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Clamor Blockchain.
+//! IMPORTANT NOTE: The term "lock" refers to the *"effective transfer"* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Fragnova Blockchain.
 //!
-//! The term "unlock" refers to the *"effective transfer"* of all the previously locked ERC-20 FRAG tokens from the Clamor Blockchain to the aforementioned Fragnova-owned FRAG Ethereum Smart Contract.
+//! The term "unlock" refers to the *"effective transfer"* of all the previously locked ERC-20 FRAG tokens from the Fragnova Blockchain to the aforementioned Fragnova-owned FRAG Ethereum Smart Contract.
 //!
-//! The term "staking" refers to the staking of the FRAG Token that is done in the Clamor Blockchain itself. It is different to the term "locking" which is defined above.
+//! The term "staking" refers to the staking of the FRAG Token that is done in the Fragnova Blockchain itself. It is different to the term "locking" which is defined above.
 //!
 //! IMPORTANT: locking != staking
 
@@ -29,11 +29,11 @@ mod weights;
 
 /// keccak256(Lock(address,bytes,uint256,uint8)). Try it here: https://emn178.github.io/online-tools/keccak_256.html
 ///
-/// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
+/// https://github.com/fragcolor-xyz/hasten-contracts/blob/fragnova/contracts/FragToken.sol
 const LOCK_EVENT: &str = "0xb9416cbc88978dc45c762d25315c5781c5270bd47c1c3879ddb4ff478695c83b";
 /// keccak256(Lock(address,bytes,uint256,uint8))
 ///
-/// https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
+/// https://github.com/fragcolor-xyz/hasten-contracts/blob/fragnova/contracts/FragToken.sol
 const UNLOCK_EVENT: &str = "0xf9480f9ead9b82690f56cdb4730f12763ca2f50ce1792a255141b71789dca7fe";
 
 const LINK_VERIFYING_CONTRACT: &str = "f5a0af5a0af5a0af5a0af5a0af5a0af5a0af5a0a";
@@ -122,7 +122,7 @@ use frame_support::traits::ReservableCurrency;
 /// TODO: Documentation
 pub type DiscordID = u64;
 
-/// Enum that indicates the different types of External Account IDs that can be "used as an account" on the Clamor Blockchain
+/// Enum that indicates the different types of External Account IDs that can be "used as an account" on the Fragnova Blockchain
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum ExternalID {
 	/// TODO: Documentation
@@ -165,7 +165,7 @@ pub struct EthLockUpdate<TPublic> {
 pub struct EthLock<TBalance, TBlockNum> {
 	/// Total amount of FRAG token locked (not just the newly locked FRAG token) by a particular Ethereum Account
 	pub amount: TBalance,
-	/// Clamor Block Number in which the locked FRAG tokens was "effectively transfered" to the Clamor Blockchain
+	/// Fragnova Block Number in which the locked FRAG tokens was "effectively transfered" to the Fragnova Blockchain
 	pub block_number: TBlockNum,
 	/// The FRAG lock period chosen by the user on Ethereum and received from the Lock event
 	pub lock_period: u8,
@@ -258,7 +258,7 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	#[derive(Default)]
 	pub struct GenesisConfig {
-		/// **List of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		/// **List of Fragnova Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		pub keys: Vec<ed25519::Public>,
 	}
 
@@ -296,15 +296,15 @@ pub mod pallet {
 		<T as pallet_assets::Config>::Balance,
 	>;
 
-	/// This **StorageMap** maps an Ethereum AccountID to an amount of NOVA received until a Clamor Account ID is not linked.
+	/// This **StorageMap** maps an Ethereum AccountID to an amount of NOVA received until a Fragnova Account ID is not linked.
 	#[pallet::storage]
 	pub type EthReservedNova<T: Config> =
 		StorageMap<_, Identity, H160, <T as pallet_balances::Config>::Balance>;
 
-	/// **StorageMap** that maps a **Clamor Account ID** to an **Ethereum Account ID**,
+	/// **StorageMap** that maps a **Fragnova Account ID** to an **Ethereum Account ID**,
 	/// where **both accounts** are **owned by the same owner**.
 	///
-	/// NOTE: The **Ethereum Account ID** had to be **manually mapped to the Clamor Account ID** by the owner itself to show up in this `StorageMap`.
+	/// NOTE: The **Ethereum Account ID** had to be **manually mapped to the Fragnova Account ID** by the owner itself to show up in this `StorageMap`.
 	#[pallet::storage]
 	pub type EVMLinks<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, H160>;
 
@@ -323,21 +323,21 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type EVMLinkVotingClosed<T: Config> = StorageMap<_, Identity, H256, T::BlockNumber>;
 	// consumed by Protos pallet
-	/// **List of Clamor Accounts** whose **(FRAG staking)-related Storage Items** are **yet to be cleared**
+	/// **List of Fragnova Accounts** whose **(FRAG staking)-related Storage Items** are **yet to be cleared**
 	#[pallet::storage]
 	pub type PendingUnlinks<T: Config> = StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
 	// These are the public keys representing the actual keys that can Sign messages
 	// to present to external chains to detach onto
-	/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
+	/// **StorageValue** that equals the **List of Fragnova Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
-	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
+	/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
 	/// StorageMap that maps an **External Account ID** to an
 	/// **`AccountInfo` struct that contains
-	/// the External Account ID's linked Clamor Account ID, amongst other things**.
+	/// the External Account ID's linked Fragnova Account ID, amongst other things**.
 	#[pallet::storage]
 	pub type ExternalID2Account<T: Config> =
 		StorageMap<_, Twox64Concat, ExternalID, AccountInfo<T::AccountId, T::Moment>>;
@@ -399,14 +399,14 @@ pub mod pallet {
 	// These functions materialize as "extrinsics", which are often compared to transactions.
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 
-	/// Add a Clamor Account ID to `FragKeys`.
+	/// Add a Fragnova Account ID to `FragKeys`.
 	///
-	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
+	/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can call this function
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		/// Add `public` to the **list of Fragnova Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
-		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
+		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_key())]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -420,9 +420,9 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Remove a Clamor Account ID from `FragKeys`
+		/// Remove a Fragnova Account ID from `FragKeys`
 
-		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
+		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can call this function
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::del_key())]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -438,7 +438,7 @@ pub mod pallet {
 
 		// Firstly: Verify the `signature` for the message keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)
 		// Secondly: After verification, recover the public key used to sign the aforementioned `signature` for the aforementioned message
-		/// **Link** the **Clamor public account address that calls this extrinsic** with the
+		/// **Link** the **Fragnova public account address that calls this extrinsic** with the
 		/// **public account address that is returned from verifying the signature `signature` for
 		/// the message `keccak_256(b"EVM2Fragnova", T::EthChainId::get(), sender)`** (NOTE: The
 		/// returned public account address is of the account that signed the signature
@@ -549,7 +549,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Unlink the **Clamor public account address that calls this extrinsic** from **its linked EVM public account address**
+		/// Unlink the **Fragnova public account address that calls this extrinsic** from **its linked EVM public account address**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::unlink())]
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
@@ -584,7 +584,7 @@ pub mod pallet {
 				Error::<T>::LinkAlreadyProcessed
 			);
 
-			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature, period)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+			// We compose the exact same message `message` as **was composed** when the external function `lock(amount, signature, period)` or `unlock(amount, signature)` of the FRAG Token Ethereum Smart Contract was called (https://github.com/fragcolor-xyz/hasten-contracts/blob/fragnova/contracts/FragToken.sol)
 			let message = if data.lock { b"FragLock".to_vec() } else { b"FragUnlock".to_vec() }; // Add b"FragLock" or b"FragUnlock" to message
 			let contract = T::EthFragContract::get_partner_contracts();
 			let contract = contract[0].as_str();
@@ -672,7 +672,7 @@ pub mod pallet {
 
 			if data.lock {
 				// If FRAG tokens were locked on Ethereum
-				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Clamor Account linked with the Ethereum Account `sender`
+				let linked = <EVMLinksReverse<T>>::get(sender.clone()); // Get the Fragnova Account linked with the Ethereum Account `sender`
 				if let Some(linked) = linked {
 					let nova_old_balance = pallet_balances::Pallet::<T>::free_balance(&linked);
 					ensure!(
@@ -697,7 +697,7 @@ pub mod pallet {
 						balance: nova_amount,
 					});
 				} else {
-					// Ethereum Account ID (H160) not linked to Clamor Account ID
+					// Ethereum Account ID (H160) not linked to Fragnova Account ID
 					// So, register the amount of NOVA owned by the H160 account for later linking
 					<EthReservedNova<T>>::insert(sender.clone(), nova_amount);
 
@@ -735,7 +735,7 @@ pub mod pallet {
 		}
 
 		/// Allow the External Account ID `external_id` to be used as a proxy
-		/// for the Clamor Account ID `origin`
+		/// for the Fragnova Account ID `origin`
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::sponsor_account())]
 		pub fn sponsor_account(origin: OriginFor<T>, external_id: ExternalID) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -946,15 +946,15 @@ pub mod pallet {
 			}
 		}
 
-		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
-		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
+		/// Obtain all the recent (i.e since last checked by Fragnova) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
+		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/fragnova/contracts/FragToken.sol).
 		///
-		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
+		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Fragnova Blockchain
 		/// (NOTE: the signed payload consists of a payload and a signature.
 		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
 		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`)
 		///
-		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
+		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Fragnova (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		fn sync_partner_contract(
 			_block_number: T::BlockNumber,
 			contract: &str,
@@ -1047,7 +1047,7 @@ pub mod pallet {
 				let data = ethabi::decode(
 					&[ParamType::Bytes, ParamType::Uint(256), ParamType::Uint(8)],
 					&data,
-				) // First parameter is a signature, the second parameter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol)
+				) // First parameter is a signature, the second parameter is the amount of FRAG token that was locked/unlocked, the third is the lock period (https://github.com/fragcolor-xyz/hasten-contracts/blob/fragnova/contracts/FragToken.sol)
 				.map_err(|_| "Invalid response - invalid eth data")?; // `data` is the decoded list of the params of the event log `topic`
 				let locked = match topic {
 					// Whether the event log type `topic` is a `LOCK_EVENT` or an `UNLOCK_EVENT`
@@ -1062,7 +1062,7 @@ pub mod pallet {
 					hex::decode(&sender[2..]).map_err(|_| "Invalid response - invalid sender")?;
 				let sender = H160::from_slice(&sender[12..]); // Hash the array slice `&sender[12..]`
 
-				let eth_signature = data[0].clone().into_bytes().ok_or_else(|| "Invalid data")?; // (`data[0]` is actually a signature - https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol btw )
+				let eth_signature = data[0].clone().into_bytes().ok_or_else(|| "Invalid data")?; // (`data[0]` is actually a signature - https://github.com/fragcolor-xyz/hasten-contracts/blob/fragnova/contracts/FragToken.sol btw )
 				let eth_signature: ecdsa::Signature =
 					(&eth_signature[..]).try_into().map_err(|_| "Invalid data")?;
 
@@ -1128,17 +1128,17 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Obtain all the recent (i.e since last checked by Clamor) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
-		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount, uint8 lock_period)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol).
+		/// Obtain all the recent (i.e since last checked by Fragnova) logs of the event `Lock` or `Unlock` that were emitted from the FRAG Token Ethereum Smart Contract.
+		/// Each event log will have either have the format `Lock(address indexed sender, bytes signature, uint256 amount, uint8 lock_period)` or `Unlock(address indexed sender, bytes signature, uint256 amount)` (https://github.com/fragcolor-xyz/hasten-contracts/blob/fragnova/contracts/FragToken.sol).
 		///
-		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Clamor Blockchain
+		/// Then, for each of the event logs - send an unsigned transaction with a signed payload onto the Fragnova Blockchain
 		/// (NOTE: the signed payload consists of a payload and a signature.
 		/// The payload is the information gained from the event log which is represented as an `EthLockUpdate`  struct
 		/// and the signature is the signature obtained from signing the aforementioned payload using `Signer::<T, T::AuthorityId>::any_account()`)
 		///
-		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
+		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Fragnova (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		pub fn sync_partner_contracts(block_number: T::BlockNumber) {
-			let geth_uri = if let Some(geth) = sp_fragnova::clamor::get_geth_url() {
+			let geth_uri = if let Some(geth) = sp_fragnova::fragnova::get_geth_url() {
 				String::from_utf8(geth).unwrap()
 			} else {
 				log::debug!("No geth url found, skipping sync");
@@ -1154,7 +1154,7 @@ pub mod pallet {
 			}
 		}
 
-		/// Unlink the **Clamor public account address `sender`** from **its linked EVM public
+		/// Unlink the **Fragnova public account address `sender`** from **its linked EVM public
 		/// account address `account`**
 		fn unlink_account(sender: T::AccountId, account: H160) -> DispatchResult {
 			if <EVMLinks<T>>::get(sender.clone()).ok_or(Error::<T>::AccountNotLinked)? != account {
@@ -1334,7 +1334,7 @@ pub mod pallet {
 		}
 
 		/// Convert the lock period integer retrieved from Ethereum event into the number of weeks.
-		/// Refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/clamor/contracts/FragToken.sol
+		/// Refer to https://github.com/fragcolor-xyz/hasten-contracts/blob/fragnova/contracts/FragToken.sol
 		pub fn eth_lock_period_to_weeks(lock_period: u8) -> Result<u8, Error<T>> {
 			let sec = match lock_period {
 				0 => 2,  // 2 weeks

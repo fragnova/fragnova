@@ -24,7 +24,7 @@ pallet-protos-rpc-runtime-api = { version = '0.0.1', path = '../rpc/runtime-api'
 
 jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
 serde = { version = "1", features = ["derive"] }
-sp-fragnova = { version = '0.1.0', path = '../../../primitives/clamor', default-features = false }
+sp-fragnova = { version = '0.1.0', path = '../../../primitives/fragnova', default-features = false }
 hex = "^0.4.3"
 protos = { version = "0.1.21", default-features = false }
 
