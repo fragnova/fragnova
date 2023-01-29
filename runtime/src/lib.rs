@@ -572,6 +572,7 @@ mod validation_logic {
 	// 	}
 	// }
 
+	#[cfg(test)]
 	mod tests {
 		use super::*;
 
