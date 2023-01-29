@@ -800,11 +800,11 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
- "sp-clamor",
  "sp-consensus",
  "sp-consensus-aura",
  "sp-core",
  "sp-finality-grandpa",
+ "sp-fragnova",
  "sp-keystore",
  "sp-runtime",
  "sp-runtime-interface",
@@ -855,13 +855,13 @@ dependencies = [
  "pallet-utility",
  "parity-scale-codec 3.2.1",
  "protos",
- "scale-info 2.3.1",
+ "scale-info",
  "serde_json",
  "sp-api",
  "sp-block-builder",
- "sp-clamor",
  "sp-consensus-aura",
  "sp-core",
+ "sp-fragnova",
  "sp-inherents",
  "sp-offchain",
  "sp-runtime",
@@ -1821,7 +1821,7 @@ dependencies = [
  "num-traits",
  "parity-scale-codec 3.2.1",
  "parking_lot 0.12.1",
- "scale-info 2.3.1",
+ "scale-info",
 ]
 
 [[package]]
@@ -1877,15 +1877,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fragments"
-version = "0.1.0"
-source = "git+https://github.com/fragcolor-xyz/fragments.git#d13886e62c362d777e26760d6592b3d111f2bd82"
-dependencies = [
- "parity-scale-codec 2.3.1",
- "scale-info 1.0.0",
-]
-
-[[package]]
 name = "frame-benchmarking"
 version = "4.0.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
@@ -1896,7 +1887,7 @@ dependencies = [
  "log",
  "parity-scale-codec 3.2.1",
  "paste",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-api",
  "sp-application-crypto",
@@ -1966,7 +1957,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -1982,7 +1973,7 @@ checksum = "df6bb8542ef006ef0de09a5c4420787d79823c0ed7924225822362fd2bf2ff2d"
 dependencies = [
  "cfg-if",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
 ]
 
@@ -2000,7 +1991,7 @@ dependencies = [
  "once_cell",
  "parity-scale-codec 3.2.1",
  "paste",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "smallvec",
  "sp-api",
@@ -2059,7 +2050,7 @@ dependencies = [
  "frame-support",
  "log",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-core",
  "sp-io",
@@ -2077,7 +2068,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-core",
  "sp-runtime",
  "sp-std",
@@ -4335,11 +4326,11 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec 3.2.1",
  "parking_lot 0.12.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "serde_json",
- "sp-clamor",
  "sp-core",
+ "sp-fragnova",
  "sp-io",
  "sp-keystore",
  "sp-runtime",
@@ -4370,12 +4361,11 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec 3.2.1",
  "protos",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "serde_json",
- "sp-clamor",
  "sp-core",
- "sp-fragments",
+ "sp-fragnova",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -4390,7 +4380,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -4404,7 +4394,7 @@ dependencies = [
  "frame-system",
  "pallet-timestamp",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-application-crypto",
  "sp-consensus-aura",
  "sp-runtime",
@@ -4420,7 +4410,7 @@ dependencies = [
  "frame-system",
  "impl-trait-for-tuples",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-authorship",
  "sp-runtime",
  "sp-std",
@@ -4436,7 +4426,7 @@ dependencies = [
  "frame-system",
  "log",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -4454,10 +4444,10 @@ dependencies = [
  "pallet-proxy",
  "pallet-timestamp",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
- "sp-clamor",
  "sp-core",
+ "sp-fragnova",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -4478,7 +4468,7 @@ dependencies = [
  "pallet-contracts-proc-macro",
  "parity-scale-codec 3.2.1",
  "rand 0.8.5",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "smallvec",
  "sp-core",
@@ -4497,7 +4487,7 @@ source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6
 dependencies = [
  "bitflags",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-core",
  "sp-rpc",
@@ -4539,7 +4529,7 @@ source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6
 dependencies = [
  "pallet-contracts-primitives",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-api",
  "sp-runtime",
  "sp-std",
@@ -4557,11 +4547,10 @@ dependencies = [
  "pallet-randomness-collective-flip",
  "parity-scale-codec 3.2.1",
  "parking_lot 0.12.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
- "sp-clamor",
  "sp-core",
- "sp-fragments",
+ "sp-fragnova",
  "sp-io",
  "sp-keystore",
  "sp-runtime",
@@ -4592,12 +4581,11 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec 3.2.1",
  "protos",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "serde_json",
- "sp-clamor",
  "sp-core",
- "sp-fragments",
+ "sp-fragnova",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -4617,7 +4605,7 @@ dependencies = [
  "serde_json",
  "sp-api",
  "sp-blockchain",
- "sp-clamor",
+ "sp-fragnova",
  "sp-rpc",
  "sp-runtime",
 ]
@@ -4628,9 +4616,9 @@ version = "0.0.1"
 dependencies = [
  "pallet-fragments",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-api",
- "sp-clamor",
+ "sp-fragnova",
  "sp-runtime",
  "sp-std",
 ]
@@ -4647,7 +4635,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-session",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-application-crypto",
  "sp-core",
  "sp-finality-grandpa",
@@ -4668,7 +4656,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -4682,7 +4670,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-core",
  "sp-io",
  "sp-keyring",
@@ -4699,7 +4687,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -4719,11 +4707,11 @@ dependencies = [
  "log",
  "parity-scale-codec 3.2.1",
  "parking_lot 0.12.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "serde_json",
- "sp-clamor",
  "sp-core",
+ "sp-fragnova",
  "sp-io",
  "sp-keystore",
  "sp-runtime",
@@ -4754,15 +4742,13 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec 3.2.1",
  "protos",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "serde_json",
- "sp-clamor",
  "sp-core",
- "sp-fragments",
+ "sp-fragnova",
  "sp-io",
  "sp-keystore",
- "sp-protos",
  "sp-runtime",
  "sp-std",
 ]
@@ -4781,7 +4767,7 @@ dependencies = [
  "serde_json",
  "sp-api",
  "sp-blockchain",
- "sp-clamor",
+ "sp-fragnova",
  "sp-rpc",
  "sp-runtime",
 ]
@@ -4792,9 +4778,9 @@ version = "0.0.1"
 dependencies = [
  "pallet-protos",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-api",
- "sp-clamor",
+ "sp-fragnova",
  "sp-runtime",
  "sp-std",
 ]
@@ -4808,7 +4794,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -4823,7 +4809,7 @@ dependencies = [
  "frame-system",
  "parity-scale-codec 3.2.1",
  "safe-mix",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -4839,7 +4825,7 @@ dependencies = [
  "log",
  "pallet-timestamp",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -4857,7 +4843,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -4873,7 +4859,7 @@ dependencies = [
  "frame-system",
  "log",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-inherents",
  "sp-io",
  "sp-runtime",
@@ -4889,7 +4875,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-core",
  "sp-io",
@@ -4932,7 +4918,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -5324,7 +5310,7 @@ dependencies = [
  "fixed-hash",
  "impl-codec 0.6.0",
  "impl-serde",
- "scale-info 2.3.1",
+ "scale-info",
  "uint",
 ]
 
@@ -5485,7 +5471,7 @@ checksum = "347894860a41749dc414192b377ed87e13dd9bd5cd74e8108e607b1a42aa27dc"
 dependencies = [
  "bitflags",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "serde_json",
 ]
@@ -6635,7 +6621,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "sc-chain-spec",
  "sc-transaction-pool-api",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "serde_json",
  "sp-core",
@@ -6873,18 +6859,6 @@ dependencies = [
 
 [[package]]
 name = "scale-info"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c55b744399c25532d63a0d2789b109df8d46fc93752d46b0782991a931a782f"
-dependencies = [
- "cfg-if",
- "derive_more",
- "parity-scale-codec 2.3.1",
- "scale-info-derive 1.0.0",
-]
-
-[[package]]
-name = "scale-info"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "001cf62ece89779fd16105b5f515ad0e5cedcd5440d3dd806bb067978e7c3608"
@@ -6893,20 +6867,8 @@ dependencies = [
  "cfg-if",
  "derive_more",
  "parity-scale-codec 3.2.1",
- "scale-info-derive 2.3.1",
+ "scale-info-derive",
  "serde",
-]
-
-[[package]]
-name = "scale-info-derive"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baeb2780690380592f86205aa4ee49815feb2acad8c2f59e6dd207148c3f1fcd"
-dependencies = [
- "proc-macro-crate",
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -7337,7 +7299,7 @@ version = "6.0.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
 dependencies = [
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-core",
  "sp-io",
@@ -7352,7 +7314,7 @@ dependencies = [
  "integer-sqrt",
  "num-traits",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-debug-derive",
  "sp-std",
@@ -7402,23 +7364,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-clamor"
-version = "0.1.0"
-dependencies = [
- "fragments",
- "hex-literal",
- "lazy_static",
- "log",
- "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-runtime-interface",
- "sp-std",
-]
-
-[[package]]
 name = "sp-consensus"
 version = "0.10.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
@@ -7444,7 +7389,7 @@ source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6
 dependencies = [
  "async-trait",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-api",
  "sp-application-crypto",
  "sp-consensus",
@@ -7461,7 +7406,7 @@ version = "0.10.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
 dependencies = [
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-arithmetic",
  "sp-runtime",
@@ -7496,7 +7441,7 @@ dependencies = [
  "primitive-types 0.11.1",
  "rand 0.7.3",
  "regex",
- "scale-info 2.3.1",
+ "scale-info",
  "schnorrkel",
  "secp256k1",
  "secrecy",
@@ -7578,7 +7523,7 @@ dependencies = [
  "finality-grandpa",
  "log",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-api",
  "sp-application-crypto",
@@ -7589,14 +7534,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-fragments"
+name = "sp-fragnova"
 version = "0.1.0"
 dependencies = [
+ "hex-literal",
+ "lazy_static",
  "log",
  "parity-scale-codec 3.2.1",
  "protos",
- "scale-info 2.3.1",
- "sp-clamor",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-runtime-interface",
  "sp-std",
 ]
 
@@ -7698,19 +7648,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-protos"
-version = "0.1.0"
-dependencies = [
- "log",
- "parity-scale-codec 3.2.1",
- "protos",
- "scale-info 2.3.1",
- "sp-clamor",
- "sp-core",
- "sp-std",
-]
-
-[[package]]
 name = "sp-rpc"
 version = "6.0.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
@@ -7733,7 +7670,7 @@ dependencies = [
  "parity-util-mem",
  "paste",
  "rand 0.7.3",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-application-crypto",
  "sp-arithmetic",
@@ -7792,7 +7729,7 @@ version = "4.0.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
 dependencies = [
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-api",
  "sp-core",
  "sp-runtime",
@@ -7806,7 +7743,7 @@ version = "4.0.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
 dependencies = [
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -7909,7 +7846,7 @@ dependencies = [
  "async-trait",
  "log",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-core",
  "sp-inherents",
  "sp-runtime",
@@ -7925,7 +7862,7 @@ dependencies = [
  "hash-db",
  "memory-db",
  "parity-scale-codec 3.2.1",
- "scale-info 2.3.1",
+ "scale-info",
  "sp-core",
  "sp-std",
  "thiserror",
@@ -7941,7 +7878,7 @@ dependencies = [
  "impl-serde",
  "parity-scale-codec 3.2.1",
  "parity-wasm 0.42.2",
- "scale-info 2.3.1",
+ "scale-info",
  "serde",
  "sp-core-hashing-proc-macro",
  "sp-runtime",

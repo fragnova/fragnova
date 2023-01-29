@@ -106,7 +106,7 @@ use frame_system::offchain::{
 
 pub use weights::WeightInfo;
 
-use sp_clamor::http_json_post;
+use sp_fragnova::http_json_post;
 
 use scale_info::prelude::{format, string::String};
 
@@ -1138,7 +1138,7 @@ pub mod pallet {
 		///
 		/// NOTE: `Signer::<T, T::AuthorityId>::any_account()` uses any of the keys that was added using the RPC `author_insertKey` into Clamor (https://polkadot.js.org/docs/substrate/rpc/#insertkeykeytype-text-suri-text-publickey-bytes-bytes)
 		pub fn sync_partner_contracts(block_number: T::BlockNumber) {
-			let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
+			let geth_uri = if let Some(geth) = sp_fragnova::clamor::get_geth_url() {
 				String::from_utf8(geth).unwrap()
 			} else {
 				log::debug!("No geth url found, skipping sync");

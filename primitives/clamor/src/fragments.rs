@@ -1,13 +1,11 @@
-//! Helper Functions and Types that are used in other Packages of the this Workspace
-
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::{Hash256};
 use codec::{Compact, Decode, Encode};
 use sp_std::{
 	collections::btree_map::BTreeMap,
 };
-use sp_clamor::{Hash256};
 use protos::permissions::FragmentPerms;
 
 /// Type used to represent an Instance's Edition ID and an Instance's Copy ID

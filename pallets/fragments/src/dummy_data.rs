@@ -46,7 +46,7 @@ mod copied_from_pallet_protos {
 
 use protos::permissions::FragmentPerms;
 
-use sp_clamor::Hash256;
+use sp_fragnova::Hash256;
 
 use protos::categories::{Categories, TextCategories};
 

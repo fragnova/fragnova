@@ -11,7 +11,7 @@ use frame_system::offchain::{
 	SigningTypes,
 };
 use serde_json::{json, Value};
-use sp_clamor::http_json_post;
+use sp_fragnova::http_json_post;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction};
 
@@ -367,7 +367,7 @@ pub mod pallet {
 			let is_oracle_stopped = <IsOracleStopped<T>>::get();
 			if !is_oracle_stopped {
 				// check that the oracle is NOT stopped
-				let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
+				let geth_uri = if let Some(geth) = sp_fragnova::clamor::get_geth_url() {
 					String::from_utf8(geth).unwrap()
 				} else {
 					log::debug!("Geth URL not set, skipping fetch price from oracle.");

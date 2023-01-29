@@ -1,15 +1,13 @@
-//! Helper Functions and Types that are used in other Packages of the this Workspace
-
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use crate::{Hash128, Hash256};
 use codec::{Compact, Decode, Encode};
 use sp_std::{
 	collections::btree_map::BTreeMap,
 	vec::Vec
 };
 use sp_core::{ecdsa, H160, U256};
-use sp_clamor::{Hash128, Hash256};
 use protos::{categories::Categories};
 
 /// TODO: Documentation

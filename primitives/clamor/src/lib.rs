@@ -6,6 +6,13 @@
 // #[cfg(feature = "std")]
 // extern crate chainblocks;
 
+// TODO Review - maybe rename this module to `sp_protos` since we have a crate with the same name `protos` (https://github.com/fragcolor-xyz/protos)
+/// Types that will be used by the Protos pallet
+pub mod protos;
+// TODO Review - maybe rename this module `sp_fragments` since we have a crate with the same name `fragments` (https://github.com/fragcolor-xyz/fragments)  - although it's not being used
+/// Types that will be used by the Fragments pallet
+pub mod fragments;
+
 use codec::{Decode, Encode, Error as CodecError};
 use sp_core::offchain::{HttpRequestStatus, Timestamp};
 use sp_io::{hashing::blake2_256, offchain};
@@ -125,7 +132,7 @@ pub trait Clamor {
 
 	/// TODO
 	fn on_new_fragment(_fragment_hash: &Hash256) -> bool {
-		log::debug!("sp_clamor on_new_fragment called...");
+		log::debug!("sp_fragnova on_new_fragment called...");
 		true
 	}
 
@@ -163,7 +170,7 @@ pub fn http_json_post(
 	body: &[u8],
 	wait: Option<Timestamp>,
 ) -> Result<Vec<u8>, &'static str> {
-	log::debug!("sp_clamor http_request called...");
+	log::debug!("sp_fragnova http_request called...");
 
 	let request =
 		offchain::http_request_start("POST", url, &[]).map_err(|_| "Failed to start request")?;

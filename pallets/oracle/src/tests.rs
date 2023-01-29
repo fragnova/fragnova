@@ -125,7 +125,7 @@ impl OracleContract for Test {
 pub fn hardcode_expected_request_and_response(state: &mut testing::OffchainState) {
 	let geth_url = Some(String::from("https://www.dummywebsite.com/"));
 
-	sp_clamor::init(geth_url);
+	sp_fragnova::init(geth_url);
 
 	let oracle_provider = <<Test as pallet_oracle::Config>::OracleProvider as pallet_oracle::OracleContract>::get_provider();
 	let contract = oracle_provider.get_contract_address();
@@ -139,7 +139,7 @@ pub fn hardcode_expected_request_and_response(state: &mut testing::OffchainState
 	*/
 	state.expect_request(testing::PendingRequest {
 		method: String::from("POST"),
-		uri: String::from_utf8(sp_clamor::clamor::get_geth_url().unwrap()).unwrap(),
+		uri: String::from_utf8(sp_fragnova::clamor::get_geth_url().unwrap()).unwrap(),
 		headers: vec![(String::from("Content-Type"), String::from("application/json"))],
 		body: json!({
 				"jsonrpc": "2.0",

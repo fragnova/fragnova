@@ -133,7 +133,7 @@ use protos::categories::{
 	VideoCategories,
 };
 use protos::traits::Trait;
-use sp_clamor::Hash256;
+use sp_fragnova::Hash256;
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.

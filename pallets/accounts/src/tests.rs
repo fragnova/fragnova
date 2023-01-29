@@ -233,7 +233,7 @@ mod sync_partner_contracts_tests {
 	) -> u64 {
 		let geth_url = Some(String::from("https://www.dummywebsite.com/"));
 
-		sp_clamor::init(geth_url);
+		sp_fragnova::init(geth_url);
 
 		let latest_block_number = lock
 			.data
@@ -244,7 +244,7 @@ mod sync_partner_contracts_tests {
 
 		state.expect_request(testing::PendingRequest {
 			method: String::from("POST"),
-			uri: String::from_utf8(sp_clamor::clamor::get_geth_url().unwrap()).unwrap(),
+			uri: String::from_utf8(sp_fragnova::clamor::get_geth_url().unwrap()).unwrap(),
 			headers: vec![(String::from("Content-Type"), String::from("application/json"))],
 			body: json!({
 				"jsonrpc": "2.0",
@@ -272,7 +272,7 @@ mod sync_partner_contracts_tests {
 
 		state.expect_request(testing::PendingRequest {
 			method: String::from("POST"),
-			uri: String::from_utf8(sp_clamor::clamor::get_geth_url().unwrap()).unwrap(),
+			uri: String::from_utf8(sp_fragnova::clamor::get_geth_url().unwrap()).unwrap(),
 			headers: vec![(String::from("Content-Type"), String::from("application/json"))],
 			body: json!({
 				"jsonrpc": "2.0",

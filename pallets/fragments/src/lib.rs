@@ -45,8 +45,8 @@ mod weights;
 
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
-use sp_clamor::{Hash128, Hash256};
-pub use sp_fragments::{
+use sp_fragnova::{Hash128, Hash256};
+pub use sp_fragnova::fragments::{
 	InstanceUnit,
 	Currency,
 	DefinitionMetadata,
@@ -233,7 +233,7 @@ pub mod pallet {
 		SupportedChains,
 	};
 	use pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
-	use sp_clamor::get_vault_id;
+	use sp_fragnova::get_vault_id;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]

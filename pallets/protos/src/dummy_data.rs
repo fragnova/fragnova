@@ -4,7 +4,7 @@ pub use pallet_accounts::dummy_data::{
 };
 
 use sp_core::H160; // Ethereum Account Addresses use this type
-use sp_clamor::Hash256;
+use sp_fragnova::Hash256;
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 

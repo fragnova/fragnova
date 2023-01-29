@@ -46,8 +46,8 @@ use sp_std::{
 
 pub use weights::WeightInfo;
 
-use sp_clamor::{Hash64, Hash128, Hash256};
-pub use sp_protos::{
+use sp_fragnova::{Hash64, Hash128, Hash256};
+pub use sp_fragnova::protos::{
 	LinkSource,
 	LinkedAsset,
 	ProtoOwner,
