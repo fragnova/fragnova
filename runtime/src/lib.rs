@@ -572,229 +572,233 @@ mod validation_logic {
 	// 	}
 	// }
 
-	#[test]
-	fn is_the_immediate_call_valid_should_not_work_if_proto_category_is_invalid() {
-		for (category, (valid_data, invalid_data)) in [
-			(
-				Categories::Text(TextCategories::Plain),
-				(b"I am valid UTF-8 text!".to_vec(), vec![0xF0, 0x9F, 0x98]),
-			),
-			(
-				Categories::Text(TextCategories::Json),
-				(b"{\"key\": \"value\"}".to_vec(), b"I am not JSON text!".to_vec()),
-			),
-			(
-				Categories::Texture(TextureCategories::PngFile),
-				(vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], vec![7u8; 10]),
-			),
-			(
-				Categories::Texture(TextureCategories::JpgFile),
-				(vec![0xFF, 0xD8, 0xFF, 0xE0], vec![7u8; 10]),
-			),
-		] {
+	mod tests {
+		use super::*;
+
+		#[test]
+		fn is_the_immediate_call_valid_should_not_work_if_proto_category_is_invalid() {
+			for (category, (valid_data, invalid_data)) in [
+				(
+					Categories::Text(TextCategories::Plain),
+					(b"I am valid UTF-8 text!".to_vec(), vec![0xF0, 0x9F, 0x98]),
+				),
+				(
+					Categories::Text(TextCategories::Json),
+					(b"{\"key\": \"value\"}".to_vec(), b"I am not JSON text!".to_vec()),
+				),
+				(
+					Categories::Texture(TextureCategories::PngFile),
+					(vec![0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], vec![7u8; 10]),
+				),
+				(
+					Categories::Texture(TextureCategories::JpgFile),
+					(vec![0xFF, 0xD8, 0xFF, 0xE0], vec![7u8; 10]),
+				),
+			] {
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
+						// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						references: vec![],
+						category: category.clone(),
+						tags: vec![].try_into().unwrap(),
+						linked_asset: None,
+						license: pallet_protos::UsageLicense::Closed,
+						cluster: None,
+						data: pallet_protos::ProtoData::Local(valid_data)
+					})),
+					true
+				);
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
+						references: vec![],
+						category: category.clone(),
+						tags: vec![].try_into().unwrap(),
+						linked_asset: None,
+						license: pallet_protos::UsageLicense::Closed,
+						cluster: None,
+						data: pallet_protos::ProtoData::Local(invalid_data)
+					}),),
+					false
+				);
+			}
+		}
+
+		#[test]
+		fn is_the_immediate_call_valid_should_not_work_if_metadata_key_is_invalid() {
+			for (metadata_key, data) in [
+				(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
+				(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
+				(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
+			] {
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+						// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						proto_hash: [7u8; 32],
+						metadata_key: metadata_key.clone().try_into().unwrap(),
+						data: data.clone()
+					})),
+					true
+				);
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+						proto_hash: [7u8; 32],
+						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
+						data: data.clone()
+					})),
+					false
+				);
+
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Fragments(
+						pallet_fragments::Call::set_definition_metadata {
+							// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+							definition_hash: [7u8; 16],
+							metadata_key: metadata_key.clone().try_into().unwrap(),
+							data: data.clone()
+						}
+					)),
+					true
+				);
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Fragments(
+						pallet_fragments::Call::set_definition_metadata {
+							definition_hash: [7u8; 16],
+							metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
+							data: data.clone()
+						}
+					)),
+					false
+				);
+
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Fragments(
+						pallet_fragments::Call::set_instance_metadata {
+							definition_hash: [7u8; 16],
+							edition_id: 1,
+							copy_id: 1,
+							metadata_key: metadata_key.clone().try_into().unwrap(),
+							data: data.clone()
+						}
+					)),
+					true
+				);
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Fragments(
+						pallet_fragments::Call::set_instance_metadata {
+							definition_hash: [7u8; 16],
+							edition_id: 1,
+							copy_id: 1,
+							metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
+							data: data.clone()
+						}
+					)),
+					false
+				);
+			}
+		}
+
+		#[test]
+		fn is_the_immediate_call_valid_should_not_work_if_metadata_data_is_invalid() {
+			for (metadata_key, data) in [
+				(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
+				(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
+				(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
+			] {
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+						// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						proto_hash: [7u8; 32],
+						metadata_key: metadata_key.clone().try_into().unwrap(),
+						data: data.clone()
+					})),
+					true
+				);
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
+						proto_hash: [7u8; 32],
+						metadata_key: metadata_key.clone().try_into().unwrap(),
+						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+					})),
+					false
+				);
+
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Fragments(
+						pallet_fragments::Call::set_definition_metadata {
+							// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
+							definition_hash: [7u8; 16],
+							metadata_key: metadata_key.clone().try_into().unwrap(),
+							data: data.clone() // Invalid UTF-8 Text
+						}
+					)),
+					true
+				);
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Fragments(
+						pallet_fragments::Call::set_definition_metadata {
+							definition_hash: [7u8; 16],
+							metadata_key: metadata_key.clone().try_into().unwrap(),
+							data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+						}
+					)),
+					false
+				);
+
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Fragments(
+						pallet_fragments::Call::set_instance_metadata {
+							definition_hash: [7u8; 16],
+							edition_id: 1,
+							copy_id: 1,
+							metadata_key: metadata_key.clone().try_into().unwrap(),
+							data: data.clone()
+						}
+					)),
+					true
+				);
+				assert_eq!(
+					is_the_immediate_call_valid(&Call::Fragments(
+						pallet_fragments::Call::set_instance_metadata {
+							definition_hash: [7u8; 16],
+							edition_id: 1,
+							copy_id: 1,
+							metadata_key: metadata_key.try_into().unwrap(),
+							data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+						}
+					)),
+					false
+				);
+			}
+		}
+
+		#[test]
+		fn is_the_immediate_call_valid_should_not_work_if_a_batch_call_contains_a_call_that_indexes_the_transaction(
+		) {
 			assert_eq!(
-				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
-					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-					references: vec![],
-					category: category.clone(),
-					tags: vec![].try_into().unwrap(),
-					linked_asset: None,
-					license: pallet_protos::UsageLicense::Closed,
-					cluster: None,
-					data: pallet_protos::ProtoData::Local(valid_data)
-				})),
+				is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
+					calls: vec![Call::Protos(pallet_protos::Call::ban {
+						// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
+						proto_hash: [7u8; 32],
+					})]
+				}),),
 				true
 			);
+
 			assert_eq!(
-				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
-					references: vec![],
-					category: category.clone(),
-					tags: vec![].try_into().unwrap(),
-					linked_asset: None,
-					license: pallet_protos::UsageLicense::Closed,
-					cluster: None,
-					data: pallet_protos::ProtoData::Local(invalid_data)
+				is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
+					calls: vec![Call::Protos(pallet_protos::Call::upload {
+						references: vec![],
+						category: Categories::Text(TextCategories::Plain),
+						tags: vec![].try_into().unwrap(),
+						linked_asset: None,
+						license: pallet_protos::UsageLicense::Closed,
+						cluster: None,
+						data: pallet_protos::ProtoData::Local(b"Bonjour".to_vec())
+					})]
 				}),),
 				false
 			);
 		}
-	}
-
-	#[test]
-	fn is_the_immediate_call_valid_should_not_work_if_metadata_key_is_invalid() {
-		for (metadata_key, data) in [
-			(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
-			(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
-			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
-		] {
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-					proto_hash: [7u8; 32],
-					metadata_key: metadata_key.clone().try_into().unwrap(),
-					data: data.clone()
-				})),
-				true
-			);
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-					proto_hash: [7u8; 32],
-					metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
-					data: data.clone()
-				})),
-				false
-			);
-
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Fragments(
-					pallet_fragments::Call::set_definition_metadata {
-						// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
-						definition_hash: [7u8; 16],
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: data.clone()
-					}
-				)),
-				true
-			);
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Fragments(
-					pallet_fragments::Call::set_definition_metadata {
-						definition_hash: [7u8; 16],
-						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
-						data: data.clone()
-					}
-				)),
-				false
-			);
-
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Fragments(
-					pallet_fragments::Call::set_instance_metadata {
-						definition_hash: [7u8; 16],
-						edition_id: 1,
-						copy_id: 1,
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: data.clone()
-					}
-				)),
-				true
-			);
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Fragments(
-					pallet_fragments::Call::set_instance_metadata {
-						definition_hash: [7u8; 16],
-						edition_id: 1,
-						copy_id: 1,
-						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
-						data: data.clone()
-					}
-				)),
-				false
-			);
-		}
-	}
-
-	#[test]
-	fn is_the_immediate_call_valid_should_not_work_if_metadata_data_is_invalid() {
-		for (metadata_key, data) in [
-			(b"title".to_vec(), b"I am valid UTF-8 text!".to_vec()),
-			(b"json_description".to_vec(), b"{\"key\": \"value\"}".to_vec()),
-			(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
-		] {
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-					proto_hash: [7u8; 32],
-					metadata_key: metadata_key.clone().try_into().unwrap(),
-					data: data.clone()
-				})),
-				true
-			);
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-					proto_hash: [7u8; 32],
-					metadata_key: metadata_key.clone().try_into().unwrap(),
-					data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
-				})),
-				false
-			);
-
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Fragments(
-					pallet_fragments::Call::set_definition_metadata {
-						// https://fragcolor-xyz.github.io/clamor/doc/pallet_fragments/pallet/enum.Call.html#
-						definition_hash: [7u8; 16],
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: data.clone() // Invalid UTF-8 Text
-					}
-				)),
-				true
-			);
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Fragments(
-					pallet_fragments::Call::set_definition_metadata {
-						definition_hash: [7u8; 16],
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
-					}
-				)),
-				false
-			);
-
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Fragments(
-					pallet_fragments::Call::set_instance_metadata {
-						definition_hash: [7u8; 16],
-						edition_id: 1,
-						copy_id: 1,
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: data.clone()
-					}
-				)),
-				true
-			);
-			assert_eq!(
-				is_the_immediate_call_valid(&Call::Fragments(
-					pallet_fragments::Call::set_instance_metadata {
-						definition_hash: [7u8; 16],
-						edition_id: 1,
-						copy_id: 1,
-						metadata_key: metadata_key.try_into().unwrap(),
-						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
-					}
-				)),
-				false
-			);
-		}
-	}
-
-	#[test]
-	fn is_the_immediate_call_valid_should_not_work_if_a_batch_call_contains_a_call_that_indexes_the_transaction(
-	) {
-		assert_eq!(
-			is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
-				calls: vec![Call::Protos(pallet_protos::Call::ban {
-					// https://fragcolor-xyz.github.io/clamor/doc/pallet_protos/pallet/enum.Call.html#
-					proto_hash: [7u8; 32],
-				})]
-			}),),
-			true
-		);
-
-		assert_eq!(
-			is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
-				calls: vec![Call::Protos(pallet_protos::Call::upload {
-					references: vec![],
-					category: Categories::Text(TextCategories::Plain),
-					tags: vec![].try_into().unwrap(),
-					linked_asset: None,
-					license: pallet_protos::UsageLicense::Closed,
-					cluster: None,
-					data: pallet_protos::ProtoData::Local(b"Bonjour".to_vec())
-				})]
-			}),),
-			false
-		);
 	}
 }
 
