@@ -97,7 +97,7 @@ impl DummyData {
 		let records1 = vec![(
 			"int1".to_string(),
 			vec![VariableTypeInfo {
-				type_: VariableType::Int,
+				type_: VariableType::Int(None),
 				default: Some(Vec::new()),
 			}],
 		).into()];
@@ -116,7 +116,7 @@ impl DummyData {
 		let records2 = vec![(
 			"int2".to_string(),
 			vec![VariableTypeInfo {
-				type_: VariableType::Int,
+				type_: VariableType::Int(None),
 				default: Some(Vec::new()),
 			}],
 		).into()];
@@ -136,7 +136,7 @@ impl DummyData {
 		let records3 = vec![(
 			"int3".to_string(),
 			vec![VariableTypeInfo {
-				type_: VariableType::Int,
+				type_: VariableType::Int(None),
 				default: Some(Vec::new()),
 			}],
 		).into()];
