@@ -384,11 +384,10 @@ mod validation_logic {
 	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
 		match category {
 			Categories::Text(sub_categories) => match sub_categories {
-				TextCategories::Plain | TextCategories::Wgsl => str::from_utf8(data).is_ok(),
-				// REVIEW - does a Json have to be a `serde_json::Map` or can it `serde_json::Value`?
+				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =>
+					str::from_utf8(data).is_ok(),
 				TextCategories::Json =>
-					serde_json::from_slice::<serde_json::Map<String, serde_json::Value>>(&data[..])
-						.is_ok(),
+					serde_json::from_slice::<serde_json::Value>(&data[..]).is_ok(),
 			},
 			Categories::Trait(trait_hash) => match trait_hash {
 				Some(_) => false,
@@ -457,6 +456,7 @@ mod validation_logic {
 			Categories::Vector(sub_categories) => match sub_categories {
 				VectorCategories::SvgFile => false,
 				VectorCategories::TtfFile => infer::is(data, "ttf"), // ttf_parser::Face::parse(&data[..], 0).is_ok(),
+				VectorCategories::OtfFile => infer::is(data, "otf"),
 			},
 			Categories::Video(sub_categories) => match sub_categories {
 				VideoCategories::MkvFile => infer::is(data, "mkv"),

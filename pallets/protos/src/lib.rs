@@ -497,7 +497,7 @@ pub mod pallet {
 				metadata: BTreeMap::new(),
 				accounts_info: AccountsInfo::default(),
 				data: data_stored,
-				cluster: cluster,
+				cluster,
 			};
 
 			// store proto

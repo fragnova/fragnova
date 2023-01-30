@@ -3,8 +3,8 @@ pub use pallet_accounts::dummy_data::{
 	create_link_signature, create_lock_signature, get_ethereum_public_address, Link, Lock,
 };
 
-use sp_core::H160; // Ethereum Account Addresses use this type
 use sp_clamor::Hash256;
+use sp_core::H160; // Ethereum Account Addresses use this type
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
@@ -96,11 +96,9 @@ impl DummyData {
 
 		let records1 = vec![(
 			"int1".to_string(),
-			vec![VariableTypeInfo {
-				type_: VariableType::Int(None),
-				default: Some(Vec::new()),
-			}],
-		).into()];
+			vec![VariableTypeInfo { type_: VariableType::Int(None), default: Some(Vec::new()) }],
+		)
+			.into()];
 		let trait1 = Trait { name: "Trait1".to_string(), revision: 1, records: records1 };
 
 		let data_trait = twox_64(&trait1.encode());
@@ -115,11 +113,9 @@ impl DummyData {
 
 		let records2 = vec![(
 			"int2".to_string(),
-			vec![VariableTypeInfo {
-				type_: VariableType::Int(None),
-				default: Some(Vec::new()),
-			}],
-		).into()];
+			vec![VariableTypeInfo { type_: VariableType::Int(None), default: Some(Vec::new()) }],
+		)
+			.into()];
 
 		let trait2 = Trait { name: "Trait2".to_string(), revision: 1, records: records2 };
 
@@ -135,11 +131,9 @@ impl DummyData {
 
 		let records3 = vec![(
 			"int3".to_string(),
-			vec![VariableTypeInfo {
-				type_: VariableType::Int(None),
-				default: Some(Vec::new()),
-			}],
-		).into()];
+			vec![VariableTypeInfo { type_: VariableType::Int(None), default: Some(Vec::new()) }],
+		)
+			.into()];
 
 		let trait3 = Trait { name: "Trait3".to_string(), revision: 1, records: records3 };
 		let data_trait_3 = twox_64(&trait3.encode());
