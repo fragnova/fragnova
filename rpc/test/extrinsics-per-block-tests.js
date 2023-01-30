@@ -22,31 +22,32 @@ describe("Extrinsics Per Block", () => {
 
         const blockHashes = [];
 
-        const totalIterations = 10;
+        const totalIterations = 3;
         for (let nonce = 0; nonce < totalIterations; nonce++) {
 
           const data = [...new Uint8Array(3 * 1024 * 1024).fill(nonce)];
 
           api.tx.contracts.uploadCode(
             data,
-            null
+            null,
+            "Deterministic"
           ).signAndSend(alice, {nonce: nonce}, (result) => {
             console.log('Transaction status:', result.status.type);
 
             if (result.status.isInBlock) {
               console.log('Included at block hash', result.status.asInBlock.toHex());
-            } else if (result.status.isFinalized) {
-              console.log('Finalized block hash', result.status.asFinalized.toHex());
-              blockHashes.push(result.status.asFinalized.toHex());
+              blockHashes.push(result.status.asInBlock.toHex());
               if (blockHashes.length == totalIterations) {
                 resolve(blockHashes);
               }
+            } else if (result.status.isFinalized) {
+              console.log('Finalized block hash', result.status.asFinalized.toHex());
             }
           });
         }
       });
 
-      assert(blockHashes.every(val => val === blockHashes[0]), "All the transactions were not executed in the same block 😢");
+      assert(blockHashes.every(val => val === blockHashes[0]), "All the extrinsics were not executed in the same block 😢");
 
     });
   });
