@@ -9,7 +9,7 @@ use sp_fragnova::Hash256;
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 
 use pallet_detach::SupportedChains;
-use protos::traits::{RecordInfo, Trait, VariableType, VariableTypeInfo};
+use protos::traits::{Trait, VariableType, VariableTypeInfo};
 
 pub fn compute_data_hash(data: &Vec<u8>) -> Hash256 {
 	blake2_256(&data)
@@ -96,12 +96,10 @@ impl DummyData {
 
 		let records1 = vec![(
 			"int1".to_string(),
-			RecordInfo::SingleType(VariableTypeInfo {
-				type_: VariableType::Int,
-				default: Some(Vec::new()),
-			}),
-		)];
-		let trait1 = Trait { name: "Trait1".to_string(), records: records1 };
+			vec![VariableTypeInfo { type_: VariableType::Int(None), default: Some(Vec::new()) }],
+		)
+			.into()];
+		let trait1 = Trait { name: "Trait1".to_string(), revision: 1, records: records1 };
 
 		let data_trait = twox_64(&trait1.encode());
 
@@ -115,13 +113,11 @@ impl DummyData {
 
 		let records2 = vec![(
 			"int2".to_string(),
-			RecordInfo::SingleType(VariableTypeInfo {
-				type_: VariableType::Int,
-				default: Some(Vec::new()),
-			}),
-		)];
+			vec![VariableTypeInfo { type_: VariableType::Int(None), default: Some(Vec::new()) }],
+		)
+			.into()];
 
-		let trait2 = Trait { name: "Trait2".to_string(), records: records2 };
+		let trait2 = Trait { name: "Trait2".to_string(), revision: 1, records: records2 };
 
 		let data_trait_2 = twox_64(&trait2.encode());
 
@@ -135,13 +131,11 @@ impl DummyData {
 
 		let records3 = vec![(
 			"int3".to_string(),
-			RecordInfo::SingleType(VariableTypeInfo {
-				type_: VariableType::Int,
-				default: Some(Vec::new()),
-			}),
-		)];
+			vec![VariableTypeInfo { type_: VariableType::Int(None), default: Some(Vec::new()) }],
+		)
+			.into()];
 
-		let trait3 = Trait { name: "Trait3".to_string(), records: records3 };
+		let trait3 = Trait { name: "Trait3".to_string(), revision: 1, records: records3 };
 		let data_trait_3 = twox_64(&trait3.encode());
 
 		let proto_fifth = ProtoFragment {

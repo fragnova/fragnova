@@ -3,7 +3,7 @@
 (def WS-SERVER-PORT 9944)
 (def WS-SERVER-SECURE false)
 
-(def RUNTIME-SPEC-VERSION 3)
+(def RUNTIME-SPEC-VERSION 4)
 (def TRANSACTION-VERSION 1)
 
 (defshards chain-get-block-hash [block-number]

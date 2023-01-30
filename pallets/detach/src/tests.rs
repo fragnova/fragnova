@@ -1,8 +1,6 @@
 #![cfg(test)]
 
-use crate::*;
-use crate::dummy_data::*;
-use crate::mock::*;
+use crate::{dummy_data::*, mock::*, *};
 
 use frame_support::assert_ok;
 

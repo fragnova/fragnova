@@ -1,8 +1,6 @@
 #![cfg(test)]
 
-use crate::*;
-use crate::dummy_data::*;
-use crate::mock::*;
+use crate::{dummy_data::*, mock::*, *};
 
 use crate::Event as FragmentsEvent;
 
@@ -1297,10 +1295,7 @@ use give_tests::{give_, mint_give_instance};
 mod give_tests {
 	use super::*;
 
-	pub fn give_(
-		signer: <Test as frame_system::Config>::AccountId,
-		give: &Give,
-	) -> DispatchResult {
+	pub fn give_(signer: <Test as frame_system::Config>::AccountId, give: &Give) -> DispatchResult {
 		FragmentsPallet::give(
 			Origin::signed(signer),
 			give.mint.definition.get_definition_id(),
