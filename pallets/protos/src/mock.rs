@@ -67,7 +67,6 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
-	pub StorageBytesMultiplier: u64 = 10;
 	pub const IsTransferable: bool = false;
 }
 impl frame_system::Config for Test {
@@ -190,7 +189,6 @@ impl pallet_protos::Config for Test {
 	type StringLimit = StringLimit;
 	type DetachAccountLimit = ConstU32<20>;
 	type MaxTags = ConstU32<10>;
-	type StorageBytesMultiplier = StorageBytesMultiplier;
 }
 
 impl pallet_detach::Config for Test {

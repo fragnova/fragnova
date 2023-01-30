@@ -318,7 +318,7 @@ parameter_types! {
 	///    - Setting `reserved` to `Some(x)`, guarantees that at least `x` weight can be consumed by the extrinsic class in every block.
 	///    	  - Note: `x` can be zero obviously. It doesn't have to only be non-zero integers (obviously!).
 	///    - Setting `reserved` to `None` guarantees that at least `max_total` weight can be consumed by the extrinsic class in every block.
-	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrisnic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
+	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrinsic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
 	/// Furthermore, a `BlockWeights` struct also contains information about the block:
 	/// 1. **Maximum total amount of weight that can be consumed by all kinds of extrinsics in a block (assuming no extrinsic class uses its `reserved` space)** (`BlockWeights::max_block`)
 	/// 2. **Base weight of a block (i.e the computation time to execute an empty block)** (`BlockWeights::base_block`).
@@ -968,8 +968,6 @@ parameter_types! {
 	/// A fee mulitplier for `Operational` extrinsics to compute "virtual tip" to boost their
 	/// `priority`
 	pub OperationalFeeMultiplier: u8 = 5;
-	/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
-	pub StorageBytesMultiplier: u64 = 10;
 }
 
 /// This pallet provides the basic logic needed to pay the absolute minimum amount needed for a
@@ -1064,7 +1062,6 @@ impl pallet_protos::Config for Runtime {
 	type StringLimit = StringLimit;
 	type DetachAccountLimit = ConstU32<20>; // An ethereum public account address has a length of 20.
 	type MaxTags = ConstU32<10>;
-	type StorageBytesMultiplier = StorageBytesMultiplier;
 }
 
 impl pallet_detach::Config for Runtime {
