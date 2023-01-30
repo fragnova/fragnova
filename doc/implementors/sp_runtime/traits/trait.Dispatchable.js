@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"clamor_runtime":[["impl Dispatchable for <a class=\"enum\" href=\"clamor_runtime/enum.Call.html\" title=\"enum clamor_runtime::Call\">Call</a>"]]
+"fragnova_runtime":[["impl Dispatchable for <a class=\"enum\" href=\"fragnova_runtime/enum.Call.html\" title=\"enum fragnova_runtime::Call\">Call</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"clamor_runtime":[["impl <a class=\"trait\" href=\"clamor_runtime/trait.Contains.html\" title=\"trait clamor_runtime::Contains\">Contains</a>&lt;<a class=\"enum\" href=\"clamor_runtime/enum.Call.html\" title=\"enum clamor_runtime::Call\">Call</a>&gt; for <a class=\"struct\" href=\"clamor_runtime/struct.BaseCallFilter.html\" title=\"struct clamor_runtime::BaseCallFilter\">BaseCallFilter</a>"]]
+"fragnova_runtime":[["impl <a class=\"trait\" href=\"fragnova_runtime/trait.Contains.html\" title=\"trait fragnova_runtime::Contains\">Contains</a>&lt;<a class=\"enum\" href=\"fragnova_runtime/enum.Call.html\" title=\"enum fragnova_runtime::Call\">Call</a>&gt; for <a class=\"struct\" href=\"fragnova_runtime/struct.BaseCallFilter.html\" title=\"struct fragnova_runtime::BaseCallFilter\">BaseCallFilter</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

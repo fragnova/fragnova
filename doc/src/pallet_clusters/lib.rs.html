@@ -639,7 +639,7 @@
 <span class="kw">use </span>codec::{Compact, Decode, Encode};
 <span class="kw">use </span>frame_support::BoundedVec;
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
-<span class="kw">use </span>sp_clamor::Hash128;
+<span class="kw">use </span>sp_fragnova::Hash128;
 <span class="kw">use </span>sp_std::{vec, vec::Vec};
 
 <span class="attr">#[cfg(test)]
@@ -705,7 +705,7 @@
 		traits::{fungible, ReservableCurrency},
 	};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
-	<span class="kw">use </span>sp_clamor::get_vault_id;
+	<span class="kw">use </span>sp_fragnova::get_vault_id;
 	<span class="kw">use </span>sp_io::hashing::blake2_128;
 
 	<span class="attr">#[pallet::pallet]

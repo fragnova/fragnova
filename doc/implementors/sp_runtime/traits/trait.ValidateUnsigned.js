@@ -1,5 +1,5 @@
 (function() {var implementors = {
-"clamor_runtime":[["impl ValidateUnsigned for <a class=\"struct\" href=\"clamor_runtime/struct.Runtime.html\" title=\"struct clamor_runtime::Runtime\">Runtime</a>"]],
+"fragnova_runtime":[["impl ValidateUnsigned for <a class=\"struct\" href=\"fragnova_runtime/struct.Runtime.html\" title=\"struct fragnova_runtime::Runtime\">Runtime</a>"]],
 "pallet_accounts":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_accounts/pallet/trait.Config.html\" title=\"trait pallet_accounts::pallet::Config\">Config</a>&gt; ValidateUnsigned for <a class=\"struct\" href=\"pallet_accounts/pallet/struct.Pallet.html\" title=\"struct pallet_accounts::pallet::Pallet\">Pallet</a>&lt;T&gt;"]],
 "pallet_detach":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_detach/pallet/trait.Config.html\" title=\"trait pallet_detach::pallet::Config\">Config</a>&gt; ValidateUnsigned for <a class=\"struct\" href=\"pallet_detach/pallet/struct.Pallet.html\" title=\"struct pallet_detach::pallet::Pallet\">Pallet</a>&lt;T&gt;"]],
 "pallet_oracle":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_oracle/pallet/trait.Config.html\" title=\"trait pallet_oracle::pallet::Config\">Config</a>&gt; ValidateUnsigned for <a class=\"struct\" href=\"pallet_oracle/pallet/struct.Pallet.html\" title=\"struct pallet_oracle::pallet::Pallet\">Pallet</a>&lt;T&gt;"]]

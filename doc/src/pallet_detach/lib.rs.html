@@ -876,7 +876,7 @@
 <a href="#876" id="876">876</a>
 <a href="#877" id="877">877</a>
 <a href="#878" id="878">878</a>
-</pre><pre class="rust"><code><span class="doccomment">//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Clamor
+</pre><pre class="rust"><code><span class="doccomment">//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Fragnova
 //! Blockchain to an External Blockchain
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
@@ -958,7 +958,7 @@
 <span class="kw">use </span>sp_runtime::{offchain::storage::StorageValueRef, traits::Hash, MultiSigner};
 <span class="kw">use </span>sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
-<span class="kw">use </span>sp_clamor::{Hash128, Hash256, InstanceUnit};
+<span class="kw">use </span>sp_fragnova::{Hash128, Hash256, fragments::InstanceUnit};
 
 <span class="kw">use </span>frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,
@@ -967,7 +967,7 @@
 
 <span class="kw">use </span>merkle_tree::{merkle_root, Keccak256};
 
-<span class="doccomment">/// Enum representing a &quot;detachable thing&quot; (i.e a Proto-Fragment or a Fragment Instance) that the User wants to detach from the Clamor Blockchain
+<span class="doccomment">/// Enum representing a &quot;detachable thing&quot; (i.e a Proto-Fragment or a Fragment Instance) that the User wants to detach from the Fragnova Blockchain
 </span><span class="attr">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 </span><span class="kw">pub enum </span>DetachHash {
 	<span class="doccomment">/// A Proto-Fragment (identified by its Hash)
@@ -985,7 +985,7 @@
 	</span>Instance,
 }
 
-<span class="doccomment">/// Enum representing a collection of &quot;detachable things&quot; that the User wants to detach from the Clamor Blockchain
+<span class="doccomment">/// Enum representing a collection of &quot;detachable things&quot; that the User wants to detach from the Fragnova Blockchain
 </span><span class="attr">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 </span><span class="kw">pub enum </span>DetachCollection {
 	<span class="doccomment">/// List of Proto-Fragments (identified by its Hash)
@@ -1039,7 +1039,7 @@
 	</span>EthereumGoerli,
 }
 
-<span class="doccomment">/// **Struct** that represents a **request to detach a collection of &quot;detachable thing&quot;s (see enum `DetachHashes` to see what type of collections can be detached)** from the Clamor Blockchain
+<span class="doccomment">/// **Struct** that represents a **request to detach a collection of &quot;detachable thing&quot;s (see enum `DetachHashes` to see what type of collections can be detached)** from the Fragnova Blockchain
 </span><span class="attr">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 </span><span class="kw">pub struct </span>DetachRequest {
 	<span class="doccomment">/// Collection of &quot;detachable thing&quot;s
@@ -1085,7 +1085,7 @@
 	}
 }
 
-<span class="doccomment">/// **Struct** that **contains information** about **a &quot;detached thing&quot;** (e.g **a detached Proto-Fragment** or a **detached Fragment Instance**) that was detached from the Clamor Blockchain
+<span class="doccomment">/// **Struct** that **contains information** about **a &quot;detached thing&quot;** (e.g **a detached Proto-Fragment** or a **detached Fragment Instance**) that was detached from the Fragnova Blockchain
 </span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
 </span><span class="kw">pub struct </span>ExportData {
 	<span class="doccomment">/// **External Blockchain** the **&quot;detached thing&quot;** can be **attached to**
@@ -1094,7 +1094,7 @@
 	</span>owner: Vec&lt;u8&gt;,
 	<span class="comment">// For now we don&#39;t allow to re-attach but in the future we will,
 	// this nonce is in 1:1 relationship with the remote chain,
-	// so that e.g. if we detach on ethereum the message cannot be repeated and needs to go 1:1 with clamor
+	// so that e.g. if we detach on ethereum the message cannot be repeated and needs to go 1:1 with fragnova
 	</span><span class="doccomment">/// Detach-Nonce of the Public Account Address  `owner` (in the external blockchain `chain`) when the &quot;detached thing&quot; was detached
 	</span>nonce: u64,
 }
@@ -1274,7 +1274,7 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Detach a Proto-Fragment from Clamor by emitting an event that includes a signature.
+		<span class="doccomment">/// Detach a Proto-Fragment from Fragnova by emitting an event that includes a signature.
 		</span><span class="attr">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
 		</span><span class="kw">pub fn </span>internal_finalize_detach(
 			origin: OriginFor&lt;T&gt;,
@@ -1683,7 +1683,7 @@
 											nonce,
 										},
 										<span class="comment">// Note: `Call` is an enum that gets generated by the macro `#[pallet::Call]`
-										// You can view it in Clamor&#39;s Rustdoc: https://fragcolor-xyz.github.io/clamor/doc/pallet_detach/pallet/enum.Call.html#
+										// You can view it in Fragnova&#39;s Rustdoc: https://fragcolor-xyz.github.io/fragnova/doc/pallet_detach/pallet/enum.Call.html#
 										</span>|payload, signature| Call::internal_finalize_detach {
 											data: payload,
 											signature,

@@ -465,10 +465,10 @@
 }
 
 <span class="kw">pub fn </span>create_link_signature(
-	clamor_account_id: sp_core::ed25519::Public,
+	fragnova_account_id: sp_core::ed25519::Public,
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 ) -&gt; sp_core::ecdsa::Signature {
-	<span class="kw">let </span>sender_string = <span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(clamor_account_id));
+	<span class="kw">let </span>sender_string = <span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(fragnova_account_id));
 	<span class="kw">let </span>genesis_hash_string = <span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(get_genesis_hash()));
 
 	<span class="kw">let </span>encoded_message: Vec&lt;u8&gt; = [
@@ -634,7 +634,7 @@
 
 <span class="attr">#[derive(Clone)]
 </span><span class="kw">pub struct </span>Link {
-	<span class="kw">pub </span>clamor_account_id: sp_core::ed25519::Public,
+	<span class="kw">pub </span>fragnova_account_id: sp_core::ed25519::Public,
 	<span class="kw">pub </span>link_signature: ecdsa::Signature,
 
 	<span class="kw">pub </span>_ethereum_account_pair: sp_core::ecdsa::Pair,
@@ -672,7 +672,7 @@
 <span class="kw">impl </span>DummyData {
 	<span class="kw">pub fn </span>new() -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span>link = Link {
-			clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">1u8</span>; <span class="number">32</span>]),
+			fragnova_account_id: sp_core::ed25519::Public::from_raw([<span class="number">1u8</span>; <span class="number">32</span>]),
 			link_signature: create_link_signature(
 				sp_core::ed25519::Public::from_raw([<span class="number">1u8</span>; <span class="number">32</span>]),
 				sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">1u8</span>; <span class="number">32</span>]),
@@ -681,7 +681,7 @@
 		};
 
 		<span class="kw">let </span>link_second = Link {
-			clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">2u8</span>; <span class="number">32</span>]),
+			fragnova_account_id: sp_core::ed25519::Public::from_raw([<span class="number">2u8</span>; <span class="number">32</span>]),
 			link_signature: create_link_signature(
 				sp_core::ed25519::Public::from_raw([<span class="number">2u8</span>; <span class="number">32</span>]),
 				sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">2u8</span>; <span class="number">32</span>]),
@@ -714,7 +714,7 @@
 				</span>block_number: <span class="number">69</span>,
 			},
 			link: Link {
-				clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
+				fragnova_account_id: sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
 				link_signature: create_link_signature(
 					sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
 					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
@@ -749,7 +749,7 @@
 				</span>block_number: <span class="number">69</span>,
 			},
 			link: Link {
-				clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
+				fragnova_account_id: sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
 				link_signature: create_link_signature(
 					sp_core::ed25519::Public::from_raw([<span class="number">3u8</span>; <span class="number">32</span>]),
 					sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">3u8</span>; <span class="number">32</span>]),
@@ -781,7 +781,7 @@
 					</span>block_number: <span class="number">69</span>,
 				},
 				link: Link {
-					clamor_account_id: sp_core::ed25519::Public::from_raw([<span class="number">4u8</span>; <span class="number">32</span>]),
+					fragnova_account_id: sp_core::ed25519::Public::from_raw([<span class="number">4u8</span>; <span class="number">32</span>]),
 					link_signature: create_link_signature(
 						sp_core::ed25519::Public::from_raw([<span class="number">4u8</span>; <span class="number">32</span>]),
 						sp_core::ecdsa::Pair::from_seed(<span class="kw-2">&amp;</span>[<span class="number">4u8</span>; <span class="number">32</span>]),

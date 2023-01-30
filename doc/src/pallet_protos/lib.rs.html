@@ -1370,96 +1370,6 @@
 <a href="#1370" id="1370">1370</a>
 <a href="#1371" id="1371">1371</a>
 <a href="#1372" id="1372">1372</a>
-<a href="#1373" id="1373">1373</a>
-<a href="#1374" id="1374">1374</a>
-<a href="#1375" id="1375">1375</a>
-<a href="#1376" id="1376">1376</a>
-<a href="#1377" id="1377">1377</a>
-<a href="#1378" id="1378">1378</a>
-<a href="#1379" id="1379">1379</a>
-<a href="#1380" id="1380">1380</a>
-<a href="#1381" id="1381">1381</a>
-<a href="#1382" id="1382">1382</a>
-<a href="#1383" id="1383">1383</a>
-<a href="#1384" id="1384">1384</a>
-<a href="#1385" id="1385">1385</a>
-<a href="#1386" id="1386">1386</a>
-<a href="#1387" id="1387">1387</a>
-<a href="#1388" id="1388">1388</a>
-<a href="#1389" id="1389">1389</a>
-<a href="#1390" id="1390">1390</a>
-<a href="#1391" id="1391">1391</a>
-<a href="#1392" id="1392">1392</a>
-<a href="#1393" id="1393">1393</a>
-<a href="#1394" id="1394">1394</a>
-<a href="#1395" id="1395">1395</a>
-<a href="#1396" id="1396">1396</a>
-<a href="#1397" id="1397">1397</a>
-<a href="#1398" id="1398">1398</a>
-<a href="#1399" id="1399">1399</a>
-<a href="#1400" id="1400">1400</a>
-<a href="#1401" id="1401">1401</a>
-<a href="#1402" id="1402">1402</a>
-<a href="#1403" id="1403">1403</a>
-<a href="#1404" id="1404">1404</a>
-<a href="#1405" id="1405">1405</a>
-<a href="#1406" id="1406">1406</a>
-<a href="#1407" id="1407">1407</a>
-<a href="#1408" id="1408">1408</a>
-<a href="#1409" id="1409">1409</a>
-<a href="#1410" id="1410">1410</a>
-<a href="#1411" id="1411">1411</a>
-<a href="#1412" id="1412">1412</a>
-<a href="#1413" id="1413">1413</a>
-<a href="#1414" id="1414">1414</a>
-<a href="#1415" id="1415">1415</a>
-<a href="#1416" id="1416">1416</a>
-<a href="#1417" id="1417">1417</a>
-<a href="#1418" id="1418">1418</a>
-<a href="#1419" id="1419">1419</a>
-<a href="#1420" id="1420">1420</a>
-<a href="#1421" id="1421">1421</a>
-<a href="#1422" id="1422">1422</a>
-<a href="#1423" id="1423">1423</a>
-<a href="#1424" id="1424">1424</a>
-<a href="#1425" id="1425">1425</a>
-<a href="#1426" id="1426">1426</a>
-<a href="#1427" id="1427">1427</a>
-<a href="#1428" id="1428">1428</a>
-<a href="#1429" id="1429">1429</a>
-<a href="#1430" id="1430">1430</a>
-<a href="#1431" id="1431">1431</a>
-<a href="#1432" id="1432">1432</a>
-<a href="#1433" id="1433">1433</a>
-<a href="#1434" id="1434">1434</a>
-<a href="#1435" id="1435">1435</a>
-<a href="#1436" id="1436">1436</a>
-<a href="#1437" id="1437">1437</a>
-<a href="#1438" id="1438">1438</a>
-<a href="#1439" id="1439">1439</a>
-<a href="#1440" id="1440">1440</a>
-<a href="#1441" id="1441">1441</a>
-<a href="#1442" id="1442">1442</a>
-<a href="#1443" id="1443">1443</a>
-<a href="#1444" id="1444">1444</a>
-<a href="#1445" id="1445">1445</a>
-<a href="#1446" id="1446">1446</a>
-<a href="#1447" id="1447">1447</a>
-<a href="#1448" id="1448">1448</a>
-<a href="#1449" id="1449">1449</a>
-<a href="#1450" id="1450">1450</a>
-<a href="#1451" id="1451">1451</a>
-<a href="#1452" id="1452">1452</a>
-<a href="#1453" id="1453">1453</a>
-<a href="#1454" id="1454">1454</a>
-<a href="#1455" id="1455">1455</a>
-<a href="#1456" id="1456">1456</a>
-<a href="#1457" id="1457">1457</a>
-<a href="#1458" id="1458">1458</a>
-<a href="#1459" id="1459">1459</a>
-<a href="#1460" id="1460">1460</a>
-<a href="#1461" id="1461">1461</a>
-<a href="#1462" id="1462">1462</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1486,7 +1396,7 @@
 
 <span class="kw">use </span>protos::{categories::Categories, traits::Trait};
 
-<span class="kw">use </span>sp_core::{crypto::UncheckedFrom, ecdsa, H160, U256};
+<span class="kw">use </span>sp_core::{crypto::UncheckedFrom};
 
 <span class="kw">use </span>codec::{Compact, Decode, Encode};
 
@@ -1508,38 +1418,23 @@
 
 <span class="kw">pub use </span>weights::WeightInfo;
 
-<span class="kw">use </span>sp_clamor::{Hash128, Hash256, Hash64};
+<span class="kw">use </span>sp_fragnova::{Hash64, Hash128, Hash256};
+<span class="kw">pub use </span>sp_fragnova::protos::{
+	LinkSource,
+	LinkedAsset,
+	ProtoOwner,
+	ProtoPatch,
+	AccountsInfo,
+	UsageLicense,
+	ProtoData,
+	Proto
+};
 
 <span class="kw">use </span>scale_info::prelude::{
 	format,
 	string::{String, ToString},
 };
 <span class="kw">use </span>serde_json::{json, Map, Value};
-
-<span class="doccomment">/// TODO: Documentation
-</span><span class="attr">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-</span><span class="kw">pub enum </span>LinkSource {
-	<span class="comment">// Generally we just store this data, we don&#39;t verify it as we assume auth service did it.
-	// (Link signature, Linked block number, EIP155 Chain ID)
-	</span><span class="doccomment">/// TODO: Documentation
-	</span>Evm(ecdsa::Signature, u64, U256),
-}
-
-<span class="doccomment">/// **Types** of **Assets that are linked to a Proto-Fragment** (e.g an ERC-721 Contract etc.)
-</span><span class="attr">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-</span><span class="kw">pub enum </span>LinkedAsset {
-	<span class="doccomment">/// Ethereum (ERC721 Contract address, Token ID, Link source)
-	</span>Erc721(H160, U256, LinkSource),
-}
-
-<span class="doccomment">/// **Types** of **Proto-Fragment Owners**
-</span><span class="attr">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-</span><span class="kw">pub enum </span>ProtoOwner&lt;TAccountId&gt; {
-	<span class="doccomment">/// A **regular account** on **this chain**
-	</span>User(TAccountId),
-	<span class="doccomment">/// An **external asset** not on this chain
-	</span>ExternalAsset(LinkedAsset),
-}
 
 <span class="doccomment">/// **Data Type** used to **Query and Filter for Proto-Fragments**
 </span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
@@ -1592,81 +1487,6 @@
 	</span><span class="kw">pub </span>proto_hash: TString,
 	<span class="doccomment">/// Whether to retrieve the ancestors of the Proto-Fragment. If `false`, the descendants are retrieved instead
 	</span><span class="kw">pub </span>get_ancestors: bool,
-}
-
-<span class="doccomment">/// **Struct** of a **Proto-Fragment Patch**
-</span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>ProtoPatch&lt;TBlockNumber&gt; {
-	<span class="doccomment">/// **Block Number** in which the **patch was created**
-	</span><span class="kw">pub </span>block: TBlockNumber,
-	<span class="doccomment">/// **Hash** of patch data
-	</span><span class="kw">pub </span>data_hash: Hash256,
-	<span class="doccomment">/// **List of New Proto-Fragments** that was **used** to **create** the **patch** (INCDT)
-	</span><span class="kw">pub </span>references: Vec&lt;Hash256&gt;,
-	<span class="doccomment">/// **Data** of the **patch** (Only valid if not Local)
-	</span><span class="kw">pub </span>data: ProtoData,
-}
-
-<span class="doccomment">/// Struct that represents the account information of a Proto-Fragment
-</span><span class="attr">#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>AccountsInfo {
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">pub </span>active_accounts: u128,
-	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">pub </span>lifetime_accounts: u128,
-}
-
-<span class="doccomment">/// **Enum** that indicates **how a Proto-Fragment can be used**
-</span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-</span><span class="kw">pub enum </span>UsageLicense&lt;TContractAddress&gt; {
-	<span class="doccomment">/// Proto-Fragment is not available for use (owners can always use it)
-	</span>Closed,
-	<span class="doccomment">/// Proto-Fragment is available for use freely
-	</span>Open,
-	<span class="doccomment">/// Proto-Fragment is available for use if a custom contract returns true
-	</span>Contract(TContractAddress),
-}
-
-<span class="doccomment">/// **Enum** that indicates **how a Proto-Fragment data can be fetched**
-</span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-</span><span class="kw">pub enum </span>ProtoData {
-	<span class="doccomment">/// Data is stored on this chain&#39;s blocks directly, this is the most safe way of storing data.
-	</span>Local(Vec&lt;u8&gt;),
-	<span class="doccomment">/// Data is stored on the Arweave chain, store tx hash, no way to guarantee exact 100% uniqueness of data.
-	</span>Arweave(Hash256),
-	<span class="doccomment">/// Data is maybe somewhere on the IPFS network, this is unsafe cos the IPFS network is all about caching and content delivery, offering no guarantee of permanent storage
-	/// With that said there are some ways to guarantee the data is stored on IPFS via stuff like FileCoin + Lighthouse but they are relatively not as popular as Arweave so it&#39;s not recommended.
-	</span>Ipfs([u8; <span class="number">64</span>]),
-}
-
-<span class="doccomment">/// **Struct** of a **Proto-Fragment**
-</span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>Proto&lt;TAccountId, TBlockNumber&gt; {
-	<span class="doccomment">/// **Block Number** in which the **Proto-Fragment was minted in**
-	</span><span class="kw">pub </span>block: TBlockNumber,
-	<span class="doccomment">/// **List of *ProtoPatch* structs** of the **Proto-Fragment**
-	</span><span class="kw">pub </span>patches: Vec&lt;ProtoPatch&lt;TBlockNumber&gt;&gt;,
-	<span class="doccomment">/// **License** details of the **Proto-Fragment**
-	</span><span class="kw">pub </span>license: UsageLicense&lt;TAccountId&gt;,
-	<span class="doccomment">/// **Original Creator** of the **Proto-Fragment**
-	</span><span class="kw">pub </span>creator: TAccountId,
-	<span class="doccomment">/// *Current Owner** of the **Proto-Fragment**
-	</span><span class="kw">pub </span>owner: ProtoOwner&lt;TAccountId&gt;,
-	<span class="doccomment">/// **List of other Proto-Fragments** used to create the **Proto-Fragment**
-	</span><span class="kw">pub </span>references: Vec&lt;Hash256&gt;,
-	<span class="doccomment">/// **Category** of the **Proto-Fragment**
-	</span><span class="kw">pub </span>category: Categories,
-	<span class="doccomment">/// **List of Tags** associated with the **Proto-Fragment**
-	</span><span class="kw">pub </span>tags: Vec&lt;Compact&lt;u64&gt;&gt;,
-	<span class="doccomment">/// **Map** that maps the **Key of a Proto-Fragment&#39;s Metadata Object** to the **Hash of the
-	/// aforementioned Metadata Object**
-	</span><span class="kw">pub </span>metadata: BTreeMap&lt;Compact&lt;u64&gt;, Hash256&gt;,
-	<span class="doccomment">/// Accounts information for this proto.
-	</span><span class="kw">pub </span>accounts_info: AccountsInfo,
-	<span class="doccomment">/// **Data** of the **Proto-Fragment** (valid only if not Local)
-	</span><span class="kw">pub </span>data: ProtoData,
-	<span class="doccomment">/// **Cluster** ID where the Proto belongs to (Optional)
-	</span><span class="kw">pub </span>cluster: <span class="prelude-ty">Option</span>&lt;Hash128&gt;,
 }
 
 <span class="attr">#[frame_support::pallet]
@@ -2291,9 +2111,9 @@
 		}
 
 		<span class="comment">// TODO Review - Should we ensure that a Detach Request doesn&#39;t already exist with the same Proto-Fragment?
-		</span><span class="doccomment">/// Request to detach a **Proto-Fragment** from **Clamor**.
+		</span><span class="doccomment">/// Request to detach a **Proto-Fragment** from **Fragnova**.
 		///
-		/// Note: The Proto-Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
+		/// Note: The Proto-Fragment may actually get detached after one or more Fragnova blocks since when this extrinsic is called.
 		///
 		/// Note: **Once the Proto-Fragment is detached**, an **event is emitted that includes a signature**.
 		/// This signature can then be used to attach the Proto-Fragment to an External Blockchain `target_chain`.

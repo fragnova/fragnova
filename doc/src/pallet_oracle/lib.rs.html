@@ -592,7 +592,7 @@
 	SigningTypes,
 };
 <span class="kw">use </span>serde_json::{json, Value};
-<span class="kw">use </span>sp_clamor::http_json_post;
+<span class="kw">use </span>sp_fragnova::http_json_post;
 <span class="kw">use </span>sp_core::crypto::KeyTypeId;
 <span class="kw">use </span>sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction};
 
@@ -717,7 +717,7 @@
 	</span><span class="attr">#[pallet::genesis_config]
 	#[derive(Default)]
 	</span><span class="kw">pub struct </span>GenesisConfig {
-		<span class="doccomment">/// **List of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		<span class="doccomment">/// **List of Fragnova Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		</span><span class="kw">pub </span>keys: Vec&lt;ed25519::Public&gt;,
 	}
 
@@ -758,9 +758,9 @@
 	</span><span class="kw">pub struct </span>OraclePrice&lt;TPublic, TBlockNumber&gt; {
 		<span class="doccomment">/// the latest price fetched from the oracle feed
 		</span><span class="kw">pub </span>price: U256,
-		<span class="doccomment">/// The block number on Clamor when this price was fetched from the oracle
+		<span class="doccomment">/// The block number on Fragnova when this price was fetched from the oracle
 		</span><span class="kw">pub </span>block_number: TBlockNumber,
-		<span class="doccomment">/// Clamor Public Account Address (the account address should be in FragKey, otherwise it fails)
+		<span class="doccomment">/// Fragnova Public Account Address (the account address should be in FragKey, otherwise it fails)
 		</span><span class="kw">pub </span>public: TPublic,
 	}
 
@@ -780,9 +780,9 @@
 	</span><span class="attr">#[pallet::storage]
 	</span><span class="kw">pub type </span>EVMLinkVotingClosed&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Identity, H256, T::BlockNumber&gt;;
 
-	<span class="doccomment">/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
+	<span class="doccomment">/// **StorageValue** that equals the **List of Fragnova Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
-	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
+	/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 	</span><span class="attr">#[pallet::storage]
 	</span><span class="kw">pub type </span>FragKeys&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, BTreeSet&lt;ed25519::Public&gt;, ValueQuery&gt;;
 
@@ -800,9 +800,9 @@
 	<span class="doccomment">/// A public part of the pallet.
 	</span><span class="attr">#[pallet::call]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-		<span class="doccomment">/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		<span class="doccomment">/// Add `public` to the **list of Fragnova Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
-		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
+		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 		</span><span class="attr">#[pallet::weight(<span class="number">10000</span>)]
 		</span><span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
@@ -816,8 +816,8 @@
 			<span class="prelude-val">Ok</span>(())
 		}
 
-		<span class="doccomment">/// Remove a Clamor Account ID from `FragKeys`
-		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
+		<span class="doccomment">/// Remove a Fragnova Account ID from `FragKeys`
+		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can call this function
 		</span><span class="attr">#[pallet::weight(<span class="number">10000</span>)] </span><span class="comment">// TODO
 		</span><span class="kw">pub fn </span>del_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
@@ -948,7 +948,7 @@
 			<span class="kw">let </span>is_oracle_stopped = &lt;IsOracleStopped&lt;T&gt;&gt;::get();
 			<span class="kw">if </span>!is_oracle_stopped {
 				<span class="comment">// check that the oracle is NOT stopped
-				</span><span class="kw">let </span>geth_uri = <span class="kw">if let </span><span class="prelude-val">Some</span>(geth) = sp_clamor::clamor::get_geth_url() {
+				</span><span class="kw">let </span>geth_uri = <span class="kw">if let </span><span class="prelude-val">Some</span>(geth) = sp_fragnova::fragnova::get_geth_url() {
 					String::from_utf8(geth).unwrap()
 				} <span class="kw">else </span>{
 					<span class="macro">log::debug!</span>(<span class="string">&quot;Geth URL not set, skipping fetch price from oracle.&quot;</span>);

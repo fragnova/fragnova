@@ -2275,82 +2275,6 @@
 <a href="#2275" id="2275">2275</a>
 <a href="#2276" id="2276">2276</a>
 <a href="#2277" id="2277">2277</a>
-<a href="#2278" id="2278">2278</a>
-<a href="#2279" id="2279">2279</a>
-<a href="#2280" id="2280">2280</a>
-<a href="#2281" id="2281">2281</a>
-<a href="#2282" id="2282">2282</a>
-<a href="#2283" id="2283">2283</a>
-<a href="#2284" id="2284">2284</a>
-<a href="#2285" id="2285">2285</a>
-<a href="#2286" id="2286">2286</a>
-<a href="#2287" id="2287">2287</a>
-<a href="#2288" id="2288">2288</a>
-<a href="#2289" id="2289">2289</a>
-<a href="#2290" id="2290">2290</a>
-<a href="#2291" id="2291">2291</a>
-<a href="#2292" id="2292">2292</a>
-<a href="#2293" id="2293">2293</a>
-<a href="#2294" id="2294">2294</a>
-<a href="#2295" id="2295">2295</a>
-<a href="#2296" id="2296">2296</a>
-<a href="#2297" id="2297">2297</a>
-<a href="#2298" id="2298">2298</a>
-<a href="#2299" id="2299">2299</a>
-<a href="#2300" id="2300">2300</a>
-<a href="#2301" id="2301">2301</a>
-<a href="#2302" id="2302">2302</a>
-<a href="#2303" id="2303">2303</a>
-<a href="#2304" id="2304">2304</a>
-<a href="#2305" id="2305">2305</a>
-<a href="#2306" id="2306">2306</a>
-<a href="#2307" id="2307">2307</a>
-<a href="#2308" id="2308">2308</a>
-<a href="#2309" id="2309">2309</a>
-<a href="#2310" id="2310">2310</a>
-<a href="#2311" id="2311">2311</a>
-<a href="#2312" id="2312">2312</a>
-<a href="#2313" id="2313">2313</a>
-<a href="#2314" id="2314">2314</a>
-<a href="#2315" id="2315">2315</a>
-<a href="#2316" id="2316">2316</a>
-<a href="#2317" id="2317">2317</a>
-<a href="#2318" id="2318">2318</a>
-<a href="#2319" id="2319">2319</a>
-<a href="#2320" id="2320">2320</a>
-<a href="#2321" id="2321">2321</a>
-<a href="#2322" id="2322">2322</a>
-<a href="#2323" id="2323">2323</a>
-<a href="#2324" id="2324">2324</a>
-<a href="#2325" id="2325">2325</a>
-<a href="#2326" id="2326">2326</a>
-<a href="#2327" id="2327">2327</a>
-<a href="#2328" id="2328">2328</a>
-<a href="#2329" id="2329">2329</a>
-<a href="#2330" id="2330">2330</a>
-<a href="#2331" id="2331">2331</a>
-<a href="#2332" id="2332">2332</a>
-<a href="#2333" id="2333">2333</a>
-<a href="#2334" id="2334">2334</a>
-<a href="#2335" id="2335">2335</a>
-<a href="#2336" id="2336">2336</a>
-<a href="#2337" id="2337">2337</a>
-<a href="#2338" id="2338">2338</a>
-<a href="#2339" id="2339">2339</a>
-<a href="#2340" id="2340">2340</a>
-<a href="#2341" id="2341">2341</a>
-<a href="#2342" id="2342">2342</a>
-<a href="#2343" id="2343">2343</a>
-<a href="#2344" id="2344">2344</a>
-<a href="#2345" id="2345">2345</a>
-<a href="#2346" id="2346">2346</a>
-<a href="#2347" id="2347">2347</a>
-<a href="#2348" id="2348">2348</a>
-<a href="#2349" id="2349">2349</a>
-<a href="#2350" id="2350">2350</a>
-<a href="#2351" id="2351">2351</a>
-<a href="#2352" id="2352">2352</a>
-<a href="#2353" id="2353">2353</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -2398,7 +2322,15 @@
 
 <span class="kw">use </span>codec::{Compact, Decode, Encode};
 <span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
-<span class="kw">use </span>sp_clamor::{Hash128, Hash256, InstanceUnit};
+<span class="kw">use </span>sp_fragnova::{Hash128, Hash256};
+<span class="kw">pub use </span>sp_fragnova::fragments::{
+	InstanceUnit,
+	Currency,
+	DefinitionMetadata,
+	UniqueOptions,
+	FragmentDefinition,
+	FragmentInstance
+};
 <span class="kw">use </span>sp_core::crypto::UncheckedFrom;
 <span class="kw">use </span>sp_io::{
 	hashing::{blake2_128, blake2_256},
@@ -2504,90 +2436,6 @@
 	</span><span class="kw">pub </span>copy_id: InstanceUnit,
 }
 
-<span class="doccomment">/// Enum can be used to represent a currency that exists on the Clamor Blockchain
-</span><span class="attr">#[derive(Encode, Decode, Copy, Clone, scale_info::TypeInfo, Debug, PartialEq)] </span><span class="comment">// REVIEW - should it implement the trait `Copy`?
-</span><span class="kw">pub enum </span>Currency&lt;TFungibleAsset&gt; {
-	<span class="doccomment">/// Clamor&#39;s Native Currency (i.e NOVA token)
-	</span>Native,
-	<span class="doccomment">/// A Custom Currency
-	</span>Custom(TFungibleAsset),
-}
-
-<span class="doccomment">/// **Struct** of a **Fragment Definition&#39;s Metadata**
-</span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-</span><span class="kw">pub struct </span>DefinitionMetadata&lt;TU8Vector, TFungibleAsset&gt; {
-	<span class="doccomment">/// **Name** of the **Fragment Definition**
-	</span><span class="kw">pub </span>name: TU8Vector,
-	<span class="doccomment">/// **Currency** that must be used to buy **any and all Fragment Instances created from the Fragment Definition**
-	</span><span class="kw">pub </span>currency: Currency&lt;TFungibleAsset&gt;,
-}
-
-<span class="doccomment">/// TODO
-/// **Enum** that represents the **settings** for a **Fragment Definition whose Fragment instance(s) must contain unique data when created**
-</span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-</span><span class="kw">pub struct </span>UniqueOptions {
-	<span class="doccomment">/// Whether the unique data of the Fragment instance(s) are mutable
-	</span><span class="kw">pub </span>mutable: bool,
-}
-
-<span class="doccomment">/// **Struct** of a **Fragment Definition**
-</span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-</span><span class="kw">pub struct </span>FragmentDefinition&lt;TU8Array, TFungibleAsset, TAccountId, TBlockNum&gt; {
-	<span class="doccomment">/// **Proto-Fragment used** to **create** the **Fragment**
-	</span><span class="kw">pub </span>proto_hash: Hash256,
-	<span class="doccomment">/// ***DefinitionMetadata* Struct** (the **struct** contains the **Fragment Definition&#39;s name**, among other things)
-	</span><span class="kw">pub </span>metadata: DefinitionMetadata&lt;TU8Array, TFungibleAsset&gt;,
-	<span class="doccomment">/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to
-	/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)
-	///
-	/// These **allowed set of actions of the Fragment Instance** ***may change***
-	/// when the **Fragment Instance is given to another account ID** (see the `give()` extrinsic).
-	</span><span class="kw">pub </span>permissions: FragmentPerms,
-	<span class="comment">// Note: If Fragment Instances (created from the Fragment Definition) must contain unique data when created (injected by buyers, validated by the system)
-	</span><span class="doccomment">/// Whether the **Fragment Definition** is **mutable**
-	</span><span class="kw">pub </span>unique: <span class="prelude-ty">Option</span>&lt;UniqueOptions&gt;,
-	<span class="doccomment">/// If scarce, the max supply of the Fragment
-	</span><span class="kw">pub </span>max_supply: <span class="prelude-ty">Option</span>&lt;Compact&lt;InstanceUnit&gt;&gt;,
-	<span class="doccomment">/// The creator of this class
-	</span><span class="kw">pub </span>creator: TAccountId,
-	<span class="doccomment">/// The block number when the item was created
-	</span><span class="kw">pub </span>created_at: TBlockNum,
-	<span class="doccomment">/// **Map** that maps the **Key of a Proto-Fragment&#39;s Custom Metadata Object** to the **Hash of the aforementioned Custom Metadata Object**
-	</span><span class="kw">pub </span>custom_metadata: BTreeMap&lt;Compact&lt;u64&gt;, Hash256&gt;,
-}
-
-<span class="doccomment">/// **Struct** of a **Fragment Instance**
-///
-/// Footnotes:
-///
-/// #### Remarks
-///
-/// * On purpose not storing owner because:
-///   * Big, 32 bytes
-///   * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.
-</span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-</span><span class="kw">pub struct </span>FragmentInstance&lt;TBlockNum&gt; {
-	<span class="comment">// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
-	</span><span class="doccomment">/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) **allowed to be done**
-	/// to the **Fragment Instance** (e.g edit, transfer etc.)
-	///
-	/// These **allowed set of actions of the Fragment Instance** ***may change***
-	/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
-	</span><span class="kw">pub </span>permissions: FragmentPerms,
-	<span class="doccomment">/// Block number in which the Fragment Instance was created
-	</span><span class="kw">pub </span>created_at: TBlockNum,
-	<span class="doccomment">/// Custom data, if unique, this is the hash of the data that can be fetched using bitswap directly on our nodes
-	</span><span class="kw">pub </span>custom_data: <span class="prelude-ty">Option</span>&lt;Hash256&gt;,
-	<span class="doccomment">/// Block number that the Fragment Instance expires at (*optional*)
-	</span><span class="kw">pub </span>expiring_at: <span class="prelude-ty">Option</span>&lt;TBlockNum&gt;,
-	<span class="doccomment">/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
-	/// the **number of items** that are **left** in the **stack of stackable items**
-	</span><span class="kw">pub </span>stack_amount: <span class="prelude-ty">Option</span>&lt;Compact&lt;InstanceUnit&gt;&gt;,
-	<span class="doccomment">/// TODO: Documentation
-	/// **Map** that maps the **Key of a Proto-Fragment&#39;s Metadata Object** to an **Index of the Hash of the aforementioned Metadata Object**
-	</span><span class="kw">pub </span>metadata: BTreeMap&lt;Compact&lt;u64&gt;, Compact&lt;u64&gt;&gt;,
-}
-
 <span class="doccomment">/// Struct **representing** a sale of the **Fragment Definition** .
 ///
 /// Note: When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
@@ -2662,7 +2510,7 @@
 		SupportedChains,
 	};
 	<span class="kw">use </span>pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
-	<span class="kw">use </span>sp_clamor::get_vault_id;
+	<span class="kw">use </span>sp_fragnova::get_vault_id;
 
 	<span class="doccomment">/// Configure the pallet by specifying the parameters and types on which it depends.
 	</span><span class="attr">#[pallet::config]
@@ -2772,9 +2620,9 @@
 		</span>InstanceUnit, <span class="comment">// Edition ID
 	</span>&gt;;
 
-	<span class="doccomment">/// StorageDoubleMap that maps a **Fragment Definition and a Clamor Account ID**
+	<span class="doccomment">/// StorageDoubleMap that maps a **Fragment Definition and a Fragnova Account ID**
 	/// to a
-	/// **list of Fragment Instances of the Fragment Definition that is owned by the Clamor Account ID**
+	/// **list of Fragment Instances of the Fragment Definition that is owned by the Fragnova Account ID**
 	///
 	/// This storage item stores the exact same thing as `Inventory`, except that the primary key and the secondary key are swapped
 	///
@@ -2791,9 +2639,9 @@
 		Vec&lt;(Compact&lt;InstanceUnit&gt;, Compact&lt;InstanceUnit&gt;)&gt;,
 	&gt;;
 
-	<span class="doccomment">/// StorageDoubleMap that maps a **Clamor Account ID and a Fragment Definition**
+	<span class="doccomment">/// StorageDoubleMap that maps a **Fragnova Account ID and a Fragment Definition**
 	/// to a
-	/// **list of Fragment Instances of the Fragment Definition that is owned by the Clamor Account ID**
+	/// **list of Fragment Instances of the Fragment Definition that is owned by the Fragnova Account ID**
 	///
 	/// This storage item stores the exact same thing as `Owners`, except that the primary key and the secondary key are swapped
 	///
@@ -3780,11 +3628,11 @@
 		}
 
 		<span class="comment">// TODO Review - Should we ensure that a Detach Request doesn&#39;t already exist with the same Fragment Instance?
-		</span><span class="doccomment">/// Request to detach **Fragment Instances** of a **single Fragment Definition** from the **Clamor Blockchain**.
+		</span><span class="doccomment">/// Request to detach **Fragment Instances** of a **single Fragment Definition** from the **Fragnova Blockchain**.
 		///
-		/// Note: Copyable Fragment Instances (i.e Fragment Instances that are duplicatable) are not allowed to be detached from Clamor
+		/// Note: Copyable Fragment Instances (i.e Fragment Instances that are duplicatable) are not allowed to be detached from Fragnova
 		///
-		/// Note: The Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
+		/// Note: The Fragment may actually get detached after one or more Fragnova blocks since when this extrinsic is called.
 		///
 		/// Note: **Once the Fragment is detached**, an **event is emitted that includes a signature**.
 		/// This signature can then be used to attach the Proto-Fragment to an External Blockchain `target_chain`.
@@ -3930,7 +3778,7 @@
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
 		/// * `quantity` - **Number of Fragment Instances** to **create**
-		/// * `current_block_number` - **Current block number** of the **Clamor Blockchain**
+		/// * `current_block_number` - **Current block number** of the **Fragnova Blockchain**
 		/// * `expiring_at` (*optional*) - **Block Number** that the **Fragment Instance** will **expire at**
 		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
 		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
@@ -4152,7 +4000,7 @@
 
 		<span class="doccomment">/// Whether a Fragment Instance can be transferred
 		///
-		/// * `from` - Clamor Account ID to transfer the Fragment Instance from
+		/// * `from` - Fragnova Account ID to transfer the Fragment Instance from
 		/// * `definition_hash` - Fragment Definition of the Fragment Instance
 		/// * `edition_id` - Edition ID of the Fragment Instance
 		/// * `copy_id` - Copy ID of the Fragment Instance
@@ -4231,8 +4079,8 @@
 
 		<span class="doccomment">/// Transfer a Fragment Instance from `from` to `to`
 		///
-		/// * `from` - Clamor Account ID to transfer the Fragment Instance from
-		/// * `to` - Clamor Account ID to transfer the Fragment Instance to
+		/// * `from` - Fragnova Account ID to transfer the Fragment Instance from
+		/// * `to` - Fragnova Account ID to transfer the Fragment Instance to
 		/// * `definition_hash` - Fragment Definition of the Fragment Instance
 		/// * `edition_id` - Edition ID of the Fragment Instance
 		/// * `copy_id` - Copy ID of the Fragment Instance
