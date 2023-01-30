@@ -2310,11 +2310,10 @@
 	<span class="kw">fn </span>is_valid(category: <span class="kw-2">&amp;</span>Categories, data: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;, proto_references: <span class="kw-2">&amp;</span>Vec&lt;Hash256&gt;) -&gt; bool {
 		<span class="kw">match </span>category {
 			Categories::Text(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
-				TextCategories::Plain | TextCategories::Wgsl =&gt; str::from_utf8(data).is_ok(),
-				<span class="comment">// REVIEW - does a Json have to be a `serde_json::Map` or can it `serde_json::Value`?
-				</span>TextCategories::Json =&gt;
-					serde_json::from_slice::&lt;serde_json::Map&lt;String, serde_json::Value&gt;&gt;(<span class="kw-2">&amp;</span>data[..])
-						.is_ok(),
+				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =&gt;
+					str::from_utf8(data).is_ok(),
+				TextCategories::Json =&gt;
+					serde_json::from_slice::&lt;serde_json::Value&gt;(<span class="kw-2">&amp;</span>data[..]).is_ok(),
 			},
 			Categories::Trait(trait_hash) =&gt; <span class="kw">match </span>trait_hash {
 				<span class="prelude-val">Some</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">false</span>,
@@ -2383,7 +2382,8 @@
 			Categories::Vector(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				VectorCategories::SvgFile =&gt; <span class="bool-val">false</span>,
 				VectorCategories::TtfFile =&gt; infer::is(data, <span class="string">&quot;ttf&quot;</span>), <span class="comment">// ttf_parser::Face::parse(&amp;data[..], 0).is_ok(),
-			</span>},
+				</span>VectorCategories::OtfFile =&gt; infer::is(data, <span class="string">&quot;otf&quot;</span>),
+			},
 			Categories::Video(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				VideoCategories::MkvFile =&gt; infer::is(data, <span class="string">&quot;mkv&quot;</span>),
 				VideoCategories::Mp4File =&gt; infer::is(data, <span class="string">&quot;mp4&quot;</span>),
