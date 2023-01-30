@@ -261,7 +261,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 /// The maximum possible length (in bytes) that a Fragnova Block can be
-pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
+pub const MAXIMUM_BLOCK_LENGTH: u32 = 50 * 1024 * 1024;
 
 // When to use:
 //
