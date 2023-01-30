@@ -45,7 +45,15 @@ mod weights;
 
 use codec::{Compact, Decode, Encode};
 pub use pallet::*;
-use sp_clamor::{Hash128, Hash256, InstanceUnit};
+use sp_fragnova::{Hash128, Hash256};
+pub use sp_fragnova::fragments::{
+	InstanceUnit,
+	Currency,
+	DefinitionMetadata,
+	UniqueOptions,
+	FragmentDefinition,
+	FragmentInstance
+};
 use sp_core::crypto::UncheckedFrom;
 use sp_io::{
 	hashing::{blake2_128, blake2_256},
@@ -151,90 +159,6 @@ pub struct GetInstanceOwnerParams<TString> {
 	pub copy_id: InstanceUnit,
 }
 
-/// Enum can be used to represent a currency that exists on the Clamor Blockchain
-#[derive(Encode, Decode, Copy, Clone, scale_info::TypeInfo, Debug, PartialEq)] // REVIEW - should it implement the trait `Copy`?
-pub enum Currency<TFungibleAsset> {
-	/// Clamor's Native Currency (i.e NOVA token)
-	Native,
-	/// A Custom Currency
-	Custom(TFungibleAsset),
-}
-
-/// **Struct** of a **Fragment Definition's Metadata**
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct DefinitionMetadata<TU8Vector, TFungibleAsset> {
-	/// **Name** of the **Fragment Definition**
-	pub name: TU8Vector,
-	/// **Currency** that must be used to buy **any and all Fragment Instances created from the Fragment Definition**
-	pub currency: Currency<TFungibleAsset>,
-}
-
-/// TODO
-/// **Enum** that represents the **settings** for a **Fragment Definition whose Fragment instance(s) must contain unique data when created**
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct UniqueOptions {
-	/// Whether the unique data of the Fragment instance(s) are mutable
-	pub mutable: bool,
-}
-
-/// **Struct** of a **Fragment Definition**
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentDefinition<TU8Array, TFungibleAsset, TAccountId, TBlockNum> {
-	/// **Proto-Fragment used** to **create** the **Fragment**
-	pub proto_hash: Hash256,
-	/// ***DefinitionMetadata* Struct** (the **struct** contains the **Fragment Definition's name**, among other things)
-	pub metadata: DefinitionMetadata<TU8Array, TFungibleAsset>,
-	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) that are **allowed to be done** to
-	/// **any Fragment Instance** when it **first gets created** from the **Fragment Definition** (e.g edit, transfer etc.)
-	///
-	/// These **allowed set of actions of the Fragment Instance** ***may change***
-	/// when the **Fragment Instance is given to another account ID** (see the `give()` extrinsic).
-	pub permissions: FragmentPerms,
-	// Note: If Fragment Instances (created from the Fragment Definition) must contain unique data when created (injected by buyers, validated by the system)
-	/// Whether the **Fragment Definition** is **mutable**
-	pub unique: Option<UniqueOptions>,
-	/// If scarce, the max supply of the Fragment
-	pub max_supply: Option<Compact<InstanceUnit>>,
-	/// The creator of this class
-	pub creator: TAccountId,
-	/// The block number when the item was created
-	pub created_at: TBlockNum,
-	/// **Map** that maps the **Key of a Proto-Fragment's Custom Metadata Object** to the **Hash of the aforementioned Custom Metadata Object**
-	pub custom_metadata: BTreeMap<Compact<u64>, Hash256>,
-}
-
-/// **Struct** of a **Fragment Instance**
-///
-/// Footnotes:
-///
-/// #### Remarks
-///
-/// * On purpose not storing owner because:
-///   * Big, 32 bytes
-///   * Most of use cases will definitely already have the owner available when using this structure, as likely going thru `Inventory` etc.
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq)]
-pub struct FragmentInstance<TBlockNum> {
-	// Next owner permissions, owners can change those if they want to more restrictive ones, never more permissive
-	/// **Set of Actions** (encapsulated in a `FragmentPerms` bitflag enum) **allowed to be done**
-	/// to the **Fragment Instance** (e.g edit, transfer etc.)
-	///
-	/// These **allowed set of actions of the Fragment Instance** ***may change***
-	/// when the **Fragment Instance is given to another account ID** (see the `give` extrinsic).
-	pub permissions: FragmentPerms,
-	/// Block number in which the Fragment Instance was created
-	pub created_at: TBlockNum,
-	/// Custom data, if unique, this is the hash of the data that can be fetched using bitswap directly on our nodes
-	pub custom_data: Option<Hash256>,
-	/// Block number that the Fragment Instance expires at (*optional*)
-	pub expiring_at: Option<TBlockNum>,
-	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
-	/// the **number of items** that are **left** in the **stack of stackable items**
-	pub stack_amount: Option<Compact<InstanceUnit>>,
-	/// TODO: Documentation
-	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to an **Index of the Hash of the aforementioned Metadata Object**
-	pub metadata: BTreeMap<Compact<u64>, Compact<u64>>,
-}
-
 /// Struct **representing** a sale of the **Fragment Definition** .
 ///
 /// Note: When a Fragment Definition is put on sale, users can create Fragment Instances from it for a fee.
@@ -309,7 +233,7 @@ pub mod pallet {
 		SupportedChains,
 	};
 	use pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
-	use sp_clamor::get_vault_id;
+	use sp_fragnova::get_vault_id;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -419,9 +343,9 @@ pub mod pallet {
 		InstanceUnit, // Edition ID
 	>;
 
-	/// StorageDoubleMap that maps a **Fragment Definition and a Clamor Account ID**
+	/// StorageDoubleMap that maps a **Fragment Definition and a Fragnova Account ID**
 	/// to a
-	/// **list of Fragment Instances of the Fragment Definition that is owned by the Clamor Account ID**
+	/// **list of Fragment Instances of the Fragment Definition that is owned by the Fragnova Account ID**
 	///
 	/// This storage item stores the exact same thing as `Inventory`, except that the primary key and the secondary key are swapped
 	///
@@ -438,9 +362,9 @@ pub mod pallet {
 		Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)>,
 	>;
 
-	/// StorageDoubleMap that maps a **Clamor Account ID and a Fragment Definition**
+	/// StorageDoubleMap that maps a **Fragnova Account ID and a Fragment Definition**
 	/// to a
-	/// **list of Fragment Instances of the Fragment Definition that is owned by the Clamor Account ID**
+	/// **list of Fragment Instances of the Fragment Definition that is owned by the Fragnova Account ID**
 	///
 	/// This storage item stores the exact same thing as `Owners`, except that the primary key and the secondary key are swapped
 	///
@@ -1427,11 +1351,11 @@ pub mod pallet {
 		}
 
 		// TODO Review - Should we ensure that a Detach Request doesn't already exist with the same Fragment Instance?
-		/// Request to detach **Fragment Instances** of a **single Fragment Definition** from the **Clamor Blockchain**.
+		/// Request to detach **Fragment Instances** of a **single Fragment Definition** from the **Fragnova Blockchain**.
 		///
-		/// Note: Copyable Fragment Instances (i.e Fragment Instances that are duplicatable) are not allowed to be detached from Clamor
+		/// Note: Copyable Fragment Instances (i.e Fragment Instances that are duplicatable) are not allowed to be detached from Fragnova
 		///
-		/// Note: The Fragment may actually get detached after one or more Clamor blocks since when this extrinsic is called.
+		/// Note: The Fragment may actually get detached after one or more Fragnova blocks since when this extrinsic is called.
 		///
 		/// Note: **Once the Fragment is detached**, an **event is emitted that includes a signature**.
 		/// This signature can then be used to attach the Proto-Fragment to an External Blockchain `target_chain`.
@@ -1577,7 +1501,7 @@ pub mod pallet {
 		/// **create one Fragment Instance with custom data attached to it** or whether to
 		/// **create multiple Fragment Instances (with no custom data attached)**
 		/// * `quantity` - **Number of Fragment Instances** to **create**
-		/// * `current_block_number` - **Current block number** of the **Clamor Blockchain**
+		/// * `current_block_number` - **Current block number** of the **Fragnova Blockchain**
 		/// * `expiring_at` (*optional*) - **Block Number** that the **Fragment Instance** will **expire at**
 		/// * `amount` (*optional*) - If the Fragment Instance(s) represent a **stack of stackable items**
 		/// (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
@@ -1799,7 +1723,7 @@ pub mod pallet {
 
 		/// Whether a Fragment Instance can be transferred
 		///
-		/// * `from` - Clamor Account ID to transfer the Fragment Instance from
+		/// * `from` - Fragnova Account ID to transfer the Fragment Instance from
 		/// * `definition_hash` - Fragment Definition of the Fragment Instance
 		/// * `edition_id` - Edition ID of the Fragment Instance
 		/// * `copy_id` - Copy ID of the Fragment Instance
@@ -1878,8 +1802,8 @@ pub mod pallet {
 
 		/// Transfer a Fragment Instance from `from` to `to`
 		///
-		/// * `from` - Clamor Account ID to transfer the Fragment Instance from
-		/// * `to` - Clamor Account ID to transfer the Fragment Instance to
+		/// * `from` - Fragnova Account ID to transfer the Fragment Instance from
+		/// * `to` - Fragnova Account ID to transfer the Fragment Instance to
 		/// * `definition_hash` - Fragment Definition of the Fragment Instance
 		/// * `edition_id` - Edition ID of the Fragment Instance
 		/// * `copy_id` - Copy ID of the Fragment Instance

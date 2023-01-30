@@ -8,7 +8,7 @@ var Web3 = require('web3');
 let api;
 const web3 = new Web3(null);
 
-const createEip712TypedDataForLinking = (chainId, verifyingContract, genesisBlockHash, clamorAccountIdHex) => {
+const createEip712TypedDataForLinking = (chainId, verifyingContract, genesisBlockHash, fragnovaAccountIdHex) => {
   const typedData = {
     domain: {
       name: 'Fragnova Network',
@@ -19,7 +19,7 @@ const createEip712TypedDataForLinking = (chainId, verifyingContract, genesisBloc
     message: {
       fragnovaGenesis: genesisBlockHash,
       op: "link",
-      sender: clamorAccountIdHex,
+      sender: fragnovaAccountIdHex,
     },
     primaryType:'Msg',
     types: {

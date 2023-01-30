@@ -52,10 +52,10 @@ fn get_genesis_hash() -> sp_core::H256 {
 }
 
 pub fn create_link_signature(
-	clamor_account_id: sp_core::ed25519::Public,
+	fragnova_account_id: sp_core::ed25519::Public,
 	ethereum_account_pair: sp_core::ecdsa::Pair,
 ) -> sp_core::ecdsa::Signature {
-	let sender_string = format!("0x{}", hex::encode(clamor_account_id));
+	let sender_string = format!("0x{}", hex::encode(fragnova_account_id));
 	let genesis_hash_string = format!("0x{}", hex::encode(get_genesis_hash()));
 
 	let encoded_message: Vec<u8> = [
@@ -221,7 +221,7 @@ pub fn get_ethereum_account_id_from_ecdsa_public_struct(
 
 #[derive(Clone)]
 pub struct Link {
-	pub clamor_account_id: sp_core::ed25519::Public,
+	pub fragnova_account_id: sp_core::ed25519::Public,
 	pub link_signature: ecdsa::Signature,
 
 	pub _ethereum_account_pair: sp_core::ecdsa::Pair,
@@ -259,7 +259,7 @@ pub struct DummyData {
 impl DummyData {
 	pub fn new() -> Self {
 		let link = Link {
-			clamor_account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
+			fragnova_account_id: sp_core::ed25519::Public::from_raw([1u8; 32]),
 			link_signature: create_link_signature(
 				sp_core::ed25519::Public::from_raw([1u8; 32]),
 				sp_core::ecdsa::Pair::from_seed(&[1u8; 32]),
@@ -268,7 +268,7 @@ impl DummyData {
 		};
 
 		let link_second = Link {
-			clamor_account_id: sp_core::ed25519::Public::from_raw([2u8; 32]),
+			fragnova_account_id: sp_core::ed25519::Public::from_raw([2u8; 32]),
 			link_signature: create_link_signature(
 				sp_core::ed25519::Public::from_raw([2u8; 32]),
 				sp_core::ecdsa::Pair::from_seed(&[2u8; 32]),
@@ -301,7 +301,7 @@ impl DummyData {
 				block_number: 69,
 			},
 			link: Link {
-				clamor_account_id: sp_core::ed25519::Public::from_raw([3u8; 32]),
+				fragnova_account_id: sp_core::ed25519::Public::from_raw([3u8; 32]),
 				link_signature: create_link_signature(
 					sp_core::ed25519::Public::from_raw([3u8; 32]),
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
@@ -336,7 +336,7 @@ impl DummyData {
 				block_number: 69,
 			},
 			link: Link {
-				clamor_account_id: sp_core::ed25519::Public::from_raw([3u8; 32]),
+				fragnova_account_id: sp_core::ed25519::Public::from_raw([3u8; 32]),
 				link_signature: create_link_signature(
 					sp_core::ed25519::Public::from_raw([3u8; 32]),
 					sp_core::ecdsa::Pair::from_seed(&[3u8; 32]),
@@ -368,7 +368,7 @@ impl DummyData {
 					block_number: 69,
 				},
 				link: Link {
-					clamor_account_id: sp_core::ed25519::Public::from_raw([4u8; 32]),
+					fragnova_account_id: sp_core::ed25519::Public::from_raw([4u8; 32]),
 					link_signature: create_link_signature(
 						sp_core::ed25519::Public::from_raw([4u8; 32]),
 						sp_core::ecdsa::Pair::from_seed(&[4u8; 32]),

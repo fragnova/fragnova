@@ -1,4 +1,4 @@
-//! Builds a WASM binary of the clamor project
+//! Builds a WASM binary of the fragnova project
 //!
 //! # What's a build script (build.rs)?
 //!

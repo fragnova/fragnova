@@ -3,8 +3,8 @@ pub use pallet_accounts::dummy_data::{
 	create_link_signature, create_lock_signature, get_ethereum_public_address, Link, Lock,
 };
 
-use sp_clamor::Hash256;
 use sp_core::H160; // Ethereum Account Addresses use this type
+use sp_fragnova::Hash256;
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
 

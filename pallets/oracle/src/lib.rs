@@ -11,7 +11,7 @@ use frame_system::offchain::{
 	SigningTypes,
 };
 use serde_json::{json, Value};
-use sp_clamor::http_json_post;
+use sp_fragnova::http_json_post;
 use sp_core::crypto::KeyTypeId;
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction};
 
@@ -136,7 +136,7 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	#[derive(Default)]
 	pub struct GenesisConfig {
-		/// **List of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		/// **List of Fragnova Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		pub keys: Vec<ed25519::Public>,
 	}
 
@@ -177,9 +177,9 @@ pub mod pallet {
 	pub struct OraclePrice<TPublic, TBlockNumber> {
 		/// the latest price fetched from the oracle feed
 		pub price: U256,
-		/// The block number on Clamor when this price was fetched from the oracle
+		/// The block number on Fragnova when this price was fetched from the oracle
 		pub block_number: TBlockNumber,
-		/// Clamor Public Account Address (the account address should be in FragKey, otherwise it fails)
+		/// Fragnova Public Account Address (the account address should be in FragKey, otherwise it fails)
 		pub public: TPublic,
 	}
 
@@ -199,9 +199,9 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type EVMLinkVotingClosed<T: Config> = StorageMap<_, Identity, H256, T::BlockNumber>;
 
-	/// **StorageValue** that equals the **List of Clamor Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
+	/// **StorageValue** that equals the **List of Fragnova Account IDs** that both ***validate*** and ***send*** **unsigned transactions with signed payload**
 	///
-	/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
+	/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 	#[pallet::storage]
 	pub type FragKeys<T: Config> = StorageValue<_, BTreeSet<ed25519::Public>, ValueQuery>;
 
@@ -219,9 +219,9 @@ pub mod pallet {
 	/// A public part of the pallet.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Add `public` to the **list of Clamor Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
+		/// Add `public` to the **list of Fragnova Account IDs** that can ***validate*** and ***send*** **unsigned transactions with signed payload**
 		///
-		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can edit this list
+		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 		#[pallet::weight(10000)]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -235,8 +235,8 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Remove a Clamor Account ID from `FragKeys`
-		/// NOTE: Only the Root User of the Clamor Blockchain (i.e the local node itself) can call this function
+		/// Remove a Fragnova Account ID from `FragKeys`
+		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can call this function
 		#[pallet::weight(10000)] // TODO
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
@@ -367,7 +367,7 @@ pub mod pallet {
 			let is_oracle_stopped = <IsOracleStopped<T>>::get();
 			if !is_oracle_stopped {
 				// check that the oracle is NOT stopped
-				let geth_uri = if let Some(geth) = sp_clamor::clamor::get_geth_url() {
+				let geth_uri = if let Some(geth) = sp_fragnova::fragnova::get_geth_url() {
 					String::from_utf8(geth).unwrap()
 				} else {
 					log::debug!("Geth URL not set, skipping fetch price from oracle.");

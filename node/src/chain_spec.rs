@@ -12,9 +12,9 @@
 //!
 //! Source: https://docs.substrate.io/build/chain-spec/
 
-// The imports from `clamor_runtime` that follow the pattern "<Pallet>Config" are the <Pallet>'s `GenesisConfig` struct
+// The imports from `fragnova_runtime` that follow the pattern "<Pallet>Config" are the <Pallet>'s `GenesisConfig` struct
 // See for more info: https://docs.substrate.io/reference/how-to-guides/basics/configure-genesis-state/
-use clamor_runtime::{
+use fragnova_runtime::{
 	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
 	GenesisConfig, GrandpaConfig, IndicesConfig, OracleConfig, Signature, SudoConfig, SystemConfig,
 	WASM_BINARY,
@@ -90,7 +90,7 @@ fn chain_spec_properties() -> serde_json::map::Map<String, serde_json::Value> {
 	.clone()
 }
 
-/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Development Network
+/// Returns the `ChainSpec` struct used when for starting/joining a Fragnova Development Network
 pub fn development_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
@@ -132,7 +132,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 	))
 }
 
-/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Testnet Network
+/// Returns the `ChainSpec` struct used when for starting/joining a Fragnova Testnet Network
 pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 
@@ -181,7 +181,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 	))
 }
 
-/// Returns the `ChainSpec` struct used when for starting/joining a Clamor Mainnet Network
+/// Returns the `ChainSpec` struct used when for starting/joining a Fragnova Mainnet Network
 pub fn live_config() -> Result<ChainSpec, String> {
 	let wasm_binary = WASM_BINARY.ok_or_else(|| "Development wasm not available".to_string())?;
 

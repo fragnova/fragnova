@@ -7,7 +7,7 @@ extern crate core;
 use codec::{Compact, Decode, Encode};
 use frame_support::BoundedVec;
 pub use pallet::*;
-use sp_clamor::Hash128;
+use sp_fragnova::Hash128;
 use sp_std::{vec, vec::Vec};
 
 #[cfg(test)]
@@ -73,7 +73,7 @@ pub mod pallet {
 		traits::{fungible, ReservableCurrency},
 	};
 	use frame_system::pallet_prelude::*;
-	use sp_clamor::get_vault_id;
+	use sp_fragnova::get_vault_id;
 	use sp_io::hashing::blake2_128;
 
 	#[pallet::pallet]

@@ -6,21 +6,26 @@
 // #[cfg(feature = "std")]
 // extern crate chainblocks;
 
+// TODO Review - maybe rename this module to `sp_protos` since we have a crate with the same name `protos` (https://github.com/fragcolor-xyz/protos)
+/// Types that will be used by the Protos pallet
+pub mod protos;
+// TODO Review - maybe rename this module `sp_fragments` since we have a crate with the same name `fragments` (https://github.com/fragcolor-xyz/fragments)  - although it's not being used
+/// Types that will be used by the Fragments pallet
+pub mod fragments;
+
 use codec::{Decode, Encode, Error as CodecError};
 use sp_core::offchain::{HttpRequestStatus, Timestamp};
 use sp_io::{hashing::blake2_256, offchain};
-use sp_std::vec::Vec;
+use sp_std::{
+	vec::Vec
+};
 
-/// 256 bytes u8-Array
-pub type Hash256 = [u8; 32];
-
-/// 128 bytes u8-Array
-pub type Hash128 = [u8; 16];
 /// 64 bytes u8-Array
 pub type Hash64 = [u8; 8];
-
-/// Type used to represent an Instance's Edition ID and an Instance's Copy ID
-pub type InstanceUnit = u64;
+/// 128 bytes u8-Array
+pub type Hash128 = [u8; 16];
+/// 256 bytes u8-Array
+pub type Hash256 = [u8; 32];
 
 /// The IPFS CID prefix used to use to obtain any data that is stored on the Fragnova Blockchain
 ///
@@ -101,7 +106,7 @@ mod details {
 	}
 }
 
-/// A runtime interface for the Clamor Blockchain
+/// A runtime interface for the Fragnova Blockchain
 ///
 /// Background:
 ///
@@ -114,7 +119,7 @@ mod details {
 ///
 /// Source: https://paritytech.github.io/substrate/latest/sp_runtime_interface/attr.runtime_interface.html
 #[sp_runtime_interface::runtime_interface]
-pub trait Clamor {
+pub trait Fragnova {
 	// these are called NATIVE from even WASM
 	// that's the deal
 
@@ -127,7 +132,7 @@ pub trait Clamor {
 
 	/// TODO
 	fn on_new_fragment(_fragment_hash: &Hash256) -> bool {
-		log::debug!("sp_clamor on_new_fragment called...");
+		log::debug!("sp_fragnova on_new_fragment called...");
 		true
 	}
 
@@ -165,7 +170,7 @@ pub fn http_json_post(
 	body: &[u8],
 	wait: Option<Timestamp>,
 ) -> Result<Vec<u8>, &'static str> {
-	log::debug!("sp_clamor http_request called...");
+	log::debug!("sp_fragnova http_request called...");
 
 	let request =
 		offchain::http_request_start("POST", url, &[]).map_err(|_| "Failed to start request")?;
