@@ -151,10 +151,6 @@ pub mod pallet {
 		/// The **maximum number of tags** that a **single Proto-Fragment** can be **tagged with**.
 		#[pallet::constant]
 		type MaxTags: Get<u32>;
-
-		/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
-		#[pallet::constant]
-		type StorageBytesMultiplier: Get<u64>;
 	}
 
 	#[pallet::pallet]

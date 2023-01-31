@@ -48,7 +48,6 @@ parameter_types! {
 		frame_system::limits::BlockWeights::simple_max(1024);
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
-	pub StorageBytesMultiplier: u64 = 10;
 	pub const IsTransferable: bool = false;
 }
 impl frame_system::Config for Test {
