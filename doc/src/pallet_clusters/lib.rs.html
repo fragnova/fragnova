@@ -630,7 +630,19 @@
 <a href="#630" id="630">630</a>
 <a href="#631" id="631">631</a>
 <a href="#632" id="632">632</a>
-</pre><pre class="rust"><code><span class="doccomment">//! This pallet `clusters` performs logic related to **Clusters**.
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+</pre><pre class="rust"><code><span class="doccomment">//! A Cluster in Fragnova represents a &quot;group&quot; where users (i.e. Accounts) can belong to.
+//!
+//! A Cluster has an owner, a name and a set of Roles. The owner of the cluster can create unlimited roles and associate users to each role.
+//!
+//! A Role has a name, some settings and a set of members (i.e. Accounts) associated to it. A user can be associated with multiple roles.
+//!
+//! A Cluster can be also associated to a **Proto** during its **upload**.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
