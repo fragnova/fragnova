@@ -24,7 +24,7 @@ mod weights;
 
 use protos::{categories::Categories, traits::Trait};
 
-use sp_core::{crypto::UncheckedFrom};
+use sp_core::crypto::UncheckedFrom;
 
 use codec::{Compact, Decode, Encode};
 
@@ -46,17 +46,10 @@ use sp_std::{
 
 pub use weights::WeightInfo;
 
-use sp_fragnova::{Hash64, Hash128, Hash256};
 pub use sp_fragnova::protos::{
-	LinkSource,
-	LinkedAsset,
-	ProtoOwner,
-	ProtoPatch,
-	AccountsInfo,
-	UsageLicense,
-	ProtoData,
-	Proto
+	AccountsInfo, LinkSource, LinkedAsset, Proto, ProtoData, ProtoOwner, ProtoPatch, UsageLicense,
 };
+use sp_fragnova::{Hash128, Hash256, Hash64};
 
 use scale_info::prelude::{
 	format,
@@ -179,12 +172,6 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type Traits<T: Config> = StorageMap<_, Identity, Hash64, Vec<u8>, ValueQuery>;
 
-	/// **StorageMap** that maps a **Shards-Proto** (i.e a Proto-Fragment that is a Shards Script) to
-	/// **all the traits** that are
-	/// **in the "implementing" field (`ShardsScriptInfo::implementing`) of the Shards-Proto's category** or **in the "implementing" field of one Shard-Proto's Shard-Proto ancestor's category**
-	#[pallet::storage]
-	pub type TraitImplsByShard<T: Config> = StorageMap<_, Identity, Hash256, Vec<Hash64>>;
-
 	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the
 	/// aforementioned Proto-Fragment)**
 	#[pallet::storage]
@@ -206,6 +193,12 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ProtosByOwner<T: Config> =
 		StorageMap<_, Twox64Concat, ProtoOwner<T::AccountId>, Vec<Hash256>>;
+
+	/// **StorageMap** that maps Traits to Protos of the Shards category implementing the Trait
+	/// hashes (that have the aforementioned variant)**
+	// Not ideal but to have it iterable...
+	#[pallet::storage]
+	pub type ProtosByTrait<T: Config> = StorageMap<_, Identity, Hash64, Vec<Hash256>>;
 
 	#[allow(missing_docs)]
 	#[pallet::event]
@@ -331,6 +324,7 @@ pub mod pallet {
 			Self::check_license(&references, &who)?;
 
 			// Store Trait if trait, also hash properly the data and decode name
+			// Also append implementations to Shards scripts
 			let category = match category {
 				Categories::Trait(_) => {
 					let data: &Vec<u8> = match &data {
@@ -351,18 +345,13 @@ pub mod pallet {
 
 					Categories::Trait(Some(trait_id))
 				},
-				Categories::Shards(shards_script_info_struct) => {
-					// let format = &shards_script_info_struct.format;
-
-					let trait_implementations = [
-						&shards_script_info_struct.requiring[..],
-						&shards_script_info_struct.implementing[..],
-					]
-					.concat();
-					TraitImplsByShard::<T>::insert(proto_hash, trait_implementations);
-
-					Categories::Shards(shards_script_info_struct)
-				},
+				Categories::Shards(info) => {
+					// store to ProtosByTrait what we directly implement
+					for implementing in info.implementing.iter() {
+						<ProtosByTrait<T>>::append(implementing, proto_hash);
+					}
+					Categories::Shards(info)
+				}
 				_ => category,
 			};
 
@@ -415,7 +404,7 @@ pub mod pallet {
 				<ProtosByParent<T>>::append(reference, proto_hash);
 			}
 
-			// store by category
+			// store by category (original)
 			<ProtosByCategory<T>>::append(category, proto_hash);
 
 			// store by owner

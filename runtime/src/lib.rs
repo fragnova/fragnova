@@ -119,20 +119,13 @@ pub use pallet_contracts::Schedule;
 use pallet_oracle::OracleProvider;
 
 // IMPORTS BELOW ARE USED IN the module `validation_logic`
-use protos::categories::{
-	AudioCategories,
-	BinaryCategories,
-	Categories,
-	ModelCategories,
-	ShardsFormat,
-	// ShardsScriptInfo,
-	// ShardsTrait,
-	TextCategories,
-	TextureCategories,
-	VectorCategories,
-	VideoCategories,
+use protos::{
+	categories::{
+		AudioCategories, BinaryCategories, Categories, ModelCategories, TextCategories,
+		TextureCategories, VectorCategories, VideoCategories,
+	},
+	traits::Trait,
 };
-use protos::traits::Trait;
 use sp_fragnova::Hash256;
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
@@ -392,7 +385,7 @@ mod validation_logic {
 			Categories::Trait(trait_hash) => match trait_hash {
 				Some(_) => false,
 				None => {
-					let Ok(trait_struct) = Trait::decode(&mut &data[..]) else { // TODO Review - is `&mut *data` safe?
+					let Ok(trait_struct) = Trait::decode(&mut &data[..]) else {
 						return false;
 					};
 
@@ -421,29 +414,37 @@ mod validation_logic {
 				},
 			},
 			Categories::Shards(shards_script_info_struct) => {
-				let format = shards_script_info_struct.format;
+				// let format = shards_script_info_struct.format;
 				let requiring = &shards_script_info_struct.requiring;
-				let implementing = &shards_script_info_struct.implementing;
+				// let implementing = &shards_script_info_struct.implementing;
 
+				// check that we reference all required traits
 				let all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
-					proto_references.iter().any(|proto| {
-						if let Some(trait_impls) =
-							pallet_protos::TraitImplsByShard::<Runtime>::get(proto)
-						{
-							trait_impls.contains(shards_trait)
+					// go thru all the things we reference, find shards scripts and check if they implement the trait
+					proto_references.iter().any(|proto_hash| {
+						if let Some(proto) = pallet_protos::Protos::<Runtime>::get(proto_hash) {
+							match proto.category {
+								Categories::Shards(shards_info) =>
+									shards_info.implementing.contains(shards_trait),
+								_ => false,
+							}
 						} else {
 							false
 						}
 					})
 				});
 
-				let all_traits_implemented_in_this_shards =
-					implementing.iter().all(|_shards_trait| match format {
-						ShardsFormat::Edn => false,
-						ShardsFormat::Binary => false,
-					});
+				// note we don't need to reference traits we implement unless explicitly required
 
-				all_required_trait_impls_found && all_traits_implemented_in_this_shards
+				/// TODO check if we implement traits?
+				// let all_traits_implemented_in_this_shards =
+				// 	implementing.iter().all(|_shards_trait| match format {
+				// 		ShardsFormat::Edn => false,
+				// 		ShardsFormat::Binary => false,
+				// 	});
+
+				// all_required_trait_impls_found && all_traits_implemented_in_this_shards
+				all_required_trait_impls_found
 			},
 			Categories::Audio(sub_categories) => match sub_categories {
 				AudioCategories::OggFile => infer::is(data, "ogg"), // TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
