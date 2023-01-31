@@ -1366,10 +1366,6 @@
 <a href="#1366" id="1366">1366</a>
 <a href="#1367" id="1367">1367</a>
 <a href="#1368" id="1368">1368</a>
-<a href="#1369" id="1369">1369</a>
-<a href="#1370" id="1370">1370</a>
-<a href="#1371" id="1371">1371</a>
-<a href="#1372" id="1372">1372</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1523,10 +1519,6 @@
 		<span class="doccomment">/// The **maximum number of tags** that a **single Proto-Fragment** can be **tagged with**.
 		</span><span class="attr">#[pallet::constant]
 		</span><span class="kw">type </span>MaxTags: Get&lt;u32&gt;;
-
-		<span class="doccomment">/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
-		</span><span class="attr">#[pallet::constant]
-		</span><span class="kw">type </span>StorageBytesMultiplier: Get&lt;u64&gt;;
 	}
 
 	<span class="attr">#[pallet::pallet]

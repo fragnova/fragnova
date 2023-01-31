@@ -1926,9 +1926,6 @@
 <a href="#1926" id="1926">1926</a>
 <a href="#1927" id="1927">1927</a>
 <a href="#1928" id="1928">1928</a>
-<a href="#1929" id="1929">1929</a>
-<a href="#1930" id="1930">1930</a>
-<a href="#1931" id="1931">1931</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2249,7 +2246,7 @@
 	///    - Setting `reserved` to `Some(x)`, guarantees that at least `x` weight can be consumed by the extrinsic class in every block.
 	///    	  - Note: `x` can be zero obviously. It doesn&#39;t have to only be non-zero integers (obviously!).
 	///    - Setting `reserved` to `None` guarantees that at least `max_total` weight can be consumed by the extrinsic class in every block.
-	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrisnic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
+	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrinsic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
 	/// Furthermore, a `BlockWeights` struct also contains information about the block:
 	/// 1. **Maximum total amount of weight that can be consumed by all kinds of extrinsics in a block (assuming no extrinsic class uses its `reserved` space)** (`BlockWeights::max_block`)
 	/// 2. **Base weight of a block (i.e the computation time to execute an empty block)** (`BlockWeights::base_block`).
@@ -2904,8 +2901,6 @@
 	<span class="doccomment">/// A fee mulitplier for `Operational` extrinsics to compute &quot;virtual tip&quot; to boost their
 	/// `priority`
 	</span><span class="kw">pub </span>OperationalFeeMultiplier: u8 = <span class="number">5</span>;
-	<span class="doccomment">/// Weight for adding a a byte worth of storage in certain extrinsics such as `upload()`.
-	</span><span class="kw">pub </span>StorageBytesMultiplier: u64 = <span class="number">10</span>;
 }
 
 <span class="doccomment">/// This pallet provides the basic logic needed to pay the absolute minimum amount needed for a
@@ -3000,7 +2995,6 @@
 	<span class="kw">type </span>StringLimit = StringLimit;
 	<span class="kw">type </span>DetachAccountLimit = ConstU32&lt;<span class="number">20</span>&gt;; <span class="comment">// An ethereum public account address has a length of 20.
 	</span><span class="kw">type </span>MaxTags = ConstU32&lt;<span class="number">10</span>&gt;;
-	<span class="kw">type </span>StorageBytesMultiplier = StorageBytesMultiplier;
 }
 
 <span class="kw">impl </span>pallet_detach::Config <span class="kw">for </span>Runtime {
