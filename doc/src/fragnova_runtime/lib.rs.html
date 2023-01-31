@@ -1926,6 +1926,7 @@
 <a href="#1926" id="1926">1926</a>
 <a href="#1927" id="1927">1927</a>
 <a href="#1928" id="1928">1928</a>
+<a href="#1929" id="1929">1929</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2047,20 +2048,13 @@
 <span class="kw">use </span>pallet_oracle::OracleProvider;
 
 <span class="comment">// IMPORTS BELOW ARE USED IN the module `validation_logic`
-</span><span class="kw">use </span>protos::categories::{
-	AudioCategories,
-	BinaryCategories,
-	Categories,
-	ModelCategories,
-	ShardsFormat,
-	<span class="comment">// ShardsScriptInfo,
-	// ShardsTrait,
-	</span>TextCategories,
-	TextureCategories,
-	VectorCategories,
-	VideoCategories,
+</span><span class="kw">use </span>protos::{
+	categories::{
+		AudioCategories, BinaryCategories, Categories, ModelCategories, TextCategories,
+		TextureCategories, VectorCategories, VideoCategories,
+	},
+	traits::Trait,
 };
-<span class="kw">use </span>protos::traits::Trait;
 <span class="kw">use </span>sp_fragnova::Hash256;
 
 <span class="doccomment">/// Prints debug output of the `contracts` pallet to stdout if the node is
@@ -2320,8 +2314,8 @@
 			Categories::Trait(trait_hash) =&gt; <span class="kw">match </span>trait_hash {
 				<span class="prelude-val">Some</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">false</span>,
 				<span class="prelude-val">None </span>=&gt; {
-					<span class="kw">let </span><span class="prelude-val">Ok</span>(trait_struct) = Trait::decode(<span class="kw-2">&amp;mut &amp;</span>data[..]) <span class="kw">else </span>{ <span class="comment">// TODO Review - is `&amp;mut *data` safe?
-						</span><span class="kw">return </span><span class="bool-val">false</span>;
+					<span class="kw">let </span><span class="prelude-val">Ok</span>(trait_struct) = Trait::decode(<span class="kw-2">&amp;mut &amp;</span>data[..]) <span class="kw">else </span>{
+						<span class="kw">return </span><span class="bool-val">false</span>;
 					};
 
 					<span class="kw">if </span>trait_struct.name.len() == <span class="number">0 </span>{
@@ -2349,29 +2343,37 @@
 				},
 			},
 			Categories::Shards(shards_script_info_struct) =&gt; {
-				<span class="kw">let </span>format = shards_script_info_struct.format;
-				<span class="kw">let </span>requiring = <span class="kw-2">&amp;</span>shards_script_info_struct.requiring;
-				<span class="kw">let </span>implementing = <span class="kw-2">&amp;</span>shards_script_info_struct.implementing;
+				<span class="comment">// let format = shards_script_info_struct.format;
+				</span><span class="kw">let </span>requiring = <span class="kw-2">&amp;</span>shards_script_info_struct.requiring;
+				<span class="comment">// let implementing = &amp;shards_script_info_struct.implementing;
 
-				<span class="kw">let </span>all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
-					proto_references.iter().any(|proto| {
-						<span class="kw">if let </span><span class="prelude-val">Some</span>(trait_impls) =
-							pallet_protos::TraitImplsByShard::&lt;Runtime&gt;::get(proto)
-						{
-							trait_impls.contains(shards_trait)
+				// check that we reference all required traits
+				</span><span class="kw">let </span>all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
+					<span class="comment">// go thru all the things we reference, find shards scripts and check if they implement the trait
+					</span>proto_references.iter().any(|proto_hash| {
+						<span class="kw">if let </span><span class="prelude-val">Some</span>(proto) = pallet_protos::Protos::&lt;Runtime&gt;::get(proto_hash) {
+							<span class="kw">match </span>proto.category {
+								Categories::Shards(shards_info) =&gt;
+									shards_info.implementing.contains(shards_trait),
+								<span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+							}
 						} <span class="kw">else </span>{
 							<span class="bool-val">false
 						</span>}
 					})
 				});
 
-				<span class="kw">let </span>all_traits_implemented_in_this_shards =
-					implementing.iter().all(|_shards_trait| <span class="kw">match </span>format {
-						ShardsFormat::Edn =&gt; <span class="bool-val">false</span>,
-						ShardsFormat::Binary =&gt; <span class="bool-val">false</span>,
-					});
+				<span class="comment">// note we don&#39;t need to reference traits we implement unless explicitly required
 
-				all_required_trait_impls_found &amp;&amp; all_traits_implemented_in_this_shards
+				</span><span class="doccomment">/// TODO check if we implement traits?
+				</span><span class="comment">// let all_traits_implemented_in_this_shards =
+				// 	implementing.iter().all(|_shards_trait| match format {
+				// 		ShardsFormat::Edn =&gt; false,
+				// 		ShardsFormat::Binary =&gt; false,
+				// 	});
+
+				// all_required_trait_impls_found &amp;&amp; all_traits_implemented_in_this_shards
+				</span>all_required_trait_impls_found
 			},
 			Categories::Audio(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				AudioCategories::OggFile =&gt; infer::is(data, <span class="string">&quot;ogg&quot;</span>), <span class="comment">// TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
