@@ -341,7 +341,7 @@ pub mod pallet {
 					ensure!(info.name.len() > 0, Error::<T>::SystematicFailure);
 
 					// Write STATE from now, ensure no errors from now...
-					<Traits<T>>::insert(trait_id, info.name.encode());
+					<Traits<T>>::insert::<[u8; 8], Vec<u8>>(trait_id, info.name.into());
 
 					Categories::Trait(Some(trait_id))
 				},
