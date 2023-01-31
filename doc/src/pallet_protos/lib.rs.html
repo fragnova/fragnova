@@ -1699,7 +1699,7 @@
 					<span class="macro">ensure!</span>(info.name.len() &gt; <span class="number">0</span>, Error::&lt;T&gt;::SystematicFailure);
 
 					<span class="comment">// Write STATE from now, ensure no errors from now...
-					</span>&lt;Traits&lt;T&gt;&gt;::insert::&lt;[u8; <span class="number">8</span>], Vec&lt;u8&gt;&gt;(trait_id, info.name.into());
+					</span>&lt;Traits&lt;T&gt;&gt;::insert(trait_id, info.name.encode());
 
 					Categories::Trait(<span class="prelude-val">Some</span>(trait_id))
 				},
