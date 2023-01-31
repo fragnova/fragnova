@@ -323,11 +323,9 @@ pub mod pallet {
 			// Check license requirements
 			Self::check_license(&references, &who)?;
 
-			let original_category = category.clone();
-
 			// Store Trait if trait, also hash properly the data and decode name
 			// Also append implementations to Shards scripts
-			let new_category = match category {
+			let category = match category {
 				Categories::Trait(_) => {
 					let data: &Vec<u8> = match &data {
 						ProtoData::Local(data) => Ok(data),
@@ -347,21 +345,10 @@ pub mod pallet {
 
 					Categories::Trait(Some(trait_id))
 				},
-				Categories::Shards(mut info) => {
+				Categories::Shards(info) => {
 					// store to ProtosByTrait what we directly implement
 					for implementing in info.implementing.iter() {
 						<ProtosByTrait<T>>::append(implementing, proto_hash);
-					}
-
-					// add to our category the implementing traits from the references (indirectly implementing)
-					for p_ref in references.iter() {
-						let proto = <Protos<T>>::get(p_ref);
-						if let Some(proto) = proto {
-							if let Categories::Shards(shards_info) = proto.category {
-								info.implementing.extend(shards_info.implementing);
-							}
-						}
-
 					}
 					Categories::Shards(info)
 				}
@@ -401,7 +388,7 @@ pub mod pallet {
 				creator: who.clone(),
 				owner: owner.clone(),
 				references: references.clone(),
-				category: new_category,
+				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
 				accounts_info: AccountsInfo::default(),
@@ -418,7 +405,7 @@ pub mod pallet {
 			}
 
 			// store by category (original)
-			<ProtosByCategory<T>>::append(original_category, proto_hash);
+			<ProtosByCategory<T>>::append(category, proto_hash);
 
 			// store by owner
 			<ProtosByOwner<T>>::append(owner, proto_hash);
