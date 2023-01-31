@@ -1,4 +1,10 @@
-//! This pallet `clusters` performs logic related to **Clusters**.
+//! A Cluster in Fragnova represents a "group" where users (i.e. Accounts) can belong to.
+//!
+//! A Cluster has an owner, a name and a set of Roles. The owner of the cluster can create unlimited roles and associate users to each role.
+//!
+//! A Role has a name, some settings and a set of members (i.e. Accounts) associated to it. A user can be associated with multiple roles.
+//!
+//! A Cluster can be also associated to a **Proto** during its **upload**.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 

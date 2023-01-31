@@ -276,6 +276,7 @@ pub mod pallet {
 		///   an ERC-721 Contract)
 		/// * `license` - **Enum** indicating **how the Proto-Fragment can be used**. NOTE: If None, the
 		///   **Proto-Fragment** *<u>can't be included</u>* into **other Proto-Fragments**
+		/// * `cluster` - the **Cluster id** the proto belongs to (Optional)
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.encode().len() as u32))]
 		pub fn upload(
