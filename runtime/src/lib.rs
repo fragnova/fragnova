@@ -376,7 +376,7 @@ mod validation_logic {
 		)
 	}
 
-	fn is_valid(category: &Categories, data: &Vec<u8>, _proto_references: &Vec<Hash256>) -> bool {
+	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
 		match category {
 			Categories::Text(sub_categories) => match sub_categories {
 				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =>
@@ -427,17 +427,33 @@ mod validation_logic {
 					return false
 				}
 
+				// check trait exists and that we require proper references
 				let requiring = &shards_script_info_struct.requiring;
-				let required_traits_exist = requiring.iter().all(|trait_hash| {
-					if let Some(_) = pallet_protos::Traits::<Runtime>::get(trait_hash) {
-						true
+				let require_check = requiring.iter().all(|trait_hash| {
+					// go thru all the things we reference, find shards scripts and check if they implement the trait
+					if proto_references.iter().any(|proto_hash| {
+						if let Some(proto) = pallet_protos::Protos::<Runtime>::get(proto_hash) {
+							match proto.category {
+								Categories::Shards(shards_info) =>
+									shards_info.implementing.contains(trait_hash),
+								_ => false,
+							}
+						} else {
+							false
+						}
+					}) {
+						if let Some(_) = pallet_protos::Traits::<Runtime>::get(trait_hash) {
+							true
+						} else {
+							false
+						}
 					} else {
 						false
 					}
 				});
 
 				let implementing = &shards_script_info_struct.implementing;
-				let implementing_traits_exist = implementing.iter().all(|trait_hash| {
+				let implement_check = implementing.iter().all(|trait_hash| {
 					if let Some(_) = pallet_protos::Traits::<Runtime>::get(trait_hash) {
 						true
 					} else {
@@ -445,7 +461,7 @@ mod validation_logic {
 					}
 				});
 
-				required_traits_exist && implementing_traits_exist
+				require_check && implement_check
 			},
 			Categories::Audio(sub_categories) => match sub_categories {
 				AudioCategories::OggFile => infer::is(data, "ogg"),
