@@ -360,6 +360,8 @@ pub const MAXIMUM_METADATA_DATA_LENGTH: usize = 1 * 1024 * 1024;
 
 mod validation_logic {
 
+	use protos::categories::ShardsFormat;
+
 	use super::*;
 
 	/// Does the call `c` use `transaction_index::index`.
@@ -374,7 +376,7 @@ mod validation_logic {
 		)
 	}
 
-	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
+	fn is_valid(category: &Categories, data: &Vec<u8>, _proto_references: &Vec<Hash256>) -> bool {
 		match category {
 			Categories::Text(sub_categories) => match sub_categories {
 				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =>
@@ -390,6 +392,10 @@ mod validation_logic {
 					};
 
 					if trait_struct.name.len() == 0 {
+						return false
+					}
+
+					if trait_struct.records.len() == 0 {
 						return false
 					}
 
@@ -414,45 +420,40 @@ mod validation_logic {
 				},
 			},
 			Categories::Shards(shards_script_info_struct) => {
-				// let format = shards_script_info_struct.format;
-				let requiring = &shards_script_info_struct.requiring;
-				// let implementing = &shards_script_info_struct.implementing;
+				let format = shards_script_info_struct.format;
 
-				// check that we reference all required traits
-				let all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
-					// go thru all the things we reference, find shards scripts and check if they implement the trait
-					proto_references.iter().any(|proto_hash| {
-						if let Some(proto) = pallet_protos::Protos::<Runtime>::get(proto_hash) {
-							match proto.category {
-								Categories::Shards(shards_info) =>
-									shards_info.implementing.contains(shards_trait),
-								_ => false,
-							}
-						} else {
-							false
-						}
-					})
+				// only support EDN for now
+				if format != ShardsFormat::Edn {
+					return false
+				}
+
+				let requiring = &shards_script_info_struct.requiring;
+				let required_traits_exist = requiring.iter().all(|trait_hash| {
+					if let Some(_) = pallet_protos::Traits::<Runtime>::get(trait_hash) {
+						true
+					} else {
+						false
+					}
 				});
 
-				// note we don't need to reference traits we implement unless explicitly required
+				let implementing = &shards_script_info_struct.implementing;
+				let implementing_traits_exist = implementing.iter().all(|trait_hash| {
+					if let Some(_) = pallet_protos::Traits::<Runtime>::get(trait_hash) {
+						true
+					} else {
+						false
+					}
+				});
 
-				/// TODO check if we implement traits?
-				// let all_traits_implemented_in_this_shards =
-				// 	implementing.iter().all(|_shards_trait| match format {
-				// 		ShardsFormat::Edn => false,
-				// 		ShardsFormat::Binary => false,
-				// 	});
-
-				// all_required_trait_impls_found && all_traits_implemented_in_this_shards
-				all_required_trait_impls_found
+				required_traits_exist && implementing_traits_exist
 			},
 			Categories::Audio(sub_categories) => match sub_categories {
-				AudioCategories::OggFile => infer::is(data, "ogg"), // TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
+				AudioCategories::OggFile => infer::is(data, "ogg"),
 				AudioCategories::Mp3File => infer::is(data, "mp3"),
 			},
 			Categories::Texture(sub_categories) => match sub_categories {
 				TextureCategories::PngFile => infer::is(data, "png"), // png_decoder::decode(&data[..]).is_ok(),
-				TextureCategories::JpgFile => infer::is(data, "jpg"), // TODO Review - we do not include ".jpeg" images, only ".jpg" images
+				TextureCategories::JpgFile => infer::is(data, "jpg"),
 			},
 			Categories::Vector(sub_categories) => match sub_categories {
 				VectorCategories::SvgFile => false,

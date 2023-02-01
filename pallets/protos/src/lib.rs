@@ -170,7 +170,7 @@ pub mod pallet {
 
 	/// **StorageMap** that maps a **Trait ID** to the **name of the Trait**
 	#[pallet::storage]
-	pub type Traits<T: Config> = StorageMap<_, Identity, Hash64, Vec<u8>, ValueQuery>;
+	pub type Traits<T: Config> = StorageMap<_, Identity, Hash64, Vec<u8>, OptionQuery>;
 
 	/// **StorageMap** that maps a **Proto-Fragment's data's hash** to a ***Proto* struct (of the
 	/// aforementioned Proto-Fragment)**
@@ -245,6 +245,8 @@ pub mod pallet {
 		InsufficientBalance,
 		/// Proto-Fragment's References includes itself!
 		CircularReference,
+		/// Cannot patch a Trait, please upload a new one
+		CannotPatchTraits,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -332,11 +334,11 @@ pub mod pallet {
 						_ => Err(Error::<T>::SystematicFailure),
 					}?;
 
-					let trait_id = twox_64(&data);
-					ensure!(!<Traits<T>>::contains_key(&trait_id), Error::<T>::ProtoExists);
-
 					let info =
 						Trait::decode(&mut &data[..]).map_err(|_| Error::<T>::SystematicFailure)?;
+
+					let trait_id = twox_64(&data);
+					ensure!(!<Traits<T>>::contains_key(&trait_id), Error::<T>::ProtoExists);
 
 					ensure!(info.name.len() > 0, Error::<T>::SystematicFailure);
 
@@ -351,7 +353,7 @@ pub mod pallet {
 						<ProtosByTrait<T>>::append(implementing, proto_hash);
 					}
 					Categories::Shards(info)
-				}
+				},
 				_ => category,
 			};
 
@@ -479,6 +481,7 @@ pub mod pallet {
 				},
 			};
 
+			// Don't allow detached protos to be patched
 			ensure!(
 				!<DetachedHashes<T>>::contains_key(&DetachHash::Proto(proto_hash)),
 				Error::<T>::Detached
@@ -501,6 +504,16 @@ pub mod pallet {
 				.ok_or(Error::<T>::SystematicFailure)?;
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
+
+			if data.is_some() {
+				// actually one last failure
+				match proto.category {
+					Categories::Trait(_) => {
+						return Err(Error::<T>::CannotPatchTraits.into())
+					}
+					_ => {},
+				};
+			}
 
 			// Write STATE from now, ensure no errors from now...
 
