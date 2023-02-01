@@ -431,7 +431,7 @@ mod validation_logic {
 				let requiring = &shards_script_info_struct.requiring;
 				let require_check = requiring.iter().all(|trait_hash| {
 					// go thru all the things we reference, find shards scripts and check if they implement the trait
-					if proto_references.iter().any(|proto_hash| {
+					proto_references.iter().any(|proto_hash| {
 						if let Some(proto) = pallet_protos::Protos::<Runtime>::get(proto_hash) {
 							match proto.category {
 								Categories::Shards(shards_info) =>
@@ -441,15 +441,7 @@ mod validation_logic {
 						} else {
 							false
 						}
-					}) {
-						if let Some(_) = pallet_protos::Traits::<Runtime>::get(trait_hash) {
-							true
-						} else {
-							false
-						}
-					} else {
-						false
-					}
+					})
 				});
 
 				let implementing = &shards_script_info_struct.implementing;
