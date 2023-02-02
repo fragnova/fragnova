@@ -9,7 +9,7 @@ use frame_support::{
 	traits::ConstU64,
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
-use pallet_oracle::{OracleContract, OracleProvider};
+
 use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
 	testing::{Header, TestXt},
@@ -205,10 +205,10 @@ impl pallet_oracle::Config for Test {
 	type Threshold = ConstU64<1>;
 }
 
-impl OracleContract for Test {
+impl pallet_oracle::OracleContract for Test {
 	/// get the default oracle provider
 	fn get_provider() -> pallet_oracle::OracleProvider {
-		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
 	}
 }
 

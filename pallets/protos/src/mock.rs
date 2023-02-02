@@ -16,8 +16,6 @@ use sp_runtime::traits::{
 };
 use sp_runtime::testing::{Header, TestXt};
 
-use pallet_oracle::{OracleContract, OracleProvider};
-
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
@@ -230,10 +228,10 @@ impl pallet_proxy::Config for Test {
 	type AnnouncementDepositFactor = ConstU32<1>;
 }
 
-impl OracleContract for Test {
+impl pallet_oracle::OracleContract for Test {
 	/// get the default oracle provider
 	fn get_provider() -> pallet_oracle::OracleProvider {
-		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
 	}
 }
 

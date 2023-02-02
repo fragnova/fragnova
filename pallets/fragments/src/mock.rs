@@ -16,7 +16,6 @@ use sp_runtime::{
 		BlakeTwo256, ConstU8, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
 	},
 };
-use pallet_oracle::{OracleContract, OracleProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -257,10 +256,10 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-impl OracleContract for Test {
+impl pallet_oracle::OracleContract for Test {
 	/// get the default oracle provider
 	fn get_provider() -> pallet_oracle::OracleProvider {
-		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
 	}
 }
 
