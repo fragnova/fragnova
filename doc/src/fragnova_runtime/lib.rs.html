@@ -1927,6 +1927,15 @@
 <a href="#1927" id="1927">1927</a>
 <a href="#1928" id="1928">1928</a>
 <a href="#1929" id="1929">1929</a>
+<a href="#1930" id="1930">1930</a>
+<a href="#1931" id="1931">1931</a>
+<a href="#1932" id="1932">1932</a>
+<a href="#1933" id="1933">1933</a>
+<a href="#1934" id="1934">1934</a>
+<a href="#1935" id="1935">1935</a>
+<a href="#1936" id="1936">1936</a>
+<a href="#1937" id="1937">1937</a>
+<a href="#1938" id="1938">1938</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2289,6 +2298,8 @@
 
 <span class="kw">mod </span>validation_logic {
 
+	<span class="kw">use </span>protos::categories::ShardsFormat;
+
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 	<span class="doccomment">/// Does the call `c` use `transaction_index::index`.
@@ -2322,6 +2333,10 @@
 						<span class="kw">return </span><span class="bool-val">false
 					</span>}
 
+					<span class="kw">if </span>trait_struct.records.len() == <span class="number">0 </span>{
+						<span class="kw">return </span><span class="bool-val">false
+					</span>}
+
 					trait_struct.records.windows(<span class="number">2</span>).all(|window| {
 						<span class="kw">let </span>(record_1, record_2) = (<span class="kw-2">&amp;</span>window[<span class="number">0</span>], <span class="kw-2">&amp;</span>window[<span class="number">1</span>]);
 						<span class="kw">let </span>(<span class="prelude-val">Ok</span>(a1), <span class="prelude-val">Ok</span>(a2)) = (get_utf8_string(<span class="kw-2">&amp;</span>record_1.name), get_utf8_string(<span class="kw-2">&amp;</span>record_2.name)) <span class="kw">else </span>{ <span class="comment">// `a1` is short for `attribute_1`, `a2` is short for `attribute_2`
@@ -2343,18 +2358,22 @@
 				},
 			},
 			Categories::Shards(shards_script_info_struct) =&gt; {
-				<span class="comment">// let format = shards_script_info_struct.format;
-				</span><span class="kw">let </span>requiring = <span class="kw-2">&amp;</span>shards_script_info_struct.requiring;
-				<span class="comment">// let implementing = &amp;shards_script_info_struct.implementing;
+				<span class="kw">let </span>format = shards_script_info_struct.format;
 
-				// check that we reference all required traits
-				</span><span class="kw">let </span>all_required_trait_impls_found = requiring.iter().all(|shards_trait| {
+				<span class="comment">// only support EDN for now
+				</span><span class="kw">if </span>format != ShardsFormat::Edn {
+					<span class="kw">return </span><span class="bool-val">false
+				</span>}
+
+				<span class="comment">// check trait exists and that we require proper references
+				</span><span class="kw">let </span>requiring = <span class="kw-2">&amp;</span>shards_script_info_struct.requiring;
+				<span class="kw">let </span>require_check = requiring.iter().all(|trait_hash| {
 					<span class="comment">// go thru all the things we reference, find shards scripts and check if they implement the trait
 					</span>proto_references.iter().any(|proto_hash| {
 						<span class="kw">if let </span><span class="prelude-val">Some</span>(proto) = pallet_protos::Protos::&lt;Runtime&gt;::get(proto_hash) {
 							<span class="kw">match </span>proto.category {
 								Categories::Shards(shards_info) =&gt;
-									shards_info.implementing.contains(shards_trait),
+									shards_info.implementing.contains(trait_hash),
 								<span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
 							}
 						} <span class="kw">else </span>{
@@ -2363,26 +2382,25 @@
 					})
 				});
 
-				<span class="comment">// note we don&#39;t need to reference traits we implement unless explicitly required
+				<span class="kw">let </span>implementing = <span class="kw-2">&amp;</span>shards_script_info_struct.implementing;
+				<span class="kw">let </span>implement_check = implementing.iter().all(|trait_hash| {
+					<span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = pallet_protos::Traits::&lt;Runtime&gt;::get(trait_hash) {
+						<span class="bool-val">true
+					</span>} <span class="kw">else </span>{
+						<span class="bool-val">false
+					</span>}
+				});
 
-				</span><span class="doccomment">/// TODO check if we implement traits?
-				</span><span class="comment">// let all_traits_implemented_in_this_shards =
-				// 	implementing.iter().all(|_shards_trait| match format {
-				// 		ShardsFormat::Edn =&gt; false,
-				// 		ShardsFormat::Binary =&gt; false,
-				// 	});
-
-				// all_required_trait_impls_found &amp;&amp; all_traits_implemented_in_this_shards
-				</span>all_required_trait_impls_found
+				require_check &amp;&amp; implement_check
 			},
 			Categories::Audio(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
-				AudioCategories::OggFile =&gt; infer::is(data, <span class="string">&quot;ogg&quot;</span>), <span class="comment">// TODO Review - We are not checking for other OGG file extensions https://en.wikipedia.org/wiki/Ogg
-				</span>AudioCategories::Mp3File =&gt; infer::is(data, <span class="string">&quot;mp3&quot;</span>),
+				AudioCategories::OggFile =&gt; infer::is(data, <span class="string">&quot;ogg&quot;</span>),
+				AudioCategories::Mp3File =&gt; infer::is(data, <span class="string">&quot;mp3&quot;</span>),
 			},
 			Categories::Texture(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				TextureCategories::PngFile =&gt; infer::is(data, <span class="string">&quot;png&quot;</span>), <span class="comment">// png_decoder::decode(&amp;data[..]).is_ok(),
-				</span>TextureCategories::JpgFile =&gt; infer::is(data, <span class="string">&quot;jpg&quot;</span>), <span class="comment">// TODO Review - we do not include &quot;.jpeg&quot; images, only &quot;.jpg&quot; images
-			</span>},
+				</span>TextureCategories::JpgFile =&gt; infer::is(data, <span class="string">&quot;jpg&quot;</span>),
+			},
 			Categories::Vector(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				VectorCategories::SvgFile =&gt; <span class="bool-val">false</span>,
 				VectorCategories::TtfFile =&gt; infer::is(data, <span class="string">&quot;ttf&quot;</span>), <span class="comment">// ttf_parser::Face::parse(&amp;data[..], 0).is_ok(),
