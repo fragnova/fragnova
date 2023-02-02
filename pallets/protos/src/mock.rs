@@ -147,18 +147,6 @@ impl pallet_balances::Config for Test {
 	type IsTransferable = IsTransferable;
 }
 
-impl pallet_accounts::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type EthChainId = ConstU64<5>; // goerli
-	type EthFragContract = ();
-	type EthConfirmations = ConstU64<1>;
-	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type InitialPercentageNova = sp_runtime::traits::ConstU8<20>;
-	type USDEquivalentAmount = ConstU128<100>;
-}
-
 parameter_types! {
 	pub const AssetDeposit: Balance = 100 * DOLLARS;
 	pub const ApprovalDeposit: Balance = 1 * DOLLARS;
@@ -181,57 +169,6 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
-}
-
-impl pallet_detach::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type AuthorityId = pallet_detach::crypto::DetachAuthId;
-}
-
-impl pallet_clusters::Config for Test {
-	type Event = Event;
-	type NameLimit = ConstU32<10>;
-	type DataLimit = ConstU32<100>;
-	type MembersLimit = ConstU32<20>;
-	type RoleSettingsLimit = ConstU32<20>;
-}
-
-impl pallet_timestamp::Config for Test {
-	/// A timestamp: milliseconds since the unix epoch.
-	type Moment = u64;
-	type OnTimestampSet = ();
-	type MinimumPeriod = ();
-	type WeightInfo = ();
-}
-
-impl pallet_proxy::Config for Test {
-	type Event = Event;
-	type Call = Call;
-	type Currency = ();
-	type ProxyType = ();
-	type ProxyDepositBase = ConstU32<1>;
-	type ProxyDepositFactor = ConstU32<1>;
-	type MaxProxies = ConstU32<4>;
-	type WeightInfo = ();
-	type MaxPending = ConstU32<2>;
-	type CallHasher = BlakeTwo256;
-	type AnnouncementDepositBase = ConstU32<1>;
-	type AnnouncementDepositFactor = ConstU32<1>;
-}
-
-impl pallet_oracle::OracleContract for Test {
-	/// get the default oracle provider
-	fn get_provider() -> pallet_oracle::OracleProvider {
-		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
-	}
-}
-
-impl pallet_oracle::Config for Test {
-	type AuthorityId = pallet_oracle::crypto::FragAuthId;
-	type Event = Event;
-	type OracleProvider = Test;
-	type Threshold = ConstU64<1>;
 }
 
 parameter_types! {
@@ -270,6 +207,68 @@ impl pallet_contracts::Config for Test {
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
 	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
+}
+
+impl pallet_timestamp::Config for Test {
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = ();
+	type WeightInfo = ();
+}
+
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = ();
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU32<1>;
+	type ProxyDepositFactor = ConstU32<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU32<1>;
+	type AnnouncementDepositFactor = ConstU32<1>;
+}
+
+impl pallet_detach::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_clusters::Config for Test {
+	type Event = Event;
+	type NameLimit = ConstU32<10>;
+	type DataLimit = ConstU32<100>;
+	type MembersLimit = ConstU32<20>;
+	type RoleSettingsLimit = ConstU32<20>;
+}
+
+impl pallet_oracle::OracleContract for Test {
+	/// get the default oracle provider
+	fn get_provider() -> pallet_oracle::OracleProvider {
+		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+	}
+}
+impl pallet_oracle::Config for Test {
+	type AuthorityId = pallet_oracle::crypto::FragAuthId;
+	type Event = Event;
+	type OracleProvider = Test;
+	type Threshold = ConstU64<1>;
+}
+
+impl pallet_accounts::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type EthChainId = ConstU64<5>; // goerli
+	type EthFragContract = ();
+	type EthConfirmations = ConstU64<1>;
+	type Threshold = ConstU64<1>;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type InitialPercentageNova = sp_runtime::traits::ConstU8<20>;
+	type USDEquivalentAmount = ConstU128<100>;
 }
 
 impl Config for Test {

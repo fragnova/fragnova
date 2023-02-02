@@ -164,6 +164,14 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
+impl pallet_timestamp::Config for Test {
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = ();
+	type WeightInfo = ();
+}
+
 parameter_types! {
 	pub const DeletionWeightLimit: Weight = 500_000_000_000;
 	pub MySchedule: pallet_contracts::Schedule<Test> = {
@@ -202,6 +210,21 @@ impl pallet_contracts::Config for Test {
 	type MaxStorageKeyLen = ConstU32<128>;
 }
 
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU128<1>;
+	type ProxyDepositFactor = ConstU128<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU128<1>;
+	type AnnouncementDepositFactor = ConstU128<1>;
+}
+
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -222,33 +245,10 @@ impl pallet_accounts::Config for Test {
 	type USDEquivalentAmount = ConstU128<100>;
 }
 
-impl pallet_proxy::Config for Test {
-	type Event = Event;
-	type Call = Call;
-	type Currency = Balances;
-	type ProxyType = ();
-	type ProxyDepositBase = ConstU128<1>;
-	type ProxyDepositFactor = ConstU128<1>;
-	type MaxProxies = ConstU32<4>;
-	type WeightInfo = ();
-	type MaxPending = ConstU32<2>;
-	type CallHasher = BlakeTwo256;
-	type AnnouncementDepositBase = ConstU128<1>;
-	type AnnouncementDepositFactor = ConstU128<1>;
-}
-
 impl pallet_detach::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
-}
-
-impl pallet_timestamp::Config for Test {
-	/// A timestamp: milliseconds since the unix epoch.
-	type Moment = u64;
-	type OnTimestampSet = ();
-	type MinimumPeriod = ();
-	type WeightInfo = ();
 }
 
 impl pallet_oracle::OracleContract for Test {
