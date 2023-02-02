@@ -114,7 +114,7 @@ where
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
-impl pallet_detach::Config for Test {
+impl Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;

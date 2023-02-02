@@ -157,24 +157,6 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
-impl pallet_accounts::EthFragContract for Test {
-	fn get_partner_contracts() -> Vec<String> {
-		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
-	}
-}
-
-impl pallet_accounts::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type EthChainId = ConstU64<5>; // goerli
-	type EthConfirmations = ConstU64<1>;
-	type EthFragContract = Test;
-	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type InitialPercentageNova = ConstU8<20>;
-	type USDEquivalentAmount = ConstU128<100>;
-}
-
 impl pallet_proxy::Config for Test {
 	type Event = Event;
 	type Call = Call;
@@ -204,12 +186,28 @@ impl pallet_oracle::OracleContract for Test {
 		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
 	}
 }
-
 impl pallet_oracle::Config for Test {
 	type AuthorityId = pallet_oracle::crypto::FragAuthId;
 	type Event = Event;
 	type OracleProvider = Test;
 	type Threshold = ConstU64<1>;
+}
+
+impl EthFragContract for Test {
+	fn get_partner_contracts() -> Vec<String> {
+		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
+	}
+}
+impl Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type EthChainId = ConstU64<5>; // goerli
+	type EthConfirmations = ConstU64<1>;
+	type EthFragContract = Test;
+	type Threshold = ConstU64<1>;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type InitialPercentageNova = ConstU8<20>;
+	type USDEquivalentAmount = ConstU128<100>;
 }
 
 fn create_public_key(keystore: &KeyStore) -> sp_core::ed25519::Public {

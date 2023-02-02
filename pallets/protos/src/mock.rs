@@ -183,14 +183,6 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
-impl pallet_protos::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type StringLimit = StringLimit;
-	type DetachAccountLimit = ConstU32<20>;
-	type MaxTags = ConstU32<10>;
-}
-
 impl pallet_detach::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -278,6 +270,14 @@ impl pallet_contracts::Config for Test {
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
 	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
+}
+
+impl Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type StringLimit = StringLimit;
+	type DetachAccountLimit = ConstU32<20>;
+	type MaxTags = ConstU32<10>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

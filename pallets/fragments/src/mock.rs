@@ -237,11 +237,6 @@ impl pallet_proxy::Config for Test {
 	type AnnouncementDepositFactor = ConstU128<1>;
 }
 
-impl pallet_fragments::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-}
-
 impl pallet_detach::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -276,6 +271,12 @@ impl pallet_clusters::Config for Test {
 	type DataLimit = ConstU32<100>;
 	type MembersLimit = ConstU32<10>;
 	type RoleSettingsLimit = ConstU32<20>;
+}
+
+
+impl Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

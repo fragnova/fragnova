@@ -104,7 +104,7 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-impl pallet_clusters::Config for Test {
+impl Config for Test {
 	type Event = Event;
 	type NameLimit = ConstU32<15>;
 	type DataLimit = ConstU32<5>;

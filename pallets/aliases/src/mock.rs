@@ -97,16 +97,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-where
-	Call: From<LocalCall>,
+	where
+		Call: From<LocalCall>,
 {
 	type OverarchingCall = Call;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-where
-	Call: From<LocalCall>,
+	where
+		Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: Call,
@@ -118,37 +118,18 @@ where
 	}
 }
 
-impl pallet_protos::Config for Test {
+impl pallet_balances::Config for Test {
+	type Balance = Balance;
+	type DustRemoval = ();
 	type Event = Event;
+	/// The minimum amount required to keep an account open.
+	type ExistentialDeposit = ConstU128<500>;
+	type AccountStore = System;
 	type WeightInfo = ();
-	type StringLimit = StringLimit;
-	type DetachAccountLimit = ConstU32<20>;
-	type MaxTags = ConstU32<10>;
-}
-
-impl pallet_fragments::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-}
-
-impl pallet_detach::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type AuthorityId = pallet_detach::crypto::DetachAuthId;
-}
-
-impl pallet_randomness_collective_flip::Config for Test {}
-
-impl pallet_accounts::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type EthChainId = ConstU64<5>; // goerli
-	type EthFragContract = ();
-	type EthConfirmations = ConstU64<1>;
-	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type InitialPercentageNova = sp_runtime::traits::ConstU8<20>;
-	type USDEquivalentAmount = ConstU128<100>;
+	type MaxLocks = ();
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	type IsTransferable = IsTransferable;
 }
 
 impl pallet_proxy::Config for Test {
@@ -198,20 +179,6 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
-impl pallet_oracle::Config for Test {
-	type AuthorityId = pallet_oracle::crypto::FragAuthId;
-	type Event = Event;
-	type OracleProvider = Test;
-	type Threshold = ConstU64<1>;
-}
-
-impl pallet_oracle::OracleContract for Test {
-	/// get the default oracle provider
-	fn get_provider() -> pallet_oracle::OracleProvider {
-		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
-	}
-}
-
 parameter_types! {
 	pub const DeletionWeightLimit: Weight = 500_000_000_000;
 	pub MySchedule: pallet_contracts::Schedule<Test> = {
@@ -250,6 +217,52 @@ impl pallet_contracts::Config for Test {
 	type MaxStorageKeyLen = ConstU32<128>;
 }
 
+impl pallet_protos::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type StringLimit = StringLimit;
+	type DetachAccountLimit = ConstU32<20>;
+	type MaxTags = ConstU32<10>;
+}
+
+impl pallet_fragments::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+}
+
+impl pallet_detach::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_randomness_collective_flip::Config for Test {}
+
+impl pallet_accounts::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type EthChainId = ConstU64<5>; // goerli
+	type EthFragContract = ();
+	type EthConfirmations = ConstU64<1>;
+	type Threshold = ConstU64<1>;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type InitialPercentageNova = sp_runtime::traits::ConstU8<20>;
+	type USDEquivalentAmount = ConstU128<100>;
+}
+
+impl pallet_oracle::OracleContract for Test {
+	/// get the default oracle provider
+	fn get_provider() -> pallet_oracle::OracleProvider {
+		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+	}
+}
+impl pallet_oracle::Config for Test {
+	type AuthorityId = pallet_oracle::crypto::FragAuthId;
+	type Event = Event;
+	type OracleProvider = Test;
+	type Threshold = ConstU64<1>;
+}
+
 impl pallet_clusters::Config for Test {
 	type Event = Event;
 	type NameLimit = ConstU32<10>;
@@ -261,26 +274,11 @@ impl pallet_clusters::Config for Test {
 parameter_types! {
 	pub RootNamespace: Vec<u8> = b"Frag".to_vec();
 }
-
-impl pallet_aliases::Config for Test {
+impl Config for Test {
 	type Event = Event;
 	type NamespacePrice = ConstU128<100>;
 	type NameLimit = ConstU32<20>;
 	type RootNamespace = RootNamespace;
-}
-
-impl pallet_balances::Config for Test {
-	type Balance = Balance;
-	type DustRemoval = ();
-	type Event = Event;
-	/// The minimum amount required to keep an account open.
-	type ExistentialDeposit = ConstU128<500>;
-	type AccountStore = System;
-	type WeightInfo = ();
-	type MaxLocks = ();
-	type MaxReserves = ();
-	type ReserveIdentifier = [u8; 8];
-	type IsTransferable = IsTransferable;
 }
 
 // Build genesis storage according to the mock runtime.
