@@ -99,7 +99,7 @@ impl DummyData {
 			vec![VariableTypeInfo { type_: VariableType::Int(None), default: Some(Vec::new()) }],
 		)
 			.into()];
-		let trait1 = Trait { name: "Trait1".to_string(), revision: 1, records: records1 };
+		let trait1 = Trait { name: "Trait1".to_string(), records: records1 };
 
 		let data_trait = twox_64(&trait1.encode());
 
@@ -117,7 +117,7 @@ impl DummyData {
 		)
 			.into()];
 
-		let trait2 = Trait { name: "Trait2".to_string(), revision: 1, records: records2 };
+		let trait2 = Trait { name: "Trait2".to_string(), records: records2 };
 
 		let data_trait_2 = twox_64(&trait2.encode());
 
@@ -135,7 +135,7 @@ impl DummyData {
 		)
 			.into()];
 
-		let trait3 = Trait { name: "Trait3".to_string(), revision: 1, records: records3 };
+		let trait3 = Trait { name: "Trait3".to_string(), records: records3 };
 		let data_trait_3 = twox_64(&trait3.encode());
 
 		let proto_fifth = ProtoFragment {
