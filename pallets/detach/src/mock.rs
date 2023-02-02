@@ -2,8 +2,9 @@
 
 pub use crate as pallet_detach;
 use crate::*;
-use frame_support::{parameter_types, traits::ConstU32};
+
 use frame_system;
+use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::{
 	offchain::{
 		testing::{self, OffchainState, PoolState, TestOffchainExt},

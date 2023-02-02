@@ -2,13 +2,13 @@
 
 use crate as pallet_aliases;
 use crate::*;
-use codec::Encode;
+
+use frame_system;
 use frame_support::{
 	parameter_types,
 	traits::ConstU64,
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
-use frame_system;
 use pallet_oracle::{OracleContract, OracleProvider};
 use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
@@ -18,6 +18,7 @@ use sp_runtime::{
 		Verify,
 	},
 };
+use codec::Encode;
 
 /// Balance of an account.
 pub type Balance = u128;

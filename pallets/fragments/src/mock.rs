@@ -2,13 +2,13 @@
 
 pub use crate as pallet_fragments;
 use crate::*;
+
+use frame_system;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU128, ConstU32, ConstU64},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
-use frame_system;
-use pallet_oracle::{OracleContract, OracleProvider};
 use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
 	testing::{Header, TestXt},
@@ -16,6 +16,7 @@ use sp_runtime::{
 		BlakeTwo256, ConstU8, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
 	},
 };
+use pallet_oracle::{OracleContract, OracleProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;

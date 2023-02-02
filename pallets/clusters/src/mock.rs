@@ -2,11 +2,12 @@
 
 use crate as pallet_clusters;
 use crate::*;
+
+use frame_system;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU128, ConstU32, ConstU64},
 };
-use frame_system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
