@@ -59,6 +59,8 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+mod chain_extension;
+
 use frame_support::{
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
 	weights::DispatchClass,
@@ -1232,6 +1234,9 @@ where
 	}
 }
 
+/// The Contracts pallet provides functionality for the runtime to deploy and execute WebAssembly smart-contracts.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_contracts/index.html#contract-pallet
 impl pallet_contracts::Config for Runtime {
 	type Time = Timestamp;
 	type Randomness = RandomnessCollectiveFlip;
@@ -1250,7 +1255,8 @@ impl pallet_contracts::Config for Runtime {
 	type CallStack = [pallet_contracts::Frame<Self>; 31];
 	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
 	type WeightInfo = ();
-	type ChainExtension = ();
+	/// Type that allows the runtime authors to add new host functions for a contract to call.
+	type ChainExtension = chain_extension::MyExtension;
 	type DeletionQueueDepth = DeletionQueueDepth;
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
