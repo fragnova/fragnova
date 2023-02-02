@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_accounts;
 use crate::*;
 
@@ -46,11 +48,12 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 	}
 );

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 pub use crate as pallet_detach;
 use crate::*;
 use frame_support::{parameter_types, traits::ConstU32};
@@ -36,6 +38,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
+
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 	}
 );

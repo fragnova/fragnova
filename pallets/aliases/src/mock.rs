@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_aliases;
 use crate::*;
 use codec::Encode;
@@ -35,19 +37,20 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
-		AliasesPallet: pallet_aliases::{Pallet, Call, Storage, Event<T>},
+		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+
+		AliasesPallet: pallet_aliases::{Pallet, Call, Storage, Event<T>},
 		Protos: pallet_protos::{Pallet, Call, Storage, Event<T>},
 		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
-		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
 		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>},
 		Clusters: pallet_clusters::{Pallet, Call, Storage, Event<T>},
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
-		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
-		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 	}
 );
 

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_clusters;
 use crate::*;
 use frame_support::{
@@ -23,10 +25,11 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
-		ClustersPallet: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+
+		ClustersPallet: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
