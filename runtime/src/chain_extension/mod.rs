@@ -41,6 +41,11 @@ use pallet_fragments::WeightInfo; // this is a trait
 
 use protos::permissions::FragmentPerms;
 
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+
 #[derive(Default)]
 pub struct MyExtension;
 

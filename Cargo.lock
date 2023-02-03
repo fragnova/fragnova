@@ -1867,6 +1867,7 @@ dependencies = [
  "sp-core",
  "sp-fragnova",
  "sp-inherents",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
