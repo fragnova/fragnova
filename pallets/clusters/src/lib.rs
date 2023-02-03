@@ -467,12 +467,16 @@ pub mod pallet {
 				})
 				.collect::<Vec<RoleSetting>>();
 
+			// ensure that the Role does not contain already any of the setting names provided
 			for setting in &role_settings {
 				ensure!(
 					!<Roles<T>>::get(&cluster_id, &name_index)
 						.ok_or(Error::<T>::SystematicFailure)?
 						.settings
-						.contains(setting),
+						.into_iter()
+						.map(|setting| setting.name)
+						.collect::<Vec<Compact<u64>>>()
+						.contains(&setting.name),
 					Error::<T>::RoleSettingsExists
 				);
 			}
