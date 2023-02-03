@@ -31,9 +31,18 @@ mod benchmarking;
 /// The **settings** of a **Role**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
 pub struct RoleSetting {
-	/// Name of the setting
+	/// Index of the name of the role setting to be stored
 	pub name: Compact<u64>,
-	/// The data associated with the Role
+	/// The data associated with the Role to be stored
+	pub data: Vec<u8>,
+}
+
+/// The **settings** of a **Role**
+#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
+pub struct Setting {
+	/// Name of the setting given by the user
+	pub name: Vec<u8>,
+	/// The data associated with the Role given by the user
 	pub data: Vec<u8>,
 }
 
@@ -184,8 +193,8 @@ pub mod pallet {
 		RoleExists,
 		/// Element not found
 		RoleNotFound,
-		/// RoleSettings not found
-		RoleSettingsNotFound,
+		/// RoleSetting already exists
+		RoleSettingsExists,
 		/// Missing permission to perform an operation
 		NoPermission,
 		/// Invalid inputs
@@ -292,7 +301,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			cluster_id: Hash128,
 			role_name: BoundedVec<u8, T::NameLimit>,
-			settings: BoundedVec<RoleSetting, T::RoleSettingsLimit>,
+			settings: BoundedVec<Setting, T::RoleSettingsLimit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -308,8 +317,16 @@ pub mod pallet {
 
 			ensure!(!<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleExists);
 
-			// At creation there are no Members assigned to a Role
-			let new_role = Role { name: name_index.clone(), settings: settings.into_inner() };
+			// At creation there are no Members assigned to a Role, only Setting
+			let role_settings = settings
+				.into_inner()
+				.into_iter()
+				.map(|setting| RoleSetting {
+					name: Self::take_name_index(&setting.name),
+					data: setting.data,
+				})
+				.collect::<Vec<RoleSetting>>();
+			let new_role = Role { name: name_index.clone(), settings: role_settings };
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
@@ -426,7 +443,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
 			cluster_id: Hash128,
-			settings: BoundedVec<RoleSetting, T::RoleSettingsLimit>,
+			settings: BoundedVec<Setting, T::RoleSettingsLimit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -441,10 +458,28 @@ pub mod pallet {
 
 			ensure!(<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleNotFound);
 
+			let role_settings = settings
+				.into_inner()
+				.into_iter()
+				.map(|setting| RoleSetting {
+					name: Self::take_name_index(&setting.name),
+					data: setting.data,
+				})
+				.collect::<Vec<RoleSetting>>();
+
+			for setting in &role_settings {
+				ensure!(
+					!<Roles<T>>::get(&cluster_id, &name_index)
+						.ok_or(Error::<T>::SystematicFailure)?
+						.settings
+						.contains(setting),
+					Error::<T>::RoleSettingsExists
+				);
+			}
 			// write
 			<Roles<T>>::mutate(&cluster_id, &name_index, |role| {
 				let role = role.as_mut().expect("Should find the role");
-				role.settings.extend(settings.into_inner());
+				role.settings.extend(role_settings);
 			});
 
 			Self::deposit_event(Event::RoleSettingsEdited {
