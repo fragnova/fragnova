@@ -414,7 +414,7 @@ mod create_tests {
 	}
 
 	#[test]
-	fn add_duplicate_role_settings_fails() {
+	fn add_role_settings_with_same_name_fails() {
 		new_test_ext().execute_with(|| {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
