@@ -1,7 +1,5 @@
 (def RPC-SERVER "http://127.0.0.1:9933")
-(def WS-SERVER-ADDR "127.0.0.1")
-(def WS-SERVER-PORT 9944)
-(def WS-SERVER-SECURE false)
+(def WS-SERVER "ws://127.0.0.1:9944")
 
 (def RUNTIME-SPEC-VERSION 4)
 (def TRANSACTION-VERSION 1)
@@ -129,7 +127,7 @@
    (Substrate.Decode [Type.Int] ["u32"]) (Take 0) (ExpectInt) >== .fragnova-nonce (Log "Start Nonce") ; also make it global ; `.fragnova-nonce` is the number of transactions of that the `Fragnova-Account` has sent (i.e its nonce)
 
    ; this is redundant but we need it for send-extinsics to work...
-   (WS.Client WS-SERVER-ADDR "/" WS-SERVER-PORT WS-SERVER-SECURE) >= .fragnova-ws-client
+   WS-SERVER (WS.Client) >= .fragnova-ws-client
 
    )
   ; our interfaces
