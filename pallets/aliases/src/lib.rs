@@ -188,6 +188,7 @@ pub mod pallet {
 			// reduce NOVA balance from caller's account. The amount is set in Config.
 			let amount: <T as pallet_balances::Config>::Balance =
 				<T as Config>::NamespacePrice::get().saturated_into();
+
 			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::withdraw(
 				&who,
 				amount,
@@ -314,7 +315,7 @@ pub mod pallet {
 			};
 			<Aliases<T>>::insert(&namespace, &alias_index, target_versioned);
 
-			Self::deposit_event(Event::AliasCreated { who, namespace, alias: alias });
+			Self::deposit_event(Event::AliasCreated { who, namespace, alias });
 
 			Ok(())
 		}
@@ -372,10 +373,7 @@ pub mod pallet {
 			};
 			<Aliases<T>>::insert(&root_namespace, &alias_index, target_versioned);
 
-			Self::deposit_event(Event::RootAliasCreated {
-				root_namespace,
-				alias: alias,
-			});
+			Self::deposit_event(Event::RootAliasCreated { root_namespace, alias });
 
 			Ok(())
 		}
