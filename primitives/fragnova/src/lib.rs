@@ -230,8 +230,8 @@ pub fn get_locked_frag_account<TAccountId: Encode + Decode>(
 	TAccountId::decode(&mut &who[..])
 }
 
-/// **Get** an **Account ID** deterministically computed from an input `hash`**.
-pub fn get_vault_id<TAccountId: Encode + Decode>(hash: Hash128) -> TAccountId {
-	let hash = blake2_256(&[&b"fragnova-vault"[..], &hash].concat());
+/// **Get** an **Account ID** deterministically computed from an input `hash` and a `prefix`.
+pub fn get_account_id<TAccountId: Encode + Decode>(prefix: &[u8], hash: &[u8]) -> TAccountId {
+	let hash = blake2_256(&[prefix, hash].concat());
 	TAccountId::decode(&mut &hash[..]).expect("T::AccountId should decode")
 }
