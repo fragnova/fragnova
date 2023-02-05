@@ -2,9 +2,7 @@
   "name": "Fragnova Testnet",
   "id": "live",
   "chainType": "Live",
-  "bootNodes": [
-    "/dns/bootstrap.fragnova.network/tcp/30337/p2p/12D3KooWQoQhtVUT8j2hV7dXrFpf3pp4Q5FT7c3GdAf2wiKACjD6"
-  ],
+  "bootNodes": [],
   "telemetryEndpoints": null,
   "protocolId": "frag",
   "properties": {
