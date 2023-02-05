@@ -1087,10 +1087,8 @@ impl pallet_detach::Config for Runtime {
 
 impl pallet_clusters::Config for Runtime {
 	type Event = Event;
-	type NameLimit = ConstU32<20>;
-	type DataLimit = ConstU32<300>;
-	type MembersLimit = ConstU32<20>;
-	type RoleSettingsLimit = ConstU32<20>;
+	type NameLimit = ConstU32<32>;
+	type DataLimit = ConstU32<256>;
 }
 
 parameter_types! {

@@ -53,7 +53,12 @@ mod create_tests {
 		roles_names: Vec<Vec<u8>>,
 		member: <Test as frame_system::Config>::AccountId,
 	) -> DispatchResult {
-		ClustersPallet::add_member(Origin::signed(signer), cluster_id, roles_names, member)
+		ClustersPallet::add_member(
+			Origin::signed(signer),
+			cluster_id,
+			roles_names.iter().map(|x| x.clone().try_into().unwrap()).collect(),
+			member,
+		)
 	}
 
 	pub fn add_role_members_(
@@ -125,14 +130,14 @@ mod create_tests {
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			role_name.clone().try_into().expect("role name is too long");
-		let bounded_settings: BoundedVec<Vec<u8>, <Test as Config>::RoleSettingsLimit> =
-			settings.clone().try_into().expect("too many settings");
+		let bounded_settings: BoundedVec<BoundedVec<u8,  <Test as Config>::NameLimit>, <Test as Config>::RoleSettingsLimit> =
+			settings.iter().map(|x| x.clone().try_into().unwrap()).collect::<Vec<_>>().try_into().expect("too many settings");
 
 		ClustersPallet::delete_role_settings(
 			Origin::signed(signer),
 			bounded_name,
 			cluster_id,
-			bounded_settings,
+			settings.iter().map(|x| x.clone().try_into().unwrap()).collect(),
 		)
 	}
 
@@ -347,7 +352,8 @@ mod create_tests {
 			));
 
 			let name_setting_index = take_name_index_(&setting_name);
-			let role_setting = CompactSetting {name: name_setting_index, data: setting_data.clone()};
+			let role_setting =
+				CompactSetting { name: name_setting_index, data: setting_data.clone() };
 			assert!(!<Roles<Test>>::get(&cluster_id, &name_index)
 				.unwrap()
 				.settings
@@ -388,7 +394,8 @@ mod create_tests {
 				vec![role_setting1.clone()]
 			));
 
-			let role_setting2 = Setting { name: setting2_name.clone(), data: setting2_data.clone() };
+			let role_setting2 =
+				Setting { name: setting2_name.clone(), data: setting2_data.clone() };
 
 			assert_ok!(add_role_settings_(
 				account_id.clone(),
@@ -398,14 +405,16 @@ mod create_tests {
 			));
 
 			let name_setting_index = take_name_index_(&setting_name);
-			let role_setting_1 = CompactSetting { name: name_setting_index, data: setting_data.clone()};
+			let role_setting_1 =
+				CompactSetting { name: name_setting_index, data: setting_data.clone() };
 
 			assert!(<Roles<Test>>::get(&cluster_id, &role_name_index)
 				.unwrap()
 				.settings
 				.contains(&role_setting_1));
 			let name_setting_index2 = take_name_index_(&setting2_name);
-			let role_setting_2 = CompactSetting { name: name_setting_index2, data: setting2_data.clone()};
+			let role_setting_2 =
+				CompactSetting { name: name_setting_index2, data: setting2_data.clone() };
 			assert!(<Roles<Test>>::get(&cluster_id, &role_name_index)
 				.unwrap()
 				.settings
@@ -443,20 +452,23 @@ mod create_tests {
 				vec![role_setting1.clone()]
 			));
 
-			let role_setting2 = Setting { name: setting2_name.clone(), data: setting2_data.clone() };
+			let role_setting2 =
+				Setting { name: setting2_name.clone(), data: setting2_data.clone() };
 
-			assert_noop!(add_role_settings_(
-				account_id.clone(),
-				cluster_id.clone(),
-				role.clone(),
-				vec![role_setting2.clone()],
-			), Error::<Test>::RoleSettingsExists);
+			assert_noop!(
+				add_role_settings_(
+					account_id.clone(),
+					cluster_id.clone(),
+					role.clone(),
+					vec![role_setting2.clone()],
+				),
+				Error::<Test>::RoleSettingsExists
+			);
 
-			assert_eq!(<Roles<Test>>::get(&cluster_id, &role_name_index)
-				.unwrap()
-				.settings
-				.len(), 1);
-
+			assert_eq!(
+				<Roles<Test>>::get(&cluster_id, &role_name_index).unwrap().settings.len(),
+				1
+			);
 		});
 	}
 
