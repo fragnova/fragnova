@@ -11,7 +11,7 @@
 extern crate core;
 
 use codec::{Compact, Decode, Encode};
-use frame_support::{BoundedVec, transactional};
+use frame_support::{transactional, BoundedVec};
 pub use pallet::*;
 use sp_fragnova::Hash128;
 use sp_std::{vec, vec::Vec};
@@ -252,7 +252,8 @@ pub mod pallet {
 			ensure!(!<Clusters<T>>::contains_key(&cluster_id), Error::<T>::ClusterExists);
 
 			let cluster_name = name.into_inner();
-			let name_index = Self::take_name_index(&cluster_name);
+			let name_index =
+				Self::take_name_index(&cluster_name, true).expect("adding if none is true, qed");
 
 			// At creation there are no roles and no members assigned to the cluster
 			let cluster =
@@ -313,12 +314,13 @@ pub mod pallet {
 			ensure!(!cluster_id.len().is_zero(), Error::<T>::InvalidInput);
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
-			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
+			let cluster = <Clusters<T>>::get(&cluster_id).expect("adding if none is true, qed");
 			// Check that the caller is the owner of the cluster
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			let role_name = role_name.into_inner();
-			let name_index = Self::take_name_index(&role_name);
+			let name_index =
+				Self::take_name_index(&role_name, true).expect("adding if none is true, qed");
 
 			ensure!(!<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleExists);
 
@@ -327,7 +329,8 @@ pub mod pallet {
 				.into_inner()
 				.into_iter()
 				.map(|setting| CompactSetting {
-					name: Self::take_name_index(&setting.name),
+					name: Self::take_name_index(&setting.name, true)
+						.expect("adding if none is true, qed"),
 					data: setting.data,
 				})
 				.collect::<Vec<CompactSetting>>();
@@ -377,7 +380,8 @@ pub mod pallet {
 			}
 
 			let role_name = role_name.into_inner();
-			let name_index = Self::take_name_index(&role_name);
+			let name_index =
+				Self::take_name_index(&role_name, false).ok_or(Error::<T>::RoleNotFound)?;
 
 			ensure!(<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleNotFound);
 
@@ -422,7 +426,8 @@ pub mod pallet {
 			}
 
 			let role_name = role_name.into_inner();
-			let name_index = Self::take_name_index(&role_name);
+			let name_index =
+				Self::take_name_index(&role_name, false).ok_or(Error::<T>::RoleNotFound)?;
 
 			ensure!(<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleNotFound);
 
@@ -462,7 +467,8 @@ pub mod pallet {
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			let role_name = role_name.into_inner();
-			let name_index = Self::take_name_index(&role_name);
+			let name_index =
+				Self::take_name_index(&role_name, false).ok_or(Error::<T>::RoleNotFound)?;
 
 			let role = <Roles<T>>::get(&cluster_id, &name_index).ok_or(Error::<T>::RoleNotFound)?;
 
@@ -470,7 +476,8 @@ pub mod pallet {
 				.into_inner()
 				.into_iter()
 				.map(|setting| CompactSetting {
-					name: Self::take_name_index(&setting.name),
+					name: Self::take_name_index(&setting.name, true)
+						.expect("adding if none is true, qed"),
 					data: setting.data,
 				})
 				.collect::<Vec<CompactSetting>>();
@@ -522,10 +529,13 @@ pub mod pallet {
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			let role_name = role_name.into_inner();
-			let name_index = Self::take_name_index(&role_name);
+			let name_index =
+				Self::take_name_index(&role_name, false).ok_or(Error::<T>::RoleNotFound)?;
+			ensure!(<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleNotFound);
 
 			let setting_name = setting_name.into_inner();
-			let setting_index = Self::take_name_index(&setting_name);
+			let setting_index = Self::take_name_index(&setting_name, false)
+				.ok_or(Error::<T>::RoleSettingNotFound)?;
 			let mut setting_exists = false;
 
 			<Roles<T>>::mutate(&cluster_id, &name_index, |role| {
@@ -560,7 +570,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
 			cluster_id: Hash128,
-			settings: BoundedVec<Vec<u8>, T::RoleSettingsLimit>,
+			setting_names: BoundedVec<Vec<u8>, T::RoleSettingsLimit>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -571,19 +581,23 @@ pub mod pallet {
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			let role_name = role_name.into_inner();
-			let name_index = Self::take_name_index(&role_name);
-
-			let mut settings_name_indexes = Vec::new();
-			for setting_name in settings.into_inner() {
-				settings_name_indexes.push(Self::take_name_index(&setting_name));
-			}
+			let name_index =
+				Self::take_name_index(&role_name, false).ok_or(Error::<T>::RoleNotFound)?;
 
 			ensure!(<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleNotFound);
+
+			let setting_indices = setting_names
+				.iter()
+				.map(|setting_name| {
+					Self::take_name_index(&setting_name, false)
+						.ok_or(Error::<T>::RoleSettingNotFound)
+				})
+				.collect::<Result<Vec<_>, _>>()?;
 
 			// write
 			<Roles<T>>::mutate(&cluster_id, &name_index, |role| {
 				let role_settings = &mut role.as_mut().expect("Should find the role").settings;
-				for setting_name in settings_name_indexes {
+				for setting_name in setting_indices {
 					role_settings.retain(|role_setting| !role_setting.name.eq(&setting_name));
 				}
 			});
@@ -617,8 +631,8 @@ pub mod pallet {
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			let role_name = role_name.into_inner();
-			let name_index = Self::take_name_index(&role_name);
-
+			let name_index =
+				Self::take_name_index(&role_name, false).ok_or(Error::<T>::RoleNotFound)?;
 			ensure!(<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleNotFound);
 
 			// write
@@ -651,7 +665,7 @@ pub mod pallet {
 		pub fn add_member(
 			origin: OriginFor<T>,
 			cluster_id: Hash128,
-			roles_names: Vec<Vec<u8>>,
+			roles_names: Vec<BoundedVec<u8, T::NameLimit>>,
 			member: T::AccountId,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -663,22 +677,19 @@ pub mod pallet {
 			// Check that the cluster does not already contain the member
 			ensure!(!<Members<T>>::contains_key(&cluster_id, &member), Error::<T>::MemberExists);
 
-			for role in &roles_names {
-				// Check that the roles actually exist in the cluster
-				let name_index = Self::take_name_index(role);
-				ensure!(
-					<Roles<T>>::contains_key(&cluster_id, &name_index),
-					Error::<T>::RoleNotFound
-				);
-			}
+			let role_indices = roles_names
+				.iter()
+				.map(|role_name| {
+					if let Some(idx) = Self::take_name_index(&role_name, false) {
+						ensure!(<Roles<T>>::contains_key(&cluster_id, &idx), Error::<T>::RoleNotFound);
+						Ok(idx)
+					} else {
+						Err(Error::<T>::RoleNotFound)
+					}
+				})
+				.collect::<Result<Vec<_>, _>>()?;
 
-			// write
-			let mut role_indexes = Vec::new();
-			for role_name in roles_names {
-				role_indexes.push(Self::take_name_index(&role_name));
-			}
-
-			<Members<T>>::insert(cluster_id, member, role_indexes);
+			<Members<T>>::insert(cluster_id, member, role_indices);
 
 			Ok(())
 		}
@@ -716,19 +727,20 @@ pub mod pallet {
 		///
 		/// Returns:
 		/// - `Compact<u64>`: the index of the name in storage
-		pub fn take_name_index(name: &Vec<u8>) -> Compact<u64> {
+		pub fn take_name_index(name: &Vec<u8>, add_if_none: bool) -> Option<Compact<u64>> {
 			let name_index = <Names<T>>::get(name);
 			if let Some(name_index) = name_index {
-				<Compact<u64>>::from(name_index)
+				Some(name_index)
 			} else {
-				let next_name_index = <NamesIndex<T>>::try_get().unwrap_or_default() + 1;
-				let next_name_index_compact = <Compact<u64>>::from(next_name_index);
-				<Names<T>>::insert(name, next_name_index_compact);
-				// storing is dangerous inside a closure
-				// but after this call we start storing..
-				// so it's fine here
-				<NamesIndex<T>>::put(next_name_index);
-				next_name_index_compact
+				if add_if_none {
+					let next_name_index = <NamesIndex<T>>::try_get().unwrap_or_default() + 1;
+					let next_name_index_compact = Compact(next_name_index);
+					<Names<T>>::insert(name, next_name_index_compact);
+					<NamesIndex<T>>::put(next_name_index);
+					Some(next_name_index_compact)
+				} else {
+					None
+				}
 			}
 		}
 	}
