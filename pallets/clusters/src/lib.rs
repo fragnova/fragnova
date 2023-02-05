@@ -11,7 +11,7 @@
 extern crate core;
 
 use codec::{Compact, Decode, Encode};
-use frame_support::BoundedVec;
+use frame_support::{BoundedVec, transactional};
 pub use pallet::*;
 use sp_fragnova::Hash128;
 use sp_std::{vec, vec::Vec};
@@ -30,7 +30,7 @@ mod benchmarking;
 
 /// The **settings** of a **Role**
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-pub struct RoleSetting {
+pub struct CompactSetting {
 	/// Index of the name of the role setting to be stored
 	pub name: Compact<u64>,
 	/// The data associated with the Role to be stored
@@ -52,7 +52,7 @@ pub struct Role {
 	/// Name of the role
 	pub name: Compact<u64>,
 	/// The settings of the Role
-	pub settings: Vec<RoleSetting>,
+	pub settings: Vec<CompactSetting>,
 }
 
 /// **Struct** of a **Cluster**
@@ -80,7 +80,7 @@ pub struct AccountInfo<TAccountID, TMoment> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::{Cluster, Role, RoleSetting};
+	use crate::{Cluster, CompactSetting, Role};
 	use frame_support::{
 		log,
 		pallet_prelude::*,
@@ -195,6 +195,8 @@ pub mod pallet {
 		RoleNotFound,
 		/// RoleSetting already exists
 		RoleSettingsExists,
+		// RoleSetting not found
+		RoleSettingNotFound,
 		/// Missing permission to perform an operation
 		NoPermission,
 		/// Invalid inputs
@@ -223,6 +225,7 @@ pub mod pallet {
 		///
 		/// - `name`: name of the cluster (BoundedVec limited to T::NameLimit).
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn create_cluster(
 			origin: OriginFor<T>,
 			name: BoundedVec<u8, T::NameLimit>,
@@ -235,6 +238,7 @@ pub mod pallet {
 			let extrinsic_index = <frame_system::Pallet<T>>::extrinsic_index()
 				.ok_or(Error::<T>::SystematicFailure)?
 				.to_be_bytes();
+
 			// BlockNumber type is non concrete, so we need to encode it to get bytes
 			let current_block_number = <frame_system::Pallet<T>>::block_number().encode();
 			// Who is not concrete, so we need to encode it to get bytes
@@ -297,6 +301,7 @@ pub mod pallet {
 		/// - `role_name`: name of the role to add into the cluster (BoundedVec limited to T::NameLimit).
 		/// - `settings`: settings of the role (BoundedVec limited to T::RoleSettingsLimit).
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn create_role(
 			origin: OriginFor<T>,
 			cluster_id: Hash128,
@@ -321,11 +326,11 @@ pub mod pallet {
 			let role_settings = settings
 				.into_inner()
 				.into_iter()
-				.map(|setting| RoleSetting {
+				.map(|setting| CompactSetting {
 					name: Self::take_name_index(&setting.name),
 					data: setting.data,
 				})
-				.collect::<Vec<RoleSetting>>();
+				.collect::<Vec<CompactSetting>>();
 			let new_role = Role { name: name_index.clone(), settings: role_settings };
 
 			// write
@@ -351,6 +356,7 @@ pub mod pallet {
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `members`: new list of members to be added to the existing list.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn add_role_members(
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
@@ -361,7 +367,7 @@ pub mod pallet {
 
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
-			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::SystematicFailure)?;
+			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			// Check that the caller is the owner of the cluster;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
@@ -395,6 +401,7 @@ pub mod pallet {
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `members`: new list of members to be deleted (BoundedVec limited to T::MembersLimit).
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn delete_role_members(
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
@@ -439,6 +446,7 @@ pub mod pallet {
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `settings`: new list of settings to be added to the existing list (BoundedVec limited to T::RoleSettingsLimit).
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn add_role_settings(
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
@@ -449,37 +457,32 @@ pub mod pallet {
 
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
-			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::SystematicFailure)?;
+			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			// Check that the caller is the owner of the cluster;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
 			let role_name = role_name.into_inner();
 			let name_index = Self::take_name_index(&role_name);
 
-			ensure!(<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleNotFound);
+			let role = <Roles<T>>::get(&cluster_id, &name_index).ok_or(Error::<T>::RoleNotFound)?;
 
 			let role_settings = settings
 				.into_inner()
 				.into_iter()
-				.map(|setting| RoleSetting {
+				.map(|setting| CompactSetting {
 					name: Self::take_name_index(&setting.name),
 					data: setting.data,
 				})
-				.collect::<Vec<RoleSetting>>();
+				.collect::<Vec<CompactSetting>>();
 
-			// ensure that the Role does not contain already any of the setting names provided
-			for setting in &role_settings {
-				ensure!(
-					!<Roles<T>>::get(&cluster_id, &name_index)
-						.ok_or(Error::<T>::SystematicFailure)?
-						.settings
-						.into_iter()
-						.map(|setting| setting.name)
-						.collect::<Vec<Compact<u64>>>()
-						.contains(&setting.name),
-					Error::<T>::RoleSettingsExists
-				);
-			}
+			let exists = role_settings.iter().any(|setting| {
+				role.settings
+					.iter()
+					.any(|existing_setting| existing_setting.name == setting.name)
+			});
+
+			ensure!(!exists, Error::<T>::RoleSettingsExists);
+
 			// write
 			<Roles<T>>::mutate(&cluster_id, &name_index, |role| {
 				let role = role.as_mut().expect("Should find the role");
@@ -495,12 +498,64 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Change a single **RoleSetting** in an existing **Role** in a Cluster
+		///
+		/// - `role_name`: name of the role to edit (BoundedVec limited to T::NameLimit).
+		/// - `cluster_id`: hash of the cluster that the role belongs to.
+		/// - `setting_name`: name of the setting to be edited (BoundedVec limited to T::SettingNameLimit).
+		/// - `data`: new data for the setting ([u8; T::SettingDataLimit]).
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
+		pub fn change_role_setting(
+			origin: OriginFor<T>,
+			role_name: BoundedVec<u8, T::NameLimit>,
+			cluster_id: Hash128,
+			setting_name: BoundedVec<u8, T::NameLimit>,
+			data: Vec<u8>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
+			ensure!(!setting_name.len().is_zero(), Error::<T>::InvalidInput);
+
+			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
+			ensure!(who == cluster.owner, Error::<T>::NoPermission);
+
+			let role_name = role_name.into_inner();
+			let name_index = Self::take_name_index(&role_name);
+
+			let setting_name = setting_name.into_inner();
+			let setting_index = Self::take_name_index(&setting_name);
+			let mut setting_exists = false;
+
+			<Roles<T>>::mutate(&cluster_id, &name_index, |role| {
+				let role = role.as_mut().expect("Should find the role");
+				for setting in role.settings.iter_mut() {
+					if setting.name == setting_index {
+						setting.data = data;
+						setting_exists = true;
+						break
+					}
+				}
+			});
+
+			ensure!(setting_exists, Error::<T>::RoleSettingNotFound);
+
+			Self::deposit_event(Event::RoleSettingsEdited {
+				cluster_hash: cluster_id,
+				role_name: role_name.clone(),
+			});
+
+			Ok(())
+		}
+
 		/// Delete a list of **RoleSettings** from a **Role** in a Cluster.
 		///
 		/// - `role_name`: name of the role to edit (BoundedVec limited to T::NameLimit).
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `settings`: new list of settings to be added to the existing list (BoundedVec limited to T::RoleSettingsLimit).
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn delete_role_settings(
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
@@ -511,7 +566,7 @@ pub mod pallet {
 
 			ensure!(!role_name.len().is_zero(), Error::<T>::InvalidInput);
 
-			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::SystematicFailure)?;
+			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			// Check that the caller is the owner of the cluster;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
@@ -547,6 +602,7 @@ pub mod pallet {
 		/// - `role_name`: name of the role to delete.
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn delete_role(
 			origin: OriginFor<T>,
 			role_name: BoundedVec<u8, T::NameLimit>,
@@ -591,6 +647,7 @@ pub mod pallet {
 		/// - `roles`: list of role names to be assigned to the new member.
 		/// - `member`: AccountId of the new member.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn add_member(
 			origin: OriginFor<T>,
 			cluster_id: Hash128,
@@ -640,6 +697,7 @@ pub mod pallet {
 
 			let cluster = <Clusters<T>>::get(cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
+
 			// Check that the member is in the cluster
 			ensure!(<Members<T>>::contains_key(&cluster_id, &member), Error::<T>::MemberExists);
 
