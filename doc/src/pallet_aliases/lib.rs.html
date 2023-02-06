@@ -567,6 +567,38 @@
 <a href="#567" id="567">567</a>
 <a href="#568" id="568">568</a>
 <a href="#569" id="569">569</a>
+<a href="#570" id="570">570</a>
+<a href="#571" id="571">571</a>
+<a href="#572" id="572">572</a>
+<a href="#573" id="573">573</a>
+<a href="#574" id="574">574</a>
+<a href="#575" id="575">575</a>
+<a href="#576" id="576">576</a>
+<a href="#577" id="577">577</a>
+<a href="#578" id="578">578</a>
+<a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
+<a href="#585" id="585">585</a>
+<a href="#586" id="586">586</a>
+<a href="#587" id="587">587</a>
+<a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `aliases` allows users to create human readable aliases to address their owned existing assets.
 //! Example:
 //!
@@ -593,7 +625,7 @@
 <span class="kw">use </span>pallet_clusters::Clusters;
 <span class="kw">use </span>pallet_fragments::Owners;
 <span class="kw">use </span>pallet_protos::{Proto, ProtoOwner, Protos};
-<span class="kw">use </span>sp_fragnova::{Hash128, Hash256, fragments::InstanceUnit};
+<span class="kw">use </span>sp_fragnova::{fragments::InstanceUnit, Hash128, Hash256};
 <span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="attr">#[cfg(test)]
@@ -749,12 +781,15 @@
 			<span class="macro">ensure!</span>(!namespace.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
 
 			<span class="kw">let </span>namespace = namespace.into_inner();
+			<span class="macro">ensure!</span>(<span class="self">Self</span>::is_valid_string(<span class="kw-2">&amp;</span>namespace), Error::&lt;T&gt;::InvalidInput);
 
 			<span class="comment">// Check that the namespace does not exist already
 			</span><span class="macro">ensure!</span>(!&lt;Namespaces&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>namespace), Error::&lt;T&gt;::NamespaceExists);
+
 			<span class="comment">// reduce NOVA balance from caller&#39;s account. The amount is set in Config.
 			</span><span class="kw">let </span>amount: &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance =
 				&lt;T <span class="kw">as </span>Config&gt;::NamespacePrice::get().saturated_into();
+
 			<span class="kw">let _ </span>= &lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>Currency&lt;T::AccountId&gt;&gt;::withdraw(
 				<span class="kw-2">&amp;</span>who,
 				amount,
@@ -781,12 +816,8 @@
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin.clone())<span class="question-mark">?</span>;
 
-			<span class="macro">ensure!</span>(!namespace.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
-
 			<span class="kw">let </span>namespace = namespace.into_inner();
 
-			<span class="comment">// Check that the namespace exists
-			</span><span class="macro">ensure!</span>(&lt;Namespaces&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>namespace), Error::&lt;T&gt;::NamespaceExists);
 			<span class="comment">// check that the caller is the owner of the namespace
 			</span><span class="kw">let </span>owner = &lt;Namespaces&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>namespace).ok_or(Error::&lt;T&gt;::NamespaceNotFound)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(<span class="kw-2">&amp;</span>who == <span class="kw-2">&amp;</span>owner, Error::&lt;T&gt;::NotAllowed);
@@ -814,7 +845,6 @@
 			<span class="kw">let </span>who = ensure_signed(origin.clone())<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(who != new_owner, Error::&lt;T&gt;::NotAllowed);
-			<span class="macro">ensure!</span>(!namespace.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
 
 			<span class="kw">let </span>namespace = namespace.into_inner();
 
@@ -847,20 +877,36 @@
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin.clone())<span class="question-mark">?</span>;
 
-			<span class="macro">ensure!</span>(!namespace.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
-
 			<span class="kw">let </span>namespace = namespace.into_inner();
+			<span class="kw">let </span>alias = alias.into_inner();
 
 			<span class="comment">// Check that the caller is the owner of the namespace
 			</span><span class="kw">let </span>owner = &lt;Namespaces&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>namespace).ok_or(Error::&lt;T&gt;::NamespaceNotFound)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(<span class="kw-2">&amp;</span>who == <span class="kw-2">&amp;</span>owner, Error::&lt;T&gt;::NotAllowed);
 
-			<span class="kw">let </span>alias_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>alias);
+			<span class="macro">ensure!</span>(!alias.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
+			<span class="macro">ensure!</span>(<span class="self">Self</span>::is_valid_string(<span class="kw-2">&amp;</span>alias), Error::&lt;T&gt;::InvalidInput);
+
+			<span class="kw">let </span>(alias_index, index_to_update) =
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(name_index) = <span class="self">Self</span>::get_name_index(<span class="kw-2">&amp;</span>alias) {
+					(name_index, <span class="prelude-val">None</span>)
+				} <span class="kw">else </span>{
+					<span class="kw">let </span>next_name_index = &lt;NamesIndex&lt;T&gt;&gt;::try_get().unwrap_or_default() + <span class="number">1</span>;
+					(Compact(next_name_index), <span class="prelude-val">Some</span>(next_name_index))
+				};
+
 			<span class="comment">// check that the caller does not already own this alias
 			</span><span class="macro">ensure!</span>(!&lt;Aliases&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index), Error::&lt;T&gt;::AliasExists);
 
 			<span class="comment">// check that the caller is the owner of the target asset
 			</span><span class="self">Self</span>::is_target_owner(<span class="kw-2">&amp;</span>who, target.clone())<span class="question-mark">?</span>;
+
+			<span class="comment">// WRITE FROM NOW
+
+			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(index_to_update) = index_to_update {
+				&lt;NamesIndex&lt;T&gt;&gt;::put(index_to_update);
+				&lt;Names&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>alias, alias_index);
+			}
 
 			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
 			<span class="kw">let </span>target_versioned = LinkTargetVersioned {
@@ -870,7 +916,7 @@
 			};
 			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index, target_versioned);
 
-			<span class="self">Self</span>::deposit_event(Event::AliasCreated { who, namespace, alias: alias.into_inner() });
+			<span class="self">Self</span>::deposit_event(Event::AliasCreated { who, namespace, alias });
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -893,13 +939,32 @@
 		) -&gt; DispatchResult {
 			ensure_root(origin.clone())<span class="question-mark">?</span>;
 
+			<span class="macro">ensure!</span>(!alias.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
+			<span class="macro">ensure!</span>(<span class="self">Self</span>::is_valid_string(<span class="kw-2">&amp;</span>alias), Error::&lt;T&gt;::InvalidInput);
+
 			<span class="kw">let </span>root_namespace = T::RootNamespace::get();
-			<span class="kw">let </span>alias_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>alias);
+			<span class="kw">let </span>alias = alias.into_inner();
+
+			<span class="kw">let </span>(alias_index, index_to_update) =
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(name_index) = <span class="self">Self</span>::get_name_index(<span class="kw-2">&amp;</span>alias) {
+					(name_index, <span class="prelude-val">None</span>)
+				} <span class="kw">else </span>{
+					<span class="kw">let </span>next_name_index = &lt;NamesIndex&lt;T&gt;&gt;::try_get().unwrap_or_default() + <span class="number">1</span>;
+					(Compact(next_name_index), <span class="prelude-val">Some</span>(next_name_index))
+				};
+
 			<span class="comment">// check that the caller does not already own this alias
 			</span><span class="macro">ensure!</span>(
 				!&lt;Aliases&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index),
 				Error::&lt;T&gt;::AliasExists
 			);
+
+			<span class="comment">// WRITE FROM NOW
+
+			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(index_to_update) = index_to_update {
+				&lt;NamesIndex&lt;T&gt;&gt;::put(index_to_update);
+				&lt;Names&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>alias, alias_index);
+			}
 
 			<span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number();
 			<span class="kw">let </span>target_versioned = LinkTargetVersioned {
@@ -909,10 +974,7 @@
 			};
 			&lt;Aliases&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index, target_versioned);
 
-			<span class="self">Self</span>::deposit_event(Event::RootAliasCreated {
-				root_namespace,
-				alias: alias.into_inner(),
-			});
+			<span class="self">Self</span>::deposit_event(Event::RootAliasCreated { root_namespace, alias });
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -933,13 +995,15 @@
 			alias: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,
 			new_target: LinkTarget&lt;T::AccountId&gt;,
 		) -&gt; DispatchResult {
-			ensure_root(origin.clone())<span class="question-mark">?</span>;
-
-			<span class="macro">ensure!</span>(!namespace.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
-			<span class="macro">ensure!</span>(!alias.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
+			<span class="kw">let </span>who = ensure_signed(origin.clone())<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>namespace = namespace.into_inner();
-			<span class="kw">let </span>alias_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>alias);
+
+			<span class="comment">// Check that the caller is the owner of the namespace
+			</span><span class="kw">let </span>owner = &lt;Namespaces&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>namespace).ok_or(Error::&lt;T&gt;::NamespaceNotFound)<span class="question-mark">?</span>;
+			<span class="macro">ensure!</span>(<span class="kw-2">&amp;</span>who == <span class="kw-2">&amp;</span>owner, Error::&lt;T&gt;::NotAllowed);
+
+			<span class="kw">let </span>alias_index = <span class="self">Self</span>::get_name_index(<span class="kw-2">&amp;</span>alias).ok_or(Error::&lt;T&gt;::AliasNotFound)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>stored_alias =
 				&lt;Aliases&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index).ok_or(Error::&lt;T&gt;::AliasNotFound)<span class="question-mark">?</span>;
@@ -974,10 +1038,8 @@
 		) -&gt; DispatchResult {
 			ensure_root(origin.clone())<span class="question-mark">?</span>;
 
-			<span class="macro">ensure!</span>(!alias.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
-
 			<span class="kw">let </span>root_namespace = T::RootNamespace::get();
-			<span class="kw">let </span>alias_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>alias);
+			<span class="kw">let </span>alias_index = <span class="self">Self</span>::get_name_index(<span class="kw-2">&amp;</span>alias).ok_or(Error::&lt;T&gt;::AliasNotFound)<span class="question-mark">?</span>;
 
 			<span class="kw">let </span>stored_alias = &lt;Aliases&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index)
 				.ok_or(Error::&lt;T&gt;::AliasNotFound)<span class="question-mark">?</span>;
@@ -1021,7 +1083,7 @@
 			<span class="kw">let </span>owner = &lt;Namespaces&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>namespace).ok_or(Error::&lt;T&gt;::NamespaceNotFound)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(<span class="kw-2">&amp;</span>who == <span class="kw-2">&amp;</span>owner, Error::&lt;T&gt;::NotAllowed);
 
-			<span class="kw">let </span>alias_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>alias);
+			<span class="kw">let </span>alias_index = <span class="self">Self</span>::get_name_index(<span class="kw-2">&amp;</span>alias).ok_or(Error::&lt;T&gt;::AliasNotFound)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(
 				&lt;Aliases&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>namespace, <span class="kw-2">&amp;</span>alias_index),
 				Error::&lt;T&gt;::AliasNotFound
@@ -1049,7 +1111,7 @@
 			<span class="macro">ensure!</span>(!alias.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
 
 			<span class="kw">let </span>root_namespace = T::RootNamespace::get();
-			<span class="kw">let </span>alias_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>alias);
+			<span class="kw">let </span>alias_index = <span class="self">Self</span>::get_name_index(<span class="kw-2">&amp;</span>alias).ok_or(Error::&lt;T&gt;::AliasNotFound)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(
 				&lt;Aliases&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>root_namespace, <span class="kw-2">&amp;</span>alias_index),
@@ -1074,20 +1136,13 @@
 		///
 		/// Returns:
 		/// - `Compact&lt;u64&gt;`: the index of the name in storage
-		</span><span class="kw">pub fn </span>take_name_index(name: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;) -&gt; Compact&lt;u64&gt; {
+		</span><span class="kw">pub fn </span>get_name_index(name: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;Compact&lt;u64&gt;&gt; {
 			<span class="kw">let </span>name_index = &lt;Names&lt;T&gt;&gt;::get(name);
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(name_index) = name_index {
-				&lt;Compact&lt;u64&gt;&gt;::from(name_index)
+				<span class="prelude-val">Some</span>(name_index)
 			} <span class="kw">else </span>{
-				<span class="kw">let </span>next_name_index = &lt;NamesIndex&lt;T&gt;&gt;::try_get().unwrap_or_default() + <span class="number">1</span>;
-				<span class="kw">let </span>next_name_index_compact = &lt;Compact&lt;u64&gt;&gt;::from(next_name_index);
-				&lt;Names&lt;T&gt;&gt;::insert(name, next_name_index_compact);
-				<span class="comment">// storing is dangerous inside a closure
-				// but after this call we start storing..
-				// so it&#39;s fine here
-				</span>&lt;NamesIndex&lt;T&gt;&gt;::put(next_name_index);
-				next_name_index_compact
-			}
+				<span class="prelude-val">None
+			</span>}
 		}
 
 		<span class="doccomment">/// Utility function that checks if an AccountId is the owner of the assets in the LinkTarget
@@ -1134,6 +1189,15 @@
 				},
 			}
 		}
+
+		<span class="kw">fn </span>is_valid_string(v: <span class="kw-2">&amp;</span>[u8]) -&gt; bool {
+			<span class="kw">for </span><span class="kw-2">&amp;</span>c <span class="kw">in </span>v {
+				<span class="kw">if </span>(c &lt; <span class="string">b&#39;a&#39; </span>|| c &gt; <span class="string">b&#39;z&#39;</span>) &amp;&amp; (c &lt; <span class="string">b&#39;0&#39; </span>|| c &gt; <span class="string">b&#39;9&#39;</span>) &amp;&amp; c != <span class="string">b&#39;-&#39; </span>&amp;&amp; c != <span class="string">b&#39;_&#39; </span>{
+					<span class="kw">return </span><span class="bool-val">false
+				</span>}
+			}
+			<span class="bool-val">true
+		</span>}
 	}
 }
 </code></pre></div>
