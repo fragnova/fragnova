@@ -10,8 +10,9 @@ mod create_tests {
 	use crate::dummy_data::DummyData;
 	use frame_support::{
 		assert_noop,
-		traits::{fungible, Currency},
+		traits::Currency,
 	};
+	use sp_fragnova::get_account_id;
 
 	pub fn create_cluster_(
 		signer: <Test as frame_system::Config>::AccountId,
@@ -163,9 +164,18 @@ mod create_tests {
 			assert!(<Clusters<Test>>::contains_key(&cluster_id.clone()));
 
 			let name_index = take_name_index_(&cluster_name);
+			let wallet_account = get_account_id::<<Test as frame_system::Config>::AccountId>(
+				b"pallet-clusters-create_cluster",
+				&cluster_id,
+			);
 
-			let cluster =
-				Cluster { owner: account_id, name: name_index, cluster_id, roles: Vec::new() };
+			let cluster = Cluster {
+				owner: account_id,
+				name: name_index,
+				cluster_id,
+				account_id: wallet_account,
+				roles: Vec::new(),
+			};
 			let result = <Clusters<Test>>::get(&cluster_id.clone()).unwrap();
 			assert_eq!(cluster, result);
 
@@ -174,28 +184,6 @@ mod create_tests {
 
 			System::assert_has_event(
 				ClusterEvent::ClusterCreated { cluster_hash: cluster_id.clone() }.into(),
-			);
-
-			let minimum_balance = <Balances as fungible::Inspect<
-				<Test as frame_system::Config>::AccountId,
-			>>::minimum_balance();
-			System::assert_has_event(
-				frame_system::Event::NewAccount { account: get_vault_account_id(cluster_id) }
-					.into(),
-			);
-			System::assert_has_event(
-				pallet_balances::Event::Endowed {
-					account: get_vault_account_id(cluster_id),
-					free_balance: minimum_balance,
-				}
-				.into(),
-			);
-			System::assert_has_event(
-				pallet_balances::Event::Deposit {
-					who: get_vault_account_id(cluster_id),
-					amount: minimum_balance,
-				}
-				.into(),
 			);
 		});
 	}
@@ -206,7 +194,6 @@ mod create_tests {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
 			let role = dummy.role.name;
-			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
@@ -220,7 +207,6 @@ mod create_tests {
 
 			let roles_in_cluster = <Clusters<Test>>::get(cluster_id).unwrap().roles;
 			assert!(roles_in_cluster.contains(&role_name_index));
-			//assert_eq!(<Roles<Test>>::get(&cluster_id, &name_index).unwrap(), expected_role);
 
 			System::assert_has_event(
 				ClusterEvent::RoleCreated { cluster_hash: cluster_id, role_name: role }.into(),
@@ -234,7 +220,6 @@ mod create_tests {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
 			let role_name = dummy.role.name;
-			let role_settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
@@ -280,7 +265,6 @@ mod create_tests {
 			let cluster = dummy.cluster.name;
 			let role = dummy.role.name;
 			let account_id = dummy.account_id;
-			let settings = dummy.role_settings;
 
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
 
@@ -313,7 +297,6 @@ mod create_tests {
 			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 			let name_index = take_name_index_(&role);
-
 			// create a cluster
 			assert_ok!(create_cluster_(account_id, cluster.clone()));
 
@@ -326,7 +309,14 @@ mod create_tests {
 			// associate the role to the cluster
 			assert_ok!(create_role_(account_id.clone(), cluster_id.clone(), role.clone()));
 
-			// TODO create settings
+			assert_ok!(add_role_settings_(
+				account_id.clone(),
+				cluster_id.clone(),
+				role.clone(),
+				vec![
+					(setting_name.clone(), setting_data.clone())
+				],
+			));
 
 			assert_ok!(delete_role_settings_(
 				account_id.clone(),
@@ -368,24 +358,17 @@ mod create_tests {
 			let setting_data = settings.data;
 			let setting2_name = settings2.name;
 			let setting2_data = settings2.data;
-
-			let role_setting1 = Setting { name: setting_name.clone(), data: setting_data.clone() };
 			// associate the role to the cluster
-			assert_ok!(create_role_(
-				account_id.clone(),
-				cluster_id.clone(),
-				role.clone(),
-				vec![role_setting1.clone()]
-			));
-
-			let role_setting2 =
-				Setting { name: setting2_name.clone(), data: setting2_data.clone() };
+			assert_ok!(create_role_(account_id.clone(), cluster_id.clone(), role.clone()));
 
 			assert_ok!(add_role_settings_(
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				vec![role_setting2.clone()],
+				vec![
+					(setting_name.clone(), setting_data.clone()),
+					(setting2_name.clone(), setting2_data.clone())
+				],
 			));
 
 			let name_setting_index = take_name_index_(&setting_name);
@@ -413,6 +396,7 @@ mod create_tests {
 			let cluster = dummy.cluster.name;
 			let role = dummy.role.name;
 			let settings = dummy.role_settings;
+			let settings2 = dummy.role_settings_2;
 			let account_id = dummy.account_id;
 
 			// create a cluster
@@ -424,34 +408,27 @@ mod create_tests {
 
 			let setting_name = settings.name;
 			let setting_data = settings.data;
-			let setting2_name = setting_name.clone();
-			let setting2_data = setting_data.clone();
+			let setting2_data = settings2.data;
 
-			let role_setting1 = Setting { name: setting_name.clone(), data: setting_data.clone() };
 			// associate the role to the cluster
-			assert_ok!(create_role_(
-				account_id.clone(),
-				cluster_id.clone(),
-				role.clone(),
-				vec![role_setting1.clone()]
-			));
-
-			let role_setting2 =
-				Setting { name: setting2_name.clone(), data: setting2_data.clone() };
+			assert_ok!(create_role_(account_id.clone(), cluster_id.clone(), role.clone()));
 
 			assert_noop!(
 				add_role_settings_(
 					account_id.clone(),
 					cluster_id.clone(),
 					role.clone(),
-					vec![role_setting2.clone()],
+					vec![
+						(setting_name.clone(), setting_data.clone()),
+						(setting_name.clone(), setting2_data.clone())
+					],
 				),
 				Error::<Test>::RoleSettingsExists
 			);
 
 			assert_eq!(
 				<Roles<Test>>::get(&cluster_id, &role_name_index).unwrap().settings.len(),
-				1
+				0
 			);
 		});
 	}
@@ -462,7 +439,6 @@ mod create_tests {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
 			let role = dummy.role.name;
-			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 			let account_id_2 = dummy.account_id_2;
 
@@ -473,14 +449,8 @@ mod create_tests {
 
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
-			let role_setting = Setting { name: settings.name, data: settings.data };
 			// associate the role to the cluster
-			assert_ok!(create_role_(
-				account_id.clone(),
-				cluster_id.clone(),
-				role.clone(),
-				vec![role_setting.clone()]
-			));
+			assert_ok!(create_role_(account_id.clone(), cluster_id.clone(), role.clone()));
 
 			assert_ok!(add_role_members_(
 				account_id.clone(),
@@ -500,7 +470,6 @@ mod create_tests {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
 			let role = dummy.role.name;
-			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 			let account_id_2 = dummy.account_id_2;
 
@@ -511,14 +480,8 @@ mod create_tests {
 
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
 
-			let role_setting = Setting { name: settings.name, data: settings.data };
 			// associate the role to the cluster
-			assert_ok!(create_role_(
-				account_id.clone(),
-				cluster_id.clone(),
-				role.clone(),
-				vec![role_setting.clone()]
-			));
+			assert_ok!(create_role_(account_id.clone(), cluster_id.clone(), role.clone()));
 
 			assert_ok!(add_role_members_(
 				account_id.clone(),
@@ -545,7 +508,6 @@ mod create_tests {
 			let dummy = DummyData::new();
 			let cluster = dummy.cluster.name;
 			let role = dummy.role.name;
-			let settings = dummy.role_settings;
 			let account_id = dummy.account_id;
 			let member = dummy.account_id_2;
 
@@ -555,15 +517,9 @@ mod create_tests {
 			let extrinsic_index = <frame_system::Pallet<Test>>::extrinsic_index().unwrap();
 
 			let cluster_id = get_cluster_id(cluster.clone(), account_id, extrinsic_index);
-			let role_setting = Setting { name: settings.name, data: settings.data };
 
 			// create a role for the cluster
-			assert_ok!(create_role_(
-				account_id.clone(),
-				cluster_id.clone(),
-				role.clone(),
-				vec![role_setting.clone()]
-			));
+			assert_ok!(create_role_(account_id.clone(), cluster_id.clone(), role.clone()));
 
 			// add member into the cluster
 			assert_ok!(add_member_(

@@ -102,8 +102,8 @@ impl pallet_timestamp::Config for Test {
 
 impl pallet_clusters::Config for Test {
 	type Event = Event;
-	type NameLimit = ConstU32<15>;
-	type DataLimit = ConstU32<5>;
+	type NameLimit = ConstU32<35>;
+	type DataLimit = ConstU32<25>;
 	type MembersLimit = ConstU32<25>;
 	type RoleSettingsLimit = ConstU32<20>;
 }

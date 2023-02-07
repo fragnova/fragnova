@@ -1,6 +1,6 @@
 use crate::{mock::*, *};
 use sp_core::ed25519::Public;
-use sp_io::hashing::{blake2_128, blake2_256};
+use sp_io::hashing::blake2_128;
 
 pub struct DummyCluster {
 	pub owner: Public,
@@ -44,11 +44,6 @@ pub fn get_cluster_id(
 		]
 		.concat(),
 	)
-}
-
-pub fn get_vault_account_id(cluster_id: Hash128) -> sp_core::ed25519::Public {
-	let hash = blake2_256(&[&b"fragnova-vault"[..], &cluster_id].concat());
-	sp_core::ed25519::Public::from_raw(hash)
 }
 
 pub fn take_name_index_(name: &Vec<u8>) -> Compact<u64> {
