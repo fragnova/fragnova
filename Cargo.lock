@@ -4757,12 +4757,14 @@ dependencies = [
 name = "pallet-protos-rpc"
 version = "0.0.1"
 dependencies = [
+ "base64 0.21.0",
  "hex",
  "jsonrpsee",
  "pallet-protos",
  "pallet-protos-rpc-runtime-api",
  "parity-scale-codec 3.2.1",
  "protos",
+ "sc-client-api",
  "serde",
  "serde_json",
  "sp-api",
