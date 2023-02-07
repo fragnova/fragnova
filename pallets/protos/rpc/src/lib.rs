@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use base64::{engine::general_purpose::STANDARD, Engine};
 use codec::Codec;
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
@@ -9,6 +10,7 @@ use jsonrpsee::{
 	types::error::{CallError, ErrorObject},
 };
 use pallet_protos::{GetGenealogyParams, GetProtosParams};
+use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
@@ -36,6 +38,11 @@ pub trait ProtosRpc<BlockHash, AccountId> {
 		params: GetGenealogyParams<String>,
 		at: Option<BlockHash>,
 	) -> RpcResult<String>;
+
+	/// **Query** and **Return** **Proto-Fragment** data based on **`proto_hash`**.
+	/// The **return type** is base64 encoded **bytes**.
+	#[method(name = "getData")]
+	fn get_data(&self, proto_hash: BlockHash, at: Option<BlockHash>) -> RpcResult<String>;
 }
 
 /// An implementation of protos specific RPC methods.
@@ -59,6 +66,7 @@ where
 	C: Send + Sync + 'static,
 	C: ProvideRuntimeApi<Block>,
 	C: HeaderBackend<Block>,
+	C: BlockBackend<Block>,
 	C::Api: ProtosRuntimeApi<Block, AccountId>,
 	AccountId: Codec,
 {
@@ -122,6 +130,24 @@ where
 				Err(e) => Err(runtime_error_into_rpc_err(e)),
 				Ok(result) => Ok(result),
 			},
+		}
+	}
+
+	fn get_data(
+		&self,
+		proto_hash: <Block as BlockT>::Hash,
+		_at: Option<<Block as BlockT>::Hash>,
+	) -> RpcResult<String> {
+		let tx = self.client.indexed_transaction(&proto_hash);
+		match tx {
+			Ok(tx) => match tx {
+				Some(data) => {
+					let data_str = STANDARD.encode(data);
+					Ok(data_str)
+				},
+				None => Err(runtime_error_into_rpc_err("No indexed transaction found")),
+			},
+			Err(e) => Err(runtime_error_into_rpc_err(e)),
 		}
 	}
 }
