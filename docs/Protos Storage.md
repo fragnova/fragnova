@@ -49,12 +49,6 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub references: Vec<Hash256>,
 }
 
-#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
-pub struct AccountsInfo {
-	pub active_accounts: u128,
-	pub liftime_accounts: u128,
-}
-
 /// Struct of a Proto-Fragment
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug)]
 pub struct Proto<TAccountId, TBlockNumber> {
@@ -77,12 +71,10 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub tags: Vec<Compact<u64>>,
 	/// Metadata attached to the proto.
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
-	/// Accounts information for this proto.
-	pub accounts_info: AccountsInfo,
 }
 ```
 ### Metadata keys
-Supported metadata keys are 'image', 'title', 'json_attributes', 'description’. 
+Supported metadata keys are 'image', 'title', 'json_attributes', 'description’.
 
 'image':
 This is the preview image of the item. Formats supported are PNG, JPEG or GIF. We recommend using a 350 x 350 image.
@@ -94,10 +86,10 @@ Title of the item. e.g. "Panda Museum"
 A human readable description of the item. e.g. "A unique 3D rendering of Panda Museum."
 
 'json_attributes':
-These are the attributes for the item, which will show up on the proto details page / fragment details page for the item. 
-e.g. 
-``` 
-{ 
+These are the attributes for the item, which will show up on the proto details page / fragment details page for the item.
+e.g.
+```
+{
 	"color": "black and white",
 	"animal": "panda"
 }
@@ -107,7 +99,7 @@ Example of retrieving protos with all metadata keys:
 ```
 const params = api.createType("GetProtosParams", {
     metadata_keys: ['image', 'title', 'json_attributes', 'description'],
-    categories: categories, 
+    categories: categories,
     available: availability,
     tags: tags,
     return_owners: true,
@@ -125,8 +117,6 @@ An `ExternalAsset` can represent anything external that can be unequivocally ide
 ### ProtoPatch
 #### Remarks
 While references can be added. They cannot be removed as both Shards side would be hard (imagine removing a dependency from a released library), but especially because of the royalties distribution we don't allow removal.
-### AccountsInfo
-This struct is purely to collect stats and metrics about a proto for now.
 ### Proto
 ## Storage
 ```rust

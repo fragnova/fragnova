@@ -47,7 +47,7 @@ use sp_std::{
 pub use weights::WeightInfo;
 
 pub use sp_fragnova::protos::{
-	AccountsInfo, LinkSource, LinkedAsset, Proto, ProtoData, ProtoOwner, ProtoPatch, UsageLicense,
+	LinkSource, LinkedAsset, Proto, ProtoData, ProtoOwner, ProtoPatch, UsageLicense,
 };
 use sp_fragnova::{Hash128, Hash256, Hash64};
 
@@ -393,7 +393,6 @@ pub mod pallet {
 				category: category.clone(),
 				tags,
 				metadata: BTreeMap::new(),
-				accounts_info: AccountsInfo::default(),
 				data: data_stored,
 				cluster,
 			};

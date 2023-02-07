@@ -60,7 +60,6 @@ mod upload_tests {
 				category: proto.category.clone(),
 				tags: Vec::new(), // proto.tags,
 				metadata: BTreeMap::new(),
-				accounts_info: AccountsInfo::default(),
 				data: ProtoData::Local(vec![]), // empty here if local
 				cluster: None,
 			};

@@ -3,12 +3,9 @@
 
 use crate::{Hash128, Hash256};
 use codec::{Compact, Decode, Encode};
-use sp_std::{
-	collections::btree_map::BTreeMap,
-	vec::Vec
-};
+use protos::categories::Categories;
 use sp_core::{ecdsa, H160, U256};
-use protos::{categories::Categories};
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 /// TODO: Documentation
 #[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
@@ -48,15 +45,6 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub data: ProtoData,
 }
 
-/// Struct that represents the account information of a Proto-Fragment
-#[derive(Default, Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-pub struct AccountsInfo {
-	/// TODO: Documentation
-	pub active_accounts: u128,
-	/// TODO: Documentation
-	pub lifetime_accounts: u128,
-}
-
 /// **Enum** that indicates **how a Proto-Fragment can be used**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum UsageLicense<TContractAddress> {
@@ -83,29 +71,27 @@ pub enum ProtoData {
 /// **Struct** of a **Proto-Fragment**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub struct Proto<TAccountId, TBlockNumber> {
-	/// **Block Number** in which the **Proto-Fragment was minted in**
-	pub block: TBlockNumber,
+	/// **Category** of the **Proto-Fragment**
+	pub category: Categories,
+	/// **List of other Proto-Fragments** used to create the **Proto-Fragment**
+	pub references: Vec<Hash256>,
 	/// **List of *ProtoPatch* structs** of the **Proto-Fragment**
 	pub patches: Vec<ProtoPatch<TBlockNumber>>,
+	/// **Data** of the **Proto-Fragment** (valid only if not Local)
+	pub data: ProtoData,
+	/// **Block Number** in which the **Proto-Fragment was minted in**
+	pub block: TBlockNumber,
 	/// **License** details of the **Proto-Fragment**
 	pub license: UsageLicense<TAccountId>,
 	/// **Original Creator** of the **Proto-Fragment**
 	pub creator: TAccountId,
 	/// *Current Owner** of the **Proto-Fragment**
 	pub owner: ProtoOwner<TAccountId>,
-	/// **List of other Proto-Fragments** used to create the **Proto-Fragment**
-	pub references: Vec<Hash256>,
-	/// **Category** of the **Proto-Fragment**
-	pub category: Categories,
 	/// **List of Tags** associated with the **Proto-Fragment**
 	pub tags: Vec<Compact<u64>>,
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to the **Hash of the
 	/// aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
-	/// Accounts information for this proto.
-	pub accounts_info: AccountsInfo,
-	/// **Data** of the **Proto-Fragment** (valid only if not Local)
-	pub data: ProtoData,
 	/// **Cluster** ID where the Proto belongs to (Optional)
 	pub cluster: Option<Hash128>,
 }
