@@ -11,7 +11,7 @@
 extern crate core;
 
 use codec::{Compact, Decode, Encode};
-use frame_support::{transactional, BoundedVec};
+use frame_support::BoundedVec;
 pub use pallet::*;
 use sp_fragnova::Hash128;
 use sp_std::{vec, vec::Vec};
@@ -453,6 +453,14 @@ pub mod pallet {
 					.iter()
 					.any(|existing_setting| existing_setting.name == setting.name)
 			});
+
+			ensure!(
+				!role_settings.iter().enumerate().any(|(index, setting)| role_settings
+					.iter()
+					.enumerate()
+					.any(|(i, s)| setting.name == s.name && i != index)),
+				Error::<T>::RoleSettingsExists
+			);
 
 			ensure!(!exists, Error::<T>::RoleSettingsExists);
 
