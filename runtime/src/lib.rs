@@ -928,7 +928,7 @@ parameter_types! {
 	/// Not strictly enforced, but used for weight estimation.
 	pub const MaxLocks: u32 = 50;
 	/// TODO: Documentation
-	pub const IsTransferable: bool = false;
+	pub const IsTransferable: bool = true; // TODO Review - Change this back to `false` once we update our substrate dependency
 }
 
 impl pallet_balances::Config for Runtime {

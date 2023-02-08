@@ -4,9 +4,7 @@ use codec::{
 };
 use frame_support::{
 	dispatch::RawOrigin,
-	log::{
-		error,
-	},
+	traits::Get
 };
 use sp_runtime::{
 	traits::{
@@ -81,7 +79,7 @@ impl TryFrom<u16> for FuncId {
 			0x0c02 => Self::GetInstanceIds,
 			0x0c03 => Self::GiveInstance,
 			_ => {
-				error!("Called an unregistered `func_id`: {:}", func_id);
+				log::error!("Called an unregistered `func_id`: {:}", func_id);
 				return Err(DispatchError::Other("Unimplemented func_id"))
 			}
 		};
@@ -140,6 +138,9 @@ impl<T> ChainExtension<T> for MyExtension
 		match func_id {
 			FuncId::GetProto => {
 				let proto_hash: Hash256 = env.read_as()?;
+				// We are supposed to charge weight even if we read a storage value according to @bkchr: https://substrate.stackexchange.com/questions/7071/in-the-runtime-chain-extension-should-we-be-charging-weight-if-we-are-reading-a
+				// Furthermore, an actual Substrate Blockchain does `<T as frame_system::Config>::DbWeight::get().reads(1)` to read a storage value here: https://github.com/AstarNetwork/astar-frame/blob/b2f888fafecb7257e68c5e9f0e9e661d1f8007c9/chain-extensions/dapps-staking/src/lib.rs#L150-L156
+				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
 				let output: Option<Proto<T::AccountId, T::BlockNumber>> = pallet_protos::Protos::<T>::get(&proto_hash);
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
@@ -149,6 +150,7 @@ impl<T> ChainExtension<T> for MyExtension
 			},
 			FuncId::GetProtoIds => {
 				let owner: T::AccountId = env.read_as()?; // TODO Review - Shouldn't `owner` parameter be of type `ProtoOwner<T::AccountId>` instead of `T::AccountId`
+				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
 				let output: Vec<Hash256> = pallet_protos::ProtosByOwner::<T>::get(ProtoOwner::<T::AccountId>::User(owner)).unwrap_or_default();
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a `Vec`!
@@ -159,6 +161,7 @@ impl<T> ChainExtension<T> for MyExtension
 
 			FuncId::GetDefinition => {
 				let definition_hash: Hash128 = env.read_as()?;
+				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
 				let output: Option<FragmentDefinition<Vec<u8>, T::AssetId, T::AccountId, T::BlockNumber>> = pallet_fragments::Definitions::<T>::get(&definition_hash);
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
@@ -168,6 +171,7 @@ impl<T> ChainExtension<T> for MyExtension
 			},
 			FuncId::GetInstance => {
 				let (definition_hash, edition_id, copy_id): (Hash128, InstanceUnit, InstanceUnit) = env.read_as()?;
+				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
 				let output: Option<FragmentInstance<T::BlockNumber>> = pallet_fragments::Fragments::<T>::get((definition_hash, edition_id, copy_id));
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
@@ -177,6 +181,7 @@ impl<T> ChainExtension<T> for MyExtension
 			},
 			FuncId::GetInstanceIds => {
 				let (definition_hash, owner): (Hash128, T::AccountId) = env.read_as()?;
+				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
 				let output: Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)> = pallet_fragments::Inventory::<T>::get(owner, definition_hash).unwrap_or_default();
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a `Vec`!
@@ -185,8 +190,24 @@ impl<T> ChainExtension<T> for MyExtension
 				})?;
 			},
 			FuncId::GiveInstance => {
+				// We are using `env.read_as_unbounded::<T: Decode>()` to read the function input instead of `env.read_as::<T: Decode + MaxEncodedLen>()` because the latter throws an error!
+				//
+				// # Footnote:
+				//
+				// I think the reason `env.read_as::<T: Decode + MaxEncodedLen>()` (https://paritytech.github.io/substrate/master/pallet_contracts/chain_extension/struct.Environment.html#method.read_as)
+				// doesn't work (even though `T` (i.e the tuple we want to decode) implements `MaxEncodedLen`)
+				// is because some of the tuple elements are optional (so if they're `None` - SCALE encodes them as `0x00` which is just 1 byte).
+				// Therefore, `T` does not have a fixed size (if it's `None` it's 1 byte, otherwise it's more than 1 byte).
+				// And `env.read_as()` is defined as: "Reads and decodes **a type with a size fixed at compile time** from contract memory."
+				//
+				// The exact same error was reported here: https://github.com/paritytech/substrate/issues/11305
+				//
+				// # Footnote 2:
+				//
+				// We are using `env.read_as_unbounded()` just like it was used in this tutorial: https://www.youtube.com/watch?v=yykPQF0tkqk / https://github.com/HCastano/decoded-2022-demo/blob/master/runtime/src/chain_extension.rs#L104
+				//
 				let (definition_hash, edition_id, copy_id, to, new_permissions, expiration):
-					(Hash128, InstanceUnit, InstanceUnit, T::AccountId, Option<FragmentPerms>, Option<T::BlockNumber>) = env.read_as()?;
+					(Hash128, InstanceUnit, InstanceUnit, T::AccountId, Option<FragmentPerms>, Option<T::BlockNumber>) = env.read_as_unbounded(env.in_len())?;
 
 				// This is the exact same expression that is in the weight macro of `fragments.give()`
 				let weight = <T as pallet_fragments::Config>::WeightInfo::benchmark_give_instance_that_has_copy_perms().max(

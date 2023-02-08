@@ -5466,8 +5466,8 @@ dependencies = [
 
 [[package]]
 name = "protos"
-version = "0.1.25"
-source = "git+https://github.com/fragcolor-xyz/protos.git?branch=implement-maxencodedlen-trait-for-fragmentperms#10a177a52ca486bf9169877e956cf96f24e6e83b"
+version = "0.1.26"
+source = "git+https://github.com/fragcolor-xyz/protos.git?branch=implement-maxencodedlen-trait-for-fragmentperms#6d28335b350715282e25fdd986aef52ba1ab290f"
 dependencies = [
  "bitflags",
  "parity-scale-codec 3.2.1",
