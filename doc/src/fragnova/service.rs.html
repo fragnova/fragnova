@@ -377,6 +377,9 @@
 <a href="#377" id="377">377</a>
 <a href="#378" id="378">378</a>
 <a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 //!
 //! service.rs: This file defines the implementation of the node. Take note of the libraries that this file imports and the names of the functions it invokes.
@@ -646,13 +649,16 @@
 	})<span class="question-mark">?</span>;
 
 	<span class="kw">if </span>role.is_authority() {
-		<span class="kw">let </span>proposer_factory = sc_basic_authorship::ProposerFactory::new(
+		<span class="kw">let </span><span class="kw-2">mut </span>proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
 			transaction_pool,
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
 		);
+		<span class="comment">// let lets set the proposer factory block limit to 16 mb
+		</span>proposer_factory.set_default_block_size_limit(<span class="number">16 </span>* <span class="number">1024 </span>* <span class="number">1024</span>);
+
 
 		<span class="kw">let </span>can_author_with =
 			sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
