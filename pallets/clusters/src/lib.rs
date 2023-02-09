@@ -339,10 +339,16 @@ pub mod pallet {
 			// Check that the caller is the owner of the cluster;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
-			// Either the list of members or the list of new settings must have values.
+			// the list of members should have values.
 			if members.len().is_zero() {
 				return Err(Error::<T>::InvalidInput.into())
 			}
+
+			// avoid duplicates
+			ensure!(
+				!(1..members.len()).any(|i| members[i..].contains(&members[i - 1])),
+				Error::<T>::InvalidInput
+			);
 
 			let role_name = role_name.into_inner();
 			let name_index =
@@ -385,10 +391,16 @@ pub mod pallet {
 			// Check that the caller is the owner of the cluster;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
-			// Either the list of members or the list of new settings must have values.
+			// the list of members should have values.
 			if members.len().is_zero() {
 				return Err(Error::<T>::InvalidInput.into())
 			}
+
+			// avoid duplicates
+			ensure!(
+				!(1..members.len()).any(|i| members[i..].contains(&members[i - 1])),
+				Error::<T>::InvalidInput
+			);
 
 			let role_name = role_name.into_inner();
 			let name_index =
@@ -434,6 +446,13 @@ pub mod pallet {
 			// Check that the caller is the owner of the cluster;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
 
+			// avoid duplicates
+			ensure!(
+				!(1..settings.len())
+					.any(|i| settings[i..].iter().map(|x| &x.0).any(|y| y == &settings[i - 1].0)),
+				Error::<T>::InvalidInput
+			);
+
 			let name_index =
 				Self::take_name_index(&role_name, false).ok_or(Error::<T>::RoleNotFound)?;
 
@@ -448,21 +467,14 @@ pub mod pallet {
 				})
 				.collect::<Vec<CompactSetting>>();
 
-			let exists = role_settings.iter().any(|setting| {
-				role.settings
-					.iter()
-					.any(|existing_setting| existing_setting.name == setting.name)
-			});
-
 			ensure!(
-				!role_settings.iter().enumerate().any(|(index, setting)| role_settings
-					.iter()
-					.enumerate()
-					.any(|(i, s)| setting.name == s.name && i != index)),
+				!role_settings.iter().any(|setting| {
+					role.settings
+						.iter()
+						.any(|existing_setting| existing_setting.name == setting.name)
+				}),
 				Error::<T>::RoleSettingsExists
 			);
-
-			ensure!(!exists, Error::<T>::RoleSettingsExists);
 
 			// write
 			<Roles<T>>::mutate(&cluster_id, &name_index, |role| {
@@ -552,6 +564,13 @@ pub mod pallet {
 			let cluster = <Clusters<T>>::get(&cluster_id).ok_or(Error::<T>::ClusterNotFound)?;
 			// Check that the caller is the owner of the cluster;
 			ensure!(who == cluster.owner, Error::<T>::NoPermission);
+
+			// avoid duplicates
+			ensure!(
+				!(1..setting_names.len())
+					.any(|i| setting_names[i..].contains(&setting_names[i - 1])),
+				Error::<T>::InvalidInput
+			);
 
 			let role_name = role_name.into_inner();
 			let name_index =
@@ -649,6 +668,12 @@ pub mod pallet {
 
 			// Check that the cluster does not already contain the member
 			ensure!(!<Members<T>>::contains_key(&cluster_id, &member), Error::<T>::MemberExists);
+
+			// avoid duplicates
+			ensure!(
+				!(1..roles_names.len()).any(|i| roles_names[i..].contains(&roles_names[i - 1])),
+				Error::<T>::InvalidInput
+			);
 
 			let role_indices = roles_names
 				.iter()

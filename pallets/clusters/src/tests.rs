@@ -423,7 +423,7 @@ mod create_tests {
 						(setting_name.clone(), setting2_data.clone())
 					],
 				),
-				Error::<Test>::RoleSettingsExists
+				Error::<Test>::InvalidInput
 			);
 
 			assert_eq!(
