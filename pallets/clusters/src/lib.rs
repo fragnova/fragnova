@@ -65,7 +65,7 @@ pub struct Cluster<TAccountId> {
 pub mod pallet {
 	use super::*;
 	use frame_support::{
-		log, pallet_prelude::*, sp_runtime::traits::Zero, traits::ReservableCurrency,
+		log, pallet_prelude::*, sp_runtime::traits::Zero, traits::ReservableCurrency, transactional,
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_fragnova::get_account_id;
