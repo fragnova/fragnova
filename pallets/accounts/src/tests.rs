@@ -42,7 +42,7 @@ mod link_tests {
 	use super::*;
 
 	pub fn link_(link: &Link) -> DispatchResult {
-		Accounts::link(Origin::signed(link.fragnova_account_id), link.link_signature.clone())
+		Accounts::link(RuntimeOrigin::signed(link.fragnova_account_id), link.link_signature.clone())
 	}
 
 	#[test]
@@ -70,7 +70,7 @@ mod link_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Linked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Linked {
 					sender: link.fragnova_account_id,
 					eth_key: link.get_ethereum_public_address_of_signer()
 				})
@@ -139,7 +139,10 @@ mod link_tests {
 				_ethereum_account_pair: dd.ethereum_account_pair,
 			};
 
-			assert_noop!(link_(&link_diff_fragnova_account_id), Error::<Test>::AccountAlreadyLinked);
+			assert_noop!(
+				link_(&link_diff_fragnova_account_id),
+				Error::<Test>::AccountAlreadyLinked
+			);
 		});
 	}
 }
@@ -156,7 +159,7 @@ mod unlink_tests {
 			assert_ok!(link_(&link));
 
 			assert_ok!(Accounts::unlink(
-				Origin::signed(link.fragnova_account_id),
+				RuntimeOrigin::signed(link.fragnova_account_id),
 				link.get_ethereum_public_address_of_signer()
 			));
 
@@ -192,7 +195,7 @@ mod unlink_tests {
 
 			assert_noop!(
 				Accounts::unlink(
-					Origin::signed(link.fragnova_account_id),
+					RuntimeOrigin::signed(link.fragnova_account_id),
 					link.get_ethereum_public_address_of_signer()
 				),
 				Error::<Test>::AccountNotLinked
@@ -215,7 +218,7 @@ mod unlink_tests {
 
 			assert_noop!(
 				Accounts::unlink(
-					Origin::signed(link.fragnova_account_id),
+					RuntimeOrigin::signed(link.fragnova_account_id),
 					link_second.get_ethereum_public_address_of_signer()
 				),
 				Error::<Test>::DifferentAccountLinked
@@ -357,7 +360,9 @@ mod sync_partner_contracts_tests {
 			let tx = <Extrinsic as codec::Decode>::decode(&mut &*tx).unwrap();
 			assert_eq!(tx.signature, None); // Because it's an **unsigned transaction** with a signed payload
 
-			if let Call::Accounts(crate::Call::internal_lock_update { data, signature }) = tx.call {
+			if let RuntimeCall::Accounts(crate::Call::internal_lock_update { data, signature }) =
+				tx.call
+			{
 				assert_eq!(data, expected_data);
 
 				let signature_valid =
@@ -379,7 +384,7 @@ mod internal_lock_update_tests {
 
 	pub fn lock_(lock: &Lock) -> DispatchResult {
 		Accounts::internal_lock_update(
-			Origin::none(),
+			RuntimeOrigin::none(),
 			lock.data.clone(),
 			sp_core::ed25519::Signature([69u8; 64]), // this can be anything and it will still work
 		)
@@ -387,7 +392,7 @@ mod internal_lock_update_tests {
 
 	pub fn unlock_(unlock: &Unlock) -> DispatchResult {
 		Accounts::internal_lock_update(
-			Origin::none(),
+			RuntimeOrigin::none(),
 			unlock.data.clone(),
 			sp_core::ed25519::Signature([69u8; 64]), // this can be anything
 		)

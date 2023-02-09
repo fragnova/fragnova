@@ -60,13 +60,11 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
+	dispatch::DispatchClass,
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
-	weights::DispatchClass,
+	weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
-use frame_system::{
-	limits::{BlockLength, BlockWeights},
-	EnsureRoot,
-};
+use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -93,7 +91,7 @@ pub use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{Contains, KeyOwnerProofSystem, Randomness, StorageInfo},
 	weights::{
-		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
 		IdentityFee, Weight,
 	},
 	StorageValue,
@@ -110,6 +108,7 @@ pub use sp_runtime::{Perbill, Permill};
 use scale_info::prelude::string::String;
 
 use codec::{Decode, Encode};
+use frame_support::traits::AsEnsureOriginWithArg;
 use sp_runtime::traits::{ConstU8, SaturatedConversion, StaticLookup};
 
 use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
@@ -220,18 +219,13 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 	items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
 }
 
-/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
-///
-/// Note: Currently it is not possible to change the slot duration after the chain has started.
-///       Attempting to do so will brick block production.
+// NOTE: Currently it is not possible to change the slot duration after the chain has started.
+//       Attempting to do so will brick block production.
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 // Time is measured by number of blocks.
-/// Number of blocks that would be added to the Blockchain on average, when one minute passes
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-/// Number of blocks that would be added to the Blockchain on average, when one hour passes
 pub const HOURS: BlockNumber = MINUTES * 60;
-/// Number of blocks that would be added to the Blockchain on average, when one day passes
 pub const DAYS: BlockNumber = HOURS * 24;
 
 /// The version information is used to identify this runtime when compiled natively.
@@ -240,117 +234,25 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
-/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
-/// This is used to limit the maximal weight of a single extrinsic.
-const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75% (i.e up to 75% of the block length and block weight of a block can be filled up by Normal extrinsics).
 /// The rest can be used by Operational extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-/// TODO Documentation - It is actually the "target block weight", not "maximum block weight".
-/// The **maximum block weight** is the **maximum amount of computation time** (assuming no extrinsic class uses its `reserved` space - please see the type `RuntimeBlockWeights` below to understand what `reserved` is)
-/// that is **allowed to be spent in constructing a block** by a Node.
-///
-/// Here, we set this to 2 seconds because we want a 6 second average block time. (since in Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** - see the crate documentation above for more information)
-const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 /// The maximum possible length (in bytes) that a Fragnova Block can be
 pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
 
-// When to use:
-//
-// To declare parameter types for a pallet's relevant associated types during runtime construction.
-//
-// What it does:
-//
-// The macro replaces each parameter specified into a struct type with a get() function returning its specified value.
-// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
-//
-// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
-	/// Version of the runtime.
-	pub const Version: RuntimeVersion = VERSION;
-	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	pub const BlockHashCount: BlockNumber = 2400;
-	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
-	pub const SS58Prefix: u8 = 93;
-
-	/// `max_with_normal_ratio(max: u32, normal: Perbill)` creates a new `BlockLength` with `max` for `Operational` & `Mandatory` and `normal * max` for `Normal`.
-	///
-	/// Note: `BlockLength` is a struct that specifies the maximum total length (in bytes) each extrinsic class can have in a block.
-	/// The maximum possible length that a block can be is the maximum of these maximums - i.e `MAX(BlockLength::max)`.
-	///
-	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockLength.html#
-	pub RuntimeBlockLength: BlockLength = BlockLength
-		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
-
-	/// Set the "target block weight" for the Fragnova Blockchain.
-	///
-	/// # Footnotes
-	///
-	/// ## `BlockWeights::builder()`
-	///
-	/// `BlockWeights::builder()` is called to start constructing a new `BlockWeights` object. By default all kinds except of Mandatory extrinsics are disallowed.
-	///
-	/// ## `BlockWeights` struct
-	///
-	/// A `BlockWeights` struct contains the following information for each extrinsic class:
-	/// 1. **Base weight of any extrinsic** of the **extrinsic class** (`WeightsPerClass::base_extrinsic`): The "overhead cost" (i.e overhead computation time) when running any extrinsic of the extrinsic class.
-	/// 2. **Maximum possible weight** that can be **consumed by a single extrinsic** of the **extrinsic class**: `WeightsPerClass::max_extrinsic`.
-	/// 3. **Maximum possible weight in a block** that can be **consumed by the extrinsic class** (to compute extrinsics): `WeightsPerClass::max_total`.
-	///    - If this is `None`, an unlimited amount of weight can be consumed by the extrinsic class. This is generally highly recommended for `Mandatory` dispatch class, while it can be dangerous for `Normal` class and should only be done with extra care and consideration.
-	///    - In the worst case, the total weight consumed by the extrinsic class is going to be: `MAX(max_total) + MAX(reserved)`. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.WeightsPerClass.html#structfield.max_total
-	/// 4. **Maximum additional amount of weight that can always be consumed by an extrinsic class**, **once a block's target block weight (`BlockWeights::max_block`)
-	///	   has been reached** (`WeightsPerClass::reserved`): "Often it's desirable for some class of transactions to be added to the block despite it being full.
-	///    For instance one might want to prevent high-priority `Normal` transactions from pushing out lower-priority `Operational` transactions.
-	///    In such cases you might add a `reserved` capacity for given class.".
-	///    Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
-	///    - Note that the `max_total` limit applies to `reserved` space as well.
-	///		 For example, in the diagram (https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# - click the "src" button - since the diagram gets cut off on the
-	///		 webpage), "the sum of weights of `Ext7` & `Ext8` (which are `Operational` extrinsics) mustn't exceed the `max_total` (of the `Operational` extrinsic)".
-	///      Please do see the diagram for complete understanding.
-	///    - Setting `reserved` to `Some(x)`, guarantees that at least `x` weight can be consumed by the extrinsic class in every block.
-	///    	  - Note: `x` can be zero obviously. It doesn't have to only be non-zero integers (obviously!).
-	///    - Setting `reserved` to `None` guarantees that at least `max_total` weight can be consumed by the extrinsic class in every block.
-	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrinsic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
-	/// Furthermore, a `BlockWeights` struct also contains information about the block:
-	/// 1. **Maximum total amount of weight that can be consumed by all kinds of extrinsics in a block (assuming no extrinsic class uses its `reserved` space)** (`BlockWeights::max_block`)
-	/// 2. **Base weight of a block (i.e the computation time to execute an empty block)** (`BlockWeights::base_block`).
-	///
-	///
-	/// Note: Even though each extrinsic class has its own separate limit `max_total`,
-	/// in an actual block the total weight consumed by each extrinsic class cannot not exceed `max_block` (except for `reserved`).
-	///
-	/// Note 2: As a consequence of `reserved` space, total consumed block weight might exceed `max_block` value,
-	/// so this parameter (i.e `max_block`) should rather be thought of as "target block weight" than a hard limit.
-	///
-	/// Note 3: Each block starts with `BlockWeights::base_block` weight being consumed right away **as part of the Mandatory extrinsic class**. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
-	///
-	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
-	pub RuntimeBlockWeights: BlockWeights = BlockWeights::builder()
-		// `BlockWeightsBuilder::base_block()` sets the base weight of the block (i.e `BlockWeights::base_block`) to
-		// `frame_support::weights::constants::BlockExecutionWeight` which is defined as the "Time to execute an empty block" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.BlockExecutionWeight.html#).
-		.base_block(BlockExecutionWeight::get())
-		// Set the base weight (i.e `WeightsPerClass::base_extrinsic`) for each extrinsic class to `ExtrinsicBaseWeight::get()`.
-		//
-		// Note: `frame_support::weights::constants::ExtrinsicBaseWeight` is the "Time to execute a NO-OP extrinsic, for example `System::remark`" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.ExtrinsicBaseWeight.html#).
-		.for_class(DispatchClass::all(), |weights| {
-			weights.base_extrinsic = ExtrinsicBaseWeight::get();
-		})
-		// Set the maximum block weight for the `Normal` extrinsic class to `NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT`.
-		.for_class(DispatchClass::Normal, |weights| {
-			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-		})
-		// Set the maximum block weight and the reserved weight for the `Operational` extrinsic class to `MAXIMUM_BLOCK_WEIGHT` and `MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT` respectively.
-		.for_class(DispatchClass::Operational, |weights| {
-			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
-			// Operational transactions have some extra reserved space, so that they
-			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
-			weights.reserved = Some(
-				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
-			);
-		})
-		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
-		.build_or_panic();
+	pub const Version: RuntimeVersion = VERSION;
+	/// We allow for 2 seconds of compute with a 6 second average block time.
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::with_sensible_defaults(
+			Weight::from_parts(2u64 * WEIGHT_REF_TIME_PER_SECOND, u64::MAX),
+			NORMAL_DISPATCH_RATIO,
+		);
+	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
+		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+	pub const SS58Prefix: u8 = 42;
 }
 
 ///  **Maximum permitted depth level** that a **descendant call** of the **outermost call of an extrinsic** can be
@@ -365,24 +267,26 @@ mod validation_logic {
 	use super::*;
 
 	/// Does the call `c` use `transaction_index::index`.
-	fn does_call_index_the_transaction(c: &Call) -> bool {
+	fn does_call_index_the_transaction(c: &RuntimeCall) -> bool {
 		matches!(
 			c,
-			Call::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
-		Call::Protos(pallet_protos::Call::patch { .. }) |
-		Call::Protos(pallet_protos::Call::set_metadata { .. }) |
-		Call::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
-		Call::Fragments(pallet_fragments::Call::set_instance_metadata { .. })
+			RuntimeCall::Protos(pallet_protos::Call::upload { .. }) | // https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
+		RuntimeCall::Protos(pallet_protos::Call::patch { .. }) |
+		RuntimeCall::Protos(pallet_protos::Call::set_metadata { .. }) |
+		RuntimeCall::Fragments(pallet_fragments::Call::set_definition_metadata { .. }) | // https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
+		RuntimeCall::Fragments(pallet_fragments::Call::set_instance_metadata { .. })
 		)
 	}
 
 	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
 		match category {
 			Categories::Text(sub_categories) => match sub_categories {
-				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =>
-					str::from_utf8(data).is_ok(),
-				TextCategories::Json =>
-					serde_json::from_slice::<serde_json::Value>(&data[..]).is_ok(),
+				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown => {
+					str::from_utf8(data).is_ok()
+				},
+				TextCategories::Json => {
+					serde_json::from_slice::<serde_json::Value>(&data[..]).is_ok()
+				},
 			},
 			Categories::Trait(trait_hash) => match trait_hash {
 				Some(_) => false,
@@ -392,11 +296,11 @@ mod validation_logic {
 					};
 
 					if trait_struct.name.len() == 0 {
-						return false
+						return false;
 					}
 
 					if trait_struct.records.len() == 0 {
-						return false
+						return false;
 					}
 
 					trait_struct.records.windows(2).all(|window| {
@@ -424,7 +328,7 @@ mod validation_logic {
 
 				// only support EDN for now
 				if format != ShardsFormat::Edn {
-					return false
+					return false;
 				}
 
 				// check trait exists and that we require proper references
@@ -434,8 +338,9 @@ mod validation_logic {
 					proto_references.iter().any(|proto_hash| {
 						if let Some(proto) = pallet_protos::Protos::<Runtime>::get(proto_hash) {
 							match proto.category {
-								Categories::Shards(shards_info) =>
-									shards_info.implementing.contains(trait_hash),
+								Categories::Shards(shards_info) => {
+									shards_info.implementing.contains(trait_hash)
+								},
 								_ => false,
 							}
 						} else {
@@ -490,9 +395,9 @@ mod validation_logic {
 	/// Is the call `c` valid?
 	///
 	/// Note: This function does not check whether the child/descendant calls of `c` (if it has any) are valid.
-	pub fn is_the_immediate_call_valid(c: &Call) -> bool {
+	pub fn is_the_immediate_call_valid(c: &RuntimeCall) -> bool {
 		match c {
-			Call::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
+			RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
 				// `Categories::Shards`, `Categories::Traits` and `Categories::Text`
 				// must have `data` that is of the enum variant type `ProtoData::Local`
 				match category {
@@ -507,7 +412,7 @@ mod validation_logic {
 					_ => true,
 				}
 			},
-			Call::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
+			RuntimeCall::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
 				let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
 					return false;
 				};
@@ -517,9 +422,9 @@ mod validation_logic {
 					_ => true,
 				}
 			},
-			Call::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
-			Call::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
-			Call::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
+			RuntimeCall::Protos(ProtosCall::set_metadata{ref data, ref metadata_key, ..}) |
+			RuntimeCall::Fragments(FragmentsCall::set_definition_metadata{ref data, ref metadata_key, ..}) |
+			RuntimeCall::Fragments(FragmentsCall::set_instance_metadata{ref data, ref metadata_key, ..}) => {
 				if data.len() > MAXIMUM_METADATA_DATA_LENGTH {
 					return false;
 				}
@@ -531,9 +436,9 @@ mod validation_logic {
 				}
 			},
 			// Prevent batch calls from containing any call that uses `transaction_index::index`. The reason we do this is because "any e̶x̶t̶r̶i̶n̶s̶i̶c̶ call using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index." (https://github.com/paritytech/substrate/issues/12835)
-			Call::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
-			Call::Utility(pallet_utility::Call::batch_all { calls }) |
-			Call::Utility(pallet_utility::Call::force_batch { calls }) => {
+			RuntimeCall::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
+			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) |
+			RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => {
 				calls.iter().all(|call| !does_call_index_the_transaction(call))
 			}
 			_ => true,
@@ -607,28 +512,32 @@ mod validation_logic {
 				),
 			] {
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
-						// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
-						references: vec![],
-						category: category.clone(),
-						tags: vec![].try_into().unwrap(),
-						linked_asset: None,
-						license: pallet_protos::UsageLicense::Closed,
-						cluster: None,
-						data: pallet_protos::ProtoData::Local(valid_data)
-					})),
+					is_the_immediate_call_valid(&RuntimeCall::Protos(
+						pallet_protos::Call::upload {
+							// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
+							references: vec![],
+							category: category.clone(),
+							tags: vec![].try_into().unwrap(),
+							linked_asset: None,
+							license: pallet_protos::UsageLicense::Closed,
+							cluster: None,
+							data: pallet_protos::ProtoData::Local(valid_data)
+						}
+					)),
 					true
 				);
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::upload {
-						references: vec![],
-						category: category.clone(),
-						tags: vec![].try_into().unwrap(),
-						linked_asset: None,
-						license: pallet_protos::UsageLicense::Closed,
-						cluster: None,
-						data: pallet_protos::ProtoData::Local(invalid_data)
-					}),),
+					is_the_immediate_call_valid(&RuntimeCall::Protos(
+						pallet_protos::Call::upload {
+							references: vec![],
+							category: category.clone(),
+							tags: vec![].try_into().unwrap(),
+							linked_asset: None,
+							license: pallet_protos::UsageLicense::Closed,
+							cluster: None,
+							data: pallet_protos::ProtoData::Local(invalid_data)
+						}
+					),),
 					false
 				);
 			}
@@ -642,25 +551,29 @@ mod validation_logic {
 				(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
 			] {
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-						// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
-						proto_hash: [7u8; 32],
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: data.clone()
-					})),
+					is_the_immediate_call_valid(&RuntimeCall::Protos(
+						pallet_protos::Call::set_metadata {
+							// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
+							proto_hash: [7u8; 32],
+							metadata_key: metadata_key.clone().try_into().unwrap(),
+							data: data.clone()
+						}
+					)),
 					true
 				);
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-						proto_hash: [7u8; 32],
-						metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
-						data: data.clone()
-					})),
+					is_the_immediate_call_valid(&RuntimeCall::Protos(
+						pallet_protos::Call::set_metadata {
+							proto_hash: [7u8; 32],
+							metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
+							data: data.clone()
+						}
+					)),
 					false
 				);
 
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Fragments(
+					is_the_immediate_call_valid(&RuntimeCall::Fragments(
 						pallet_fragments::Call::set_definition_metadata {
 							// https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
 							definition_hash: [7u8; 16],
@@ -671,7 +584,7 @@ mod validation_logic {
 					true
 				);
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Fragments(
+					is_the_immediate_call_valid(&RuntimeCall::Fragments(
 						pallet_fragments::Call::set_definition_metadata {
 							definition_hash: [7u8; 16],
 							metadata_key: b"invalid_key".to_vec().try_into().unwrap(),
@@ -682,7 +595,7 @@ mod validation_logic {
 				);
 
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Fragments(
+					is_the_immediate_call_valid(&RuntimeCall::Fragments(
 						pallet_fragments::Call::set_instance_metadata {
 							definition_hash: [7u8; 16],
 							edition_id: 1,
@@ -694,7 +607,7 @@ mod validation_logic {
 					true
 				);
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Fragments(
+					is_the_immediate_call_valid(&RuntimeCall::Fragments(
 						pallet_fragments::Call::set_instance_metadata {
 							definition_hash: [7u8; 16],
 							edition_id: 1,
@@ -716,25 +629,29 @@ mod validation_logic {
 				(b"image".to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
 			] {
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-						// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
-						proto_hash: [7u8; 32],
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: data.clone()
-					})),
+					is_the_immediate_call_valid(&RuntimeCall::Protos(
+						pallet_protos::Call::set_metadata {
+							// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
+							proto_hash: [7u8; 32],
+							metadata_key: metadata_key.clone().try_into().unwrap(),
+							data: data.clone()
+						}
+					)),
 					true
 				);
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Protos(pallet_protos::Call::set_metadata {
-						proto_hash: [7u8; 32],
-						metadata_key: metadata_key.clone().try_into().unwrap(),
-						data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
-					})),
+					is_the_immediate_call_valid(&RuntimeCall::Protos(
+						pallet_protos::Call::set_metadata {
+							proto_hash: [7u8; 32],
+							metadata_key: metadata_key.clone().try_into().unwrap(),
+							data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+						}
+					)),
 					false
 				);
 
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Fragments(
+					is_the_immediate_call_valid(&RuntimeCall::Fragments(
 						pallet_fragments::Call::set_definition_metadata {
 							// https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
 							definition_hash: [7u8; 16],
@@ -745,7 +662,7 @@ mod validation_logic {
 					true
 				);
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Fragments(
+					is_the_immediate_call_valid(&RuntimeCall::Fragments(
 						pallet_fragments::Call::set_definition_metadata {
 							definition_hash: [7u8; 16],
 							metadata_key: metadata_key.clone().try_into().unwrap(),
@@ -756,7 +673,7 @@ mod validation_logic {
 				);
 
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Fragments(
+					is_the_immediate_call_valid(&RuntimeCall::Fragments(
 						pallet_fragments::Call::set_instance_metadata {
 							definition_hash: [7u8; 16],
 							edition_id: 1,
@@ -768,7 +685,7 @@ mod validation_logic {
 					true
 				);
 				assert_eq!(
-					is_the_immediate_call_valid(&Call::Fragments(
+					is_the_immediate_call_valid(&RuntimeCall::Fragments(
 						pallet_fragments::Call::set_instance_metadata {
 							definition_hash: [7u8; 16],
 							edition_id: 1,
@@ -786,8 +703,8 @@ mod validation_logic {
 		fn is_the_immediate_call_valid_should_not_work_if_a_batch_call_contains_a_call_that_indexes_the_transaction(
 		) {
 			assert_eq!(
-				is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
-					calls: vec![Call::Protos(pallet_protos::Call::ban {
+				is_the_immediate_call_valid(&RuntimeCall::Utility(pallet_utility::Call::batch {
+					calls: vec![RuntimeCall::Protos(pallet_protos::Call::ban {
 						// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
 						proto_hash: [7u8; 32],
 					})]
@@ -796,8 +713,8 @@ mod validation_logic {
 			);
 
 			assert_eq!(
-				is_the_immediate_call_valid(&Call::Utility(pallet_utility::Call::batch {
-					calls: vec![Call::Protos(pallet_protos::Call::upload {
+				is_the_immediate_call_valid(&RuntimeCall::Utility(pallet_utility::Call::batch {
+					calls: vec![RuntimeCall::Protos(pallet_protos::Call::upload {
 						references: vec![],
 						category: Categories::Text(TextCategories::Plain),
 						tags: vec![].try_into().unwrap(),
@@ -815,8 +732,8 @@ mod validation_logic {
 
 // Configure FRAME pallets to include in runtime.
 pub struct BaseCallFilter;
-impl Contains<Call> for BaseCallFilter {
-	fn contains(c: &Call) -> bool {
+impl Contains<RuntimeCall> for BaseCallFilter {
+	fn contains(c: &RuntimeCall) -> bool {
 		// log::info!("The call {:?} is {}", c, validation_logic::is_the_immediate_call_valid(c));
 		validation_logic::is_the_immediate_call_valid(c)
 	}
@@ -825,13 +742,13 @@ impl frame_system::Config for Runtime {
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = BaseCallFilter;
 	/// Block & extrinsics weights: base values and limits.
-	type BlockWeights = RuntimeBlockWeights;
+	type BlockWeights = BlockWeights;
 	/// The maximum length of a block (in bytes).
-	type BlockLength = RuntimeBlockLength;
+	type BlockLength = BlockLength;
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The aggregated dispatch type that is available for extrinsics.
-	type Call = Call;
+	type RuntimeCall = RuntimeCall;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
 	type Lookup = Indices;
 	/// The index type for storing how many extrinsics an account has signed.
@@ -845,9 +762,9 @@ impl frame_system::Config for Runtime {
 	/// The header type.
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	/// The ubiquitous event type.
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	/// The ubiquitous origin type.
-	type Origin = Origin;
+	type RuntimeOrigin = RuntimeOrigin;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	/// The weight of database operations that the runtime can invoke.
@@ -887,8 +804,7 @@ impl pallet_aura::Config for Runtime {
 }
 
 impl pallet_grandpa::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
 
 	type KeyOwnerProofSystem = ();
 
@@ -936,7 +852,7 @@ impl pallet_balances::Config for Runtime {
 	/// The type for recording an account's balance.
 	type Balance = Balance;
 	/// The ubiquitous event type.
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
@@ -976,7 +892,7 @@ parameter_types! {
 	/// The maximum number of contracts that can be pending for deletion.
 	pub const DeletionQueueDepth: u32 = 1024;
 	/// The maximum amount of weight that can be consumed per block for lazy trie removal.
-	pub const DeletionWeightLimit: Weight = 500_000_000_000;
+	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
 	// pub const MaxCodeSize: u32 = 2 * 1024;
 	/// Cost schedule and limits.
 	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
@@ -1003,7 +919,7 @@ parameter_types! {
 ///   final_fee = inclusion_fee + tip;
 ///   ```
 impl pallet_transaction_payment::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	/// Convert a weight value into a deductible fee based on the currency type.
@@ -1019,12 +935,12 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 impl pallet_sudo::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 }
 
 impl pallet_fragments::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 
@@ -1035,7 +951,7 @@ impl pallet_accounts::EthFragContract for Runtime {
 }
 
 impl pallet_accounts::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthFragContract = Runtime;
@@ -1066,13 +982,13 @@ impl pallet_oracle::OracleContract for Runtime {
 
 impl pallet_oracle::Config for Runtime {
 	type AuthorityId = pallet_oracle::crypto::FragAuthId;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OracleProvider = Runtime; // the contract address determines the network to connect (mainnet, goerli, etc.)
 	type Threshold = ConstU64<1>;
 }
 
 impl pallet_protos::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type StringLimit = StringLimit;
 	type DetachAccountLimit = ConstU32<20>; // An ethereum public account address has a length of 20.
@@ -1080,13 +996,13 @@ impl pallet_protos::Config for Runtime {
 }
 
 impl pallet_detach::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
 impl pallet_clusters::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type NameLimit = ConstU32<20>;
 	type DataLimit = ConstU32<300>;
 	type MembersLimit = ConstU32<20>;
@@ -1098,25 +1014,25 @@ parameter_types! {
 }
 
 impl pallet_aliases::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type NamespacePrice = ConstU128<100>;
 	type NameLimit = ConstU32<20>;
 	type RootNamespace = RootNamespace;
 }
 
 impl pallet_multisig::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type DepositBase = ConstU128<1>;
 	type DepositFactor = ConstU128<1>;
-	type MaxSignatories = ConstU16<3>;
+	type MaxSignatories = ConstU32<3>;
 	type WeightInfo = ();
 }
 
 impl pallet_proxy::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type ProxyType = ();
 	type ProxyDepositBase = ConstU128<1>;
@@ -1139,7 +1055,7 @@ parameter_types! {
 }
 
 impl pallet_identity::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Currency = Balances;
 	type Slashed = ();
 	type BasicDeposit = ConstU128<10>;
@@ -1154,8 +1070,8 @@ impl pallet_identity::Config for Runtime {
 }
 
 impl pallet_utility::Config for Runtime {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = ();
 }
@@ -1175,9 +1091,9 @@ impl frame_system::offchain::SigningTypes for Runtime {
 /// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Runtime
 where
-	Call: From<LocalCall>,
+	RuntimeCall: From<LocalCall>,
 {
-	type OverarchingCall = Call;
+	type OverarchingCall = RuntimeCall;
 	type Extrinsic = UncheckedExtrinsic;
 }
 
@@ -1185,7 +1101,7 @@ where
 /// to implement the `CreateSignedTransaction` trait, you also need to implement that trait for the runtime.
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
 where
-	Call: From<LocalCall>,
+	RuntimeCall: From<LocalCall>,
 {
 	/// The code seems long, but what it tries to do is really:
 	/// 	- Create and prepare extra of SignedExtra type, and put various checkers in-place.
@@ -1196,11 +1112,11 @@ where
 	///
 	/// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-		call: Call,
+		call: RuntimeCall,
 		public: <Signature as Verify>::Signer,
 		account: AccountId,
 		nonce: Index,
-	) -> Option<(Call, <UncheckedExtrinsic as ExtrinsicT>::SignaturePayload)> {
+	) -> Option<(RuntimeCall, <UncheckedExtrinsic as ExtrinsicT>::SignaturePayload)> {
 		let tip = 0;
 		// take the biggest period possible.
 		let period =
@@ -1236,8 +1152,8 @@ impl pallet_contracts::Config for Runtime {
 	type Time = Timestamp;
 	type Randomness = RandomnessCollectiveFlip;
 	type Currency = Balances;
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	/// The safest default is to allow no calls at all.
 	///
 	/// Runtimes should whitelist dispatchables that are allowed to be called from contracts
@@ -1255,10 +1171,10 @@ impl pallet_contracts::Config for Runtime {
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<RuntimeBlockWeights>;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
-	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
+	type UnsafeUnstableInterface = ();
+	type MaxDebugBufferLen = ();
 }
 
 parameter_types! {
@@ -1270,7 +1186,7 @@ impl pallet_indices::Config for Runtime {
 	type AccountIndex = AccountIndex;
 	type Currency = Balances;
 	type Deposit = IndexDeposit;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_indices::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1289,10 +1205,13 @@ parameter_types! {
 }
 
 impl pallet_assets::Config for Runtime {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
+	type RemoveItemsLimit = ConstU32<1000>;
 	type AssetId = u64;
+	type AssetIdParameter = u64;
 	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
 	type AssetAccountDeposit = ConstU128<DOLLARS>;
@@ -1302,6 +1221,7 @@ impl pallet_assets::Config for Runtime {
 	type StringLimit = StringLimit;
 	type Freezer = ();
 	type Extra = ();
+	type CallbackHandle = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
@@ -1489,12 +1409,13 @@ pub type SignedExtra = (
 ///
 /// For example - notice that the encoded transaction for `protos.upload()` has the order of first "signer", "signature"🥖, extra data🥕 (i.e "era", "nonce" and "tip") and finally the encoded call data🥦 (i.e "callIndex" and the arguments of `protos.upload()`): https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
 ///
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// The payload being signed in transactions.
 ///
 /// Note: This type is only needed if you want to enable an off-chain worker for the runtime,
 /// since it is only used when implementing the trait `frame_system::offchain::CreateSignedTransaction` for `Runtime`.
-pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
+pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -1769,7 +1690,7 @@ impl_runtime_apis! {
 	/// The Runtime API used to dry-run contract interactions.
 	///
 	/// See: https://paritytech.github.io/substrate/master/pallet_contracts/trait.ContractsApi.html#
-	impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash> for Runtime {
+	impl pallet_contracts::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash> for Runtime {
 		/// Perform a call from a specified account to a given contract.
 		///
 		/// See [`crate::Pallet::bare_call`].
@@ -1777,11 +1698,12 @@ impl_runtime_apis! {
 			origin: AccountId,
 			dest: AccountId,
 			value: Balance,
-			gas_limit: u64,
+			gas_limit: Option<Weight>,
 			storage_deposit_limit: Option<Balance>,
 			input_data: Vec<u8>,
 		) -> pallet_contracts_primitives::ContractExecResult<Balance> {
-			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true)
+			let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
+			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
 		}
 
 		/// Instantiate a new contract.
@@ -1790,13 +1712,14 @@ impl_runtime_apis! {
 		fn instantiate(
 			origin: AccountId,
 			value: Balance,
-			gas_limit: u64,
+			gas_limit: Option<Weight>,
 			storage_deposit_limit: Option<Balance>,
 			code: pallet_contracts_primitives::Code<Hash>,
 			data: Vec<u8>,
 			salt: Vec<u8>,
 		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
 		{
+			let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
 			Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
 		}
 
@@ -1807,9 +1730,10 @@ impl_runtime_apis! {
 			origin: AccountId,
 			code: Vec<u8>,
 			storage_deposit_limit: Option<Balance>,
+			determinism: pallet_contracts::Determinism,
 		) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
 		{
-			Contracts::bare_upload_code(origin, code, storage_deposit_limit)
+			Contracts::bare_upload_code(origin, code, storage_deposit_limit, determinism)
 		}
 
 		/// Query a given storage key in a given contract.

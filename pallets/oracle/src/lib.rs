@@ -11,8 +11,8 @@ use frame_system::offchain::{
 	SigningTypes,
 };
 use serde_json::{json, Value};
-use sp_fragnova::http_json_post;
 use sp_core::crypto::KeyTypeId;
+use sp_fragnova::http_json_post;
 use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction};
 
 #[cfg(feature = "std")]
@@ -122,7 +122,7 @@ pub mod pallet {
 		type AuthorityId: AppCrypto<Self::Public, Self::Signature>;
 
 		/// The overarching event type.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// **Traits** that allows to set the Oracle provider for the price feed of FRAG token
 		type OracleProvider: OracleContract;
@@ -223,6 +223,7 @@ pub mod pallet {
 		///
 		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 		#[pallet::weight(10000)]
+		#[pallet::call_index(0)]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -238,6 +239,7 @@ pub mod pallet {
 		/// Remove a Fragnova Account ID from `FragKeys`
 		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can call this function
 		#[pallet::weight(10000)] // TODO
+		#[pallet::call_index(1)]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -252,6 +254,7 @@ pub mod pallet {
 
 		/// This function stores the original price (U256) received from the selected oracle provider.
 		#[pallet::weight(10000)] // TODO
+		#[pallet::call_index(2)]
 		pub fn store_price(
 			origin: OriginFor<T>,
 			oracle_price: OraclePrice<T::Public, T::BlockNumber>,
@@ -304,6 +307,7 @@ pub mod pallet {
 		/// **true** = oracle stop from the next block,
 		/// **false** = oracle keeps running (default).
 		#[pallet::weight(10000)]
+		#[pallet::call_index(3)]
 		pub fn stop_oracle(origin: OriginFor<T>, stop_it: bool) -> DispatchResult {
 			ensure_root(origin)?;
 

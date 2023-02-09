@@ -138,7 +138,7 @@ where
 		proto_hash: <Block as BlockT>::Hash,
 		_at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<String> {
-		let tx = self.client.indexed_transaction(&proto_hash);
+		let tx = self.client.indexed_transaction(proto_hash);
 		match tx {
 			Ok(tx) => match tx {
 				Some(data) => {

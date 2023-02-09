@@ -94,7 +94,7 @@ pub mod pallet {
 		+ pallet_clusters::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The price (in native NOVA) for a Namespace
 		#[pallet::constant]
@@ -170,7 +170,8 @@ pub mod pallet {
 		/// The amount is set in Config `NamespacePrice`.
 		///
 		/// - `namespace`: namespace to create
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(0)]
 		pub fn create_namespace(
 			origin: OriginFor<T>,
 			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
@@ -208,7 +209,8 @@ pub mod pallet {
 		/// This also deletes all the aliases linked to this namespace
 		///
 		/// - `namespace`: namespace to delete
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(1)]
 		pub fn delete_namespace(
 			origin: OriginFor<T>,
 			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
@@ -235,7 +237,8 @@ pub mod pallet {
 		///
 		/// - `namespace`: namespace to create
 		/// - `new_owner`: the AccountId to transfer ownership to
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(2)]
 		pub fn transfer_namespace(
 			origin: OriginFor<T>,
 			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
@@ -267,7 +270,8 @@ pub mod pallet {
 		/// Only the owner of the asset can create its alias.
 		///
 		/// - `namespace`: namespace to create
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(3)]
 		pub fn create_alias(
 			origin: OriginFor<T>,
 			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
@@ -330,7 +334,8 @@ pub mod pallet {
 		///
 		/// - `alias`: root alias to create
 		/// - `target`: LinkTarget to link the alias to
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(4)]
 		pub fn create_root_alias(
 			origin: OriginFor<T>,
 			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
@@ -387,7 +392,8 @@ pub mod pallet {
 		/// - `namespace`: namespace related to the alias to update
 		/// - `alias`: the alias to update
 		/// - `new_target`: the new LinkTarget to link the alias to
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(5)]
 		pub fn update_alias_target(
 			origin: OriginFor<T>,
 			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
@@ -429,7 +435,8 @@ pub mod pallet {
 		///
 		/// - `alias`: the alias to update
 		/// - `new_target`: the new LinkTarget to link the alias to
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(6)]
 		pub fn update_root_alias_target(
 			origin: OriginFor<T>,
 			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
@@ -466,7 +473,8 @@ pub mod pallet {
 		///
 		/// - `namespace`: namespace related to the alias to delete
 		/// - `alias`: the alias to delete
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(7)]
 		pub fn delete_alias(
 			origin: OriginFor<T>,
 			namespace: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
@@ -500,7 +508,8 @@ pub mod pallet {
 		/// Only the root can execute this.
 		///
 		/// - `alias`: the root alias to delete
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(8)]
 		pub fn delete_root_alias(
 			origin: OriginFor<T>,
 			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,

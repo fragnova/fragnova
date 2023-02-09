@@ -48,9 +48,9 @@ pub trait FragmentsRpc<BlockHash, AccountId> {
 // It can have fields, if required, as long as it's still `Send + Sync + 'static`.
 // Read More: https://docs.rs/jsonrpsee-proc-macros/0.15.1/jsonrpsee_proc_macros/attr.rpc.html
 /// A struct that implements all the RPC functions related to Pallet Fragments (since it implements the trait `FragmentsRpc`)
-pub struct FragmentsRpcServerImpl<C, M> {
+pub struct FragmentsRpcServerImpl<C, P> {
 	client: Arc<C>,
-	_marker: std::marker::PhantomData<M>,
+	_marker: std::marker::PhantomData<P>,
 }
 
 impl<C, P> FragmentsRpcServerImpl<C, P> {

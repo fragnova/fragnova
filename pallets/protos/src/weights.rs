@@ -66,18 +66,18 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `t` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	fn upload(r: u32, t: u32, d: u32, ) -> Weight {
-		(95_041_000 as Weight)
+		Weight::from_ref_time(95_041_000 as u64)
 			// Standard Error: 65_000
-			.saturating_add((2_092_000 as Weight).saturating_mul(r as Weight))
+			.saturating_add(Weight::from_ref_time(2_092_000 as u64).saturating_mul(r as u64))
 			// Standard Error: 65_000
-			.saturating_add((2_860_000 as Weight).saturating_mul(t as Weight))
+			.saturating_add(Weight::from_ref_time(2_860_000 as u64).saturating_mul(t as u64))
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(d as Weight))
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(r as Weight)))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(t as Weight)))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(t as Weight)))
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(d as u64))
+			.saturating_add(T::DbWeight::get().reads(5 as u64))
+			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
+			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(t as u64)))
+			.saturating_add(T::DbWeight::get().writes(4 as u64))
+			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(t as u64)))
 	}
 	// Storage: Protos Protos (r:2 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
@@ -88,34 +88,34 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `t` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	fn patch(r: u32, t: u32, d: u32, ) -> Weight {
-		(0 as Weight)
+		Weight::from_ref_time(0 as u64)
 			// Standard Error: 198_000
-			.saturating_add((2_254_000 as Weight).saturating_mul(r as Weight))
+			.saturating_add(Weight::from_ref_time(2_254_000 as u64).saturating_mul(r as u64))
 			// Standard Error: 198_000
-			.saturating_add((3_096_000 as Weight).saturating_mul(t as Weight))
+			.saturating_add(Weight::from_ref_time(3_096_000 as u64).saturating_mul(t as u64))
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(d as Weight))
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(r as Weight)))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(t as Weight)))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(t as Weight)))
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(d as u64))
+			.saturating_add(T::DbWeight::get().reads(4 as u64))
+			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
+			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(t as u64)))
+			.saturating_add(T::DbWeight::get().writes(2 as u64))
+			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(t as u64)))
 	}
 	// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Detach DetachRequests (r:1 w:1)
 	fn detach() -> Weight {
-		(13_387_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(13_387_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(3 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Protos ProtosByOwner (r:2 w:2)
 	fn transfer() -> Weight {
-		(24_381_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		Weight::from_ref_time(24_381_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(4 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
@@ -125,13 +125,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// The range of component `m` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	fn set_metadata(m: u32, d: u32, ) -> Weight {
-		(0 as Weight)
+		Weight::from_ref_time(0 as u64)
 			// Standard Error: 90_000
-			.saturating_add((122_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add(Weight::from_ref_time(122_000 as u64).saturating_mul(m as u64))
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(d as Weight))
-			.saturating_add(T::DbWeight::get().reads(5 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(d as u64))
+			.saturating_add(T::DbWeight::get().reads(5 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 }
 
@@ -147,18 +147,18 @@ impl WeightInfo for () {
 	/// The range of component `t` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	fn upload(r: u32, t: u32, d: u32, ) -> Weight {
-		(95_041_000 as Weight)
+		Weight::from_ref_time(95_041_000 as u64)
 			// Standard Error: 65_000
-			.saturating_add((2_092_000 as Weight).saturating_mul(r as Weight))
+			.saturating_add(Weight::from_ref_time(2_092_000 as u64).saturating_mul(r as u64))
 			// Standard Error: 65_000
-			.saturating_add((2_860_000 as Weight).saturating_mul(t as Weight))
+			.saturating_add(Weight::from_ref_time(2_860_000 as u64).saturating_mul(t as u64))
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(d as Weight))
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(r as Weight)))
-			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(t as Weight)))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
-			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(t as Weight)))
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(d as u64))
+			.saturating_add(RocksDbWeight::get().reads(5 as u64))
+			.saturating_add(RocksDbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
+			.saturating_add(RocksDbWeight::get().reads((1 as u64).saturating_mul(t as u64)))
+			.saturating_add(RocksDbWeight::get().writes(4 as u64))
+			.saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(t as u64)))
 	}
 	// Storage: Protos Protos (r:2 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
@@ -169,34 +169,34 @@ impl WeightInfo for () {
 	/// The range of component `t` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	fn patch(r: u32, t: u32, d: u32, ) -> Weight {
-		(0 as Weight)
+		Weight::from_ref_time(0 as u64)
 			// Standard Error: 198_000
-			.saturating_add((2_254_000 as Weight).saturating_mul(r as Weight))
+			.saturating_add(Weight::from_ref_time(2_254_000 as u64).saturating_mul(r as u64))
 			// Standard Error: 198_000
-			.saturating_add((3_096_000 as Weight).saturating_mul(t as Weight))
+			.saturating_add(Weight::from_ref_time(3_096_000 as u64).saturating_mul(t as u64))
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(d as Weight))
-			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
-			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(r as Weight)))
-			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(t as Weight)))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
-			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(t as Weight)))
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(d as u64))
+			.saturating_add(RocksDbWeight::get().reads(4 as u64))
+			.saturating_add(RocksDbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
+			.saturating_add(RocksDbWeight::get().reads((1 as u64).saturating_mul(t as u64)))
+			.saturating_add(RocksDbWeight::get().writes(2 as u64))
+			.saturating_add(RocksDbWeight::get().writes((1 as u64).saturating_mul(t as u64)))
 	}
 	// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Detach DetachRequests (r:1 w:1)
 	fn detach() -> Weight {
-		(13_387_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(13_387_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(3 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Protos ProtosByOwner (r:2 w:2)
 	fn transfer() -> Weight {
-		(24_381_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		Weight::from_ref_time(24_381_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(4 as u64))
+			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
@@ -206,12 +206,12 @@ impl WeightInfo for () {
 	/// The range of component `m` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	fn set_metadata(m: u32, d: u32, ) -> Weight {
-		(0 as Weight)
+		Weight::from_ref_time(0 as u64)
 			// Standard Error: 90_000
-			.saturating_add((122_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add(Weight::from_ref_time(122_000 as u64).saturating_mul(m as u64))
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(d as Weight))
-			.saturating_add(RocksDbWeight::get().reads(5 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+			.saturating_add(Weight::from_ref_time(2_000 as u64).saturating_mul(d as u64))
+			.saturating_add(RocksDbWeight::get().reads(5 as u64))
+			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 }
