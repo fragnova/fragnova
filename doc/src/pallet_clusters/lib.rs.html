@@ -636,6 +636,116 @@
 <a href="#636" id="636">636</a>
 <a href="#637" id="637">637</a>
 <a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a>
+<a href="#659" id="659">659</a>
+<a href="#660" id="660">660</a>
+<a href="#661" id="661">661</a>
+<a href="#662" id="662">662</a>
+<a href="#663" id="663">663</a>
+<a href="#664" id="664">664</a>
+<a href="#665" id="665">665</a>
+<a href="#666" id="666">666</a>
+<a href="#667" id="667">667</a>
+<a href="#668" id="668">668</a>
+<a href="#669" id="669">669</a>
+<a href="#670" id="670">670</a>
+<a href="#671" id="671">671</a>
+<a href="#672" id="672">672</a>
+<a href="#673" id="673">673</a>
+<a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
+<a href="#685" id="685">685</a>
+<a href="#686" id="686">686</a>
+<a href="#687" id="687">687</a>
+<a href="#688" id="688">688</a>
+<a href="#689" id="689">689</a>
+<a href="#690" id="690">690</a>
+<a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
+<a href="#697" id="697">697</a>
+<a href="#698" id="698">698</a>
+<a href="#699" id="699">699</a>
+<a href="#700" id="700">700</a>
+<a href="#701" id="701">701</a>
+<a href="#702" id="702">702</a>
+<a href="#703" id="703">703</a>
+<a href="#704" id="704">704</a>
+<a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
+<a href="#707" id="707">707</a>
+<a href="#708" id="708">708</a>
+<a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
+<a href="#727" id="727">727</a>
+<a href="#728" id="728">728</a>
+<a href="#729" id="729">729</a>
+<a href="#730" id="730">730</a>
+<a href="#731" id="731">731</a>
+<a href="#732" id="732">732</a>
+<a href="#733" id="733">733</a>
+<a href="#734" id="734">734</a>
+<a href="#735" id="735">735</a>
+<a href="#736" id="736">736</a>
+<a href="#737" id="737">737</a>
+<a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
 </pre><pre class="rust"><code><span class="doccomment">//! A Cluster in Fragnova represents a &quot;group&quot; where users (i.e. Accounts) can belong to.
 //!
 //! A Cluster has an owner, a name and a set of Roles. The owner of the cluster can create unlimited roles and associate users to each role.
@@ -668,10 +778,10 @@
 
 <span class="doccomment">/// The **settings** of a **Role**
 </span><span class="attr">#[derive(Encode, Decode, Clone, PartialEq, Debug, Eq, scale_info::TypeInfo)]
-</span><span class="kw">pub struct </span>RoleSetting {
-	<span class="doccomment">/// Name of the setting
+</span><span class="kw">pub struct </span>CompactSetting {
+	<span class="doccomment">/// Index of the name of the role setting to be stored
 	</span><span class="kw">pub </span>name: Compact&lt;u64&gt;,
-	<span class="doccomment">/// The data associated with the Role
+	<span class="doccomment">/// The data associated with the Role to be stored
 	</span><span class="kw">pub </span>data: Vec&lt;u8&gt;,
 }
 
@@ -681,7 +791,7 @@
 	<span class="doccomment">/// Name of the role
 	</span><span class="kw">pub </span>name: Compact&lt;u64&gt;,
 	<span class="doccomment">/// The settings of the Role
-	</span><span class="kw">pub </span>settings: Vec&lt;RoleSetting&gt;,
+	</span><span class="kw">pub </span>settings: Vec&lt;CompactSetting&gt;,
 }
 
 <span class="doccomment">/// **Struct** of a **Cluster**
@@ -693,31 +803,20 @@
 	</span><span class="kw">pub </span>name: Compact&lt;u64&gt;,
 	<span class="doccomment">/// The ID of the cluster
 	</span><span class="kw">pub </span>cluster_id: Hash128,
+	<span class="doccomment">/// The account ID (wallet) of the Cluster
+	</span><span class="kw">pub </span>account_id: TAccountId,
 	<span class="doccomment">/// The map that contains the list of Role IDs belonging to the in Cluster
 	</span><span class="kw">pub </span>roles: Vec&lt;Compact&lt;u64&gt;&gt;,
-}
-
-<span class="doccomment">/// **Struct** representing the details about accounts created off-chain by various parties and integrations.
-</span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>AccountInfo&lt;TAccountID, TMoment&gt; {
-	<span class="doccomment">/// The actual account ID
-	</span><span class="kw">pub </span>account_id: TAccountID,
-	<span class="doccomment">/// The timestamp when this account was created
-	</span><span class="kw">pub </span>created_at: TMoment,
 }
 
 <span class="attr">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use crate</span>::{Cluster, Role, RoleSetting};
 	<span class="kw">use </span>frame_support::{
-		log,
-		pallet_prelude::<span class="kw-2">*</span>,
-		sp_runtime::traits::Zero,
-		traits::{fungible, ReservableCurrency},
+		log, pallet_prelude::<span class="kw-2">*</span>, sp_runtime::traits::Zero, traits::ReservableCurrency, transactional,
 	};
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
-	<span class="kw">use </span>sp_fragnova::get_vault_id;
+	<span class="kw">use </span>sp_fragnova::get_account_id;
 	<span class="kw">use </span>sp_io::hashing::blake2_128;
 
 	<span class="attr">#[pallet::pallet]
@@ -822,8 +921,10 @@
 		</span>RoleExists,
 		<span class="doccomment">/// Element not found
 		</span>RoleNotFound,
-		<span class="doccomment">/// RoleSettings not found
-		</span>RoleSettingsNotFound,
+		<span class="doccomment">/// RoleSetting already exists
+		</span>RoleSettingsExists,
+		<span class="doccomment">/// RoleSetting not found
+		</span>RoleSettingNotFound,
 		<span class="doccomment">/// Missing permission to perform an operation
 		</span>NoPermission,
 		<span class="doccomment">/// Invalid inputs
@@ -852,6 +953,7 @@
 		///
 		/// - `name`: name of the cluster (BoundedVec limited to T::NameLimit).
 		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>create_cluster(
 			origin: OriginFor&lt;T&gt;,
 			name: BoundedVec&lt;u8, T::NameLimit&gt;,
@@ -864,6 +966,7 @@
 			</span><span class="kw">let </span>extrinsic_index = &lt;frame_system::Pallet&lt;T&gt;&gt;::extrinsic_index()
 				.ok_or(Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?
 				</span>.to_be_bytes();
+
 			<span class="comment">// BlockNumber type is non concrete, so we need to encode it to get bytes
 			</span><span class="kw">let </span>current_block_number = &lt;frame_system::Pallet&lt;T&gt;&gt;::block_number().encode();
 			<span class="comment">// Who is not concrete, so we need to encode it to get bytes
@@ -877,39 +980,36 @@
 			</span><span class="macro">ensure!</span>(!&lt;Clusters&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id), Error::&lt;T&gt;::ClusterExists);
 
 			<span class="kw">let </span>cluster_name = name.into_inner();
-			<span class="kw">let </span>name_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>cluster_name);
-
-			<span class="comment">// At creation there are no roles and no members assigned to the cluster
-			</span><span class="kw">let </span>cluster =
-				Cluster { owner: who.clone(), name: name_index, cluster_id, roles: Vec::new() };
-
-			<span class="kw">let </span>minimum_balance =
-				&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Inspect&lt;T::AccountId&gt;&gt;::minimum_balance();
+			<span class="kw">let </span>name_index =
+				<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>cluster_name, <span class="bool-val">true</span>).expect(<span class="string">&quot;adding if none is true, qed&quot;</span>);
 
 			<span class="comment">// write
 			// create an account for the cluster, so that the cluster will be able to receive funds.
-			</span><span class="kw">let </span>vault = get_vault_id(cluster_id);
-			&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Mutate&lt;T::AccountId&gt;&gt;::mint_into(
-				<span class="kw-2">&amp;</span>vault,
-				minimum_balance,
-			)<span class="question-mark">?</span>;
+			</span><span class="kw">let </span>account =
+				get_account_id::&lt;T::AccountId&gt;(<span class="string">b&quot;pallet-clusters-create_cluster&quot;</span>, <span class="kw-2">&amp;</span>cluster_id);
 
-			<span class="comment">// create a proxy
+			<span class="comment">// use the same logic of proxy anonymous
 			</span><span class="kw">let </span>proxy_def = pallet_proxy::ProxyDefinition {
 				delegate: who.clone(),
 				proxy_type: T::ProxyType::default(),
 				delay: T::BlockNumber::default(),
 			};
-
 			<span class="kw">let </span>bounded_proxies: BoundedVec&lt;<span class="kw">_</span>, T::MaxProxies&gt; =
 				<span class="macro">vec!</span>[proxy_def].try_into().map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::TooManyProxies)<span class="question-mark">?</span>;
 
-			<span class="comment">// ! Writing state
-
-			</span><span class="kw">let </span>deposit = T::ProxyDepositBase::get() + T::ProxyDepositFactor::get();
+			<span class="kw">let </span>deposit = T::ProxyDepositBase::get() + T::ProxyDepositFactor::get();
 			&lt;T <span class="kw">as </span>pallet_proxy::Config&gt;::Currency::reserve(<span class="kw-2">&amp;</span>who, deposit)<span class="question-mark">?</span>;
 
-			pallet_proxy::Proxies::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>vault, (bounded_proxies, deposit));
+			pallet_proxy::Proxies::&lt;T&gt;::insert(<span class="kw-2">&amp;</span>account, (bounded_proxies, deposit));
+
+			<span class="comment">// At creation there are no roles and no members assigned to the cluster
+			</span><span class="kw">let </span>cluster = Cluster {
+				owner: who.clone(),
+				name: name_index,
+				cluster_id,
+				account_id: account,
+				roles: Vec::new(),
+			};
 
 			&lt;Clusters&lt;T&gt;&gt;::insert(cluster_id, cluster);
 			&lt;ClustersByOwner&lt;T&gt;&gt;::append(who, <span class="kw-2">&amp;</span>cluster_id);
@@ -926,28 +1026,28 @@
 		/// - `role_name`: name of the role to add into the cluster (BoundedVec limited to T::NameLimit).
 		/// - `settings`: settings of the role (BoundedVec limited to T::RoleSettingsLimit).
 		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>create_role(
 			origin: OriginFor&lt;T&gt;,
 			cluster_id: Hash128,
 			role_name: BoundedVec&lt;u8, T::NameLimit&gt;,
-			settings: BoundedVec&lt;RoleSetting, T::RoleSettingsLimit&gt;,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(!cluster_id.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
 			<span class="macro">ensure!</span>(!role_name.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
 
-			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id).ok_or(Error::&lt;T&gt;::ClusterNotFound)<span class="question-mark">?</span>;
+			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id).expect(<span class="string">&quot;adding if none is true, qed&quot;</span>);
 			<span class="comment">// Check that the caller is the owner of the cluster
 			</span><span class="macro">ensure!</span>(who == cluster.owner, Error::&lt;T&gt;::NoPermission);
 
 			<span class="kw">let </span>role_name = role_name.into_inner();
-			<span class="kw">let </span>name_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name);
+			<span class="kw">let </span>name_index =
+				<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name, <span class="bool-val">true</span>).expect(<span class="string">&quot;adding if none is true, qed&quot;</span>);
 
 			<span class="macro">ensure!</span>(!&lt;Roles&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index), Error::&lt;T&gt;::RoleExists);
 
-			<span class="comment">// At creation there are no Members assigned to a Role
-			</span><span class="kw">let </span>new_role = Role { name: name_index.clone(), settings: settings.into_inner() };
+			<span class="kw">let </span>new_role = Role { name: name_index.clone(), settings: <span class="macro">vec!</span>[] };
 
 			<span class="comment">// write
 			</span>&lt;Clusters&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>cluster_id, |cluster| {
@@ -972,6 +1072,7 @@
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `members`: new list of members to be added to the existing list.
 		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>add_role_members(
 			origin: OriginFor&lt;T&gt;,
 			role_name: BoundedVec&lt;u8, T::NameLimit&gt;,
@@ -982,17 +1083,24 @@
 
 			<span class="macro">ensure!</span>(!role_name.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
 
-			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id).ok_or(Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
+			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id).ok_or(Error::&lt;T&gt;::ClusterNotFound)<span class="question-mark">?</span>;
 			<span class="comment">// Check that the caller is the owner of the cluster;
 			</span><span class="macro">ensure!</span>(who == cluster.owner, Error::&lt;T&gt;::NoPermission);
 
-			<span class="comment">// Either the list of members or the list of new settings must have values.
+			<span class="comment">// the list of members should have values.
 			</span><span class="kw">if </span>members.len().is_zero() {
 				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::InvalidInput.into())
 			}
 
+			<span class="comment">// avoid duplicates
+			</span><span class="macro">ensure!</span>(
+				!(<span class="number">1</span>..members.len()).any(|i| members[i..].contains(<span class="kw-2">&amp;</span>members[i - <span class="number">1</span>])),
+				Error::&lt;T&gt;::InvalidInput
+			);
+
 			<span class="kw">let </span>role_name = role_name.into_inner();
-			<span class="kw">let </span>name_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name);
+			<span class="kw">let </span>name_index =
+				<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name, <span class="bool-val">false</span>).ok_or(Error::&lt;T&gt;::RoleNotFound)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(&lt;Roles&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index), Error::&lt;T&gt;::RoleNotFound);
 
@@ -1016,6 +1124,7 @@
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `members`: new list of members to be deleted (BoundedVec limited to T::MembersLimit).
 		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>delete_role_members(
 			origin: OriginFor&lt;T&gt;,
 			role_name: BoundedVec&lt;u8, T::NameLimit&gt;,
@@ -1030,13 +1139,20 @@
 			<span class="comment">// Check that the caller is the owner of the cluster;
 			</span><span class="macro">ensure!</span>(who == cluster.owner, Error::&lt;T&gt;::NoPermission);
 
-			<span class="comment">// Either the list of members or the list of new settings must have values.
+			<span class="comment">// the list of members should have values.
 			</span><span class="kw">if </span>members.len().is_zero() {
 				<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::InvalidInput.into())
 			}
 
+			<span class="comment">// avoid duplicates
+			</span><span class="macro">ensure!</span>(
+				!(<span class="number">1</span>..members.len()).any(|i| members[i..].contains(<span class="kw-2">&amp;</span>members[i - <span class="number">1</span>])),
+				Error::&lt;T&gt;::InvalidInput
+			);
+
 			<span class="kw">let </span>role_name = role_name.into_inner();
-			<span class="kw">let </span>name_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name);
+			<span class="kw">let </span>name_index =
+				<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name, <span class="bool-val">false</span>).ok_or(Error::&lt;T&gt;::RoleNotFound)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(&lt;Roles&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index), Error::&lt;T&gt;::RoleNotFound);
 
@@ -1060,36 +1176,118 @@
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `settings`: new list of settings to be added to the existing list (BoundedVec limited to T::RoleSettingsLimit).
 		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>add_role_settings(
 			origin: OriginFor&lt;T&gt;,
 			role_name: BoundedVec&lt;u8, T::NameLimit&gt;,
 			cluster_id: Hash128,
-			settings: BoundedVec&lt;RoleSetting, T::RoleSettingsLimit&gt;,
+			settings: BoundedVec&lt;
+				(BoundedVec&lt;u8, T::NameLimit&gt;, BoundedVec&lt;u8, T::DataLimit&gt;),
+				T::RoleSettingsLimit,
+			&gt;,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(!role_name.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
 
-			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id).ok_or(Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
+			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id).ok_or(Error::&lt;T&gt;::ClusterNotFound)<span class="question-mark">?</span>;
 			<span class="comment">// Check that the caller is the owner of the cluster;
 			</span><span class="macro">ensure!</span>(who == cluster.owner, Error::&lt;T&gt;::NoPermission);
 
-			<span class="kw">let </span>role_name = role_name.into_inner();
-			<span class="kw">let </span>name_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name);
+			<span class="comment">// avoid duplicates
+			</span><span class="macro">ensure!</span>(
+				!(<span class="number">1</span>..settings.len())
+					.any(|i| settings[i..].iter().map(|x| <span class="kw-2">&amp;</span>x.<span class="number">0</span>).any(|y| y == <span class="kw-2">&amp;</span>settings[i - <span class="number">1</span>].<span class="number">0</span>)),
+				Error::&lt;T&gt;::InvalidInput
+			);
 
-			<span class="macro">ensure!</span>(&lt;Roles&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index), Error::&lt;T&gt;::RoleNotFound);
+			<span class="kw">let </span>name_index =
+				<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name, <span class="bool-val">false</span>).ok_or(Error::&lt;T&gt;::RoleNotFound)<span class="question-mark">?</span>;
+
+			<span class="kw">let </span>role = &lt;Roles&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index).ok_or(Error::&lt;T&gt;::RoleNotFound)<span class="question-mark">?</span>;
+
+			<span class="kw">let </span>role_settings = settings
+				.iter()
+				.map(|setting| CompactSetting {
+					name: <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>setting.<span class="number">0</span>, <span class="bool-val">true</span>)
+						.expect(<span class="string">&quot;adding if none is true, qed&quot;</span>),
+					data: (<span class="kw-2">*</span>setting.<span class="number">1</span>).clone(),
+				})
+				.collect::&lt;Vec&lt;CompactSetting&gt;&gt;();
+
+			<span class="macro">ensure!</span>(
+				!role_settings.iter().any(|setting| {
+					role.settings
+						.iter()
+						.any(|existing_setting| existing_setting.name == setting.name)
+				}),
+				Error::&lt;T&gt;::RoleSettingsExists
+			);
 
 			<span class="comment">// write
 			</span>&lt;Roles&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index, |role| {
-				<span class="kw">let </span>role = role.as_mut().expect(<span class="string">&quot;Should find the role&quot;</span>);
-				role.settings.extend(settings.into_inner());
+				<span class="kw">let </span>role = role.as_mut().expect(<span class="string">&quot;role exists as per above check, qed&quot;</span>);
+				role.settings.extend(role_settings);
 			});
+
+			<span class="self">Self</span>::deposit_event(Event::RoleSettingsEdited {
+				cluster_hash: cluster_id,
+				role_name: role_name.into_inner(),
+			});
+
+			<span class="prelude-val">Ok</span>(())
+		}
+
+		<span class="doccomment">/// Change a single **RoleSetting** in an existing **Role** in a Cluster
+		///
+		/// - `role_name`: name of the role to edit (BoundedVec limited to T::NameLimit).
+		/// - `cluster_id`: hash of the cluster that the role belongs to.
+		/// - `setting_name`: name of the setting to be edited (BoundedVec limited to T::NameLimit).
+		/// - `data`: new data for the setting ([u8; T::SettingDataLimit]).
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
+		</span><span class="kw">pub fn </span>change_role_setting(
+			origin: OriginFor&lt;T&gt;,
+			role_name: BoundedVec&lt;u8, T::NameLimit&gt;,
+			cluster_id: Hash128,
+			setting_name: BoundedVec&lt;u8, T::NameLimit&gt;,
+			data: BoundedVec&lt;u8, T::DataLimit&gt;,
+		) -&gt; DispatchResult {
+			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
+
+			<span class="macro">ensure!</span>(!role_name.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
+			<span class="macro">ensure!</span>(!setting_name.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
+
+			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id).ok_or(Error::&lt;T&gt;::ClusterNotFound)<span class="question-mark">?</span>;
+			<span class="macro">ensure!</span>(who == cluster.owner, Error::&lt;T&gt;::NoPermission);
+
+			<span class="kw">let </span>role_name = role_name.into_inner();
+			<span class="kw">let </span>name_index =
+				<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name, <span class="bool-val">false</span>).ok_or(Error::&lt;T&gt;::RoleNotFound)<span class="question-mark">?</span>;
+			<span class="macro">ensure!</span>(&lt;Roles&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index), Error::&lt;T&gt;::RoleNotFound);
+
+			<span class="kw">let </span>setting_name = setting_name.into_inner();
+			<span class="kw">let </span>setting_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>setting_name, <span class="bool-val">false</span>)
+				.ok_or(Error::&lt;T&gt;::RoleSettingNotFound)<span class="question-mark">?</span>;
+
+			<span class="kw">let </span><span class="kw-2">mut </span>setting_exists = <span class="bool-val">false</span>;
+			&lt;Roles&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index, |role| {
+				<span class="kw">let </span>role = role.as_mut().expect(<span class="string">&quot;role exists as per above check, qed&quot;</span>);
+				<span class="kw">for </span>setting <span class="kw">in </span>role.settings.iter_mut() {
+					<span class="kw">if </span>setting.name == setting_index {
+						setting.data = data.into_inner();
+						setting_exists = <span class="bool-val">true</span>;
+						<span class="kw">break
+					</span>}
+				}
+			});
+
+			<span class="macro">ensure!</span>(setting_exists, Error::&lt;T&gt;::RoleSettingNotFound);
 
 			<span class="self">Self</span>::deposit_event(Event::RoleSettingsEdited {
 				cluster_hash: cluster_id,
 				role_name: role_name.clone(),
 			});
-			<span class="macro">log::trace!</span>(<span class="string">&quot;New role settings added into the role {:?}&quot;</span>, <span class="kw-2">&amp;</span>role_name);
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -1100,34 +1298,46 @@
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `settings`: new list of settings to be added to the existing list (BoundedVec limited to T::RoleSettingsLimit).
 		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>delete_role_settings(
 			origin: OriginFor&lt;T&gt;,
 			role_name: BoundedVec&lt;u8, T::NameLimit&gt;,
 			cluster_id: Hash128,
-			settings: BoundedVec&lt;Vec&lt;u8&gt;, T::RoleSettingsLimit&gt;,
+			setting_names: BoundedVec&lt;Vec&lt;u8&gt;, T::RoleSettingsLimit&gt;,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(!role_name.len().is_zero(), Error::&lt;T&gt;::InvalidInput);
 
-			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id).ok_or(Error::&lt;T&gt;::SystematicFailure)<span class="question-mark">?</span>;
+			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(<span class="kw-2">&amp;</span>cluster_id).ok_or(Error::&lt;T&gt;::ClusterNotFound)<span class="question-mark">?</span>;
 			<span class="comment">// Check that the caller is the owner of the cluster;
 			</span><span class="macro">ensure!</span>(who == cluster.owner, Error::&lt;T&gt;::NoPermission);
 
-			<span class="kw">let </span>role_name = role_name.into_inner();
-			<span class="kw">let </span>name_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name);
+			<span class="comment">// avoid duplicates
+			</span><span class="macro">ensure!</span>(
+				!(<span class="number">1</span>..setting_names.len())
+					.any(|i| setting_names[i..].contains(<span class="kw-2">&amp;</span>setting_names[i - <span class="number">1</span>])),
+				Error::&lt;T&gt;::InvalidInput
+			);
 
-			<span class="kw">let </span><span class="kw-2">mut </span>settings_name_indexes = Vec::new();
-			<span class="kw">for </span>setting_name <span class="kw">in </span>settings.into_inner() {
-				settings_name_indexes.push(<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>setting_name));
-			}
+			<span class="kw">let </span>role_name = role_name.into_inner();
+			<span class="kw">let </span>name_index =
+				<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name, <span class="bool-val">false</span>).ok_or(Error::&lt;T&gt;::RoleNotFound)<span class="question-mark">?</span>;
 
 			<span class="macro">ensure!</span>(&lt;Roles&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index), Error::&lt;T&gt;::RoleNotFound);
+
+			<span class="kw">let </span>setting_indices = setting_names
+				.iter()
+				.map(|setting_name| {
+					<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>setting_name, <span class="bool-val">false</span>)
+						.ok_or(Error::&lt;T&gt;::RoleSettingNotFound)
+				})
+				.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
 
 			<span class="comment">// write
 			</span>&lt;Roles&lt;T&gt;&gt;::mutate(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index, |role| {
 				<span class="kw">let </span>role_settings = <span class="kw-2">&amp;mut </span>role.as_mut().expect(<span class="string">&quot;Should find the role&quot;</span>).settings;
-				<span class="kw">for </span>setting_name <span class="kw">in </span>settings_name_indexes {
+				<span class="kw">for </span>setting_name <span class="kw">in </span>setting_indices {
 					role_settings.retain(|role_setting| !role_setting.name.eq(<span class="kw-2">&amp;</span>setting_name));
 				}
 			});
@@ -1146,6 +1356,7 @@
 		/// - `role_name`: name of the role to delete.
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>delete_role(
 			origin: OriginFor&lt;T&gt;,
 			role_name: BoundedVec&lt;u8, T::NameLimit&gt;,
@@ -1160,8 +1371,8 @@
 			<span class="macro">ensure!</span>(who == cluster.owner, Error::&lt;T&gt;::NoPermission);
 
 			<span class="kw">let </span>role_name = role_name.into_inner();
-			<span class="kw">let </span>name_index = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name);
-
+			<span class="kw">let </span>name_index =
+				<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name, <span class="bool-val">false</span>).ok_or(Error::&lt;T&gt;::RoleNotFound)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(&lt;Roles&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index), Error::&lt;T&gt;::RoleNotFound);
 
 			<span class="comment">// write
@@ -1190,10 +1401,11 @@
 		/// - `roles`: list of role names to be assigned to the new member.
 		/// - `member`: AccountId of the new member.
 		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>add_member(
 			origin: OriginFor&lt;T&gt;,
 			cluster_id: Hash128,
-			roles_names: Vec&lt;Vec&lt;u8&gt;&gt;,
+			roles_names: Vec&lt;BoundedVec&lt;u8, T::NameLimit&gt;&gt;,
 			member: T::AccountId,
 		) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
@@ -1205,22 +1417,28 @@
 			<span class="comment">// Check that the cluster does not already contain the member
 			</span><span class="macro">ensure!</span>(!&lt;Members&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>member), Error::&lt;T&gt;::MemberExists);
 
-			<span class="kw">for </span>role <span class="kw">in </span><span class="kw-2">&amp;</span>roles_names {
-				<span class="comment">// Check that the roles actually exist in the cluster
-				</span><span class="kw">let </span>name_index = <span class="self">Self</span>::take_name_index(role);
-				<span class="macro">ensure!</span>(
-					&lt;Roles&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>name_index),
-					Error::&lt;T&gt;::RoleNotFound
-				);
-			}
+			<span class="comment">// avoid duplicates
+			</span><span class="macro">ensure!</span>(
+				!(<span class="number">1</span>..roles_names.len()).any(|i| roles_names[i..].contains(<span class="kw-2">&amp;</span>roles_names[i - <span class="number">1</span>])),
+				Error::&lt;T&gt;::InvalidInput
+			);
 
-			<span class="comment">// write
-			</span><span class="kw">let </span><span class="kw-2">mut </span>role_indexes = Vec::new();
-			<span class="kw">for </span>role_name <span class="kw">in </span>roles_names {
-				role_indexes.push(<span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name));
-			}
+			<span class="kw">let </span>role_indices = roles_names
+				.iter()
+				.map(|role_name| {
+					<span class="kw">if let </span><span class="prelude-val">Some</span>(idx) = <span class="self">Self</span>::take_name_index(<span class="kw-2">&amp;</span>role_name, <span class="bool-val">false</span>) {
+						<span class="macro">ensure!</span>(
+							&lt;Roles&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>idx),
+							Error::&lt;T&gt;::RoleNotFound
+						);
+						<span class="prelude-val">Ok</span>(idx)
+					} <span class="kw">else </span>{
+						<span class="prelude-val">Err</span>(Error::&lt;T&gt;::RoleNotFound)
+					}
+				})
+				.collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>;
 
-			&lt;Members&lt;T&gt;&gt;::insert(cluster_id, member, role_indexes);
+			&lt;Members&lt;T&gt;&gt;::insert(cluster_id, member, role_indices);
 
 			<span class="prelude-val">Ok</span>(())
 		}
@@ -1239,6 +1457,7 @@
 
 			<span class="kw">let </span>cluster = &lt;Clusters&lt;T&gt;&gt;::get(cluster_id).ok_or(Error::&lt;T&gt;::ClusterNotFound)<span class="question-mark">?</span>;
 			<span class="macro">ensure!</span>(who == cluster.owner, Error::&lt;T&gt;::NoPermission);
+
 			<span class="comment">// Check that the member is in the cluster
 			</span><span class="macro">ensure!</span>(&lt;Members&lt;T&gt;&gt;::contains_key(<span class="kw-2">&amp;</span>cluster_id, <span class="kw-2">&amp;</span>member), Error::&lt;T&gt;::MemberExists);
 
@@ -1257,22 +1476,23 @@
 		///
 		/// Returns:
 		/// - `Compact&lt;u64&gt;`: the index of the name in storage
-		</span><span class="kw">pub fn </span>take_name_index(name: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;) -&gt; Compact&lt;u64&gt; {
+		</span><span class="kw">pub fn </span>take_name_index(name: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;, add_if_none: bool) -&gt; <span class="prelude-ty">Option</span>&lt;Compact&lt;u64&gt;&gt; {
 			<span class="kw">let </span>name_index = &lt;Names&lt;T&gt;&gt;::get(name);
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(name_index) = name_index {
-				&lt;Compact&lt;u64&gt;&gt;::from(name_index)
+				<span class="prelude-val">Some</span>(name_index)
 			} <span class="kw">else </span>{
-				<span class="kw">let </span>next_name_index = &lt;NamesIndex&lt;T&gt;&gt;::try_get().unwrap_or_default() + <span class="number">1</span>;
-				<span class="kw">let </span>next_name_index_compact = &lt;Compact&lt;u64&gt;&gt;::from(next_name_index);
-				&lt;Names&lt;T&gt;&gt;::insert(name, next_name_index_compact);
-				<span class="comment">// storing is dangerous inside a closure
-				// but after this call we start storing..
-				// so it&#39;s fine here
-				</span>&lt;NamesIndex&lt;T&gt;&gt;::put(next_name_index);
-				next_name_index_compact
+				<span class="kw">if </span>add_if_none {
+					<span class="kw">let </span>next_name_index = &lt;NamesIndex&lt;T&gt;&gt;::try_get().unwrap_or_default() + <span class="number">1</span>;
+					<span class="kw">let </span>next_name_index_compact = Compact(next_name_index);
+					&lt;Names&lt;T&gt;&gt;::insert(name, next_name_index_compact);
+					&lt;NamesIndex&lt;T&gt;&gt;::put(next_name_index);
+					<span class="prelude-val">Some</span>(next_name_index_compact)
+				} <span class="kw">else </span>{
+					<span class="prelude-val">None
+				</span>}
 			}
 		}
 	}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_clusters" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.0 (fc594f156 2023-01-24)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_clusters" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.1 (d5a82bbd2 2023-02-07)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
