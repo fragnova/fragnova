@@ -65,7 +65,7 @@ use protos::permissions::FragmentPerms;
 use frame_support::dispatch::DispatchResult;
 use sp_runtime::traits::StaticLookup;
 
-use frame_support::traits::tokens::{fungible, fungibles, ExistenceRequirement};
+use frame_support::traits::tokens::{fungible, fungibles};
 
 use sp_runtime::SaturatedConversion;
 
@@ -1711,16 +1711,6 @@ pub mod pallet {
 						to,
 						amount.saturated_into(),
 						true, // The debited account must stay alive at the end of the operation; an error is returned if this cannot be achieved legally.
-					)
-					.map_err(|_| Error::<T>::InsufficientBalance)?;
-				},
-				Currency::Native => {
-					pallet_balances::Pallet::<T>::do_transfer(
-						// transfer `amount` units of NOVA from `from` to `to`
-						from,
-						to,
-						amount.saturated_into(),
-						ExistenceRequirement::KeepAlive,
 					)
 					.map_err(|_| Error::<T>::InsufficientBalance)?;
 				},
