@@ -1714,6 +1714,9 @@ pub mod pallet {
 					)
 					.map_err(|_| Error::<T>::InsufficientBalance)?;
 				},
+				Currency::Native => {
+					todo!();
+				}
 			}
 
 			Ok(())

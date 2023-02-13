@@ -18,11 +18,11 @@ sp-blockchain = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz
 
 pallet-fragments = { version = '0.0.1', default-features = false, path = '..' }
 
-codec = { package = "parity-scale-codec", version = "3" }
+codec = { package = "parity-scale-codec", version = "3.0.0", features = ["derive"] }
 
 pallet-fragments-rpc-runtime-api = { version = '0.0.1', path = '../rpc/runtime-api' }
 
-jsonrpsee = { version = "0.16.2", features = ["server", "macros"] }
+jsonrpsee = { version = "0.16.2", features = ["server", "macros", "client-core"] }
 serde = { version = "1", features = ["derive"] }
 hex = "^0.4.3"
 protos = { version = "0.1.25", default-features = false }

@@ -14,6 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 sp-core = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-io = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-std = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-runtime = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-fragnova = { version = '0.1.0', path = '../../primitives/fragnova', default-features = false }
 
@@ -37,7 +38,7 @@ scale-info = { version = '2.0', default-features = false, features = ['derive'] 
 
 hex = { version = "0.4.3", default-features = false }
 serde = { version = "1.0.136", default-features = false, features = ["derive"], optional = true }
-serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
+serde_json = { version = '1.0.85', default-features = false, features = ['alloc'] }
 protos = { version = "0.1.25", default-features = false }
 log = { version = "0.4.14", default-features = false }
 bitflags = "1.3.2"

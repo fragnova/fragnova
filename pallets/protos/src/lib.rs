@@ -58,8 +58,8 @@ use scale_info::prelude::{
 use serde_json::{json, Map, Value};
 
 /// **Data Type** used to **Query and Filter for Proto-Fragments**
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GetProtosParams<TAccountId, TString> {
 	/// Whether to order the results in descending or ascending order
 	pub desc: bool,
