@@ -1936,6 +1936,15 @@
 <a href="#1936" id="1936">1936</a>
 <a href="#1937" id="1937">1937</a>
 <a href="#1938" id="1938">1938</a>
+<a href="#1939" id="1939">1939</a>
+<a href="#1940" id="1940">1940</a>
+<a href="#1941" id="1941">1941</a>
+<a href="#1942" id="1942">1942</a>
+<a href="#1943" id="1943">1943</a>
+<a href="#1944" id="1944">1944</a>
+<a href="#1945" id="1945">1945</a>
+<a href="#1946" id="1946">1946</a>
+<a href="#1947" id="1947">1947</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2297,10 +2306,19 @@
 </span><span class="kw">pub const </span>MAXIMUM_METADATA_DATA_LENGTH: usize = <span class="number">1 </span>* <span class="number">1024 </span>* <span class="number">1024</span>;
 
 <span class="kw">mod </span>validation_logic {
-
 	<span class="kw">use </span>protos::categories::ShardsFormat;
 
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+
+	<span class="kw">fn </span>match_gltf(buf: <span class="kw-2">&amp;</span>[u8]) -&gt; bool {
+		<span class="comment">// gltf v2
+		</span><span class="kw">return </span>buf.len() &gt;= <span class="number">5 </span>&amp;&amp;
+			buf[<span class="number">0</span>] == <span class="number">0x67 </span>&amp;&amp;
+			buf[<span class="number">1</span>] == <span class="number">0x6C </span>&amp;&amp;
+			buf[<span class="number">2</span>] == <span class="number">0x54 </span>&amp;&amp;
+			buf[<span class="number">3</span>] == <span class="number">0x46 </span>&amp;&amp;
+			buf[<span class="number">4</span>] == <span class="number">0x02
+	</span>}
 
 	<span class="doccomment">/// Does the call `c` use `transaction_index::index`.
 	</span><span class="kw">fn </span>does_call_index_the_transaction(c: <span class="kw-2">&amp;</span>Call) -&gt; bool {
@@ -2411,9 +2429,9 @@
 				VideoCategories::Mp4File =&gt; infer::is(data, <span class="string">&quot;mp4&quot;</span>),
 			},
 			Categories::Model(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
-				ModelCategories::GltfFile =&gt; <span class="bool-val">false</span>,
-				ModelCategories::Sdf =&gt; <span class="bool-val">false</span>,
-				ModelCategories::PhysicsCollider =&gt; <span class="bool-val">false</span>, <span class="comment">// Note: &quot;This is a Fragnova/Fragcolor data type&quot;
+				ModelCategories::GltfFile =&gt; match_gltf(data),
+				ModelCategories::Sdf =&gt; <span class="bool-val">false</span>, <span class="comment">// Note: &quot;This is a Fragnova/Fragcolor data type&quot;
+				</span>ModelCategories::PhysicsCollider =&gt; <span class="bool-val">false</span>, <span class="comment">// Note: &quot;This is a Fragnova/Fragcolor data type&quot;
 			</span>},
 			Categories::Binary(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				BinaryCategories::WasmProgram =&gt; infer::is(data, <span class="string">&quot;wasm&quot;</span>), <span class="comment">// wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn&#39;t I check if the last `payload` is `Payload::End`?
