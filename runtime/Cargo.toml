@@ -55,8 +55,6 @@ pallet-aliases = { version = '0.0.1', default-features = false, path = '../palle
 # Used for the RPCs
 frame-system-rpc-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 pallet-transaction-payment-rpc-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
-pallet-protos-rpc-runtime-api = { version = '0.0.1', default-features = false, path = '../pallets/protos/rpc/runtime-api' }
-pallet-fragments-rpc-runtime-api = { version = '0.0.1', default-features = false, path = '../pallets/fragments/rpc/runtime-api' }
 
 # Used for runtime benchmarking
 frame-benchmarking = { version = '4.0.0-dev', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
@@ -148,8 +146,6 @@ std = [
 	'pallet-fragments/std',
 	'pallet-oracle/std',
 	'pallet-transaction-payment-rpc-runtime-api/std',
-	'pallet-protos-rpc-runtime-api/std',
-	'pallet-fragments-rpc-runtime-api/std',
     'codec/std',
     'scale-info/std',
     'protos/std'

@@ -26,7 +26,7 @@ use protos::{categories::Categories, traits::Trait};
 
 use sp_core::crypto::UncheckedFrom;
 
-use codec::{Compact, Decode, Encode};
+use codec::{Codec, Compact, Decode, Encode};
 
 pub use pallet::*;
 
@@ -58,8 +58,8 @@ use scale_info::prelude::{
 use serde_json::{json, Map, Value};
 
 /// **Data Type** used to **Query and Filter for Proto-Fragments**
-#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct GetProtosParams<TAccountId, TString> {
 	/// Whether to order the results in descending or ascending order
 	pub desc: bool,
@@ -82,6 +82,20 @@ pub struct GetProtosParams<TAccountId, TString> {
 	/// Whether the Proto-Fragments should be available or not
 	pub available: Option<bool>,
 }
+
+sp_api::decl_runtime_apis! {
+	/// The trait `ProtosRuntimeApi` is declared to be a Runtime API
+	pub trait ProtosRuntimeApi<AccountId>
+	where
+		AccountId: Codec
+	{
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
+		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>, at: Option<<Block>::Hash>) -> Result<Vec<u8>, Vec<u8>>;
+		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
+		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>, at: Option<<Block>::Hash>) -> Result<Vec<u8>, Vec<u8>>;
+	}
+}
+
 #[cfg(test)]
 impl<TAccountId, TString> Default for GetProtosParams<TAccountId, TString> {
 	fn default() -> Self {
@@ -120,7 +134,7 @@ pub mod pallet {
 		DetachCollection, DetachHash, DetachRequest, DetachRequests, DetachedHashes,
 		SupportedChains,
 	};
-	use sp_runtime::SaturatedConversion;
+	use sp_runtime::{generic::Block, SaturatedConversion};
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -510,9 +524,7 @@ pub mod pallet {
 			if data.is_some() {
 				// actually one last failure
 				match proto.category {
-					Categories::Trait(_) => {
-						return Err(Error::<T>::CannotPatchTraits.into())
-					}
+					Categories::Trait(_) => return Err(Error::<T>::CannotPatchTraits.into()),
 					_ => {},
 				};
 			}
@@ -842,7 +854,7 @@ pub mod pallet {
 					if let Some(owner) = owner {
 						if owner == *who {
 							// owner can include freely
-							continue
+							continue;
 						}
 					}
 
@@ -873,19 +885,19 @@ pub mod pallet {
 								let allowed = bool::decode(&mut &res.data[..]);
 								if let Ok(allowed) = allowed {
 									if !allowed {
-										return Err(Error::<T>::Unauthorized.into())
+										return Err(Error::<T>::Unauthorized.into());
 									}
 								} else {
-									return Err(Error::<T>::Unauthorized.into())
+									return Err(Error::<T>::Unauthorized.into());
 								}
 							} else {
-								return Err(Error::<T>::Unauthorized.into())
+								return Err(Error::<T>::Unauthorized.into());
 							}
 						},
 					}
 				} else {
 					// Proto not found
-					return Err(Error::<T>::ReferenceNotFound.into())
+					return Err(Error::<T>::ReferenceNotFound.into());
 				}
 			}
 			Ok(())
@@ -901,16 +913,16 @@ pub mod pallet {
 			if let Some(struct_proto) = <Protos<T>>::get(proto_id) {
 				if let Some(avail) = avail {
 					if avail && struct_proto.license == UsageLicense::Closed {
-						return false
+						return false;
 					} else if !avail && struct_proto.license != UsageLicense::Closed {
-						return false
+						return false;
 					}
 				}
 
 				if categories.len() == 0 {
-					return Self::filter_tags(tags, &struct_proto, exclude_tags)
+					return Self::filter_tags(tags, &struct_proto, exclude_tags);
 				} else {
-					return Self::filter_category(tags, &struct_proto, categories, exclude_tags)
+					return Self::filter_category(tags, &struct_proto, categories, exclude_tags);
 				}
 			} else {
 				false
@@ -948,39 +960,40 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return Self::filter_tags(tags, struct_proto, exclude_tags)
+									return Self::filter_tags(tags, struct_proto, exclude_tags);
 								} else {
-									return false
+									return false;
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec) &&
-								param_script_info.requiring.contains(&zero_vec) &&
-								param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec)
+								&& param_script_info.requiring.contains(&zero_vec)
+								&& param_script_info.format == stored_script_info.format
 							{
-								return Self::filter_tags(tags, struct_proto, exclude_tags)
+								return Self::filter_tags(tags, struct_proto, exclude_tags);
 							} else {
-								return false
+								return false;
 							}
 						} else {
 							// it should never go here
-							return false
+							return false;
 						}
 					},
-					_ =>
+					_ => {
 						if *cat == &struct_proto.category {
-							return Self::filter_tags(tags, struct_proto, exclude_tags)
+							return Self::filter_tags(tags, struct_proto, exclude_tags);
 						} else {
-							return false
-						},
+							return false;
+						}
+					},
 				})
 				.collect();
 
 			if found.is_empty() {
-				return false
+				return false;
 			} else {
-				return true
+				return true;
 			}
 		}
 
@@ -1040,38 +1053,39 @@ pub mod pallet {
 							// Partial or full match {requiring, implementing}. Same format {Edn|Binary}.
 							if !implementing_diffs.is_empty() || !requiring_diffs.is_empty() {
 								if param_script_info.format == stored_script_info.format {
-									return true
+									return true;
 								} else {
-									return false
+									return false;
 								}
 							}
 							// Generic query:
 							// Get all with same format. {Edn|Binary}. No match {requiring, implementing}.
-							else if param_script_info.implementing.contains(&zero_vec) &&
-								param_script_info.requiring.contains(&zero_vec) &&
-								param_script_info.format == stored_script_info.format
+							else if param_script_info.implementing.contains(&zero_vec)
+								&& param_script_info.requiring.contains(&zero_vec)
+								&& param_script_info.format == stored_script_info.format
 							{
-								return true
+								return true;
 							} else if !(&cat == &category) {
-								return false
+								return false;
 							} else {
-								return false
+								return false;
 							}
 						} else {
-							return false
+							return false;
 						}
 					},
 					// for all other types of Categories
-					_ =>
+					_ => {
 						if !(&cat == &category) {
-							return false
+							return false;
 						} else {
-							return true
-						},
+							return true;
+						}
+					},
 				})
 				.collect();
 
-			return found
+			return found;
 		}
 
 		/// Converts a `ProtoOwner` struct into a JSON
@@ -1150,6 +1164,39 @@ pub mod pallet {
 			Ok(result.into_bytes())
 		}
 
+		pub fn get_protos_api(
+			params: GetProtosParams<T::AccountId, Vec<u8>>,
+			at: Option<T::BlockNumber>
+		) -> Result<Vec<u8>, Vec<u8>> {
+
+			// If the block hash is not supplied in `at`, use the best block's hash
+			//TODO let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+			let params_no_std = GetProtosParams::<T::AccountId, Vec<u8>> {
+				metadata_keys: params.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
+				desc: params.desc,
+				from: params.from,
+				limit: params.limit,
+				owner: params.owner,
+				return_owners: params.return_owners,
+				categories: params.categories,
+				tags: params.tags.into_iter().map(|s| s.into_bytes()).collect(),
+				exclude_tags: params.exclude_tags.into_iter().map(|s| s.into_bytes()).collect(),
+				available: params.available,
+			};
+
+			let result_outer = Self::get_protos(params_no_std).map(|list_bytes| {
+				list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
+			});
+			match result_outer {
+				Err(e) => Err("Error while calling get_protos."),
+				Ok(result_outer) => match result_outer {
+					Err(e) => Err("Error while calling get_protos."),
+					Ok(result_inner) => Ok(result_inner),
+				},
+			}
+		}
+
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**. The **return
 		/// type** is a **JSON string**
 		///
@@ -1215,7 +1262,7 @@ pub mod pallet {
 						// if the current stored category does not match with any of the categories
 						// in input, it can be discarded from this search.
 						if found.is_empty() {
-							continue
+							continue;
 						}
 					}
 					// Found the category.
@@ -1322,6 +1369,28 @@ pub mod pallet {
 			}
 
 			Ok(map)
+		}
+
+		pub fn get_genealogy_api(params: GetGenealogyParams<Vec<u8>>, at: Option<T::BlockNumber>) -> Result<Vec<u8>, Vec<u8>> {
+// If the block hash is not supplied in `at`, use the best block's hash
+			// TODO let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+			let params_no_std = GetGenealogyParams::<Vec<u8>> {
+				proto_hash: params.proto_hash.into_bytes(),
+				get_ancestors: params.get_ancestors,
+			};
+
+			let result = Self::get_genealogy(&at, params_no_std).map(|list_bytes| {
+				list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
+			});
+			match result {
+				Err(e) => Err("error while calling get_genealogy."),
+				Ok(result) => match result {
+					Err(e) => Err("error while calling get_genealogy."),
+					Ok(result) => Ok(result),
+				},
+			}
+			Self::get_genealogy(params_no_std)
 		}
 
 		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**. The **return

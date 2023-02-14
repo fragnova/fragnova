@@ -1175,6 +1175,7 @@ impl pallet_contracts::Config for Runtime {
 	type MaxStorageKeyLen = ConstU32<128>;
 	type UnsafeUnstableInterface = ();
 	type MaxDebugBufferLen = ();
+	type IsTransferable = IsTransferable;
 }
 
 parameter_types! {
@@ -1223,6 +1224,7 @@ impl pallet_assets::Config for Runtime {
 	type Extra = ();
 	type CallbackHandle = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type BenchmarkHelper = ();
 }
 
 // Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
@@ -1750,13 +1752,35 @@ impl_runtime_apis! {
 	}
 
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Protos
-	impl pallet_protos_rpc_runtime_api::ProtosRuntimeApi<Block, AccountId> for Runtime {
+	impl pallet_protos::ProtosRuntimeApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
-		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-			Protos::get_protos(params)
+		fn get_protos(
+			params: GetProtosParams<AccountId, Vec<u8>>,
+			at: Option<<Block>::Hash>
+		) -> Result<Vec<u8>, Vec<u8>> {
+
+			Protos::get_protos_api(params, at)
 		}
 		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
-		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
+		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>, at: Option<Block>::Hash) -> Result<Vec<u8>, Vec<u8>> {
+// If the block hash is not supplied in `at`, use the best block's hash
+			// TODO let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+			let params_no_std = GetGenealogyParams::<Vec<u8>> {
+				proto_hash: params.proto_hash.into_bytes(),
+				get_ancestors: params.get_ancestors,
+			};
+
+			let result = api.get_genealogy(&at, params_no_std).map(|list_bytes| {
+				list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
+			});
+			match result {
+				Err(e) => Err(runtime_error_into_rpc_err(e)),
+				Ok(result) => match result {
+					Err(e) => Err(runtime_error_into_rpc_err(e)),
+					Ok(result) => Ok(result),
+				},
+			}
 			Protos::get_genealogy(params)
 		}
 	}
@@ -1764,16 +1788,78 @@ impl_runtime_apis! {
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Fragments
 	impl pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
-		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-			Fragments::get_definitions(params)
+		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>, at: Option<Block>::Hash) -> Result<Vec<u8>, Vec<u8>> {
+
+			// If the block hash is not supplied in `at`, use the best block's hash
+			// TODO let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+			let params_no_std = GetDefinitionsParams::<AccountId, Vec<u8>> {
+				metadata_keys: params.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
+				desc: params.desc,
+				from: params.from,
+				limit: params.limit,
+				owner: params.owner,
+				return_owners: params.return_owners,
+			};
+
+			let result_outer = Fragments::get_definitions(&at, params_no_std)
+				.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
+			match result_outer {
+				Err(e) => Err(runtime_error_into_rpc_err(e)),
+				Ok(result_outer) => match result_outer {
+					Err(e) => Err(runtime_error_into_rpc_err(e)),
+					Ok(result_inner) => Ok(result_inner),
+				},
+			}
 		}
 		/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
-		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-			Fragments::get_instances(params)
+		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>, at: Option<Block>::Hash) -> Result<Vec<u8>, Vec<u8>> {
+
+			// If the block hash is not supplied in `at`, use the best block's hash
+			// TODO let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+			let params_no_std = GetInstancesParams::<AccountId, Vec<u8>> {
+				metadata_keys: params.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
+				desc: params.desc,
+				from: params.from,
+				limit: params.limit,
+				definition_hash: params.definition_hash.into_bytes(),
+				owner: params.owner,
+				only_return_first_copies: params.only_return_first_copies,
+			};
+
+			let result_outer = Fragments::get_instances(&at, params_no_std)
+				.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
+			match result_outer {
+				Err(e) => Err(runtime_error_into_rpc_err(e)),
+				Ok(result_outer) => match result_outer {
+					Err(e) => Err(runtime_error_into_rpc_err(e)),
+					Ok(result_inner) => Ok(result_inner),
+				},
+			}
 		}
 		/// Query the owner of a Fragment Instance. The return type is a String
-		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-			Fragments::get_instance_owner(params)
+		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>, at: Option<Block>::Hash) -> Result<Vec<u8>, Vec<u8>> {
+
+			// If the block hash is not supplied in `at`, use the best block's hash
+			// TODO let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+
+			let params_no_std = GetInstanceOwnerParams::<Vec<u8>> {
+				definition_hash: params.definition_hash.into_bytes(),
+				edition_id: params.edition_id,
+				copy_id: params.copy_id,
+			};
+
+			let result_outer = Fragments::get_instance_owner(&at, params_no_std)
+				.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
+
+			match result_outer {
+				Err(e) => Err(runtime_error_into_rpc_err(e)),
+				Ok(result_outer) => match result_outer {
+					Err(e) => Err(runtime_error_into_rpc_err(e)),
+					Ok(result_inner) => Ok(result_inner),
+				},
+			}
 		}
 	}
 

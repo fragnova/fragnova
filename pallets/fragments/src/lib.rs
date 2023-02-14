@@ -43,7 +43,7 @@ mod benchmarking;
 #[allow(missing_docs)]
 mod weights;
 
-use codec::{Compact, Decode, Encode};
+use codec::{Codec, Compact, Decode, Encode};
 pub use pallet::*;
 use sp_core::crypto::UncheckedFrom;
 pub use sp_fragnova::fragments::{
@@ -216,6 +216,26 @@ pub enum FragmentBuyOptions {
 	Quantity(u64),
 	/// Create a single Fragment Instance with some custom data attached to it (where the custom data is specified in the associated `Vec<u8>` value of this enum variant)
 	UniqueData(Vec<u8>),
+}
+
+// Declares given traits as runtime apis
+//
+// For more information, read: https://docs.rs/sp-api/latest/sp_api/macro.decl_runtime_apis.html
+sp_api::decl_runtime_apis! {
+	/// The trait `FragmentsRuntimeApi` is declared to be a Runtime API
+	pub trait FragmentsRuntimeApi<AccountId>
+	where
+		AccountId: Codec
+	{
+		/// **Query** and **Return** **Fragmnent Definition(s)** based on **`params`**
+		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+
+		/// **Query** and **Return** **Fragmnent Instance(s)** based on **`params`**
+		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+
+		/// Query the owner of a Fragment Instance. The return type is a String
+		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+	}
 }
 
 #[frame_support::pallet]
