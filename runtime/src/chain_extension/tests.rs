@@ -111,6 +111,8 @@ mod protos_tests {
 				false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
 			);
 
+			println!("the contract result is: {:?}", contract_result);
+
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
 				contract_result.result.unwrap().data.0,

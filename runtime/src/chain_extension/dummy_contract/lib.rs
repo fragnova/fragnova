@@ -2,13 +2,13 @@
 
 use ink_lang as ink;
 
-use fragnova_chain_extension_methods::FragnovaEnvironment;
+use fragnova_extensions::FragnovaEnvironment;
 
 #[ink::contract(env = crate::FragnovaEnvironment)]
 mod dummy_contract {
     use scale::Compact;
     use ink_prelude::vec::Vec;
-    use fragnova_chain_extension_methods::{AssetId, MyChainExtensionError};
+    use fragnova_extensions::{AssetId, MyChainExtensionError};
     use sp_fragnova::{
         Hash128,
         Hash256,

@@ -373,9 +373,9 @@ dependencies = [
 
 [[package]]
 name = "cxx"
-version = "1.0.89"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc831ee6a32dd495436e317595e639a587aa9907bef96fe6e6abc290ab6204e9"
+checksum = "86d3488e7665a7a483b57e25bdd90d0aeb2bc7608c8d0346acf2ad3f1caf1d62"
 dependencies = [
  "cc",
  "cxxbridge-flags",
@@ -385,9 +385,9 @@ dependencies = [
 
 [[package]]
 name = "cxx-build"
-version = "1.0.89"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94331d54f1b1a8895cd81049f7eaaaef9d05a7dcb4d1fd08bf3ff0806246789d"
+checksum = "48fcaf066a053a41a81dfb14d57d99738b767febb8b735c3016e469fac5da690"
 dependencies = [
  "cc",
  "codespan-reporting",
@@ -400,15 +400,15 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-flags"
-version = "1.0.89"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "48dcd35ba14ca9b40d6e4b4b39961f23d835dbb8eed74565ded361d93e1feb8a"
+checksum = "a2ef98b8b717a829ca5603af80e1f9e2e48013ab227b68ef37872ef84ee479bf"
 
 [[package]]
 name = "cxxbridge-macro"
-version = "1.0.89"
+version = "1.0.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81bbeb29798b407ccd82a3324ade1a7286e0d29851475990b612670f6f5124d2"
+checksum = "086c685979a698443656e5cf7856c95c642295a38599f12fb1ff76fb28d19892"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -465,7 +465,7 @@ checksum = "9ea835d29036a4087793836fa931b08837ad5e957da9e23886b29586fb9b6650"
 name = "dummy_contract"
 version = "0.1.0"
 dependencies = [
- "fragnova_chain_extension_methods",
+ "fragnova_extensions",
  "ink_env",
  "ink_lang",
  "ink_metadata",
@@ -476,7 +476,7 @@ dependencies = [
  "protos",
  "scale-info",
  "sp-fragnova",
- "sp-io",
+ "sp-io 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
 ]
 
 [[package]]
@@ -560,9 +560,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "fragnova_chain_extension_methods"
+name = "fragnova_extensions"
 version = "0.1.0"
-source = "git+https://github.com/fragcolor-xyz/fragnova-chain-extension-methods.git?branch=add-all-chain-extension-method-definitions#b8d3eda26c132417ddf8c47f1305572eac2d2e91"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d97b27da5483b3e9bf015558013e009a5e0fd48a12f59c67f6b4d1b05643a63e"
 dependencies = [
  "ink_env",
  "ink_lang",
@@ -571,7 +572,7 @@ dependencies = [
  "protos",
  "scale-info",
  "sp-fragnova",
- "sp-io",
+ "sp-io 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -715,9 +716,9 @@ dependencies = [
 
 [[package]]
 name = "gimli"
-version = "0.27.1"
+version = "0.27.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "221996f774192f0f718773def8201c4ae31f02616a54ccfc2d358bb0e5cefdec"
+checksum = "ad0a93d233ebf96623465aad4046a8d3aa4da22d4f4beba5388838c8a434bbb4"
 
 [[package]]
 name = "hash-db"
@@ -883,7 +884,7 @@ dependencies = [
  "derive_more",
  "parity-scale-codec",
  "rand 0.8.5",
- "secp256k1",
+ "secp256k1 0.24.3",
  "sha2 0.10.6",
  "sha3",
 ]
@@ -909,7 +910,7 @@ dependencies = [
  "rand 0.8.5",
  "rlibc",
  "scale-info",
- "secp256k1",
+ "secp256k1 0.24.3",
  "sha2 0.10.6",
  "sha3",
  "static_assertions",
@@ -1313,9 +1314,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.17.0"
+version = "1.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f61fba1741ea2b3d6a1e3178721804bb716a68a6aeba1149b5d52e3d464ea66"
+checksum = "b7e5500299e16ebb147ae15a00a942af264cf3688f47923b8fc2cd5858f23ad3"
 
 [[package]]
 name = "opaque-debug"
@@ -1331,9 +1332,9 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
 name = "parity-scale-codec"
-version = "3.3.0"
+version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3840933452adf7b3b9145e27086a5a3376c619dca1a21b1e5a5af0d54979bed"
+checksum = "637935964ff85a605d114591d4d2c13c5d1ba2806dae97cea6bf180238a749ac"
 dependencies = [
  "arrayvec 0.7.2",
  "bitvec",
@@ -1488,7 +1489,8 @@ dependencies = [
 [[package]]
 name = "protos"
 version = "0.1.26"
-source = "git+https://github.com/fragcolor-xyz/protos.git?branch=implement-maxencodedlen-trait-for-fragmentperms#6d28335b350715282e25fdd986aef52ba1ab290f"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "60f3682b4407a720de0903cdffb78ffc73165aa29292fd5dc561187b3ee6f7aa"
 dependencies = [
  "bitflags",
  "parity-scale-codec",
@@ -1736,11 +1738,29 @@ checksum = "ddccb15bcce173023b3fedd9436f882a0739b8dfb45e4f6b6002bee5929f61b2"
 
 [[package]]
 name = "secp256k1"
+version = "0.21.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c42e6f1735c5f00f51e43e28d6634141f2bcad10931b2609ddd74a86d751260"
+dependencies = [
+ "secp256k1-sys 0.4.2",
+]
+
+[[package]]
+name = "secp256k1"
 version = "0.24.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b1629c9c557ef9b293568b338dddfc8208c98a18c59d722a9d53f859d9c9b62"
 dependencies = [
- "secp256k1-sys",
+ "secp256k1-sys 0.6.1",
+]
+
+[[package]]
+name = "secp256k1-sys"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "957da2573cde917463ece3570eab4a0b3f19de6f1646cde62e6fd3868f566036"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
@@ -1783,9 +1803,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.92"
+version = "1.0.93"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7434af0dc1cbd59268aa98b4c22c131c0584d2232f6fb166efb993e2832e896a"
+checksum = "cad406b69c91885b5107daf2c29572f6c8cdb3c66826821e286c533490c0bc76"
 dependencies = [
  "itoa",
  "ryu",
@@ -1871,29 +1891,78 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 [[package]]
 name = "sp-application-crypto"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "acb4490364cb3b097a6755343e552495b0013778152300714be4647d107e9a2e"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-core",
- "sp-io",
- "sp-std",
+ "sp-core 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-io 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sp-arithmetic"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31ef21f82cc10f75ed046b65e2f8048080ee76e59f1b8aed55c7150daebfd35b"
 dependencies = [
  "integer-sqrt",
  "num-traits",
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-debug-derive",
- "sp-std",
+ "sp-debug-derive 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "static_assertions",
+]
+
+[[package]]
+name = "sp-core"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77963e2aa8fadb589118c3aede2e78b6c4bcf1c01d588fbf33e915b390825fbd"
+dependencies = [
+ "base58",
+ "bitflags",
+ "blake2-rfc",
+ "byteorder",
+ "dyn-clonable",
+ "ed25519-dalek",
+ "futures",
+ "hash-db",
+ "hash256-std-hasher",
+ "hex",
+ "impl-serde",
+ "lazy_static",
+ "libsecp256k1",
+ "log",
+ "merlin",
+ "num-traits",
+ "parity-scale-codec",
+ "parity-util-mem",
+ "parking_lot",
+ "primitive-types",
+ "rand 0.7.3",
+ "regex",
+ "scale-info",
+ "schnorrkel",
+ "secp256k1 0.21.3",
+ "secrecy",
+ "serde",
+ "sp-core-hashing 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-debug-derive 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-externalities 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-runtime-interface 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-storage 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ss58-registry",
+ "substrate-bip39",
+ "thiserror",
+ "tiny-bip39",
+ "wasmi",
+ "zeroize",
 ]
 
 [[package]]
@@ -1925,21 +1994,35 @@ dependencies = [
  "regex",
  "scale-info",
  "schnorrkel",
- "secp256k1",
+ "secp256k1 0.24.3",
  "secrecy",
  "serde",
- "sp-core-hashing",
- "sp-debug-derive",
- "sp-externalities",
- "sp-runtime-interface",
- "sp-std",
- "sp-storage",
+ "sp-core-hashing 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-debug-derive 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-externalities 0.12.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-runtime-interface 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-storage 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
  "ss58-registry",
  "substrate-bip39",
  "thiserror",
  "tiny-bip39",
  "wasmi",
  "zeroize",
+]
+
+[[package]]
+name = "sp-core-hashing"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec864a6a67249f0c8dd3d5acab43623a61677e85ff4f2f9b04b802d2fe780e83"
+dependencies = [
+ "blake2-rfc",
+ "byteorder",
+ "sha2 0.9.9",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tiny-keccak",
+ "twox-hash",
 ]
 
 [[package]]
@@ -1952,8 +2035,19 @@ dependencies = [
  "digest 0.10.6",
  "sha2 0.10.6",
  "sha3",
- "sp-std",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
  "twox-hash",
+]
+
+[[package]]
+name = "sp-debug-derive"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d676664972e22a0796176e81e7bec41df461d1edf52090955cdab55f2c956ff2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1969,18 +2063,31 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fcfd91f92a2a59224230a77c4a5d6f51709620c0aab4e51f108ccece6adc56f"
+dependencies = [
+ "environmental",
+ "parity-scale-codec",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-storage 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "sp-externalities"
+version = "0.12.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
 dependencies = [
  "environmental",
  "parity-scale-codec",
- "sp-std",
- "sp-storage",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-storage 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
 ]
 
 [[package]]
 name = "sp-fragnova"
 version = "0.1.0"
-source = "git+https://github.com/fragcolor-xyz/fragnova.git?branch=add-chain-extension#98f2af8178109473698e333267a06c1726b6b6bc"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "078e3fc67a004b53018ddacb7eab4f1dc7e8af86e47c01302595a89c255fd570"
 dependencies = [
  "hex-literal",
  "lazy_static",
@@ -1988,11 +2095,37 @@ dependencies = [
  "parity-scale-codec",
  "protos",
  "scale-info",
- "sp-core",
- "sp-io",
+ "sp-core 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-io 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-runtime",
- "sp-runtime-interface",
- "sp-std",
+ "sp-runtime-interface 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "sp-io"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "935fd3c71bad6811a7984cabb74d323b8ca3107024024c3eabb610e0182ba8d3"
+dependencies = [
+ "futures",
+ "hash-db",
+ "libsecp256k1",
+ "log",
+ "parity-scale-codec",
+ "parking_lot",
+ "secp256k1 0.21.3",
+ "sp-core 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-externalities 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-keystore 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-runtime-interface 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-state-machine 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-tracing 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-trie 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-wasm-interface 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tracing",
+ "tracing-core",
 ]
 
 [[package]]
@@ -2007,18 +2140,35 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "parking_lot",
- "secp256k1",
- "sp-core",
- "sp-externalities",
- "sp-keystore",
- "sp-runtime-interface",
- "sp-state-machine",
- "sp-std",
- "sp-tracing",
- "sp-trie",
- "sp-wasm-interface",
+ "secp256k1 0.24.3",
+ "sp-core 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-externalities 0.12.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-keystore 0.12.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-runtime-interface 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-state-machine 0.12.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-tracing 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-trie 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-wasm-interface 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
  "tracing",
  "tracing-core",
+]
+
+[[package]]
+name = "sp-keystore"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3261eddca8c8926e3e1de136a7980cb3afc3455247d9d6f3119d9b292f73aaee"
+dependencies = [
+ "async-trait",
+ "futures",
+ "merlin",
+ "parity-scale-codec",
+ "parking_lot",
+ "schnorrkel",
+ "sp-core 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-externalities 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror",
 ]
 
 [[package]]
@@ -2032,9 +2182,20 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot",
  "schnorrkel",
- "sp-core",
- "sp-externalities",
+ "sp-core 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-externalities 0.12.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
  "thiserror",
+]
+
+[[package]]
+name = "sp-panic-handler"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2101f3c555fceafcfcfb0e61c55ea9ed80dc60bd77d54d9f25b369edb029e9a4"
+dependencies = [
+ "backtrace",
+ "lazy_static",
+ "regex",
 ]
 
 [[package]]
@@ -2050,7 +2211,8 @@ dependencies = [
 [[package]]
 name = "sp-runtime"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb7d8a8d5ab5d349c6cf9300af1721b7b6446ba63401dbb11c10a1d65197aa5f"
 dependencies = [
  "either",
  "hash256-std-hasher",
@@ -2064,9 +2226,27 @@ dependencies = [
  "serde",
  "sp-application-crypto",
  "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-std",
+ "sp-core 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-io 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "sp-runtime-interface"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "158bf0305c75a50fc0e334b889568f519a126e32b87900c3f4251202dece7b4b"
+dependencies = [
+ "impl-trait-for-tuples",
+ "parity-scale-codec",
+ "primitive-types",
+ "sp-externalities 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-runtime-interface-proc-macro 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-storage 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-tracing 5.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-wasm-interface 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "static_assertions",
 ]
 
 [[package]]
@@ -2078,13 +2258,26 @@ dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
  "primitive-types",
- "sp-externalities",
- "sp-runtime-interface-proc-macro",
- "sp-std",
- "sp-storage",
- "sp-tracing",
- "sp-wasm-interface",
+ "sp-externalities 0.12.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-runtime-interface-proc-macro 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-storage 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-tracing 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-wasm-interface 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
  "static_assertions",
+]
+
+[[package]]
+name = "sp-runtime-interface-proc-macro"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22ecb916b9664ed9f90abef0ff5a3e61454c1efea5861b2997e03f39b59b955f"
+dependencies = [
+ "Inflector",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2102,6 +2295,30 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ecee3b33eb78c99997676a571656bcc35db6886abecfddd13e76a73b5871c6c1"
+dependencies = [
+ "hash-db",
+ "log",
+ "num-traits",
+ "parity-scale-codec",
+ "parking_lot",
+ "rand 0.7.3",
+ "smallvec",
+ "sp-core 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-externalities 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-panic-handler 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-trie 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "thiserror",
+ "tracing",
+ "trie-db",
+ "trie-root",
+]
+
+[[package]]
+name = "sp-state-machine"
+version = "0.12.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
 dependencies = [
  "hash-db",
@@ -2111,11 +2328,11 @@ dependencies = [
  "parking_lot",
  "rand 0.7.3",
  "smallvec",
- "sp-core",
- "sp-externalities",
- "sp-panic-handler",
- "sp-std",
- "sp-trie",
+ "sp-core 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-externalities 0.12.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-panic-handler 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-trie 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
  "thiserror",
  "tracing",
  "trie-root",
@@ -2124,7 +2341,27 @@ dependencies = [
 [[package]]
 name = "sp-std"
 version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14804d6069ee7a388240b665f17908d98386ffb0b5d39f89a4099fc7a2a4c03f"
+
+[[package]]
+name = "sp-std"
+version = "4.0.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+
+[[package]]
+name = "sp-storage"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5dab53af846068e3e0716d3ccc70ea0db44035c79b2ed5821aaa6635039efa37"
+dependencies = [
+ "impl-serde",
+ "parity-scale-codec",
+ "ref-cast",
+ "serde",
+ "sp-debug-derive 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "sp-storage"
@@ -2135,8 +2372,21 @@ dependencies = [
  "parity-scale-codec",
  "ref-cast",
  "serde",
- "sp-debug-derive",
- "sp-std",
+ "sp-debug-derive 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+]
+
+[[package]]
+name = "sp-tracing"
+version = "5.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69a67e555d171c4238bd223393cda747dd20ec7d4f5fe5c042c056cb7fde9eda"
+dependencies = [
+ "parity-scale-codec",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tracing",
+ "tracing-core",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -2145,10 +2395,26 @@ version = "5.0.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
 dependencies = [
  "parity-scale-codec",
- "sp-std",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
  "tracing",
  "tracing-core",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "sp-trie"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6fc34f4f291886914733e083b62708d829f3e6b8d7a7ca7fa8a55a3d7640b0b"
+dependencies = [
+ "hash-db",
+ "memory-db",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core 6.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "trie-db",
+ "trie-root",
 ]
 
 [[package]]
@@ -2160,11 +2426,24 @@ dependencies = [
  "memory-db",
  "parity-scale-codec",
  "scale-info",
- "sp-core",
- "sp-std",
+ "sp-core 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
  "thiserror",
  "trie-db",
  "trie-root",
+]
+
+[[package]]
+name = "sp-wasm-interface"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10d88debe690c2b24eaa9536a150334fcef2ae184c21a0e5b3e80135407a7d52"
+dependencies = [
+ "impl-trait-for-tuples",
+ "log",
+ "parity-scale-codec",
+ "sp-std 4.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wasmi",
 ]
 
 [[package]]
@@ -2175,7 +2454,7 @@ dependencies = [
  "impl-trait-for-tuples",
  "log",
  "parity-scale-codec",
- "sp-std",
+ "sp-std 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6)",
  "wasmi",
 ]
 
@@ -2279,10 +2558,11 @@ dependencies = [
 
 [[package]]
 name = "thread_local"
-version = "1.1.4"
+version = "1.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5516c27b78311c50bf42c071425c560ac799b11c30b31f87e3081965fe5e0180"
+checksum = "3fdd6f064ccff2d6567adcb3873ca630700f00b5ad3f060c25b5dcfd9a4ce152"
 dependencies = [
+ "cfg-if",
  "once_cell",
 ]
 
@@ -2303,6 +2583,15 @@ dependencies = [
  "unicode-normalization",
  "wasm-bindgen",
  "zeroize",
+]
+
+[[package]]
+name = "tiny-keccak"
+version = "2.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c9d3793400a45f954c52e73d068316d76b6f4e36977e3fcebb13a2721e80237"
+dependencies = [
+ "crunchy",
 ]
 
 [[package]]

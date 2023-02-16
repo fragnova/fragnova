@@ -145,7 +145,7 @@ impl<T> ChainExtension<T> for MyExtension
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
 				env.write(&output.encode(), false, None).map_err(|_| {
-					DispatchError::Other("ChainExtension failed to get protos")
+					DispatchError::Other("ChainExtension failed to get the proto")
 				})?;
 			},
 			FuncId::GetProtoIds => {
