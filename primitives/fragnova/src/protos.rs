@@ -1,3 +1,5 @@
+//! Types that will be used in ths Protos Pallet
+
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 

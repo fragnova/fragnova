@@ -42,3 +42,14 @@ std = [
 	"lazy_static",
 	"protos/std",
 ]
+
+# In ink crates (https://github.com/paritytech/ink/tree/v4.0.0), the macros `#[global_allocator]`, `#[panic_handler]` and `#[alloc_error_handler]` are used. For example, `#[global_allocator]` is used here: https://github.com/paritytech/ink/blob/v4.0.0/crates/allocator/src/lib.rs#L29
+# These macros are also used in the `sp_io` crate.
+# However, these macros can be only be used once in a crate or its recurive dependencies: "the `#[global_allocator]` can only be used once in a crate or its recursive dependencies." (https://doc.rust-lang.org/std/alloc/index.html#the-global_allocator-attribute),
+# Therefore, the macros will not be used if this feature is enabled!
+# Another Evidentiary Source: https://substrate.stackexchange.com/questions/4733/error-when-compiling-a-contract-using-the-xcm-chain-extension/5767#5767
+use-as-dep-in-ink-contract = [
+	'sp-io/disable_allocator',
+	'sp-io/disable_oom',
+	'sp-io/disable_panic_handler'
+]
