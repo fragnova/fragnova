@@ -47,13 +47,25 @@ fn upload_dummy_contract(signer: <Test as frame_system::Config>::AccountId) -> <
 			vec![], // `salt` parameter. Used for the address derivation. See `pallet_contracts::Pallet::contract_address`
 		)
 	);
-	// assert_ok!(
-	// 	Contracts::bare_upload_code(
+
+	// let bare_upload_code_result = Contracts::bare_upload_code(
 	// 		signer,
-	// 		wasm_binary,
-	// 		None
-	// 	)
+	// 		wasm_binary, // The contract code to deploy in raw bytes.
+	// 		None // The maximum amount of balance that can be charged/reserved from the caller to pay for the storage consumed.
 	// );
+	// assert!(bare_upload_code_result.is_ok());
+	// let bare_instantiate_result = Contracts::bare_instantiate(
+	// 		signer,
+	// 		0, // The balance to transfer from the `origin` to the newly created contract.
+	// 		GAS_LIMIT, // The gas limit enforced when executing the constructor.
+	// 		None, // The maximum amount of balance that can be charged/reserved from the caller to pay for the storage consumed.
+	// 		pallet_contracts_primitives::Code::Existing(code_hash),
+	// 		blake2_256(b"new")[0..4].to_vec(), // The input data to pass to the contract constructor.
+	// 		vec![], // `salt` parameter. Used for the address derivation. See `pallet_contracts::Pallet::contract_address`
+	// 		false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+	// );
+	// assert_eq!(bare_instantiate_result.result.unwrap().result.flags.bits(), 0);
+
 	code_hash
 }
 
