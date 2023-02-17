@@ -24,7 +24,7 @@ pub use pallet::*;
 use pallet_clusters::Clusters;
 use pallet_fragments::Owners;
 use pallet_protos::{Proto, ProtoOwner, Protos};
-use sp_fragnova::{Hash128, Hash256, fragments::InstanceUnit};
+use sp_fragnova::{fragments::InstanceUnit, Hash128, Hash256};
 use sp_std::vec::Vec;
 
 #[cfg(test)]
@@ -180,12 +180,15 @@ pub mod pallet {
 			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
 
 			let namespace = namespace.into_inner();
+			ensure!(Self::is_valid_string(&namespace), Error::<T>::InvalidInput);
 
 			// Check that the namespace does not exist already
 			ensure!(!<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceExists);
+
 			// reduce NOVA balance from caller's account. The amount is set in Config.
 			let amount: <T as pallet_balances::Config>::Balance =
 				<T as Config>::NamespacePrice::get().saturated_into();
+
 			let _ = <pallet_balances::Pallet<T> as Currency<T::AccountId>>::withdraw(
 				&who,
 				amount,
@@ -212,12 +215,8 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin.clone())?;
 
-			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
-
 			let namespace = namespace.into_inner();
 
-			// Check that the namespace exists
-			ensure!(<Namespaces<T>>::contains_key(&namespace), Error::<T>::NamespaceExists);
 			// check that the caller is the owner of the namespace
 			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
 			ensure!(&who == &owner, Error::<T>::NotAllowed);
@@ -245,7 +244,6 @@ pub mod pallet {
 			let who = ensure_signed(origin.clone())?;
 
 			ensure!(who != new_owner, Error::<T>::NotAllowed);
-			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
 
 			let namespace = namespace.into_inner();
 
@@ -278,20 +276,36 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin.clone())?;
 
-			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
-
 			let namespace = namespace.into_inner();
+			let alias = alias.into_inner();
 
 			// Check that the caller is the owner of the namespace
 			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
 			ensure!(&who == &owner, Error::<T>::NotAllowed);
 
-			let alias_index = Self::take_name_index(&alias);
+			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
+			ensure!(Self::is_valid_string(&alias), Error::<T>::InvalidInput);
+
+			let (alias_index, index_to_update) =
+				if let Some(name_index) = Self::get_name_index(&alias) {
+					(name_index, None)
+				} else {
+					let next_name_index = <NamesIndex<T>>::try_get().unwrap_or_default() + 1;
+					(Compact(next_name_index), Some(next_name_index))
+				};
+
 			// check that the caller does not already own this alias
 			ensure!(!<Aliases<T>>::contains_key(&namespace, &alias_index), Error::<T>::AliasExists);
 
 			// check that the caller is the owner of the target asset
 			Self::is_target_owner(&who, target.clone())?;
+
+			// WRITE FROM NOW
+
+			if let Some(index_to_update) = index_to_update {
+				<NamesIndex<T>>::put(index_to_update);
+				<Names<T>>::insert(&alias, alias_index);
+			}
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 			let target_versioned = LinkTargetVersioned {
@@ -301,7 +315,7 @@ pub mod pallet {
 			};
 			<Aliases<T>>::insert(&namespace, &alias_index, target_versioned);
 
-			Self::deposit_event(Event::AliasCreated { who, namespace, alias: alias.into_inner() });
+			Self::deposit_event(Event::AliasCreated { who, namespace, alias });
 
 			Ok(())
 		}
@@ -324,13 +338,32 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin.clone())?;
 
+			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
+			ensure!(Self::is_valid_string(&alias), Error::<T>::InvalidInput);
+
 			let root_namespace = T::RootNamespace::get();
-			let alias_index = Self::take_name_index(&alias);
+			let alias = alias.into_inner();
+
+			let (alias_index, index_to_update) =
+				if let Some(name_index) = Self::get_name_index(&alias) {
+					(name_index, None)
+				} else {
+					let next_name_index = <NamesIndex<T>>::try_get().unwrap_or_default() + 1;
+					(Compact(next_name_index), Some(next_name_index))
+				};
+
 			// check that the caller does not already own this alias
 			ensure!(
 				!<Aliases<T>>::contains_key(&root_namespace, &alias_index),
 				Error::<T>::AliasExists
 			);
+
+			// WRITE FROM NOW
+
+			if let Some(index_to_update) = index_to_update {
+				<NamesIndex<T>>::put(index_to_update);
+				<Names<T>>::insert(&alias, alias_index);
+			}
 
 			let current_block_number = <frame_system::Pallet<T>>::block_number();
 			let target_versioned = LinkTargetVersioned {
@@ -340,10 +373,7 @@ pub mod pallet {
 			};
 			<Aliases<T>>::insert(&root_namespace, &alias_index, target_versioned);
 
-			Self::deposit_event(Event::RootAliasCreated {
-				root_namespace,
-				alias: alias.into_inner(),
-			});
+			Self::deposit_event(Event::RootAliasCreated { root_namespace, alias });
 
 			Ok(())
 		}
@@ -364,13 +394,15 @@ pub mod pallet {
 			alias: BoundedVec<u8, <T as pallet::Config>::NameLimit>,
 			new_target: LinkTarget<T::AccountId>,
 		) -> DispatchResult {
-			ensure_root(origin.clone())?;
-
-			ensure!(!namespace.len().is_zero(), Error::<T>::InvalidInput);
-			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
+			let who = ensure_signed(origin.clone())?;
 
 			let namespace = namespace.into_inner();
-			let alias_index = Self::take_name_index(&alias);
+
+			// Check that the caller is the owner of the namespace
+			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
+			ensure!(&who == &owner, Error::<T>::NotAllowed);
+
+			let alias_index = Self::get_name_index(&alias).ok_or(Error::<T>::AliasNotFound)?;
 
 			let stored_alias =
 				<Aliases<T>>::get(&namespace, &alias_index).ok_or(Error::<T>::AliasNotFound)?;
@@ -405,10 +437,8 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_root(origin.clone())?;
 
-			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
-
 			let root_namespace = T::RootNamespace::get();
-			let alias_index = Self::take_name_index(&alias);
+			let alias_index = Self::get_name_index(&alias).ok_or(Error::<T>::AliasNotFound)?;
 
 			let stored_alias = <Aliases<T>>::get(&root_namespace, &alias_index)
 				.ok_or(Error::<T>::AliasNotFound)?;
@@ -452,7 +482,7 @@ pub mod pallet {
 			let owner = <Namespaces<T>>::get(&namespace).ok_or(Error::<T>::NamespaceNotFound)?;
 			ensure!(&who == &owner, Error::<T>::NotAllowed);
 
-			let alias_index = Self::take_name_index(&alias);
+			let alias_index = Self::get_name_index(&alias).ok_or(Error::<T>::AliasNotFound)?;
 			ensure!(
 				<Aliases<T>>::contains_key(&namespace, &alias_index),
 				Error::<T>::AliasNotFound
@@ -480,7 +510,7 @@ pub mod pallet {
 			ensure!(!alias.len().is_zero(), Error::<T>::InvalidInput);
 
 			let root_namespace = T::RootNamespace::get();
-			let alias_index = Self::take_name_index(&alias);
+			let alias_index = Self::get_name_index(&alias).ok_or(Error::<T>::AliasNotFound)?;
 
 			ensure!(
 				<Aliases<T>>::contains_key(&root_namespace, &alias_index),
@@ -505,19 +535,12 @@ pub mod pallet {
 		///
 		/// Returns:
 		/// - `Compact<u64>`: the index of the name in storage
-		pub fn take_name_index(name: &Vec<u8>) -> Compact<u64> {
+		pub fn get_name_index(name: &Vec<u8>) -> Option<Compact<u64>> {
 			let name_index = <Names<T>>::get(name);
 			if let Some(name_index) = name_index {
-				<Compact<u64>>::from(name_index)
+				Some(name_index)
 			} else {
-				let next_name_index = <NamesIndex<T>>::try_get().unwrap_or_default() + 1;
-				let next_name_index_compact = <Compact<u64>>::from(next_name_index);
-				<Names<T>>::insert(name, next_name_index_compact);
-				// storing is dangerous inside a closure
-				// but after this call we start storing..
-				// so it's fine here
-				<NamesIndex<T>>::put(next_name_index);
-				next_name_index_compact
+				None
 			}
 		}
 
@@ -564,6 +587,15 @@ pub mod pallet {
 					Ok(())
 				},
 			}
+		}
+
+		fn is_valid_string(v: &[u8]) -> bool {
+			for &c in v {
+				if (c < b'a' || c > b'z') && (c < b'0' || c > b'9') && c != b'-' && c != b'_' {
+					return false
+				}
+			}
+			true
 		}
 	}
 }

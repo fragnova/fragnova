@@ -256,7 +256,7 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 /// The maximum possible length (in bytes) that a Fragnova Block can be
-pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
+pub const MAXIMUM_BLOCK_LENGTH: u32 = 16 * 1024 * 1024;
 
 // When to use:
 //
@@ -361,10 +361,19 @@ pub const MAXIMUM_NESTED_CALL_DEPTH_LEVEL: u8 = 4;
 pub const MAXIMUM_METADATA_DATA_LENGTH: usize = 1 * 1024 * 1024;
 
 mod validation_logic {
-
 	use protos::categories::ShardsFormat;
 
 	use super::*;
+
+	fn match_gltf(buf: &[u8]) -> bool {
+		// gltf v2
+		return buf.len() >= 5 &&
+			buf[0] == 0x67 &&
+			buf[1] == 0x6C &&
+			buf[2] == 0x54 &&
+			buf[3] == 0x46 &&
+			buf[4] == 0x02
+	}
 
 	/// Does the call `c` use `transaction_index::index`.
 	fn does_call_index_the_transaction(c: &Call) -> bool {
@@ -475,8 +484,8 @@ mod validation_logic {
 				VideoCategories::Mp4File => infer::is(data, "mp4"),
 			},
 			Categories::Model(sub_categories) => match sub_categories {
-				ModelCategories::GltfFile => false,
-				ModelCategories::Sdf => false,
+				ModelCategories::GltfFile => match_gltf(data),
+				ModelCategories::Sdf => false, // Note: "This is a Fragnova/Fragcolor data type"
 				ModelCategories::PhysicsCollider => false, // Note: "This is a Fragnova/Fragcolor data type"
 			},
 			Categories::Binary(sub_categories) => match sub_categories {

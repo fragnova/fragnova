@@ -15,10 +15,13 @@ sp-runtime = { version = '6.0.0', git = 'https://github.com/fragcolor-xyz/substr
 sp-api = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 sp-rpc = { version = '6.0.0', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 sp-blockchain = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+sc-client-api = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 
 pallet-protos = { version = '0.0.1', default-features = false, path = '..' }
 
 codec = { package = "parity-scale-codec", version = "3" }
+
+base64 = "0.21"
 
 pallet-protos-rpc-runtime-api = { version = '0.0.1', path = '../rpc/runtime-api' }
 
