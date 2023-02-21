@@ -228,7 +228,6 @@ pub mod pallet {
 		SupportedChains,
 	};
 	use pallet_protos::{MetaKeys, MetaKeysIndex, Proto, ProtoOwner, Protos, ProtosByOwner};
-	use sp_fragnova::get_vault_id;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -583,7 +582,7 @@ pub mod pallet {
 
 			// create vault account
 			// we need an existential amount deposit to be able to create the vault account
-			let vault: T::AccountId = get_vault_id(hash);
+			let vault: T::AccountId = sp_fragnova::get_account_id(b"pallet-fragments-create", &hash);
 
 			match metadata.currency {
 				Currency::Native => {
@@ -1076,7 +1075,7 @@ pub mod pallet {
 			let fragment_data =
 				<Definitions<T>>::get(definition_hash).ok_or(Error::<T>::NotFound)?;
 
-			let vault: T::AccountId = get_vault_id(definition_hash); // Get the Vault Account ID of `definition_hash`
+			let vault: T::AccountId = sp_fragnova::get_account_id(b"pallet-fragments-create", &definition_hash);
 
 			let quantity = match options {
 				FragmentBuyOptions::Quantity(amount) => u64::from(amount),
