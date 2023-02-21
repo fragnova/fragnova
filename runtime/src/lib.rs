@@ -61,7 +61,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use frame_support::{
 	dispatch::DispatchClass,
-	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
+	traits::{ConstBool, ConstU128, ConstU32, ConstU64},
 	weights::constants::WEIGHT_REF_TIME_PER_SECOND,
 };
 use frame_system::{EnsureRoot, EnsureSigned};
@@ -114,7 +114,6 @@ use sp_runtime::traits::{ConstU8, SaturatedConversion, StaticLookup};
 use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 use pallet_protos::{GetGenealogyParams, GetProtosParams};
 
-pub use pallet_contracts::Schedule;
 use pallet_oracle::OracleProvider;
 
 // IMPORTS BELOW ARE USED IN the module `validation_logic`
@@ -219,13 +218,18 @@ pub const fn deposit(items: u32, bytes: u32) -> Balance {
 	items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
 }
 
-// NOTE: Currently it is not possible to change the slot duration after the chain has started.
-//       Attempting to do so will brick block production.
+/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
+///
+/// Note: Currently it is not possible to change the slot duration after the chain has started.
+///       Attempting to do so will brick block production.
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 // Time is measured by number of blocks.
+/// Number of blocks that would be added to the Blockchain on average, when one minute passes
 pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
+/// Number of blocks that would be added to the Blockchain on average, when one hour passes
 pub const HOURS: BlockNumber = MINUTES * 60;
+/// Number of blocks that would be added to the Blockchain on average, when one day passes
 pub const DAYS: BlockNumber = HOURS * 24;
 
 /// The version information is used to identify this runtime when compiled natively.
@@ -234,25 +238,117 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
+/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// This is used to limit the maximal weight of a single extrinsic.
+const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// We allow `Normal` extrinsics to fill up the block up to 75% (i.e up to 75% of the block length and block weight of a block can be filled up by Normal extrinsics).
 /// The rest can be used by Operational extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-
+/// TODO Documentation - It is actually the "target block weight", not "maximum block weight".
+/// The **maximum block weight** is the **maximum amount of computation time** (assuming no extrinsic class uses its `reserved` space - please see the type `BlockWeights` below to understand what `reserved` is)
+/// that is **allowed to be spent in constructing a block** by a Node.
+///
+/// Here, we set this to 2 seconds because we want a 6 second average block time. (since in Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** - see the crate documentation above for more information)
+const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(2u64 * WEIGHT_REF_TIME_PER_SECOND, u64::MAX);
 /// The maximum possible length (in bytes) that a Fragnova Block can be
 pub const MAXIMUM_BLOCK_LENGTH: u32 = 5 * 1024 * 1024;
 
+// When to use:
+//
+// To declare parameter types for a pallet's relevant associated types during runtime construction.
+//
+// What it does:
+//
+// The macro replaces each parameter specified into a struct type with a get() function returning its specified value.
+// Each parameter struct type also implements the frame_support::traits::Get<I> trait to convert the type to its specified value.
+//
+// Source: https://docs.substrate.io/v3/runtime/macros/
 parameter_types! {
-	pub const BlockHashCount: BlockNumber = 2400;
+	/// Version of the runtime.
 	pub const Version: RuntimeVersion = VERSION;
-	/// We allow for 2 seconds of compute with a 6 second average block time.
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::with_sensible_defaults(
-			Weight::from_parts(2u64 * WEIGHT_REF_TIME_PER_SECOND, u64::MAX),
-			NORMAL_DISPATCH_RATIO,
-		);
+	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
+	pub const BlockHashCount: BlockNumber = 2400;
+	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
+	pub const SS58Prefix: u8 = 93;
+
+	/// `max_with_normal_ratio(max: u32, normal: Perbill)` creates a new `BlockLength` with `max` for `Operational` & `Mandatory` and `normal * max` for `Normal`.
+	///
+	/// Note: `BlockLength` is a struct that specifies the maximum total length (in bytes) each extrinsic class can have in a block.
+	/// The maximum possible length that a block can be is the maximum of these maximums - i.e `MAX(BlockLength::max)`.
+	///
+	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockLength.html#
 	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-		::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
-	pub const SS58Prefix: u8 = 42;
+		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
+
+	// TODO Review - The same code written here can now be done in a single line with the function `BlockWeights::with_sensible_defaults()`. See this example here: https://github.com/paritytech/substrate/blob/polkadot-v0.9.37/bin/node-template/runtime/src/lib.rs#L145-L148
+	/// Set the "target block weight" for the Fragnova Blockchain.
+	///
+	/// # Footnotes
+	///
+	/// ## `BlockWeights::builder()`
+	///
+	/// `BlockWeights::builder()` is called to start constructing a new `BlockWeights` object. By default all kinds except of Mandatory extrinsics are disallowed.
+	///
+	/// ## `BlockWeights` struct
+	///
+	/// A `BlockWeights` struct contains the following information for each extrinsic class:
+	/// 1. **Base weight of any extrinsic** of the **extrinsic class** (`WeightsPerClass::base_extrinsic`): The "overhead cost" (i.e overhead computation time) when running any extrinsic of the extrinsic class.
+	/// 2. **Maximum possible weight** that can be **consumed by a single extrinsic** of the **extrinsic class**: `WeightsPerClass::max_extrinsic`.
+	/// 3. **Maximum possible weight in a block** that can be **consumed by the extrinsic class** (to compute extrinsics): `WeightsPerClass::max_total`.
+	///    - If this is `None`, an unlimited amount of weight can be consumed by the extrinsic class. This is generally highly recommended for `Mandatory` dispatch class, while it can be dangerous for `Normal` class and should only be done with extra care and consideration.
+	///    - In the worst case, the total weight consumed by the extrinsic class is going to be: `MAX(max_total) + MAX(reserved)`. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.WeightsPerClass.html#structfield.max_total
+	/// 4. **Maximum additional amount of weight that can always be consumed by an extrinsic class**, **once a block's target block weight (`BlockWeights::max_block`)
+	///	   has been reached** (`WeightsPerClass::reserved`): "Often it's desirable for some class of transactions to be added to the block despite it being full.
+	///    For instance one might want to prevent high-priority `Normal` transactions from pushing out lower-priority `Operational` transactions.
+	///    In such cases you might add a `reserved` capacity for given class.".
+	///    Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
+	///    - Note that the `max_total` limit applies to `reserved` space as well.
+	///		 For example, in the diagram (https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# - click the "src" button - since the diagram gets cut off on the
+	///		 webpage), "the sum of weights of `Ext7` & `Ext8` (which are `Operational` extrinsics) mustn't exceed the `max_total` (of the `Operational` extrinsic)".
+	///      Please do see the diagram for complete understanding.
+	///    - Setting `reserved` to `Some(x)`, guarantees that at least `x` weight can be consumed by the extrinsic class in every block.
+	///    	  - Note: `x` can be zero obviously. It doesn't have to only be non-zero integers (obviously!).
+	///    - Setting `reserved` to `None` guarantees that at least `max_total` weight can be consumed by the extrinsic class in every block.
+	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrinsic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
+	/// Furthermore, a `BlockWeights` struct also contains information about the block:
+	/// 1. **Maximum total amount of weight that can be consumed by all kinds of extrinsics in a block (assuming no extrinsic class uses its `reserved` space)** (`BlockWeights::max_block`)
+	/// 2. **Base weight of a block (i.e the computation time to execute an empty block)** (`BlockWeights::base_block`).
+	///
+	///
+	/// Note: Even though each extrinsic class has its own separate limit `max_total`,
+	/// in an actual block the total weight consumed by each extrinsic class cannot not exceed `max_block` (except for `reserved`).
+	///
+	/// Note 2: As a consequence of `reserved` space, total consumed block weight might exceed `max_block` value,
+	/// so this parameter (i.e `max_block`) should rather be thought of as "target block weight" than a hard limit.
+	///
+	/// Note 3: Each block starts with `BlockWeights::base_block` weight being consumed right away **as part of the Mandatory extrinsic class**. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	///
+	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the "src" button - since the diagram gets cut off on the webpage)
+	pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::builder()
+		// `BlockWeightsBuilder::base_block()` sets the base weight of the block (i.e `BlockWeights::base_block`) to
+		// `frame_support::weights::constants::BlockExecutionWeight` which is defined as the "Time to execute an empty block" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.BlockExecutionWeight.html#).
+		.base_block(BlockExecutionWeight::get())
+		// Set the base weight (i.e `WeightsPerClass::base_extrinsic`) for each extrinsic class to `ExtrinsicBaseWeight::get()`.
+		//
+		// Note: `frame_support::weights::constants::ExtrinsicBaseWeight` is the "Time to execute a NO-OP extrinsic, for example `System::remark`" (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.ExtrinsicBaseWeight.html#).
+		.for_class(DispatchClass::all(), |weights| {
+			weights.base_extrinsic = ExtrinsicBaseWeight::get();
+		})
+		// Set the maximum block weight for the `Normal` extrinsic class to `NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT`.
+		.for_class(DispatchClass::Normal, |weights| {
+			weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+		})
+		// Set the maximum block weight and the reserved weight for the `Operational` extrinsic class to `MAXIMUM_BLOCK_WEIGHT` and `MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT` respectively.
+		.for_class(DispatchClass::Operational, |weights| {
+			weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
+			// Operational transactions have some extra reserved space, so that they
+			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+			weights.reserved = Some(
+				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+			);
+		})
+		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+		.build_or_panic();
 }
 
 ///  **Maximum permitted depth level** that a **descendant call** of the **outermost call of an extrinsic** can be
@@ -809,7 +905,7 @@ impl pallet_grandpa::Config for Runtime {
 	type KeyOwnerProofSystem = ();
 
 	type KeyOwnerProof =
-		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
+	<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 
 	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
 		KeyTypeId,
@@ -860,6 +956,7 @@ impl pallet_balances::Config for Runtime {
 	type IsTransferable = IsTransferable;
 }
 
+// TODO Review - All the parameters (except `OperationalFeeMultiplier`) have been copied from the repo `substrate-contracts-node`: https://github.com/paritytech/substrate-contracts-node/blob/fcc75b237d85a5f8ad5a492c14d8bd3e065fea8a/runtime/src/lib.rs#L313-L324
 // Parameters related to calculating the Weight fee.
 parameter_types! {
 	/// The amount of balance a caller (here "caller" refers to a "smart-contract account") has to pay for each storage item.
@@ -886,16 +983,19 @@ parameter_types! {
 	/// its associated code is retrieved via the code hash and gets executed.
 	/// This call can alter the storage entries of the smart-contract account, instantiate new smart-contracts, or call other smart-contracts.
 	///
-	/// See for mor information: https://paritytech.github.io/substrate/master/pallet_contracts/index.html
+	/// See for more information: https://paritytech.github.io/substrate/master/pallet_contracts/index.html
 	pub const DepositPerByte: Balance = deposit(0, 1);
-	// pub const MaxValueSize: u32 = 16_384;
 	/// The maximum number of contracts that can be pending for deletion.
-	pub const DeletionQueueDepth: u32 = 1024;
+	pub const DeletionQueueDepth: u32 = 128;
 	/// The maximum amount of weight that can be consumed per block for lazy trie removal.
-	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
-	// pub const MaxCodeSize: u32 = 2 * 1024;
+	// The lazy deletion runs inside on_initialize.
+	pub DeletionWeightLimit: Weight = BlockWeights::get()
+		.per_class
+		.get(DispatchClass::Normal)
+		.max_total
+		.unwrap_or(BlockWeights::get().max_block);
 	/// Cost schedule and limits.
-	pub MySchedule: Schedule<Runtime> = <Schedule<Runtime>>::default();
+	pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 	/// A fee mulitplier for `Operational` extrinsics to compute "virtual tip" to boost their
 	/// `priority`
 	pub OperationalFeeMultiplier: u8 = 5;
@@ -1090,8 +1190,8 @@ impl frame_system::offchain::SigningTypes for Runtime {
 ///
 /// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Runtime
-where
-	RuntimeCall: From<LocalCall>,
+	where
+		RuntimeCall: From<LocalCall>,
 {
 	type OverarchingCall = RuntimeCall;
 	type Extrinsic = UncheckedExtrinsic;
@@ -1100,8 +1200,8 @@ where
 /// Because you configured the Config trait for detach pallet and frag pallet
 /// to implement the `CreateSignedTransaction` trait, you also need to implement that trait for the runtime.
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
-where
-	RuntimeCall: From<LocalCall>,
+	where
+		RuntimeCall: From<LocalCall>,
 {
 	/// The code seems long, but what it tries to do is really:
 	/// 	- Create and prepare extra of SignedExtra type, and put various checkers in-place.
@@ -1169,12 +1269,22 @@ impl pallet_contracts::Config for Runtime {
 	type ChainExtension = ();
 	type DeletionQueueDepth = DeletionQueueDepth;
 	type DeletionWeightLimit = DeletionWeightLimit;
-	type Schedule = MySchedule;
+	type Schedule = Schedule;
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
-	type UnsafeUnstableInterface = ();
-	type MaxDebugBufferLen = ();
+	/// Make contract callable functions marked as `#[unstable]` available.
+	///
+	/// Contracts that use `#[unstable]` functions won't be able to be uploaded unless
+	/// this is set to `true`. This is only meant for testnets and dev nodes in order to
+	/// experiment with new features.
+	///
+	/// # Warning
+	///
+	/// Do **not** set to `true` on productions chains.
+	type UnsafeUnstableInterface = ConstBool<false>;
+	// TODO Review - Not sure what this is but I've made it `ConstU32<{ 2 * 1024 * 1024 }>` from following https://github.com/paritytech/substrate-contracts-node/blob/fcc75b237d85a5f8ad5a492c14d8bd3e065fea8a/runtime/src/lib.rs#L366
+	type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
 parameter_types! {
@@ -1410,7 +1520,7 @@ pub type SignedExtra = (
 /// For example - notice that the encoded transaction for `protos.upload()` has the order of first "signer", "signature"🥖, extra data🥕 (i.e "era", "nonce" and "tip") and finally the encoded call data🥦 (i.e "callIndex" and the arguments of `protos.upload()`): https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
 ///
 pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// The payload being signed in transactions.
 ///
 /// Note: This type is only needed if you want to enable an off-chain worker for the runtime,
@@ -1703,7 +1813,16 @@ impl_runtime_apis! {
 			input_data: Vec<u8>,
 		) -> pallet_contracts_primitives::ContractExecResult<Balance> {
 			let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-			Contracts::bare_call(origin, dest, value, gas_limit, storage_deposit_limit, input_data, true, pallet_contracts::Determinism::Deterministic)
+			Contracts::bare_call(
+				origin,
+				dest,
+				value,
+				gas_limit,
+				storage_deposit_limit,
+				input_data,
+				CONTRACTS_DEBUG_OUTPUT,
+				pallet_contracts::Determinism::Deterministic
+			)
 		}
 
 		/// Instantiate a new contract.
@@ -1720,7 +1839,16 @@ impl_runtime_apis! {
 		) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, Balance>
 		{
 			let gas_limit = gas_limit.unwrap_or(BlockWeights::get().max_block);
-			Contracts::bare_instantiate(origin, value, gas_limit, storage_deposit_limit, code, data, salt, true)
+			Contracts::bare_instantiate(
+				origin,
+				value,
+				gas_limit,
+				storage_deposit_limit,
+				code,
+				data,
+				salt,
+				CONTRACTS_DEBUG_OUTPUT
+			)
 		}
 
 		/// Upload new code without instantiating a contract from it.
@@ -1750,7 +1878,7 @@ impl_runtime_apis! {
 	}
 
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Protos
-	impl pallet_protos_rpc_runtime_api::ProtosRuntimeApi<Block, AccountId> for Runtime {
+	impl pallet_protos::ProtosRuntimeApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Protos::get_protos(params)
@@ -1762,7 +1890,7 @@ impl_runtime_apis! {
 	}
 
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Fragments
-	impl pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi<Block, AccountId> for Runtime {
+	impl pallet_fragments::FragmentsRuntimeApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Fragments::get_definitions(params)

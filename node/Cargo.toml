@@ -55,8 +55,8 @@ sp-blockchain = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz
 sp-block-builder = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 substrate-frame-rpc-system = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 pallet-transaction-payment-rpc = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
-pallet-protos-rpc = { version = '0.0.1', path = '../pallets/protos/rpc' }
-pallet-fragments-rpc = { version = '0.0.1', path = '../pallets/fragments/rpc' }
+#pallet-protos-rpc = { version = '0.0.1', path = '../pallets/protos/rpc' }
+#pallet-fragments-rpc = { version = '0.0.1', path = '../pallets/fragments/rpc' }
 
 log = { version = "0.4.14", default-features = false }
 clap = { version = "4.0.9", features = ["derive"] }
