@@ -65,8 +65,8 @@ impl frame_system::Config for Test {
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
-	type Origin = Origin;
-	type Call = Call;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -87,7 +87,7 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<2>;
 }
 
-pub type Extrinsic = TestXt<Call, ()>;
+pub type Extrinsic = TestXt<RuntimeCall, ()>;
 type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 impl frame_system::offchain::SigningTypes for Test {
@@ -97,22 +97,22 @@ impl frame_system::offchain::SigningTypes for Test {
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
 where
-	Call: From<LocalCall>,
+	RuntimeCall: From<LocalCall>,
 {
-	type OverarchingCall = Call;
+	type OverarchingCall = RuntimeCall;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
 where
-	Call: From<LocalCall>,
+	RuntimeCall: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: Call,
 		_public: <Signature as Verify>::Signer,
 		_account: AccountId,
 		nonce: u64,
-	) -> Option<(Call, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
+	) -> Option<(RuntimeCall, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
 		Some((call, (nonce, ())))
 	}
 }
@@ -122,7 +122,7 @@ impl pallet_randomness_collective_flip::Config for Test {}
 impl pallet_balances::Config for Test {
 	type Balance = Balance;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	/// The minimum amount required to keep an account open.
 	type ExistentialDeposit = ConstU128<500>;
 	type AccountStore = System;
@@ -141,7 +141,7 @@ parameter_types! {
 	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
 }
 impl pallet_assets::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type AssetId = u64;
 	type Currency = Balances;
@@ -164,7 +164,7 @@ impl pallet_accounts::EthFragContract for Test {
 }
 
 impl pallet_accounts::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type EthChainId = ConstU64<5>; // goerli
 	type EthConfirmations = ConstU64<1>;
@@ -176,8 +176,8 @@ impl pallet_accounts::Config for Test {
 }
 
 impl pallet_proxy::Config for Test {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type ProxyType = ();
 	type ProxyDepositBase = ConstU128<1>;
@@ -207,7 +207,7 @@ impl OracleContract for Test {
 
 impl pallet_oracle::Config for Test {
 	type AuthorityId = pallet_oracle::crypto::FragAuthId;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type OracleProvider = Test;
 	type Threshold = ConstU64<1>;
 }

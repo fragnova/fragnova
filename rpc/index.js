@@ -5,46 +5,53 @@ const connectToLocalNode = async () => {
 
   const api = await ApiPromise.create({
     provider: wsProvider,
-    rpc: {
-      protos: {
-        getProtos: {
-          description: "Query and Return Proto-Fragment(s) based on `params`. The return type is a JSON string", type: "String",
-          params: [
-            { name: "params", type: "GetProtosParams" },
-            { name: "at", type: "BlockHash", isOptional: true }
-          ]
-        },
-        getGenealogy: {
-          description: "Query the Genealogy of a Proto-Fragment based on `params`. The return type is a JSON string that represents an Adjacency List.", type: "String",
-          params: [
-            { name: "params", type: "GetGenealogyParams" },
-            { name: "at", type: "BlockHash", isOptional: true }
-          ]
-        },
-      },
-      fragments: {
-        getDefinitions: {
-          description: "Query and Return Fragment Definition(s) based on `params`", type: "String",
-          params: [
-            { name: "params", type: "GetDefinitionsParams" },
-            { name: "at", type: "BlockHash", isOptional: true }
-          ]
-        },
-        getInstances: {
-          description: "Query and Return Fragment Instance(s) based on `params`", type: "String",
-          params: [
-            { name: "params", type: "GetInstancesParams" },
-            { name: "at", type: "BlockHash", isOptional: true }
-          ]
-        },
-        getInstanceOwner: {
-          description: "Query the owner of a Fragment Instance. The return type is a String", type: "String",
-          params: [
-            { name: "params", type: "GetInstanceOwnerParams" },
-            { name: "at", type: "BlockHash", isOptional: true }
-          ]
-        },
-      },
+    runtime: {
+      ProtosApi: [
+        {
+          version: 1,
+          methods: {
+            get_protos: {
+              description: "Query and Return Proto-Fragment(s) based on `params`. The return type is a JSON string",
+              type: "String",
+              params: [
+                {name: "params", type: "GetProtosParams"},
+              ]
+            },
+            get_genealogy: {
+              description: "Query the Genealogy of a Proto-Fragment based on `params`. The return type is a JSON string that represents an Adjacency List.",
+              type: "Vec<u8>",
+              params: [
+                {name: "params", type: "GetGenealogyParams"},
+              ]
+            },
+          }
+        }
+      ],
+      FragmentsApi: [
+        {
+          version: 1,
+          methods: {
+            get_definitions: {
+              description: "Query and Return Fragment Definition(s) based on `params`", type: "Vec<u8>",
+              params: [
+                {name: "params", type: "GetDefinitionsParams"},
+              ]
+            },
+            get_instances: {
+              description: "Query and Return Fragment Instance(s) based on `params`", type: "Vec<u8>",
+              params: [
+                {name: "params", type: "GetInstancesParams"},
+              ]
+            },
+            get_instance_owner: {
+              description: "Query the owner of a Fragment Instance. The return type is a Vec<u8>", type: "Vec<u8>",
+              params: [
+                {name: "params", type: "GetInstanceOwnerParams"},
+              ]
+            },
+          }
+        }
+      ],
     },
 
     types: {
@@ -83,7 +90,8 @@ const connectToLocalNode = async () => {
       VectorCategories: {
         _enum: [
           "svgFile",
-          "ttfFile"
+          "ttfFile",
+          "otfFile",
         ]
       },
       VideoCategories: {
@@ -95,7 +103,9 @@ const connectToLocalNode = async () => {
       TextCategories: {
         _enum: [
           "plain",
-          "json"
+          "json",
+          "wgsl",
+          "markdown",
         ]
       },
       BinaryCategories: {
@@ -103,6 +113,8 @@ const connectToLocalNode = async () => {
           "wasmProgram",
           "wasmReactor",
           "blendFile",
+          "onnxModel",
+          "safeTensors"
         ]
       },
       ShardsScriptInfo: {
@@ -110,7 +122,7 @@ const connectToLocalNode = async () => {
         requiring: "Vec<ShardsTrait>",
         implementing: "Vec<ShardsTrait>"
       },
-      ShardsTrait: "Vec<u16>",
+      ShardsTrait: "[u8; 8]",
       ShardsFormat: {
         _enum: [
           "edn",
@@ -139,18 +151,18 @@ const connectToLocalNode = async () => {
 
       GetProtosParams: {
         desc: 'bool',
-        from: 'u32',
-        limit: 'u32',
-        metadata_keys: 'Vec<String>',
+        from: 'u64',
+        limit: 'u64',
+        metadata_keys: 'Vec<Vec<u8>>',
         owner: 'Option<AccountId>',
         return_owners: 'bool',
         categories: 'Vec<Categories>',
-        tags: 'Vec<String>',
-        exclude_tags: 'Vec<String>',
+        tags: 'Vec<Vec<u8>>',
+        exclude_tags: 'Vec<Vec<u8>>',
         available: 'Option<bool>',
       },
       GetGenealogyParams: {
-        proto_hash: "String",
+        proto_hash: "Vec<u8>",
         get_ancestors: "bool",
       },
 
@@ -158,7 +170,7 @@ const connectToLocalNode = async () => {
         desc: "bool",
         from: "u64",
         limit: "u64",
-        metadata_keys: "Vec<String>",
+        metadata_keys: "Vec<Vec<u8>>",
         owner: "Option<AccountId>",
         return_owners: "bool",
       },
@@ -166,13 +178,13 @@ const connectToLocalNode = async () => {
         desc: "bool",
         from: "u64",
         limit: "u64",
-        definition_hash: "String", // "Hash128",  // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
-        metadata_keys: "Vec<String>",
+        definition_hash: "Vec<u8>", // "Hash128",  // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
+        metadata_keys: "Vec<Vec<u8>>",
         owner: "Option<AccountId>",
         only_return_first_copies: "bool",
       },
       GetInstanceOwnerParams: {
-        definition_hash: 'String', // "Hash128", // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
+        definition_hash: 'Vec<u8>', // "Hash128", // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
         edition_id: "Unit",
         copy_id: "Unit",
       },

@@ -61,61 +61,61 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Accounts FragKeys (r:1 w:1)
 	fn add_key() -> Weight {
-		(6_401_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(6_401_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Accounts FragKeys (r:1 w:1)
 	fn del_key() -> Weight {
-		(6_890_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(6_890_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
 	// Storage: Accounts EthReservedNova (r:1 w:0)
 	fn link() -> Weight {
-		(58_668_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		Weight::from_ref_time(58_668_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(4 as u64))
+			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
 	// Storage: Accounts PendingUnlinks (r:1 w:1)
 	fn unlink() -> Weight {
-		(23_631_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		Weight::from_ref_time(23_631_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(3 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Accounts EVMLinkVotingClosed (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:0)
 	// Storage: Accounts EthReservedNova (r:0 w:1)
 	// Storage: Accounts EthLockedFrag (r:0 w:1)
 	fn internal_lock_update() -> Weight {
-		(67_671_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+		Weight::from_ref_time(67_671_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(2 as u64))
+			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	// Storage: Accounts ExternalAuthorities (r:1 w:0)
 	// Storage: Proxy Proxies (r:1 w:1)
 	// Storage: Timestamp Now (r:1 w:0)
 	// Storage: Accounts ExternalID2Account (r:0 w:1)
 	fn sponsor_account() -> Weight {
-		(37_290_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(3 as Weight))
-			.saturating_add(T::DbWeight::get().writes(2 as Weight))
+		Weight::from_ref_time(37_290_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(3 as u64))
+			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
 	// Storage: Accounts ExternalAuthorities (r:1 w:1)
 	fn add_sponsor() -> Weight {
-		(6_491_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(6_491_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Accounts ExternalAuthorities (r:1 w:1)
 	fn remove_sponsor() -> Weight {
-		(7_589_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(7_589_000 as u64)
+			.saturating_add(T::DbWeight::get().reads(1 as u64))
+			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
 
@@ -123,60 +123,60 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 impl WeightInfo for () {
 	// Storage: Accounts FragKeys (r:1 w:1)
 	fn add_key() -> Weight {
-		(6_401_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(6_401_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Accounts FragKeys (r:1 w:1)
 	fn del_key() -> Weight {
-		(6_890_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(6_890_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
 	// Storage: Accounts EthReservedNova (r:1 w:0)
 	fn link() -> Weight {
-		(58_668_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+		Weight::from_ref_time(58_668_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(4 as u64))
+			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 	// Storage: Accounts EVMLinks (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:1)
 	// Storage: Accounts PendingUnlinks (r:1 w:1)
 	fn unlink() -> Weight {
-		(23_631_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+		Weight::from_ref_time(23_631_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(3 as u64))
+			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
 	// Storage: Accounts EVMLinkVotingClosed (r:1 w:1)
 	// Storage: Accounts EVMLinksReverse (r:1 w:0)
 	// Storage: Accounts EthReservedNova (r:0 w:1)
 	// Storage: Accounts EthLockedFrag (r:0 w:1)
 	fn internal_lock_update() -> Weight {
-		(67_671_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+		Weight::from_ref_time(67_671_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(2 as u64))
+			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
 	// Storage: Accounts ExternalAuthorities (r:1 w:0)
 	// Storage: Proxy Proxies (r:1 w:1)
 	// Storage: Timestamp Now (r:1 w:0)
 	// Storage: Accounts ExternalID2Account (r:0 w:1)
 	fn sponsor_account() -> Weight {
-		(37_290_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
+		Weight::from_ref_time(37_290_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(3 as u64))
+			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
 	// Storage: Accounts ExternalAuthorities (r:1 w:1)
 	fn add_sponsor() -> Weight {
-		(6_491_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(6_491_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 	// Storage: Accounts ExternalAuthorities (r:1 w:1)
 	fn remove_sponsor() -> Weight {
-		(7_589_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
+		Weight::from_ref_time(7_589_000 as u64)
+			.saturating_add(RocksDbWeight::get().reads(1 as u64))
+			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }

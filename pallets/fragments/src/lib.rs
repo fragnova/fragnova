@@ -75,6 +75,7 @@ use scale_info::prelude::{
 };
 use serde_json::{json, Map, Value};
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query and Filter for Fragment Definitions**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -108,6 +109,7 @@ impl<TAccountId, TString> Default for GetDefinitionsParams<TAccountId, TString> 
 	}
 }
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query and Filter for Fragment Instances**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -142,6 +144,7 @@ impl<TAccountId, TString: Default> Default for GetInstancesParams<TAccountId, TS
 	}
 }
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query the owner of a Fragment Instance**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -233,7 +236,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_protos::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_fragments.
 		type WeightInfo: WeightInfo;
 	}
@@ -525,6 +528,7 @@ pub mod pallet {
 		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)**
 		/// that **can be created** using the **Fragment Definition**
 		#[pallet::weight(<T as Config>::WeightInfo::create(metadata.name.len() as u32))]
+		#[pallet::call_index(0)]
 		pub fn create(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
@@ -634,6 +638,7 @@ pub mod pallet {
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(1)]
 		pub fn set_definition_metadata(
 			origin: OriginFor<T>,
 			// fragment hash we want to update
@@ -724,6 +729,7 @@ pub mod pallet {
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Fragment Instance's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Fragment Instance's Struct Instance
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(2)]
 		pub fn set_instance_metadata(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -837,6 +843,7 @@ pub mod pallet {
 		/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// the **number of items** to **top up** in the **stack of stackable items**
 		#[pallet::weight(<T as Config>::WeightInfo::publish())]
+		#[pallet::call_index(3)]
 		pub fn publish(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -915,6 +922,7 @@ pub mod pallet {
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `definition_hash` - **ID** of the **Fragment Definition** to take off sale
 		#[pallet::weight(<T as Config>::WeightInfo::unpublish())]
+		#[pallet::call_index(4)]
 		pub fn unpublish(origin: OriginFor<T>, definition_hash: Hash128) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -972,6 +980,7 @@ pub mod pallet {
 		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(*q as u32),
 		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
 		})]
+		#[pallet::call_index(5)]
 		pub fn mint(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1045,6 +1054,7 @@ pub mod pallet {
 		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::buy_definition_that_has_non_unique_capability(*q as u32),
 		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::buy_definition_that_has_unique_capability(d.len() as u32)
 		})]
+		#[pallet::call_index(6)]
 		pub fn buy(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1118,6 +1128,7 @@ pub mod pallet {
 		<T as Config>::WeightInfo::benchmark_give_instance_that_has_copy_perms()
 		.max(<T as Config>::WeightInfo::benchmark_give_instance_that_does_not_have_copy_perms())
 		)] // Since both weight functions return a static value, we should not be doing a `max()` and just manually choose the one with a greater weight!
+		#[pallet::call_index(7)]
 		pub fn give(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1164,6 +1175,7 @@ pub mod pallet {
 		/// * `edition` - **Edition ID** of the **Fragment Instance**
 		/// * `copy` - **Copy ID** of the **Fragment Instance**
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(8)]
 		pub fn create_account(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1210,6 +1222,7 @@ pub mod pallet {
 		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is practically irrelevant.
 		/// * `secondary_sale_type` - Type of Sale
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(9)]
 		pub fn resell(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1263,6 +1276,7 @@ pub mod pallet {
 		/// * `edition` - Edition ID of the Fragment Instance
 		/// * `copy` - Copy ID of the Fragment instance
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(10)]
 		pub fn end_resale(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1300,6 +1314,7 @@ pub mod pallet {
 		/// * `copy` - Copy ID of the Fragment instance
 		/// * `options` - Enum indicating how to buy the instance
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(11)]
 		pub fn secondary_buy(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1363,6 +1378,7 @@ pub mod pallet {
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
 		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::call_index(12)]
 		pub fn detach(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -2267,5 +2283,41 @@ pub mod pallet {
 
 			Ok(hex::encode(owner).into_bytes())
 		}
+	}
+}
+
+// Declares given traits as runtime apis
+//
+// For more information, read: https://docs.rs/sp-api/latest/sp_api/macro.decl_runtime_apis.html
+//
+// # Footnote
+//
+// A Runtime API facilitates this kind of communication between the outer node and the runtime
+//
+// # Background:
+//
+// Each Substrate node contains a runtime.
+// The runtime contains the business logic of the chain.
+// It defines what transactions are valid and invalid and determines how the chain's state changes in response to transactions.
+// The runtime is compiled to Wasm to facilitate runtime upgrades. The "outer node", everything other than the runtime,
+// does not compile to Wasm, only to native.
+// The outer node is responsible for handling peer discovery, transaction pooling, block and transaction gossiping, consensus,
+// and answering RPC calls from the outside world. While performing these tasks, the outer node sometimes needs to query the runtime for information,
+// or provide information to the runtime.
+sp_api::decl_runtime_apis! {
+	/// The trait `FragmentsApi` is declared to be a Runtime API
+	// #[api_version(2)] // By default the runtime api version for `FragmentsApi` is 1 unless we use the attribute macro `api_version()`
+	pub trait FragmentsApi<AccountId>
+	where
+		AccountId: codec::Codec
+	{
+		/// **Query** and **Return** **Fragmnent Definition(s)** based on **`params`**
+		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Vec<u8>;
+
+		/// **Query** and **Return** **Fragmnent Instance(s)** based on **`params`**
+		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Vec<u8>;
+
+		/// Query the owner of a Fragment Instance. The return type is a String
+		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Vec<u8>;
 	}
 }

@@ -57,6 +57,7 @@ use scale_info::prelude::{
 };
 use serde_json::{json, Map, Value};
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query and Filter for Proto-Fragments**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -100,6 +101,7 @@ impl<TAccountId, TString> Default for GetProtosParams<TAccountId, TString> {
 	}
 }
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query the Genealogy of a Proto-Fragment**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -115,6 +117,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
+	use pallet_contracts::Determinism;
 	use pallet_detach::{
 		DetachCollection, DetachHash, DetachRequest, DetachRequests, DetachedHashes,
 		SupportedChains,
@@ -132,7 +135,7 @@ pub mod pallet {
 		+ pallet_clusters::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
 		/// The **maximum length** of a **metadata key** or a **proto-fragment's tag** or a **fragment definition's name** that is **stored on-chain**.
@@ -274,6 +277,7 @@ pub mod pallet {
 		/// * `cluster` - the **Cluster id** the proto belongs to (Optional)
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.encode().len() as u32))]
+		#[pallet::call_index(0)]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -442,6 +446,7 @@ pub mod pallet {
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len() as u32,
 		tags.as_ref().map(|tags| tags.len() as u32).unwrap_or_default(), data.encode().len() as u32))]
+		#[pallet::call_index(1)]
 		pub fn patch(
 			origin: OriginFor<T>,
 			// proto hash we want to patch
@@ -592,6 +597,7 @@ pub mod pallet {
 		/// * `proto_hash` - The **hash of the data of the Proto-Fragment** to **transfer**
 		/// * `new_owner` - The **Account ID** to **transfer the Proto-Fragment to**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+		#[pallet::call_index(2)]
 		pub fn transfer(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
@@ -663,6 +669,7 @@ pub mod pallet {
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
 		///   in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata(metadata_key.len() as u32, data.len() as u32))]
+		#[pallet::call_index(3)]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			// proto hash we want to update
@@ -752,6 +759,7 @@ pub mod pallet {
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
+		#[pallet::call_index(4)]
 		pub fn detach(
 			origin: OriginFor<T>,
 			proto_hashes: Vec<Hash256>,
@@ -798,6 +806,7 @@ pub mod pallet {
 
 		/// Delete Proto-Fragment `proto_hash` from all relevant Storage Items
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(5)]
 		pub fn ban(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -850,10 +859,11 @@ pub mod pallet {
 									who.clone(),
 									contract_address,
 									0u32.saturated_into(),
-									1_000_000, // TODO determine this limit better should not be too high indeed
+									Weight::from_ref_time(1_000_000), // TODO determine this limit better should not be too high indeed
 									None,
 									data,
 									false,
+									Determinism::Deterministic,
 								)
 								.result
 								.map_err(|e| {
@@ -1366,5 +1376,36 @@ pub mod pallet {
 
 			Ok(json!(adjacency_list).to_string().into_bytes())
 		}
+	}
+}
+
+// Declares given traits as runtime apis
+// For more information, read: https://docs.rs/sp-api/latest/sp_api/macro.decl_runtime_apis.html
+//
+// # Footnote
+//
+// A Runtime API facilitates this kind of communication between the outer node and the runtime
+//
+// # Background:
+//
+// Each Substrate node contains a runtime.
+// The runtime contains the business logic of the chain.
+// It defines what transactions are valid and invalid and determines how the chain's state changes in response to transactions.
+// The runtime is compiled to Wasm to facilitate runtime upgrades. The "outer node", everything other than the runtime,
+// does not compile to Wasm, only to native.
+// The outer node is responsible for handling peer discovery, transaction pooling, block and transaction gossiping, consensus,
+// and answering RPC calls from the outside world. While performing these tasks, the outer node sometimes needs to query the runtime for information,
+// or provide information to the runtime.
+sp_api::decl_runtime_apis! {
+	/// The trait `ProtosApi` is declared to be a Runtime API
+	// #[api_version(2)] // By default the runtime api version for `ProtosApi` is 1 unless we use the attribute macro `api_version()`
+	pub trait ProtosApi<AccountId>
+	where
+		AccountId: codec::Codec
+	{
+		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
+		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8>;
+		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
+		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Vec<u8>;
 	}
 }

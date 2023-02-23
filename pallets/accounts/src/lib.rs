@@ -220,7 +220,7 @@ pub mod pallet {
 	+ pallet_oracle::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// Weight functions needed for pallet_accounts.
 		type WeightInfo: WeightInfo;
@@ -408,6 +408,7 @@ pub mod pallet {
 		///
 		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_key())]
+		#[pallet::call_index(0)]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -424,6 +425,7 @@ pub mod pallet {
 
 		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can call this function
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::del_key())]
+		#[pallet::call_index(1)]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -447,6 +449,7 @@ pub mod pallet {
 		/// from any previous lock of FRAG. If there are, then they are minted.
 		/// After linking and minting, it emit events indicating that the two accounts were linked and NOVA were minted.
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::link())]
+		#[pallet::call_index(2)]
 		pub fn link(origin: OriginFor<T>, signature: ecdsa::Signature) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -551,6 +554,7 @@ pub mod pallet {
 
 		/// Unlink the **Fragnova public account address that calls this extrinsic** from **its linked EVM public account address**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::unlink())]
+		#[pallet::call_index(3)]
 		pub fn unlink(origin: OriginFor<T>, account: H160) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 			Self::unlink_account(sender, account)
@@ -560,6 +564,7 @@ pub mod pallet {
 		///
 		/// TODO
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::internal_lock_update())]
+		#[pallet::call_index(4)]
 		pub fn internal_lock_update(
 			origin: OriginFor<T>,
 			data: EthLockUpdate<T::Public>,
@@ -737,6 +742,7 @@ pub mod pallet {
 		/// Allow the External Account ID `external_id` to be used as a proxy
 		/// for the Fragnova Account ID `origin`
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::sponsor_account())]
+		#[pallet::call_index(5)]
 		pub fn sponsor_account(origin: OriginFor<T>, external_id: ExternalID) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -789,6 +795,7 @@ pub mod pallet {
 
 		/// Add a sponsor account to the list of sponsors able to sponsor external accounts.
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::add_sponsor())]
+		#[pallet::call_index(6)]
 		pub fn add_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -803,6 +810,7 @@ pub mod pallet {
 
 		/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::remove_sponsor())]
+		#[pallet::call_index(7)]
 		pub fn remove_sponsor(origin: OriginFor<T>, account: T::AccountId) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -817,6 +825,7 @@ pub mod pallet {
 
 		/// Withdraw vested NOVA
 		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::call_index(8)]
 		pub fn withdraw(origin: OriginFor<T>) -> DispatchResult {
 			let account = ensure_signed(origin)?;
 			Self::withdraw_nova(account)
