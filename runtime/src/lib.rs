@@ -1878,30 +1878,30 @@ impl_runtime_apis! {
 	}
 
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Protos
-	impl pallet_protos::ProtosRuntimeApi<Block, AccountId> for Runtime {
+	impl pallet_protos::ProtosApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
-		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-			Protos::get_protos(params)
+		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8> {
+			Protos::get_protos(params).unwrap_or_default()
 		}
 		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
-		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-			Protos::get_genealogy(params)
+		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Vec<u8> {
+			Protos::get_genealogy(params).unwrap_or_default()
 		}
 	}
 
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Fragments
-	impl pallet_fragments::FragmentsRuntimeApi<Block, AccountId> for Runtime {
+	impl pallet_fragments::FragmentsApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
-		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-			Fragments::get_definitions(params)
+		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Vec<u8> {
+			Fragments::get_definitions(params).unwrap_or_default()
 		}
 		/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
-		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-			Fragments::get_instances(params)
+		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Vec<u8> {
+			Fragments::get_instances(params).unwrap_or_default()
 		}
 		/// Query the owner of a Fragment Instance. The return type is a String
-		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-			Fragments::get_instance_owner(params)
+		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Vec<u8> {
+			Fragments::get_instance_owner(params).unwrap_or_default()
 		}
 	}
 

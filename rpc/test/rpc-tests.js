@@ -102,14 +102,14 @@ describe("RPCs", () => {
 
     it("should return proto", async () => {
       const params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10});
-      const result = await api.rpc.protos.getProtos(params);
+      const result = await api.call.protosApi.getProtos(params);
       const obj = JSON.parse(result.toHuman());
       assert(protoHash in obj);
     });
 
     it("should return owner", async () => {
       const params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, return_owners: true});
-      const result = await api.rpc.protos.getProtos(params);
+      const result = await api.call.protosApi.getProtos(params);
       const obj = JSON.parse(result.toHuman());
       assert.equal(obj[protoHash]["owner"]["type"], "internal");
       assert.equal(obj[protoHash]["owner"]["value"], protoOwner);
@@ -117,21 +117,21 @@ describe("RPCs", () => {
 
     it("should return no protos when filtering by a wrong category", async () => {
       const params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, categories: [{ "text": "json" }]});
-      const result = await api.rpc.protos.getProtos(params);
+      const result = await api.call.protosApi.getProtos(params);
       const obj = JSON.parse(result.toHuman());
       assert(Object.keys(obj).length === 0 && obj.constructor === Object);
     });
 
     it("should return no protos when filtering by a non-existent Category Trait", async () => {
       const params = api.createType("GetProtosParams", { desc: true, from: 0, limit: 10, categories: [{ "trait": [1, 1, 1, 1, 1, 1, 1, 1] }] });
-      const result = await api.rpc.protos.getProtos(params);
+      const result = await api.call.protosApi.getProtos(params);
       const obj = JSON.parse(result.toHuman());
       assert(Object.keys(obj).length === 0 && obj.constructor === Object);
     });
 
     it("should return no protos when filtering by a non-existent Category Shards", async () => {
       const params = api.createType("GetProtosParams", { desc: true, from: 0, limit: 10, categories: [{ "shards": {format: "edn", requiring: [[0, 0, 0, 0, 0, 0, 0, 0]], implementing: [[0, 0, 0, 0, 0, 0, 0, 0]]} }] });
-      const result = await api.rpc.protos.getProtos(params);
+      const result = await api.call.protosApi.getProtos(params);
       const obj = JSON.parse(result.toHuman());
       assert(Object.keys(obj).length === 0 && obj.constructor === Object);
     });
@@ -142,7 +142,7 @@ describe("RPCs", () => {
         metadata_keys: ["image", "json_description"],
         owner: protoOwnerSs58
       });
-      const result = await api.rpc.protos.getProtos(params);
+      const result = await api.call.protosApi.getProtos(params);
       const obj = JSON.parse(result.toHuman());
       assert.equal(obj[protoHash]["metadata"]["json_description"], jsonDescriptionHash);
       assert.equal(obj[protoHash]["metadata"]["image"], imageHash);
@@ -153,7 +153,7 @@ describe("RPCs", () => {
   describe("protos.getGenealogy()", () => {
     it("should return descendents", async () => {
       const params = api.createType("GetGenealogyParams", {proto_hash: protoHash, get_ancestors: false});
-      const result = await api.rpc.protos.getGenealogy(params);
+      const result = await api.call.protosApi.getGenealogy(params);
       const obj = JSON.parse(result.toHuman());
       assert.deepEqual(
         obj,
@@ -167,7 +167,7 @@ describe("RPCs", () => {
 
     it("should return ancestors", async () => {
       const params = api.createType("GetGenealogyParams", {proto_hash: protoHashGrandchild, get_ancestors: true});
-      const result = await api.rpc.protos.getGenealogy(params);
+      const result = await api.call.protosApi.getGenealogy(params);
       const obj = JSON.parse(result.toHuman());
       assert.deepEqual(
         obj,
@@ -183,21 +183,21 @@ describe("RPCs", () => {
   describe("fragments.getDefinitions()", () => {
     it("should return FD", async () => {
       const params = api.createType("GetDefinitionsParams", {desc: true, from: 0, limit: 10});
-      const result = await api.rpc.fragments.getDefinitions(params);
+      const result = await api.call.fragmentsApi.getDefinitions(params);
       const obj = JSON.parse(result.toHuman());
       assert(definitionHash in obj);
     });
 
     it("should return num_instances", async () => {
       const params = api.createType("GetDefinitionsParams", {desc: true, from: 0, limit: 10});
-      const result = await api.rpc.fragments.getDefinitions(params);
+      const result = await api.call.fragmentsApi.getDefinitions(params);
       const obj = JSON.parse(result.toHuman());
       assert.equal(obj[definitionHash]["num_instances"], 1);
     });
 
     it("should return owner", async () => {
       const params = api.createType("GetDefinitionsParams", {desc: true, from: 0, limit: 10, return_owners: true});
-      const result = await api.rpc.fragments.getDefinitions(params);
+      const result = await api.call.fragmentsApi.getDefinitions(params);
       const obj = JSON.parse(result.toHuman());
       assert.equal(obj[definitionHash]["owner"]["type"], "internal");
       assert.equal(obj[definitionHash]["owner"]["value"], protoOwner);
@@ -208,7 +208,7 @@ describe("RPCs", () => {
   describe("fragments.getInstances()", () => {
     it("should return correct FI", async () => {
       const params = api.createType("GetInstancesParams", {desc: true, from: 0, limit: 10, definition_hash: definitionHash});
-      const result = await api.rpc.fragments.getInstances(params);
+      const result = await api.call.fragmentsApi.getInstances(params);
       const obj = JSON.parse(result.toHuman());
       assert("1.1" in obj);
     });
@@ -217,7 +217,7 @@ describe("RPCs", () => {
   describe("fragments.getInstanceOwner()", () => {
     it("should return FI owner", async () => {
       const params = api.createType("GetInstanceOwnerParams", {definition_hash: definitionHash, edition_id: 1, copy_id: 1});
-      const result = await api.rpc.fragments.getInstanceOwner(params);
+      const result = await api.call.fragmentsApi.getInstanceOwner(params);
       assert.equal(result, protoOwner);
     });
   });

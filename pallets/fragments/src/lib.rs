@@ -75,6 +75,7 @@ use scale_info::prelude::{
 };
 use serde_json::{json, Map, Value};
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query and Filter for Fragment Definitions**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -108,6 +109,7 @@ impl<TAccountId, TString> Default for GetDefinitionsParams<TAccountId, TString> 
 	}
 }
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query and Filter for Fragment Instances**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -142,6 +144,7 @@ impl<TAccountId, TString: Default> Default for GetInstancesParams<TAccountId, TS
 	}
 }
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query the owner of a Fragment Instance**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -2303,18 +2306,19 @@ pub mod pallet {
 // and answering RPC calls from the outside world. While performing these tasks, the outer node sometimes needs to query the runtime for information,
 // or provide information to the runtime.
 sp_api::decl_runtime_apis! {
-	/// The trait `FragmentsRuntimeApi` is declared to be a Runtime API
-	pub trait FragmentsRuntimeApi<AccountId>
+	/// The trait `FragmentsApi` is declared to be a Runtime API
+	// #[api_version(2)] // By default the runtime api version for `FragmentsApi` is 1 unless we use the attribute macro `api_version()`
+	pub trait FragmentsApi<AccountId>
 	where
 		AccountId: codec::Codec
 	{
 		/// **Query** and **Return** **Fragmnent Definition(s)** based on **`params`**
-		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Vec<u8>;
 
 		/// **Query** and **Return** **Fragmnent Instance(s)** based on **`params`**
-		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+		fn get_instances(params: GetInstancesParams<AccountId, Vec<u8>>) -> Vec<u8>;
 
 		/// Query the owner of a Fragment Instance. The return type is a String
-		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+		fn get_instance_owner(params: GetInstanceOwnerParams<Vec<u8>>) -> Vec<u8>;
 	}
 }

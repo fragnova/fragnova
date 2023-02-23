@@ -57,6 +57,7 @@ use scale_info::prelude::{
 };
 use serde_json::{json, Map, Value};
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query and Filter for Proto-Fragments**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -100,6 +101,7 @@ impl<TAccountId, TString> Default for GetProtosParams<TAccountId, TString> {
 	}
 }
 
+// TODO Review - We don't need `TString` to be generic anymore and can just make it `Vec<u8>`. Earlier (in March 2022), I had to use `String` instead of `Vec<u8>` for the RPC method parameters because the RPC calls weren't being encoded correctly by polkadot.js
 /// **Data Type** used to **Query the Genealogy of a Proto-Fragment**
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -1395,14 +1397,15 @@ pub mod pallet {
 // and answering RPC calls from the outside world. While performing these tasks, the outer node sometimes needs to query the runtime for information,
 // or provide information to the runtime.
 sp_api::decl_runtime_apis! {
-	/// The trait `ProtosRuntimeApi` is declared to be a Runtime API
-	pub trait ProtosRuntimeApi<AccountId>
+	/// The trait `ProtosApi` is declared to be a Runtime API
+	// #[api_version(2)] // By default the runtime api version for `ProtosApi` is 1 unless we use the attribute macro `api_version()`
+	pub trait ProtosApi<AccountId>
 	where
 		AccountId: codec::Codec
 	{
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
-		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Vec<u8>;
 		/// **Query** the Genealogy of a Proto-Fragment based on **`params`**
-		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Result<Vec<u8>, Vec<u8>>;
+		fn get_genealogy(params: GetGenealogyParams<Vec<u8>>) -> Vec<u8>;
 	}
 }
