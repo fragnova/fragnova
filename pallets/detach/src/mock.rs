@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 pub use crate as pallet_detach;
 use crate::*;
 use frame_support::{parameter_types, traits::ConstU32};

@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_protos;
 use crate::*;
 

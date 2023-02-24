@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_aliases;
 use crate::*;
 use codec::Encode;

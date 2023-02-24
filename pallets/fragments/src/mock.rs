@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 pub use crate as pallet_fragments;
 use crate::*;
 use frame_support::{

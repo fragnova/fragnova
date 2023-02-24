@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_clusters;
 use crate::*;
 use frame_support::{
