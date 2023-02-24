@@ -1,19 +1,20 @@
-pub use crate as pallet_fragments;
-use crate::*;
+#![cfg(test)]
+
+use crate::chain_extension;
+
+use frame_system;
 use frame_support::{
 	parameter_types,
-	traits::{ConstU128, ConstU32, ConstU64, ConstBool, AsEnsureOriginWithArg},
-	weights::Weight,
+	traits::{ConstU32, ConstU64},
+	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
-use frame_system;
-use pallet_oracle::{OracleContract, OracleProvider};
+
 use sp_core::{ed25519::Signature, H256};
-use sp_runtime::{
-	testing::{Header, TestXt},
-	traits::{
-		BlakeTwo256, ConstU8, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
-	},
+use sp_runtime::traits::{
+	BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
 };
+use sp_runtime::testing::{Header, TestXt};
+use codec::Encode;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -25,24 +26,30 @@ pub const MILLICENTS: Balance = 1_000_000_000;
 pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
 pub const DOLLARS: Balance = 100 * CENTS;
 
-// Configure a mock runtime to test the pallet.
+// Construct a mock runtime environment.
 frame_support::construct_runtime!(
+	// The **configuration type `Test`** is defined as a **Rust enum** with **implementations**
+	// for **each of the pallet configuration trait** that are **used in the mock runtime**. (https://docs.substrate.io/v3/runtime/testing/)
+	//
+	// Basically the **enum `Test`** is mock-up of **`Runtime` in pallet-protos (i.e in `pallet/protos/src/lib.rs`)
+	// NOTE: The aforementioned `T` is bound by **trait `pallet:Config`**, if you didn't know
 	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
+		Block = Block, //  Block is the block type that is used in the runtime
+		NodeBlock = Block, // NodeBlock is the block type that is used in the node
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Protos: pallet_protos::{Pallet, Call, Storage, Event<T>},
-		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
-		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
+		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+
+		Protos: pallet_protos::{Pallet, Call, Storage, Event<T>},
+		Fragments: pallet_fragments::{Pallet, Call, Storage, Event<T>},
+		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>},
 		Clusters: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 	}
@@ -61,15 +68,15 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
-	pub const IsTransferable: bool = false;
+	pub const IsTransferable: bool = true; // TODO Review - Change this back to false once we update our substrate dependency
 }
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type DbWeight = ();
-	type RuntimeOrigin = RuntimeOrigin;
-	type RuntimeCall = RuntimeCall;
+	type Origin = Origin;
+	type Call = Call;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -77,7 +84,7 @@ impl frame_system::Config for Test {
 	type AccountId = sp_core::ed25519::Public;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -90,7 +97,7 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<2>;
 }
 
-pub type Extrinsic = TestXt<RuntimeCall, ()>;
+pub type Extrinsic = TestXt<Call, ()>;
 type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
 
 impl frame_system::offchain::SigningTypes for Test {
@@ -100,32 +107,37 @@ impl frame_system::offchain::SigningTypes for Test {
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
 	where
-		RuntimeCall: From<LocalCall>,
+		Call: From<LocalCall>,
 {
-	type OverarchingCall = RuntimeCall;
+	type OverarchingCall = Call;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
 	where
-		RuntimeCall: From<LocalCall>,
+		Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-		call: RuntimeCall,
+		call: Call,
 		_public: <Signature as Verify>::Signer,
 		_account: AccountId,
 		nonce: u64,
-	) -> Option<(RuntimeCall, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
+	) -> Option<(Call, <Extrinsic as ExtrinsicT>::SignaturePayload)> {
 		Some((call, (nonce, ())))
 	}
 }
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
+/// If `Test` implements `pallet_balances::Config`, the assignment might use `u64` for the `Balance` type. (https://docs.substrate.io/v3/runtime/testing/)
+///
+/// By assigning `pallet_balances::Balance` and `frame_system::AccountId` (see implementation block `impl system::Config for Test` above) to `u64`,
+/// mock runtimes ease the mental overhead of comprehensive, conscientious testers.
+/// Reasoning about accounts and balances only requires tracking a `(AccountId: u64, Balance: u64)` mapping. (https://docs.substrate.io/v3/runtime/testing/)
 impl pallet_balances::Config for Test {
 	type Balance = Balance;
 	type DustRemoval = ();
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	/// The minimum amount required to keep an account open.
 	type ExistentialDeposit = ConstU128<500>;
 	type AccountStore = System;
@@ -143,15 +155,11 @@ parameter_types! {
 	pub const MetadataDepositBase: Balance = 10 * DOLLARS;
 	pub const MetadataDepositPerByte: Balance = 1 * DOLLARS;
 }
-
 impl pallet_assets::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type Balance = Balance;
-	type RemoveItemsLimit = ConstU32<1000>;
 	type AssetId = u64;
-	type AssetIdParameter = u64;
 	type Currency = Balances;
-	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
 	type AssetAccountDeposit = ConstU128<DOLLARS>;
@@ -162,90 +170,44 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
-	type CallbackHandle = ();
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = ();
 }
 
 parameter_types! {
-	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
+	pub const DeletionWeightLimit: Weight = 500_000_000_000;
 	pub MySchedule: pallet_contracts::Schedule<Test> = {
 		let mut schedule = <pallet_contracts::Schedule<Test>>::default();
-		schedule.instruction_weights.fallback = 1;
+		// We want stack height to be always enabled for tests so that this
+		// instrumentation path is always tested implicitly.
+		schedule.limits.stack_height = Some(512);
 		schedule
 	};
 	pub static DepositPerByte: u64 = 1;
 	pub const DepositPerItem: u64 = 2;
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(2 * WEIGHT_PER_SECOND);
 }
 
 impl pallet_contracts::Config for Test {
 	type Time = Timestamp;
 	type Randomness = CollectiveFlip;
 	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
+	type Event = Event;
+	type Call = Call;
 	type CallFilter = frame_support::traits::Nothing;
 	type DepositPerItem = DepositPerItem;
 	type DepositPerByte = DepositPerByte;
 	type CallStack = [pallet_contracts::Frame<Self>; 31];
 	type WeightPrice = ();
 	type WeightInfo = ();
-	type ChainExtension = ();
+	type ChainExtension = chain_extension::MyExtension; // This is what we are testing!
 	type DeletionQueueDepth = ConstU32<1024>;
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+	type ContractAccessWeight = pallet_contracts::DefaultContractAccessWeight<BlockWeights>;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+	type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
-	type UnsafeUnstableInterface = ConstBool<false>;
-	type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
-	type IsTransferable = ConstBool<false>;
-}
-
-impl pallet_protos::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
-	type StringLimit = StringLimit;
-	type DetachAccountLimit = ConstU32<20>;
-	type MaxTags = ConstU32<10>;
-}
-
-impl pallet_accounts::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
-	type EthChainId = ConstU64<5>; // goerli
-	type EthFragContract = ();
-	type EthConfirmations = ConstU64<1>;
-	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type InitialPercentageNova = ConstU8<20>;
-	type USDEquivalentAmount = ConstU128<100>;
-}
-
-impl pallet_proxy::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeCall = RuntimeCall;
-	type Currency = Balances;
-	type ProxyType = ();
-	type ProxyDepositBase = ConstU128<1>;
-	type ProxyDepositFactor = ConstU128<1>;
-	type MaxProxies = ConstU32<4>;
-	type WeightInfo = ();
-	type MaxPending = ConstU32<2>;
-	type CallHasher = BlakeTwo256;
-	type AnnouncementDepositBase = ConstU128<1>;
-	type AnnouncementDepositFactor = ConstU128<1>;
-}
-
-impl pallet_fragments::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
-}
-
-impl pallet_detach::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
-	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
 impl pallet_timestamp::Config for Test {
@@ -256,26 +218,71 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-impl OracleContract for Test {
-	/// get the default oracle provider
-	fn get_provider() -> pallet_oracle::OracleProvider {
-		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
-	}
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = ();
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU32<1>;
+	type ProxyDepositFactor = ConstU32<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU32<1>;
+	type AnnouncementDepositFactor = ConstU32<1>;
 }
 
+impl pallet_detach::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type AuthorityId = pallet_detach::crypto::DetachAuthId;
+}
+
+impl pallet_clusters::Config for Test {
+	type Event = Event;
+	type NameLimit = ConstU32<10>;
+	type DataLimit = ConstU32<100>;
+	type MembersLimit = ConstU32<20>;
+	type RoleSettingsLimit = ConstU32<20>;
+}
+
+impl pallet_oracle::OracleContract for Test {
+	/// get the default oracle provider
+	fn get_provider() -> pallet_oracle::OracleProvider {
+		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+	}
+}
 impl pallet_oracle::Config for Test {
 	type AuthorityId = pallet_oracle::crypto::FragAuthId;
-	type RuntimeEvent = RuntimeEvent;
+	type Event = Event;
 	type OracleProvider = Test;
 	type Threshold = ConstU64<1>;
 }
 
-impl pallet_clusters::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type NameLimit = ConstU32<10>;
-	type DataLimit = ConstU32<100>;
-	type MembersLimit = ConstU32<10>;
-	type RoleSettingsLimit = ConstU32<20>;
+impl pallet_accounts::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type EthChainId = ConstU64<5>; // goerli
+	type EthFragContract = ();
+	type EthConfirmations = ConstU64<1>;
+	type Threshold = ConstU64<1>;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type InitialPercentageNova = sp_runtime::traits::ConstU8<20>;
+	type USDEquivalentAmount = ConstU128<100>;
+}
+
+impl pallet_protos::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type StringLimit = StringLimit;
+	type DetachAccountLimit = ConstU32<20>;
+	type MaxTags = ConstU32<10>;
+}
+
+impl pallet_fragments::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -286,26 +293,4 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext.execute_with(|| System::set_block_number(1)); // if we don't execute this line, Events are not emitted from extrinsics (I don't know why this is the case though)
 
 	ext
-}
-
-/// Simulate block production
-///
-/// A simple way of doing this is by incrementing the System module's block number between `on_initialize` and `on_finalize` calls
-/// from all modules with `System::block_number()` as the sole input.
-/// While it is important for runtime code to cache calls to storage or the system module, the test environment scaffolding should
-/// prioritize readability to facilitate future maintenance.
-///
-/// Source: https://docs.substrate.io/v3/runtime/testing/
-pub fn run_to_block(n: u64) {
-	while System::block_number() < n {
-		use frame_support::traits::{OnFinalize, OnInitialize};
-
-		if System::block_number() > 0 {
-			FragmentsPallet::on_finalize(System::block_number());
-			System::on_finalize(System::block_number());
-		}
-		System::set_block_number(System::block_number() + 1);
-		System::on_initialize(System::block_number());
-		// FragmentsPallet::on_initialize(System::block_number()); // Commented out since this function (`on_finalize`) doesn't exist in pallets/fragments/src/lib.rs
-	}
 }

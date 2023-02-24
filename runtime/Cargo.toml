@@ -68,7 +68,7 @@ scale-info = { version = '2.1.2', default-features = false, features = ['derive'
 hex-literal = { version = '0.3.1', optional = true }
 log = { version = "0.4.14", default-features = false }
 hex = { version = "0.4.3", default-features = false }
-protos = { version = "0.1.25", default-features = false }
+protos = { version = "0.1.26", default-features = false }
 
 # These use `std`:
 #unic-emoji-char = {version = "0.9.0", default-features = false }
@@ -83,6 +83,10 @@ infer = { version = "0.11.0", default-features=false }
 # svgtypes = "0.8.2"
 # wasmparser-nostd = { version = "0.91.0", default-features = false }
 # rmp3 = { version = "0.3", default-features = false } # Official Idiomatic `no_std` bindings to minimp3 (short for "Minimalistic MP3 decoder single header library") (https://github.com/lieff/minimp3). (minimp3's repo's README mentions this crate btw)
+
+[dev-dependencies]
+# `sp-io` is used when testing the `chain_extension` module
+sp-io = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
 
 [build-dependencies]
 substrate-wasm-builder = { version = '5.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
