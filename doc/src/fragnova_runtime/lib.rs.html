@@ -1945,6 +1945,12 @@
 <a href="#1945" id="1945">1945</a>
 <a href="#1946" id="1946">1946</a>
 <a href="#1947" id="1947">1947</a>
+<a href="#1948" id="1948">1948</a>
+<a href="#1949" id="1949">1949</a>
+<a href="#1950" id="1950">1950</a>
+<a href="#1951" id="1951">1951</a>
+<a href="#1952" id="1952">1952</a>
+<a href="#1953" id="1953">1953</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2005,6 +2011,8 @@
 </span><span class="comment">// This will include the generated WASM binary as two constants WASM_BINARY and WASM_BINARY_BLOATY. The former is a compact WASM binary and the latter is not compacted.
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
+
+<span class="kw">mod </span>chain_extension;
 
 <span class="kw">use </span>frame_support::{
 	traits::{ConstU128, ConstU16, ConstU32, ConstU64},
@@ -2882,8 +2890,8 @@
 	/// Not strictly enforced, but used for weight estimation.
 	</span><span class="kw">pub const </span>MaxLocks: u32 = <span class="number">50</span>;
 	<span class="doccomment">/// TODO: Documentation
-	</span><span class="kw">pub const </span>IsTransferable: bool = <span class="bool-val">false</span>;
-}
+	</span><span class="kw">pub const </span>IsTransferable: bool = <span class="bool-val">true</span>; <span class="comment">// TODO Review - Change this back to `false` once we update our substrate dependency
+</span>}
 
 <span class="kw">impl </span>pallet_balances::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>MaxLocks = MaxLocks;
@@ -3188,7 +3196,10 @@
 	}
 }
 
-<span class="kw">impl </span>pallet_contracts::Config <span class="kw">for </span>Runtime {
+<span class="doccomment">/// The Contracts pallet provides functionality for the runtime to deploy and execute WebAssembly smart-contracts.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_contracts/index.html#contract-pallet
+</span><span class="kw">impl </span>pallet_contracts::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>Time = Timestamp;
 	<span class="kw">type </span>Randomness = RandomnessCollectiveFlip;
 	<span class="kw">type </span>Currency = Balances;
@@ -3206,7 +3217,8 @@
 	<span class="kw">type </span>CallStack = [pallet_contracts::Frame&lt;<span class="self">Self</span>&gt;; <span class="number">31</span>];
 	<span class="kw">type </span>WeightPrice = pallet_transaction_payment::Pallet&lt;<span class="self">Self</span>&gt;;
 	<span class="kw">type </span>WeightInfo = ();
-	<span class="kw">type </span>ChainExtension = ();
+	<span class="doccomment">/// Type that allows the runtime authors to add new host functions for a contract to call.
+	</span><span class="kw">type </span>ChainExtension = chain_extension::MyExtension;
 	<span class="kw">type </span>DeletionQueueDepth = DeletionQueueDepth;
 	<span class="kw">type </span>DeletionWeightLimit = DeletionWeightLimit;
 	<span class="kw">type </span>Schedule = MySchedule;

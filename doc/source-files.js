@@ -1,6 +1,6 @@
 var sourcesIndex = JSON.parse('{\
 "fragnova":["",[],["chain_spec.rs","fragnova.rs","lib.rs","rpc.rs","service.rs"]],\
-"fragnova_runtime":["",[],["lib.rs"]],\
+"fragnova_runtime":["",[["chain_extension",[],["mod.rs"]]],["lib.rs"]],\
 "pallet_accounts":["",[],["dummy_data.rs","lib.rs","weights.rs"]],\
 "pallet_aliases":["",[],["lib.rs"]],\
 "pallet_clusters":["",[],["lib.rs"]],\
@@ -12,6 +12,6 @@ var sourcesIndex = JSON.parse('{\
 "pallet_protos":["",[],["lib.rs","weights.rs"]],\
 "pallet_protos_rpc":["",[],["lib.rs"]],\
 "pallet_protos_rpc_runtime_api":["",[],["lib.rs"]],\
-"sp_fragnova":["",[],["fragments.rs","lib.rs","protos.rs"]]\
+"sp_fragnova":["",[],["fragments.rs","helper_functions.rs","lib.rs","protos.rs","runtime_interface.rs"]]\
 }');
 createSourceSidebar();
