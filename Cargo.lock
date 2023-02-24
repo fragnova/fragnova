@@ -2022,12 +2022,12 @@ dependencies = [
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-aura",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-finality-grandpa",
  "sp-fragnova",
  "sp-keystore",
  "sp-runtime",
- "sp-runtime-interface",
+ "sp-runtime-interface 7.0.0",
  "sp-timestamp",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
@@ -2079,14 +2079,14 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-fragnova",
  "sp-inherents",
- "sp-io",
+ "sp-io 6.0.0",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
@@ -2107,12 +2107,12 @@ dependencies = [
  "serde",
  "sp-api",
  "sp-application-crypto",
- "sp-core",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-runtime-interface",
- "sp-std",
- "sp-storage",
+ "sp-runtime-interface 7.0.0",
+ "sp-std 5.0.0",
+ "sp-storage 7.0.0",
 ]
 
 [[package]]
@@ -2148,15 +2148,15 @@ dependencies = [
  "serde_json",
  "sp-api",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-database",
- "sp-externalities",
+ "sp-externalities 0.13.0",
  "sp-inherents",
  "sp-keystore",
  "sp-runtime",
  "sp-state-machine",
- "sp-std",
- "sp-storage",
+ "sp-std 5.0.0",
+ "sp-storage 7.0.0",
  "sp-trie",
  "thiserror",
  "thousands",
@@ -2171,11 +2171,11 @@ dependencies = [
  "frame-system",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-core",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
- "sp-tracing",
+ "sp-std 5.0.0",
+ "sp-tracing 6.0.0",
 ]
 
 [[package]]
@@ -2209,15 +2209,15 @@ dependencies = [
  "smallvec",
  "sp-api",
  "sp-arithmetic",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-core-hashing-proc-macro",
  "sp-inherents",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
  "sp-staking",
  "sp-state-machine",
- "sp-std",
- "sp-tracing",
+ "sp-std 5.0.0",
+ "sp-tracing 6.0.0",
  "sp-weights",
  "tt-call",
 ]
@@ -2268,10 +2268,10 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "serde",
- "sp-core",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-version",
  "sp-weights",
 ]
@@ -2286,9 +2286,9 @@ dependencies = [
  "frame-system",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4459,12 +4459,12 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-fragnova",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-keystore",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4494,11 +4494,11 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-fragnova",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4511,9 +4511,9 @@ dependencies = [
  "frame-system",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4529,7 +4529,7 @@ dependencies = [
  "sp-application-crypto",
  "sp-consensus-aura",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4544,7 +4544,7 @@ dependencies = [
  "scale-info",
  "sp-authorship",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4559,7 +4559,7 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4577,11 +4577,11 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "serde",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-fragnova",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4604,10 +4604,10 @@ dependencies = [
  "serde",
  "smallvec",
  "sp-api",
- "sp-core",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
  "wasm-instrument 0.4.0",
  "wasmi 0.20.0",
  "wasmparser-nostd",
@@ -4621,7 +4621,7 @@ dependencies = [
  "bitflags",
  "parity-scale-codec 3.2.1",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-weights",
 ]
 
@@ -4649,12 +4649,12 @@ dependencies = [
  "parking_lot 0.12.1",
  "scale-info",
  "serde",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-fragnova",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-keystore",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4685,11 +4685,11 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-api",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-fragnova",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4716,7 +4716,7 @@ dependencies = [
  "sp-api",
  "sp-fragnova",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4733,13 +4733,13 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "sp-application-crypto",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-finality-grandpa",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
  "sp-session",
  "sp-staking",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4753,9 +4753,9 @@ dependencies = [
  "frame-system",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4768,11 +4768,11 @@ dependencies = [
  "frame-system",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-core",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
  "sp-keyring",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4786,9 +4786,9 @@ dependencies = [
  "log",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4809,12 +4809,12 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-fragnova",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-keystore",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4844,12 +4844,12 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-fragnova",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-keystore",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4878,7 +4878,7 @@ dependencies = [
  "sp-api",
  "sp-fragnova",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4891,9 +4891,9 @@ dependencies = [
  "frame-system",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4907,7 +4907,7 @@ dependencies = [
  "safe-mix",
  "scale-info",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4922,12 +4922,12 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-core",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
  "sp-runtime",
  "sp-session",
  "sp-staking",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-trie",
 ]
 
@@ -4940,9 +4940,9 @@ dependencies = [
  "frame-system",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4957,9 +4957,9 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "sp-inherents",
- "sp-io",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-timestamp",
 ]
 
@@ -4973,10 +4973,10 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "serde",
- "sp-core",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -4989,7 +4989,7 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "sp-api",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-rpc",
  "sp-runtime",
  "sp-weights",
@@ -5017,10 +5017,10 @@ dependencies = [
  "frame-system",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-core",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -5100,6 +5100,30 @@ name = "parity-send-wrapper"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9777aa91b8ad9dd5aaa04a9b6bcb02c7f1deb952fca5a66034d5e63afc5c6f"
+
+[[package]]
+name = "parity-util-mem"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c32561d248d352148124f036cac253a644685a21dc9fea383eb4907d7bd35a8f"
+dependencies = [
+ "cfg-if",
+ "impl-trait-for-tuples",
+ "parity-util-mem-derive",
+ "primitive-types 0.11.1",
+ "winapi",
+]
+
+[[package]]
+name = "parity-util-mem-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f557c32c6d268a07c921471619c0295f5efad3a0e76d4f97a05c091a51d110b2"
+dependencies = [
+ "proc-macro2",
+ "syn",
+ "synstructure",
+]
 
 [[package]]
 name = "parity-wasm"
@@ -5449,6 +5473,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e28720988bff275df1f51b171e1b2a18c30d194c4d2b61defdacecd625a5d94a"
 dependencies = [
  "fixed-hash 0.7.0",
+ "impl-codec 0.6.0",
+ "scale-info",
  "uint",
 ]
 
@@ -6204,8 +6230,8 @@ version = "4.1.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#2a4f77674213f06de4aece47efea1c15935b90f6"
 dependencies = [
  "log",
- "sp-core",
- "sp-wasm-interface",
+ "sp-core 7.0.0",
+ "sp-wasm-interface 7.0.0",
  "thiserror",
 ]
 
@@ -6226,7 +6252,7 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-inherents",
  "sp-runtime",
  "substrate-prometheus-endpoint",
@@ -6242,7 +6268,7 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-inherents",
  "sp-runtime",
  "sp-state-machine",
@@ -6259,7 +6285,7 @@ dependencies = [
  "sc-telemetry",
  "serde",
  "serde_json",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
 ]
 
@@ -6303,7 +6329,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-keyring",
  "sp-keystore",
  "sp-panic-handler",
@@ -6330,13 +6356,13 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-database",
- "sp-externalities",
+ "sp-externalities 0.13.0",
  "sp-keystore",
  "sp-runtime",
  "sp-state-machine",
- "sp-storage",
+ "sp-storage 7.0.0",
  "substrate-prometheus-endpoint",
 ]
 
@@ -6358,7 +6384,7 @@ dependencies = [
  "sc-state-db",
  "sp-arithmetic",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-database",
  "sp-runtime",
  "sp-state-machine",
@@ -6383,7 +6409,7 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
  "sp-state-machine",
  "substrate-prometheus-endpoint",
@@ -6411,7 +6437,7 @@ dependencies = [
  "sp-consensus",
  "sp-consensus-aura",
  "sp-consensus-slots",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-inherents",
  "sp-keystore",
  "sp-runtime",
@@ -6436,7 +6462,7 @@ dependencies = [
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-slots",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-inherents",
  "sp-runtime",
  "sp-state-machine",
@@ -6454,14 +6480,14 @@ dependencies = [
  "sc-executor-wasmi",
  "sc-executor-wasmtime",
  "sp-api",
- "sp-core",
- "sp-externalities",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-externalities 0.13.0",
+ "sp-io 7.0.0",
  "sp-panic-handler",
- "sp-runtime-interface",
+ "sp-runtime-interface 7.0.0",
  "sp-trie",
  "sp-version",
- "sp-wasm-interface",
+ "sp-wasm-interface 7.0.0",
  "tracing",
  "wasmi 0.13.2",
 ]
@@ -6473,7 +6499,7 @@ source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.
 dependencies = [
  "sc-allocator",
  "sp-maybe-compressed-blob",
- "sp-wasm-interface",
+ "sp-wasm-interface 7.0.0",
  "thiserror",
  "wasm-instrument 0.3.0",
  "wasmi 0.13.2",
@@ -6487,8 +6513,8 @@ dependencies = [
  "log",
  "sc-allocator",
  "sc-executor-common",
- "sp-runtime-interface",
- "sp-wasm-interface",
+ "sp-runtime-interface 7.0.0",
+ "sp-wasm-interface 7.0.0",
  "wasmi 0.13.2",
 ]
 
@@ -6504,8 +6530,8 @@ dependencies = [
  "rustix 0.35.13",
  "sc-allocator",
  "sc-executor-common",
- "sp-runtime-interface",
- "sp-wasm-interface",
+ "sp-runtime-interface 7.0.0",
+ "sp-wasm-interface 7.0.0",
  "wasmtime",
 ]
 
@@ -6541,7 +6567,7 @@ dependencies = [
  "sp-arithmetic",
  "sp-blockchain",
  "sp-consensus",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-finality-grandpa",
  "sp-keystore",
  "sp-runtime",
@@ -6574,7 +6600,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "serde_json",
  "sp-application-crypto",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-keystore",
  "thiserror",
 ]
@@ -6613,7 +6639,7 @@ dependencies = [
  "sp-arithmetic",
  "sp-blockchain",
  "sp-consensus",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
  "substrate-prometheus-endpoint",
  "thiserror",
@@ -6700,7 +6726,7 @@ dependencies = [
  "sc-network-common",
  "sc-peerset",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
  "thiserror",
 ]
@@ -6730,7 +6756,7 @@ dependencies = [
  "sp-arithmetic",
  "sp-blockchain",
  "sp-consensus",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-finality-grandpa",
  "sp-runtime",
  "substrate-prometheus-endpoint",
@@ -6779,7 +6805,7 @@ dependencies = [
  "sc-peerset",
  "sc-utils",
  "sp-api",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-offchain",
  "sp-runtime",
  "threadpool",
@@ -6828,7 +6854,7 @@ dependencies = [
  "serde_json",
  "sp-api",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-keystore",
  "sp-offchain",
  "sp-rpc",
@@ -6849,7 +6875,7 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-rpc",
  "sp-runtime",
  "sp-version",
@@ -6890,7 +6916,7 @@ dependencies = [
  "serde",
  "sp-api",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
  "sp-version",
  "thiserror",
@@ -6942,13 +6968,13 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core",
- "sp-externalities",
+ "sp-core 7.0.0",
+ "sp-externalities 0.13.0",
  "sp-keystore",
  "sp-runtime",
  "sp-session",
  "sp-state-machine",
- "sp-storage",
+ "sp-storage 7.0.0",
  "sp-transaction-pool",
  "sp-transaction-storage-proof",
  "sp-trie",
@@ -6970,7 +6996,7 @@ dependencies = [
  "log",
  "parity-scale-codec 3.2.1",
  "parking_lot 0.12.1",
- "sp-core",
+ "sp-core 7.0.0",
 ]
 
 [[package]]
@@ -6987,9 +7013,9 @@ dependencies = [
  "sc-telemetry",
  "serde",
  "serde_json",
- "sp-core",
- "sp-io",
- "sp-std",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -7032,10 +7058,10 @@ dependencies = [
  "serde",
  "sp-api",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-rpc",
  "sp-runtime",
- "sp-tracing",
+ "sp-tracing 6.0.0",
  "thiserror",
  "tracing",
  "tracing-log",
@@ -7071,9 +7097,9 @@ dependencies = [
  "serde",
  "sp-api",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
- "sp-tracing",
+ "sp-tracing 6.0.0",
  "sp-transaction-pool",
  "substrate-prometheus-endpoint",
  "thiserror",
@@ -7529,10 +7555,10 @@ dependencies = [
  "log",
  "parity-scale-codec 3.2.1",
  "sp-api-proc-macro",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
  "sp-state-machine",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-trie",
  "sp-version",
  "thiserror",
@@ -7558,9 +7584,9 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "serde",
- "sp-core",
- "sp-io",
- "sp-std",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -7573,7 +7599,7 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "serde",
- "sp-std",
+ "sp-std 5.0.0",
  "static_assertions",
 ]
 
@@ -7586,7 +7612,7 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "sp-inherents",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -7598,7 +7624,7 @@ dependencies = [
  "sp-api",
  "sp-inherents",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -7628,11 +7654,11 @@ dependencies = [
  "futures",
  "log",
  "parity-scale-codec 3.2.1",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-inherents",
  "sp-runtime",
  "sp-state-machine",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-version",
  "thiserror",
 ]
@@ -7651,7 +7677,7 @@ dependencies = [
  "sp-consensus-slots",
  "sp-inherents",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-timestamp",
 ]
 
@@ -7663,8 +7689,32 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "serde",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-timestamp",
+]
+
+[[package]]
+name = "sp-core"
+version = "6.0.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+dependencies = [
+ "bitflags",
+ "byteorder",
+ "hash-db",
+ "hash256-std-hasher",
+ "log",
+ "num-traits",
+ "parity-scale-codec 3.2.1",
+ "parity-util-mem",
+ "primitive-types 0.11.1",
+ "scale-info",
+ "secrecy",
+ "sp-debug-derive 4.0.0",
+ "sp-runtime-interface 6.0.0",
+ "sp-std 4.0.0",
+ "sp-storage 6.0.0",
+ "ss58-registry",
+ "zeroize",
 ]
 
 [[package]]
@@ -7697,11 +7747,11 @@ dependencies = [
  "secrecy",
  "serde",
  "sp-core-hashing",
- "sp-debug-derive",
- "sp-externalities",
- "sp-runtime-interface",
- "sp-std",
- "sp-storage",
+ "sp-debug-derive 5.0.0",
+ "sp-externalities 0.13.0",
+ "sp-runtime-interface 7.0.0",
+ "sp-std 5.0.0",
+ "sp-storage 7.0.0",
  "ss58-registry",
  "substrate-bip39",
  "thiserror",
@@ -7719,7 +7769,7 @@ dependencies = [
  "digest 0.10.6",
  "sha2 0.10.6",
  "sha3 0.10.6",
- "sp-std",
+ "sp-std 5.0.0",
  "twox-hash",
 ]
 
@@ -7745,6 +7795,16 @@ dependencies = [
 
 [[package]]
 name = "sp-debug-derive"
+version = "4.0.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "sp-debug-derive"
 version = "5.0.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#2a4f77674213f06de4aece47efea1c15935b90f6"
 dependencies = [
@@ -7755,13 +7815,24 @@ dependencies = [
 
 [[package]]
 name = "sp-externalities"
+version = "0.12.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+dependencies = [
+ "environmental",
+ "parity-scale-codec 3.2.1",
+ "sp-std 4.0.0",
+ "sp-storage 6.0.0",
+]
+
+[[package]]
+name = "sp-externalities"
 version = "0.13.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#2a4f77674213f06de4aece47efea1c15935b90f6"
 dependencies = [
  "environmental",
  "parity-scale-codec 3.2.1",
- "sp-std",
- "sp-storage",
+ "sp-std 5.0.0",
+ "sp-storage 7.0.0",
 ]
 
 [[package]]
@@ -7776,10 +7847,10 @@ dependencies = [
  "serde",
  "sp-api",
  "sp-application-crypto",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-keystore",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -7792,11 +7863,11 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "protos",
  "scale-info",
- "sp-core",
- "sp-io",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
  "sp-runtime",
- "sp-runtime-interface",
- "sp-std",
+ "sp-runtime-interface 7.0.0",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -7807,10 +7878,28 @@ dependencies = [
  "async-trait",
  "impl-trait-for-tuples",
  "parity-scale-codec 3.2.1",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
  "thiserror",
+]
+
+[[package]]
+name = "sp-io"
+version = "6.0.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+dependencies = [
+ "bytes",
+ "hash-db",
+ "parity-scale-codec 3.2.1",
+ "sp-core 6.0.0",
+ "sp-externalities 0.12.0",
+ "sp-runtime-interface 6.0.0",
+ "sp-std 4.0.0",
+ "sp-tracing 5.0.0",
+ "sp-wasm-interface 6.0.0",
+ "tracing",
+ "tracing-core",
 ]
 
 [[package]]
@@ -7826,13 +7915,13 @@ dependencies = [
  "log",
  "parity-scale-codec 3.2.1",
  "secp256k1",
- "sp-core",
- "sp-externalities",
+ "sp-core 7.0.0",
+ "sp-externalities 0.13.0",
  "sp-keystore",
- "sp-runtime-interface",
+ "sp-runtime-interface 7.0.0",
  "sp-state-machine",
- "sp-std",
- "sp-tracing",
+ "sp-std 5.0.0",
+ "sp-tracing 6.0.0",
  "sp-trie",
  "tracing",
  "tracing-core",
@@ -7844,7 +7933,7 @@ version = "7.0.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#2a4f77674213f06de4aece47efea1c15935b90f6"
 dependencies = [
  "lazy_static",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
  "strum",
 ]
@@ -7861,8 +7950,8 @@ dependencies = [
  "parking_lot 0.12.1",
  "schnorrkel",
  "serde",
- "sp-core",
- "sp-externalities",
+ "sp-core 7.0.0",
+ "sp-externalities 0.13.0",
  "thiserror",
 ]
 
@@ -7881,7 +7970,7 @@ version = "4.0.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#2a4f77674213f06de4aece47efea1c15935b90f6"
 dependencies = [
  "sp-api",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
 ]
 
@@ -7902,7 +7991,7 @@ source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.
 dependencies = [
  "rustc-hash",
  "serde",
- "sp-core",
+ "sp-core 7.0.0",
 ]
 
 [[package]]
@@ -7921,10 +8010,28 @@ dependencies = [
  "serde",
  "sp-application-crypto",
  "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-std",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
+ "sp-std 5.0.0",
  "sp-weights",
+]
+
+[[package]]
+name = "sp-runtime-interface"
+version = "6.0.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+dependencies = [
+ "bytes",
+ "impl-trait-for-tuples",
+ "parity-scale-codec 3.2.1",
+ "primitive-types 0.11.1",
+ "sp-externalities 0.12.0",
+ "sp-runtime-interface-proc-macro 5.0.0",
+ "sp-std 4.0.0",
+ "sp-storage 6.0.0",
+ "sp-tracing 5.0.0",
+ "sp-wasm-interface 6.0.0",
+ "static_assertions",
 ]
 
 [[package]]
@@ -7936,13 +8043,25 @@ dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec 3.2.1",
  "primitive-types 0.12.1",
- "sp-externalities",
- "sp-runtime-interface-proc-macro",
- "sp-std",
- "sp-storage",
- "sp-tracing",
- "sp-wasm-interface",
+ "sp-externalities 0.13.0",
+ "sp-runtime-interface-proc-macro 6.0.0",
+ "sp-std 5.0.0",
+ "sp-storage 7.0.0",
+ "sp-tracing 6.0.0",
+ "sp-wasm-interface 7.0.0",
  "static_assertions",
+]
+
+[[package]]
+name = "sp-runtime-interface-proc-macro"
+version = "5.0.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+dependencies = [
+ "Inflector",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -7965,10 +8084,10 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
  "sp-api",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
  "sp-staking",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -7978,9 +8097,9 @@ source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.
 dependencies = [
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -7994,10 +8113,10 @@ dependencies = [
  "parking_lot 0.12.1",
  "rand 0.8.5",
  "smallvec",
- "sp-core",
- "sp-externalities",
+ "sp-core 7.0.0",
+ "sp-externalities 0.13.0",
  "sp-panic-handler",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-trie",
  "thiserror",
  "tracing",
@@ -8005,8 +8124,24 @@ dependencies = [
 
 [[package]]
 name = "sp-std"
+version = "4.0.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+
+[[package]]
+name = "sp-std"
 version = "5.0.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#2a4f77674213f06de4aece47efea1c15935b90f6"
+
+[[package]]
+name = "sp-storage"
+version = "6.0.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+dependencies = [
+ "parity-scale-codec 3.2.1",
+ "ref-cast",
+ "sp-debug-derive 4.0.0",
+ "sp-std 4.0.0",
+]
 
 [[package]]
 name = "sp-storage"
@@ -8017,8 +8152,8 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "ref-cast",
  "serde",
- "sp-debug-derive",
- "sp-std",
+ "sp-debug-derive 5.0.0",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -8032,8 +8167,19 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "sp-inherents",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
  "thiserror",
+]
+
+[[package]]
+name = "sp-tracing"
+version = "5.0.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+dependencies = [
+ "parity-scale-codec 3.2.1",
+ "sp-std 4.0.0",
+ "tracing",
+ "tracing-core",
 ]
 
 [[package]]
@@ -8042,7 +8188,7 @@ version = "6.0.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#2a4f77674213f06de4aece47efea1c15935b90f6"
 dependencies = [
  "parity-scale-codec 3.2.1",
- "sp-std",
+ "sp-std 5.0.0",
  "tracing",
  "tracing-core",
  "tracing-subscriber",
@@ -8066,10 +8212,10 @@ dependencies = [
  "log",
  "parity-scale-codec 3.2.1",
  "scale-info",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-inherents",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-trie",
 ]
 
@@ -8088,8 +8234,8 @@ dependencies = [
  "parity-scale-codec 3.2.1",
  "parking_lot 0.12.1",
  "scale-info",
- "sp-core",
- "sp-std",
+ "sp-core 7.0.0",
+ "sp-std 5.0.0",
  "thiserror",
  "tracing",
  "trie-db",
@@ -8108,7 +8254,7 @@ dependencies = [
  "serde",
  "sp-core-hashing-proc-macro",
  "sp-runtime",
- "sp-std",
+ "sp-std 5.0.0",
  "sp-version-proc-macro",
  "thiserror",
 ]
@@ -8126,13 +8272,23 @@ dependencies = [
 
 [[package]]
 name = "sp-wasm-interface"
+version = "6.0.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.0.6#90e07df9d09742cdbc7d2725e45123acd17442c3"
+dependencies = [
+ "impl-trait-for-tuples",
+ "parity-scale-codec 3.2.1",
+ "sp-std 4.0.0",
+]
+
+[[package]]
+name = "sp-wasm-interface"
 version = "7.0.0"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#2a4f77674213f06de4aece47efea1c15935b90f6"
 dependencies = [
  "impl-trait-for-tuples",
  "log",
  "parity-scale-codec 3.2.1",
- "sp-std",
+ "sp-std 5.0.0",
  "wasmi 0.13.2",
  "wasmtime",
 ]
@@ -8147,9 +8303,9 @@ dependencies = [
  "serde",
  "smallvec",
  "sp-arithmetic",
- "sp-core",
- "sp-debug-derive",
- "sp-std",
+ "sp-core 7.0.0",
+ "sp-debug-derive 5.0.0",
+ "sp-std 5.0.0",
 ]
 
 [[package]]
@@ -8325,7 +8481,7 @@ dependencies = [
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
- "sp-core",
+ "sp-core 7.0.0",
  "sp-runtime",
 ]
 
