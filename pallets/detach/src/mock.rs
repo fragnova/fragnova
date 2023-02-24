@@ -1,7 +1,10 @@
+#![cfg(test)]
+
 pub use crate as pallet_detach;
 use crate::*;
-use frame_support::{parameter_types, traits::ConstU32};
+
 use frame_system;
+use frame_support::{parameter_types, traits::ConstU32};
 use sp_core::{
 	offchain::{
 		testing::{self, OffchainState, PoolState, TestOffchainExt},
@@ -36,6 +39,7 @@ frame_support::construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
+
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -110,7 +114,7 @@ where
 
 impl pallet_randomness_collective_flip::Config for Test {}
 
-impl pallet_detach::Config for Test {
+impl Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;

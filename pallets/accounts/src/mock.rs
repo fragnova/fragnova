@@ -1,3 +1,5 @@
+#![cfg(test)]
+
 use crate as pallet_accounts;
 use crate::*;
 
@@ -5,11 +7,6 @@ use frame_support::{
 	parameter_types,
 	traits::{ConstU128, ConstU32, ConstU64},
 };
-
-use parking_lot::RwLock;
-use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
-use std::sync::Arc;
-
 use sp_core::{
 	ed25519::Signature,
 	offchain::{
@@ -18,8 +15,6 @@ use sp_core::{
 	},
 	H256,
 };
-
-use pallet_oracle::{OracleContract, OracleProvider};
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{
@@ -27,6 +22,10 @@ use sp_runtime::{
 	},
 	RuntimeAppPublic,
 };
+
+use parking_lot::RwLock;
+use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStore};
+use std::sync::Arc;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -46,11 +45,12 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>, ValidateUnsigned},
 	}
 );
@@ -157,24 +157,6 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
-impl pallet_accounts::EthFragContract for Test {
-	fn get_partner_contracts() -> Vec<String> {
-		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
-	}
-}
-
-impl pallet_accounts::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-	type EthChainId = ConstU64<5>; // goerli
-	type EthConfirmations = ConstU64<1>;
-	type EthFragContract = Test;
-	type Threshold = ConstU64<1>;
-	type AuthorityId = pallet_accounts::crypto::FragAuthId;
-	type InitialPercentageNova = ConstU8<20>;
-	type USDEquivalentAmount = ConstU128<100>;
-}
-
 impl pallet_proxy::Config for Test {
 	type Event = Event;
 	type Call = Call;
@@ -198,18 +180,34 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-impl OracleContract for Test {
+impl pallet_oracle::OracleContract for Test {
 	/// get the default oracle provider
-	fn get_provider() -> OracleProvider {
-		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+	fn get_provider() -> pallet_oracle::OracleProvider {
+		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
 	}
 }
-
 impl pallet_oracle::Config for Test {
 	type AuthorityId = pallet_oracle::crypto::FragAuthId;
 	type Event = Event;
 	type OracleProvider = Test;
 	type Threshold = ConstU64<1>;
+}
+
+impl EthFragContract for Test {
+	fn get_partner_contracts() -> Vec<String> {
+		vec![String::from("0x8a819F380ff18240B5c11010285dF63419bdb2d5")]
+	}
+}
+impl Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
+	type EthChainId = ConstU64<5>; // goerli
+	type EthConfirmations = ConstU64<1>;
+	type EthFragContract = Test;
+	type Threshold = ConstU64<1>;
+	type AuthorityId = pallet_accounts::crypto::FragAuthId;
+	type InitialPercentageNova = ConstU8<20>;
+	type USDEquivalentAmount = ConstU128<100>;
 }
 
 fn create_public_key(keystore: &KeyStore) -> sp_core::ed25519::Public {

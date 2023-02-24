@@ -1867,6 +1867,7 @@ dependencies = [
  "sp-core",
  "sp-fragnova",
  "sp-inherents",
+ "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -5467,9 +5468,9 @@ dependencies = [
 
 [[package]]
 name = "protos"
-version = "0.1.25"
+version = "0.1.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "019983d7d2b49d4fd485c1fea781d146a5d218a8447a6e2bdd05683b0a3044e2"
+checksum = "60f3682b4407a720de0903cdffb78ffc73165aa29292fd5dc561187b3ee6f7aa"
 dependencies = [
  "bitflags",
  "parity-scale-codec 3.2.1",

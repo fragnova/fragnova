@@ -1,12 +1,14 @@
+#![cfg(test)]
+
 pub use crate as pallet_fragments;
 use crate::*;
+
+use frame_system;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU128, ConstU32, ConstU64},
 	weights::{constants::WEIGHT_PER_SECOND, Weight},
 };
-use frame_system;
-use pallet_oracle::{OracleContract, OracleProvider};
 use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
 	testing::{Header, TestXt},
@@ -33,16 +35,17 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		Protos: pallet_protos::{Pallet, Call, Storage, Event<T>},
-		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
-		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
-		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
-		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
-		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 		Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
+
+		Protos: pallet_protos::{Pallet, Call, Storage, Event<T>},
+		FragmentsPallet: pallet_fragments::{Pallet, Call, Storage, Event<T>},
+		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
+		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>},
 		Clusters: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 	}
@@ -161,6 +164,14 @@ impl pallet_assets::Config for Test {
 	type Extra = ();
 }
 
+impl pallet_timestamp::Config for Test {
+	/// A timestamp: milliseconds since the unix epoch.
+	type Moment = u64;
+	type OnTimestampSet = ();
+	type MinimumPeriod = ();
+	type WeightInfo = ();
+}
+
 parameter_types! {
 	pub const DeletionWeightLimit: Weight = 500_000_000_000;
 	pub MySchedule: pallet_contracts::Schedule<Test> = {
@@ -199,6 +210,21 @@ impl pallet_contracts::Config for Test {
 	type MaxStorageKeyLen = ConstU32<128>;
 }
 
+impl pallet_proxy::Config for Test {
+	type Event = Event;
+	type Call = Call;
+	type Currency = Balances;
+	type ProxyType = ();
+	type ProxyDepositBase = ConstU128<1>;
+	type ProxyDepositFactor = ConstU128<1>;
+	type MaxProxies = ConstU32<4>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<2>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = ConstU128<1>;
+	type AnnouncementDepositFactor = ConstU128<1>;
+}
+
 impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
@@ -219,44 +245,16 @@ impl pallet_accounts::Config for Test {
 	type USDEquivalentAmount = ConstU128<100>;
 }
 
-impl pallet_proxy::Config for Test {
-	type Event = Event;
-	type Call = Call;
-	type Currency = Balances;
-	type ProxyType = ();
-	type ProxyDepositBase = ConstU128<1>;
-	type ProxyDepositFactor = ConstU128<1>;
-	type MaxProxies = ConstU32<4>;
-	type WeightInfo = ();
-	type MaxPending = ConstU32<2>;
-	type CallHasher = BlakeTwo256;
-	type AnnouncementDepositBase = ConstU128<1>;
-	type AnnouncementDepositFactor = ConstU128<1>;
-}
-
-impl pallet_fragments::Config for Test {
-	type Event = Event;
-	type WeightInfo = ();
-}
-
 impl pallet_detach::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type AuthorityId = pallet_detach::crypto::DetachAuthId;
 }
 
-impl pallet_timestamp::Config for Test {
-	/// A timestamp: milliseconds since the unix epoch.
-	type Moment = u64;
-	type OnTimestampSet = ();
-	type MinimumPeriod = ();
-	type WeightInfo = ();
-}
-
-impl OracleContract for Test {
+impl pallet_oracle::OracleContract for Test {
 	/// get the default oracle provider
 	fn get_provider() -> pallet_oracle::OracleProvider {
-		OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
+		pallet_oracle::OracleProvider::Uniswap("can-be-whatever-here".encode()) // never used
 	}
 }
 
@@ -273,6 +271,12 @@ impl pallet_clusters::Config for Test {
 	type DataLimit = ConstU32<100>;
 	type MembersLimit = ConstU32<10>;
 	type RoleSettingsLimit = ConstU32<20>;
+}
+
+
+impl Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

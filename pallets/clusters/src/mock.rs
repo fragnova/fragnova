@@ -1,10 +1,13 @@
+#![cfg(test)]
+
 use crate as pallet_clusters;
 use crate::*;
+
+use frame_system;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU128, ConstU32, ConstU64},
 };
-use frame_system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -23,10 +26,11 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
-		ClustersPallet: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+
+		ClustersPallet: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -100,7 +104,7 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-impl pallet_clusters::Config for Test {
+impl Config for Test {
 	type Event = Event;
 	type NameLimit = ConstU32<35>;
 	type DataLimit = ConstU32<25>;

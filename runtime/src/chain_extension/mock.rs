@@ -1,7 +1,6 @@
 #![cfg(test)]
 
-use crate as pallet_protos;
-use crate::*;
+use crate::chain_extension;
 
 use frame_system;
 use frame_support::{
@@ -15,6 +14,7 @@ use sp_runtime::traits::{
 	BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
 };
 use sp_runtime::testing::{Header, TestXt};
+use codec::Encode;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -46,7 +46,8 @@ frame_support::construct_runtime!(
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
 
-		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
+		Protos: pallet_protos::{Pallet, Call, Storage, Event<T>},
+		Fragments: pallet_fragments::{Pallet, Call, Storage, Event<T>},
 		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
 		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
 		Oracle: pallet_oracle::{Pallet, Call, Storage, Event<T>},
@@ -67,7 +68,7 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub const SS58Prefix: u8 = 42;
-	pub const IsTransferable: bool = false;
+	pub const IsTransferable: bool = true; // TODO Review - Change this back to false once we update our substrate dependency
 }
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -105,16 +106,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-where
-	Call: From<LocalCall>,
+	where
+		Call: From<LocalCall>,
 {
 	type OverarchingCall = Call;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-where
-	Call: From<LocalCall>,
+	where
+		Call: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: Call,
@@ -198,7 +199,7 @@ impl pallet_contracts::Config for Test {
 	type CallStack = [pallet_contracts::Frame<Self>; 31];
 	type WeightPrice = ();
 	type WeightInfo = ();
-	type ChainExtension = ();
+	type ChainExtension = chain_extension::MyExtension; // This is what we are testing!
 	type DeletionQueueDepth = ConstU32<1024>;
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
@@ -271,12 +272,17 @@ impl pallet_accounts::Config for Test {
 	type USDEquivalentAmount = ConstU128<100>;
 }
 
-impl Config for Test {
+impl pallet_protos::Config for Test {
 	type Event = Event;
 	type WeightInfo = ();
 	type StringLimit = StringLimit;
 	type DetachAccountLimit = ConstU32<20>;
 	type MaxTags = ConstU32<10>;
+}
+
+impl pallet_fragments::Config for Test {
+	type Event = Event;
+	type WeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
