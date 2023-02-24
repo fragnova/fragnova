@@ -364,4 +364,49 @@ mod fragments_tests {
 
 		});
 	}
+
+	#[test]
+	pub fn give_instance_should_not_work_if_contract_does_not_own_the_instance() {
+		new_test_ext().execute_with(|| {
+
+			let code_hash = upload_dummy_contract(ALICE);
+			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &[]);
+
+			let proto_data = b"Je suis Data".to_vec();
+			assert_ok!(upload(ALICE, &proto_data));
+			let proto_hash = blake2_256(&proto_data);
+
+			let definition_name = b"Je suis un Nom".to_vec();
+			assert_ok!(create(ALICE, &proto_hash, &definition_name));
+			let definition_hash = blake2_128(&[&proto_hash[..], &definition_name.encode(), &pallet_fragments::Currency::<<Test as pallet_assets::Config>::AssetId>::Native.encode()].concat());
+
+			assert_ok!(
+				Fragments::mint(
+					Origin::signed(ALICE),
+					definition_hash,
+					pallet_fragments::FragmentBuyOptions::Quantity(1),
+					None,
+				)
+			);
+
+			let contract_result = Contracts::bare_call(
+				ALICE,
+				contract_address, // Address of the contract to call.
+				0, // The balance to transfer from the origin to dest.
+				GAS_LIMIT, // The gas limit enforced when executing the constructor.
+				None, // The maximum amount of balance that can be charged from the caller to pay for the storage consumed.
+				vec![&blake2_256(b"give_instance")[0..4], &(definition_hash, 1u64, 1u64, BOB, None::<Option<FragmentPerms>>, None::<Option<<Test as frame_system::Config>::BlockNumber>>).encode()[..]].concat(), // The input data to pass to the contract.
+				false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+			);
+
+			// assert_eq!(contract_result.result.as_ref(), sp_runtime::DispatchError::Module(pallet_fragments::Error::NoPermission.into()));
+			assert!(contract_result.result.is_err());
+
+			assert_eq!(
+				pallet_fragments::Inventory::<Test>::get(BOB, definition_hash),
+				None
+			);
+
+		});
+	}
 }
