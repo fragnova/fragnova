@@ -90,25 +90,27 @@ substrate-wasm-builder = { version = '5.0.0-dev', git = 'https://github.com/frag
 [features]
 default = ['std']
 runtime-benchmarks = [
+	'sp-runtime/runtime-benchmarks',
     'frame-benchmarking',
     'frame-support/runtime-benchmarks',
     'frame-system-benchmarking',
     'frame-system/runtime-benchmarks',
     'hex-literal',
+	'pallet-balances/runtime-benchmarks',
     'pallet-assets/runtime-benchmarks',
-    'pallet-balances/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
-    'sp-runtime/runtime-benchmarks',
+	'pallet-multisig/runtime-benchmarks',
+	'pallet-proxy/runtime-benchmarks',
+	'pallet-identity/runtime-benchmarks',
+	'pallet-utility/runtime-benchmarks',
+	'pallet-contracts/runtime-benchmarks',
     'pallet-protos/runtime-benchmarks',
     'pallet-fragments/runtime-benchmarks',
     'pallet-detach/runtime-benchmarks',
 	'pallet-accounts/runtime-benchmarks',
 	'pallet-clusters/runtime-benchmarks',
 	'pallet-aliases/runtime-benchmarks',
-    'pallet-multisig/runtime-benchmarks',
-    'pallet-proxy/runtime-benchmarks',
-    'pallet-identity/runtime-benchmarks',
-    'pallet-utility/runtime-benchmarks',
+	'pallet-oracle/runtime-benchmarks',
 ]
 std = [
 	'sp-api/std',

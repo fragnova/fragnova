@@ -24,6 +24,11 @@ const SEED: u32 = 0;
 const MAX_DATA_LENGTH: u32 = 1_000_000; // 1 MegaByte
 const MAX_QUANTITY_TO_MINT: u32 = 100;
 
+// Copied from: https://github.com/paritytech/substrate/blob/polkadot-v0.9.37/frame/assets/src/benchmarking.rs#L38-L40
+fn default_asset_id<T: pallet_assets::Config>() -> T::AssetIdParameter {
+	<<T as pallet_assets::Config>::BenchmarkHelper as pallet_assets::BenchmarkHelper<T::AssetIdParameter>>::create_asset_id_parameter(0)
+}
+
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
@@ -42,7 +47,7 @@ benchmarks! {
 
 		Assets::<T>::force_create(
 			RawOrigin::Root.into(),
-			T::AssetId::default(),
+			default_asset_id::<T>(),
 			T::Lookup::unlookup(caller.clone()),
 			true,
 			7u128.saturated_into::<<T as pallet_assets::Config>::Balance>(),
@@ -65,7 +70,7 @@ benchmarks! {
 		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
 			name: vec![7u8; <T as pallet_protos::Config>::StringLimit::get() as usize].try_into().unwrap(),
 			// By making currency `Currency::Custom`, we enter an extra if-statement and also do an extra DB read operation
-			currency: Currency::Custom(T::AssetId::default()),
+			currency: Currency::Custom(default_asset_id::<T>().into()),
 		};
 		let permissions: FragmentPerms = FragmentPerms::EDIT | FragmentPerms::TRANSFER;
 		let unique: Option<UniqueOptions> = Some(UniqueOptions { mutable: false});

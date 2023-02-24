@@ -1714,14 +1714,12 @@ pub mod pallet {
 					.map_err(|_| Error::<T>::InsufficientBalance)?;
 				},
 				Currency::Native => {
-					pallet_balances::Pallet::<T>::do_transfer(
-						// transfer `amount` units of NOVA from `from` to `to`
+					<pallet_balances::Pallet<T> as frame_support::traits::Currency<T::AccountId>>::transfer(
 						from,
 						to,
 						amount.saturated_into(),
-						ExistenceRequirement::KeepAlive,
-					)
-					.map_err(|_| Error::<T>::InsufficientBalance)?;
+						ExistenceRequirement::KeepAlive
+					).map_err(|_| Error::<T>::InsufficientBalance)?;
 				},
 			}
 

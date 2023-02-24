@@ -18,6 +18,9 @@ use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "runtime-benchmarks")]
+mod benchmarking;
+
 #[cfg(test)]
 pub mod tests;
 /// Defines application identifier for crypto keys of this module.

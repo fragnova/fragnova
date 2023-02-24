@@ -946,7 +946,9 @@ parameter_types! {
 	/// The maximum number of locks that should exist on an account.
 	/// Not strictly enforced, but used for weight estimation.
 	pub const MaxLocks: u32 = 50;
-	/// TODO: Documentation
+	/// Whether an account can voluntarily transfer any of its balance to another account
+	///
+	/// Note: This type has been added by Fragnova
 	pub const IsTransferable: bool = false;
 }
 
@@ -1294,6 +1296,10 @@ impl pallet_contracts::Config for Runtime {
 	type UnsafeUnstableInterface = ConstBool<false>;
 	// TODO Review - Not sure what this is but I've made it `ConstU32<{ 2 * 1024 * 1024 }>` from following https://github.com/paritytech/substrate-contracts-node/blob/fcc75b237d85a5f8ad5a492c14d8bd3e065fea8a/runtime/src/lib.rs#L366
 	type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
+	/// Whether an account can voluntarily transfer any of its balance to another account
+	///
+	/// Note: This type has been added by Fragnova
+	type IsTransferable = ConstBool<false>;
 }
 
 parameter_types! {
@@ -1342,6 +1348,8 @@ impl pallet_assets::Config for Runtime {
 	type Extra = ();
 	type CallbackHandle = ();
 	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 // Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
