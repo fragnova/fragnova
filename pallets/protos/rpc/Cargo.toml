@@ -19,7 +19,7 @@ sc-client-api = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz
 
 pallet-protos = { version = '0.0.1', default-features = false, path = '..' }
 
-codec = { package = "parity-scale-codec", version = '3.1.5' }
+codec = { package = "parity-scale-codec", version = '3.0.0' }
 
 base64 = "0.21"
 
