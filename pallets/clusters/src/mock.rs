@@ -40,8 +40,8 @@ impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
-	type Origin = Origin;
-	type Call = Call;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -49,7 +49,7 @@ impl frame_system::Config for Test {
 	type AccountId = sp_core::ed25519::Public;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type DbWeight = ();
 	type Version = ();
@@ -66,7 +66,7 @@ impl frame_system::Config for Test {
 impl pallet_balances::Config for Test {
 	type Balance = Balance;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	/// The minimum amount required to keep an account open.
 	type ExistentialDeposit = ConstU128<500>;
 	type AccountStore = System;
@@ -78,8 +78,8 @@ impl pallet_balances::Config for Test {
 }
 
 impl pallet_proxy::Config for Test {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type ProxyType = ();
 	type ProxyDepositBase = ConstU128<1>;
@@ -101,7 +101,7 @@ impl pallet_timestamp::Config for Test {
 }
 
 impl pallet_clusters::Config for Test {
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type NameLimit = ConstU32<35>;
 	type DataLimit = ConstU32<25>;
 	type MembersLimit = ConstU32<25>;

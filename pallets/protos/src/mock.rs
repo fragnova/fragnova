@@ -3,8 +3,8 @@ use crate::*;
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, ConstU64},
-	weights::{constants::WEIGHT_PER_SECOND, Weight},
+	traits::{ConstU32, ConstU64, ConstBool, AsEnsureOriginWithArg},
+	weights::Weight,
 };
 use frame_system;
 
@@ -169,8 +169,11 @@ parameter_types! {
 impl pallet_assets::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
+	type RemoveItemsLimit = ConstU32<1000>;
 	type AssetId = u64;
+	type AssetIdParameter = u64;
 	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
 	type AssetAccountDeposit = ConstU128<DOLLARS>;
@@ -181,6 +184,7 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
+	type CallbackHandle = ();
 }
 
 impl pallet_protos::Config for Test {
@@ -246,9 +250,7 @@ parameter_types! {
 	pub const DeletionWeightLimit: Weight = Weight::from_ref_time(500_000_000_000);
 	pub MySchedule: pallet_contracts::Schedule<Test> = {
 		let mut schedule = <pallet_contracts::Schedule<Test>>::default();
-		// We want stack height to be always enabled for tests so that this
-		// instrumentation path is always tested implicitly.
-		schedule.limits.stack_height = Some(512);
+		schedule.instruction_weights.fallback = 1;
 		schedule
 	};
 	pub static DepositPerByte: u64 = 1;
@@ -274,6 +276,8 @@ impl pallet_contracts::Config for Test {
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
 	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
+	type UnsafeUnstableInterface = ConstBool<false>;
+	type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

@@ -22,7 +22,7 @@ mod create_tests {
 			name.clone().try_into().expect("cluster name is too long");
 		// fund the account to be able to create the proxy
 		pallet_balances::Pallet::<Test>::make_free_balance_be(&signer, 1000000);
-		ClustersPallet::create_cluster(Origin::signed(signer), bounded_name)
+		ClustersPallet::create_cluster(RuntimeOrigin::signed(signer), bounded_name)
 	}
 
 	pub fn create_role_(
@@ -31,7 +31,7 @@ mod create_tests {
 		role: Vec<u8>,
 	) -> DispatchResult {
 		ClustersPallet::create_role(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			cluster,
 			role.clone().try_into().expect("role name is too long"),
 		)
@@ -44,7 +44,7 @@ mod create_tests {
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			role_name.clone().try_into().expect("role name is too long");
-		ClustersPallet::delete_role(Origin::signed(signer), bounded_name, cluster_id)
+		ClustersPallet::delete_role(RuntimeOrigin::signed(signer), bounded_name, cluster_id)
 	}
 
 	pub fn add_member_(
@@ -54,7 +54,7 @@ mod create_tests {
 		member: <Test as frame_system::Config>::AccountId,
 	) -> DispatchResult {
 		ClustersPallet::add_member(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			cluster_id,
 			roles_names.iter().map(|x| BoundedVec::try_from(x.clone()).unwrap()).collect(),
 			member,
@@ -75,7 +75,7 @@ mod create_tests {
 		> = members.clone().try_into().expect("too many accounts");
 
 		ClustersPallet::add_role_members(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			bounded_name,
 			cluster_id,
 			bounded_members_list,
@@ -96,7 +96,7 @@ mod create_tests {
 		> = members.clone().try_into().expect("too many accounts");
 
 		ClustersPallet::delete_role_members(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			bounded_name,
 			cluster_id,
 			bounded_members_list,
@@ -110,7 +110,7 @@ mod create_tests {
 		settings: Vec<(Vec<u8>, Vec<u8>)>,
 	) -> DispatchResult {
 		ClustersPallet::add_role_settings(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			role_name.clone().try_into().expect("role name is too long"),
 			cluster_id,
 			BoundedVec::try_from(
@@ -142,7 +142,7 @@ mod create_tests {
 			settings.clone().try_into().expect("too many settings");
 
 		ClustersPallet::delete_role_settings(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			bounded_name,
 			cluster_id,
 			bounded_settings,

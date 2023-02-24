@@ -3,7 +3,7 @@ use crate::*;
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU128, ConstU32, ConstU64},
+	traits::{ConstU128, ConstU32, ConstU64, AsEnsureOriginWithArg},
 };
 
 use parking_lot::RwLock;
@@ -74,7 +74,7 @@ impl frame_system::Config for Test {
 	type AccountId = sp_core::ed25519::Public;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -108,7 +108,7 @@ where
 	RuntimeCall: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-		call: Call,
+		call: RuntimeCall,
 		_public: <Signature as Verify>::Signer,
 		_account: AccountId,
 		nonce: u64,
@@ -143,8 +143,11 @@ parameter_types! {
 impl pallet_assets::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
+	type RemoveItemsLimit = ConstU32<1000>;
 	type AssetId = u64;
+	type AssetIdParameter = u64;
 	type Currency = Balances;
+	type CreateOrigin = AsEnsureOriginWithArg<frame_system::EnsureSigned<AccountId>>;
 	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 	type AssetDeposit = AssetDeposit;
 	type AssetAccountDeposit = ConstU128<DOLLARS>;
@@ -155,6 +158,7 @@ impl pallet_assets::Config for Test {
 	type Freezer = ();
 	type WeightInfo = ();
 	type Extra = ();
+	type CallbackHandle = ();
 }
 
 impl pallet_accounts::EthFragContract for Test {

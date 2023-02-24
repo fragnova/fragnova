@@ -32,7 +32,7 @@ pub fn store_price_() -> DispatchResult {
 		public: sp_core::ed25519::Public([69u8; 32]),
 	};
 	Oracle::store_price(
-		Origin::none(),
+		RuntimeOrigin::none(),
 		oracle_price,
 		sp_core::ed25519::Signature([69u8; 64]), // this can be anything
 	)
@@ -179,7 +179,7 @@ mod unlink_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Unlinked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Unlinked {
 					sender: link.fragnova_account_id,
 					eth_key: link.get_ethereum_public_address_of_signer(),
 				})
@@ -467,7 +467,7 @@ mod internal_lock_update_tests {
 			let event = events.pop().expect("Expected at least one EventRecord to be found").event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Locked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Locked {
 					eth_key: lock.data.sender.clone(),
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_assets::Config>::Balance,
@@ -518,7 +518,7 @@ mod internal_lock_update_tests {
 			let event = events.pop().expect("Expected at least one EventRecord to be found").event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Locked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Locked {
 					eth_key: lock.data.sender,
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_assets::Config>::Balance,
@@ -530,7 +530,7 @@ mod internal_lock_update_tests {
 			let event = events.pop().expect("Expected at least one EventRecord to be found").event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::NOVAReserved {
+				mock::RuntimeEvent::from(pallet_accounts::Event::NOVAReserved {
 					eth_key: lock.data.sender.clone(),
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_balances::Config>::Balance,
@@ -752,7 +752,7 @@ mod internal_lock_update_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_accounts::Event::Unlocked {
+				mock::RuntimeEvent::from(pallet_accounts::Event::Unlocked {
 					eth_key: unlock.data.sender,
 					balance: SaturatedConversion::saturated_into::<
 						<Test as pallet_assets::Config>::Balance,
@@ -790,7 +790,7 @@ mod withdraw_tests {
 	use super::*;
 
 	fn withdraw_(lock: &Lock) -> DispatchResult {
-		Accounts::withdraw(Origin::signed(lock.link.fragnova_account_id))
+		Accounts::withdraw(RuntimeOrigin::signed(lock.link.fragnova_account_id))
 	}
 
 	pub fn get_initial_amounts(lock: &Lock) -> u128 {
