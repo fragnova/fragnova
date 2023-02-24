@@ -1887,7 +1887,7 @@ impl_runtime_apis! {
 	}
 
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Protos
-	impl pallet_protos::ProtosRuntimeApi<Block, AccountId> for Runtime {
+	impl pallet_protos_rpc_runtime_api::ProtosRuntimeApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 		fn get_protos(params: GetProtosParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Protos::get_protos(params)
@@ -1899,7 +1899,7 @@ impl_runtime_apis! {
 	}
 
 	/// Runtime API that allows the Outer Node to communicate with the Runtime's Pallet-Fragments
-	impl pallet_fragments::FragmentsRuntimeApi<Block, AccountId> for Runtime {
+	impl pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi<Block, AccountId> for Runtime {
 		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		fn get_definitions(params: GetDefinitionsParams<AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
 			Fragments::get_definitions(params)

@@ -280,7 +280,6 @@ pub mod pallet {
 		/// - `settings`: settings of the role (BoundedVec limited to T::RoleSettingsLimit).
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
 		#[pallet::call_index(1)]
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn create_role(
 			origin: OriginFor<T>,
@@ -502,7 +501,8 @@ pub mod pallet {
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `setting_name`: name of the setting to be edited (BoundedVec limited to T::NameLimit).
 		/// - `data`: new data for the setting ([u8; T::SettingDataLimit]).
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
+		#[pallet::call_index(5)]
 		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn change_role_setting(
 			origin: OriginFor<T>,
@@ -556,7 +556,7 @@ pub mod pallet {
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `settings`: new list of settings to be added to the existing list (BoundedVec limited to T::RoleSettingsLimit).
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		#[pallet::call_index(5)]
+		#[pallet::call_index(6)]
 		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn delete_role_settings(
 			origin: OriginFor<T>,
@@ -615,7 +615,7 @@ pub mod pallet {
 		/// - `role_name`: name of the role to delete.
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		#[pallet::call_index(6)]
+		#[pallet::call_index(7)]
 		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn delete_role(
 			origin: OriginFor<T>,
@@ -661,7 +661,7 @@ pub mod pallet {
 		/// - `roles`: list of role names to be assigned to the new member.
 		/// - `member`: AccountId of the new member.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		#[pallet::call_index(7)]
+		#[pallet::call_index(8)]
 		#[transactional] // not ideal but need to refactor `take_name_index` if we want to remove it
 		pub fn add_member(
 			origin: OriginFor<T>,
@@ -709,7 +709,7 @@ pub mod pallet {
 		/// - `cluster_id`: hash of the cluster.
 		/// - `member`: AccountId of the member to be removed.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1).ref_time())]
-		#[pallet::call_index(8)]
+		#[pallet::call_index(9)]
 		pub fn delete_member(
 			origin: OriginFor<T>,
 			cluster_id: Hash128,

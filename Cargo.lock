@@ -1997,6 +1997,8 @@ dependencies = [
  "hex",
  "jsonrpsee",
  "log",
+ "pallet-fragments-rpc",
+ "pallet-protos-rpc",
  "pallet-transaction-payment-rpc",
  "protos",
  "sc-basic-authorship",
@@ -2054,12 +2056,14 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-detach",
  "pallet-fragments",
+ "pallet-fragments-rpc-runtime-api",
  "pallet-grandpa",
  "pallet-identity",
  "pallet-indices",
  "pallet-multisig",
  "pallet-oracle",
  "pallet-protos",
+ "pallet-protos-rpc-runtime-api",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
@@ -4692,6 +4696,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-fragments-rpc"
+version = "0.0.1"
+dependencies = [
+ "jsonrpsee",
+ "pallet-fragments",
+ "pallet-fragments-rpc-runtime-api",
+ "parity-scale-codec 3.3.0",
+ "sp-api",
+ "sp-blockchain",
+ "sp-fragnova",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-fragments-rpc-runtime-api"
+version = "0.0.1"
+dependencies = [
+ "pallet-fragments",
+ "parity-scale-codec 3.3.0",
+ "scale-info",
+ "sp-api",
+ "sp-fragnova",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#2149a5b6c6d2a22d2d10e213f65a66b9b73cbffd"
@@ -4815,11 +4846,39 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "sp-api",
  "sp-core",
  "sp-fragnova",
  "sp-io",
  "sp-keystore",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-protos-rpc"
+version = "0.0.1"
+dependencies = [
+ "base64 0.21.0",
+ "jsonrpsee",
+ "pallet-protos",
+ "pallet-protos-rpc-runtime-api",
+ "parity-scale-codec 3.3.0",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-protos-rpc-runtime-api"
+version = "0.0.1"
+dependencies = [
+ "pallet-protos",
+ "parity-scale-codec 3.3.0",
+ "scale-info",
+ "sp-api",
+ "sp-fragnova",
  "sp-runtime",
  "sp-std",
 ]
