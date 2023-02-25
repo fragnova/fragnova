@@ -7,40 +7,53 @@ const connectToLocalNode = async () => {
     provider: wsProvider,
     rpc: {
       protos: {
-        getProtos: {
-          description: "Query and Return Proto-Fragment(s) based on `params`. The return type is a JSON string", type: "String",
+        getData: {
+          description: "Query and Return Proto-Fragment data based on `proto_hash`. The **return type** is base64 encoded bytes.",
+          type: "String",
           params: [
-            { name: "params", type: "GetProtosParams" },
+            { name: "proto_hash", type: "BlockHash" },
+            { name: "at", type: "BlockHash", isOptional: true }
+          ]
+        },
+        getProtos: {
+          description: "Query and Return Proto-Fragment(s) based on `params`. The return type is a JSON string",
+          type: "String",
+          params: [
+            { name: "param", type: "GetProtosParams" },
             { name: "at", type: "BlockHash", isOptional: true }
           ]
         },
         getGenealogy: {
-          description: "Query the Genealogy of a Proto-Fragment based on `params`. The return type is a JSON string that represents an Adjacency List.", type: "String",
+          description: "Query the Genealogy of a Proto-Fragment based on `params`. The return type is a JSON string that represents an Adjacency List.",
+          type: "String",
           params: [
-            { name: "params", type: "GetGenealogyParams" },
+            { name: "param", type: "GetGenealogyParams" },
             { name: "at", type: "BlockHash", isOptional: true }
           ]
         },
       },
       fragments: {
         getDefinitions: {
-          description: "Query and Return Fragment Definition(s) based on `params`", type: "String",
+          description: "Query and Return Fragment Definition(s) based on `params`",
+          type: "String",
           params: [
-            { name: "params", type: "GetDefinitionsParams" },
+            { name: "param", type: "GetDefinitionsParams" },
             { name: "at", type: "BlockHash", isOptional: true }
           ]
         },
         getInstances: {
-          description: "Query and Return Fragment Instance(s) based on `params`", type: "String",
+          description: "Query and Return Fragment Instance(s) based on `params`",
+          type: "String",
           params: [
-            { name: "params", type: "GetInstancesParams" },
+            { name: "param", type: "GetInstancesParams" },
             { name: "at", type: "BlockHash", isOptional: true }
           ]
         },
         getInstanceOwner: {
-          description: "Query the owner of a Fragment Instance. The return type is a String", type: "String",
+          description: "Query the owner of a Fragment Instance. The return type is a String",
+          type: "String",
           params: [
-            { name: "params", type: "GetInstanceOwnerParams" },
+            { name: "param", type: "GetInstanceOwnerParams" },
             { name: "at", type: "BlockHash", isOptional: true }
           ]
         },
@@ -173,10 +186,10 @@ const connectToLocalNode = async () => {
       },
       GetInstanceOwnerParams: {
         definition_hash: 'String', // "Hash128", // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
-        edition_id: "Unit",
-        copy_id: "Unit",
+        edition_id: "InstanceUnit",
+        copy_id: "InstanceUnit",
       },
-      "Unit": "u64",
+      "InstanceUnit": "u64",
 
     }
   });
