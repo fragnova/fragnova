@@ -20,7 +20,6 @@ use pallet_contracts::chain_extension::{
 	InitState,
 	RetVal,
 	SysConfig, // `frame_system::Config` is re-exported as "SysConfig" in `pallet_contracts::chain_extension` (https://paritytech.github.io/substrate/master/pallet_contracts/chain_extension/trait.SysConfig.html#)
-	UncheckedFrom,
 };
 use sp_fragnova::{
 	Hash128,
@@ -97,7 +96,7 @@ impl TryFrom<u16> for FuncId {
 impl<T> ChainExtension<T> for MyExtension
 	where
 		T: pallet_contracts::Config + pallet_protos::Config + pallet_fragments::Config,
-		<T as SysConfig>::AccountId: UncheckedFrom<<T as SysConfig>::Hash> + AsRef<[u8]>,
+		<T as SysConfig>::AccountId: AsRef<[u8]>,
 {
 
 	/// Call the chain extension logic.
@@ -122,7 +121,6 @@ impl<T> ChainExtension<T> for MyExtension
 	) -> Result<RetVal, DispatchError>
 		where
 			E: Ext<T = T>,
-			<E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
 	{
 		let func_id = FuncId::try_from(env.func_id())?;
 

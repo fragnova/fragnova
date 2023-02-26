@@ -3,7 +3,7 @@
 mod tests {
 	use crate::{
 		dummy_data::{get_root_namespace, DummyData},
-		mock::{new_test_ext, AliasesPallet, Origin, System, Test},
+		mock::{new_test_ext, AliasesPallet, RuntimeOrigin, System, Test},
 		Config, Event as AliasesEvent, LinkTarget, Namespaces, *,
 	};
 	use frame_support::{
@@ -23,7 +23,7 @@ mod tests {
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			name.clone().try_into().expect("alias name is too long");
-		AliasesPallet::create_namespace(Origin::signed(signer), bounded_name)
+		AliasesPallet::create_namespace(RuntimeOrigin::signed(signer), bounded_name)
 	}
 
 	pub fn delete_namespace_(
@@ -32,7 +32,7 @@ mod tests {
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			name.clone().try_into().expect("alias name is too long");
-		AliasesPallet::delete_namespace(Origin::signed(signer), bounded_name)
+		AliasesPallet::delete_namespace(RuntimeOrigin::signed(signer), bounded_name)
 	}
 
 	pub fn transfer_namespace_(
@@ -42,7 +42,7 @@ mod tests {
 	) -> DispatchResult {
 		let bounded_name: BoundedVec<u8, <Test as Config>::NameLimit> =
 			name.clone().try_into().expect("alias name is too long");
-		AliasesPallet::transfer_namespace(Origin::signed(signer), bounded_name, new_owner)
+		AliasesPallet::transfer_namespace(RuntimeOrigin::signed(signer), bounded_name, new_owner)
 	}
 
 	pub fn create_alias_(
@@ -58,10 +58,10 @@ mod tests {
 			alias.clone().try_into().expect("alias is too long");
 
 		if as_root {
-			AliasesPallet::create_root_alias(Origin::root(), bounded_alias, target)
+			AliasesPallet::create_root_alias(RuntimeOrigin::root(), bounded_alias, target)
 		} else {
 			AliasesPallet::create_alias(
-				Origin::signed(signer),
+				RuntimeOrigin::signed(signer),
 				bounded_namespace,
 				bounded_alias,
 				target,
@@ -81,7 +81,7 @@ mod tests {
 		let bounded_alias: BoundedVec<u8, <Test as Config>::NameLimit> =
 			alias.clone().try_into().expect("alias is too long");
 
-		let origin = if as_root { Origin::root() } else { Origin::signed(signer) };
+		let origin = if as_root { RuntimeOrigin::root() } else { RuntimeOrigin::signed(signer) };
 
 		AliasesPallet::update_alias_target(origin, bounded_namespace, bounded_alias, new_target)
 	}

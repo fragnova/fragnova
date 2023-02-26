@@ -19,6 +19,7 @@ pub use pallet_protos_rpc_runtime_api::ProtosRuntimeApi;
 
 const RUNTIME_ERROR: i32 = 1;
 
+// Note: Do not name any parameter as "params" in any of your RPC Methods, otherwise it won't compile!
 #[rpc(client, server, namespace = "protos")]
 pub trait ProtosRpc<BlockHash, AccountId> {
 	/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**.
@@ -26,7 +27,7 @@ pub trait ProtosRpc<BlockHash, AccountId> {
 	#[method(name = "getProtos")]
 	fn get_protos(
 		&self,
-		params: GetProtosParams<AccountId, String>,
+		param: GetProtosParams<AccountId, String>,
 		at: Option<BlockHash>,
 	) -> RpcResult<String>;
 
@@ -35,7 +36,7 @@ pub trait ProtosRpc<BlockHash, AccountId> {
 	#[method(name = "getGenealogy")]
 	fn get_genealogy(
 		&self,
-		params: GetGenealogyParams<String>,
+		param: GetGenealogyParams<String>,
 		at: Option<BlockHash>,
 	) -> RpcResult<String>;
 
@@ -66,14 +67,14 @@ where
 	C: Send + Sync + 'static,
 	C: ProvideRuntimeApi<Block>,
 	C: HeaderBackend<Block>,
-	C: BlockBackend<Block>,
+	C: BlockBackend<Block>, // used to call the function `BlockBackend::indexed_transaction()` in the RPC method `protos_getData`
 	C::Api: ProtosRuntimeApi<Block, AccountId>,
 	AccountId: Codec,
 {
 	/// **Query** and **Return** **Proto-Fragment(s)** based on **`params`**
 	fn get_protos(
 		&self,
-		params: GetProtosParams<AccountId, String>,
+		param: GetProtosParams<AccountId, String>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<String> {
 		let api = self.client.runtime_api();
@@ -81,20 +82,20 @@ where
 		// If the block hash is not supplied in `at`, use the best block's hash
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-		let params_no_std = GetProtosParams::<AccountId, Vec<u8>> {
-			metadata_keys: params.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
-			desc: params.desc,
-			from: params.from,
-			limit: params.limit,
-			owner: params.owner,
-			return_owners: params.return_owners,
-			categories: params.categories,
-			tags: params.tags.into_iter().map(|s| s.into_bytes()).collect(),
-			exclude_tags: params.exclude_tags.into_iter().map(|s| s.into_bytes()).collect(),
-			available: params.available,
+		let param_no_std = GetProtosParams::<AccountId, Vec<u8>> {
+			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
+			desc: param.desc,
+			from: param.from,
+			limit: param.limit,
+			owner: param.owner,
+			return_owners: param.return_owners,
+			categories: param.categories,
+			tags: param.tags.into_iter().map(|s| s.into_bytes()).collect(),
+			exclude_tags: param.exclude_tags.into_iter().map(|s| s.into_bytes()).collect(),
+			available: param.available,
 		};
 
-		let result_outer = api.get_protos(&at, params_no_std).map(|list_bytes| {
+		let result_outer = api.get_protos(&at, param_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
 		});
 		match result_outer {
@@ -108,7 +109,7 @@ where
 
 	fn get_genealogy(
 		&self,
-		params: GetGenealogyParams<String>,
+		param: GetGenealogyParams<String>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<String> {
 		let api = self.client.runtime_api();
@@ -116,12 +117,12 @@ where
 		// If the block hash is not supplied in `at`, use the best block's hash
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-		let params_no_std = GetGenealogyParams::<Vec<u8>> {
-			proto_hash: params.proto_hash.into_bytes(),
-			get_ancestors: params.get_ancestors,
+		let param_no_std = GetGenealogyParams::<Vec<u8>> {
+			proto_hash: param.proto_hash.into_bytes(),
+			get_ancestors: param.get_ancestors,
 		};
 
-		let result = api.get_genealogy(&at, params_no_std).map(|list_bytes| {
+		let result = api.get_genealogy(&at, param_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
 		});
 		match result {
@@ -138,7 +139,7 @@ where
 		proto_hash: <Block as BlockT>::Hash,
 		_at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<String> {
-		let tx = self.client.indexed_transaction(&proto_hash);
+		let tx = self.client.indexed_transaction(proto_hash);
 		match tx {
 			Ok(tx) => match tx {
 				Some(data) => {

@@ -17,7 +17,7 @@ mod upload_tests {
 		proto: &ProtoFragment,
 	) -> DispatchResult {
 		ProtosPallet::upload(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			proto.references.clone(),
 			proto.category.clone(),
 			TryInto::<BoundedVec<BoundedVec<_, _>, <Test as pallet_protos::Config>::MaxTags>>::try_into(
@@ -83,7 +83,7 @@ mod upload_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_protos::Event::Uploaded {
+				mock::RuntimeEvent::from(pallet_protos::Event::Uploaded {
 					proto_hash: proto.get_proto_hash(),
 				})
 			);
@@ -106,7 +106,7 @@ mod patch_tests {
 
 	fn patch_(signer: <Test as frame_system::Config>::AccountId, patch: &Patch) -> DispatchResult {
 		ProtosPallet::patch(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			patch.proto_fragment.clone().get_proto_hash(),
 			Some(UsageLicense::Open),
 			patch.new_references.clone(),
@@ -142,7 +142,7 @@ mod patch_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_protos::Event::Patched {
+				mock::RuntimeEvent::from(pallet_protos::Event::Patched {
 					proto_hash: patch.proto_fragment.get_proto_hash(),
 				})
 			);
@@ -186,7 +186,7 @@ mod transfer_tests {
 		proto: &ProtoFragment,
 		new_owner: <Test as frame_system::Config>::AccountId,
 	) -> DispatchResult {
-		ProtosPallet::transfer(Origin::signed(signer), proto.get_proto_hash(), new_owner)
+		ProtosPallet::transfer(RuntimeOrigin::signed(signer), proto.get_proto_hash(), new_owner)
 	}
 
 	#[test]
@@ -221,7 +221,7 @@ mod transfer_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_protos::Event::Transferred {
+				mock::RuntimeEvent::from(pallet_protos::Event::Transferred {
 					proto_hash: proto.get_proto_hash(),
 					owner_id: dd.account_id_second
 				})
@@ -274,7 +274,7 @@ mod set_metadata_tests {
 		metadata: &Metadata,
 	) -> DispatchResult {
 		ProtosPallet::set_metadata(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			metadata.proto_fragment.get_proto_hash(),
 			metadata.metadata_key.clone().try_into().unwrap(),
 			metadata.data.clone(),
@@ -310,7 +310,7 @@ mod set_metadata_tests {
 				.event;
 			assert_eq!(
 				event,
-				mock::Event::from(pallet_protos::Event::MetadataChanged {
+				mock::RuntimeEvent::from(pallet_protos::Event::MetadataChanged {
 					proto_hash: metadata.proto_fragment.get_proto_hash(),
 					metadata_key: metadata.metadata_key.clone()
 				})
@@ -356,7 +356,7 @@ mod detach_tests {
 		detach: &Detach,
 	) -> DispatchResult {
 		ProtosPallet::detach(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			detach
 				.proto_fragments
 				.iter()
@@ -1259,7 +1259,7 @@ mod ban_tests {
 	use super::*;
 
 	pub fn ban(proto: &ProtoFragment) -> DispatchResult {
-		ProtosPallet::ban(Origin::root(), proto.get_proto_hash())
+		ProtosPallet::ban(RuntimeOrigin::root(), proto.get_proto_hash())
 	}
 
 	#[test]
@@ -1294,7 +1294,7 @@ mod ban_tests {
 			let proto = dd.proto_fragment;
 			assert_ok!(upload(dd.account_id, &proto));
 			assert_noop!(
-				ProtosPallet::ban(Origin::signed(dd.account_id), proto.get_proto_hash()),
+				ProtosPallet::ban(RuntimeOrigin::signed(dd.account_id), proto.get_proto_hash()),
 				sp_runtime::DispatchError::BadOrigin
 			);
 		});

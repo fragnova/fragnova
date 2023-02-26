@@ -1,7 +1,7 @@
 const assert = require("chai").assert;
 const index = require("../index");
 const { Keyring } = require('@polkadot/keyring');
-const {blake2AsU8a} = require('@polkadot/util-crypto')
+const {blake2AsU8a} = require('@polkadot/util-crypto');
 const fs = require('fs').promises;
 
 let api;
@@ -219,6 +219,40 @@ describe("RPCs", () => {
       const params = api.createType("GetInstanceOwnerParams", {definition_hash: definitionHash, edition_id: 1, copy_id: 1});
       const result = await api.rpc.fragments.getInstanceOwner(params);
       assert.equal(result, protoOwner);
+    });
+  });
+
+  describe("protos.getData()", () => {
+
+    it("should work", async function () {
+
+      this.timeout(200_000);
+
+      const data = "Proto-Austronesian";
+      const protoHash = blake2AsU8a(data);
+
+      const keyring = new Keyring({type: 'sr25519'});
+      keyring.setSS58Format(93);
+      const alice = keyring.addFromUri('//Alice');
+
+      await new Promise((resolve) => {
+        api.tx.protos.upload(
+          [],
+          {text: 'plain'},
+          [],
+          null,
+          "Closed",
+          null,
+          {local: data},
+        ).signAndSend(alice, (result) => {
+          if (result.status.isFinalized) {
+            resolve();
+          }
+        });
+      });
+
+      const result = await api.rpc.protos.getData(protoHash);
+      assert.equal(btoa(data), result.toHuman()); // `btoa()` encodes binary data to base64 encoding
     });
   });
 

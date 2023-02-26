@@ -233,7 +233,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_protos::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_fragments.
 		type WeightInfo: WeightInfo;
 	}
@@ -525,6 +525,7 @@ pub mod pallet {
 		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)**
 		/// that **can be created** using the **Fragment Definition**
 		#[pallet::weight(<T as Config>::WeightInfo::create(metadata.name.len() as u32))]
+		#[pallet::call_index(0)]
 		pub fn create(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
@@ -634,6 +635,7 @@ pub mod pallet {
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition's Struct Instance
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(1)]
 		pub fn set_definition_metadata(
 			origin: OriginFor<T>,
 			// fragment hash we want to update
@@ -724,6 +726,7 @@ pub mod pallet {
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Fragment Instance's Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Fragment Instance's Struct Instance
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(2)]
 		pub fn set_instance_metadata(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -837,6 +840,7 @@ pub mod pallet {
 		/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// the **number of items** to **top up** in the **stack of stackable items**
 		#[pallet::weight(<T as Config>::WeightInfo::publish())]
+		#[pallet::call_index(3)]
 		pub fn publish(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -915,6 +919,7 @@ pub mod pallet {
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `definition_hash` - **ID** of the **Fragment Definition** to take off sale
 		#[pallet::weight(<T as Config>::WeightInfo::unpublish())]
+		#[pallet::call_index(4)]
 		pub fn unpublish(origin: OriginFor<T>, definition_hash: Hash128) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -972,6 +977,7 @@ pub mod pallet {
 		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::mint_definition_that_has_non_unique_capability(*q as u32),
 		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::mint_definition_that_has_unique_capability(d.len() as u32)
 		})]
+		#[pallet::call_index(5)]
 		pub fn mint(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1045,6 +1051,7 @@ pub mod pallet {
 		FragmentBuyOptions::Quantity(q) => <T as Config>::WeightInfo::buy_definition_that_has_non_unique_capability(*q as u32),
 		FragmentBuyOptions::UniqueData(d) => <T as Config>::WeightInfo::buy_definition_that_has_unique_capability(d.len() as u32)
 		})]
+		#[pallet::call_index(6)]
 		pub fn buy(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1118,6 +1125,7 @@ pub mod pallet {
 		<T as Config>::WeightInfo::benchmark_give_instance_that_has_copy_perms()
 		.max(<T as Config>::WeightInfo::benchmark_give_instance_that_does_not_have_copy_perms())
 		)] // Since both weight functions return a static value, we should not be doing a `max()` and just manually choose the one with a greater weight!
+		#[pallet::call_index(7)]
 		pub fn give(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1164,6 +1172,7 @@ pub mod pallet {
 		/// * `edition` - **Edition ID** of the **Fragment Instance**
 		/// * `copy` - **Copy ID** of the **Fragment Instance**
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(8)]
 		pub fn create_account(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1210,6 +1219,7 @@ pub mod pallet {
 		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is practically irrelevant.
 		/// * `secondary_sale_type` - Type of Sale
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(9)]
 		pub fn resell(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1263,6 +1273,7 @@ pub mod pallet {
 		/// * `edition` - Edition ID of the Fragment Instance
 		/// * `copy` - Copy ID of the Fragment instance
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(10)]
 		pub fn end_resale(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1300,6 +1311,7 @@ pub mod pallet {
 		/// * `copy` - Copy ID of the Fragment instance
 		/// * `options` - Enum indicating how to buy the instance
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(11)]
 		pub fn secondary_buy(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1363,6 +1375,7 @@ pub mod pallet {
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
 		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::call_index(12)]
 		pub fn detach(
 			origin: OriginFor<T>,
 			definition_hash: Hash128,
@@ -1701,14 +1714,12 @@ pub mod pallet {
 					.map_err(|_| Error::<T>::InsufficientBalance)?;
 				},
 				Currency::Native => {
-					pallet_balances::Pallet::<T>::do_transfer(
-						// transfer `amount` units of NOVA from `from` to `to`
+					<pallet_balances::Pallet<T> as frame_support::traits::Currency<T::AccountId>>::transfer(
 						from,
 						to,
 						amount.saturated_into(),
-						ExistenceRequirement::KeepAlive,
-					)
-					.map_err(|_| Error::<T>::InsufficientBalance)?;
+						ExistenceRequirement::KeepAlive
+					).map_err(|_| Error::<T>::InsufficientBalance)?;
 				},
 			}
 

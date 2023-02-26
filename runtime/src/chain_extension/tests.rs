@@ -24,10 +24,12 @@ use protos::{
 	permissions::FragmentPerms,
 };
 
+use pallet_contracts::Determinism;
+
 pub const ALICE: sp_core::ed25519::Public = sp_core::ed25519::Public([1u8; 32]);
 pub const BOB: sp_core::ed25519::Public = sp_core::ed25519::Public([2u8; 32]);
-/// Copied from https://github.com/fragcolor-xyz/substrate/blob/fragnova-v0.0.6/frame/contracts/src/tests.rs#L387
-pub const GAS_LIMIT: Weight = 100_000_000_000;
+/// Copied from https://github.com/fragcolor-xyz/substrate/blob/fragnova-v0.9.37/frame/contracts/src/tests.rs#L421
+pub const GAS_LIMIT: Weight = Weight::from_ref_time(100_000_000_000).set_proof_size(256 * 1024);
 
 fn upload_dummy_contract(signer: <Test as frame_system::Config>::AccountId) -> <<Test as frame_system::Config>::Hashing as Hash>::Output {
 
@@ -38,7 +40,7 @@ fn upload_dummy_contract(signer: <Test as frame_system::Config>::AccountId) -> <
 	let code_hash = <Test as frame_system::Config>::Hashing::hash(&wasm_binary);
 	assert_ok!(
 		Contracts::instantiate_with_code(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			0, // The balance to transfer from the `origin` to the newly created contract.
 			GAS_LIMIT, // The gas limit enforced when executing the constructor.
 			None, // The maximum amount of balance that can be charged/reserved from the caller to pay for the storage consumed.
@@ -91,7 +93,7 @@ mod protos_tests {
 
 	pub fn upload(signer: <Test as frame_system::Config>::AccountId, proto_data: &Vec<u8>) -> DispatchResult {
 		Protos::upload(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			Vec::<Hash256>::new(), // references
 			Categories::Text(TextCategories::Plain), // category
 			Vec::<BoundedVec<u8, _>>::new().try_into().unwrap(), // tags
@@ -107,7 +109,7 @@ mod protos_tests {
 		new_test_ext().execute_with(|| {
 
 			let code_hash = upload_dummy_contract(ALICE);
-			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &[]);
+			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &blake2_256(b"new")[0..4], &[]);
 
 			let proto_data = b"Je suis Data".to_vec();
 			assert_ok!(upload(ALICE, &proto_data));
@@ -120,14 +122,15 @@ mod protos_tests {
 				GAS_LIMIT, // The gas limit enforced when executing the constructor.
 				None, // The maximum amount of balance that can be charged from the caller to pay for the storage consumed.
 				vec![&blake2_256(b"get_proto")[0..4], &proto_hash.encode()[..]].concat(), // The input data to pass to the contract.
-				false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				false, // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				Determinism::Deterministic // The execution should be deterministic and hence no indeterministic instructions are allowed.
 			);
 
 			println!("the contract result is: {:?}", contract_result);
 
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
-				contract_result.result.unwrap().data.0,
+				contract_result.result.unwrap().data,
 				Some(pallet_protos::Protos::<Test>::get(&proto_hash).unwrap()).encode()
 			);
 
@@ -139,7 +142,7 @@ mod protos_tests {
 		new_test_ext().execute_with(|| {
 
 			let code_hash = upload_dummy_contract(ALICE);
-			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &[]);
+			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &blake2_256(b"new")[0..4], &[]);
 
 			let proto_data = b"Je suis Data".to_vec();
 			assert_ok!(upload(ALICE, &proto_data));
@@ -156,12 +159,13 @@ mod protos_tests {
 				GAS_LIMIT, // The gas limit enforced when executing the constructor.
 				None, // The maximum amount of balance that can be charged from the caller to pay for the storage consumed.
 				vec![&blake2_256(b"get_proto_ids")[0..4], &ALICE.encode()[..]].concat(), // The input data to pass to the contract.
-				false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				false, // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				Determinism::Deterministic // The execution should be deterministic and hence no indeterministic instructions are allowed.
 			);
 
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
-				contract_result.result.unwrap().data.0,
+				contract_result.result.unwrap().data,
 				vec![proto_hash, proto_hash_second].encode()
 			);
 
@@ -174,7 +178,7 @@ mod fragments_tests {
 
 	fn create(signer: <Test as frame_system::Config>::AccountId, proto_hash: &Hash256, definition_name: &Vec<u8>) -> DispatchResult {
 		Fragments::create(
-			Origin::signed(signer),
+			RuntimeOrigin::signed(signer),
 			proto_hash.clone(),
 			pallet_fragments::DefinitionMetadata::<BoundedVec<u8, _>, _> {
 				name: definition_name.clone().try_into().unwrap(),
@@ -191,7 +195,7 @@ mod fragments_tests {
 		new_test_ext().execute_with(|| {
 
 			let code_hash = upload_dummy_contract(ALICE);
-			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &[]);
+			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &blake2_256(b"new")[0..4], &[]);
 
 			let proto_data = b"Je suis Data".to_vec();
 			assert_ok!(upload(ALICE, &proto_data));
@@ -208,12 +212,13 @@ mod fragments_tests {
 				GAS_LIMIT, // The gas limit enforced when executing the constructor.
 				None, // The maximum amount of balance that can be charged from the caller to pay for the storage consumed.
 				vec![&blake2_256(b"get_definition")[0..4], &definition_hash.encode()[..]].concat(), // The input data to pass to the contract.
-				false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				false, // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				Determinism::Deterministic // The execution should be deterministic and hence no indeterministic instructions are allowed.
 			);
 
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
-				contract_result.result.unwrap().data.0,
+				contract_result.result.unwrap().data,
 				Some(pallet_fragments::Definitions::<Test>::get(&definition_hash).unwrap()).encode()
 			);
 
@@ -225,7 +230,7 @@ mod fragments_tests {
 		new_test_ext().execute_with(|| {
 
 			let code_hash = upload_dummy_contract(ALICE);
-			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &[]);
+			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &blake2_256(b"new")[0..4], &[]);
 
 			let proto_data = b"Je suis Data".to_vec();
 			assert_ok!(upload(ALICE, &proto_data));
@@ -237,7 +242,7 @@ mod fragments_tests {
 
 			assert_ok!(
 				Fragments::mint(
-					Origin::signed(ALICE),
+					RuntimeOrigin::signed(ALICE),
 					definition_hash,
 					pallet_fragments::FragmentBuyOptions::Quantity(1),
 					None,
@@ -251,12 +256,13 @@ mod fragments_tests {
 				GAS_LIMIT, // The gas limit enforced when executing the constructor.
 				None, // The maximum amount of balance that can be charged from the caller to pay for the storage consumed.
 				vec![&blake2_256(b"get_instance")[0..4], &(definition_hash, 1u64, 1u64).encode()[..]].concat(), // The input data to pass to the contract.
-				false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				false, // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				Determinism::Deterministic // The execution should be deterministic and hence no indeterministic instructions are allowed.
 			);
 
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
-				contract_result.result.unwrap().data.0,
+				contract_result.result.unwrap().data,
 				Some(pallet_fragments::Fragments::<Test>::get(&(definition_hash, 1, 1)).unwrap()).encode()
 			);
 
@@ -268,7 +274,7 @@ mod fragments_tests {
 		new_test_ext().execute_with(|| {
 
 			let code_hash = upload_dummy_contract(ALICE);
-			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &[]);
+			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &blake2_256(b"new")[0..4], &[]);
 
 			let proto_data = b"Je suis Data".to_vec();
 			assert_ok!(upload(ALICE, &proto_data));
@@ -280,7 +286,7 @@ mod fragments_tests {
 
 			assert_ok!(
 				Fragments::mint(
-					Origin::signed(ALICE),
+					RuntimeOrigin::signed(ALICE),
 					definition_hash,
 					pallet_fragments::FragmentBuyOptions::Quantity(10),
 					None,
@@ -294,12 +300,13 @@ mod fragments_tests {
 				GAS_LIMIT, // The gas limit enforced when executing the constructor.
 				None, // The maximum amount of balance that can be charged from the caller to pay for the storage consumed.
 				vec![&blake2_256(b"get_instance_ids")[0..4], &(definition_hash, ALICE).encode()[..]].concat(), // The input data to pass to the contract.
-				false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				false, // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				Determinism::Deterministic // The execution should be deterministic and hence no indeterministic instructions are allowed.
 			);
 
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
-				contract_result.result.unwrap().data.0,
+				contract_result.result.unwrap().data,
 				pallet_fragments::Inventory::<Test>::get(ALICE, definition_hash).unwrap().encode()
 			);
 
@@ -311,7 +318,7 @@ mod fragments_tests {
 		new_test_ext().execute_with(|| {
 
 			let code_hash = upload_dummy_contract(ALICE);
-			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &[]);
+			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &blake2_256(b"new")[0..4], &[]);
 
 			let proto_data = b"Je suis Data".to_vec();
 			assert_ok!(upload(ALICE, &proto_data));
@@ -323,7 +330,7 @@ mod fragments_tests {
 
 			assert_ok!(
 				Fragments::mint(
-					Origin::signed(ALICE),
+					RuntimeOrigin::signed(ALICE),
 					definition_hash,
 					pallet_fragments::FragmentBuyOptions::Quantity(1),
 					None,
@@ -331,7 +338,7 @@ mod fragments_tests {
 			);
 			assert_ok!(
 				Fragments::give(
-					Origin::signed(ALICE),
+					RuntimeOrigin::signed(ALICE),
 					definition_hash, // definition_hash
 					1, // edition_id
 					1, // copy_id
@@ -348,12 +355,13 @@ mod fragments_tests {
 				GAS_LIMIT, // The gas limit enforced when executing the constructor.
 				None, // The maximum amount of balance that can be charged from the caller to pay for the storage consumed.
 				vec![&blake2_256(b"give_instance")[0..4], &(definition_hash, 1u64, 1u64, BOB, None::<Option<FragmentPerms>>, None::<Option<<Test as frame_system::Config>::BlockNumber>>).encode()[..]].concat(), // The input data to pass to the contract.
-				false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				false, // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				Determinism::Deterministic // The execution should be deterministic and hence no indeterministic instructions are allowed.
 			);
 
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			// assert_eq!(
-			// 	contract_result.result.unwrap().data.0,
+			// 	contract_result.result.unwrap().data,
 			// 	().encode()
 			// );
 
@@ -370,7 +378,7 @@ mod fragments_tests {
 		new_test_ext().execute_with(|| {
 
 			let code_hash = upload_dummy_contract(ALICE);
-			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &[]);
+			let contract_address = Contracts::contract_address(&ALICE, &code_hash, &blake2_256(b"new")[0..4], &[]);
 
 			let proto_data = b"Je suis Data".to_vec();
 			assert_ok!(upload(ALICE, &proto_data));
@@ -382,7 +390,7 @@ mod fragments_tests {
 
 			assert_ok!(
 				Fragments::mint(
-					Origin::signed(ALICE),
+					RuntimeOrigin::signed(ALICE),
 					definition_hash,
 					pallet_fragments::FragmentBuyOptions::Quantity(1),
 					None,
@@ -396,7 +404,8 @@ mod fragments_tests {
 				GAS_LIMIT, // The gas limit enforced when executing the constructor.
 				None, // The maximum amount of balance that can be charged from the caller to pay for the storage consumed.
 				vec![&blake2_256(b"give_instance")[0..4], &(definition_hash, 1u64, 1u64, BOB, None::<Option<FragmentPerms>>, None::<Option<<Test as frame_system::Config>::BlockNumber>>).encode()[..]].concat(), // The input data to pass to the contract.
-				false // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				false, // `debug` should only ever be set to true when executing as an RPC because it adds allocations and could be abused to drive the runtime into an OOM panic.
+				Determinism::Deterministic // The execution should be deterministic and hence no indeterministic instructions are allowed.
 			);
 
 			// assert_eq!(contract_result.result.as_ref(), sp_runtime::DispatchError::Module(pallet_fragments::Error::NoPermission.into()));

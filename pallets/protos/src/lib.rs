@@ -115,6 +115,7 @@ pub mod pallet {
 	use super::*;
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
+	use pallet_contracts::Determinism;
 	use pallet_detach::{
 		DetachCollection, DetachHash, DetachRequest, DetachRequests, DetachedHashes,
 		SupportedChains,
@@ -132,7 +133,7 @@ pub mod pallet {
 		+ pallet_clusters::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_protos.
 		type WeightInfo: WeightInfo;
 		/// The **maximum length** of a **metadata key** or a **proto-fragment's tag** or a **fragment definition's name** that is **stored on-chain**.
@@ -274,6 +275,7 @@ pub mod pallet {
 		/// * `cluster` - the **Cluster id** the proto belongs to (Optional)
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::upload(references.len() as u32, tags.len() as u32, data.encode().len() as u32))]
+		#[pallet::call_index(0)]
 		pub fn upload(
 			origin: OriginFor<T>,
 			// we store this in the state as well
@@ -442,6 +444,7 @@ pub mod pallet {
 		/// * `data` - **Data** of the **Proto-Fragment**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::patch(new_references.len() as u32,
 		tags.as_ref().map(|tags| tags.len() as u32).unwrap_or_default(), data.encode().len() as u32))]
+		#[pallet::call_index(1)]
 		pub fn patch(
 			origin: OriginFor<T>,
 			// proto hash we want to patch
@@ -592,6 +595,7 @@ pub mod pallet {
 		/// * `proto_hash` - The **hash of the data of the Proto-Fragment** to **transfer**
 		/// * `new_owner` - The **Account ID** to **transfer the Proto-Fragment to**
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::transfer())]
+		#[pallet::call_index(2)]
 		pub fn transfer(
 			origin: OriginFor<T>,
 			proto_hash: Hash256,
@@ -663,6 +667,7 @@ pub mod pallet {
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added
 		///   in the BTreeMap field `metadata` of the existing Proto-Fragment's Struct Instance
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::set_metadata(metadata_key.len() as u32, data.len() as u32))]
+		#[pallet::call_index(3)]
 		pub fn set_metadata(
 			origin: OriginFor<T>,
 			// proto hash we want to update
@@ -752,6 +757,7 @@ pub mod pallet {
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
 		#[pallet::weight(<T as pallet::Config>::WeightInfo::detach())]
+		#[pallet::call_index(4)]
 		pub fn detach(
 			origin: OriginFor<T>,
 			proto_hashes: Vec<Hash256>,
@@ -798,6 +804,7 @@ pub mod pallet {
 
 		/// Delete Proto-Fragment `proto_hash` from all relevant Storage Items
 		#[pallet::weight(50_000)]
+		#[pallet::call_index(5)]
 		pub fn ban(origin: OriginFor<T>, proto_hash: Hash256) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -850,10 +857,11 @@ pub mod pallet {
 									who.clone(),
 									contract_address,
 									0u32.saturated_into(),
-									1_000_000, // TODO determine this limit better should not be too high indeed
+									Weight::from_ref_time(1_000_000), // TODO determine this limit better should not be too high indeed
 									None,
 									data,
 									false,
+									Determinism::Deterministic,
 								)
 								.result
 								.map_err(|e| {

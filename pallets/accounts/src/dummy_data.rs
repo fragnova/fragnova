@@ -8,7 +8,6 @@ use sp_core::{
 	keccak_256,
 	Pair,
 	H160, // size of an Ethereum Account Address
-	U256,
 };
 
 #[cfg(test)]

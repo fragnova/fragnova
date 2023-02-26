@@ -2,12 +2,11 @@
 
 use crate as pallet_clusters;
 use crate::*;
-
-use frame_system;
 use frame_support::{
 	parameter_types,
 	traits::{ConstU128, ConstU32, ConstU64},
 };
+use frame_system;
 use sp_core::H256;
 use sp_runtime::{
 	testing::Header,
@@ -26,11 +25,10 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system,
+		ClustersPallet: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Proxy: pallet_proxy::{Pallet, Call, Storage, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-
-		ClustersPallet: pallet_clusters::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -44,8 +42,8 @@ impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
-	type Origin = Origin;
-	type Call = Call;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeCall = RuntimeCall;
 	type Index = u64;
 	type BlockNumber = u64;
 	type Hash = H256;
@@ -53,7 +51,7 @@ impl frame_system::Config for Test {
 	type AccountId = sp_core::ed25519::Public;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU64<250>;
 	type DbWeight = ();
 	type Version = ();
@@ -70,7 +68,7 @@ impl frame_system::Config for Test {
 impl pallet_balances::Config for Test {
 	type Balance = Balance;
 	type DustRemoval = ();
-	type Event = Event;
+	type RuntimeEvent = RuntimeEvent;
 	/// The minimum amount required to keep an account open.
 	type ExistentialDeposit = ConstU128<500>;
 	type AccountStore = System;
@@ -82,8 +80,8 @@ impl pallet_balances::Config for Test {
 }
 
 impl pallet_proxy::Config for Test {
-	type Event = Event;
-	type Call = Call;
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
 	type ProxyType = ();
 	type ProxyDepositBase = ConstU128<1>;
@@ -104,8 +102,8 @@ impl pallet_timestamp::Config for Test {
 	type WeightInfo = ();
 }
 
-impl Config for Test {
-	type Event = Event;
+impl pallet_clusters::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
 	type NameLimit = ConstU32<35>;
 	type DataLimit = ConstU32<25>;
 	type MembersLimit = ConstU32<25>;

@@ -19,27 +19,29 @@ const RUNTIME_ERROR: i32 = 1;
 
 // Generate both server and client implementations, prepend all the methods with `fragments_` prefix.
 // Read more: https://docs.rs/jsonrpsee-proc-macros/0.15.1/jsonrpsee_proc_macros/attr.rpc.html
+//
+// Note: Do not name any parameter as `params` in any of your RPC Methods, otherwise it won't compile!
 #[rpc(client, server, namespace = "fragments")]
 pub trait FragmentsRpc<BlockHash, AccountId> {
 	/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 	#[method(name = "getDefinitions")]
 	fn get_definitions(
 		&self,
-		params: GetDefinitionsParams<AccountId, String>,
+		param: GetDefinitionsParams<AccountId, String>,
 		at: Option<BlockHash>,
 	) -> RpcResult<String>;
 	/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
 	#[method(name = "getInstances")]
 	fn get_instances(
 		&self,
-		params: GetInstancesParams<AccountId, String>,
+		param: GetInstancesParams<AccountId, String>,
 		at: Option<BlockHash>,
 	) -> RpcResult<String>;
 	/// Query the owner of a Fragment Instance. The return type is a String
 	#[method(name = "getInstanceOwner")]
 	fn get_instance_owner(
 		&self,
-		params: GetInstanceOwnerParams<String>,
+		param: GetInstanceOwnerParams<String>,
 		at: Option<BlockHash>,
 	) -> RpcResult<String>;
 }
@@ -48,9 +50,9 @@ pub trait FragmentsRpc<BlockHash, AccountId> {
 // It can have fields, if required, as long as it's still `Send + Sync + 'static`.
 // Read More: https://docs.rs/jsonrpsee-proc-macros/0.15.1/jsonrpsee_proc_macros/attr.rpc.html
 /// A struct that implements all the RPC functions related to Pallet Fragments (since it implements the trait `FragmentsRpc`)
-pub struct FragmentsRpcServerImpl<C, M> {
+pub struct FragmentsRpcServerImpl<C, P> {
 	client: Arc<C>,
-	_marker: std::marker::PhantomData<M>,
+	_marker: std::marker::PhantomData<P>,
 }
 
 impl<C, P> FragmentsRpcServerImpl<C, P> {
@@ -75,7 +77,7 @@ where
 	/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 	fn get_definitions(
 		&self,
-		params: GetDefinitionsParams<AccountId, String>,
+		param: GetDefinitionsParams<AccountId, String>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<String> {
 		let api = self.client.runtime_api();
@@ -83,17 +85,17 @@ where
 		// If the block hash is not supplied in `at`, use the best block's hash
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-		let params_no_std = GetDefinitionsParams::<AccountId, Vec<u8>> {
-			metadata_keys: params.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
-			desc: params.desc,
-			from: params.from,
-			limit: params.limit,
-			owner: params.owner,
-			return_owners: params.return_owners,
+		let param_no_std = GetDefinitionsParams::<AccountId, Vec<u8>> {
+			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
+			desc: param.desc,
+			from: param.from,
+			limit: param.limit,
+			owner: param.owner,
+			return_owners: param.return_owners,
 		};
 
 		let result_outer = api
-			.get_definitions(&at, params_no_std)
+			.get_definitions(&at, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
@@ -107,7 +109,7 @@ where
 	/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
 	fn get_instances(
 		&self,
-		params: GetInstancesParams<AccountId, String>,
+		param: GetInstancesParams<AccountId, String>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<String> {
 		let api = self.client.runtime_api();
@@ -115,18 +117,18 @@ where
 		// If the block hash is not supplied in `at`, use the best block's hash
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-		let params_no_std = GetInstancesParams::<AccountId, Vec<u8>> {
-			metadata_keys: params.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
-			desc: params.desc,
-			from: params.from,
-			limit: params.limit,
-			definition_hash: params.definition_hash.into_bytes(),
-			owner: params.owner,
-			only_return_first_copies: params.only_return_first_copies,
+		let param_no_std = GetInstancesParams::<AccountId, Vec<u8>> {
+			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
+			desc: param.desc,
+			from: param.from,
+			limit: param.limit,
+			definition_hash: param.definition_hash.into_bytes(),
+			owner: param.owner,
+			only_return_first_copies: param.only_return_first_copies,
 		};
 
 		let result_outer = api
-			.get_instances(&at, params_no_std)
+			.get_instances(&at, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
@@ -140,7 +142,7 @@ where
 	/// Query the owner of a Fragment Instance. The return type is a String
 	fn get_instance_owner(
 		&self,
-		params: GetInstanceOwnerParams<String>,
+		param: GetInstanceOwnerParams<String>,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<String> {
 		let api = self.client.runtime_api();
@@ -148,14 +150,14 @@ where
 		// If the block hash is not supplied in `at`, use the best block's hash
 		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
 
-		let params_no_std = GetInstanceOwnerParams::<Vec<u8>> {
-			definition_hash: params.definition_hash.into_bytes(),
-			edition_id: params.edition_id,
-			copy_id: params.copy_id,
+		let param_no_std = GetInstanceOwnerParams::<Vec<u8>> {
+			definition_hash: param.definition_hash.into_bytes(),
+			edition_id: param.edition_id,
+			copy_id: param.copy_id,
 		};
 
 		let result_outer = api
-			.get_instance_owner(&at, params_no_std)
+			.get_instance_owner(&at, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 
 		match result_outer {

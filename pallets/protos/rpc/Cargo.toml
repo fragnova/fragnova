@@ -11,27 +11,18 @@ version = '0.0.1'
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-sp-runtime = { version = '6.0.0', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-api = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-rpc = { version = '6.0.0', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-blockchain = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sc-client-api = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+sp-runtime = { version = '7.0.0', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-api = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-rpc = { version = '6.0.0', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-blockchain = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sc-client-api = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 
 pallet-protos = { version = '0.0.1', default-features = false, path = '..' }
 
-codec = { package = "parity-scale-codec", version = "3" }
+codec = { package = "parity-scale-codec", version = '3.0.0' }
 
 base64 = "0.21"
 
 pallet-protos-rpc-runtime-api = { version = '0.0.1', path = '../rpc/runtime-api' }
 
-jsonrpsee = { version = "0.15.1", features = ["server", "macros"] }
-serde = { version = "1", features = ["derive"] }
-sp-fragnova = { version = '0.1.0', path = '../../../primitives/fragnova', default-features = false }
-hex = "^0.4.3"
-protos = { version = "0.1.26", default-features = false }
-
-
-
-[dev-dependencies]
-serde_json = "1"
+jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }

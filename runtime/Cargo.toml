@@ -13,37 +13,37 @@ repository = 'https://github.com/substrate-developer-hub/substrate-node-template
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-sp-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-block-builder = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-consensus-aura = { version = '0.10.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-core = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-inherents = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-offchain = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-runtime = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-session = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-std = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-transaction-pool = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-sp-version = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+sp-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-block-builder = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-consensus-aura = { version = '0.10.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-core = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-inherents = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-offchain = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-runtime = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-session = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-std = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-transaction-pool = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-version = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-fragnova = { version = '0.1.0', path = '../primitives/fragnova', default-features = false }
 
-frame-executive = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-frame-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-frame-system = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-assets = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-aura = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-balances = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-grandpa = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-randomness-collective-flip = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-sudo = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-timestamp = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-transaction-payment = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-indices = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-contracts = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-contracts-primitives = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-multisig = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-proxy = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-identity = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-utility = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+frame-executive = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+frame-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+frame-system = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-assets = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-aura = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-balances = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-grandpa = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-randomness-collective-flip = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-sudo = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-timestamp = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-transaction-payment = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-indices = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-contracts = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-contracts-primitives = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-multisig = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-proxy = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-identity = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-utility = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 pallet-protos = { version = '0.0.1', default-features = false, path = '../pallets/protos' }
 pallet-fragments = { version = '0.0.1', default-features = false, path = '../pallets/fragments' }
 pallet-accounts = { version = '0.0.1', default-features = false, path = '../pallets/accounts' }
@@ -53,18 +53,17 @@ pallet-clusters = { version = '0.0.1', default-features = false, path = '../pall
 pallet-aliases = { version = '0.0.1', default-features = false, path = '../pallets/aliases' }
 
 # Used for the RPCs
-frame-system-rpc-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-contracts-rpc-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-pallet-transaction-payment-rpc-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+frame-system-rpc-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+pallet-transaction-payment-rpc-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 pallet-protos-rpc-runtime-api = { version = '0.0.1', default-features = false, path = '../pallets/protos/rpc/runtime-api' }
 pallet-fragments-rpc-runtime-api = { version = '0.0.1', default-features = false, path = '../pallets/fragments/rpc/runtime-api' }
 
 # Used for runtime benchmarking
-frame-benchmarking = { version = '4.0.0-dev', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
-frame-system-benchmarking = { version = '4.0.0-dev', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+frame-benchmarking = { version = '4.0.0-dev', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+frame-system-benchmarking = { version = '4.0.0-dev', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 
 codec = { package = 'parity-scale-codec', version = '3.0.0', default-features = false, features = ['derive'] }
-scale-info = { version = '2.0', default-features = false, features = ['derive'] }
+scale-info = { version = '2.1.2', default-features = false, features = ['derive'] }
 
 hex-literal = { version = '0.3.1', optional = true }
 log = { version = "0.4.14", default-features = false }
@@ -87,33 +86,35 @@ infer = { version = "0.11.0", default-features=false }
 
 [dev-dependencies]
 # `sp-io` is used when testing the `chain_extension` module
-sp-io = { version = '6.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+sp-io = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 
 [build-dependencies]
-substrate-wasm-builder = { version = '5.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.0.6' }
+substrate-wasm-builder = { version = '5.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 
 [features]
 default = ['std']
 runtime-benchmarks = [
+	'sp-runtime/runtime-benchmarks',
     'frame-benchmarking',
     'frame-support/runtime-benchmarks',
     'frame-system-benchmarking',
     'frame-system/runtime-benchmarks',
     'hex-literal',
+	'pallet-balances/runtime-benchmarks',
     'pallet-assets/runtime-benchmarks',
-    'pallet-balances/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
-    'sp-runtime/runtime-benchmarks',
+	'pallet-multisig/runtime-benchmarks',
+	'pallet-proxy/runtime-benchmarks',
+	'pallet-identity/runtime-benchmarks',
+	'pallet-utility/runtime-benchmarks',
+	'pallet-contracts/runtime-benchmarks',
     'pallet-protos/runtime-benchmarks',
     'pallet-fragments/runtime-benchmarks',
     'pallet-detach/runtime-benchmarks',
 	'pallet-accounts/runtime-benchmarks',
 	'pallet-clusters/runtime-benchmarks',
 	'pallet-aliases/runtime-benchmarks',
-    'pallet-multisig/runtime-benchmarks',
-    'pallet-proxy/runtime-benchmarks',
-    'pallet-identity/runtime-benchmarks',
-    'pallet-utility/runtime-benchmarks',
+	'pallet-oracle/runtime-benchmarks',
 ]
 std = [
 	'sp-api/std',
@@ -155,7 +156,6 @@ std = [
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-protos-rpc-runtime-api/std',
 	'pallet-fragments-rpc-runtime-api/std',
-	'pallet-contracts-rpc-runtime-api/std',
     'codec/std',
     'scale-info/std',
     'protos/std'

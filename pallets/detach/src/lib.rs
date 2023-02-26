@@ -236,7 +236,7 @@ pub mod pallet {
 		+ frame_system::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Weight functions needed for pallet_detach.
 		type WeightInfo: WeightInfo;
 		/// The identifier type for an offchain worker.
@@ -336,6 +336,7 @@ pub mod pallet {
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		#[pallet::weight(T::WeightInfo::add_eth_auth())]
+		#[pallet::call_index(0)]
 		pub fn add_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -352,6 +353,7 @@ pub mod pallet {
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		#[pallet::weight(T::WeightInfo::del_eth_auth())]
+		#[pallet::call_index(1)]
 		pub fn del_eth_auth(origin: OriginFor<T>, public: ecdsa::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -368,6 +370,7 @@ pub mod pallet {
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		#[pallet::weight(T::WeightInfo::add_eth_auth())]
+		#[pallet::call_index(2)]
 		pub fn add_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -384,6 +387,7 @@ pub mod pallet {
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		#[pallet::weight(T::WeightInfo::del_eth_auth())]
+		#[pallet::call_index(3)]
 		pub fn del_key(origin: OriginFor<T>, public: ed25519::Public) -> DispatchResult {
 			ensure_root(origin)?;
 
@@ -398,6 +402,7 @@ pub mod pallet {
 
 		/// Detach a Proto-Fragment from Fragnova by emitting an event that includes a signature.
 		#[pallet::weight(25_000)] // TODO - weight
+		#[pallet::call_index(4)]
 		pub fn internal_finalize_detach(
 			origin: OriginFor<T>,
 			data: DetachInternalData<T::Public>,
