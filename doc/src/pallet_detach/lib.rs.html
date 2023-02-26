@@ -876,6 +876,11 @@
 <a href="#876" id="876">876</a>
 <a href="#877" id="877">877</a>
 <a href="#878" id="878">878</a>
+<a href="#879" id="879">879</a>
+<a href="#880" id="880">880</a>
+<a href="#881" id="881">881</a>
+<a href="#882" id="882">882</a>
+<a href="#883" id="883">883</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Fragnova
 //! Blockchain to an External Blockchain
 
@@ -1114,7 +1119,7 @@
 		+ frame_system::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
-		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 		<span class="doccomment">/// Weight functions needed for pallet_detach.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 		<span class="doccomment">/// The identifier type for an offchain worker.
@@ -1214,6 +1219,7 @@
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		</span><span class="attr">#[pallet::weight(T::WeightInfo::add_eth_auth())]
+		#[pallet::call_index(<span class="number">0</span>)]
 		</span><span class="kw">pub fn </span>add_eth_auth(origin: OriginFor&lt;T&gt;, public: ecdsa::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1230,6 +1236,7 @@
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		</span><span class="attr">#[pallet::weight(T::WeightInfo::del_eth_auth())]
+		#[pallet::call_index(<span class="number">1</span>)]
 		</span><span class="kw">pub fn </span>del_eth_auth(origin: OriginFor&lt;T&gt;, public: ecdsa::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1246,6 +1253,7 @@
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		</span><span class="attr">#[pallet::weight(T::WeightInfo::add_eth_auth())]
+		#[pallet::call_index(<span class="number">2</span>)]
 		</span><span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1262,6 +1270,7 @@
 		///
 		/// Note: Only the Sudo User can edit `EthereumAuthorities`
 		</span><span class="attr">#[pallet::weight(T::WeightInfo::del_eth_auth())]
+		#[pallet::call_index(<span class="number">3</span>)]
 		</span><span class="kw">pub fn </span>del_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1276,6 +1285,7 @@
 
 		<span class="doccomment">/// Detach a Proto-Fragment from Fragnova by emitting an event that includes a signature.
 		</span><span class="attr">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attr">#[pallet::call_index(<span class="number">4</span>)]
 		</span><span class="kw">pub fn </span>internal_finalize_detach(
 			origin: OriginFor&lt;T&gt;,
 			data: DetachInternalData&lt;T::Public&gt;,

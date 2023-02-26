@@ -283,18 +283,18 @@
 	/// The range of component `t` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>upload(r: u32, t: u32, d: u32, ) -&gt; Weight {
-		(<span class="number">95_041_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">95_041_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 65_000
-			</span>.saturating_add((<span class="number">2_092_000 </span><span class="kw">as </span>Weight).saturating_mul(r <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_092_000 </span><span class="kw">as </span>u64).saturating_mul(r <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 65_000
-			</span>.saturating_add((<span class="number">2_860_000 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_860_000 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">2_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(r <span class="kw">as </span>Weight)))
-			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight)))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight)))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(r <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64)))
 	}
 	<span class="comment">// Storage: Protos Protos (r:2 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
@@ -305,34 +305,34 @@
 	/// The range of component `t` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>patch(r: u32, t: u32, d: u32, ) -&gt; Weight {
-		(<span class="number">0 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">0 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 198_000
-			</span>.saturating_add((<span class="number">2_254_000 </span><span class="kw">as </span>Weight).saturating_mul(r <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_254_000 </span><span class="kw">as </span>u64).saturating_mul(r <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 198_000
-			</span>.saturating_add((<span class="number">3_096_000 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">3_096_000 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">2_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(r <span class="kw">as </span>Weight)))
-			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight)))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight)))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(r <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64)))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64)))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Detach DetachRequests (r:1 w:1)
 	</span><span class="kw">fn </span>detach() -&gt; Weight {
-		(<span class="number">13_387_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">13_387_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Protos ProtosByOwner (r:2 w:2)
 	</span><span class="kw">fn </span>transfer() -&gt; Weight {
-		(<span class="number">24_381_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">24_381_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
@@ -342,13 +342,13 @@
 	</span><span class="doccomment">/// The range of component `m` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>set_metadata(m: u32, d: u32, ) -&gt; Weight {
-		(<span class="number">0 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">0 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 90_000
-			</span>.saturating_add((<span class="number">122_000 </span><span class="kw">as </span>Weight).saturating_mul(m <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">122_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">2_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
 }
 
@@ -364,18 +364,18 @@
 	/// The range of component `t` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>upload(r: u32, t: u32, d: u32, ) -&gt; Weight {
-		(<span class="number">95_041_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">95_041_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 65_000
-			</span>.saturating_add((<span class="number">2_092_000 </span><span class="kw">as </span>Weight).saturating_mul(r <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_092_000 </span><span class="kw">as </span>u64).saturating_mul(r <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 65_000
-			</span>.saturating_add((<span class="number">2_860_000 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_860_000 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">2_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(r <span class="kw">as </span>Weight)))
-			.saturating_add(RocksDbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight)))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight)))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(r <span class="kw">as </span>u64)))
+			.saturating_add(RocksDbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64)))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64)))
 	}
 	<span class="comment">// Storage: Protos Protos (r:2 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
@@ -386,34 +386,34 @@
 	/// The range of component `t` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>patch(r: u32, t: u32, d: u32, ) -&gt; Weight {
-		(<span class="number">0 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">0 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 198_000
-			</span>.saturating_add((<span class="number">2_254_000 </span><span class="kw">as </span>Weight).saturating_mul(r <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_254_000 </span><span class="kw">as </span>u64).saturating_mul(r <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 198_000
-			</span>.saturating_add((<span class="number">3_096_000 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">3_096_000 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">2_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(r <span class="kw">as </span>Weight)))
-			.saturating_add(RocksDbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight)))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>Weight).saturating_mul(t <span class="kw">as </span>Weight)))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(r <span class="kw">as </span>u64)))
+			.saturating_add(RocksDbWeight::get().reads((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64)))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">2 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes((<span class="number">1 </span><span class="kw">as </span>u64).saturating_mul(t <span class="kw">as </span>u64)))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Detach DetachRequests (r:1 w:1)
 	</span><span class="kw">fn </span>detach() -&gt; Weight {
-		(<span class="number">13_387_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">13_387_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">3 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Protos ProtosByOwner (r:2 w:2)
 	</span><span class="kw">fn </span>transfer() -&gt; Weight {
-		(<span class="number">24_381_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">24_381_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Protos Protos (r:1 w:1)
 	// Storage: Detach DetachedHashes (r:1 w:0)
@@ -423,13 +423,13 @@
 	</span><span class="doccomment">/// The range of component `m` is `[1, 100]`.
 	/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>set_metadata(m: u32, d: u32, ) -&gt; Weight {
-		(<span class="number">0 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">0 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 90_000
-			</span>.saturating_add((<span class="number">122_000 </span><span class="kw">as </span>Weight).saturating_mul(m <span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">122_000 </span><span class="kw">as </span>u64).saturating_mul(m <span class="kw">as </span>u64))
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">2_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
 }
 </code></pre></div>

@@ -376,10 +376,6 @@
 <a href="#376" id="376">376</a>
 <a href="#377" id="377">377</a>
 <a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 //!
 //! service.rs: This file defines the implementation of the node. Take note of the libraries that this file imports and the names of the functions it invokes.
@@ -391,7 +387,7 @@
 // ```
 
 </span><span class="kw">use </span>fragnova_runtime::{<span class="self">self</span>, opaque::Block, RuntimeApi};
-<span class="kw">use </span>sc_client_api::{BlockBackend, ExecutorProvider};
+<span class="kw">use </span>sc_client_api::BlockBackend;
 <span class="kw">use </span>sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 <span class="kw">pub use </span>sc_executor::NativeElseWasmExecutor;
 <span class="kw">use </span>sc_finality_grandpa::SharedVoterState;
@@ -509,7 +505,7 @@
 	<span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>import_queue =
-		sc_consensus_aura::import_queue::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(ImportQueueParams {
+		sc_consensus_aura::import_queue::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(ImportQueueParams {
 			block_import: grandpa_block_import.clone(),
 			justification_import: <span class="prelude-val">Some</span>(Box::new(grandpa_block_import.clone())),
 			client: client.clone(),
@@ -522,15 +518,13 @@
 						slot_duration,
 					);
 
-				<span class="prelude-val">Ok</span>((timestamp, slot))
+				<span class="prelude-val">Ok</span>((slot, timestamp))
 			},
 			spawner: <span class="kw-2">&amp;</span>task_manager.spawn_essential_handle(),
-			can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(
-				client.executor().clone(),
-			),
 			registry: config.prometheus_registry(),
 			check_for_equivocation: Default::default(),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
+			compatibility_mode: Default::default(),
 		})<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(sc_service::PartialComponents {
@@ -594,7 +588,7 @@
 		Vec::default(),
 	));
 
-	<span class="kw">let </span>(network, system_rpc_tx, network_starter) =
+	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: <span class="kw-2">&amp;</span>config,
 			client: client.clone(),
@@ -644,6 +638,7 @@
 		rpc_builder: rpc_extensions_builder,
 		backend,
 		system_rpc_tx,
+		tx_handler_controller,
 		config,
 		telemetry: telemetry.as_mut(),
 	})<span class="question-mark">?</span>;
@@ -660,12 +655,9 @@
 		</span>proposer_factory.set_default_block_size_limit(<span class="number">16 </span>* <span class="number">1024 </span>* <span class="number">1024</span>);
 
 
-		<span class="kw">let </span>can_author_with =
-			sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
-
 		<span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>aura = sc_consensus_aura::start_aura::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
+		<span class="kw">let </span>aura = sc_consensus_aura::start_aura::&lt;AuraPair, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(
 			StartAuraParams {
 				slot_duration,
 				client: client.clone(),
@@ -681,17 +673,17 @@
 							slot_duration,
 						);
 
-					<span class="prelude-val">Ok</span>((timestamp, slot))
+					<span class="prelude-val">Ok</span>((slot, timestamp))
 				},
 				force_authoring,
 				backoff_authoring_blocks,
 				keystore: keystore_container.sync_keystore(),
-				can_author_with,
 				sync_oracle: network.clone(),
 				justification_sync_link: network.clone(),
 				block_proposal_slot_portion: SlotProportion::new(<span class="number">2f32 </span>/ <span class="number">3f32</span>),
 				max_block_proposal_slot_portion: <span class="prelude-val">None</span>,
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
+				compatibility_mode: Default::default(),
 			},
 		)<span class="question-mark">?</span>;
 

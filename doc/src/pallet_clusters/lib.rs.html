@@ -746,6 +746,16 @@
 <a href="#746" id="746">746</a>
 <a href="#747" id="747">747</a>
 <a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
+<a href="#757" id="757">757</a>
+<a href="#758" id="758">758</a>
 </pre><pre class="rust"><code><span class="doccomment">//! A Cluster in Fragnova represents a &quot;group&quot; where users (i.e. Accounts) can belong to.
 //!
 //! A Cluster has an owner, a name and a set of Roles. The owner of the cluster can create unlimited roles and associate users to each role.
@@ -833,7 +843,7 @@
 		+ pallet_timestamp::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
-		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 
 		<span class="doccomment">/// The max size of name
 		</span><span class="attr">#[pallet::constant]
@@ -952,7 +962,8 @@
 		<span class="doccomment">/// Create a new **Cluster**.
 		///
 		/// - `name`: name of the cluster (BoundedVec limited to T::NameLimit).
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">0</span>)]
 		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>create_cluster(
 			origin: OriginFor&lt;T&gt;,
@@ -1025,7 +1036,8 @@
 		/// - `cluster_id`: hash of the cluster
 		/// - `role_name`: name of the role to add into the cluster (BoundedVec limited to T::NameLimit).
 		/// - `settings`: settings of the role (BoundedVec limited to T::RoleSettingsLimit).
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">1</span>)]
 		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>create_role(
 			origin: OriginFor&lt;T&gt;,
@@ -1071,7 +1083,8 @@
 		/// - `role_name`: name of the role to edit (BoundedVec limited to T::NameLimit).
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `members`: new list of members to be added to the existing list.
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">2</span>)]
 		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>add_role_members(
 			origin: OriginFor&lt;T&gt;,
@@ -1123,7 +1136,8 @@
 		/// - `role_name`: name of the role to edit (BoundedVec limited to T::NameLimit).
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `members`: new list of members to be deleted (BoundedVec limited to T::MembersLimit).
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">3</span>)]
 		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>delete_role_members(
 			origin: OriginFor&lt;T&gt;,
@@ -1175,7 +1189,8 @@
 		/// - `role_name`: name of the role to edit (BoundedVec limited to T::NameLimit).
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `settings`: new list of settings to be added to the existing list (BoundedVec limited to T::RoleSettingsLimit).
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">4</span>)]
 		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>add_role_settings(
 			origin: OriginFor&lt;T&gt;,
@@ -1244,7 +1259,8 @@
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `setting_name`: name of the setting to be edited (BoundedVec limited to T::NameLimit).
 		/// - `data`: new data for the setting ([u8; T::SettingDataLimit]).
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">5</span>)]
 		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>change_role_setting(
 			origin: OriginFor&lt;T&gt;,
@@ -1297,7 +1313,8 @@
 		/// - `role_name`: name of the role to edit (BoundedVec limited to T::NameLimit).
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
 		/// - `settings`: new list of settings to be added to the existing list (BoundedVec limited to T::RoleSettingsLimit).
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">6</span>)]
 		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>delete_role_settings(
 			origin: OriginFor&lt;T&gt;,
@@ -1355,7 +1372,8 @@
 		///
 		/// - `role_name`: name of the role to delete.
 		/// - `cluster_id`: hash of the cluster that the role belongs to.
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">7</span>)]
 		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>delete_role(
 			origin: OriginFor&lt;T&gt;,
@@ -1400,7 +1418,8 @@
 		/// - `cluster_id`: hash of the cluster where to add the new member.
 		/// - `roles`: list of role names to be assigned to the new member.
 		/// - `member`: AccountId of the new member.
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">8</span>)]
 		#[transactional] </span><span class="comment">// not ideal but need to refactor `take_name_index` if we want to remove it
 		</span><span class="kw">pub fn </span>add_member(
 			origin: OriginFor&lt;T&gt;,
@@ -1447,7 +1466,8 @@
 		///
 		/// - `cluster_id`: hash of the cluster.
 		/// - `member`: AccountId of the member to be removed.
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">9</span>)]
 		</span><span class="kw">pub fn </span>delete_member(
 			origin: OriginFor&lt;T&gt;,
 			cluster_id: Hash128,

@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"fragnova_runtime":[["impl CallerTrait&lt;&lt;<a class=\"struct\" href=\"fragnova_runtime/struct.Runtime.html\" title=\"struct fragnova_runtime::Runtime\">Runtime</a> as Config&gt;::AccountId&gt; for <a class=\"enum\" href=\"fragnova_runtime/enum.OriginCaller.html\" title=\"enum fragnova_runtime::OriginCaller\">OriginCaller</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

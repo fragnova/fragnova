@@ -599,6 +599,15 @@
 <a href="#599" id="599">599</a>
 <a href="#600" id="600">600</a>
 <a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `aliases` allows users to create human readable aliases to address their owned existing assets.
 //! Example:
 //!
@@ -695,7 +704,7 @@
 		+ pallet_clusters::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
-		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 
 		<span class="doccomment">/// The price (in native NOVA) for a Namespace
 		</span><span class="attr">#[pallet::constant]
@@ -771,7 +780,8 @@
 		/// The amount is set in Config `NamespacePrice`.
 		///
 		/// - `namespace`: namespace to create
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">0</span>)]
 		</span><span class="kw">pub fn </span>create_namespace(
 			origin: OriginFor&lt;T&gt;,
 			namespace: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,
@@ -809,7 +819,8 @@
 		/// This also deletes all the aliases linked to this namespace
 		///
 		/// - `namespace`: namespace to delete
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">1</span>)]
 		</span><span class="kw">pub fn </span>delete_namespace(
 			origin: OriginFor&lt;T&gt;,
 			namespace: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,
@@ -836,7 +847,8 @@
 		///
 		/// - `namespace`: namespace to create
 		/// - `new_owner`: the AccountId to transfer ownership to
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">2</span>)]
 		</span><span class="kw">pub fn </span>transfer_namespace(
 			origin: OriginFor&lt;T&gt;,
 			namespace: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,
@@ -868,7 +880,8 @@
 		/// Only the owner of the asset can create its alias.
 		///
 		/// - `namespace`: namespace to create
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">3</span>)]
 		</span><span class="kw">pub fn </span>create_alias(
 			origin: OriginFor&lt;T&gt;,
 			namespace: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,
@@ -931,7 +944,8 @@
 		///
 		/// - `alias`: root alias to create
 		/// - `target`: LinkTarget to link the alias to
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">4</span>)]
 		</span><span class="kw">pub fn </span>create_root_alias(
 			origin: OriginFor&lt;T&gt;,
 			alias: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,
@@ -988,7 +1002,8 @@
 		/// - `namespace`: namespace related to the alias to update
 		/// - `alias`: the alias to update
 		/// - `new_target`: the new LinkTarget to link the alias to
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">5</span>)]
 		</span><span class="kw">pub fn </span>update_alias_target(
 			origin: OriginFor&lt;T&gt;,
 			namespace: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,
@@ -1030,7 +1045,8 @@
 		///
 		/// - `alias`: the alias to update
 		/// - `new_target`: the new LinkTarget to link the alias to
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">6</span>)]
 		</span><span class="kw">pub fn </span>update_root_alias_target(
 			origin: OriginFor&lt;T&gt;,
 			alias: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,
@@ -1067,7 +1083,8 @@
 		///
 		/// - `namespace`: namespace related to the alias to delete
 		/// - `alias`: the alias to delete
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">7</span>)]
 		</span><span class="kw">pub fn </span>delete_alias(
 			origin: OriginFor&lt;T&gt;,
 			namespace: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,
@@ -1101,7 +1118,8 @@
 		/// Only the root can execute this.
 		///
 		/// - `alias`: the root alias to delete
-		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>))]
+		</span><span class="attr">#[pallet::weight(<span class="number">10_000 </span>+ T::DbWeight::get().writes(<span class="number">1</span>).ref_time())]
+		#[pallet::call_index(<span class="number">8</span>)]
 		</span><span class="kw">pub fn </span>delete_root_alias(
 			origin: OriginFor&lt;T&gt;,
 			alias: BoundedVec&lt;u8, &lt;T <span class="kw">as </span>pallet::Config&gt;::NameLimit&gt;,

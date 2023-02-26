@@ -1378,6 +1378,15 @@
 <a href="#1378" id="1378">1378</a>
 <a href="#1379" id="1379">1379</a>
 <a href="#1380" id="1380">1380</a>
+<a href="#1381" id="1381">1381</a>
+<a href="#1382" id="1382">1382</a>
+<a href="#1383" id="1383">1383</a>
+<a href="#1384" id="1384">1384</a>
+<a href="#1385" id="1385">1385</a>
+<a href="#1386" id="1386">1386</a>
+<a href="#1387" id="1387">1387</a>
+<a href="#1388" id="1388">1388</a>
+<a href="#1389" id="1389">1389</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Fragnova Blockchain.
@@ -1600,7 +1609,7 @@
 	+ pallet_oracle::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
-		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 
 		<span class="doccomment">/// Weight functions needed for pallet_accounts.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
@@ -1788,6 +1797,7 @@
 		///
 		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::add_key())]
+		#[pallet::call_index(<span class="number">0</span>)]
 		</span><span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1804,6 +1814,7 @@
 
 		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can call this function
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::del_key())]
+		#[pallet::call_index(<span class="number">1</span>)]
 		</span><span class="kw">pub fn </span>del_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -1827,6 +1838,7 @@
 		/// from any previous lock of FRAG. If there are, then they are minted.
 		/// After linking and minting, it emit events indicating that the two accounts were linked and NOVA were minted.
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::link())]
+		#[pallet::call_index(<span class="number">2</span>)]
 		</span><span class="kw">pub fn </span>link(origin: OriginFor&lt;T&gt;, signature: ecdsa::Signature) -&gt; DispatchResult {
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -1931,6 +1943,7 @@
 
 		<span class="doccomment">/// Unlink the **Fragnova public account address that calls this extrinsic** from **its linked EVM public account address**
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::unlink())]
+		#[pallet::call_index(<span class="number">3</span>)]
 		</span><span class="kw">pub fn </span>unlink(origin: OriginFor&lt;T&gt;, account: H160) -&gt; DispatchResult {
 			<span class="kw">let </span>sender = ensure_signed(origin)<span class="question-mark">?</span>;
 			<span class="self">Self</span>::unlink_account(sender, account)
@@ -1940,6 +1953,7 @@
 		///
 		/// TODO
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::internal_lock_update())]
+		#[pallet::call_index(<span class="number">4</span>)]
 		</span><span class="kw">pub fn </span>internal_lock_update(
 			origin: OriginFor&lt;T&gt;,
 			data: EthLockUpdate&lt;T::Public&gt;,
@@ -2117,6 +2131,7 @@
 		<span class="doccomment">/// Allow the External Account ID `external_id` to be used as a proxy
 		/// for the Fragnova Account ID `origin`
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::sponsor_account())]
+		#[pallet::call_index(<span class="number">5</span>)]
 		</span><span class="kw">pub fn </span>sponsor_account(origin: OriginFor&lt;T&gt;, external_id: ExternalID) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -2169,6 +2184,7 @@
 
 		<span class="doccomment">/// Add a sponsor account to the list of sponsors able to sponsor external accounts.
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::add_sponsor())]
+		#[pallet::call_index(<span class="number">6</span>)]
 		</span><span class="kw">pub fn </span>add_sponsor(origin: OriginFor&lt;T&gt;, account: T::AccountId) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -2183,6 +2199,7 @@
 
 		<span class="doccomment">/// Remove a sponsor account to the list of sponsors able to sponsor external accounts.
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::remove_sponsor())]
+		#[pallet::call_index(<span class="number">7</span>)]
 		</span><span class="kw">pub fn </span>remove_sponsor(origin: OriginFor&lt;T&gt;, account: T::AccountId) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -2197,6 +2214,7 @@
 
 		<span class="doccomment">/// Withdraw vested NOVA
 		</span><span class="attr">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attr">#[pallet::call_index(<span class="number">8</span>)]
 		</span><span class="kw">pub fn </span>withdraw(origin: OriginFor&lt;T&gt;) -&gt; DispatchResult {
 			<span class="kw">let </span>account = ensure_signed(origin)<span class="question-mark">?</span>;
 			<span class="self">Self</span>::withdraw_nova(account)

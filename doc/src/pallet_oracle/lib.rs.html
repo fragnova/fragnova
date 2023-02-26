@@ -579,6 +579,13 @@
 <a href="#579" id="579">579</a>
 <a href="#580" id="580">580</a>
 <a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
+<a href="#585" id="585">585</a>
+<a href="#586" id="586">586</a>
+<a href="#587" id="587">587</a>
+<a href="#588" id="588">588</a>
 </pre><pre class="rust"><code><span class="doccomment">//! pallet-oracle queries the ChainLink Price Feed smart contract on Ethereum to fetch the price of FRAG/USD.
 //!
 //! It works as an Offchain Worker that will be triggered after every block, to fetch the current price.
@@ -592,12 +599,15 @@
 	SigningTypes,
 };
 <span class="kw">use </span>serde_json::{json, Value};
-<span class="kw">use </span>sp_fragnova::http_json_post;
 <span class="kw">use </span>sp_core::crypto::KeyTypeId;
+<span class="kw">use </span>sp_fragnova::http_json_post;
 <span class="kw">use </span>sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction};
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>serde::{Deserialize, Serialize};
+
+<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+</span><span class="kw">mod </span>benchmarking;
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">pub mod </span>tests;
@@ -703,7 +713,7 @@
 		</span><span class="kw">type </span>AuthorityId: AppCrypto&lt;<span class="self">Self</span>::Public, <span class="self">Self</span>::Signature&gt;;
 
 		<span class="doccomment">/// The overarching event type.
-		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 
 		<span class="doccomment">/// **Traits** that allows to set the Oracle provider for the price feed of FRAG token
 		</span><span class="kw">type </span>OracleProvider: OracleContract;
@@ -804,6 +814,7 @@
 		///
 		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can edit this list
 		</span><span class="attr">#[pallet::weight(<span class="number">10000</span>)]
+		#[pallet::call_index(<span class="number">0</span>)]
 		</span><span class="kw">pub fn </span>add_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -819,6 +830,7 @@
 		<span class="doccomment">/// Remove a Fragnova Account ID from `FragKeys`
 		/// NOTE: Only the Root User of the Fragnova Blockchain (i.e the local node itself) can call this function
 		</span><span class="attr">#[pallet::weight(<span class="number">10000</span>)] </span><span class="comment">// TODO
+		</span><span class="attr">#[pallet::call_index(<span class="number">1</span>)]
 		</span><span class="kw">pub fn </span>del_key(origin: OriginFor&lt;T&gt;, public: ed25519::Public) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 
@@ -833,6 +845,7 @@
 
 		<span class="doccomment">/// This function stores the original price (U256) received from the selected oracle provider.
 		</span><span class="attr">#[pallet::weight(<span class="number">10000</span>)] </span><span class="comment">// TODO
+		</span><span class="attr">#[pallet::call_index(<span class="number">2</span>)]
 		</span><span class="kw">pub fn </span>store_price(
 			origin: OriginFor&lt;T&gt;,
 			oracle_price: OraclePrice&lt;T::Public, T::BlockNumber&gt;,
@@ -885,6 +898,7 @@
 		/// **true** = oracle stop from the next block,
 		/// **false** = oracle keeps running (default).
 		</span><span class="attr">#[pallet::weight(<span class="number">10000</span>)]
+		#[pallet::call_index(<span class="number">3</span>)]
 		</span><span class="kw">pub fn </span>stop_oracle(origin: OriginFor&lt;T&gt;, stop_it: bool) -&gt; DispatchResult {
 			ensure_root(origin)<span class="question-mark">?</span>;
 

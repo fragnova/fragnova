@@ -176,6 +176,8 @@
 <a href="#176" id="176">176</a>
 <a href="#177" id="177">177</a>
 <a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Implementation of the RPC functions related to Pallet Fragments
 
 </span><span class="kw">use </span>std::sync::Arc;
@@ -197,27 +199,29 @@
 
 <span class="comment">// Generate both server and client implementations, prepend all the methods with `fragments_` prefix.
 // Read more: https://docs.rs/jsonrpsee-proc-macros/0.15.1/jsonrpsee_proc_macros/attr.rpc.html
+//
+// Note: Do not name any parameter as `params` in any of your RPC Methods, otherwise it won&#39;t compile!
 </span><span class="attr">#[rpc(client, server, namespace = <span class="string">&quot;fragments&quot;</span>)]
 </span><span class="kw">pub trait </span>FragmentsRpc&lt;BlockHash, AccountId&gt; {
 	<span class="doccomment">/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 	</span><span class="attr">#[method(name = <span class="string">&quot;getDefinitions&quot;</span>)]
 	</span><span class="kw">fn </span>get_definitions(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		params: GetDefinitionsParams&lt;AccountId, String&gt;,
+		param: GetDefinitionsParams&lt;AccountId, String&gt;,
 		at: <span class="prelude-ty">Option</span>&lt;BlockHash&gt;,
 	) -&gt; RpcResult&lt;String&gt;;
 	<span class="doccomment">/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
 	</span><span class="attr">#[method(name = <span class="string">&quot;getInstances&quot;</span>)]
 	</span><span class="kw">fn </span>get_instances(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		params: GetInstancesParams&lt;AccountId, String&gt;,
+		param: GetInstancesParams&lt;AccountId, String&gt;,
 		at: <span class="prelude-ty">Option</span>&lt;BlockHash&gt;,
 	) -&gt; RpcResult&lt;String&gt;;
 	<span class="doccomment">/// Query the owner of a Fragment Instance. The return type is a String
 	</span><span class="attr">#[method(name = <span class="string">&quot;getInstanceOwner&quot;</span>)]
 	</span><span class="kw">fn </span>get_instance_owner(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		params: GetInstanceOwnerParams&lt;String&gt;,
+		param: GetInstanceOwnerParams&lt;String&gt;,
 		at: <span class="prelude-ty">Option</span>&lt;BlockHash&gt;,
 	) -&gt; RpcResult&lt;String&gt;;
 }
@@ -226,9 +230,9 @@
 // It can have fields, if required, as long as it&#39;s still `Send + Sync + &#39;static`.
 // Read More: https://docs.rs/jsonrpsee-proc-macros/0.15.1/jsonrpsee_proc_macros/attr.rpc.html
 </span><span class="doccomment">/// A struct that implements all the RPC functions related to Pallet Fragments (since it implements the trait `FragmentsRpc`)
-</span><span class="kw">pub struct </span>FragmentsRpcServerImpl&lt;C, M&gt; {
+</span><span class="kw">pub struct </span>FragmentsRpcServerImpl&lt;C, P&gt; {
 	client: Arc&lt;C&gt;,
-	_marker: std::marker::PhantomData&lt;M&gt;,
+	_marker: std::marker::PhantomData&lt;P&gt;,
 }
 
 <span class="kw">impl</span>&lt;C, P&gt; FragmentsRpcServerImpl&lt;C, P&gt; {
@@ -253,7 +257,7 @@
 	<span class="doccomment">/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 	</span><span class="kw">fn </span>get_definitions(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		params: GetDefinitionsParams&lt;AccountId, String&gt;,
+		param: GetDefinitionsParams&lt;AccountId, String&gt;,
 		at: <span class="prelude-ty">Option</span>&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;,
 	) -&gt; RpcResult&lt;String&gt; {
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
@@ -261,17 +265,17 @@
 		<span class="comment">// If the block hash is not supplied in `at`, use the best block&#39;s hash
 		</span><span class="kw">let </span>at = BlockId::hash(at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash));
 
-		<span class="kw">let </span>params_no_std = GetDefinitionsParams::&lt;AccountId, Vec&lt;u8&gt;&gt; {
-			metadata_keys: params.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
-			desc: params.desc,
-			from: params.from,
-			limit: params.limit,
-			owner: params.owner,
-			return_owners: params.return_owners,
+		<span class="kw">let </span>param_no_std = GetDefinitionsParams::&lt;AccountId, Vec&lt;u8&gt;&gt; {
+			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
+			desc: param.desc,
+			from: param.from,
+			limit: param.limit,
+			owner: param.owner,
+			return_owners: param.return_owners,
 		};
 
 		<span class="kw">let </span>result_outer = api
-			.get_definitions(<span class="kw-2">&amp;</span>at, params_no_std)
+			.get_definitions(<span class="kw-2">&amp;</span>at, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		<span class="kw">match </span>result_outer {
 			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
@@ -285,7 +289,7 @@
 	<span class="doccomment">/// **Query** and **Return** **Fragment Instance(s)** based on **`params`**
 	</span><span class="kw">fn </span>get_instances(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		params: GetInstancesParams&lt;AccountId, String&gt;,
+		param: GetInstancesParams&lt;AccountId, String&gt;,
 		at: <span class="prelude-ty">Option</span>&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;,
 	) -&gt; RpcResult&lt;String&gt; {
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
@@ -293,18 +297,18 @@
 		<span class="comment">// If the block hash is not supplied in `at`, use the best block&#39;s hash
 		</span><span class="kw">let </span>at = BlockId::hash(at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash));
 
-		<span class="kw">let </span>params_no_std = GetInstancesParams::&lt;AccountId, Vec&lt;u8&gt;&gt; {
-			metadata_keys: params.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
-			desc: params.desc,
-			from: params.from,
-			limit: params.limit,
-			definition_hash: params.definition_hash.into_bytes(),
-			owner: params.owner,
-			only_return_first_copies: params.only_return_first_copies,
+		<span class="kw">let </span>param_no_std = GetInstancesParams::&lt;AccountId, Vec&lt;u8&gt;&gt; {
+			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
+			desc: param.desc,
+			from: param.from,
+			limit: param.limit,
+			definition_hash: param.definition_hash.into_bytes(),
+			owner: param.owner,
+			only_return_first_copies: param.only_return_first_copies,
 		};
 
 		<span class="kw">let </span>result_outer = api
-			.get_instances(<span class="kw-2">&amp;</span>at, params_no_std)
+			.get_instances(<span class="kw-2">&amp;</span>at, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		<span class="kw">match </span>result_outer {
 			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
@@ -318,7 +322,7 @@
 	<span class="doccomment">/// Query the owner of a Fragment Instance. The return type is a String
 	</span><span class="kw">fn </span>get_instance_owner(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		params: GetInstanceOwnerParams&lt;String&gt;,
+		param: GetInstanceOwnerParams&lt;String&gt;,
 		at: <span class="prelude-ty">Option</span>&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash&gt;,
 	) -&gt; RpcResult&lt;String&gt; {
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
@@ -326,14 +330,14 @@
 		<span class="comment">// If the block hash is not supplied in `at`, use the best block&#39;s hash
 		</span><span class="kw">let </span>at = BlockId::hash(at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash));
 
-		<span class="kw">let </span>params_no_std = GetInstanceOwnerParams::&lt;Vec&lt;u8&gt;&gt; {
-			definition_hash: params.definition_hash.into_bytes(),
-			edition_id: params.edition_id,
-			copy_id: params.copy_id,
+		<span class="kw">let </span>param_no_std = GetInstanceOwnerParams::&lt;Vec&lt;u8&gt;&gt; {
+			definition_hash: param.definition_hash.into_bytes(),
+			edition_id: param.edition_id,
+			copy_id: param.copy_id,
 		};
 
 		<span class="kw">let </span>result_outer = api
-			.get_instance_owner(<span class="kw-2">&amp;</span>at, params_no_std)
+			.get_instance_owner(<span class="kw-2">&amp;</span>at, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 
 		<span class="kw">match </span>result_outer {

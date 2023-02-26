@@ -381,11 +381,11 @@
 	// Storage: Fragments Proto2Fragments (r:1 w:1)
 	</span><span class="doccomment">/// The range of component `n` is `[1, 100]`.
 	</span><span class="kw">fn </span>create(n: u32, ) -&gt; Weight {
-		(<span class="number">53_058_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">53_058_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 9_000
-			</span>.saturating_add((<span class="number">10_000 </span><span class="kw">as </span>Weight).saturating_mul(n <span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">10_000 </span><span class="kw">as </span>u64).saturating_mul(n <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Definitions (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:0)
@@ -393,18 +393,18 @@
 	// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments EditionsCount (r:1 w:0)
 	</span><span class="kw">fn </span>publish() -&gt; Weight {
-		(<span class="number">34_050_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">34_050_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Definitions (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Fragments Publishing (r:1 w:1)
 	</span><span class="kw">fn </span>unpublish() -&gt; Weight {
-		(<span class="number">32_337_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">32_337_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Definitions (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:0)
@@ -417,12 +417,12 @@
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	</span><span class="doccomment">/// The range of component `q` is `[1, 100]`.
 	</span><span class="kw">fn </span>mint_definition_that_has_non_unique_capability(q: u32, ) -&gt; Weight {
-		(<span class="number">36_569_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">36_569_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 133_000
-			</span>.saturating_add((<span class="number">8_255_000 </span><span class="kw">as </span>Weight).saturating_mul(q <span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">7 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>Weight).saturating_mul(q <span class="kw">as </span>Weight)))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">8_255_000 </span><span class="kw">as </span>u64).saturating_mul(q <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">7 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>u64).saturating_mul(q <span class="kw">as </span>u64)))
 	}
 	<span class="comment">// Storage: Fragments Definitions (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:0)
@@ -436,11 +436,11 @@
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	</span><span class="doccomment">/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>mint_definition_that_has_unique_capability(d: u32, ) -&gt; Weight {
-		(<span class="number">77_922_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">77_922_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">1_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">7 </span><span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">1_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">7 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments Definitions (r:1 w:1)
@@ -453,12 +453,12 @@
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	</span><span class="doccomment">/// The range of component `q` is `[1, 100]`.
 	</span><span class="kw">fn </span>buy_definition_that_has_non_unique_capability(q: u32, ) -&gt; Weight {
-		(<span class="number">49_276_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">49_276_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 32_000
-			</span>.saturating_add((<span class="number">7_485_000 </span><span class="kw">as </span>Weight).saturating_mul(q <span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">7 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">6 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>Weight).saturating_mul(q <span class="kw">as </span>Weight)))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">7_485_000 </span><span class="kw">as </span>u64).saturating_mul(q <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">7 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">6 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>u64).saturating_mul(q <span class="kw">as </span>u64)))
 	}
 	<span class="comment">// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments Definitions (r:1 w:1)
@@ -472,19 +472,19 @@
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	</span><span class="doccomment">/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>buy_definition_that_has_unique_capability(d: u32, ) -&gt; Weight {
-		(<span class="number">33_800_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">33_800_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">2_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">9 </span><span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">9 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Inventory (r:2 w:2)
 	// Storage: Fragments Owners (r:2 w:2)
 	</span><span class="kw">fn </span>benchmark_give_instance_that_does_not_have_copy_perms() -&gt; Weight {
-		(<span class="number">36_669_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">36_669_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Inventory (r:2 w:1)
@@ -492,9 +492,9 @@
 	// Storage: Fragments Owners (r:1 w:1)
 	// Storage: Fragments Expirations (r:1 w:1)
 	</span><span class="kw">fn </span>benchmark_give_instance_that_has_copy_perms() -&gt; Weight {
-		(<span class="number">30_168_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(T::DbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>Weight))
-			.saturating_add(T::DbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">30_168_000 </span><span class="kw">as </span>u64)
+			.saturating_add(T::DbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>u64))
+			.saturating_add(T::DbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>u64))
 	}
 }
 
@@ -508,11 +508,11 @@
 	// Storage: Fragments Proto2Fragments (r:1 w:1)
 	</span><span class="doccomment">/// The range of component `n` is `[1, 100]`.
 	</span><span class="kw">fn </span>create(n: u32, ) -&gt; Weight {
-		(<span class="number">53_058_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">53_058_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 9_000
-			</span>.saturating_add((<span class="number">10_000 </span><span class="kw">as </span>Weight).saturating_mul(n <span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">10_000 </span><span class="kw">as </span>u64).saturating_mul(n <span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">3 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Definitions (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:0)
@@ -520,18 +520,18 @@
 	// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments EditionsCount (r:1 w:0)
 	</span><span class="kw">fn </span>publish() -&gt; Weight {
-		(<span class="number">34_050_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">34_050_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Definitions (r:1 w:0)
 	// Storage: Protos Protos (r:1 w:0)
 	// Storage: Detach DetachedHashes (r:1 w:0)
 	// Storage: Fragments Publishing (r:1 w:1)
 	</span><span class="kw">fn </span>unpublish() -&gt; Weight {
-		(<span class="number">32_337_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">32_337_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">1 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Definitions (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:0)
@@ -544,12 +544,12 @@
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	</span><span class="doccomment">/// The range of component `q` is `[1, 100]`.
 	</span><span class="kw">fn </span>mint_definition_that_has_non_unique_capability(q: u32, ) -&gt; Weight {
-		(<span class="number">36_569_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">36_569_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 133_000
-			</span>.saturating_add((<span class="number">8_255_000 </span><span class="kw">as </span>Weight).saturating_mul(q <span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">7 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>Weight).saturating_mul(q <span class="kw">as </span>Weight)))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">8_255_000 </span><span class="kw">as </span>u64).saturating_mul(q <span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">7 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">4 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>u64).saturating_mul(q <span class="kw">as </span>u64)))
 	}
 	<span class="comment">// Storage: Fragments Definitions (r:1 w:1)
 	// Storage: Protos Protos (r:1 w:0)
@@ -563,11 +563,11 @@
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	</span><span class="doccomment">/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>mint_definition_that_has_unique_capability(d: u32, ) -&gt; Weight {
-		(<span class="number">77_922_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">77_922_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">1_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">7 </span><span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">1_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">7 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments Definitions (r:1 w:1)
@@ -580,12 +580,12 @@
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	</span><span class="doccomment">/// The range of component `q` is `[1, 100]`.
 	</span><span class="kw">fn </span>buy_definition_that_has_non_unique_capability(q: u32, ) -&gt; Weight {
-		(<span class="number">49_276_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">49_276_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 32_000
-			</span>.saturating_add((<span class="number">7_485_000 </span><span class="kw">as </span>Weight).saturating_mul(q <span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">7 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">6 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>Weight).saturating_mul(q <span class="kw">as </span>Weight)))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">7_485_000 </span><span class="kw">as </span>u64).saturating_mul(q <span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">7 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">6 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes((<span class="number">2 </span><span class="kw">as </span>u64).saturating_mul(q <span class="kw">as </span>u64)))
 	}
 	<span class="comment">// Storage: Fragments Publishing (r:1 w:1)
 	// Storage: Fragments Definitions (r:1 w:1)
@@ -599,19 +599,19 @@
 	// Storage: Fragments CopiesCount (r:0 w:1)
 	</span><span class="doccomment">/// The range of component `d` is `[1, 1000000]`.
 	</span><span class="kw">fn </span>buy_definition_that_has_unique_capability(d: u32, ) -&gt; Weight {
-		(<span class="number">33_800_000 </span><span class="kw">as </span>Weight)
+		Weight::from_ref_time(<span class="number">33_800_000 </span><span class="kw">as </span>u64)
 			<span class="comment">// Standard Error: 0
-			</span>.saturating_add((<span class="number">2_000 </span><span class="kw">as </span>Weight).saturating_mul(d <span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">9 </span><span class="kw">as </span>Weight))
+			</span>.saturating_add(Weight::from_ref_time(<span class="number">2_000 </span><span class="kw">as </span>u64).saturating_mul(d <span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">8 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">9 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Inventory (r:2 w:2)
 	// Storage: Fragments Owners (r:2 w:2)
 	</span><span class="kw">fn </span>benchmark_give_instance_that_does_not_have_copy_perms() -&gt; Weight {
-		(<span class="number">36_669_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">36_669_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">5 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>u64))
 	}
 	<span class="comment">// Storage: Fragments Fragments (r:1 w:1)
 	// Storage: Fragments Inventory (r:2 w:1)
@@ -619,9 +619,9 @@
 	// Storage: Fragments Owners (r:1 w:1)
 	// Storage: Fragments Expirations (r:1 w:1)
 	</span><span class="kw">fn </span>benchmark_give_instance_that_has_copy_perms() -&gt; Weight {
-		(<span class="number">30_168_000 </span><span class="kw">as </span>Weight)
-			.saturating_add(RocksDbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>Weight))
-			.saturating_add(RocksDbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>Weight))
+		Weight::from_ref_time(<span class="number">30_168_000 </span><span class="kw">as </span>u64)
+			.saturating_add(RocksDbWeight::get().reads(<span class="number">6 </span><span class="kw">as </span>u64))
+			.saturating_add(RocksDbWeight::get().writes(<span class="number">5 </span><span class="kw">as </span>u64))
 	}
 }
 </code></pre></div>

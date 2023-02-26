@@ -2269,6 +2269,17 @@
 <a href="#2269" id="2269">2269</a>
 <a href="#2270" id="2270">2270</a>
 <a href="#2271" id="2271">2271</a>
+<a href="#2272" id="2272">2272</a>
+<a href="#2273" id="2273">2273</a>
+<a href="#2274" id="2274">2274</a>
+<a href="#2275" id="2275">2275</a>
+<a href="#2276" id="2276">2276</a>
+<a href="#2277" id="2277">2277</a>
+<a href="#2278" id="2278">2278</a>
+<a href="#2279" id="2279">2279</a>
+<a href="#2280" id="2280">2280</a>
+<a href="#2281" id="2281">2281</a>
+<a href="#2282" id="2282">2282</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -2504,7 +2515,7 @@
 	</span><span class="attr">#[pallet::config]
 	</span><span class="kw">pub trait </span>Config: frame_system::Config + pallet_protos::Config {
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
-		</span><span class="kw">type </span>Event: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::Event&gt;;
+		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&lt;<span class="self">Self</span>&gt;&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 		<span class="doccomment">/// Weight functions needed for pallet_fragments.
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 	}
@@ -2796,6 +2807,7 @@
 		/// * `max_supply` (*optional*) - **Maximum amount of Fragment instances (where each Fragment instance has a different Edition ID)**
 		/// that **can be created** using the **Fragment Definition**
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::create(metadata.name.len() <span class="kw">as </span>u32))]
+		#[pallet::call_index(<span class="number">0</span>)]
 		</span><span class="kw">pub fn </span>create(
 			origin: OriginFor&lt;T&gt;,
 			proto_hash: Hash256,
@@ -2905,6 +2917,7 @@
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition&#39;s Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `custom_metadata` of the existing Fragment Definition&#39;s Struct Instance
 		</span><span class="attr">#[pallet::weight(<span class="number">50_000</span>)]
+		#[pallet::call_index(<span class="number">1</span>)]
 		</span><span class="kw">pub fn </span>set_definition_metadata(
 			origin: OriginFor&lt;T&gt;,
 			<span class="comment">// fragment hash we want to update
@@ -2995,6 +3008,7 @@
 		/// * `metadata_key` - The key (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Fragment Instance&#39;s Struct Instance
 		/// * `data` - The hash of `data` is used as the value (of the key-value pair) that is added in the BTreeMap field `metadata` of the existing Fragment Instance&#39;s Struct Instance
 		</span><span class="attr">#[pallet::weight(<span class="number">50_000</span>)]
+		#[pallet::call_index(<span class="number">2</span>)]
 		</span><span class="kw">pub fn </span>set_instance_metadata(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3108,6 +3122,7 @@
 		/// * `amount` (*optional*) - If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 		/// the **number of items** to **top up** in the **stack of stackable items**
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::publish())]
+		#[pallet::call_index(<span class="number">3</span>)]
 		</span><span class="kw">pub fn </span>publish(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3186,6 +3201,7 @@
 		/// * `origin` - **Origin** of the **extrinsic function**
 		/// * `definition_hash` - **ID** of the **Fragment Definition** to take off sale
 		</span><span class="attr">#[pallet::weight(&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::unpublish())]
+		#[pallet::call_index(<span class="number">4</span>)]
 		</span><span class="kw">pub fn </span>unpublish(origin: OriginFor&lt;T&gt;, definition_hash: Hash128) -&gt; DispatchResult {
 			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
 
@@ -3243,6 +3259,7 @@
 		FragmentBuyOptions::Quantity(q) =&gt; &lt;T <span class="kw">as </span>Config&gt;::WeightInfo::mint_definition_that_has_non_unique_capability(<span class="kw-2">*</span>q <span class="kw">as </span>u32),
 		FragmentBuyOptions::UniqueData(d) =&gt; &lt;T <span class="kw">as </span>Config&gt;::WeightInfo::mint_definition_that_has_unique_capability(d.len() <span class="kw">as </span>u32)
 		})]
+		#[pallet::call_index(<span class="number">5</span>)]
 		</span><span class="kw">pub fn </span>mint(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3316,6 +3333,7 @@
 		FragmentBuyOptions::Quantity(q) =&gt; &lt;T <span class="kw">as </span>Config&gt;::WeightInfo::buy_definition_that_has_non_unique_capability(<span class="kw-2">*</span>q <span class="kw">as </span>u32),
 		FragmentBuyOptions::UniqueData(d) =&gt; &lt;T <span class="kw">as </span>Config&gt;::WeightInfo::buy_definition_that_has_unique_capability(d.len() <span class="kw">as </span>u32)
 		})]
+		#[pallet::call_index(<span class="number">6</span>)]
 		</span><span class="kw">pub fn </span>buy(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3389,6 +3407,7 @@
 		&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::benchmark_give_instance_that_has_copy_perms()
 		.max(&lt;T <span class="kw">as </span>Config&gt;::WeightInfo::benchmark_give_instance_that_does_not_have_copy_perms())
 		)] </span><span class="comment">// Since both weight functions return a static value, we should not be doing a `max()` and just manually choose the one with a greater weight!
+		</span><span class="attr">#[pallet::call_index(<span class="number">7</span>)]
 		</span><span class="kw">pub fn </span>give(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3435,6 +3454,7 @@
 		/// * `edition` - **Edition ID** of the **Fragment Instance**
 		/// * `copy` - **Copy ID** of the **Fragment Instance**
 		</span><span class="attr">#[pallet::weight(<span class="number">50_000</span>)]
+		#[pallet::call_index(<span class="number">8</span>)]
 		</span><span class="kw">pub fn </span>create_account(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3481,6 +3501,7 @@
 		/// * `expiration` (*optional*) - Block number that the newly-copied Fragment Instance expires at. If the Fragment Instance is not copyable, this parameter is practically irrelevant.
 		/// * `secondary_sale_type` - Type of Sale
 		</span><span class="attr">#[pallet::weight(<span class="number">50_000</span>)]
+		#[pallet::call_index(<span class="number">9</span>)]
 		</span><span class="kw">pub fn </span>resell(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3534,6 +3555,7 @@
 		/// * `edition` - Edition ID of the Fragment Instance
 		/// * `copy` - Copy ID of the Fragment instance
 		</span><span class="attr">#[pallet::weight(<span class="number">50_000</span>)]
+		#[pallet::call_index(<span class="number">10</span>)]
 		</span><span class="kw">pub fn </span>end_resale(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3571,6 +3593,7 @@
 		/// * `copy` - Copy ID of the Fragment instance
 		/// * `options` - Enum indicating how to buy the instance
 		</span><span class="attr">#[pallet::weight(<span class="number">50_000</span>)]
+		#[pallet::call_index(<span class="number">11</span>)]
 		</span><span class="kw">pub fn </span>secondary_buy(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3634,6 +3657,7 @@
 		/// * `target_account` - **Public Account Address in the External Blockchain `target_chain`**
 		///   to assign ownership of the Proto-Fragment to
 		</span><span class="attr">#[pallet::weight(<span class="number">25_000</span>)] </span><span class="comment">// TODO - weight
+		</span><span class="attr">#[pallet::call_index(<span class="number">12</span>)]
 		</span><span class="kw">pub fn </span>detach(
 			origin: OriginFor&lt;T&gt;,
 			definition_hash: Hash128,
@@ -3972,14 +3996,12 @@
 					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
 				},
 				Currency::Native =&gt; {
-					pallet_balances::Pallet::&lt;T&gt;::do_transfer(
-						<span class="comment">// transfer `amount` units of NOVA from `from` to `to`
-						</span>from,
+					&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>frame_support::traits::Currency&lt;T::AccountId&gt;&gt;::transfer(
+						from,
 						to,
 						amount.saturated_into(),
-						ExistenceRequirement::KeepAlive,
-					)
-					.map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
+						ExistenceRequirement::KeepAlive
+					).map_err(|<span class="kw">_</span>| Error::&lt;T&gt;::InsufficientBalance)<span class="question-mark">?</span>;
 				},
 			}
 
