@@ -2008,6 +2008,8 @@
 <a href="#2008" id="2008">2008</a>
 <a href="#2009" id="2009">2009</a>
 <a href="#2010" id="2010">2010</a>
+<a href="#2011" id="2011">2011</a>
+<a href="#2012" id="2012">2012</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2545,13 +2547,15 @@
 				<span class="kw">if </span>data.len() &gt; MAXIMUM_METADATA_DATA_LENGTH {
 					<span class="kw">return </span><span class="bool-val">false</span>;
 				}
-				<span class="kw">match </span><span class="kw-2">&amp;</span>metadata_key[..] {
-					<span class="string">b&quot;title&quot; </span>=&gt; is_valid(<span class="kw-2">&amp;</span>Categories::Text(TextCategories::Plain), data, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[]),
-					<span class="string">b&quot;json_description&quot; </span>=&gt; is_valid(<span class="kw-2">&amp;</span>Categories::Text(TextCategories::Json), data, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[]),
-					<span class="string">b&quot;image&quot; </span>=&gt; is_valid(<span class="kw-2">&amp;</span>Categories::Texture(TextureCategories::PngFile), data, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[]) || is_valid(<span class="kw-2">&amp;</span>Categories::Texture(TextureCategories::JpgFile), data, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[]),
-					<span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
-				}
-			},
+				<span class="kw">let </span>_metadata_key = metadata_key;
+				<span class="comment">// match &amp;metadata_key[..] {
+				// 	b&quot;title&quot; =&gt; is_valid(&amp;Categories::Text(TextCategories::Plain), data, &amp;vec![]),
+				// 	b&quot;json_description&quot; =&gt; is_valid(&amp;Categories::Text(TextCategories::Json), data, &amp;vec![]),
+				// 	b&quot;image&quot; =&gt; is_valid(&amp;Categories::Texture(TextureCategories::PngFile), data, &amp;vec![]) || is_valid(&amp;Categories::Texture(TextureCategories::JpgFile), data, &amp;vec![]),
+				// 	_ =&gt; false,
+				// }
+				</span><span class="bool-val">true
+			</span>},
 			<span class="comment">// Prevent batch calls from containing any call that uses `transaction_index::index`. The reason we do this is because &quot;any e̶x̶t̶r̶i̶n̶s̶i̶c̶ call using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index.&quot; (https://github.com/paritytech/substrate/issues/12835)
 			</span>RuntimeCall::Utility(pallet_utility::Call::batch { calls }) | <span class="comment">// https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
 			</span>RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) |
