@@ -535,12 +535,14 @@ mod validation_logic {
 				if data.len() > MAXIMUM_METADATA_DATA_LENGTH {
 					return false;
 				}
-				match &metadata_key[..] {
-					b"title" => is_valid(&Categories::Text(TextCategories::Plain), data, &vec![]),
-					b"json_description" => is_valid(&Categories::Text(TextCategories::Json), data, &vec![]),
-					b"image" => is_valid(&Categories::Texture(TextureCategories::PngFile), data, &vec![]) || is_valid(&Categories::Texture(TextureCategories::JpgFile), data, &vec![]),
-					_ => false,
-				}
+				let _metadata_key = metadata_key;
+				// match &metadata_key[..] {
+				// 	b"title" => is_valid(&Categories::Text(TextCategories::Plain), data, &vec![]),
+				// 	b"json_description" => is_valid(&Categories::Text(TextCategories::Json), data, &vec![]),
+				// 	b"image" => is_valid(&Categories::Texture(TextureCategories::PngFile), data, &vec![]) || is_valid(&Categories::Texture(TextureCategories::JpgFile), data, &vec![]),
+				// 	_ => false,
+				// }
+				true
 			},
 			// Prevent batch calls from containing any call that uses `transaction_index::index`. The reason we do this is because "any e̶x̶t̶r̶i̶n̶s̶i̶c̶ call using `transaction_index::index` will not work properly if used within a `pallet_utility` batch call as it depends on extrinsic index and during a batch there is only one index." (https://github.com/paritytech/substrate/issues/12835)
 			RuntimeCall::Utility(pallet_utility::Call::batch { calls }) | // https://paritytech.github.io/substrate/master/pallet_utility/pallet/enum.Call.html
