@@ -8,7 +8,7 @@ let api;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const upload = async (signer, data, references=[], category={text: "plain"}, tags=[], linkedAsset=null, license="Closed", cluster=null) => {
+const upload = async (signer, data, references=[], tags=[], linkedAsset=null, category={text: "plain"}, license="Closed", cluster=null) => {
   const txHash = await api.tx.protos.upload(
     references,
     category,
@@ -76,7 +76,7 @@ describe("RPCs", () => {
     keyring.setSS58Format(93);
     const alice = keyring.addFromUri('//Alice');
 
-    protoHash = await upload(alice, [...Buffer.from('Proto-Indo-European')], []);
+    protoHash = await upload(alice, [...Buffer.from('Proto-Indo-European')], [], ["tag1", "tag2"]);
     jsonDescriptionHash = await setMetadata(alice, protoHash, "json_description", '{"name": "monalisa", "description": "iconic, priceless, renaissance art"}');
     const imageData = "0x" + (await fs.readFile("monalisa.jpeg")).toString("hex");
     imageHash = await setMetadata(alice, protoHash, "image", imageData);
@@ -105,6 +105,18 @@ describe("RPCs", () => {
       const result = await api.rpc.protos.getProtos(params);
       const obj = JSON.parse(result.toHuman());
       assert(protoHash in obj);
+    });
+
+    it("should return proto when querying by tags", async () => {
+      let params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, tags: ["tag1", "tag2"]});
+      let result = await api.rpc.protos.getProtos(params);
+      let obj = JSON.parse(result.toHuman());
+      assert(protoHash in obj);
+
+      params = api.createType("GetProtosParams", {desc: true, from: 0, limit: 10, tags: ["fakeTag1", "tag2"]});
+      result = await api.rpc.protos.getProtos(params);
+      obj = JSON.parse(result.toHuman());
+      assert(Object.keys(obj).length === 0);
     });
 
     it("should return owner", async () => {
