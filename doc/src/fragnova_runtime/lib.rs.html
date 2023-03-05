@@ -2057,6 +2057,8 @@
 <a href="#2057" id="2057">2057</a>
 <a href="#2058" id="2058">2058</a>
 <a href="#2059" id="2059">2059</a>
+<a href="#2060" id="2060">2060</a>
+<a href="#2061" id="2061">2061</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2758,163 +2760,165 @@
 			}
 		}
 
-		<span class="attr">#[test]
-		</span><span class="kw">fn </span>is_the_immediate_call_valid_should_not_work_if_metadata_key_is_invalid() {
-			<span class="kw">for </span>(metadata_key, data) <span class="kw">in </span>[
-				(<span class="string">b&quot;title&quot;</span>.to_vec(), <span class="string">b&quot;I am valid UTF-8 text!&quot;</span>.to_vec()),
-				(<span class="string">b&quot;json_description&quot;</span>.to_vec(), <span class="string">b&quot;{\&quot;key\&quot;: \&quot;value\&quot;}&quot;</span>.to_vec()),
-				(<span class="string">b&quot;image&quot;</span>.to_vec(), <span class="macro">vec!</span>[<span class="number">0xFF</span>, <span class="number">0xD8</span>, <span class="number">0xFF</span>, <span class="number">0xE0</span>]),
-			] {
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Protos(
-						pallet_protos::Call::set_metadata {
-							<span class="comment">// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
-							</span>proto_hash: [<span class="number">7u8</span>; <span class="number">32</span>],
-							metadata_key: metadata_key.clone().try_into().unwrap(),
-							data: data.clone()
-						}
-					)),
-					<span class="bool-val">true
-				</span>);
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Protos(
-						pallet_protos::Call::set_metadata {
-							proto_hash: [<span class="number">7u8</span>; <span class="number">32</span>],
-							metadata_key: <span class="string">b&quot;invalid_key&quot;</span>.to_vec().try_into().unwrap(),
-							data: data.clone()
-						}
-					)),
-					<span class="bool-val">false
-				</span>);
+		<span class="comment">// For now we allow all keys!
+		// #[test]
+		// fn is_the_immediate_call_valid_should_not_work_if_metadata_key_is_invalid() {
+		// 	for (metadata_key, data) in [
+		// 		(b&quot;title&quot;.to_vec(), b&quot;I am valid UTF-8 text!&quot;.to_vec()),
+		// 		(b&quot;json_description&quot;.to_vec(), b&quot;{\&quot;key\&quot;: \&quot;value\&quot;}&quot;.to_vec()),
+		// 		(b&quot;image&quot;.to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
+		// 	] {
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Protos(
+		// 				pallet_protos::Call::set_metadata {
+		// 					// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
+		// 					proto_hash: [7u8; 32],
+		// 					metadata_key: metadata_key.clone().try_into().unwrap(),
+		// 					data: data.clone()
+		// 				}
+		// 			)),
+		// 			true
+		// 		);
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Protos(
+		// 				pallet_protos::Call::set_metadata {
+		// 					proto_hash: [7u8; 32],
+		// 					metadata_key: b&quot;invalid_key&quot;.to_vec().try_into().unwrap(),
+		// 					data: data.clone()
+		// 				}
+		// 			)),
+		// 			false
+		// 		);
 
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Fragments(
-						pallet_fragments::Call::set_definition_metadata {
-							<span class="comment">// https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
-							</span>definition_hash: [<span class="number">7u8</span>; <span class="number">16</span>],
-							metadata_key: metadata_key.clone().try_into().unwrap(),
-							data: data.clone()
-						}
-					)),
-					<span class="bool-val">true
-				</span>);
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Fragments(
-						pallet_fragments::Call::set_definition_metadata {
-							definition_hash: [<span class="number">7u8</span>; <span class="number">16</span>],
-							metadata_key: <span class="string">b&quot;invalid_key&quot;</span>.to_vec().try_into().unwrap(),
-							data: data.clone()
-						}
-					)),
-					<span class="bool-val">false
-				</span>);
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Fragments(
+		// 				pallet_fragments::Call::set_definition_metadata {
+		// 					// https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
+		// 					definition_hash: [7u8; 16],
+		// 					metadata_key: metadata_key.clone().try_into().unwrap(),
+		// 					data: data.clone()
+		// 				}
+		// 			)),
+		// 			true
+		// 		);
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Fragments(
+		// 				pallet_fragments::Call::set_definition_metadata {
+		// 					definition_hash: [7u8; 16],
+		// 					metadata_key: b&quot;invalid_key&quot;.to_vec().try_into().unwrap(),
+		// 					data: data.clone()
+		// 				}
+		// 			)),
+		// 			false
+		// 		);
 
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Fragments(
-						pallet_fragments::Call::set_instance_metadata {
-							definition_hash: [<span class="number">7u8</span>; <span class="number">16</span>],
-							edition_id: <span class="number">1</span>,
-							copy_id: <span class="number">1</span>,
-							metadata_key: metadata_key.clone().try_into().unwrap(),
-							data: data.clone()
-						}
-					)),
-					<span class="bool-val">true
-				</span>);
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Fragments(
-						pallet_fragments::Call::set_instance_metadata {
-							definition_hash: [<span class="number">7u8</span>; <span class="number">16</span>],
-							edition_id: <span class="number">1</span>,
-							copy_id: <span class="number">1</span>,
-							metadata_key: <span class="string">b&quot;invalid_key&quot;</span>.to_vec().try_into().unwrap(),
-							data: data.clone()
-						}
-					)),
-					<span class="bool-val">false
-				</span>);
-			}
-		}
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Fragments(
+		// 				pallet_fragments::Call::set_instance_metadata {
+		// 					definition_hash: [7u8; 16],
+		// 					edition_id: 1,
+		// 					copy_id: 1,
+		// 					metadata_key: metadata_key.clone().try_into().unwrap(),
+		// 					data: data.clone()
+		// 				}
+		// 			)),
+		// 			true
+		// 		);
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Fragments(
+		// 				pallet_fragments::Call::set_instance_metadata {
+		// 					definition_hash: [7u8; 16],
+		// 					edition_id: 1,
+		// 					copy_id: 1,
+		// 					metadata_key: b&quot;invalid_key&quot;.to_vec().try_into().unwrap(),
+		// 					data: data.clone()
+		// 				}
+		// 			)),
+		// 			false
+		// 		);
+		// 	}
+		// }
 
-		<span class="attr">#[test]
-		</span><span class="kw">fn </span>is_the_immediate_call_valid_should_not_work_if_metadata_data_is_invalid() {
-			<span class="kw">for </span>(metadata_key, data) <span class="kw">in </span>[
-				(<span class="string">b&quot;title&quot;</span>.to_vec(), <span class="string">b&quot;I am valid UTF-8 text!&quot;</span>.to_vec()),
-				(<span class="string">b&quot;json_description&quot;</span>.to_vec(), <span class="string">b&quot;{\&quot;key\&quot;: \&quot;value\&quot;}&quot;</span>.to_vec()),
-				(<span class="string">b&quot;image&quot;</span>.to_vec(), <span class="macro">vec!</span>[<span class="number">0xFF</span>, <span class="number">0xD8</span>, <span class="number">0xFF</span>, <span class="number">0xE0</span>]),
-			] {
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Protos(
-						pallet_protos::Call::set_metadata {
-							<span class="comment">// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
-							</span>proto_hash: [<span class="number">7u8</span>; <span class="number">32</span>],
-							metadata_key: metadata_key.clone().try_into().unwrap(),
-							data: data.clone()
-						}
-					)),
-					<span class="bool-val">true
-				</span>);
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Protos(
-						pallet_protos::Call::set_metadata {
-							proto_hash: [<span class="number">7u8</span>; <span class="number">32</span>],
-							metadata_key: metadata_key.clone().try_into().unwrap(),
-							data: <span class="macro">vec!</span>[<span class="number">0xF0</span>, <span class="number">0x9F</span>, <span class="number">0x98</span>] <span class="comment">// Invalid UTF-8 Text
-						</span>}
-					)),
-					<span class="bool-val">false
-				</span>);
+		// For now only size check
+		// #[test]
+		// fn is_the_immediate_call_valid_should_not_work_if_metadata_data_is_invalid() {
+		// 	for (metadata_key, data) in [
+		// 		(b&quot;title&quot;.to_vec(), b&quot;I am valid UTF-8 text!&quot;.to_vec()),
+		// 		(b&quot;json_description&quot;.to_vec(), b&quot;{\&quot;key\&quot;: \&quot;value\&quot;}&quot;.to_vec()),
+		// 		(b&quot;image&quot;.to_vec(), vec![0xFF, 0xD8, 0xFF, 0xE0]),
+		// 	] {
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Protos(
+		// 				pallet_protos::Call::set_metadata {
+		// 					// https://fragcolor-xyz.github.io/fragnova/doc/pallet_protos/pallet/enum.Call.html#
+		// 					proto_hash: [7u8; 32],
+		// 					metadata_key: metadata_key.clone().try_into().unwrap(),
+		// 					data: data.clone()
+		// 				}
+		// 			)),
+		// 			true
+		// 		);
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Protos(
+		// 				pallet_protos::Call::set_metadata {
+		// 					proto_hash: [7u8; 32],
+		// 					metadata_key: metadata_key.clone().try_into().unwrap(),
+		// 					data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+		// 				}
+		// 			)),
+		// 			false
+		// 		);
 
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Fragments(
-						pallet_fragments::Call::set_definition_metadata {
-							<span class="comment">// https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
-							</span>definition_hash: [<span class="number">7u8</span>; <span class="number">16</span>],
-							metadata_key: metadata_key.clone().try_into().unwrap(),
-							data: data.clone() <span class="comment">// Invalid UTF-8 Text
-						</span>}
-					)),
-					<span class="bool-val">true
-				</span>);
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Fragments(
-						pallet_fragments::Call::set_definition_metadata {
-							definition_hash: [<span class="number">7u8</span>; <span class="number">16</span>],
-							metadata_key: metadata_key.clone().try_into().unwrap(),
-							data: <span class="macro">vec!</span>[<span class="number">0xF0</span>, <span class="number">0x9F</span>, <span class="number">0x98</span>] <span class="comment">// Invalid UTF-8 Text
-						</span>}
-					)),
-					<span class="bool-val">false
-				</span>);
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Fragments(
+		// 				pallet_fragments::Call::set_definition_metadata {
+		// 					// https://fragcolor-xyz.github.io/fragnova/doc/pallet_fragments/pallet/enum.Call.html#
+		// 					definition_hash: [7u8; 16],
+		// 					metadata_key: metadata_key.clone().try_into().unwrap(),
+		// 					data: data.clone() // Invalid UTF-8 Text
+		// 				}
+		// 			)),
+		// 			true
+		// 		);
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Fragments(
+		// 				pallet_fragments::Call::set_definition_metadata {
+		// 					definition_hash: [7u8; 16],
+		// 					metadata_key: metadata_key.clone().try_into().unwrap(),
+		// 					data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+		// 				}
+		// 			)),
+		// 			false
+		// 		);
 
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Fragments(
-						pallet_fragments::Call::set_instance_metadata {
-							definition_hash: [<span class="number">7u8</span>; <span class="number">16</span>],
-							edition_id: <span class="number">1</span>,
-							copy_id: <span class="number">1</span>,
-							metadata_key: metadata_key.clone().try_into().unwrap(),
-							data: data.clone()
-						}
-					)),
-					<span class="bool-val">true
-				</span>);
-				<span class="macro">assert_eq!</span>(
-					is_the_immediate_call_valid(<span class="kw-2">&amp;</span>RuntimeCall::Fragments(
-						pallet_fragments::Call::set_instance_metadata {
-							definition_hash: [<span class="number">7u8</span>; <span class="number">16</span>],
-							edition_id: <span class="number">1</span>,
-							copy_id: <span class="number">1</span>,
-							metadata_key: metadata_key.try_into().unwrap(),
-							data: <span class="macro">vec!</span>[<span class="number">0xF0</span>, <span class="number">0x9F</span>, <span class="number">0x98</span>] <span class="comment">// Invalid UTF-8 Text
-						</span>}
-					)),
-					<span class="bool-val">false
-				</span>);
-			}
-		}
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Fragments(
+		// 				pallet_fragments::Call::set_instance_metadata {
+		// 					definition_hash: [7u8; 16],
+		// 					edition_id: 1,
+		// 					copy_id: 1,
+		// 					metadata_key: metadata_key.clone().try_into().unwrap(),
+		// 					data: data.clone()
+		// 				}
+		// 			)),
+		// 			true
+		// 		);
+		// 		assert_eq!(
+		// 			is_the_immediate_call_valid(&amp;RuntimeCall::Fragments(
+		// 				pallet_fragments::Call::set_instance_metadata {
+		// 					definition_hash: [7u8; 16],
+		// 					edition_id: 1,
+		// 					copy_id: 1,
+		// 					metadata_key: metadata_key.try_into().unwrap(),
+		// 					data: vec![0xF0, 0x9F, 0x98] // Invalid UTF-8 Text
+		// 				}
+		// 			)),
+		// 			false
+		// 		);
+		// 	}
+		// }
 
-		<span class="attr">#[test]
+		</span><span class="attr">#[test]
 		</span><span class="kw">fn </span>is_the_immediate_call_valid_should_not_work_if_a_batch_call_contains_a_call_that_indexes_the_transaction(
 		) {
 			<span class="macro">assert_eq!</span>(
