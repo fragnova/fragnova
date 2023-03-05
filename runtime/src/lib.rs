@@ -251,7 +251,8 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// that is **allowed to be spent in constructing a block** by a Node.
 ///
 /// Here, we set this to 2 seconds because we want a 6 second average block time. (since in Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** - see the crate documentation above for more information)
-const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(2u64 * WEIGHT_REF_TIME_PER_SECOND, u64::MAX);
+const MAXIMUM_BLOCK_WEIGHT: Weight =
+	Weight::from_parts(2u64 * WEIGHT_REF_TIME_PER_SECOND, u64::MAX);
 /// The maximum possible length (in bytes) that a Fragnova Block can be
 pub const MAXIMUM_BLOCK_LENGTH: u32 = 16 * 1024 * 1024;
 
@@ -373,6 +374,54 @@ mod validation_logic {
 			buf[4] == 0x02
 	}
 
+	fn match_rared(buf: &[u8]) -> bool {
+		// rared v1
+		return buf.len() >= 6 &&
+			buf[0] == 0x72 &&
+			buf[1] == 0x61 &&
+			buf[2] == 0x72 &&
+			buf[3] == 0x65 &&
+			buf[4] == 0x64 &&
+			buf[5] == 0x01
+	}
+
+	fn match_blender(buf: &[u8]) -> bool {
+		// blender BLENDER-
+		return buf.len() >= 8 &&
+			buf[0] == 0x42 &&
+			buf[1] == 0x4C &&
+			buf[2] == 0x45 &&
+			buf[3] == 0x4E &&
+			buf[4] == 0x44 &&
+			buf[5] == 0x45 &&
+			buf[6] == 0x52 &&
+			buf[7] == 0x2D
+	}
+
+	fn match_safetensor(buf: &[u8]) -> bool {
+		// safetensor v1
+		return buf.len() >= 24 &&
+			// skip 8 bytes
+			// find {"__metadata__"
+			// not the best but might work most of times!
+			buf[8] == 0x7B &&
+			buf[9] == 0x22 &&
+			buf[10] == 0x5F &&
+			buf[11] == 0x5F &&
+			buf[12] == 0x6D &&
+			buf[13] == 0x65 &&
+			buf[14] == 0x74 &&
+			buf[15] == 0x61 &&
+			buf[16] == 0x64 &&
+			buf[17] == 0x61 &&
+			buf[18] == 0x74 &&
+			buf[19] == 0x61 &&
+			buf[20] == 0x5F &&
+			buf[21] == 0x5F &&
+			buf[22] == 0x22 &&
+			buf[23] == 0x3A
+	}
+
 	/// Does the call `c` use `transaction_index::index`.
 	fn does_call_index_the_transaction(c: &RuntimeCall) -> bool {
 		matches!(
@@ -388,12 +437,10 @@ mod validation_logic {
 	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
 		match category {
 			Categories::Text(sub_categories) => match sub_categories {
-				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown => {
-					str::from_utf8(data).is_ok()
-				},
-				TextCategories::Json => {
-					serde_json::from_slice::<serde_json::Value>(&data[..]).is_ok()
-				},
+				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =>
+					str::from_utf8(data).is_ok(),
+				TextCategories::Json =>
+					serde_json::from_slice::<serde_json::Value>(&data[..]).is_ok(),
 			},
 			Categories::Trait(trait_hash) => match trait_hash {
 				Some(_) => false,
@@ -403,11 +450,11 @@ mod validation_logic {
 					};
 
 					if trait_struct.name.len() == 0 {
-						return false;
+						return false
 					}
 
 					if trait_struct.records.len() == 0 {
-						return false;
+						return false
 					}
 
 					trait_struct.records.windows(2).all(|window| {
@@ -435,7 +482,7 @@ mod validation_logic {
 
 				// only support EDN for now
 				if format != ShardsFormat::Edn {
-					return false;
+					return false
 				}
 
 				// check trait exists and that we require proper references
@@ -445,9 +492,8 @@ mod validation_logic {
 					proto_references.iter().any(|proto_hash| {
 						if let Some(proto) = pallet_protos::Protos::<Runtime>::get(proto_hash) {
 							match proto.category {
-								Categories::Shards(shards_info) => {
-									shards_info.implementing.contains(trait_hash)
-								},
+								Categories::Shards(shards_info) =>
+									shards_info.implementing.contains(trait_hash),
 								_ => false,
 							}
 						} else {
@@ -492,9 +538,10 @@ mod validation_logic {
 			Categories::Binary(sub_categories) => match sub_categories {
 				BinaryCategories::WasmProgram => infer::is(data, "wasm"), // wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn't I check if the last `payload` is `Payload::End`?
 				BinaryCategories::WasmReactor => infer::is(data, "wasm"),
-				BinaryCategories::BlendFile => false,
+				BinaryCategories::BlendFile => match_blender(data),
 				BinaryCategories::OnnxModel => false,
-				BinaryCategories::SafeTensors => false,
+				BinaryCategories::SafeTensors => match_safetensor(data),
+				BinaryCategories::RareDomain => match_rared(data),
 			},
 		}
 	}
@@ -918,7 +965,7 @@ impl pallet_grandpa::Config for Runtime {
 	type KeyOwnerProofSystem = ();
 
 	type KeyOwnerProof =
-	<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
+		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
 
 	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
 		KeyTypeId,
@@ -1205,8 +1252,8 @@ impl frame_system::offchain::SigningTypes for Runtime {
 ///
 /// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Runtime
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	type OverarchingCall = RuntimeCall;
 	type Extrinsic = UncheckedExtrinsic;
@@ -1215,8 +1262,8 @@ impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Runt
 /// Because you configured the Config trait for detach pallet and frag pallet
 /// to implement the `CreateSignedTransaction` trait, you also need to implement that trait for the runtime.
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	/// The code seems long, but what it tries to do is really:
 	/// 	- Create and prepare extra of SignedExtra type, and put various checkers in-place.
@@ -1542,7 +1589,7 @@ pub type SignedExtra = (
 /// For example - notice that the encoded transaction for `protos.upload()` has the order of first "signer", "signature"🥖, extra data🥕 (i.e "era", "nonce" and "tip") and finally the encoded call data🥦 (i.e "callIndex" and the arguments of `protos.upload()`): https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
 ///
 pub type UncheckedExtrinsic =
-generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// The payload being signed in transactions.
 ///
 /// Note: This type is only needed if you want to enable an off-chain worker for the runtime,

@@ -61,7 +61,7 @@ pallet-fragments-rpc = { version = '0.0.1', path = '../pallets/fragments/rpc' }
 log = { version = "0.4.14", default-features = false }
 clap = { version = "4.0.9", features = ["derive"] }
 hex = { version = "0.4.3", default-features = false }
-protos = { version = "0.1.26", default-features = false }
+protos = { version = "0.1.27", default-features = false }
 serde_json = { version = '1.0.79', default-features = false, features = ['alloc'] }
 
 # Local Dependencies
