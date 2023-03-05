@@ -2010,6 +2010,53 @@
 <a href="#2010" id="2010">2010</a>
 <a href="#2011" id="2011">2011</a>
 <a href="#2012" id="2012">2012</a>
+<a href="#2013" id="2013">2013</a>
+<a href="#2014" id="2014">2014</a>
+<a href="#2015" id="2015">2015</a>
+<a href="#2016" id="2016">2016</a>
+<a href="#2017" id="2017">2017</a>
+<a href="#2018" id="2018">2018</a>
+<a href="#2019" id="2019">2019</a>
+<a href="#2020" id="2020">2020</a>
+<a href="#2021" id="2021">2021</a>
+<a href="#2022" id="2022">2022</a>
+<a href="#2023" id="2023">2023</a>
+<a href="#2024" id="2024">2024</a>
+<a href="#2025" id="2025">2025</a>
+<a href="#2026" id="2026">2026</a>
+<a href="#2027" id="2027">2027</a>
+<a href="#2028" id="2028">2028</a>
+<a href="#2029" id="2029">2029</a>
+<a href="#2030" id="2030">2030</a>
+<a href="#2031" id="2031">2031</a>
+<a href="#2032" id="2032">2032</a>
+<a href="#2033" id="2033">2033</a>
+<a href="#2034" id="2034">2034</a>
+<a href="#2035" id="2035">2035</a>
+<a href="#2036" id="2036">2036</a>
+<a href="#2037" id="2037">2037</a>
+<a href="#2038" id="2038">2038</a>
+<a href="#2039" id="2039">2039</a>
+<a href="#2040" id="2040">2040</a>
+<a href="#2041" id="2041">2041</a>
+<a href="#2042" id="2042">2042</a>
+<a href="#2043" id="2043">2043</a>
+<a href="#2044" id="2044">2044</a>
+<a href="#2045" id="2045">2045</a>
+<a href="#2046" id="2046">2046</a>
+<a href="#2047" id="2047">2047</a>
+<a href="#2048" id="2048">2048</a>
+<a href="#2049" id="2049">2049</a>
+<a href="#2050" id="2050">2050</a>
+<a href="#2051" id="2051">2051</a>
+<a href="#2052" id="2052">2052</a>
+<a href="#2053" id="2053">2053</a>
+<a href="#2054" id="2054">2054</a>
+<a href="#2055" id="2055">2055</a>
+<a href="#2056" id="2056">2056</a>
+<a href="#2057" id="2057">2057</a>
+<a href="#2058" id="2058">2058</a>
+<a href="#2059" id="2059">2059</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2263,7 +2310,8 @@
 /// that is **allowed to be spent in constructing a block** by a Node.
 ///
 /// Here, we set this to 2 seconds because we want a 6 second average block time. (since in Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** - see the crate documentation above for more information)
-</span><span class="kw">const </span>MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(<span class="number">2u64 </span>* WEIGHT_REF_TIME_PER_SECOND, u64::MAX);
+</span><span class="kw">const </span>MAXIMUM_BLOCK_WEIGHT: Weight =
+	Weight::from_parts(<span class="number">2u64 </span>* WEIGHT_REF_TIME_PER_SECOND, u64::MAX);
 <span class="doccomment">/// The maximum possible length (in bytes) that a Fragnova Block can be
 </span><span class="kw">pub const </span>MAXIMUM_BLOCK_LENGTH: u32 = <span class="number">16 </span>* <span class="number">1024 </span>* <span class="number">1024</span>;
 
@@ -2385,6 +2433,54 @@
 			buf[<span class="number">4</span>] == <span class="number">0x02
 	</span>}
 
+	<span class="kw">fn </span>match_rared(buf: <span class="kw-2">&amp;</span>[u8]) -&gt; bool {
+		<span class="comment">// rared v1
+		</span><span class="kw">return </span>buf.len() &gt;= <span class="number">6 </span>&amp;&amp;
+			buf[<span class="number">0</span>] == <span class="number">0x72 </span>&amp;&amp;
+			buf[<span class="number">1</span>] == <span class="number">0x61 </span>&amp;&amp;
+			buf[<span class="number">2</span>] == <span class="number">0x72 </span>&amp;&amp;
+			buf[<span class="number">3</span>] == <span class="number">0x65 </span>&amp;&amp;
+			buf[<span class="number">4</span>] == <span class="number">0x64 </span>&amp;&amp;
+			buf[<span class="number">5</span>] == <span class="number">0x01
+	</span>}
+
+	<span class="kw">fn </span>match_blender(buf: <span class="kw-2">&amp;</span>[u8]) -&gt; bool {
+		<span class="comment">// blender BLENDER-
+		</span><span class="kw">return </span>buf.len() &gt;= <span class="number">8 </span>&amp;&amp;
+			buf[<span class="number">0</span>] == <span class="number">0x42 </span>&amp;&amp;
+			buf[<span class="number">1</span>] == <span class="number">0x4C </span>&amp;&amp;
+			buf[<span class="number">2</span>] == <span class="number">0x45 </span>&amp;&amp;
+			buf[<span class="number">3</span>] == <span class="number">0x4E </span>&amp;&amp;
+			buf[<span class="number">4</span>] == <span class="number">0x44 </span>&amp;&amp;
+			buf[<span class="number">5</span>] == <span class="number">0x45 </span>&amp;&amp;
+			buf[<span class="number">6</span>] == <span class="number">0x52 </span>&amp;&amp;
+			buf[<span class="number">7</span>] == <span class="number">0x2D
+	</span>}
+
+	<span class="kw">fn </span>match_safetensor(buf: <span class="kw-2">&amp;</span>[u8]) -&gt; bool {
+		<span class="comment">// safetensor v1
+		</span><span class="kw">return </span>buf.len() &gt;= <span class="number">24 </span>&amp;&amp;
+			<span class="comment">// skip 8 bytes
+			// find {&quot;__metadata__&quot;
+			// not the best but might work most of times!
+			</span>buf[<span class="number">8</span>] == <span class="number">0x7B </span>&amp;&amp;
+			buf[<span class="number">9</span>] == <span class="number">0x22 </span>&amp;&amp;
+			buf[<span class="number">10</span>] == <span class="number">0x5F </span>&amp;&amp;
+			buf[<span class="number">11</span>] == <span class="number">0x5F </span>&amp;&amp;
+			buf[<span class="number">12</span>] == <span class="number">0x6D </span>&amp;&amp;
+			buf[<span class="number">13</span>] == <span class="number">0x65 </span>&amp;&amp;
+			buf[<span class="number">14</span>] == <span class="number">0x74 </span>&amp;&amp;
+			buf[<span class="number">15</span>] == <span class="number">0x61 </span>&amp;&amp;
+			buf[<span class="number">16</span>] == <span class="number">0x64 </span>&amp;&amp;
+			buf[<span class="number">17</span>] == <span class="number">0x61 </span>&amp;&amp;
+			buf[<span class="number">18</span>] == <span class="number">0x74 </span>&amp;&amp;
+			buf[<span class="number">19</span>] == <span class="number">0x61 </span>&amp;&amp;
+			buf[<span class="number">20</span>] == <span class="number">0x5F </span>&amp;&amp;
+			buf[<span class="number">21</span>] == <span class="number">0x5F </span>&amp;&amp;
+			buf[<span class="number">22</span>] == <span class="number">0x22 </span>&amp;&amp;
+			buf[<span class="number">23</span>] == <span class="number">0x3A
+	</span>}
+
 	<span class="doccomment">/// Does the call `c` use `transaction_index::index`.
 	</span><span class="kw">fn </span>does_call_index_the_transaction(c: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
 		<span class="macro">matches!</span>(
@@ -2400,12 +2496,10 @@
 	<span class="kw">fn </span>is_valid(category: <span class="kw-2">&amp;</span>Categories, data: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;, proto_references: <span class="kw-2">&amp;</span>Vec&lt;Hash256&gt;) -&gt; bool {
 		<span class="kw">match </span>category {
 			Categories::Text(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
-				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =&gt; {
-					str::from_utf8(data).is_ok()
-				},
-				TextCategories::Json =&gt; {
-					serde_json::from_slice::&lt;serde_json::Value&gt;(<span class="kw-2">&amp;</span>data[..]).is_ok()
-				},
+				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =&gt;
+					str::from_utf8(data).is_ok(),
+				TextCategories::Json =&gt;
+					serde_json::from_slice::&lt;serde_json::Value&gt;(<span class="kw-2">&amp;</span>data[..]).is_ok(),
 			},
 			Categories::Trait(trait_hash) =&gt; <span class="kw">match </span>trait_hash {
 				<span class="prelude-val">Some</span>(<span class="kw">_</span>) =&gt; <span class="bool-val">false</span>,
@@ -2415,12 +2509,12 @@
 					};
 
 					<span class="kw">if </span>trait_struct.name.len() == <span class="number">0 </span>{
-						<span class="kw">return </span><span class="bool-val">false</span>;
-					}
+						<span class="kw">return </span><span class="bool-val">false
+					</span>}
 
 					<span class="kw">if </span>trait_struct.records.len() == <span class="number">0 </span>{
-						<span class="kw">return </span><span class="bool-val">false</span>;
-					}
+						<span class="kw">return </span><span class="bool-val">false
+					</span>}
 
 					trait_struct.records.windows(<span class="number">2</span>).all(|window| {
 						<span class="kw">let </span>(record_1, record_2) = (<span class="kw-2">&amp;</span>window[<span class="number">0</span>], <span class="kw-2">&amp;</span>window[<span class="number">1</span>]);
@@ -2447,8 +2541,8 @@
 
 				<span class="comment">// only support EDN for now
 				</span><span class="kw">if </span>format != ShardsFormat::Edn {
-					<span class="kw">return </span><span class="bool-val">false</span>;
-				}
+					<span class="kw">return </span><span class="bool-val">false
+				</span>}
 
 				<span class="comment">// check trait exists and that we require proper references
 				</span><span class="kw">let </span>requiring = <span class="kw-2">&amp;</span>shards_script_info_struct.requiring;
@@ -2457,9 +2551,8 @@
 					</span>proto_references.iter().any(|proto_hash| {
 						<span class="kw">if let </span><span class="prelude-val">Some</span>(proto) = pallet_protos::Protos::&lt;Runtime&gt;::get(proto_hash) {
 							<span class="kw">match </span>proto.category {
-								Categories::Shards(shards_info) =&gt; {
-									shards_info.implementing.contains(trait_hash)
-								},
+								Categories::Shards(shards_info) =&gt;
+									shards_info.implementing.contains(trait_hash),
 								<span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
 							}
 						} <span class="kw">else </span>{
@@ -2504,9 +2597,10 @@
 			Categories::Binary(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				BinaryCategories::WasmProgram =&gt; infer::is(data, <span class="string">&quot;wasm&quot;</span>), <span class="comment">// wasmparser_nostd::Parser::new(0).parse_all(data).all(|payload| payload.is_ok()), // REVIEW - shouldn&#39;t I check if the last `payload` is `Payload::End`?
 				</span>BinaryCategories::WasmReactor =&gt; infer::is(data, <span class="string">&quot;wasm&quot;</span>),
-				BinaryCategories::BlendFile =&gt; <span class="bool-val">false</span>,
+				BinaryCategories::BlendFile =&gt; match_blender(data),
 				BinaryCategories::OnnxModel =&gt; <span class="bool-val">false</span>,
-				BinaryCategories::SafeTensors =&gt; <span class="bool-val">false</span>,
+				BinaryCategories::SafeTensors =&gt; match_safetensor(data),
+				BinaryCategories::RareDomain =&gt; match_rared(data),
 			},
 		}
 	}
@@ -2930,7 +3024,7 @@
 	<span class="kw">type </span>KeyOwnerProofSystem = ();
 
 	<span class="kw">type </span>KeyOwnerProof =
-	&lt;<span class="self">Self</span>::KeyOwnerProofSystem <span class="kw">as </span>KeyOwnerProofSystem&lt;(KeyTypeId, GrandpaId)&gt;&gt;::Proof;
+		&lt;<span class="self">Self</span>::KeyOwnerProofSystem <span class="kw">as </span>KeyOwnerProofSystem&lt;(KeyTypeId, GrandpaId)&gt;&gt;::Proof;
 
 	<span class="kw">type </span>KeyOwnerIdentification = &lt;<span class="self">Self</span>::KeyOwnerProofSystem <span class="kw">as </span>KeyOwnerProofSystem&lt;(
 		KeyTypeId,
@@ -3217,8 +3311,8 @@
 ///
 /// Source: https://docs.substrate.io/how-to-guides/v3/ocw/transactions/
 </span><span class="kw">impl</span>&lt;LocalCall&gt; frame_system::offchain::SendTransactionTypes&lt;LocalCall&gt; <span class="kw">for </span>Runtime
-	<span class="kw">where
-		</span>RuntimeCall: From&lt;LocalCall&gt;,
+<span class="kw">where
+	</span>RuntimeCall: From&lt;LocalCall&gt;,
 {
 	<span class="kw">type </span>OverarchingCall = RuntimeCall;
 	<span class="kw">type </span>Extrinsic = UncheckedExtrinsic;
@@ -3227,8 +3321,8 @@
 <span class="doccomment">/// Because you configured the Config trait for detach pallet and frag pallet
 /// to implement the `CreateSignedTransaction` trait, you also need to implement that trait for the runtime.
 </span><span class="kw">impl</span>&lt;LocalCall&gt; frame_system::offchain::CreateSignedTransaction&lt;LocalCall&gt; <span class="kw">for </span>Runtime
-	<span class="kw">where
-		</span>RuntimeCall: From&lt;LocalCall&gt;,
+<span class="kw">where
+	</span>RuntimeCall: From&lt;LocalCall&gt;,
 {
 	<span class="doccomment">/// The code seems long, but what it tries to do is really:
 	/// 	- Create and prepare extra of SignedExtra type, and put various checkers in-place.
@@ -3554,7 +3648,7 @@
 /// For example - notice that the encoded transaction for `protos.upload()` has the order of first &quot;signer&quot;, &quot;signature&quot;🥖, extra data🥕 (i.e &quot;era&quot;, &quot;nonce&quot; and &quot;tip&quot;) and finally the encoded call data🥦 (i.e &quot;callIndex&quot; and the arguments of `protos.upload()`): https://polkadot.js.org/apps/#/extrinsics/decode/0xf5018400d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d0150cc530a8f70343680c46687ade61e1e4cdc0dfc6d916c3143828dc588938c1934030b530d9117001260426798d380306ea3a9d04fe7b525a33053a1c31bee86750200000b000000000000003448656c6c6f2c20576f726c6421
 ///
 </span><span class="kw">pub type </span>UncheckedExtrinsic =
-generic::UncheckedExtrinsic&lt;Address, RuntimeCall, Signature, SignedExtra&gt;;
+	generic::UncheckedExtrinsic&lt;Address, RuntimeCall, Signature, SignedExtra&gt;;
 <span class="doccomment">/// The payload being signed in transactions.
 ///
 /// Note: This type is only needed if you want to enable an off-chain worker for the runtime,
