@@ -17,7 +17,6 @@ sp-api = { version = '4.0.0-dev', default-features = false, git = 'https://githu
 sp-block-builder = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-consensus-aura = { version = '0.10.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-core = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
-sp-io = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-inherents = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-offchain = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-runtime = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
@@ -85,6 +84,10 @@ infer = { version = "0.11.0", default-features=false }
 # wasmparser-nostd = { version = "0.91.0", default-features = false }
 # rmp3 = { version = "0.3", default-features = false } # Official Idiomatic `no_std` bindings to minimp3 (short for "Minimalistic MP3 decoder single header library") (https://github.com/lieff/minimp3). (minimp3's repo's README mentions this crate btw)
 
+[dev-dependencies]
+# `sp-io` is used when testing the `chain_extension` module
+sp-io = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+
 [build-dependencies]
 substrate-wasm-builder = { version = '5.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 
@@ -118,7 +121,6 @@ std = [
 	'sp-block-builder/std',
 	'sp-consensus-aura/std',
 	'sp-core/std',
-	'sp-io/std',
 	'sp-inherents/std',
 	'sp-offchain/std',
 	'sp-runtime/std',

@@ -504,10 +504,14 @@ mod validation_logic {
 				});
 
 				let implementing = &shards_script_info_struct.implementing;
-				let implement_check = implementing.iter().all(|trait_hash| {
-					pallet_protos::Traits::<Runtime>::contains_key(trait_hash)
-						&&
-						proto_references.iter().any(|proto_hash| twox_64(proto_hash) == *trait_hash)
+				let implement_check = implementing.iter().all(|&trait_hash| {
+					// `trait_protos` should always have a length of 1
+					let Some(trait_protos) = pallet_protos::ProtosByCategory::<Runtime>::get(Categories::Trait(Some(trait_hash))) else {
+						return false;
+					};
+					proto_references.iter().any(|proto_hash| {
+						trait_protos.contains(proto_hash)
+					})
 				});
 
 				require_check && implement_check
