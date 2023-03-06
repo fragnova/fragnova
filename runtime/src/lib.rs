@@ -574,6 +574,8 @@ mod validation_logic {
 				};
 				match data {
 					None => true,
+					// `proto_references` param of `is_valid()` is only checked if the proto category is a ShardsScriptInfo.
+					// But since currently we don't allow a proto to patch/update its ShardsScriptInfo's traits, we don't need to pass in `new_references` into `is_valid()`.
 					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data, &proto_struct.references),
 					_ => true,
 				}
