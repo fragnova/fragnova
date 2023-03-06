@@ -568,13 +568,13 @@ mod validation_logic {
 					_ => true,
 				}
 			},
-			RuntimeCall::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
+			RuntimeCall::Protos(ProtosCall::patch{ref proto_hash, ref data, ..}) => {
 				let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
 					return false;
 				};
 				match data {
 					None => true,
-					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data, new_references),
+					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data, &proto_struct.references),
 					_ => true,
 				}
 			},
