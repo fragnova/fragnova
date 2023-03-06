@@ -84,6 +84,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult, MultiSignature,
 };
 use sp_std::{prelude::*, str};
+use sp_io::hashing::twox_64;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -504,11 +505,9 @@ mod validation_logic {
 
 				let implementing = &shards_script_info_struct.implementing;
 				let implement_check = implementing.iter().all(|trait_hash| {
-					if let Some(_) = pallet_protos::Traits::<Runtime>::get(trait_hash) {
-						true
-					} else {
-						false
-					}
+					pallet_protos::Traits::<Runtime>::contains_key(trait_hash)
+						&&
+						proto_references.iter().any(|proto_hash| twox_64(proto_hash) == *trait_hash)
 				});
 
 				require_check && implement_check
