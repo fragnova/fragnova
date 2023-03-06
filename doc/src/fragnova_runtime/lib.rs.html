@@ -2059,6 +2059,14 @@
 <a href="#2059" id="2059">2059</a>
 <a href="#2060" id="2060">2060</a>
 <a href="#2061" id="2061">2061</a>
+<a href="#2062" id="2062">2062</a>
+<a href="#2063" id="2063">2063</a>
+<a href="#2064" id="2064">2064</a>
+<a href="#2065" id="2065">2065</a>
+<a href="#2066" id="2066">2066</a>
+<a href="#2067" id="2067">2067</a>
+<a href="#2068" id="2068">2068</a>
+<a href="#2069" id="2069">2069</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2496,6 +2504,12 @@
 	}
 
 	<span class="kw">fn </span>is_valid(category: <span class="kw-2">&amp;</span>Categories, data: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;, proto_references: <span class="kw-2">&amp;</span>Vec&lt;Hash256&gt;) -&gt; bool {
+
+		<span class="comment">// Ensure all proto-references exist
+		</span><span class="kw">if </span>!proto_references.iter().all(|proto_hash| pallet_protos::Protos::&lt;Runtime&gt;::contains_key(proto_hash)) {
+			<span class="kw">return </span><span class="bool-val">false</span>;
+		}
+
 		<span class="kw">match </span>category {
 			Categories::Text(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =&gt;
@@ -2564,12 +2578,14 @@
 				});
 
 				<span class="kw">let </span>implementing = <span class="kw-2">&amp;</span>shards_script_info_struct.implementing;
-				<span class="kw">let </span>implement_check = implementing.iter().all(|trait_hash| {
-					<span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = pallet_protos::Traits::&lt;Runtime&gt;::get(trait_hash) {
-						<span class="bool-val">true
-					</span>} <span class="kw">else </span>{
-						<span class="bool-val">false
-					</span>}
+				<span class="kw">let </span>implement_check = implementing.iter().all(|<span class="kw-2">&amp;</span>trait_hash| {
+					<span class="comment">// `trait_protos` should always have a length of 1
+					</span><span class="kw">let </span><span class="prelude-val">Some</span>(trait_protos) = pallet_protos::ProtosByCategory::&lt;Runtime&gt;::get(Categories::Trait(<span class="prelude-val">Some</span>(trait_hash))) <span class="kw">else </span>{
+						<span class="kw">return </span><span class="bool-val">false</span>;
+					};
+					proto_references.iter().any(|proto_hash| {
+						trait_protos.contains(proto_hash)
+					})
 				});
 
 				require_check &amp;&amp; implement_check
@@ -2633,7 +2649,7 @@
 				};
 				<span class="kw">match </span>data {
 					<span class="prelude-val">None </span>=&gt; <span class="bool-val">true</span>,
-					<span class="prelude-val">Some</span>(pallet_protos::ProtoData::Local(<span class="kw-2">ref </span>data)) =&gt; is_valid(<span class="kw-2">&amp;</span>proto_struct.category, data, new_references),
+					<span class="prelude-val">Some</span>(pallet_protos::ProtoData::Local(<span class="kw-2">ref </span>data)) =&gt; is_valid(<span class="kw-2">&amp;</span>proto_struct.category, data, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[<span class="kw-2">&amp;</span>proto_struct.references[..], <span class="kw-2">&amp;</span>new_references[..]].concat()),
 					<span class="kw">_ </span>=&gt; <span class="bool-val">true</span>,
 				}
 			},
