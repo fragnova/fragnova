@@ -435,6 +435,12 @@ mod validation_logic {
 	}
 
 	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
+
+		// Ensure all proto-references exist
+		if !proto_references.iter().all(|proto_hash| pallet_protos::Protos::<Runtime>::contains_key(proto_hash)) {
+			return false;
+		}
+
 		match category {
 			Categories::Text(sub_categories) => match sub_categories {
 				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =>
@@ -568,15 +574,13 @@ mod validation_logic {
 					_ => true,
 				}
 			},
-			RuntimeCall::Protos(ProtosCall::patch{ref proto_hash, ref data, ..}) => {
+			RuntimeCall::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
 				let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
 					return false;
 				};
 				match data {
 					None => true,
-					// `proto_references` param of `is_valid()` is only checked if the proto category is a ShardsScriptInfo.
-					// But since currently we don't allow a proto to patch/update its ShardsScriptInfo's traits, we don't need to pass in `new_references` into `is_valid()`.
-					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data, &proto_struct.references),
+					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data, &vec![&proto_struct.references[..], &new_references[..]].concat()),
 					_ => true,
 				}
 			},
