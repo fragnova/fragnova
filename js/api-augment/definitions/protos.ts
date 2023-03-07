@@ -62,7 +62,8 @@ export default {
     VectorCategories: {
       _enum: [
         "svgFile",
-        "ttfFile"
+        "ttfFile",
+        "otfFile"
       ]
     },
     VideoCategories: {
@@ -74,7 +75,9 @@ export default {
     TextCategories: {
       _enum: [
         "plain",
-        "json"
+        "json",
+        "wgsl",
+        "markdown"
       ]
     },
     BinaryCategories: {
@@ -82,6 +85,9 @@ export default {
         "wasmProgram",
         "wasmReactor",
         "blendFile",
+        "onnxModel",
+        "safeTensors",
+        "rareDomain",
       ]
     },
     ShardsScriptInfo: {
@@ -89,7 +95,7 @@ export default {
       requiring: "Vec<ShardsTrait>",
       implementing: "Vec<ShardsTrait>"
     },
-    ShardsTrait: "Vec<u16>",
+    ShardsTrait: "Vec<u16>", // TODO Review - It should be `[u8; 8]` - but if I put that the RPC tests fails
     ShardsFormat: {
       _enum: [
         "edn",

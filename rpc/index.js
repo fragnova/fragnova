@@ -96,7 +96,8 @@ const connectToLocalNode = async () => {
       VectorCategories: {
         _enum: [
           "svgFile",
-          "ttfFile"
+          "ttfFile",
+          "otfFile"
         ]
       },
       VideoCategories: {
@@ -108,7 +109,9 @@ const connectToLocalNode = async () => {
       TextCategories: {
         _enum: [
           "plain",
-          "json"
+          "json",
+          "wgsl",
+          "markdown"
         ]
       },
       BinaryCategories: {
@@ -116,6 +119,9 @@ const connectToLocalNode = async () => {
           "wasmProgram",
           "wasmReactor",
           "blendFile",
+          "onnxModel",
+          "safeTensors",
+          "rareDomain"
         ]
       },
       ShardsScriptInfo: {
@@ -123,7 +129,7 @@ const connectToLocalNode = async () => {
         requiring: "Vec<ShardsTrait>",
         implementing: "Vec<ShardsTrait>"
       },
-      ShardsTrait: "Vec<u16>",
+      ShardsTrait: "Vec<u16>", // TODO Review - It should be `[u8; 8]` - but if I put that the RPC tests fails
       ShardsFormat: {
         _enum: [
           "edn",
