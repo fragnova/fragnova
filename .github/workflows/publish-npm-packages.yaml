@@ -30,8 +30,6 @@ jobs:
 
       - name: Check Out Repo
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
 
       - name: Install the Necessary Packages
         run: |
