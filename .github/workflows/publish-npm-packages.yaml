@@ -11,6 +11,7 @@ on:
   workflow_dispatch:
 
 env:
+  NEW_RELEASE_TAG: ${{ github.ref_name }}
   # The command `${{github.ref_name}/fragnova-v/}}` uses pattern substitution in Bash to replace the first occurrence of the string `fragnova-v` in the variable `github.ref_name` with an empty string.
   NEW_NPM_VERSION: ${{github.ref_name}/fragnova-v/}}
 
@@ -23,6 +24,10 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Set the `NEW_NPM_VERSION` env variable 
+        # The command `echo ${env.NEW_RELEASE_TAG/fragnova-v/}` uses pattern substitution in Bash to replace the first occurrence of the string "fragnova-v" in the variable NEW_RELEASE_TAG with an empty string.
+        run: echo "NEW_NPM_VERSION=${{env.NEW_RELEASE_TAG}/fragnova-v/}" >> $GITHUB_ENV
+    
       - name: Check Out Repo
         uses: actions/checkout@v3
 
