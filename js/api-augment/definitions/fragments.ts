@@ -5,7 +5,7 @@ export default {
       type: "String",
       params: [
         { name: "param", type: "GetDefinitionsParams" },
-        { name: "at", type: "BlockHash", isOptional: true }
+        { name: "at", type: "Hash", isOptional: true }
       ]
     },
     getInstances: {
@@ -13,7 +13,7 @@ export default {
       type: "String",
       params: [
         { name: "param", type: "GetInstancesParams" },
-        { name: "at", type: "BlockHash", isOptional: true }
+        { name: "at", type: "Hash", isOptional: true }
       ]
     },
     getInstanceOwner: {
@@ -21,12 +21,11 @@ export default {
       type: "String",
       params: [
         { name: "param", type: "GetInstanceOwnerParams" },
-        { name: "at", type: "BlockHash", isOptional: true }
+        { name: "at", type: "Hash", isOptional: true }
       ]
     },
   },
   types: {
-    BlockHash: "Hash",
     Hash128: "[u8; 16]",
     FragmentMetadata: {
       name: "Vec<u8>",
