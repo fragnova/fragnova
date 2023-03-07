@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  NEW_RELEASE_TAG: ${{ github.ref_name }}
+  NEW_RELEASE_TAG: ${{github.ref_name}}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Set the `NEW_NPM_VERSION` env variable using `NEW_RELEASE_TAG`
         run: | 
-          NEW_RELEASE_TAG=${{ env.NEW_RELEASE_TAG }}
+          NEW_RELEASE_TAG=${{env.NEW_RELEASE_TAG}}
           # The command `${NEW_RELEASE_TAG/fragnova-v/}` uses pattern substitution in Bash to replace the first occurrence of the string "fragnova-v" in the variable `NEW_RELEASE_TAG` with an empty string.
           echo "NEW_NPM_VERSION=${NEW_RELEASE_TAG/fragnova-v/}" >> $GITHUB_ENV
     
@@ -33,7 +33,7 @@ jobs:
 
       - name: Install Rustup
         run: |
-          echo "the new NPM version is ${env.NEW_NPM_VERSION}"
+          echo "the new NPM version is ${{env.NEW_NPM_VERSION}}"
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source ~/.cargo/env
           rustup default nightly
