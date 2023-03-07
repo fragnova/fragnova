@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  NEW_NPM_VERSION: ${{ github.ref_name.NEW_RELEASE_TAG.replace("fragnova-v", "") }}
+  NEW_NPM_VERSION: ${{ github.ref_name.replace("fragnova-v", "") }}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
