@@ -1,0 +1,29 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "display": "Base",
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "moduleResolution": "node",
+        "noImplicitAny": true,
+        "outDir": "dist",
+        "resolveJsonModule": true,
+        "sourceMap": false,
+        "strict": true,
+        "skipLibCheck": true,
+        "target": "es2022",
+        "watch": false,
+        "typeRoots": [
+            "node_modules/@types"
+        ],
+        "paths": {
+            "@fragnova/api-augment/*": [
+                "./interfaces/*"
+            ],
+            "@polkadot/api/augment": ["./interfaces/augment-api.ts"],
+            "@polkadot/types/augment": ["./interfaces/augment-types.ts"],
+            "@polkadot/types/lookup": ["./interfaces/types-lookup.ts"]
+        }
+    },
+    "exclude": ["node_modules/**", "./scripts/**", "./dist/**"],
+}

@@ -1,0 +1,80 @@
+name: Publish the NPM Package `@fragnova/api-augment` whenever you tag the Fragnova Repository
+
+# Controls when the action will run.
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    tags:
+      - "fragnova-v[0-9]+.[0-9]+" # ex. fragnova-v1.0
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  NEW_RELEASE_TAG: ${{ github.ref_name }}
+  NEW_NPM_VERSION: ${{ env.NEW_RELEASE_TAG.replace(fragnova-v, '') }}
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  update-npm-package:
+    name: Update the NPM Package `@fragnova/api-augment` using the Fragnova Blockchain's Metadata
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+
+      - name: Install Rustup
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source ~/.cargo/env
+          rustup default nightly
+          rustup update nightly
+          rustup update stable
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Set up NodeJs
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+          cache-dependency-path: js/api-augment/package-lock.json
+
+      - name: Build Fragnova
+        run: |
+          cargo build
+
+      - name: Run Fragnova
+        run: |
+          target/debug/fragnova --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing true --rpc-methods=Unsafe --pool-kbytes 200000 &
+          sleep 120
+          curl -H "Content-Type: application/json" -d '{"id":"1", "jsonrpc":"2.0", "method": "state_getMetadata", "params":[]}' http://localhost:9933 -o ./js/api-augment/metadata.json
+
+      - name: Npm Install
+        run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
+        working-directory: ./js/api-augment
+
+      # Note: `npm run build` auto-generates the typescript files. Then, it compiles them into javacsript files and saves them in the folder "./js/api-agument/dist" (the instruction to compile it into the "dist" folder is specified in js/api-augment/tsconfig.json).
+      # Furthermore, it also adds a "package.json" file into the "dist" using the script "./js/api-augment/scripts/package.js"
+      - name: Auto-generate the TypeScript types from the Fragnova Blockchain's metadata (metadata.json)
+        working-directory: ./js/api-augment
+        run: npm run build
+
+      - name: Bump the NPM Package's Version
+        run: npm version --new-version "${{env.NEW_NPM_VERSION}}" --no-git-tag-version
+        working-directory: ./js/api-augment/dist
+
+      - name: Publish the NPM Package to the NPM Registry with the `latest` tag
+        run: npm publish --tag latest --access public
+        working-directory: ./js/api-augment/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+
+
+
+
