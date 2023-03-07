@@ -11,8 +11,8 @@ on:
   workflow_dispatch:
 
 env:
-  # The command `${{github.ref_name}./fragnova-v/}}` uses pattern substitution in Bash to replace the first occurrence of the string `fragnova-v` in the variable `github.ref_name` with an empty string.
-  NEW_NPM_VERSION: ${{github.ref_name}./fragnova-v/}}
+  # The command `${{github.ref_name}/fragnova-v/}}` uses pattern substitution in Bash to replace the first occurrence of the string `fragnova-v` in the variable `github.ref_name` with an empty string.
+  NEW_NPM_VERSION: ${{github.ref_name}/fragnova-v/}}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
