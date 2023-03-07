@@ -11,7 +11,8 @@ on:
   workflow_dispatch:
 
 env:
-  NEW_NPM_VERSION: ${{ github.ref_name.replace("fragnova-v", "") }}
+  # The command `${{github.ref_name}./fragnova-v/}` uses pattern substitution in Bash to replace the first occurrence of the string `fragnova-v` in the variable `github.ref_name` with an empty string.
+  NEW_NPM_VERSION: ${{github.ref_name}./fragnova-v/}
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -27,6 +28,7 @@ jobs:
 
       - name: Install Rustup
         run: |
+          echo "the new NPM version is ${env.NEW_NPM_VERSION}"
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source ~/.cargo/env
           rustup default nightly
