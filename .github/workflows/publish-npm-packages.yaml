@@ -23,13 +23,20 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Set the `NEW_NPM_VERSION` env variable using `NEW_RELEASE_TAG`
-        run: | 
+        run: |
           NEW_RELEASE_TAG=${{env.NEW_RELEASE_TAG}}
           # The command `${NEW_RELEASE_TAG/fragnova-v/}` uses pattern substitution in Bash to replace the first occurrence of the string "fragnova-v" in the variable `NEW_RELEASE_TAG` with an empty string.
-          echo "NEW_NPM_VERSION=${NEW_RELEASE_TAG/fragnova-v/}" >> $GITHUB_ENV        
-    
+          echo "NEW_NPM_VERSION=${NEW_RELEASE_TAG/fragnova-v/}" >> $GITHUB_ENV
+
       - name: Check Out Repo
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Install the Necessary Packages
+        run: |
+          sudo apt update -y
+          sudo apt install -y cmake pkg-config libssl-dev git build-essential clang libclang-dev curl protobuf-compiler
 
       - name: Install Rustup
         run: |
@@ -54,7 +61,7 @@ jobs:
         run: |
           cargo build
 
-      - name: Run Fragnova
+      - name: Run a Fragnova Node and Download its Chain Metadata
         run: |
           target/debug/fragnova --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing true --rpc-methods=Unsafe --pool-kbytes 200000 &
           sleep 120
