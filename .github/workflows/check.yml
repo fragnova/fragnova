@@ -57,7 +57,7 @@ jobs:
       - name: Check if all the Polkadot.js RPC tests pass
         run: |
           RUST_LOG=bitswap=trace,runtime=trace,pallet_protos::pallet=trace,pallet_fragments::pallet=trace,pallet_detach::pallet=trace,pallet_accounts::pallet=trace target/debug/fragnova --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing true --rpc-methods=Unsafe --pool-kbytes 200000 &
-          sleep 120 # sleep 10
+          sleep 120
           cd ./rpc &&
           npm install &&
           npm test
