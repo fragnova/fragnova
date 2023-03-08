@@ -62,7 +62,7 @@ jobs:
       - name: Run a Fragnova Node and Download its Chain Metadata
         run: |
           target/debug/fragnova --dev --tmp --rpc-external --rpc-port 9933 --rpc-cors all --ws-external --enable-offchain-indexing true --rpc-methods=Unsafe --pool-kbytes 200000 &
-          sleep 120
+          sleep 240
           curl -H "Content-Type: application/json" -d '{"id":"1", "jsonrpc":"2.0", "method": "state_getMetadata", "params":[]}' http://localhost:9933 -o ./js/api-augment/metadata.json
 
       - name: Npm Install
