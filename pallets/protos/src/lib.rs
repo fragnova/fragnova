@@ -306,10 +306,14 @@ pub mod pallet {
 			// to compose the V1 Cid add this prefix to the hash: (str "z" (base58
 			// "0x0155a0e40220"))
 			let (proto_hash, data_size, data_stored) = match &data {
-				ProtoData::Local(data) => {
-					ensure!(!data.is_empty(), Error::<T>::ProtoDataIsEmpty);
-					(blake2_256(data), data.len(), ProtoData::Local(vec![]))
-				},
+				ProtoData::Local(data) =>
+					if category == Categories::Bundle {
+						ensure!(data.is_empty(), Error::<T>::SystematicFailure);
+						(blake2_256(&references.encode()), 0usize, ProtoData::Local(vec![]))
+					} else {
+						ensure!(!data.is_empty(), Error::<T>::ProtoDataIsEmpty);
+						(blake2_256(data), data.len(), ProtoData::Local(vec![]))
+					},
 				ProtoData::Arweave(data) => (blake2_256(data), 0usize, ProtoData::Arweave(*data)),
 				ProtoData::Ipfs(cid) => (blake2_256(cid), 0usize, ProtoData::Ipfs(*cid)),
 			};
@@ -408,15 +412,17 @@ pub mod pallet {
 			}
 
 			// store by category (original)
-			<ProtosByCategory<T>>::append(category, proto_hash);
+			<ProtosByCategory<T>>::append(category.clone(), proto_hash);
 
 			// store by owner
 			<ProtosByOwner<T>>::append(owner, proto_hash);
 
 			match &data {
 				ProtoData::Local(_data) => {
-					// index immutable data for IPFS discovery
-					transaction_index::index(extrinsic_index, data_size as u32, proto_hash);
+					if category != Categories::Bundle {
+						// index immutable data for fetching
+						transaction_index::index(extrinsic_index, data_size as u32, proto_hash);
+					}
 				},
 				_ => {},
 			};
@@ -510,9 +516,7 @@ pub mod pallet {
 			if data.is_some() {
 				// actually one last failure
 				match proto.category {
-					Categories::Trait(_) => {
-						return Err(Error::<T>::CannotPatchTraits.into())
-					}
+					Categories::Trait(_) => return Err(Error::<T>::CannotPatchTraits.into()),
 					_ => {},
 				};
 			}
