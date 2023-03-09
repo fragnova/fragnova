@@ -1376,6 +1376,10 @@
 <a href="#1376" id="1376">1376</a>
 <a href="#1377" id="1377">1377</a>
 <a href="#1378" id="1378">1378</a>
+<a href="#1379" id="1379">1379</a>
+<a href="#1380" id="1380">1380</a>
+<a href="#1381" id="1381">1381</a>
+<a href="#1382" id="1382">1382</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1684,10 +1688,14 @@
 			// to compose the V1 Cid add this prefix to the hash: (str &quot;z&quot; (base58
 			// &quot;0x0155a0e40220&quot;))
 			</span><span class="kw">let </span>(proto_hash, data_size, data_stored) = <span class="kw">match </span><span class="kw-2">&amp;</span>data {
-				ProtoData::Local(data) =&gt; {
-					<span class="macro">ensure!</span>(!data.is_empty(), Error::&lt;T&gt;::ProtoDataIsEmpty);
-					(blake2_256(data), data.len(), ProtoData::Local(<span class="macro">vec!</span>[]))
-				},
+				ProtoData::Local(data) =&gt;
+					<span class="kw">if </span>category == Categories::Bundle {
+						<span class="macro">ensure!</span>(data.is_empty(), Error::&lt;T&gt;::SystematicFailure);
+						(blake2_256(<span class="kw-2">&amp;</span>references.encode()), <span class="number">0usize</span>, ProtoData::Local(<span class="macro">vec!</span>[]))
+					} <span class="kw">else </span>{
+						<span class="macro">ensure!</span>(!data.is_empty(), Error::&lt;T&gt;::ProtoDataIsEmpty);
+						(blake2_256(data), data.len(), ProtoData::Local(<span class="macro">vec!</span>[]))
+					},
 				ProtoData::Arweave(data) =&gt; (blake2_256(data), <span class="number">0usize</span>, ProtoData::Arweave(<span class="kw-2">*</span>data)),
 				ProtoData::Ipfs(cid) =&gt; (blake2_256(cid), <span class="number">0usize</span>, ProtoData::Ipfs(<span class="kw-2">*</span>cid)),
 			};
@@ -1786,15 +1794,17 @@
 			}
 
 			<span class="comment">// store by category (original)
-			</span>&lt;ProtosByCategory&lt;T&gt;&gt;::append(category, proto_hash);
+			</span>&lt;ProtosByCategory&lt;T&gt;&gt;::append(category.clone(), proto_hash);
 
 			<span class="comment">// store by owner
 			</span>&lt;ProtosByOwner&lt;T&gt;&gt;::append(owner, proto_hash);
 
 			<span class="kw">match </span><span class="kw-2">&amp;</span>data {
 				ProtoData::Local(_data) =&gt; {
-					<span class="comment">// index immutable data for IPFS discovery
-					</span>transaction_index::index(extrinsic_index, data_size <span class="kw">as </span>u32, proto_hash);
+					<span class="kw">if </span>category != Categories::Bundle {
+						<span class="comment">// index immutable data for fetching
+						</span>transaction_index::index(extrinsic_index, data_size <span class="kw">as </span>u32, proto_hash);
+					}
 				},
 				<span class="kw">_ </span>=&gt; {},
 			};
@@ -1888,9 +1898,7 @@
 			<span class="kw">if </span>data.is_some() {
 				<span class="comment">// actually one last failure
 				</span><span class="kw">match </span>proto.category {
-					Categories::Trait(<span class="kw">_</span>) =&gt; {
-						<span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::CannotPatchTraits.into())
-					}
+					Categories::Trait(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::&lt;T&gt;::CannotPatchTraits.into()),
 					<span class="kw">_ </span>=&gt; {},
 				};
 			}

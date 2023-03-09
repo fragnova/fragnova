@@ -2067,6 +2067,9 @@
 <a href="#2067" id="2067">2067</a>
 <a href="#2068" id="2068">2068</a>
 <a href="#2069" id="2069">2069</a>
+<a href="#2070" id="2070">2070</a>
+<a href="#2071" id="2071">2071</a>
+<a href="#2072" id="2072">2072</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2504,11 +2507,13 @@
 	}
 
 	<span class="kw">fn </span>is_valid(category: <span class="kw-2">&amp;</span>Categories, data: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;, proto_references: <span class="kw-2">&amp;</span>Vec&lt;Hash256&gt;) -&gt; bool {
-
 		<span class="comment">// Ensure all proto-references exist
-		</span><span class="kw">if </span>!proto_references.iter().all(|proto_hash| pallet_protos::Protos::&lt;Runtime&gt;::contains_key(proto_hash)) {
-			<span class="kw">return </span><span class="bool-val">false</span>;
-		}
+		</span><span class="kw">if </span>!proto_references
+			.iter()
+			.all(|proto_hash| pallet_protos::Protos::&lt;Runtime&gt;::contains_key(proto_hash))
+		{
+			<span class="kw">return </span><span class="bool-val">false
+		</span>}
 
 		<span class="kw">match </span>category {
 			Categories::Text(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
@@ -2620,6 +2625,7 @@
 				BinaryCategories::SafeTensors =&gt; match_safetensor(data),
 				BinaryCategories::RareDomain =&gt; match_rared(data),
 			},
+			Categories::Bundle =&gt; data.is_empty(),
 		}
 	}
 
@@ -2632,7 +2638,7 @@
 				<span class="comment">// `Categories::Shards`, `Categories::Traits` and `Categories::Text`
 				// must have `data` that is of the enum variant type `ProtoData::Local`
 				</span><span class="kw">match </span>category {
-					Categories::Shards(<span class="kw">_</span>) | Categories::Trait(<span class="kw">_</span>) | Categories::Text(<span class="kw">_</span>) =&gt; <span class="kw">match </span>data {
+					Categories::Shards(<span class="kw">_</span>) | Categories::Trait(<span class="kw">_</span>) | Categories::Text(<span class="kw">_</span>) | Categories::Bundle =&gt; <span class="kw">match </span>data {
 						pallet_protos::ProtoData::Local(<span class="kw">_</span>) =&gt; (),
 						<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="bool-val">false</span>,
 					},
