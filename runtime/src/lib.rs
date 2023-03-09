@@ -435,10 +435,12 @@ mod validation_logic {
 	}
 
 	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
-
 		// Ensure all proto-references exist
-		if !proto_references.iter().all(|proto_hash| pallet_protos::Protos::<Runtime>::contains_key(proto_hash)) {
-			return false;
+		if !proto_references
+			.iter()
+			.all(|proto_hash| pallet_protos::Protos::<Runtime>::contains_key(proto_hash))
+		{
+			return false
 		}
 
 		match category {
@@ -551,6 +553,7 @@ mod validation_logic {
 				BinaryCategories::SafeTensors => match_safetensor(data),
 				BinaryCategories::RareDomain => match_rared(data),
 			},
+			Categories::Bundle => data.is_empty(),
 		}
 	}
 
@@ -563,7 +566,7 @@ mod validation_logic {
 				// `Categories::Shards`, `Categories::Traits` and `Categories::Text`
 				// must have `data` that is of the enum variant type `ProtoData::Local`
 				match category {
-					Categories::Shards(_) | Categories::Trait(_) | Categories::Text(_) => match data {
+					Categories::Shards(_) | Categories::Trait(_) | Categories::Text(_) | Categories::Bundle => match data {
 						pallet_protos::ProtoData::Local(_) => (),
 						_ => return false,
 					},
