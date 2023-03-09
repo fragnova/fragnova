@@ -1383,7 +1383,7 @@ parameter_types! {
 	/// The amount of funds that must be reserved when creating a new approval.
 	pub const ApprovalDeposit: Balance = 1 * DOLLARS;
 	/// The maximum length of a name or symbol of an asset stored on-chain.
-	pub const StringLimit: u32 = 50;
+	pub const StringLimit: u32 = 75;
 	/// The basic amount of funds that must be reserved when adding metadata to your asset.
 	pub const MetadataDepositBase: Balance = 10 * DOLLARS;
 	/// The additional funds that must be reserved for the number of bytes you store in your
