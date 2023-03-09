@@ -26,7 +26,7 @@ jobs:
         run: |
           NEW_RELEASE_TAG=${{env.NEW_RELEASE_TAG}}
           # The command `${NEW_RELEASE_TAG/fragnova-v/}` uses pattern substitution in Bash to replace the first occurrence of the string "fragnova-v" in the variable `NEW_RELEASE_TAG` with an empty string.
-          echo "NEW_NPM_VERSION=1.0.0-spec-${NEW_RELEASE_TAG/fragnova-v/}" >> $GITHUB_ENV
+          echo "NEW_NPM_VERSION=0.1.0-spec-${NEW_RELEASE_TAG/fragnova-v/}" >> $GITHUB_ENV
 
       - name: Check Out Repo
         uses: actions/checkout@v3
