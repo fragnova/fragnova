@@ -22,7 +22,7 @@ mod tests;
 #[allow(missing_docs)]
 mod weights;
 
-use protos::{categories::Categories, traits::Trait};
+use protos::{categories::{Categories, ShardsFormat}, traits::Trait};
 
 use sp_core::crypto::UncheckedFrom;
 
@@ -248,6 +248,10 @@ pub mod pallet {
 		CircularReference,
 		/// Cannot patch a Trait, please upload a new one
 		CannotPatchTraits,
+		/// All the requiring traits of the Shards Script that you want to upload have not been referenced
+		RequiredTraitsMissing,
+		/// All the implementing traits of the Shards Script that you want to upload have not been implemented
+		TraitsNotImplemented
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -354,6 +358,41 @@ pub mod pallet {
 					Categories::Trait(Some(trait_id))
 				},
 				Categories::Shards(info) => {
+
+					// only support EDN for now
+					ensure!(info.format == ShardsFormat::Edn, Error::<T>::SystematicFailure);
+
+					// check trait exists and that we require proper references
+					let requiring = &info.requiring;
+					let require_check = requiring.iter().all(|trait_hash| {
+						// go thru all the things we reference, find shards scripts and check if they implement the trait
+						references.iter().any(|proto_hash| {
+							if let Some(proto) = Protos::<T>::get(proto_hash) {
+								match proto.category {
+									Categories::Shards(shards_info) =>
+										shards_info.implementing.contains(trait_hash),
+									_ => false,
+								}
+							} else {
+								false
+							}
+						})
+					});
+					ensure!(require_check, Error::<T>::RequiredTraitsMissing);
+
+					let implementing = &info.implementing;
+					// All the "implementing" traits must also be in the `references` parameter
+					let implement_check = implementing.iter().all(|&trait_hash| {
+						// `trait_protos` should always have a length of 1
+						let Some(trait_protos) = ProtosByCategory::<T>::get(Categories::Trait(Some(trait_hash))) else {
+							return false;
+						};
+						references.iter().any(|proto_hash| {
+							trait_protos.contains(proto_hash)
+						})
+					});
+					ensure!(implement_check, Error::<T>::TraitsNotImplemented);
+
 					// store to ProtosByTrait what we directly implement
 					for implementing in info.implementing.iter() {
 						<ProtosByTrait<T>>::append(implementing, proto_hash);
