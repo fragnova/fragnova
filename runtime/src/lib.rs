@@ -476,7 +476,7 @@ mod validation_logic {
 					})
 				},
 			},
-			Categories::Shards(shards_script_info_struct) => shards_script_info_struct.format == ShardsFormat::Edn,
+			Categories::Shards(shards_script_info_struct) => shards_script_info_struct.format == ShardsFormat::Edn && str::from_utf8(data).is_ok(),
 			Categories::Audio(sub_categories) => match sub_categories {
 				AudioCategories::OggFile => infer::is(data, "ogg"),
 				AudioCategories::Mp3File => infer::is(data, "mp3"),
