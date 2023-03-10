@@ -126,7 +126,6 @@ use protos::{
 	},
 	traits::Trait,
 };
-use sp_fragnova::Hash256;
 
 /// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.
@@ -434,15 +433,7 @@ mod validation_logic {
 		)
 	}
 
-	fn is_valid(category: &Categories, data: &Vec<u8>, proto_references: &Vec<Hash256>) -> bool {
-		// Ensure all proto-references exist
-		if !proto_references
-			.iter()
-			.all(|proto_hash| pallet_protos::Protos::<Runtime>::contains_key(proto_hash))
-		{
-			return false
-		}
-
+	fn is_valid(category: &Categories, data: &Vec<u8>) -> bool {
 		match category {
 			Categories::Text(sub_categories) => match sub_categories {
 				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =>
@@ -485,44 +476,7 @@ mod validation_logic {
 					})
 				},
 			},
-			Categories::Shards(shards_script_info_struct) => {
-				let format = shards_script_info_struct.format;
-
-				// only support EDN for now
-				if format != ShardsFormat::Edn {
-					return false
-				}
-
-				// check trait exists and that we require proper references
-				let requiring = &shards_script_info_struct.requiring;
-				let require_check = requiring.iter().all(|trait_hash| {
-					// go thru all the things we reference, find shards scripts and check if they implement the trait
-					proto_references.iter().any(|proto_hash| {
-						if let Some(proto) = pallet_protos::Protos::<Runtime>::get(proto_hash) {
-							match proto.category {
-								Categories::Shards(shards_info) =>
-									shards_info.implementing.contains(trait_hash),
-								_ => false,
-							}
-						} else {
-							false
-						}
-					})
-				});
-
-				let implementing = &shards_script_info_struct.implementing;
-				let implement_check = implementing.iter().all(|&trait_hash| {
-					// `trait_protos` should always have a length of 1
-					let Some(trait_protos) = pallet_protos::ProtosByCategory::<Runtime>::get(Categories::Trait(Some(trait_hash))) else {
-						return false;
-					};
-					proto_references.iter().any(|proto_hash| {
-						trait_protos.contains(proto_hash)
-					})
-				});
-
-				require_check && implement_check
-			},
+			Categories::Shards(shards_script_info_struct) => shards_script_info_struct.format == ShardsFormat::Edn,
 			Categories::Audio(sub_categories) => match sub_categories {
 				AudioCategories::OggFile => infer::is(data, "ogg"),
 				AudioCategories::Mp3File => infer::is(data, "mp3"),
@@ -562,7 +516,7 @@ mod validation_logic {
 	/// Note: This function does not check whether the child/descendant calls of `c` (if it has any) are valid.
 	pub fn is_the_immediate_call_valid(c: &RuntimeCall) -> bool {
 		match c {
-			RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ref references, ..}) => {
+			RuntimeCall::Protos(ProtosCall::upload{ref data, ref category, ..}) => {
 				// `Categories::Shards`, `Categories::Traits` and `Categories::Text`
 				// must have `data` that is of the enum variant type `ProtoData::Local`
 				match category {
@@ -573,17 +527,17 @@ mod validation_logic {
 					_ => (),
 				};
 				match data {
-					pallet_protos::ProtoData::Local(ref data) => is_valid(category, data, references),
+					pallet_protos::ProtoData::Local(ref data) => is_valid(category, data),
 					_ => true,
 				}
 			},
-			RuntimeCall::Protos(ProtosCall::patch{ref proto_hash, ref data, ref new_references, ..}) => {
+			RuntimeCall::Protos(ProtosCall::patch{ref proto_hash, ref data, ..}) => {
 				let Some(proto_struct) = pallet_protos::Protos::<Runtime>::get(proto_hash) else {
 					return false;
 				};
 				match data {
 					None => true,
-					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data, &vec![&proto_struct.references[..], &new_references[..]].concat()),
+					Some(pallet_protos::ProtoData::Local(ref data)) => is_valid(&proto_struct.category, data),
 					_ => true,
 				}
 			},

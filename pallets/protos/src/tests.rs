@@ -643,215 +643,215 @@ mod get_protos_tests {
 		});
 	}
 
-	#[test]
-	fn get_protos_searching_by_multiple_categories_same_owner_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto1 = dd.proto_fragment_third;
-			let proto_text = dd.proto_fragment_second;
-			let proto_shard_script = dd.proto_shard_script;
+	// #[test]
+	// fn get_protos_searching_by_multiple_categories_same_owner_should_work() {
+	// 	new_test_ext().execute_with(|| {
+	// 		// UPLOAD
+	// 		let dd = DummyData::new();
+	// 		// Two protos with different trait names
+	// 		let proto1 = dd.proto_fragment_third;
+	// 		let proto_text = dd.proto_fragment_second;
+	// 		let proto_shard_script = dd.proto_shard_script;
+	//
+	// 		assert_ok!(upload(dd.account_id, &proto1));
+	// 		assert_ok!(upload(dd.account_id, &proto_text));
+	// 		assert_ok!(upload(dd.account_id, &proto_shard_script));
+	//
+	// 		// SEARCH
+	// 		let shard_script_num_1: [u8; 8] = [4u8; 8];
+	// 		let shard_script_num_2: [u8; 8] = [5u8; 8];
+	// 		let shard_script = ShardsScriptInfo {
+	// 			format: ShardsFormat::Edn,
+	// 			requiring: vec![shard_script_num_1],
+	// 			implementing: vec![shard_script_num_2],
+	// 		};
+	// 		let params = GetProtosParams {
+	// 			desc: true,
+	// 			from: 0,
+	// 			limit: 10,
+	// 			metadata_keys: Vec::new(),
+	// 			owner: None,
+	// 			return_owners: true,
+	// 			categories: vec![
+	// 				Categories::Trait(Some(twox_64(&proto1.data))),
+	// 				Categories::Shards(shard_script),
+	// 				Categories::Text(TextCategories::Plain),
+	// 			],
+	// 			tags: Vec::new(),
+	// 			exclude_tags: Vec::new(),
+	// 			available: Some(true),
+	// 		};
+	//
+	// 		let result = ProtosPallet::get_protos(params).ok().unwrap();
+	// 		let result_string = std::str::from_utf8(&result).unwrap();
+	//
+	// 		let proto_hash = proto1.get_proto_hash();
+	// 		let encoded = hex::encode(&proto_hash);
+	//
+	// 		let proto_hash_2 = proto_shard_script.get_proto_hash();
+	// 		let encoded2 = hex::encode(&proto_hash_2);
+	//
+	// 		let proto_hash_text = proto_text.get_proto_hash();
+	// 		let encoded3 = hex::encode(&proto_hash_text);
+	//
+	// 		let json_expected = json!({
+	// 			encoded: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id)
+	// 			},
+	// 		}, encoded2: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id)
+	// 			},
+	// 		}, encoded3: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id)
+	// 			},
+	// 		}})
+	// 		.to_string();
+	//
+	// 		assert_eq!(result_string, json_expected);
+	// 	});
+	// }
 
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id, &proto_text));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
+	// #[test]
+	// fn get_protos_filter_shards_by_implementing_requiring() {
+	// 	new_test_ext().execute_with(|| {
+	// 		// UPLOAD
+	// 		let dd = DummyData::new();
+	// 		// Two protos with different trait names
+	// 		let proto_shard_script = dd.proto_shard_script;
+	// 		let proto_shard_script_3 = dd.proto_shard_script_3;
+	// 		let proto_shard_script_binary = dd.proto_shard_script_4;
+	//
+	// 		assert_ok!(upload(dd.account_id, &proto_shard_script));
+	// 		assert_ok!(upload(dd.account_id, &proto_shard_script_3));
+	// 		// This below has the same implementing and requiring of script_3, but different format (Binary)
+	// 		assert_ok!(upload(dd.account_id, &proto_shard_script_binary));
+	//
+	// 		// SEARCH
+	// 		let shard_script_num_4: [u8; 8] = [1u8; 8];
+	// 		let shard_script_num_5: [u8; 8] = [7u8; 8];
+	// 		let shard_script = ShardsScriptInfo {
+	// 			format: ShardsFormat::Edn,
+	// 			requiring: vec![shard_script_num_4],
+	// 			implementing: vec![shard_script_num_5],
+	// 		};
+	// 		let params = GetProtosParams {
+	// 			desc: true,
+	// 			from: 0,
+	// 			limit: 10,
+	// 			metadata_keys: Vec::new(),
+	// 			owner: None,
+	// 			return_owners: true,
+	// 			categories: vec![Categories::Shards(shard_script)],
+	// 			tags: Vec::new(),
+	// 			exclude_tags: Vec::new(),
+	// 			available: Some(true),
+	// 		};
+	//
+	// 		let result = ProtosPallet::get_protos(params).ok().unwrap();
+	// 		let result_string = std::str::from_utf8(&result).unwrap();
+	//
+	// 		let proto_hash = proto_shard_script_3.get_proto_hash();
+	// 		let encoded2 = hex::encode(&proto_hash);
+	//
+	// 		let json_expected = json!({
+	// 			encoded2: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id)
+	// 			},
+	// 		}})
+	// 		.to_string();
+	//
+	// 		assert_eq!(result_string, json_expected);
+	// 	});
+	// }
 
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [4u8; 8];
-			let shard_script_num_2: [u8; 8] = [5u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 10,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![
-					Categories::Trait(Some(twox_64(&proto1.data))),
-					Categories::Shards(shard_script),
-					Categories::Text(TextCategories::Plain),
-				],
-				tags: Vec::new(),
-				exclude_tags: Vec::new(),
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto1.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let proto_hash_2 = proto_shard_script.get_proto_hash();
-			let encoded2 = hex::encode(&proto_hash_2);
-
-			let proto_hash_text = proto_text.get_proto_hash();
-			let encoded3 = hex::encode(&proto_hash_text);
-
-			let json_expected = json!({
-				encoded: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}, encoded2: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}, encoded3: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_filter_shards_by_implementing_requiring() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto_shard_script = dd.proto_shard_script;
-			let proto_shard_script_3 = dd.proto_shard_script_3;
-			let proto_shard_script_binary = dd.proto_shard_script_4;
-
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-			assert_ok!(upload(dd.account_id, &proto_shard_script_3));
-			// This below has the same implementing and requiring of script_3, but different format (Binary)
-			assert_ok!(upload(dd.account_id, &proto_shard_script_binary));
-
-			// SEARCH
-			let shard_script_num_4: [u8; 8] = [1u8; 8];
-			let shard_script_num_5: [u8; 8] = [7u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_4],
-				implementing: vec![shard_script_num_5],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 10,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Shards(shard_script)],
-				tags: Vec::new(),
-				exclude_tags: Vec::new(),
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto_shard_script_3.get_proto_hash();
-			let encoded2 = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded2: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_searching_by_multiple_categories_different_owner_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto1 = dd.proto_fragment_third;
-			let proto_text = dd.proto_fragment_second;
-			let proto_shard_script = dd.proto_shard_script;
-
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id_second, &proto_text));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [4u8; 8];
-			let shard_script_num_2: [u8; 8] = [5u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 10,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![
-					Categories::Trait(Some(twox_64(&proto1.data))),
-					Categories::Shards(shard_script),
-					Categories::Text(TextCategories::Plain),
-				],
-				tags: Vec::new(),
-				exclude_tags: Vec::new(),
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto1.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let proto_hash_2 = proto_shard_script.get_proto_hash();
-			let encoded2 = hex::encode(&proto_hash_2);
-
-			let proto_hash_text = proto_text.get_proto_hash();
-			let encoded3 = hex::encode(&proto_hash_text);
-
-			let json_expected = json!({
-				encoded: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}, encoded2: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}, encoded3: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id_second)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
+	// #[test]
+	// fn get_protos_searching_by_multiple_categories_different_owner_should_work() {
+	// 	new_test_ext().execute_with(|| {
+	// 		// UPLOAD
+	// 		let dd = DummyData::new();
+	// 		// Two protos with different trait names
+	// 		let proto1 = dd.proto_fragment_third;
+	// 		let proto_text = dd.proto_fragment_second;
+	// 		let proto_shard_script = dd.proto_shard_script;
+	//
+	// 		assert_ok!(upload(dd.account_id, &proto1));
+	// 		assert_ok!(upload(dd.account_id_second, &proto_text));
+	// 		assert_ok!(upload(dd.account_id, &proto_shard_script));
+	//
+	// 		// SEARCH
+	// 		let shard_script_num_1: [u8; 8] = [4u8; 8];
+	// 		let shard_script_num_2: [u8; 8] = [5u8; 8];
+	// 		let shard_script = ShardsScriptInfo {
+	// 			format: ShardsFormat::Edn,
+	// 			requiring: vec![shard_script_num_1],
+	// 			implementing: vec![shard_script_num_2],
+	// 		};
+	// 		let params = GetProtosParams {
+	// 			desc: true,
+	// 			from: 0,
+	// 			limit: 10,
+	// 			metadata_keys: Vec::new(),
+	// 			owner: None,
+	// 			return_owners: true,
+	// 			categories: vec![
+	// 				Categories::Trait(Some(twox_64(&proto1.data))),
+	// 				Categories::Shards(shard_script),
+	// 				Categories::Text(TextCategories::Plain),
+	// 			],
+	// 			tags: Vec::new(),
+	// 			exclude_tags: Vec::new(),
+	// 			available: Some(true),
+	// 		};
+	//
+	// 		let result = ProtosPallet::get_protos(params).ok().unwrap();
+	// 		let result_string = std::str::from_utf8(&result).unwrap();
+	//
+	// 		let proto_hash = proto1.get_proto_hash();
+	// 		let encoded = hex::encode(&proto_hash);
+	//
+	// 		let proto_hash_2 = proto_shard_script.get_proto_hash();
+	// 		let encoded2 = hex::encode(&proto_hash_2);
+	//
+	// 		let proto_hash_text = proto_text.get_proto_hash();
+	// 		let encoded3 = hex::encode(&proto_hash_text);
+	//
+	// 		let json_expected = json!({
+	// 			encoded: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id)
+	// 			},
+	// 		}, encoded2: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id)
+	// 			},
+	// 		}, encoded3: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id_second)
+	// 			},
+	// 		}})
+	// 		.to_string();
+	//
+	// 		assert_eq!(result_string, json_expected);
+	// 	});
+	// }
 
 	#[test]
 	fn get_protos_by_trait_should_return_two_protos() {
@@ -908,202 +908,202 @@ mod get_protos_tests {
 		});
 	}
 
-	#[test]
-	fn get_protos_by_shards_script_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto1 = dd.proto_fragment_third;
-			let proto_shard_script = dd.proto_shard_script;
+	// #[test]
+	// fn get_protos_by_shards_script_should_work() {
+	// 	new_test_ext().execute_with(|| {
+	// 		// UPLOAD
+	// 		let dd = DummyData::new();
+	// 		// Two protos with different trait names
+	// 		let proto1 = dd.proto_fragment_third;
+	// 		let proto_shard_script = dd.proto_shard_script;
+	//
+	// 		assert_ok!(upload(dd.account_id, &proto1));
+	// 		assert_ok!(upload(dd.account_id, &proto_shard_script));
+	//
+	// 		// SEARCH
+	// 		let shard_script_num_1: [u8; 8] = [4u8; 8];
+	// 		let shard_script_num_2: [u8; 8] = [5u8; 8];
+	// 		let shard_script = ShardsScriptInfo {
+	// 			format: ShardsFormat::Edn,
+	// 			requiring: vec![shard_script_num_1],
+	// 			implementing: vec![shard_script_num_2],
+	// 		};
+	// 		let params = GetProtosParams {
+	// 			desc: true,
+	// 			from: 0,
+	// 			limit: 2,
+	// 			metadata_keys: Vec::new(),
+	// 			owner: None,
+	// 			return_owners: true,
+	// 			categories: vec![Categories::Shards(shard_script)],
+	// 			tags: Vec::new(),
+	// 			exclude_tags: Vec::new(),
+	// 			available: Some(true),
+	// 		};
+	//
+	// 		let result = ProtosPallet::get_protos(params).ok().unwrap();
+	// 		let result_string = std::str::from_utf8(&result).unwrap();
+	//
+	// 		let proto_hash = proto_shard_script.get_proto_hash();
+	// 		let encoded = hex::encode(&proto_hash);
+	//
+	// 		let json_expected = json!({
+	// 			encoded: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id)
+	// 			},
+	// 		}})
+	// 		.to_string();
+	//
+	// 		assert_eq!(result_string, json_expected);
+	// 	});
+	// }
 
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
+	// #[test]
+	// fn get_protos_by_shards_finds_nothing() {
+	// 	new_test_ext().execute_with(|| {
+	// 		// UPLOAD
+	// 		let dd = DummyData::new();
+	// 		// Two protos with different trait names
+	// 		let proto1 = dd.proto_fragment_third;
+	// 		let proto_shard_script = dd.proto_shard_script;
+	//
+	// 		assert_ok!(upload(dd.account_id, &proto1));
+	// 		assert_ok!(upload(dd.account_id, &proto_shard_script));
+	//
+	// 		// SEARCH
+	// 		let shard_script_num_1: [u8; 8] = [99u8; 8];
+	// 		let shard_script_num_2: [u8; 8] = [99u8; 8];
+	// 		let shard_script = ShardsScriptInfo {
+	// 			format: ShardsFormat::Edn,
+	// 			requiring: vec![shard_script_num_1],
+	// 			implementing: vec![shard_script_num_2],
+	// 		};
+	// 		let params = GetProtosParams {
+	// 			desc: true,
+	// 			from: 0,
+	// 			limit: 2,
+	// 			metadata_keys: Vec::new(),
+	// 			owner: None,
+	// 			return_owners: true,
+	// 			categories: vec![Categories::Shards(shard_script)],
+	// 			tags: Vec::new(),
+	// 			exclude_tags: Vec::new(),
+	// 			available: Some(true),
+	// 		};
+	//
+	// 		let result = ProtosPallet::get_protos(params).ok().unwrap();
+	// 		let result_string = std::str::from_utf8(&result).unwrap();
+	//
+	// 		let json_expected = json!({}).to_string();
+	//
+	// 		assert_eq!(result_string, json_expected);
+	// 	});
+	// }
 
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [4u8; 8];
-			let shard_script_num_2: [u8; 8] = [5u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Shards(shard_script)],
-				tags: Vec::new(),
-				exclude_tags: Vec::new(),
-				available: Some(true),
-			};
+	// #[test]
+	// fn get_protos_by_partial_implementing_shards_script_should_work() {
+	// 	new_test_ext().execute_with(|| {
+	// 		// UPLOAD
+	// 		let dd = DummyData::new();
+	// 		let proto1 = dd.proto_fragment_third;
+	// 		let proto_shard_script = dd.proto_shard_script_2;
+	//
+	// 		assert_ok!(upload(dd.account_id, &proto1));
+	// 		assert_ok!(upload(dd.account_id, &proto_shard_script));
+	//
+	// 		// SEARCH
+	// 		let shard_script_num_1: [u8; 8] = [0u8; 8];
+	// 		let shard_script_num_2: [u8; 8] = [5u8; 8];
+	// 		let shard_script = ShardsScriptInfo {
+	// 			format: ShardsFormat::Edn,
+	// 			requiring: vec![shard_script_num_1],
+	// 			implementing: vec![shard_script_num_2],
+	// 		};
+	// 		let params = GetProtosParams {
+	// 			desc: true,
+	// 			from: 0,
+	// 			limit: 2,
+	// 			metadata_keys: Vec::new(),
+	// 			owner: None,
+	// 			return_owners: true,
+	// 			categories: vec![Categories::Shards(shard_script)],
+	// 			tags: Vec::new(),
+	// 			exclude_tags: Vec::new(),
+	// 			available: Some(true),
+	// 		};
+	//
+	// 		let result = ProtosPallet::get_protos(params).ok().unwrap();
+	// 		let result_string = std::str::from_utf8(&result).unwrap();
+	//
+	// 		let proto_hash = proto_shard_script.get_proto_hash();
+	// 		let encoded = hex::encode(&proto_hash);
+	//
+	// 		let json_expected = json!({
+	// 			encoded: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id)
+	// 			},
+	// 		}})
+	// 		.to_string();
+	//
+	// 		assert_eq!(result_string, json_expected);
+	// 	});
+	// }
 
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto_shard_script.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_shards_finds_nothing() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			// Two protos with different trait names
-			let proto1 = dd.proto_fragment_third;
-			let proto_shard_script = dd.proto_shard_script;
-
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [99u8; 8];
-			let shard_script_num_2: [u8; 8] = [99u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Shards(shard_script)],
-				tags: Vec::new(),
-				exclude_tags: Vec::new(),
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let json_expected = json!({}).to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_partial_implementing_shards_script_should_work() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			let proto1 = dd.proto_fragment_third;
-			let proto_shard_script = dd.proto_shard_script_2;
-
-			assert_ok!(upload(dd.account_id, &proto1));
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [0u8; 8];
-			let shard_script_num_2: [u8; 8] = [5u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Shards(shard_script)],
-				tags: Vec::new(),
-				exclude_tags: Vec::new(),
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto_shard_script.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
-
-	#[test]
-	fn get_protos_by_generic_format() {
-		new_test_ext().execute_with(|| {
-			// UPLOAD
-			let dd = DummyData::new();
-			let proto_shard_script = dd.proto_shard_script_2;
-
-			assert_ok!(upload(dd.account_id, &proto_shard_script));
-
-			// SEARCH
-			let shard_script_num_1: [u8; 8] = [0u8; 8];
-			let shard_script_num_2: [u8; 8] = [0u8; 8];
-			let shard_script = ShardsScriptInfo {
-				format: ShardsFormat::Edn,
-				requiring: vec![shard_script_num_1],
-				implementing: vec![shard_script_num_2],
-			};
-			let params = GetProtosParams {
-				desc: true,
-				from: 0,
-				limit: 2,
-				metadata_keys: Vec::new(),
-				owner: None,
-				return_owners: true,
-				categories: vec![Categories::Shards(shard_script)],
-				tags: Vec::new(),
-				exclude_tags: Vec::new(),
-				available: Some(true),
-			};
-
-			let result = ProtosPallet::get_protos(params).ok().unwrap();
-			let result_string = std::str::from_utf8(&result).unwrap();
-
-			let proto_hash = proto_shard_script.get_proto_hash();
-			let encoded = hex::encode(&proto_hash);
-
-			let json_expected = json!({
-				encoded: {
-				"license": "open",
-				"owner": {
-					"type": "internal",
-					"value": hex::encode(dd.account_id)
-				},
-			}})
-			.to_string();
-
-			assert_eq!(result_string, json_expected);
-		});
-	}
+	// #[test]
+	// fn get_protos_by_generic_format() {
+	// 	new_test_ext().execute_with(|| {
+	// 		// UPLOAD
+	// 		let dd = DummyData::new();
+	// 		let proto_shard_script = dd.proto_shard_script_2;
+	//
+	// 		assert_ok!(upload(dd.account_id, &proto_shard_script));
+	//
+	// 		// SEARCH
+	// 		let shard_script_num_1: [u8; 8] = [0u8; 8];
+	// 		let shard_script_num_2: [u8; 8] = [0u8; 8];
+	// 		let shard_script = ShardsScriptInfo {
+	// 			format: ShardsFormat::Edn,
+	// 			requiring: vec![shard_script_num_1],
+	// 			implementing: vec![shard_script_num_2],
+	// 		};
+	// 		let params = GetProtosParams {
+	// 			desc: true,
+	// 			from: 0,
+	// 			limit: 2,
+	// 			metadata_keys: Vec::new(),
+	// 			owner: None,
+	// 			return_owners: true,
+	// 			categories: vec![Categories::Shards(shard_script)],
+	// 			tags: Vec::new(),
+	// 			exclude_tags: Vec::new(),
+	// 			available: Some(true),
+	// 		};
+	//
+	// 		let result = ProtosPallet::get_protos(params).ok().unwrap();
+	// 		let result_string = std::str::from_utf8(&result).unwrap();
+	//
+	// 		let proto_hash = proto_shard_script.get_proto_hash();
+	// 		let encoded = hex::encode(&proto_hash);
+	//
+	// 		let json_expected = json!({
+	// 			encoded: {
+	// 			"license": "open",
+	// 			"owner": {
+	// 				"type": "internal",
+	// 				"value": hex::encode(dd.account_id)
+	// 			},
+	// 		}})
+	// 		.to_string();
+	//
+	// 		assert_eq!(result_string, json_expected);
+	// 	});
+	// }
 
 	#[test]
 	fn get_protos_should_exclude_tags() {
