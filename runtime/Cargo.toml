@@ -24,7 +24,7 @@ sp-session = { version = '4.0.0-dev', default-features = false, git = 'https://g
 sp-std = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-transaction-pool = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-version = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
-sp-fragnova = { version = '0.1.0', path = '../primitives/fragnova', default-features = false }
+sp-fragnova = { version = '0.1.0', path = '../primitives/fragnova', default-features = false, features = ['fragnova-workspace'] }
 
 frame-executive = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 frame-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }

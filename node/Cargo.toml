@@ -37,7 +37,7 @@ sp-finality-grandpa = { version = '4.0.0-dev', git = 'https://github.com/fragcol
 sp-runtime = { version = '7.0.0', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-runtime-interface = { version = '7.0.0', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-timestamp = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
-sp-fragnova = { version = '0.1.0', path = '../primitives/fragnova' }
+sp-fragnova = { version = '0.1.0', path = '../primitives/fragnova', features = ['fragnova-workspace'] }
 
 frame-system = { version = '4.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 
