@@ -16,7 +16,7 @@ sp-core = { version = '7.0.0', default-features = false, git = 'https://github.c
 sp-io = { version = '7.0.0', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-std = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 sp-runtime = { version = '7.0.0', optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
-sp-runtime-interface = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
+sp-runtime-interface = { version = '7.0.0', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', branch = 'fragnova-v0.9.37' }
 
 codec = { package = 'parity-scale-codec', version = '3.0.0', default-features = false, features = ['derive'] }
 scale-info = { version = '2.1.2', default-features = false, features = ['derive'] }
@@ -42,4 +42,4 @@ std = [
 ]
 
 # If you are using this crate inside Fragnova Cargo Workspace (https://github.com/fragcolor-xyz/fragnova.git), this feature must be enabled
-fragnova-workspace = ["sp-io"]
+fragnova-workspace = ["sp-io", "sp-runtime-interface"]
