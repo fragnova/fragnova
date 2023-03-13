@@ -92,6 +92,7 @@ export default {
     },
     ShardsScriptInfo: {
       format: "ShardsFormat",
+      shardsVersion: "Compact<u32>",
       requiring: "Vec<ShardsTrait>",
       implementing: "Vec<ShardsTrait>"
     },

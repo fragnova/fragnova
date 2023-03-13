@@ -142,7 +142,7 @@ describe("RPCs", () => {
     });
 
     it("should return no protos when filtering by a non-existent Category Shards", async () => {
-      const params = api.createType("GetProtosParams", { desc: true, from: 0, limit: 10, categories: [{ "shards": {format: "edn", requiring: [[0, 0, 0, 0, 0, 0, 0, 0]], implementing: [[0, 0, 0, 0, 0, 0, 0, 0]]} }] });
+      const params = api.createType("GetProtosParams", { desc: true, from: 0, limit: 10, categories: [{ "shards": {format: "edn", shardsVersion: 0, requiring: [[0, 0, 0, 0, 0, 0, 0, 0]], implementing: [[0, 0, 0, 0, 0, 0, 0, 0]]} }] });
       const result = await api.rpc.protos.getProtos(params);
       const obj = JSON.parse(result.toHuman());
       assert(Object.keys(obj).length === 0 && obj.constructor === Object);
