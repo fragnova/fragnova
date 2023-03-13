@@ -1380,6 +1380,45 @@
 <a href="#1380" id="1380">1380</a>
 <a href="#1381" id="1381">1381</a>
 <a href="#1382" id="1382">1382</a>
+<a href="#1383" id="1383">1383</a>
+<a href="#1384" id="1384">1384</a>
+<a href="#1385" id="1385">1385</a>
+<a href="#1386" id="1386">1386</a>
+<a href="#1387" id="1387">1387</a>
+<a href="#1388" id="1388">1388</a>
+<a href="#1389" id="1389">1389</a>
+<a href="#1390" id="1390">1390</a>
+<a href="#1391" id="1391">1391</a>
+<a href="#1392" id="1392">1392</a>
+<a href="#1393" id="1393">1393</a>
+<a href="#1394" id="1394">1394</a>
+<a href="#1395" id="1395">1395</a>
+<a href="#1396" id="1396">1396</a>
+<a href="#1397" id="1397">1397</a>
+<a href="#1398" id="1398">1398</a>
+<a href="#1399" id="1399">1399</a>
+<a href="#1400" id="1400">1400</a>
+<a href="#1401" id="1401">1401</a>
+<a href="#1402" id="1402">1402</a>
+<a href="#1403" id="1403">1403</a>
+<a href="#1404" id="1404">1404</a>
+<a href="#1405" id="1405">1405</a>
+<a href="#1406" id="1406">1406</a>
+<a href="#1407" id="1407">1407</a>
+<a href="#1408" id="1408">1408</a>
+<a href="#1409" id="1409">1409</a>
+<a href="#1410" id="1410">1410</a>
+<a href="#1411" id="1411">1411</a>
+<a href="#1412" id="1412">1412</a>
+<a href="#1413" id="1413">1413</a>
+<a href="#1414" id="1414">1414</a>
+<a href="#1415" id="1415">1415</a>
+<a href="#1416" id="1416">1416</a>
+<a href="#1417" id="1417">1417</a>
+<a href="#1418" id="1418">1418</a>
+<a href="#1419" id="1419">1419</a>
+<a href="#1420" id="1420">1420</a>
+<a href="#1421" id="1421">1421</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1404,7 +1443,7 @@
 <span class="attr">#[allow(missing_docs)]
 </span><span class="kw">mod </span>weights;
 
-<span class="kw">use </span>protos::{categories::Categories, traits::Trait};
+<span class="kw">use </span>protos::{categories::{Categories, ShardsFormat}, traits::Trait};
 
 <span class="kw">use </span>sp_core::crypto::UncheckedFrom;
 
@@ -1630,6 +1669,10 @@
 		</span>CircularReference,
 		<span class="doccomment">/// Cannot patch a Trait, please upload a new one
 		</span>CannotPatchTraits,
+		<span class="doccomment">/// All the requiring traits of the Shards Script that you want to upload have not been referenced
+		</span>RequiredTraitsMissing,
+		<span class="doccomment">/// All the implementing traits of the Shards Script that you want to upload have not been implemented
+		</span>TraitsNotImplemented
 	}
 
 	<span class="comment">// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -1736,6 +1779,41 @@
 					Categories::Trait(<span class="prelude-val">Some</span>(trait_id))
 				},
 				Categories::Shards(info) =&gt; {
+
+					<span class="comment">// only support EDN for now
+					</span><span class="macro">ensure!</span>(info.format == ShardsFormat::Edn, Error::&lt;T&gt;::SystematicFailure);
+
+					<span class="comment">// check trait exists and that we require proper references
+					</span><span class="kw">let </span>requiring = <span class="kw-2">&amp;</span>info.requiring;
+					<span class="kw">let </span>require_check = requiring.iter().all(|trait_hash| {
+						<span class="comment">// go thru all the things we reference, find shards scripts and check if they implement the trait
+						</span>references.iter().any(|proto_hash| {
+							<span class="kw">if let </span><span class="prelude-val">Some</span>(proto) = Protos::&lt;T&gt;::get(proto_hash) {
+								<span class="kw">match </span>proto.category {
+									Categories::Shards(shards_info) =&gt;
+										shards_info.implementing.contains(trait_hash),
+									<span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+								}
+							} <span class="kw">else </span>{
+								<span class="bool-val">false
+							</span>}
+						})
+					});
+					<span class="macro">ensure!</span>(require_check, Error::&lt;T&gt;::RequiredTraitsMissing);
+
+					<span class="kw">let </span>implementing = <span class="kw-2">&amp;</span>info.implementing;
+					<span class="comment">// All the &quot;implementing&quot; traits must also be in the `references` parameter
+					</span><span class="kw">let </span>implement_check = implementing.iter().all(|<span class="kw-2">&amp;</span>trait_hash| {
+						<span class="comment">// `trait_protos` should always have a length of 1
+						</span><span class="kw">let </span><span class="prelude-val">Some</span>(trait_protos) = ProtosByCategory::&lt;T&gt;::get(Categories::Trait(<span class="prelude-val">Some</span>(trait_hash))) <span class="kw">else </span>{
+							<span class="kw">return </span><span class="bool-val">false</span>;
+						};
+						references.iter().any(|proto_hash| {
+							trait_protos.contains(proto_hash)
+						})
+					});
+					<span class="macro">ensure!</span>(implement_check, Error::&lt;T&gt;::TraitsNotImplemented);
+
 					<span class="comment">// store to ProtosByTrait what we directly implement
 					</span><span class="kw">for </span>implementing <span class="kw">in </span>info.implementing.iter() {
 						&lt;ProtosByTrait&lt;T&gt;&gt;::append(implementing, proto_hash);

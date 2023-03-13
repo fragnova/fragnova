@@ -2034,42 +2034,6 @@
 <a href="#2034" id="2034">2034</a>
 <a href="#2035" id="2035">2035</a>
 <a href="#2036" id="2036">2036</a>
-<a href="#2037" id="2037">2037</a>
-<a href="#2038" id="2038">2038</a>
-<a href="#2039" id="2039">2039</a>
-<a href="#2040" id="2040">2040</a>
-<a href="#2041" id="2041">2041</a>
-<a href="#2042" id="2042">2042</a>
-<a href="#2043" id="2043">2043</a>
-<a href="#2044" id="2044">2044</a>
-<a href="#2045" id="2045">2045</a>
-<a href="#2046" id="2046">2046</a>
-<a href="#2047" id="2047">2047</a>
-<a href="#2048" id="2048">2048</a>
-<a href="#2049" id="2049">2049</a>
-<a href="#2050" id="2050">2050</a>
-<a href="#2051" id="2051">2051</a>
-<a href="#2052" id="2052">2052</a>
-<a href="#2053" id="2053">2053</a>
-<a href="#2054" id="2054">2054</a>
-<a href="#2055" id="2055">2055</a>
-<a href="#2056" id="2056">2056</a>
-<a href="#2057" id="2057">2057</a>
-<a href="#2058" id="2058">2058</a>
-<a href="#2059" id="2059">2059</a>
-<a href="#2060" id="2060">2060</a>
-<a href="#2061" id="2061">2061</a>
-<a href="#2062" id="2062">2062</a>
-<a href="#2063" id="2063">2063</a>
-<a href="#2064" id="2064">2064</a>
-<a href="#2065" id="2065">2065</a>
-<a href="#2066" id="2066">2066</a>
-<a href="#2067" id="2067">2067</a>
-<a href="#2068" id="2068">2068</a>
-<a href="#2069" id="2069">2069</a>
-<a href="#2070" id="2070">2070</a>
-<a href="#2071" id="2071">2071</a>
-<a href="#2072" id="2072">2072</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2198,7 +2162,6 @@
 	},
 	traits::Trait,
 };
-<span class="kw">use </span>sp_fragnova::Hash256;
 
 <span class="doccomment">/// Prints debug output of the `contracts` pallet to stdout if the node is
 /// started with `-lruntime::contracts=debug`.
@@ -2287,7 +2250,7 @@
 </span><span class="kw">pub const </span>CENTS: Balance = <span class="number">1_000 </span>* MILLICENTS; <span class="comment">// assume this is worth about a cent.
 </span><span class="doccomment">/// TODO: Documentation
 </span><span class="kw">pub const </span>DOLLARS: Balance = <span class="number">100 </span>* CENTS;
-<span class="doccomment">/// The amount of balance a caller has to pay for calling an extrinsic with `bytes` bytes and .
+<span class="doccomment">/// The amount of balance a caller has to pay for calling an extrinsic with `bytes` bytes and storage items `items`.
 </span><span class="kw">pub const fn </span>deposit(items: u32, bytes: u32) -&gt; Balance {
 	items <span class="kw">as </span>Balance * <span class="number">15 </span>* CENTS + (bytes <span class="kw">as </span>Balance) * <span class="number">6 </span>* CENTS
 }
@@ -2506,15 +2469,7 @@
 		)
 	}
 
-	<span class="kw">fn </span>is_valid(category: <span class="kw-2">&amp;</span>Categories, data: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;, proto_references: <span class="kw-2">&amp;</span>Vec&lt;Hash256&gt;) -&gt; bool {
-		<span class="comment">// Ensure all proto-references exist
-		</span><span class="kw">if </span>!proto_references
-			.iter()
-			.all(|proto_hash| pallet_protos::Protos::&lt;Runtime&gt;::contains_key(proto_hash))
-		{
-			<span class="kw">return </span><span class="bool-val">false
-		</span>}
-
+	<span class="kw">fn </span>is_valid(category: <span class="kw-2">&amp;</span>Categories, data: <span class="kw-2">&amp;</span>Vec&lt;u8&gt;) -&gt; bool {
 		<span class="kw">match </span>category {
 			Categories::Text(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				TextCategories::Plain | TextCategories::Wgsl | TextCategories::Markdown =&gt;
@@ -2557,44 +2512,7 @@
 					</span>})
 				},
 			},
-			Categories::Shards(shards_script_info_struct) =&gt; {
-				<span class="kw">let </span>format = shards_script_info_struct.format;
-
-				<span class="comment">// only support EDN for now
-				</span><span class="kw">if </span>format != ShardsFormat::Edn {
-					<span class="kw">return </span><span class="bool-val">false
-				</span>}
-
-				<span class="comment">// check trait exists and that we require proper references
-				</span><span class="kw">let </span>requiring = <span class="kw-2">&amp;</span>shards_script_info_struct.requiring;
-				<span class="kw">let </span>require_check = requiring.iter().all(|trait_hash| {
-					<span class="comment">// go thru all the things we reference, find shards scripts and check if they implement the trait
-					</span>proto_references.iter().any(|proto_hash| {
-						<span class="kw">if let </span><span class="prelude-val">Some</span>(proto) = pallet_protos::Protos::&lt;Runtime&gt;::get(proto_hash) {
-							<span class="kw">match </span>proto.category {
-								Categories::Shards(shards_info) =&gt;
-									shards_info.implementing.contains(trait_hash),
-								<span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
-							}
-						} <span class="kw">else </span>{
-							<span class="bool-val">false
-						</span>}
-					})
-				});
-
-				<span class="kw">let </span>implementing = <span class="kw-2">&amp;</span>shards_script_info_struct.implementing;
-				<span class="kw">let </span>implement_check = implementing.iter().all(|<span class="kw-2">&amp;</span>trait_hash| {
-					<span class="comment">// `trait_protos` should always have a length of 1
-					</span><span class="kw">let </span><span class="prelude-val">Some</span>(trait_protos) = pallet_protos::ProtosByCategory::&lt;Runtime&gt;::get(Categories::Trait(<span class="prelude-val">Some</span>(trait_hash))) <span class="kw">else </span>{
-						<span class="kw">return </span><span class="bool-val">false</span>;
-					};
-					proto_references.iter().any(|proto_hash| {
-						trait_protos.contains(proto_hash)
-					})
-				});
-
-				require_check &amp;&amp; implement_check
-			},
+			Categories::Shards(shards_script_info_struct) =&gt; shards_script_info_struct.format == ShardsFormat::Edn &amp;&amp; str::from_utf8(data).is_ok(),
 			Categories::Audio(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				AudioCategories::OggFile =&gt; infer::is(data, <span class="string">&quot;ogg&quot;</span>),
 				AudioCategories::Mp3File =&gt; infer::is(data, <span class="string">&quot;mp3&quot;</span>),
@@ -2634,7 +2552,7 @@
 	/// Note: This function does not check whether the child/descendant calls of `c` (if it has any) are valid.
 	</span><span class="kw">pub fn </span>is_the_immediate_call_valid(c: <span class="kw-2">&amp;</span>RuntimeCall) -&gt; bool {
 		<span class="kw">match </span>c {
-			RuntimeCall::Protos(ProtosCall::upload{<span class="kw-2">ref </span>data, <span class="kw-2">ref </span>category, <span class="kw-2">ref </span>references, ..}) =&gt; {
+			RuntimeCall::Protos(ProtosCall::upload{<span class="kw-2">ref </span>data, <span class="kw-2">ref </span>category, ..}) =&gt; {
 				<span class="comment">// `Categories::Shards`, `Categories::Traits` and `Categories::Text`
 				// must have `data` that is of the enum variant type `ProtoData::Local`
 				</span><span class="kw">match </span>category {
@@ -2645,17 +2563,17 @@
 					<span class="kw">_ </span>=&gt; (),
 				};
 				<span class="kw">match </span>data {
-					pallet_protos::ProtoData::Local(<span class="kw-2">ref </span>data) =&gt; is_valid(category, data, references),
+					pallet_protos::ProtoData::Local(<span class="kw-2">ref </span>data) =&gt; is_valid(category, data),
 					<span class="kw">_ </span>=&gt; <span class="bool-val">true</span>,
 				}
 			},
-			RuntimeCall::Protos(ProtosCall::patch{<span class="kw-2">ref </span>proto_hash, <span class="kw-2">ref </span>data, <span class="kw-2">ref </span>new_references, ..}) =&gt; {
+			RuntimeCall::Protos(ProtosCall::patch{<span class="kw-2">ref </span>proto_hash, <span class="kw-2">ref </span>data, ..}) =&gt; {
 				<span class="kw">let </span><span class="prelude-val">Some</span>(proto_struct) = pallet_protos::Protos::&lt;Runtime&gt;::get(proto_hash) <span class="kw">else </span>{
 					<span class="kw">return </span><span class="bool-val">false</span>;
 				};
 				<span class="kw">match </span>data {
 					<span class="prelude-val">None </span>=&gt; <span class="bool-val">true</span>,
-					<span class="prelude-val">Some</span>(pallet_protos::ProtoData::Local(<span class="kw-2">ref </span>data)) =&gt; is_valid(<span class="kw-2">&amp;</span>proto_struct.category, data, <span class="kw-2">&amp;</span><span class="macro">vec!</span>[<span class="kw-2">&amp;</span>proto_struct.references[..], <span class="kw-2">&amp;</span>new_references[..]].concat()),
+					<span class="prelude-val">Some</span>(pallet_protos::ProtoData::Local(<span class="kw-2">ref </span>data)) =&gt; is_valid(<span class="kw-2">&amp;</span>proto_struct.category, data),
 					<span class="kw">_ </span>=&gt; <span class="bool-val">true</span>,
 				}
 			},
@@ -3408,8 +3326,18 @@
 	/// change because that would break already deployed contracts. The `Call` structure itself
 	/// is not allowed to change the indices of existing pallets, too.
 	</span><span class="kw">type </span>CallFilter = frame_support::traits::Nothing;
-	<span class="kw">type </span>DepositPerItem = DepositPerItem;
-	<span class="kw">type </span>DepositPerByte = DepositPerByte;
+	<span class="doccomment">/// The amount of balance a caller has to pay for each storage item.
+	///
+	/// # Note
+	///
+	/// Changing this value for an existing chain might need a storage migration.
+	</span><span class="kw">type </span>DepositPerItem = DepositPerItem;
+	<span class="doccomment">/// The amount of balance a caller has to pay for each byte of storage.
+	///
+	/// # Note
+	///
+	/// Changing this value for an existing chain might need a storage migration.
+	</span><span class="kw">type </span>DepositPerByte = DepositPerByte;
 	<span class="kw">type </span>CallStack = [pallet_contracts::Frame&lt;<span class="self">Self</span>&gt;; <span class="number">31</span>];
 	<span class="kw">type </span>WeightPrice = pallet_transaction_payment::Pallet&lt;<span class="self">Self</span>&gt;;
 	<span class="kw">type </span>WeightInfo = ();
