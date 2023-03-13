@@ -128,7 +128,6 @@ pub mod pallet {
 		frame_system::Config
 		+ pallet_detach::Config
 		+ pallet_accounts::Config
-		+ pallet_assets::Config
 		+ pallet_contracts::Config
 		+ pallet_clusters::Config
 	{
