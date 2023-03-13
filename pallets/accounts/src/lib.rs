@@ -834,7 +834,13 @@ pub mod pallet {
 
 		/// Allow the External Account ID `external_id` to be used as a proxy
 		/// for the Fragnova Account ID `origin`
-		#[pallet::weight(<T as pallet::Config>::WeightInfo::sponsor_account())] // TODO - DYNAMIC COST @aang114
+		#[pallet::weight({
+			let di = call.get_dispatch_info();
+			(<T as pallet::Config>::WeightInfo::sponsor_account() // TODO - better weight
+			.saturating_add(T::DbWeight::get().reads_writes(1, 1))
+			.saturating_add(di.weight),
+			di.class)
+		})]
 		#[pallet::call_index(9)]
 		#[transactional]
 		pub fn sponsor_call(
