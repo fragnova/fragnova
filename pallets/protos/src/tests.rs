@@ -99,6 +99,36 @@ mod upload_tests {
 			assert_noop!(upload(dd.account_id, &proto), Error::<Test>::ProtoExists);
 		});
 	}
+
+	#[test]
+	fn upload_should_not_work_if_reference_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let mut proto = dd.proto_fragment;
+			proto.references = vec![[222; 32]];
+			assert_noop!(upload(dd.account_id, &proto), Error::<Test>::ReferenceNotFound);
+		});
+	}
+
+	#[test]
+	fn upload_should_not_work_if_trait_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let [trait_proto, shards_proto] = dd.proto_with_trait;
+			assert_ok!(upload(dd.account_id, &trait_proto));
+			assert_ok!(upload(dd.account_id, &shards_proto));
+		});
+
+		new_test_ext().execute_with(|| {
+			let dd = DummyData::new();
+			let [_trait_proto, mut shards_proto] = dd.proto_with_trait;
+			assert_noop!(upload(dd.account_id, &shards_proto), Error::<Test>::ReferenceNotFound);
+
+			shards_proto.references = vec![];
+			assert_noop!(upload(dd.account_id, &shards_proto), Error::<Test>::TraitsNotImplemented);
+		});
+
+	}
 }
 
 mod patch_tests {
@@ -430,7 +460,7 @@ mod detach_tests {
 
 mod get_protos_tests {
 	use super::*;
-	use protos::categories::{ShardsFormat, ShardsScriptInfo};
+	// use protos::categories::{ShardsFormat, ShardsScriptInfo};
 	use upload_tests::upload;
 
 	#[test]

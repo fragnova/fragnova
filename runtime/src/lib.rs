@@ -214,7 +214,7 @@ pub const MILLICENTS: Balance = 1_000_000_000;
 pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
 /// TODO: Documentation
 pub const DOLLARS: Balance = 100 * CENTS;
-/// The amount of balance a caller has to pay for calling an extrinsic with `bytes` bytes and .
+/// The amount of balance a caller has to pay for calling an extrinsic with `bytes` bytes and storage items `items`.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
 	items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
 }
@@ -1290,7 +1290,17 @@ impl pallet_contracts::Config for Runtime {
 	/// change because that would break already deployed contracts. The `Call` structure itself
 	/// is not allowed to change the indices of existing pallets, too.
 	type CallFilter = frame_support::traits::Nothing;
+	/// The amount of balance a caller has to pay for each storage item.
+	///
+	/// # Note
+	///
+	/// Changing this value for an existing chain might need a storage migration.
 	type DepositPerItem = DepositPerItem;
+	/// The amount of balance a caller has to pay for each byte of storage.
+	///
+	/// # Note
+	///
+	/// Changing this value for an existing chain might need a storage migration.
 	type DepositPerByte = DepositPerByte;
 	type CallStack = [pallet_contracts::Frame<Self>; 31];
 	type WeightPrice = pallet_transaction_payment::Pallet<Self>;
