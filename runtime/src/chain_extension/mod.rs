@@ -1,18 +1,5 @@
-use codec::{
-	Encode,
-	Compact,
-};
-use frame_support::{
-	dispatch::RawOrigin,
-	traits::Get
-};
-use sp_runtime::{
-	traits::{
-		StaticLookup,
-	},
-	DispatchError,
-};
-use sp_std::vec::Vec;
+use codec::{Compact, Encode};
+use frame_support::{dispatch::RawOrigin, traits::Get};
 use pallet_contracts::chain_extension::{
 	ChainExtension,
 	Environment,
@@ -21,20 +8,14 @@ use pallet_contracts::chain_extension::{
 	RetVal,
 	SysConfig, // `frame_system::Config` is re-exported as "SysConfig" in `pallet_contracts::chain_extension` (https://paritytech.github.io/substrate/master/pallet_contracts/chain_extension/trait.SysConfig.html#)
 };
+use pallet_fragments::WeightInfo;
 use sp_fragnova::{
-	Hash128,
-	Hash256,
-	protos::{
-		Proto,
-		ProtoOwner,
-	},
-	fragments::{
-		FragmentDefinition,
-		FragmentInstance,
-		InstanceUnit
-	}
+	fragments::{FragmentDefinition, FragmentInstance, InstanceUnit},
+	protos::{Proto, ProtoOwner},
+	Hash128, Hash256,
 };
-use pallet_fragments::WeightInfo; // this is a trait
+use sp_runtime::{traits::StaticLookup, DispatchError};
+use sp_std::vec::Vec; // this is a trait
 
 use protos::permissions::FragmentPerms;
 
@@ -80,7 +61,7 @@ impl TryFrom<u16> for FuncId {
 			_ => {
 				log::error!("Called an unregistered `func_id`: {:}", func_id);
 				return Err(DispatchError::Other("Unimplemented func_id"))
-			}
+			},
 		};
 
 		Ok(id)
@@ -94,11 +75,10 @@ impl TryFrom<u16> for FuncId {
 ///
 /// Source: https://paritytech.github.io/substrate/master/pallet_contracts/chain_extension/trait.ChainExtension.html#
 impl<T> ChainExtension<T> for MyExtension
-	where
-		T: pallet_contracts::Config + pallet_protos::Config + pallet_fragments::Config,
-		<T as SysConfig>::AccountId: AsRef<[u8]>,
+where
+	T: pallet_contracts::Config + pallet_protos::Config + pallet_fragments::Config,
+	<T as SysConfig>::AccountId: AsRef<[u8]>,
 {
-
 	/// Call the chain extension logic.
 	///
 	/// This is the only function that needs to be implemented in order to write a
@@ -115,12 +95,9 @@ impl<T> ChainExtension<T> for MyExtension
 	/// behaviour.
 	///
 	/// Source: https://paritytech.github.io/substrate/master/pallet_contracts/chain_extension/trait.ChainExtension.html#tymethod.call
-	fn call<E: Ext>(
-		&mut self,
-		env: Environment<E, InitState>,
-	) -> Result<RetVal, DispatchError>
-		where
-			E: Ext<T = T>,
+	fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
+	where
+		E: Ext<T = T>,
 	{
 		let func_id = FuncId::try_from(env.func_id())?;
 
@@ -139,17 +116,19 @@ impl<T> ChainExtension<T> for MyExtension
 				// We are supposed to charge weight even if we read a storage value according to @bkchr: https://substrate.stackexchange.com/questions/7071/in-the-runtime-chain-extension-should-we-be-charging-weight-if-we-are-reading-a
 				// Furthermore, an actual Substrate Blockchain does `<T as frame_system::Config>::DbWeight::get().reads(1)` to read a storage value here: https://github.com/AstarNetwork/astar-frame/blob/b2f888fafecb7257e68c5e9f0e9e661d1f8007c9/chain-extensions/dapps-staking/src/lib.rs#L150-L156
 				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
-				let output: Option<Proto<T::AccountId, T::BlockNumber>> = pallet_protos::Protos::<T>::get(&proto_hash);
+				let output: Option<Proto<T::AccountId, T::BlockNumber>> =
+					pallet_protos::Protos::<T>::get(&proto_hash);
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
-				env.write(&output.encode(), false, None).map_err(|_| {
-					DispatchError::Other("ChainExtension failed to get the proto")
-				})?;
+				env.write(&output.encode(), false, None)
+					.map_err(|_| DispatchError::Other("ChainExtension failed to get the proto"))?;
 			},
 			FuncId::GetProtoIds => {
 				let owner: T::AccountId = env.read_as()?; // TODO Review - Shouldn't `owner` parameter be of type `ProtoOwner<T::AccountId>` instead of `T::AccountId`
 				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
-				let output: Vec<Hash256> = pallet_protos::ProtosByOwner::<T>::get(ProtoOwner::<T::AccountId>::User(owner)).unwrap_or_default();
+				let output: Vec<Hash256> =
+					pallet_protos::ProtosByOwner::<T>::get(ProtoOwner::<T::AccountId>::User(owner))
+						.unwrap_or_default();
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a `Vec`!
 				env.write(&output.encode(), false, None).map_err(|_| {
@@ -160,7 +139,9 @@ impl<T> ChainExtension<T> for MyExtension
 			FuncId::GetDefinition => {
 				let definition_hash: Hash128 = env.read_as()?;
 				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
-				let output: Option<FragmentDefinition<Vec<u8>, T::AssetId, T::AccountId, T::BlockNumber>> = pallet_fragments::Definitions::<T>::get(&definition_hash);
+				let output: Option<
+					FragmentDefinition<Vec<u8>, T::AssetId, T::AccountId, T::BlockNumber>,
+				> = pallet_fragments::Definitions::<T>::get(&definition_hash);
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
 				env.write(&output.encode(), false, None).map_err(|_| {
@@ -168,9 +149,11 @@ impl<T> ChainExtension<T> for MyExtension
 				})?;
 			},
 			FuncId::GetInstance => {
-				let (definition_hash, edition_id, copy_id): (Hash128, InstanceUnit, InstanceUnit) = env.read_as()?;
+				let (definition_hash, edition_id, copy_id): (Hash128, InstanceUnit, InstanceUnit) =
+					env.read_as()?;
 				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
-				let output: Option<FragmentInstance<T::BlockNumber>> = pallet_fragments::Fragments::<T>::get((definition_hash, edition_id, copy_id));
+				let output: Option<FragmentInstance<T::BlockNumber>> =
+					pallet_fragments::Fragments::<T>::get((definition_hash, edition_id, copy_id));
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
 				env.write(&output.encode(), false, None).map_err(|_| {
@@ -180,7 +163,9 @@ impl<T> ChainExtension<T> for MyExtension
 			FuncId::GetInstanceIds => {
 				let (definition_hash, owner): (Hash128, T::AccountId) = env.read_as()?;
 				env.charge_weight(<T as SysConfig>::DbWeight::get().reads(1))?;
-				let output: Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)> = pallet_fragments::Inventory::<T>::get(owner, definition_hash).unwrap_or_default();
+				let output: Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)> =
+					pallet_fragments::Inventory::<T>::get(owner, definition_hash)
+						.unwrap_or_default();
 				// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a `Vec`!
 				env.write(&output.encode(), false, None).map_err(|_| {
@@ -204,8 +189,14 @@ impl<T> ChainExtension<T> for MyExtension
 				//
 				// We are using `env.read_as_unbounded()` just like it was used in this tutorial: https://www.youtube.com/watch?v=yykPQF0tkqk / https://github.com/HCastano/decoded-2022-demo/blob/master/runtime/src/chain_extension.rs#L104
 				//
-				let (definition_hash, edition_id, copy_id, to, new_permissions, expiration):
-					(Hash128, InstanceUnit, InstanceUnit, T::AccountId, Option<FragmentPerms>, Option<T::BlockNumber>) = env.read_as_unbounded(env.in_len())?;
+				let (definition_hash, edition_id, copy_id, to, new_permissions, expiration): (
+					Hash128,
+					InstanceUnit,
+					InstanceUnit,
+					T::AccountId,
+					Option<FragmentPerms>,
+					Option<T::BlockNumber>,
+				) = env.read_as_unbounded(env.in_len())?;
 
 				// This is the exact same expression that is in the weight macro of `fragments.give()`
 				let weight = <T as pallet_fragments::Config>::WeightInfo::benchmark_give_instance_that_has_copy_perms().max(
@@ -241,7 +232,7 @@ impl<T> ChainExtension<T> for MyExtension
 					copy_id,
 					T::Lookup::unlookup(to),
 					new_permissions,
-					expiration
+					expiration,
 				)?;
 			},
 		};

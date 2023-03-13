@@ -276,7 +276,6 @@ pub fn new_full(
 		// let lets set the proposer factory block limit to 16 mb
 		proposer_factory.set_default_block_size_limit(16 * 1024 * 1024);
 
-
 		let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 
 		let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(

@@ -3,7 +3,7 @@ pub use pallet_accounts::dummy_data::{
 	create_link_signature, create_lock_signature, get_ethereum_public_address, Link, Lock,
 };
 
-use sp_core::{blake2_256, H160, twox_64}; // Ethereum Account Addresses use this type
+use sp_core::{blake2_256, twox_64, H160}; // Ethereum Account Addresses use this type
 use sp_fragnova::Hash256;
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
@@ -100,7 +100,7 @@ impl DummyData {
 			category: Categories::Trait(None),
 			tags: Vec::new(),
 			linked_asset: None,
-			data: Trait { name: "Je suis un Trait".to_string(), records: vec![] }.encode()
+			data: Trait { name: "Je suis un Trait".to_string(), records: vec![] }.encode(),
 		};
 		let proto_with_trait = [
 			trait_first.clone(),
@@ -110,12 +110,12 @@ impl DummyData {
 					format: ShardsFormat::Edn,
 					shards_version: 0,
 					requiring: vec![],
-					implementing: vec![twox_64(&trait_first.data)]
+					implementing: vec![twox_64(&trait_first.data)],
 				}),
 				tags: Vec::new(),
 				linked_asset: None,
-				data: b"Je suis ShardsScriptInfo Data".to_vec()
-			}
+				data: b"Je suis ShardsScriptInfo Data".to_vec(),
+			},
 		];
 
 		let records1 = vec![(

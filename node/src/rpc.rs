@@ -15,8 +15,8 @@
 
 use std::sync::Arc;
 
-use jsonrpsee::RpcModule;
 use fragnova_runtime::{opaque::Block, AccountId, Balance, Index};
+use jsonrpsee::RpcModule;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
@@ -38,22 +38,22 @@ pub struct FullDeps<C, P> {
 pub fn create_full<C, P>(
 	deps: FullDeps<C, P>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
-	where
-		C: ProvideRuntimeApi<Block>,
-		C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
-		C: Send + Sync + 'static,
-		C: sc_client_api::BlockBackend<Block>, // used for in the RPC method `protos_getData`
+where
+	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
+	C: Send + Sync + 'static,
+	C: sc_client_api::BlockBackend<Block>, // used for in the RPC method `protos_getData`
 
-		C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
-		C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-		C::Api: pallet_protos_rpc::ProtosRuntimeApi<Block, AccountId>,
-		C::Api: pallet_fragments_rpc::FragmentsRuntimeApi<Block, AccountId>,
-		C::Api: BlockBuilder<Block>,
-		P: TransactionPool + 'static,
+	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
+	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+	C::Api: pallet_protos_rpc::ProtosRuntimeApi<Block, AccountId>,
+	C::Api: pallet_fragments_rpc::FragmentsRuntimeApi<Block, AccountId>,
+	C::Api: BlockBuilder<Block>,
+	P: TransactionPool + 'static,
 {
-	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use pallet_fragments_rpc::{FragmentsRpcServer, FragmentsRpcServerImpl};
 	use pallet_protos_rpc::{ProtosRpcServer, ProtosRpcServerImpl};
+	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	// use sc_rpc::dev::{Dev, DevApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 

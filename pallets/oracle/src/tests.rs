@@ -298,7 +298,10 @@ fn price_storage_after_offchain_worker_works() {
 		let price: u128 = expected_data.clone().price.try_into().unwrap();
 		let block_number = expected_data.clone().block_number;
 
-		assert_eq!(event, RuntimeEvent::from(pallet_oracle::Event::NewPrice { price, block_number }));
+		assert_eq!(
+			event,
+			RuntimeEvent::from(pallet_oracle::Event::NewPrice { price, block_number })
+		);
 		assert_eq!(<Price<Test>>::get(), price);
 	});
 }
@@ -311,7 +314,10 @@ fn circuit_breaker_works() {
 			.pop()
 			.expect("Expected one EventRecord to be found")
 			.event;
-		assert_eq!(event, RuntimeEvent::from(pallet_oracle::Event::OracleStopFlag { is_stopped: true }));
+		assert_eq!(
+			event,
+			RuntimeEvent::from(pallet_oracle::Event::OracleStopFlag { is_stopped: true })
+		);
 	});
 }
 

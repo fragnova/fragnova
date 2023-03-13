@@ -840,8 +840,8 @@ pub mod pallet {
 		pub fn sponsor_call(
 			origin: OriginFor<T>,
 			external_id: ExternalID,
-			endowment: <T as pallet_balances::Config>::Balance,
-			extra_value: Option<<T as pallet_balances::Config>::Balance>,
+			call_endowment: <T as pallet_balances::Config>::Balance,
+			extra_expected_value: Option<<T as pallet_balances::Config>::Balance>,
 			call: Box<<T as pallet_proxy::Config>::RuntimeCall>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -852,23 +852,24 @@ pub mod pallet {
 				.ok_or(Error::<T>::SystematicFailure)?
 				.account_id;
 
+			let proxy = pallet_proxy::Pallet::<T>::find_proxy(&account.clone(), &who, None)?;
+
+			ensure!(proxy.proxy_type == T::ProxyType::default(), Error::<T>::SystematicFailure);
+
 			// ENDOW NOVA
-			let balance_before = pallet_balances::Pallet::<T>::free_balance(&account);
+			let balance_before = pallet_balances::Pallet::<T>::free_balance(&account.clone());
 
 			<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
-				&account, endowment,
+				&account.clone(),
+				call_endowment,
 			)?;
 
 			// DO THE PROXY CALL
-			// pallet_proxy::Pallet::<T>::do_proxy(
-			// 	who.clone(),
-			// 	None,
-			// 	call,
-			// )?;
+			pallet_proxy::Pallet::<T>::do_proxy(proxy, account.clone(), *call);
 
 			// RESTORE PREVIOUS AMOUNT OF NOVA
-			let balance_after = pallet_balances::Pallet::<T>::free_balance(&account) -
-				extra_value.unwrap_or_default();
+			let balance_after = pallet_balances::Pallet::<T>::free_balance(&account.clone()) -
+				extra_expected_value.unwrap_or_default();
 
 			ensure!(balance_after >= balance_before, Error::<T>::SystematicFailure);
 

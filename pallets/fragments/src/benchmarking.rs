@@ -26,7 +26,9 @@ const MAX_QUANTITY_TO_MINT: u32 = 100;
 
 // Copied from: https://github.com/paritytech/substrate/blob/polkadot-v0.9.37/frame/assets/src/benchmarking.rs#L38-L40
 fn default_asset_id<T: pallet_assets::Config>() -> T::AssetIdParameter {
-	<<T as pallet_assets::Config>::BenchmarkHelper as pallet_assets::BenchmarkHelper<T::AssetIdParameter>>::create_asset_id_parameter(0)
+	<<T as pallet_assets::Config>::BenchmarkHelper as pallet_assets::BenchmarkHelper<
+		T::AssetIdParameter,
+	>>::create_asset_id_parameter(0)
 }
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {

@@ -22,7 +22,10 @@ mod tests;
 #[allow(missing_docs)]
 mod weights;
 
-use protos::{categories::{Categories, ShardsFormat}, traits::Trait};
+use protos::{
+	categories::{Categories, ShardsFormat},
+	traits::Trait,
+};
 
 use sp_core::crypto::UncheckedFrom;
 
@@ -250,7 +253,7 @@ pub mod pallet {
 		/// All the requiring traits of the Shards Script that you want to upload have not been referenced
 		RequiredTraitsMissing,
 		/// All the implementing traits of the Shards Script that you want to upload have not been implemented
-		TraitsNotImplemented
+		TraitsNotImplemented,
 	}
 
 	// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -357,7 +360,6 @@ pub mod pallet {
 					Categories::Trait(Some(trait_id))
 				},
 				Categories::Shards(info) => {
-
 					// only support EDN for now
 					ensure!(info.format == ShardsFormat::Edn, Error::<T>::SystematicFailure);
 
@@ -386,9 +388,7 @@ pub mod pallet {
 						let Some(trait_protos) = ProtosByCategory::<T>::get(Categories::Trait(Some(trait_hash))) else {
 							return false;
 						};
-						references.iter().any(|proto_hash| {
-							trait_protos.contains(proto_hash)
-						})
+						references.iter().any(|proto_hash| trait_protos.contains(proto_hash))
 					});
 					ensure!(implement_check, Error::<T>::TraitsNotImplemented);
 

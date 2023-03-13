@@ -2,19 +2,21 @@
 
 use crate::chain_extension;
 
-use frame_system;
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, ConstU64, ConstBool, AsEnsureOriginWithArg},
+	traits::{AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64},
 	weights::Weight,
 };
+use frame_system;
 
-use sp_core::{ed25519::Signature, H256};
-use sp_runtime::traits::{
-	BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
-};
-use sp_runtime::testing::{Header, TestXt};
 use codec::Encode;
+use sp_core::{ed25519::Signature, H256};
+use sp_runtime::{
+	testing::{Header, TestXt},
+	traits::{
+		BlakeTwo256, ConstU128, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup, Verify,
+	},
+};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -106,16 +108,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	type OverarchingCall = RuntimeCall;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: RuntimeCall,

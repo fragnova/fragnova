@@ -5,7 +5,7 @@ use crate::*;
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU128, ConstU32, ConstU64, AsEnsureOriginWithArg},
+	traits::{AsEnsureOriginWithArg, ConstU128, ConstU32, ConstU64},
 };
 
 use parking_lot::RwLock;
@@ -98,16 +98,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	type OverarchingCall = RuntimeCall;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: RuntimeCall,
@@ -228,7 +228,7 @@ fn create_public_key(keystore: &KeyStore) -> sp_core::ed25519::Public {
 		<crate::crypto::Public as RuntimeAppPublic>::ID,
 		Some(&format!("{}", PHRASE)),
 	)
-		.unwrap();
+	.unwrap();
 	keystore.ed25519_public_keys(crate::crypto::Public::ID).get(0).unwrap().clone()
 }
 
