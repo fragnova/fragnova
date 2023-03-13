@@ -198,13 +198,14 @@ pub mod pallet {
 		dispatch::DispatchResult,
 		pallet_prelude::*,
 		traits::{fungible, Currency},
-		Twox64Concat,
+		transactional, Twox64Concat,
 	};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::{
 		traits::{CheckedAdd, Saturating, Zero},
 		Percent, SaturatedConversion,
 	};
+	use sp_std::boxed::Box;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -829,6 +830,55 @@ pub mod pallet {
 		pub fn withdraw(origin: OriginFor<T>) -> DispatchResult {
 			let account = ensure_signed(origin)?;
 			Self::withdraw_nova(account)
+		}
+
+		/// Allow the External Account ID `external_id` to be used as a proxy
+		/// for the Fragnova Account ID `origin`
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::sponsor_account())] // TODO - DYNAMIC COST @aang114
+		#[pallet::call_index(9)]
+		#[transactional]
+		pub fn sponsor_call(
+			origin: OriginFor<T>,
+			external_id: ExternalID,
+			endowment: <T as pallet_balances::Config>::Balance,
+			extra_value: Option<<T as pallet_balances::Config>::Balance>,
+			call: Box<<T as pallet_proxy::Config>::RuntimeCall>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			ensure!(<ExternalAuthorities<T>>::get().contains(&who), Error::<T>::SystematicFailure);
+
+			let account = <ExternalID2Account<T>>::get(external_id.clone())
+				.ok_or(Error::<T>::SystematicFailure)?
+				.account_id;
+
+			// ENDOW NOVA
+			let balance_before = pallet_balances::Pallet::<T>::free_balance(&account);
+
+			<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(
+				&account, endowment,
+			)?;
+
+			// DO THE PROXY CALL
+			// pallet_proxy::Pallet::<T>::do_proxy(
+			// 	who.clone(),
+			// 	None,
+			// 	call,
+			// )?;
+
+			// RESTORE PREVIOUS AMOUNT OF NOVA
+			let balance_after = pallet_balances::Pallet::<T>::free_balance(&account) -
+				extra_value.unwrap_or_default();
+
+			ensure!(balance_after >= balance_before, Error::<T>::SystematicFailure);
+
+			let amount = balance_after - balance_before;
+
+			<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::burn_from(
+				&account, amount,
+			)?;
+
+			Ok(())
 		}
 	}
 

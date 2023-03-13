@@ -173,6 +173,7 @@ impl DummyData {
 		let shard_script_num_2: [u8; 8] = [5u8; 8];
 		let shard_script_1 = ShardsScriptInfo {
 			format: ShardsFormat::Edn,
+			shards_version: 0,
 			requiring: vec![shard_script_num_1],
 			implementing: vec![shard_script_num_2],
 		};
@@ -188,6 +189,7 @@ impl DummyData {
 		let shard_script_num_3: [u8; 8] = [9u8; 8];
 		let shard_script_2 = ShardsScriptInfo {
 			format: ShardsFormat::Edn,
+			shards_version: 0,
 			requiring: vec![shard_script_num_1],
 			implementing: vec![shard_script_num_2, shard_script_num_3],
 		};
@@ -204,6 +206,7 @@ impl DummyData {
 		let shard_script_num_5: [u8; 8] = [7u8; 8];
 		let shard_script_3 = ShardsScriptInfo {
 			format: ShardsFormat::Edn,
+			shards_version: 0,
 			requiring: vec![shard_script_num_4],
 			implementing: vec![shard_script_num_5],
 		};
@@ -218,6 +221,7 @@ impl DummyData {
 
 		let shard_script_4 = ShardsScriptInfo {
 			format: ShardsFormat::Binary,
+			shards_version: 0,
 			requiring: vec![shard_script_num_4],
 			implementing: vec![shard_script_num_5],
 		};
