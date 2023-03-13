@@ -3,7 +3,7 @@ pub use pallet_accounts::dummy_data::{
 	create_link_signature, create_lock_signature, get_ethereum_public_address, Link, Lock,
 };
 
-use sp_core::H160; // Ethereum Account Addresses use this type
+use sp_core::{blake2_256, H160, twox_64}; // Ethereum Account Addresses use this type
 use sp_fragnova::Hash256;
 
 use protos::categories::{Categories, ShardsFormat, ShardsScriptInfo, TextCategories};
@@ -68,6 +68,7 @@ pub struct DummyData {
 	pub proto_shard_script_2: ProtoFragment,
 	pub proto_shard_script_3: ProtoFragment,
 	pub proto_shard_script_4: ProtoFragment,
+	pub proto_with_trait: [ProtoFragment; 2],
 	pub patch: Patch,
 	pub metadata: Metadata,
 	pub detach: Detach,
@@ -93,6 +94,28 @@ impl DummyData {
 			linked_asset: None,
 			data: "0x222".as_bytes().to_vec(),
 		};
+
+		let trait_first = ProtoFragment {
+			references: vec![],
+			category: Categories::Trait(None),
+			tags: Vec::new(),
+			linked_asset: None,
+			data: Trait { name: "Je suis un Trait".to_string(), records: vec![] }.encode()
+		};
+		let proto_with_trait = [
+			trait_first.clone(),
+			ProtoFragment {
+				references: vec![blake2_256(&trait_first.data)],
+				category: Categories::Shards(ShardsScriptInfo {
+					format: ShardsFormat::Edn,
+					requiring: vec![],
+					implementing: vec![twox_64(&trait_first.data)]
+				}),
+				tags: Vec::new(),
+				linked_asset: None,
+				data: b"Je suis ShardsScriptInfo Data".to_vec()
+			}
+		];
 
 		let records1 = vec![(
 			"int1".to_string(),
@@ -235,6 +258,7 @@ impl DummyData {
 			proto_shard_script_2,
 			proto_shard_script_3,
 			proto_shard_script_4,
+			proto_with_trait,
 			patch,
 			metadata,
 			detach,
