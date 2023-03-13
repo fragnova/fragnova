@@ -1975,7 +1975,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "fork-tree"
 version = "3.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
 ]
@@ -2001,9 +2001,9 @@ version = "4.0.0-dev"
 dependencies = [
  "clap",
  "fragnova-runtime",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
  "frame-benchmarking-cli",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-system",
  "hex",
  "jsonrpsee",
  "log",
@@ -2026,18 +2026,18 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "serde_json",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-aura",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-finality-grandpa",
  "sp-fragnova",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-timestamp",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
 ]
@@ -2046,10 +2046,10 @@ dependencies = [
 name = "fragnova-runtime"
 version = "4.0.0-dev"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
  "frame-executive",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
+ "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "hex",
@@ -2060,7 +2060,7 @@ dependencies = [
  "pallet-aliases",
  "pallet-assets",
  "pallet-aura",
- "pallet-balances 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-balances",
  "pallet-clusters",
  "pallet-contracts",
  "pallet-contracts-primitives",
@@ -2074,10 +2074,10 @@ dependencies = [
  "pallet-oracle",
  "pallet-protos",
  "pallet-protos-rpc-runtime-api",
- "pallet-proxy 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
@@ -2085,81 +2085,58 @@ dependencies = [
  "protos",
  "scale-info",
  "serde_json",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-fragnova",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-inherents",
+ "sp-io",
  "sp-offchain",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
  "sp-session",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-std",
  "sp-transaction-pool",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-version",
  "substrate-wasm-builder",
 ]
 
 [[package]]
 name = "frame-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
+ "frame-system",
  "linregress",
  "log",
  "parity-scale-codec 3.4.0",
  "paste",
  "scale-info",
  "serde",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "frame-benchmarking"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "linregress",
- "log",
- "parity-scale-codec 3.4.0",
- "paste",
- "scale-info",
- "serde",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-std",
+ "sp-storage",
 ]
 
 [[package]]
 name = "frame-benchmarking-cli"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "Inflector",
  "array-bytes",
  "chrono",
  "clap",
  "comfy-table",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "gethostname",
  "handlebars",
  "itertools",
@@ -2178,18 +2155,18 @@ dependencies = [
  "sc-sysinfo",
  "serde",
  "serde_json",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-database",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-externalities",
+ "sp-inherents",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-storage",
+ "sp-trie",
  "thiserror",
  "thousands",
 ]
@@ -2197,17 +2174,17 @@ dependencies = [
 [[package]]
 name = "frame-executive"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-tracing 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-tracing",
 ]
 
 [[package]]
@@ -2225,11 +2202,11 @@ dependencies = [
 [[package]]
 name = "frame-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "bitflags",
  "frame-metadata",
- "frame-support-procedural 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support-procedural",
  "impl-trait-for-tuples",
  "k256",
  "log",
@@ -2239,75 +2216,29 @@ dependencies = [
  "scale-info",
  "serde",
  "smallvec",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core-hashing-proc-macro 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-staking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-tracing 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-weights 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "tt-call",
-]
-
-[[package]]
-name = "frame-support"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "bitflags",
- "frame-metadata",
- "frame-support-procedural 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "impl-trait-for-tuples",
- "k256",
- "log",
- "once_cell",
- "parity-scale-codec 3.4.0",
- "paste",
- "scale-info",
- "serde",
- "smallvec",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-core-hashing-proc-macro 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-staking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-tracing 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-weights 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-api",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-core-hashing-proc-macro",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-state-machine",
+ "sp-std",
+ "sp-tracing",
+ "sp-weights",
  "tt-call",
 ]
 
 [[package]]
 name = "frame-support-procedural"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "Inflector",
  "cfg-expr",
- "frame-support-procedural-tools 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "itertools",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "frame-support-procedural"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "Inflector",
- "cfg-expr",
- "frame-support-procedural-tools 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "frame-support-procedural-tools",
  "itertools",
  "proc-macro2",
  "quote",
@@ -2317,21 +2248,9 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support-procedural-tools-derive 3.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "proc-macro-crate",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "frame-support-procedural-tools"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "frame-support-procedural-tools-derive 3.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "frame-support-procedural-tools-derive",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
@@ -2341,17 +2260,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "3.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "frame-support-procedural-tools-derive"
-version = "3.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2361,61 +2270,43 @@ dependencies = [
 [[package]]
 name = "frame-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
  "log",
  "parity-scale-codec 3.4.0",
  "scale-info",
  "serde",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-weights 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "frame-system"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "log",
- "parity-scale-codec 3.4.0",
- "scale-info",
- "serde",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-weights 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
+ "sp-weights",
 ]
 
 [[package]]
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
 ]
 
 [[package]]
@@ -4644,29 +4535,29 @@ name = "pallet-accounts"
 version = "0.0.1"
 dependencies = [
  "ethabi 18.0.0",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "hex",
  "libsecp256k1",
  "log",
  "pallet-assets",
- "pallet-balances 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-balances",
  "pallet-oracle",
- "pallet-proxy 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "parking_lot 0.12.1",
  "scale-info",
  "serde",
  "serde_json",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-fragnova",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -4674,142 +4565,127 @@ name = "pallet-aliases"
 version = "0.0.1"
 dependencies = [
  "bitflags",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "hex",
  "log",
  "pallet-accounts",
  "pallet-assets",
- "pallet-balances 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-balances",
  "pallet-clusters",
  "pallet-contracts",
  "pallet-detach",
  "pallet-fragments",
  "pallet-oracle",
  "pallet-protos",
- "pallet-proxy 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "protos",
  "scale-info",
  "serde",
  "serde_json",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-fragnova",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-assets"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
+ "frame-system",
+ "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-application-crypto",
  "sp-consensus-aura",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-authorship"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
+ "frame-system",
  "impl-trait-for-tuples",
  "parity-scale-codec 3.4.0",
  "scale-info",
  "sp-authorship",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-balances"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "log",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "pallet-balances"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "log",
- "parity-scale-codec 3.4.0",
- "scale-info",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-clusters"
 version = "0.0.1"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "hex",
  "log",
- "pallet-balances 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "pallet-proxy 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "pallet-balances",
+ "pallet-proxy",
+ "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "scale-info",
  "serde",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core",
  "sp-fragnova",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-contracts"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "bitflags",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "impl-trait-for-tuples",
  "log",
  "pallet-contracts-primitives",
@@ -4820,11 +4696,11 @@ dependencies = [
  "scale-info",
  "serde",
  "smallvec",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
  "wasm-instrument 0.4.0",
  "wasmi 0.20.0",
  "wasmparser-nostd",
@@ -4833,19 +4709,19 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "bitflags",
  "parity-scale-codec 3.4.0",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-weights 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-std",
+ "sp-weights",
 ]
 
 [[package]]
 name = "pallet-contracts-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4856,9 +4732,9 @@ dependencies = [
 name = "pallet-detach"
 version = "0.0.1"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "hex",
  "log",
  "pallet-randomness-collective-flip",
@@ -4866,12 +4742,12 @@ dependencies = [
  "parking_lot 0.12.1",
  "scale-info",
  "serde",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-fragnova",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -4879,34 +4755,34 @@ name = "pallet-fragments"
 version = "0.0.1"
 dependencies = [
  "bitflags",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "hex",
  "itertools",
  "log",
  "pallet-accounts",
  "pallet-assets",
- "pallet-balances 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-balances",
  "pallet-clusters",
  "pallet-contracts",
  "pallet-detach",
  "pallet-oracle",
  "pallet-protos",
- "pallet-proxy 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "protos",
  "scale-info",
  "serde",
  "serde_json",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-core",
  "sp-fragnova",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -4917,10 +4793,10 @@ dependencies = [
  "pallet-fragments",
  "pallet-fragments-rpc-runtime-api",
  "parity-scale-codec 3.4.0",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
  "sp-fragnova",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -4930,82 +4806,82 @@ dependencies = [
  "pallet-fragments",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-fragnova",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "log",
  "pallet-authorship",
  "pallet-session",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-application-crypto",
+ "sp-core",
  "sp-finality-grandpa",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-runtime",
  "sp-session",
- "sp-staking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-staking",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-identity"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "enumflags2",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-indices"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-io",
  "sp-keyring",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-multisig"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "log",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5015,9 +4891,9 @@ dependencies = [
  "ethabi 18.0.0",
  "ethabi-contract",
  "ethabi-derive",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "hex",
  "libsecp256k1",
  "log",
@@ -5026,12 +4902,12 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-fragnova",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5040,33 +4916,33 @@ version = "0.0.1"
 dependencies = [
  "base58",
  "ethabi 17.2.0",
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "hex",
  "log",
  "pallet-accounts",
  "pallet-assets",
- "pallet-balances 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-balances",
  "pallet-clusters",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-detach",
  "pallet-oracle",
- "pallet-proxy 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "protos",
  "scale-info",
  "serde",
  "serde_json",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-fragnova",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5079,10 +4955,10 @@ dependencies = [
  "pallet-protos-rpc-runtime-api",
  "parity-scale-codec 3.4.0",
  "sc-client-api",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
  "sp-rpc",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -5092,185 +4968,152 @@ dependencies = [
  "pallet-protos",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-fragnova",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-proxy"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "pallet-proxy"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "parity-scale-codec 3.4.0",
- "scale-info",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-randomness-collective-flip"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "safe-mix",
  "scale-info",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
+ "frame-system",
  "impl-trait-for-tuples",
  "log",
- "pallet-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-session",
- "sp-staking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-staking",
+ "sp-std",
+ "sp-trie",
 ]
 
 [[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "log",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "pallet-timestamp"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "log",
- "parity-scale-codec 3.4.0",
- "scale-info",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-timestamp",
 ]
 
 [[package]]
 name = "pallet-transaction-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "scale-info",
  "serde",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-transaction-payment-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec 3.4.0",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-rpc",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-weights 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-weights",
 ]
 
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec 3.4.0",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-weights 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-runtime",
+ "sp-weights",
 ]
 
 [[package]]
 name = "pallet-utility"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "frame-benchmarking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-support 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "frame-system 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -6454,18 +6297,18 @@ dependencies = [
 [[package]]
 name = "sc-allocator"
 version = "4.1.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "log",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-wasm-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-wasm-interface",
  "thiserror",
 ]
 
 [[package]]
 name = "sc-basic-authorship"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "futures",
  "futures-timer",
@@ -6476,35 +6319,35 @@ dependencies = [
  "sc-proposer-metrics",
  "sc-telemetry",
  "sc-transaction-pool-api",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
  "substrate-prometheus-endpoint",
 ]
 
 [[package]]
 name = "sc-block-builder"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "sc-client-api",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-block-builder",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-state-machine",
 ]
 
 [[package]]
 name = "sc-chain-spec"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "memmap2",
  "sc-chain-spec-derive",
@@ -6512,14 +6355,14 @@ dependencies = [
  "sc-telemetry",
  "serde",
  "serde_json",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
 name = "sc-chain-spec-derive"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -6530,7 +6373,7 @@ dependencies = [
 [[package]]
 name = "sc-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "array-bytes",
  "chrono",
@@ -6556,12 +6399,12 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-keyring",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-panic-handler 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-keystore",
+ "sp-panic-handler",
+ "sp-runtime",
+ "sp-version",
  "thiserror",
  "tiny-bip39",
  "tokio",
@@ -6570,7 +6413,7 @@ dependencies = [
 [[package]]
 name = "sc-client-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "fnv",
  "futures",
@@ -6580,23 +6423,23 @@ dependencies = [
  "sc-executor",
  "sc-transaction-pool-api",
  "sc-utils",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-database",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-externalities",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-storage",
  "substrate-prometheus-endpoint",
 ]
 
 [[package]]
 name = "sc-client-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "hash-db",
  "kvdb",
@@ -6609,19 +6452,19 @@ dependencies = [
  "parking_lot 0.12.1",
  "sc-client-api",
  "sc-state-db",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-arithmetic",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-database",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-trie",
 ]
 
 [[package]]
 name = "sc-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "futures",
@@ -6633,12 +6476,12 @@ dependencies = [
  "sc-client-api",
  "sc-utils",
  "serde",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
  "substrate-prometheus-endpoint",
  "thiserror",
 ]
@@ -6646,7 +6489,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "futures",
@@ -6657,17 +6500,17 @@ dependencies = [
  "sc-consensus",
  "sc-consensus-slots",
  "sc-telemetry",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-application-crypto",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-aura",
  "sp-consensus-slots",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-inherents",
+ "sp-keystore",
+ "sp-runtime",
  "substrate-prometheus-endpoint",
  "thiserror",
 ]
@@ -6675,7 +6518,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "futures",
@@ -6685,20 +6528,20 @@ dependencies = [
  "sc-client-api",
  "sc-consensus",
  "sc-telemetry",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-arithmetic",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-slots",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-state-machine",
 ]
 
 [[package]]
 name = "sc-executor"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "lru",
  "parity-scale-codec 3.4.0",
@@ -6706,15 +6549,15 @@ dependencies = [
  "sc-executor-common",
  "sc-executor-wasmi",
  "sc-executor-wasmtime",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-panic-handler 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-wasm-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-core",
+ "sp-externalities",
+ "sp-io",
+ "sp-panic-handler",
+ "sp-runtime-interface",
+ "sp-trie",
+ "sp-version",
+ "sp-wasm-interface",
  "tracing",
  "wasmi 0.13.2",
 ]
@@ -6722,11 +6565,11 @@ dependencies = [
 [[package]]
 name = "sc-executor-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "sc-allocator",
  "sp-maybe-compressed-blob",
- "sp-wasm-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-wasm-interface",
  "thiserror",
  "wasm-instrument 0.3.0",
  "wasmi 0.13.2",
@@ -6735,20 +6578,20 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmi"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "log",
  "sc-allocator",
  "sc-executor-common",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-wasm-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime-interface",
+ "sp-wasm-interface",
  "wasmi 0.13.2",
 ]
 
 [[package]]
 name = "sc-executor-wasmtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "cfg-if",
  "libc",
@@ -6757,15 +6600,15 @@ dependencies = [
  "rustix 0.35.13",
  "sc-allocator",
  "sc-executor-common",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-wasm-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime-interface",
+ "sp-wasm-interface",
  "wasmtime",
 ]
 
 [[package]]
 name = "sc-finality-grandpa"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "ahash",
  "array-bytes",
@@ -6789,15 +6632,15 @@ dependencies = [
  "sc-telemetry",
  "sc-utils",
  "serde_json",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-arithmetic",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-finality-grandpa",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-keystore",
+ "sp-runtime",
  "substrate-prometheus-endpoint",
  "thiserror",
 ]
@@ -6805,7 +6648,7 @@ dependencies = [
 [[package]]
 name = "sc-informant"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "ansi_term",
  "futures",
@@ -6814,28 +6657,28 @@ dependencies = [
  "sc-client-api",
  "sc-network-common",
  "sp-blockchain",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
 ]
 
 [[package]]
 name = "sc-keystore"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "array-bytes",
  "async-trait",
  "parking_lot 0.12.1",
  "serde_json",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-keystore",
  "thiserror",
 ]
 
 [[package]]
 name = "sc-network"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "array-bytes",
  "async-trait",
@@ -6863,11 +6706,11 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-arithmetic",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
  "substrate-prometheus-endpoint",
  "thiserror",
  "unsigned-varint",
@@ -6877,7 +6720,7 @@ dependencies = [
 [[package]]
 name = "sc-network-bitswap"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "cid",
  "futures",
@@ -6888,7 +6731,7 @@ dependencies = [
  "sc-client-api",
  "sc-network-common",
  "sp-blockchain",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
  "thiserror",
  "unsigned-varint",
 ]
@@ -6896,7 +6739,7 @@ dependencies = [
 [[package]]
 name = "sc-network-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "bitflags",
@@ -6914,7 +6757,7 @@ dependencies = [
  "sp-blockchain",
  "sp-consensus",
  "sp-finality-grandpa",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
  "substrate-prometheus-endpoint",
  "thiserror",
 ]
@@ -6922,7 +6765,7 @@ dependencies = [
 [[package]]
 name = "sc-network-gossip"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "ahash",
  "futures",
@@ -6932,7 +6775,7 @@ dependencies = [
  "lru",
  "sc-network-common",
  "sc-peerset",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
  "substrate-prometheus-endpoint",
  "tracing",
 ]
@@ -6940,7 +6783,7 @@ dependencies = [
 [[package]]
 name = "sc-network-light"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "array-bytes",
  "futures",
@@ -6953,15 +6796,15 @@ dependencies = [
  "sc-network-common",
  "sc-peerset",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
  "thiserror",
 ]
 
 [[package]]
 name = "sc-network-sync"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "array-bytes",
  "async-trait",
@@ -6980,12 +6823,12 @@ dependencies = [
  "sc-peerset",
  "sc-utils",
  "smallvec",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-arithmetic",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-finality-grandpa",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
  "substrate-prometheus-endpoint",
  "thiserror",
 ]
@@ -6993,7 +6836,7 @@ dependencies = [
 [[package]]
 name = "sc-network-transactions"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "array-bytes",
  "futures",
@@ -7005,14 +6848,14 @@ dependencies = [
  "sc-peerset",
  "sc-utils",
  "sp-consensus",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
  "substrate-prometheus-endpoint",
 ]
 
 [[package]]
 name = "sc-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "array-bytes",
  "bytes",
@@ -7031,10 +6874,10 @@ dependencies = [
  "sc-network-common",
  "sc-peerset",
  "sc-utils",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-core",
  "sp-offchain",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
  "threadpool",
  "tracing",
 ]
@@ -7042,7 +6885,7 @@ dependencies = [
 [[package]]
 name = "sc-peerset"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "futures",
  "libp2p",
@@ -7055,7 +6898,7 @@ dependencies = [
 [[package]]
 name = "sc-proposer-metrics"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "log",
  "substrate-prometheus-endpoint",
@@ -7064,7 +6907,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "futures",
  "jsonrpsee",
@@ -7079,21 +6922,21 @@ dependencies = [
  "sc-transaction-pool-api",
  "sc-utils",
  "serde_json",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-keystore",
  "sp-offchain",
  "sp-rpc",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
  "sp-session",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-version",
 ]
 
 [[package]]
 name = "sc-rpc-api"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec 3.4.0",
@@ -7102,17 +6945,17 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-rpc",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-version",
  "thiserror",
 ]
 
 [[package]]
 name = "sc-rpc-server"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "http",
  "jsonrpsee",
@@ -7127,7 +6970,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-spec-v2"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "array-bytes",
  "futures",
@@ -7141,11 +6984,11 @@ dependencies = [
  "sc-client-api",
  "sc-transaction-pool-api",
  "serde",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
+ "sp-version",
  "thiserror",
  "tokio-stream",
 ]
@@ -7153,7 +6996,7 @@ dependencies = [
 [[package]]
 name = "sc-service"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "directories",
@@ -7192,20 +7035,20 @@ dependencies = [
  "sc-utils",
  "serde",
  "serde_json",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-externalities",
+ "sp-keystore",
+ "sp-runtime",
  "sp-session",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-state-machine",
+ "sp-storage",
  "sp-transaction-pool",
  "sp-transaction-storage-proof",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-trie",
+ "sp-version",
  "static_init",
  "substrate-prometheus-endpoint",
  "tempfile",
@@ -7218,18 +7061,18 @@ dependencies = [
 [[package]]
 name = "sc-state-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "log",
  "parity-scale-codec 3.4.0",
  "parking_lot 0.12.1",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
 ]
 
 [[package]]
 name = "sc-sysinfo"
 version = "6.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "futures",
  "libc",
@@ -7240,15 +7083,15 @@ dependencies = [
  "sc-telemetry",
  "serde",
  "serde_json",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-io",
+ "sp-std",
 ]
 
 [[package]]
 name = "sc-telemetry"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "chrono",
  "futures",
@@ -7267,7 +7110,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "ansi_term",
  "atty",
@@ -7283,12 +7126,12 @@ dependencies = [
  "sc-rpc-server",
  "sc-tracing-proc-macro",
  "serde",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
  "sp-rpc",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-tracing 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-tracing",
  "thiserror",
  "tracing",
  "tracing-log",
@@ -7298,7 +7141,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -7309,7 +7152,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "futures",
@@ -7322,11 +7165,11 @@ dependencies = [
  "sc-transaction-pool-api",
  "sc-utils",
  "serde",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-tracing 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
+ "sp-tracing",
  "sp-transaction-pool",
  "substrate-prometheus-endpoint",
  "thiserror",
@@ -7335,21 +7178,21 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "futures",
  "log",
  "serde",
  "sp-blockchain",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
  "thiserror",
 ]
 
 [[package]]
 name = "sc-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "backtrace",
  "futures",
@@ -7793,55 +7636,25 @@ dependencies = [
 [[package]]
 name = "sp-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "hash-db",
  "log",
  "parity-scale-codec 3.4.0",
- "sp-api-proc-macro 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "thiserror",
-]
-
-[[package]]
-name = "sp-api"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "hash-db",
- "log",
- "parity-scale-codec 3.4.0",
- "sp-api-proc-macro 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-api-proc-macro",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "sp-version",
  "thiserror",
 ]
 
 [[package]]
 name = "sp-api-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
-dependencies = [
- "blake2",
- "proc-macro-crate",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "sp-api-proc-macro"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "blake2",
  "proc-macro-crate",
@@ -7853,151 +7666,124 @@ dependencies = [
 [[package]]
 name = "sp-application-crypto"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
  "serde",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "sp-application-crypto"
-version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "parity-scale-codec 3.4.0",
- "scale-info",
- "serde",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core",
+ "sp-io",
+ "sp-std",
 ]
 
 [[package]]
 name = "sp-arithmetic"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "integer-sqrt",
  "num-traits",
  "parity-scale-codec 3.4.0",
  "scale-info",
  "serde",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "static_assertions",
-]
-
-[[package]]
-name = "sp-arithmetic"
-version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "integer-sqrt",
- "num-traits",
- "parity-scale-codec 3.4.0",
- "scale-info",
- "serde",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-std",
  "static_assertions",
 ]
 
 [[package]]
 name = "sp-authorship"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "parity-scale-codec 3.4.0",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "sp-block-builder"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "sp-blockchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "futures",
  "log",
  "lru",
  "parity-scale-codec 3.4.0",
  "parking_lot 0.12.1",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-consensus",
  "sp-database",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-runtime",
+ "sp-state-machine",
  "thiserror",
 ]
 
 [[package]]
 name = "sp-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "futures",
  "log",
  "parity-scale-codec 3.4.0",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-version 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-version",
  "thiserror",
 ]
 
 [[package]]
 name = "sp-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-application-crypto",
  "sp-consensus",
  "sp-consensus-slots",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
+ "sp-timestamp",
 ]
 
 [[package]]
 name = "sp-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
  "serde",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-timestamp 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-std",
+ "sp-timestamp",
 ]
 
 [[package]]
 name = "sp-core"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "array-bytes",
  "base58",
@@ -8023,54 +7809,12 @@ dependencies = [
  "secp256k1",
  "secrecy",
  "serde",
- "sp-core-hashing 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-debug-derive 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "ss58-registry",
- "substrate-bip39",
- "thiserror",
- "tiny-bip39",
- "zeroize",
-]
-
-[[package]]
-name = "sp-core"
-version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "array-bytes",
- "base58",
- "bitflags",
- "blake2",
- "dyn-clonable",
- "ed25519-zebra",
- "futures",
- "hash-db",
- "hash256-std-hasher",
- "impl-serde 0.4.0",
- "lazy_static",
- "libsecp256k1",
- "log",
- "merlin",
- "parity-scale-codec 3.4.0",
- "parking_lot 0.12.1",
- "primitive-types 0.12.1",
- "rand 0.8.5",
- "regex",
- "scale-info",
- "schnorrkel",
- "secp256k1",
- "secrecy",
- "serde",
- "sp-core-hashing 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-debug-derive 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core-hashing",
+ "sp-debug-derive",
+ "sp-externalities",
+ "sp-runtime-interface",
+ "sp-std",
+ "sp-storage",
  "ss58-registry",
  "substrate-bip39",
  "thiserror",
@@ -8081,57 +7825,32 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "blake2",
  "byteorder",
  "digest 0.10.6",
  "sha2 0.10.6",
  "sha3 0.10.6",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "twox-hash",
-]
-
-[[package]]
-name = "sp-core-hashing"
-version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "blake2",
- "byteorder",
- "digest 0.10.6",
- "sha2 0.10.6",
- "sha3 0.10.6",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-std",
  "twox-hash",
 ]
 
 [[package]]
 name = "sp-core-hashing-proc-macro"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "proc-macro2",
  "quote",
- "sp-core-hashing 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "syn",
-]
-
-[[package]]
-name = "sp-core-hashing-proc-macro"
-version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "proc-macro2",
- "quote",
- "sp-core-hashing 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core-hashing",
  "syn",
 ]
 
 [[package]]
 name = "sp-database"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "kvdb",
  "parking_lot 0.12.1",
@@ -8140,17 +7859,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "sp-debug-derive"
-version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8160,41 +7869,30 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.13.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "environmental",
  "parity-scale-codec 3.4.0",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "sp-externalities"
-version = "0.13.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "environmental",
- "parity-scale-codec 3.4.0",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-std",
+ "sp-storage",
 ]
 
 [[package]]
 name = "sp-finality-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "finality-grandpa",
  "log",
  "parity-scale-codec 3.4.0",
  "scale-info",
  "serde",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -8207,45 +7905,31 @@ dependencies = [
  "parity-scale-codec 3.4.0",
  "protos",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-std",
 ]
 
 [[package]]
 name = "sp-inherents"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "impl-trait-for-tuples",
  "parity-scale-codec 3.4.0",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "thiserror",
-]
-
-[[package]]
-name = "sp-inherents"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "async-trait",
- "impl-trait-for-tuples",
- "parity-scale-codec 3.4.0",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
  "thiserror",
 ]
 
 [[package]]
 name = "sp-io"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "bytes",
  "ed25519",
@@ -8255,39 +7939,14 @@ dependencies = [
  "log",
  "parity-scale-codec 3.4.0",
  "secp256k1",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-tracing 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "tracing",
- "tracing-core",
-]
-
-[[package]]
-name = "sp-io"
-version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "bytes",
- "ed25519",
- "ed25519-dalek",
- "futures",
- "libsecp256k1",
- "log",
- "parity-scale-codec 3.4.0",
- "secp256k1",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-keystore 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-state-machine 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-tracing 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core",
+ "sp-externalities",
+ "sp-keystore",
+ "sp-runtime-interface",
+ "sp-state-machine",
+ "sp-std",
+ "sp-tracing",
+ "sp-trie",
  "tracing",
  "tracing-core",
 ]
@@ -8295,18 +7954,18 @@ dependencies = [
 [[package]]
 name = "sp-keyring"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "lazy_static",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
  "strum",
 ]
 
 [[package]]
 name = "sp-keystore"
 version = "0.13.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "futures",
@@ -8315,31 +7974,15 @@ dependencies = [
  "parking_lot 0.12.1",
  "schnorrkel",
  "serde",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "thiserror",
-]
-
-[[package]]
-name = "sp-keystore"
-version = "0.13.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "async-trait",
- "futures",
- "merlin",
- "parity-scale-codec 3.4.0",
- "parking_lot 0.12.1",
- "schnorrkel",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core",
+ "sp-externalities",
  "thiserror",
 ]
 
 [[package]]
 name = "sp-maybe-compressed-blob"
 version = "4.1.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "thiserror",
  "zstd",
@@ -8348,27 +7991,17 @@ dependencies = [
 [[package]]
 name = "sp-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
 name = "sp-panic-handler"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
-dependencies = [
- "backtrace",
- "lazy_static",
- "regex",
-]
-
-[[package]]
-name = "sp-panic-handler"
-version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "backtrace",
  "lazy_static",
@@ -8378,17 +8011,17 @@ dependencies = [
 [[package]]
 name = "sp-rpc"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "rustc-hash",
  "serde",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
 ]
 
 [[package]]
 name = "sp-runtime"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "either",
  "hash256-std-hasher",
@@ -8399,88 +8032,36 @@ dependencies = [
  "rand 0.8.5",
  "scale-info",
  "serde",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-weights 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "sp-runtime"
-version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "either",
- "hash256-std-hasher",
- "impl-trait-for-tuples",
- "log",
- "parity-scale-codec 3.4.0",
- "paste",
- "rand 0.8.5",
- "scale-info",
- "serde",
- "sp-application-crypto 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-io 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-weights 4.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-application-crypto",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-std",
+ "sp-weights",
 ]
 
 [[package]]
 name = "sp-runtime-interface"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "bytes",
  "impl-trait-for-tuples",
  "parity-scale-codec 3.4.0",
  "primitive-types 0.12.1",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime-interface-proc-macro 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-tracing 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-wasm-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "static_assertions",
-]
-
-[[package]]
-name = "sp-runtime-interface"
-version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "bytes",
- "impl-trait-for-tuples",
- "parity-scale-codec 3.4.0",
- "primitive-types 0.12.1",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime-interface-proc-macro 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-storage 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-tracing 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-wasm-interface 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-externalities",
+ "sp-runtime-interface-proc-macro",
+ "sp-std",
+ "sp-storage",
+ "sp-tracing",
+ "sp-wasm-interface",
  "static_assertions",
 ]
 
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
-dependencies = [
- "Inflector",
- "proc-macro-crate",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "sp-runtime-interface-proc-macro"
-version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "Inflector",
  "proc-macro-crate",
@@ -8492,45 +8073,33 @@ dependencies = [
 [[package]]
 name = "sp-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-staking 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
 ]
 
 [[package]]
 name = "sp-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "sp-staking"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "parity-scale-codec 3.4.0",
- "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "sp-state-machine"
 version = "0.13.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "hash-db",
  "log",
@@ -8538,31 +8107,11 @@ dependencies = [
  "parking_lot 0.12.1",
  "rand 0.8.5",
  "smallvec",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-panic-handler 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "thiserror",
- "tracing",
-]
-
-[[package]]
-name = "sp-state-machine"
-version = "0.13.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "hash-db",
- "log",
- "parity-scale-codec 3.4.0",
- "parking_lot 0.12.1",
- "rand 0.8.5",
- "smallvec",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-externalities 0.13.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-panic-handler 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core",
+ "sp-externalities",
+ "sp-panic-handler",
+ "sp-std",
+ "sp-trie",
  "thiserror",
  "tracing",
 ]
@@ -8570,88 +8119,43 @@ dependencies = [
 [[package]]
 name = "sp-std"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
-
-[[package]]
-name = "sp-std"
-version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 
 [[package]]
 name = "sp-storage"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "impl-serde 0.4.0",
  "parity-scale-codec 3.4.0",
  "ref-cast",
  "serde",
- "sp-debug-derive 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "sp-storage"
-version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "impl-serde 0.4.0",
- "parity-scale-codec 3.4.0",
- "ref-cast",
- "serde",
- "sp-debug-derive 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-debug-derive",
+ "sp-std",
 ]
 
 [[package]]
 name = "sp-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "futures-timer",
  "log",
  "parity-scale-codec 3.4.0",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "thiserror",
-]
-
-[[package]]
-name = "sp-timestamp"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "async-trait",
- "futures-timer",
- "log",
- "parity-scale-codec 3.4.0",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
  "thiserror",
 ]
 
 [[package]]
 name = "sp-tracing"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "tracing",
- "tracing-core",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "sp-tracing"
-version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "parity-scale-codec 3.4.0",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-std",
  "tracing",
  "tracing-core",
  "tracing-subscriber",
@@ -8660,32 +8164,32 @@ dependencies = [
 [[package]]
 name = "sp-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
+ "sp-runtime",
 ]
 
 [[package]]
 name = "sp-transaction-storage-proof"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "async-trait",
  "log",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-inherents 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-trie 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
 ]
 
 [[package]]
 name = "sp-trie"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "ahash",
  "hash-db",
@@ -8697,31 +8201,8 @@ dependencies = [
  "parity-scale-codec 3.4.0",
  "parking_lot 0.12.1",
  "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "thiserror",
- "tracing",
- "trie-db",
- "trie-root",
-]
-
-[[package]]
-name = "sp-trie"
-version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "ahash",
- "hash-db",
- "hashbrown",
- "lazy_static",
- "lru",
- "memory-db",
- "nohash-hasher",
- "parity-scale-codec 3.4.0",
- "parking_lot 0.12.1",
- "scale-info",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core",
+ "sp-std",
  "thiserror",
  "tracing",
  "trie-db",
@@ -8731,52 +8212,24 @@ dependencies = [
 [[package]]
 name = "sp-version"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "impl-serde 0.4.0",
  "parity-scale-codec 3.4.0",
  "parity-wasm",
  "scale-info",
  "serde",
- "sp-core-hashing-proc-macro 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-version-proc-macro 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "thiserror",
-]
-
-[[package]]
-name = "sp-version"
-version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "impl-serde 0.4.0",
- "parity-scale-codec 3.4.0",
- "parity-wasm",
- "scale-info",
- "serde",
- "sp-core-hashing-proc-macro 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-version-proc-macro 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-core-hashing-proc-macro",
+ "sp-runtime",
+ "sp-std",
+ "sp-version-proc-macro",
  "thiserror",
 ]
 
 [[package]]
 name = "sp-version-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
-dependencies = [
- "parity-scale-codec 3.4.0",
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "sp-version-proc-macro"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "proc-macro2",
@@ -8787,25 +8240,12 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "impl-trait-for-tuples",
  "log",
  "parity-scale-codec 3.4.0",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "wasmi 0.13.2",
- "wasmtime",
-]
-
-[[package]]
-name = "sp-wasm-interface"
-version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "impl-trait-for-tuples",
- "log",
- "parity-scale-codec 3.4.0",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-std",
  "wasmi 0.13.2",
  "wasmtime",
 ]
@@ -8813,31 +8253,16 @@ dependencies = [
 [[package]]
 name = "sp-weights"
 version = "4.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
  "serde",
  "smallvec",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-debug-derive 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
-]
-
-[[package]]
-name = "sp-weights"
-version = "4.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37#6fa708e7bec04b36a77ccd0568623b076b02f704"
-dependencies = [
- "parity-scale-codec 3.4.0",
- "scale-info",
- "serde",
- "smallvec",
- "sp-arithmetic 6.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-debug-derive 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
- "sp-std 5.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?branch=fragnova-v0.9.37)",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-debug-derive",
+ "sp-std",
 ]
 
 [[package]]
@@ -8993,7 +8418,7 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "3.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "platforms 2.0.0",
 ]
@@ -9001,7 +8426,7 @@ dependencies = [
 [[package]]
 name = "substrate-frame-rpc-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "frame-system-rpc-runtime-api",
  "futures",
@@ -9010,17 +8435,17 @@ dependencies = [
  "parity-scale-codec 3.4.0",
  "sc-rpc-api",
  "sc-transaction-pool-api",
- "sp-api 4.0.0-dev (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-api",
  "sp-block-builder",
  "sp-blockchain",
- "sp-core 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
- "sp-runtime 7.0.0 (git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2)",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
 name = "substrate-prometheus-endpoint"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "hyper",
  "log",
@@ -9032,7 +8457,7 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder"
 version = "5.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch2#e0299b660fe81b821a35dca6fc01620d4519a2ad"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
 dependencies = [
  "ansi_term",
  "build-helper",
