@@ -126,6 +126,7 @@ const connectToLocalNode = async () => {
       },
       ShardsScriptInfo: {
         format: "ShardsFormat",
+        shardsVersion: "Compact<u32>",
         requiring: "Vec<ShardsTrait>",
         implementing: "Vec<ShardsTrait>"
       },
@@ -146,7 +147,6 @@ const connectToLocalNode = async () => {
       },
 
       BlockHash: "Hash",
-      Hash128: "[u8; 16]",
 
       FragmentMetadata: {
         name: "Vec<u8>",
@@ -185,13 +185,13 @@ const connectToLocalNode = async () => {
         desc: "bool",
         from: "u64",
         limit: "u64",
-        definition_hash: "String", // "Hash128",  // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
+        definition_hash: "String", // "[u8; 16]",  // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
         metadata_keys: "Vec<String>",
         owner: "Option<AccountId>",
         only_return_first_copies: "bool",
       },
       GetInstanceOwnerParams: {
-        definition_hash: 'String', // "Hash128", // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
+        definition_hash: 'String', // "[u8; 16]", // using `String` because Polkadot-JS has a problem fixed-sized arrays: https://github.com/encointer/pallets/pull/86
         edition_id: "InstanceUnit",
         copy_id: "InstanceUnit",
       },
