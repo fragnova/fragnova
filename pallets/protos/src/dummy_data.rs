@@ -108,6 +108,7 @@ impl DummyData {
 				references: vec![blake2_256(&trait_first.data)],
 				category: Categories::Shards(ShardsScriptInfo {
 					format: ShardsFormat::Edn,
+					shards_version: 0,
 					requiring: vec![],
 					implementing: vec![twox_64(&trait_first.data)]
 				}),
