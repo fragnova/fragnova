@@ -3,19 +3,15 @@
 use crate as pallet_aliases;
 use crate::*;
 use codec::Encode;
-use frame_support::{
-	parameter_types,
-	traits::AsEnsureOriginWithArg,
-	weights::Weight,
-};
+use frame_support::{parameter_types, traits::AsEnsureOriginWithArg, weights::Weight};
 use frame_system;
 use pallet_oracle::{OracleContract, OracleProvider};
 use sp_core::{ed25519::Signature, H256};
 use sp_runtime::{
 	testing::{Header, TestXt},
 	traits::{
-		BlakeTwo256, ConstU128, ConstU32, ConstU64, ConstBool, Extrinsic as ExtrinsicT, IdentifyAccount, IdentityLookup,
-		Verify,
+		BlakeTwo256, ConstBool, ConstU128, ConstU32, ConstU64, Extrinsic as ExtrinsicT,
+		IdentifyAccount, IdentityLookup, Verify,
 	},
 };
 
@@ -95,16 +91,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	type OverarchingCall = RuntimeCall;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: RuntimeCall,

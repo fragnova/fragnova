@@ -8,10 +8,7 @@ use frame_support::{assert_ok, dispatch::DispatchResult};
 mod create_tests {
 	use super::*;
 	use crate::dummy_data::DummyData;
-	use frame_support::{
-		assert_noop,
-		traits::Currency,
-	};
+	use frame_support::{assert_noop, traits::Currency};
 	use sp_fragnova::get_account_id;
 
 	pub fn create_cluster_(
@@ -313,9 +310,7 @@ mod create_tests {
 				account_id.clone(),
 				cluster_id.clone(),
 				role.clone(),
-				vec![
-					(setting_name.clone(), setting_data.clone())
-				],
+				vec![(setting_name.clone(), setting_data.clone())],
 			));
 
 			assert_ok!(delete_role_settings_(

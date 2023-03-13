@@ -80,7 +80,7 @@ use sp_io::{crypto as Crypto, hashing::keccak_256, offchain_index};
 use sp_runtime::{offchain::storage::StorageValueRef, traits::Hash, MultiSigner};
 use sp_std::{collections::btree_set::BTreeSet, vec, vec::Vec};
 
-use sp_fragnova::{Hash128, Hash256, fragments::InstanceUnit};
+use sp_fragnova::{fragments::InstanceUnit, Hash128, Hash256};
 
 use frame_system::offchain::{
 	AppCrypto, CreateSignedTransaction, SendUnsignedTransaction, SignedPayload, Signer,

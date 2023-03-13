@@ -3,9 +3,7 @@
 use codec::{Decode, Encode, Error as CodecError};
 use sp_core::offchain::{HttpRequestStatus, Timestamp};
 use sp_io::{hashing::blake2_256, offchain};
-use sp_std::{
-	vec::Vec
-};
+use sp_std::vec::Vec;
 
 /// Make an HTTP POST Request with data `body` to the URL `url`
 pub fn http_json_post(

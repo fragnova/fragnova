@@ -5,7 +5,7 @@ use crate::*;
 
 use frame_support::{
 	parameter_types,
-	traits::{ConstU32, ConstU64, ConstBool, AsEnsureOriginWithArg},
+	traits::{AsEnsureOriginWithArg, ConstBool, ConstU32, ConstU64},
 	weights::Weight,
 };
 use frame_system;
@@ -107,16 +107,16 @@ impl frame_system::offchain::SigningTypes for Test {
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	type OverarchingCall = RuntimeCall;
 	type Extrinsic = Extrinsic;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Test
-	where
-		RuntimeCall: From<LocalCall>,
+where
+	RuntimeCall: From<LocalCall>,
 {
 	fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
 		call: RuntimeCall,

@@ -6,17 +6,13 @@
 // #[cfg(feature = "std")]
 // extern crate chainblocks;
 
-/// Types that will be used by the Protos pallet
-pub mod protos;
 /// Types that will be used by the Fragments pallet
 pub mod fragments;
 /// Helper Functions that can be used in other packages of this workspace
 mod helper_functions;
-pub use helper_functions::{
-	http_json_post,
-	get_locked_frag_account,
-	get_account_id,
-};
+/// Types that will be used by the Protos pallet
+pub mod protos;
+pub use helper_functions::{get_account_id, get_locked_frag_account, http_json_post};
 /// TODO - Documentation
 mod runtime_interface;
 pub use runtime_interface::fragnova;

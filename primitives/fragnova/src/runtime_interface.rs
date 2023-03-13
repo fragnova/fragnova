@@ -1,6 +1,6 @@
 //! TODO - Documentation
 
-use crate::{Hash256};
+use crate::Hash256;
 
 use sp_std::vec::Vec;
 

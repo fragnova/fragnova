@@ -127,7 +127,6 @@ mod upload_tests {
 			shards_proto.references = vec![];
 			assert_noop!(upload(dd.account_id, &shards_proto), Error::<Test>::TraitsNotImplemented);
 		});
-
 	}
 }
 

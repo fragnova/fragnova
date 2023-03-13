@@ -3,12 +3,10 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use crate::{Hash256};
+use crate::Hash256;
 use codec::{Compact, Decode, Encode};
-use sp_std::{
-	collections::btree_map::BTreeMap,
-};
 use protos::permissions::FragmentPerms;
+use sp_std::collections::btree_map::BTreeMap;
 
 /// Type used to represent an Instance's Edition ID and an Instance's Copy ID
 pub type InstanceUnit = u64;
