@@ -68,9 +68,11 @@ pub struct LinkTargetVersioned<TAccountId, TBlockNum> {
 	pub prev_block_number: TBlockNum,
 	/// The block number indicating the current version of the linked asset.
 	pub cur_block_number: TBlockNum,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 

@@ -35,9 +35,11 @@ pub struct CompactSetting {
 	pub name: Compact<u64>,
 	/// The data associated with the Role to be stored
 	pub data: Vec<u8>,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 
@@ -48,9 +50,11 @@ pub struct Role {
 	pub name: Compact<u64>,
 	/// The settings of the Role
 	pub settings: Vec<CompactSetting>,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 
@@ -67,9 +71,11 @@ pub struct Cluster<TAccountId> {
 	pub account_id: TAccountId,
 	/// The map that contains the list of Role IDs belonging to the in Cluster
 	pub roles: Vec<Compact<u64>>,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 
