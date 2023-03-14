@@ -5,7 +5,7 @@ export default {
       type: "String",
       params: [
         { name: "param", type: "GetDefinitionsParams" },
-        { name: "at", type: "Hash", isOptional: true }
+        { name: "at", type: "BlockHash", isOptional: true }
       ]
     },
     getInstances: {
@@ -13,7 +13,7 @@ export default {
       type: "String",
       params: [
         { name: "param", type: "GetInstancesParams" },
-        { name: "at", type: "Hash", isOptional: true }
+        { name: "at", type: "BlockHash", isOptional: true }
       ]
     },
     getInstanceOwner: {
@@ -21,14 +21,18 @@ export default {
       type: "String",
       params: [
         { name: "param", type: "GetInstanceOwnerParams" },
-        { name: "at", type: "Hash", isOptional: true }
+        { name: "at", type: "BlockHash", isOptional: true }
       ]
     },
   },
   types: {
-    FragmentMetadata: {
+    DefinitionMetadata: {
       name: "Vec<u8>",
       currency: "Option<AssetId>",
+      // Reserved for future use
+      _reserved1: "Option<()>",
+      _reserved2: "Option<()>",
+      _reserved3: "Option<()>",
     },
 
     GetDefinitionsParams: {

@@ -672,6 +672,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3b5ca7a04898ad4bcd41c90c5285445ff5b791899bb1b0abdd2a2aa791211d7"
 
 [[package]]
+name = "bytemuck"
+version = "1.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17febce684fd15d89027105661fec94afb475cb995fbc59d2865198446ba2eea"
+
+[[package]]
 name = "byteorder"
 version = "1.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -710,19 +716,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cbdb825da8a5df079a43676dbe042702f1707b1109f713a01420fbb4cc71fa27"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "cargo_metadata"
-version = "0.14.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4acbb09d9ee8e23699b9634375c72795d095bf268439da88562cf9b501f181fa"
-dependencies = [
- "camino",
- "cargo-platform",
- "semver 1.0.17",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -973,13 +966,13 @@ checksum = "13418e745008f7349ec7e449155f419a61b92b58a99cc3616942b926825ec76b"
 
 [[package]]
 name = "contract-build"
-version = "2.1.0"
+version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0bcb5c81d19272226062cce7ada2dd7c58b2fc04e35c772a1b2f1d748263a276"
+checksum = "4727a6b1dd177e90daf67b4612e7233caab1077b4544f28c9a58964bd48e0d08"
 dependencies = [
  "anyhow",
  "blake2",
- "cargo_metadata 0.15.3",
+ "cargo_metadata",
  "clap",
  "colored",
  "contract-metadata",
@@ -997,7 +990,7 @@ dependencies = [
  "tracing",
  "url",
  "walkdir",
- "wasm-opt 0.112.0",
+ "wasm-opt",
  "which",
  "zip",
 ]
@@ -1067,27 +1060,28 @@ dependencies = [
 
 [[package]]
 name = "cranelift-bforest"
-version = "0.88.2"
+version = "0.93.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52056f6d0584484b57fa6c1a65c1fcb15f3780d8b6a758426d9e3084169b2ddd"
+checksum = "a7379abaacee0f14abf3204a7606118f0465785252169d186337bcb75030815a"
 dependencies = [
- "cranelift-entity 0.88.2",
+ "cranelift-entity 0.93.1",
 ]
 
 [[package]]
 name = "cranelift-codegen"
-version = "0.88.2"
+version = "0.93.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18fed94c8770dc25d01154c3ffa64ed0b3ba9d583736f305fed7beebe5d9cf74"
+checksum = "9489fa336927df749631f1008007ced2871068544f40a202ce6d93fbf2366a7b"
 dependencies = [
  "arrayvec 0.7.2",
  "bumpalo",
  "cranelift-bforest",
  "cranelift-codegen-meta",
  "cranelift-codegen-shared",
- "cranelift-entity 0.88.2",
+ "cranelift-entity 0.93.1",
  "cranelift-isle",
  "gimli 0.26.2",
+ "hashbrown 0.12.3",
  "log",
  "regalloc2",
  "smallvec",
@@ -1096,27 +1090,18 @@ dependencies = [
 
 [[package]]
 name = "cranelift-codegen-meta"
-version = "0.88.2"
+version = "0.93.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c451b81faf237d11c7e4f3165eeb6bac61112762c5cfe7b4c0fb7241474358f"
+checksum = "05bbb67da91ec721ed57cef2f7c5ef7728e1cd9bde9ffd3ef8601022e73e3239"
 dependencies = [
  "cranelift-codegen-shared",
 ]
 
 [[package]]
 name = "cranelift-codegen-shared"
-version = "0.88.2"
+version = "0.93.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7c940133198426d26128f08be2b40b0bd117b84771fd36798969c4d712d81fc"
-
-[[package]]
-name = "cranelift-entity"
-version = "0.88.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87a0f1b2fdc18776956370cf8d9b009ded3f855350c480c1c52142510961f352"
-dependencies = [
- "serde",
-]
+checksum = "418ecb2f36032f6665dc1a5e2060a143dbab41d83b784882e97710e890a7a16d"
 
 [[package]]
 name = "cranelift-entity"
@@ -1128,10 +1113,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "cranelift-frontend"
-version = "0.88.2"
+name = "cranelift-entity"
+version = "0.93.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34897538b36b216cc8dd324e73263596d51b8cf610da6498322838b2546baf8a"
+checksum = "7cf583f7b093f291005f9fb1323e2c37f6ee4c7909e39ce016b2e8360d461705"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "cranelift-frontend"
+version = "0.93.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b66bf9e916f57fbbd0f7703ec6286f4624866bf45000111627c70d272c8dda1"
 dependencies = [
  "cranelift-codegen",
  "log",
@@ -1141,15 +1135,15 @@ dependencies = [
 
 [[package]]
 name = "cranelift-isle"
-version = "0.88.2"
+version = "0.93.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b2629a569fae540f16a76b70afcc87ad7decb38dc28fa6c648ac73b51e78470"
+checksum = "649782a39ce99798dd6b4029e2bb318a2fbeaade1b4fa25330763c10c65bc358"
 
 [[package]]
 name = "cranelift-native"
-version = "0.88.2"
+version = "0.93.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20937dab4e14d3e225c5adfc9c7106bafd4ac669bdb43027b911ff794c6fb318"
+checksum = "937e021e089c51f9749d09e7ad1c4f255c2f8686cb8c3df63a34b3ec9921bc41"
 dependencies = [
  "cranelift-codegen",
  "libc",
@@ -1158,18 +1152,18 @@ dependencies = [
 
 [[package]]
 name = "cranelift-wasm"
-version = "0.88.2"
+version = "0.93.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80fc2288957a94fd342a015811479de1837850924166d1f1856d8406e6f3609b"
+checksum = "d850cf6775477747c9dfda9ae23355dd70512ffebc70cf82b85a5b111ae668b5"
 dependencies = [
  "cranelift-codegen",
- "cranelift-entity 0.88.2",
+ "cranelift-entity 0.93.1",
  "cranelift-frontend",
  "itertools",
  "log",
  "smallvec",
- "wasmparser 0.89.1",
- "wasmtime-types 1.0.2",
+ "wasmparser 0.100.0",
+ "wasmtime-types 6.0.1",
 ]
 
 [[package]]
@@ -1495,6 +1489,17 @@ name = "derivative"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "derive-syn-parse"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e79116f119dd1dba1abf1f3405f03b9b0e79a27a3883864bfebded8a3dc768cd"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2103,7 +2108,7 @@ checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 [[package]]
 name = "fork-tree"
 version = "3.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
 ]
@@ -2198,12 +2203,12 @@ dependencies = [
  "pallet-grandpa",
  "pallet-identity",
  "pallet-indices",
+ "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
  "pallet-oracle",
  "pallet-protos",
  "pallet-protos-rpc-runtime-api",
  "pallet-proxy",
- "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -2244,9 +2249,10 @@ dependencies = [
 [[package]]
 name = "frame-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-support",
+ "frame-support-procedural",
  "frame-system",
  "linregress",
  "log",
@@ -2262,12 +2268,13 @@ dependencies = [
  "sp-runtime-interface 7.0.0",
  "sp-std 5.0.0",
  "sp-storage 7.0.0",
+ "static_assertions",
 ]
 
 [[package]]
 name = "frame-benchmarking-cli"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "Inflector",
  "array-bytes",
@@ -2314,7 +2321,7 @@ dependencies = [
 [[package]]
 name = "frame-executive"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -2342,7 +2349,7 @@ dependencies = [
 [[package]]
 name = "frame-support"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "bitflags",
  "frame-metadata",
@@ -2374,10 +2381,11 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "Inflector",
  "cfg-expr",
+ "derive-syn-parse",
  "frame-support-procedural-tools",
  "itertools",
  "proc-macro2",
@@ -2388,7 +2396,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-support-procedural-tools-derive",
  "proc-macro-crate",
@@ -2400,7 +2408,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "3.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2410,7 +2418,7 @@ dependencies = [
 [[package]]
 name = "frame-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-support",
  "log",
@@ -2428,7 +2436,7 @@ dependencies = [
 [[package]]
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -2443,7 +2451,7 @@ dependencies = [
 [[package]]
 name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "sp-api",
@@ -2784,6 +2792,9 @@ name = "hashbrown"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
+dependencies = [
+ "ahash 0.8.3",
+]
 
 [[package]]
 name = "heck"
@@ -3424,12 +3435,6 @@ dependencies = [
 
 [[package]]
 name = "io-lifetimes"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59ce5ef949d49ee85593fc4d3f3f95ad61657076395cbbce23e2121fc5542074"
-
-[[package]]
-name = "io-lifetimes"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cfa919a82ea574332e2de6e74b4c36e74d41982b335080fa59d4ef31be20fdf3"
@@ -3469,8 +3474,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21b6b32576413a8e69b90e952e4a026476040d81017b80445deda5f2d3921857"
 dependencies = [
  "hermit-abi 0.3.1",
- "io-lifetimes 1.0.6",
- "rustix 0.36.9",
+ "io-lifetimes",
+ "rustix",
  "windows-sys 0.45.0",
 ]
 
@@ -4300,19 +4305,12 @@ dependencies = [
 
 [[package]]
 name = "linregress"
-version = "0.4.4"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6c601a85f5ecd1aba625247bca0031585fb1c446461b142878a16f8245ddeb8"
+checksum = "475015a7f8f017edb28d2e69813be23500ad4b32cfe3421c4148efc97324ee52"
 dependencies = [
  "nalgebra",
- "statrs",
 ]
-
-[[package]]
-name = "linux-raw-sys"
-version = "0.0.46"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4d2456c373231a208ad294c33dc5bff30051eafd954cd4caae83a712b12854d"
 
 [[package]]
 name = "linux-raw-sys"
@@ -4437,7 +4435,7 @@ version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b20a59d985586e4a5aef64564ac77299f8586d8be6cf9106a5a40207e8908efb"
 dependencies = [
- "rustix 0.36.9",
+ "rustix",
 ]
 
 [[package]]
@@ -4454,6 +4452,15 @@ name = "memoffset"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5aa361d4faea93603064a027415f07bd8e1d5c88c9fbf68bf56a285428fd79ce"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
+name = "memoffset"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5de893c32cde5f383baa4c04c5d6dbdd735cfd4a794b0debdb2bb1b421da5ff4"
 dependencies = [
  "autocfg",
 ]
@@ -4662,9 +4669,9 @@ dependencies = [
 
 [[package]]
 name = "nalgebra"
-version = "0.27.1"
+version = "0.32.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "462fffe4002f4f2e1f6a9dcf12cc1a6fc0e15989014efc02a941d3e0f5dc2120"
+checksum = "d68d47bba83f9e2006d117a9a33af1524e655516b8919caac694427a6fb1e511"
 dependencies = [
  "approx",
  "matrixmultiply",
@@ -4672,17 +4679,15 @@ dependencies = [
  "num-complex",
  "num-rational",
  "num-traits",
- "rand 0.8.5",
- "rand_distr",
  "simba",
  "typenum",
 ]
 
 [[package]]
 name = "nalgebra-macros"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01fcc0b8149b4632adc89ac3b7b31a12fb6099a0317a4eb2ebff574ef7de7218"
+checksum = "d232c68884c0c99810a5a4d333ef7e47689cfd0edc85efc9e54e1e6bf5212766"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4777,6 +4782,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "nix"
+version = "0.26.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bfdda3d196821d6af13126e40375cdf7da646a96114af134d5f417a9a1dc8e1a"
+dependencies = [
+ "bitflags",
+ "cfg-if",
+ "libc",
+ "memoffset 0.7.1",
+ "pin-utils",
+ "static_assertions",
+]
+
+[[package]]
 name = "nohash-hasher"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4857,7 +4876,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "578ede34cf02f8924ab9447f50c28075b4d3e5b269972345e7e0372b38c6cdcd"
 dependencies = [
  "autocfg",
- "libm 0.2.6",
 ]
 
 [[package]]
@@ -4984,9 +5002,9 @@ dependencies = [
  "log",
  "pallet-assets",
  "pallet-balances",
+ "pallet-insecure-randomness-collective-flip",
  "pallet-oracle",
  "pallet-proxy",
- "pallet-randomness-collective-flip",
  "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "parking_lot 0.12.1",
@@ -5018,10 +5036,10 @@ dependencies = [
  "pallet-contracts",
  "pallet-detach",
  "pallet-fragments",
+ "pallet-insecure-randomness-collective-flip",
  "pallet-oracle",
  "pallet-protos",
  "pallet-proxy",
- "pallet-randomness-collective-flip",
  "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "protos",
@@ -5038,7 +5056,7 @@ dependencies = [
 [[package]]
 name = "pallet-assets"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5053,7 +5071,7 @@ dependencies = [
 [[package]]
 name = "pallet-aura"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5069,14 +5087,13 @@ dependencies = [
 [[package]]
 name = "pallet-authorship"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-support",
  "frame-system",
  "impl-trait-for-tuples",
  "parity-scale-codec 3.4.0",
  "scale-info",
- "sp-authorship",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
 ]
@@ -5084,7 +5101,7 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5121,7 +5138,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "bitflags",
  "frame-benchmarking",
@@ -5150,10 +5167,11 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-primitives"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "bitflags",
  "parity-scale-codec 3.4.0",
+ "scale-info",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
  "sp-weights 4.0.0",
@@ -5176,7 +5194,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5192,7 +5210,7 @@ dependencies = [
  "frame-system",
  "hex",
  "log",
- "pallet-randomness-collective-flip",
+ "pallet-insecure-randomness-collective-flip",
  "parity-scale-codec 3.4.0",
  "parking_lot 0.12.1",
  "scale-info",
@@ -5222,10 +5240,10 @@ dependencies = [
  "pallet-clusters",
  "pallet-contracts",
  "pallet-detach",
+ "pallet-insecure-randomness-collective-flip",
  "pallet-oracle",
  "pallet-protos",
  "pallet-proxy",
- "pallet-randomness-collective-flip",
  "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "protos",
@@ -5270,7 +5288,7 @@ dependencies = [
 [[package]]
 name = "pallet-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5293,7 +5311,7 @@ dependencies = [
 [[package]]
 name = "pallet-identity"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "enumflags2",
  "frame-benchmarking",
@@ -5309,7 +5327,7 @@ dependencies = [
 [[package]]
 name = "pallet-indices"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5324,9 +5342,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-insecure-randomness-collective-flip"
+version = "4.0.0-dev"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec 3.4.0",
+ "safe-mix",
+ "scale-info",
+ "sp-runtime 7.0.0",
+ "sp-std 5.0.0",
+]
+
+[[package]]
 name = "pallet-multisig"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5383,9 +5415,9 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives 7.0.0",
  "pallet-detach",
+ "pallet-insecure-randomness-collective-flip",
  "pallet-oracle",
  "pallet-proxy",
- "pallet-randomness-collective-flip",
  "pallet-timestamp",
  "parity-scale-codec 3.4.0",
  "protos",
@@ -5432,7 +5464,7 @@ dependencies = [
 [[package]]
 name = "pallet-proxy"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5445,23 +5477,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-randomness-collective-flip"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec 3.4.0",
- "safe-mix",
- "scale-info",
- "sp-runtime 7.0.0",
- "sp-std 5.0.0",
-]
-
-[[package]]
 name = "pallet-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5482,7 +5500,7 @@ dependencies = [
 [[package]]
 name = "pallet-sudo"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5496,7 +5514,7 @@ dependencies = [
 [[package]]
 name = "pallet-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5514,7 +5532,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5530,7 +5548,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "jsonrpsee",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -5546,7 +5564,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec 3.4.0",
@@ -5558,7 +5576,7 @@ dependencies = [
 [[package]]
 name = "pallet-utility"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6232,9 +6250,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.25"
+version = "1.0.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5308e8208729c3e1504a6cfad0d5daacc4614c9a2e65d1ea312a34b5cb00fe84"
+checksum = "4424af4bf778aae2051a77b60283332f386554255d722233d09fbfc7e30da2fc"
 dependencies = [
  "proc-macro2",
 ]
@@ -6311,16 +6329,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom 0.2.8",
-]
-
-[[package]]
-name = "rand_distr"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32cb0b9bc82b0a0876c2dd994a7e7a2683d3e7390ca40e6886785ef0c7e3ee31"
-dependencies = [
- "num-traits",
- "rand 0.8.5",
 ]
 
 [[package]]
@@ -6436,9 +6444,9 @@ dependencies = [
 
 [[package]]
 name = "regalloc2"
-version = "0.3.2"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d43a209257d978ef079f3d446331d0f1794f5e0fc19b306a199983857833a779"
+checksum = "300d4fbfb40c1c66a78ba3ddd41c1110247cf52f97b87d0f2fc9209bd49b030c"
 dependencies = [
  "fxhash",
  "log",
@@ -6471,6 +6479,18 @@ name = "regex-syntax"
 version = "0.6.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "456c603be3e8d448b072f410900c09faf164fbce2d480456f50eea6e25f9c848"
+
+[[package]]
+name = "region"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76e189c2369884dce920945e2ddf79b3dff49e071a167dd1817fa9c4c00d512e"
+dependencies = [
+ "bitflags",
+ "libc",
+ "mach",
+ "winapi",
+]
 
 [[package]]
 name = "resolv-conf"
@@ -6566,7 +6586,7 @@ dependencies = [
  "log",
  "netlink-packet-route",
  "netlink-proto",
- "nix",
+ "nix 0.24.3",
  "thiserror",
  "tokio",
 ]
@@ -6642,29 +6662,15 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.35.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "727a1a6d65f786ec22df8a81ca3121107f235970dc1705ed681d3e6e8b9cd5f9"
-dependencies = [
- "bitflags",
- "errno",
- "io-lifetimes 0.7.5",
- "libc",
- "linux-raw-sys 0.0.46",
- "windows-sys 0.42.0",
-]
-
-[[package]]
-name = "rustix"
 version = "0.36.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd5c6ff11fecd55b40746d1995a02f2eb375bf8c00d192d521ee09f42bef37bc"
 dependencies = [
  "bitflags",
  "errno",
- "io-lifetimes 1.0.6",
+ "io-lifetimes",
  "libc",
- "linux-raw-sys 0.1.4",
+ "linux-raw-sys",
  "windows-sys 0.45.0",
 ]
 
@@ -6747,6 +6753,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "safe_arch"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "794821e4ccb0d9f979512f9c1973480123f9bd62a90d74ab0f9426fcf8f4a529"
+dependencies = [
+ "bytemuck",
+]
+
+[[package]]
 name = "same-file"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6758,7 +6773,7 @@ dependencies = [
 [[package]]
 name = "sc-allocator"
 version = "4.1.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "log",
  "sp-core 7.0.0",
@@ -6769,7 +6784,7 @@ dependencies = [
 [[package]]
 name = "sc-basic-authorship"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "futures",
  "futures-timer",
@@ -6792,7 +6807,7 @@ dependencies = [
 [[package]]
 name = "sc-block-builder"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "sc-client-api",
@@ -6808,7 +6823,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "memmap2",
  "sc-chain-spec-derive",
@@ -6823,7 +6838,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec-derive"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -6834,7 +6849,7 @@ dependencies = [
 [[package]]
 name = "sc-cli"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "array-bytes",
  "chrono",
@@ -6874,7 +6889,7 @@ dependencies = [
 [[package]]
 name = "sc-client-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "fnv",
  "futures",
@@ -6900,7 +6915,7 @@ dependencies = [
 [[package]]
 name = "sc-client-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "hash-db",
  "kvdb",
@@ -6913,6 +6928,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "sc-client-api",
  "sc-state-db",
+ "schnellru",
  "sp-arithmetic 6.0.0",
  "sp-blockchain",
  "sp-core 7.0.0",
@@ -6925,7 +6941,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "futures",
@@ -6950,7 +6966,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "futures",
@@ -6979,7 +6995,7 @@ dependencies = [
 [[package]]
 name = "sc-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "futures",
@@ -7002,7 +7018,7 @@ dependencies = [
 [[package]]
 name = "sc-executor"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "lru",
  "parity-scale-codec 3.4.0",
@@ -7026,7 +7042,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "sc-allocator",
  "sp-maybe-compressed-blob",
@@ -7039,7 +7055,7 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmi"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "log",
  "sc-allocator",
@@ -7052,26 +7068,27 @@ dependencies = [
 [[package]]
 name = "sc-executor-wasmtime"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
+ "anyhow",
  "cfg-if",
  "libc",
  "log",
  "once_cell",
- "rustix 0.35.13",
+ "rustix",
  "sc-allocator",
  "sc-executor-common",
  "sp-runtime-interface 7.0.0",
  "sp-wasm-interface 7.0.0",
- "wasmtime 1.0.2",
+ "wasmtime 6.0.1",
 ]
 
 [[package]]
 name = "sc-finality-grandpa"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
- "ahash 0.7.6",
+ "ahash 0.8.3",
  "array-bytes",
  "async-trait",
  "dyn-clone",
@@ -7109,7 +7126,7 @@ dependencies = [
 [[package]]
 name = "sc-informant"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "ansi_term",
  "futures",
@@ -7124,7 +7141,7 @@ dependencies = [
 [[package]]
 name = "sc-keystore"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "array-bytes",
  "async-trait",
@@ -7139,7 +7156,7 @@ dependencies = [
 [[package]]
 name = "sc-network"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "array-bytes",
  "async-trait",
@@ -7154,6 +7171,7 @@ dependencies = [
  "libp2p",
  "log",
  "lru",
+ "mockall",
  "parity-scale-codec 3.4.0",
  "parking_lot 0.12.1",
  "pin-project",
@@ -7181,7 +7199,7 @@ dependencies = [
 [[package]]
 name = "sc-network-bitswap"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "cid",
  "futures",
@@ -7200,7 +7218,7 @@ dependencies = [
 [[package]]
 name = "sc-network-common"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "bitflags",
@@ -7226,9 +7244,9 @@ dependencies = [
 [[package]]
 name = "sc-network-gossip"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
- "ahash 0.7.6",
+ "ahash 0.8.3",
  "futures",
  "futures-timer",
  "libp2p",
@@ -7244,7 +7262,7 @@ dependencies = [
 [[package]]
 name = "sc-network-light"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "array-bytes",
  "futures",
@@ -7265,7 +7283,7 @@ dependencies = [
 [[package]]
 name = "sc-network-sync"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "array-bytes",
  "async-trait",
@@ -7297,7 +7315,7 @@ dependencies = [
 [[package]]
 name = "sc-network-transactions"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "array-bytes",
  "futures",
@@ -7316,7 +7334,7 @@ dependencies = [
 [[package]]
 name = "sc-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "array-bytes",
  "bytes",
@@ -7346,7 +7364,7 @@ dependencies = [
 [[package]]
 name = "sc-peerset"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "futures",
  "libp2p",
@@ -7359,7 +7377,7 @@ dependencies = [
 [[package]]
 name = "sc-proposer-metrics"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "log",
  "substrate-prometheus-endpoint",
@@ -7368,7 +7386,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "futures",
  "jsonrpsee",
@@ -7392,12 +7410,13 @@ dependencies = [
  "sp-runtime 7.0.0",
  "sp-session",
  "sp-version",
+ "tokio",
 ]
 
 [[package]]
 name = "sc-rpc-api"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "jsonrpsee",
  "parity-scale-codec 3.4.0",
@@ -7416,7 +7435,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-server"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "http",
  "jsonrpsee",
@@ -7431,7 +7450,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-spec-v2"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "array-bytes",
  "futures",
@@ -7457,7 +7476,7 @@ dependencies = [
 [[package]]
 name = "sc-service"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "directories",
@@ -7488,6 +7507,7 @@ dependencies = [
  "sc-rpc",
  "sc-rpc-server",
  "sc-rpc-spec-v2",
+ "sc-storage-monitor",
  "sc-sysinfo",
  "sc-telemetry",
  "sc-tracing",
@@ -7522,7 +7542,7 @@ dependencies = [
 [[package]]
 name = "sc-state-db"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "log",
  "parity-scale-codec 3.4.0",
@@ -7531,9 +7551,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "sc-storage-monitor"
+version = "0.1.0"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
+dependencies = [
+ "clap",
+ "futures",
+ "log",
+ "nix 0.26.2",
+ "sc-client-db",
+ "sc-utils",
+ "sp-core 7.0.0",
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "sc-sysinfo"
 version = "6.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "futures",
  "libc",
@@ -7552,7 +7588,7 @@ dependencies = [
 [[package]]
 name = "sc-telemetry"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "chrono",
  "futures",
@@ -7571,7 +7607,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "ansi_term",
  "atty",
@@ -7602,7 +7638,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -7613,13 +7649,14 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "futures",
  "futures-timer",
  "linked-hash-map",
  "log",
+ "num-traits",
  "parity-scale-codec 3.4.0",
  "parking_lot 0.12.1",
  "sc-client-api",
@@ -7639,7 +7676,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "futures",
@@ -7653,7 +7690,7 @@ dependencies = [
 [[package]]
 name = "sc-utils"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "backtrace",
  "futures",
@@ -8085,14 +8122,15 @@ dependencies = [
 
 [[package]]
 name = "simba"
-version = "0.5.1"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e82063457853d00243beda9952e910b82593e4b07ae9f721b9278a99a0d3d5c"
+checksum = "50582927ed6f77e4ac020c057f37a268fc6aebc29225050365aacbb9deeeddc4"
 dependencies = [
  "approx",
  "num-complex",
  "num-traits",
  "paste",
+ "wide",
 ]
 
 [[package]]
@@ -8175,7 +8213,7 @@ dependencies = [
 [[package]]
 name = "sp-api"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "hash-db",
  "log",
@@ -8193,7 +8231,7 @@ dependencies = [
 [[package]]
 name = "sp-api-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "blake2",
  "proc-macro-crate",
@@ -8205,7 +8243,7 @@ dependencies = [
 [[package]]
 name = "sp-application-crypto"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
@@ -8232,7 +8270,7 @@ dependencies = [
 [[package]]
 name = "sp-arithmetic"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "integer-sqrt",
  "num-traits",
@@ -8259,21 +8297,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-authorship"
-version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
-dependencies = [
- "async-trait",
- "parity-scale-codec 3.4.0",
- "sp-inherents",
- "sp-runtime 7.0.0",
- "sp-std 5.0.0",
-]
-
-[[package]]
 name = "sp-block-builder"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "sp-api",
@@ -8285,7 +8311,7 @@ dependencies = [
 [[package]]
 name = "sp-blockchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "futures",
  "log",
@@ -8303,7 +8329,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "futures",
@@ -8321,7 +8347,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-aura"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "parity-scale-codec 3.4.0",
@@ -8339,7 +8365,7 @@ dependencies = [
 [[package]]
 name = "sp-consensus-slots"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
@@ -8351,12 +8377,13 @@ dependencies = [
 [[package]]
 name = "sp-core"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "array-bytes",
  "base58",
  "bitflags",
  "blake2",
+ "bounded-collections",
  "dyn-clonable",
  "ed25519-zebra",
  "futures",
@@ -8437,7 +8464,7 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "blake2",
  "byteorder",
@@ -8466,7 +8493,7 @@ dependencies = [
 [[package]]
 name = "sp-core-hashing-proc-macro"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8477,7 +8504,7 @@ dependencies = [
 [[package]]
 name = "sp-database"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "kvdb",
  "parking_lot 0.12.1",
@@ -8486,7 +8513,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8507,7 +8534,7 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.13.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "environmental",
  "parity-scale-codec 3.4.0",
@@ -8530,7 +8557,7 @@ dependencies = [
 [[package]]
 name = "sp-finality-grandpa"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "finality-grandpa",
  "log",
@@ -8565,11 +8592,12 @@ dependencies = [
 [[package]]
 name = "sp-inherents"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "impl-trait-for-tuples",
  "parity-scale-codec 3.4.0",
+ "scale-info",
  "sp-core 7.0.0",
  "sp-runtime 7.0.0",
  "sp-std 5.0.0",
@@ -8579,7 +8607,7 @@ dependencies = [
 [[package]]
 name = "sp-io"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "bytes",
  "ed25519",
@@ -8630,7 +8658,7 @@ dependencies = [
 [[package]]
 name = "sp-keyring"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "lazy_static",
  "sp-core 7.0.0",
@@ -8653,7 +8681,7 @@ dependencies = [
 [[package]]
 name = "sp-keystore"
 version = "0.13.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "futures",
@@ -8687,7 +8715,7 @@ dependencies = [
 [[package]]
 name = "sp-maybe-compressed-blob"
 version = "4.1.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "thiserror",
  "zstd",
@@ -8696,7 +8724,7 @@ dependencies = [
 [[package]]
 name = "sp-offchain"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "sp-api",
  "sp-core 7.0.0",
@@ -8706,7 +8734,7 @@ dependencies = [
 [[package]]
 name = "sp-panic-handler"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "backtrace",
  "lazy_static",
@@ -8727,7 +8755,7 @@ dependencies = [
 [[package]]
 name = "sp-rpc"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "rustc-hash",
  "serde",
@@ -8737,7 +8765,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "either",
  "hash256-std-hasher",
@@ -8782,7 +8810,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "bytes",
  "impl-trait-for-tuples",
@@ -8819,7 +8847,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "Inflector",
  "proc-macro-crate",
@@ -8844,7 +8872,7 @@ dependencies = [
 [[package]]
 name = "sp-session"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
@@ -8858,7 +8886,7 @@ dependencies = [
 [[package]]
 name = "sp-staking"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
@@ -8870,7 +8898,7 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "0.13.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "hash-db",
  "log",
@@ -8911,7 +8939,7 @@ dependencies = [
 [[package]]
 name = "sp-std"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 
 [[package]]
 name = "sp-std"
@@ -8922,7 +8950,7 @@ checksum = "af0ee286f98455272f64ac5bb1384ff21ac029fbb669afbaf48477faff12760e"
 [[package]]
 name = "sp-storage"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "impl-serde 0.4.0",
  "parity-scale-codec 3.4.0",
@@ -8949,7 +8977,7 @@ dependencies = [
 [[package]]
 name = "sp-timestamp"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "futures-timer",
@@ -8964,7 +8992,7 @@ dependencies = [
 [[package]]
 name = "sp-tracing"
 version = "6.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "sp-std 5.0.0",
@@ -8989,7 +9017,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-pool"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "sp-api",
  "sp-runtime 7.0.0",
@@ -8998,7 +9026,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-storage-proof"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "async-trait",
  "log",
@@ -9014,23 +9042,23 @@ dependencies = [
 [[package]]
 name = "sp-trie"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
- "ahash 0.7.6",
+ "ahash 0.8.3",
  "hash-db",
  "hashbrown 0.12.3",
  "lazy_static",
- "lru",
  "memory-db",
  "nohash-hasher",
  "parity-scale-codec 3.4.0",
  "parking_lot 0.12.1",
  "scale-info",
+ "schnellru",
  "sp-core 7.0.0",
  "sp-std 5.0.0",
  "thiserror",
  "tracing",
- "trie-db",
+ "trie-db 0.25.1",
  "trie-root",
 ]
 
@@ -9054,14 +9082,14 @@ dependencies = [
  "sp-std 6.0.0",
  "thiserror",
  "tracing",
- "trie-db",
+ "trie-db 0.24.0",
  "trie-root",
 ]
 
 [[package]]
 name = "sp-version"
 version = "5.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "impl-serde 0.4.0",
  "parity-scale-codec 3.4.0",
@@ -9078,7 +9106,7 @@ dependencies = [
 [[package]]
 name = "sp-version-proc-macro"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "proc-macro2",
@@ -9089,14 +9117,15 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "7.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
+ "anyhow",
  "impl-trait-for-tuples",
  "log",
  "parity-scale-codec 3.4.0",
  "sp-std 5.0.0",
  "wasmi 0.13.2",
- "wasmtime 1.0.2",
+ "wasmtime 6.0.1",
 ]
 
 [[package]]
@@ -9117,7 +9146,7 @@ dependencies = [
 [[package]]
 name = "sp-weights"
 version = "4.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "parity-scale-codec 3.4.0",
  "scale-info",
@@ -9153,9 +9182,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "spin"
-version = "0.9.5"
+version = "0.9.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7dccf47db1b41fa1573ed27ccf5e08e3ca771cb994f776668c5ebda893b248fc"
+checksum = "b5d6e0250b93c8427a177b849d144a96d5acc57006149479403d7861ab721e34"
 
 [[package]]
 name = "spki"
@@ -9223,19 +9252,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "statrs"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05bdbb8e4e78216a85785a85d3ec3183144f98d0097b9281802c019bb07a6f05"
-dependencies = [
- "approx",
- "lazy_static",
- "nalgebra",
- "num-traits",
- "rand 0.8.5",
-]
-
-[[package]]
 name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9298,7 +9314,7 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "3.0.0"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "platforms 2.0.0",
 ]
@@ -9306,7 +9322,7 @@ dependencies = [
 [[package]]
 name = "substrate-frame-rpc-system"
 version = "4.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "frame-system-rpc-runtime-api",
  "futures",
@@ -9325,7 +9341,7 @@ dependencies = [
 [[package]]
 name = "substrate-prometheus-endpoint"
 version = "0.10.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "hyper",
  "log",
@@ -9337,18 +9353,18 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder"
 version = "5.0.0-dev"
-source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.37-patch1#bc25bf6beb190cba81b814b231d83e6a0d751a36"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
 dependencies = [
  "ansi_term",
  "build-helper",
- "cargo_metadata 0.14.2",
+ "cargo_metadata",
  "filetime",
  "sp-maybe-compressed-blob",
  "strum",
  "tempfile",
  "toml 0.5.11",
  "walkdir",
- "wasm-opt 0.110.0",
+ "wasm-opt",
 ]
 
 [[package]]
@@ -9509,7 +9525,7 @@ dependencies = [
  "cfg-if",
  "fastrand",
  "redox_syscall",
- "rustix 0.36.9",
+ "rustix",
  "windows-sys 0.42.0",
 ]
 
@@ -9929,6 +9945,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "trie-db"
+version = "0.25.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3390c0409daaa6027d6681393316f4ccd3ff82e1590a1e4725014e3ae2bf1920"
+dependencies = [
+ "hash-db",
+ "hashbrown 0.13.2",
+ "log",
+ "rustc-hex",
+ "smallvec",
+]
+
+[[package]]
 name = "trie-root"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10312,9 +10341,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-opt"
-version = "0.110.0"
+version = "0.111.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02484958a1edbd8e71485c5c10e89cbcf58b3a234aafc2fe78dee79cbfbbaae5"
+checksum = "84a303793cbc01fb96551badfc7367db6007396bba6bac97936b3c8b6f7fdb41"
 dependencies = [
  "anyhow",
  "libc",
@@ -10322,71 +10351,33 @@ dependencies = [
  "strum_macros",
  "tempfile",
  "thiserror",
- "wasm-opt-cxx-sys 0.110.0",
- "wasm-opt-sys 0.110.0",
-]
-
-[[package]]
-name = "wasm-opt"
-version = "0.112.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87fef6d0d508f08334e0ab0e6877feb4c0ecb3956bcf2cb950699b22fedf3e9c"
-dependencies = [
- "anyhow",
- "libc",
- "strum",
- "strum_macros",
- "tempfile",
- "thiserror",
- "wasm-opt-cxx-sys 0.112.0",
- "wasm-opt-sys 0.112.0",
+ "wasm-opt-cxx-sys",
+ "wasm-opt-sys",
 ]
 
 [[package]]
 name = "wasm-opt-cxx-sys"
-version = "0.110.0"
+version = "0.111.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c150ac22758b63137b0ccbcddcc45cfaa2bb1b4d7ebc7d50f6bb76d4d52a5bf1"
+checksum = "d9c9deb56f8a9f2ec177b3bd642a8205621835944ed5da55f2388ef216aca5a4"
 dependencies = [
  "anyhow",
  "cxx",
  "cxx-build",
- "wasm-opt-sys 0.110.0",
-]
-
-[[package]]
-name = "wasm-opt-cxx-sys"
-version = "0.112.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc816bbc1596c8f2e8127e137a760c798023ef3d378f2ae51f0f1840e2dfa445"
-dependencies = [
- "anyhow",
- "cxx",
- "cxx-build",
- "wasm-opt-sys 0.112.0",
+ "wasm-opt-sys",
 ]
 
 [[package]]
 name = "wasm-opt-sys"
-version = "0.110.0"
+version = "0.111.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc8110e347152693834f357f67b1505ab85ec9546b9546d41a6299bab06d4f9a"
+checksum = "4432e28b542738a9776cedf92e8a99d8991c7b4667ee2c7ccddfb479dd2856a7"
 dependencies = [
  "anyhow",
  "cc",
+ "cxx",
+ "cxx-build",
  "regex",
-]
-
-[[package]]
-name = "wasm-opt-sys"
-version = "0.112.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40199e4f68ef1071b3c6d0bd8026a12b481865d4b9e49c156932ea9a6234dd14"
-dependencies = [
- "anyhow",
- "cc",
- "cxx",
- "cxx-build",
 ]
 
 [[package]]
@@ -10421,7 +10412,7 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "01bf50edb2ea9d922aa75a7bf3c15e26a6c9e2d18c56e862b49737a582901729"
 dependencies = [
- "spin 0.9.5",
+ "spin 0.9.6",
  "wasmi_arena",
  "wasmi_core 0.5.0",
  "wasmparser-nostd",
@@ -10453,6 +10444,7 @@ dependencies = [
  "memory_units",
  "num-rational",
  "num-traits",
+ "region",
 ]
 
 [[package]]
@@ -10468,18 +10460,19 @@ dependencies = [
 
 [[package]]
 name = "wasmparser"
-version = "0.89.1"
+version = "0.96.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab5d3e08b13876f96dd55608d03cd4883a0545884932d5adf11925876c96daef"
+checksum = "adde01ade41ab9a5d10ec8ed0bb954238cf8625b5cd5a13093d6de2ad9c2be1a"
 dependencies = [
  "indexmap",
+ "url",
 ]
 
 [[package]]
 name = "wasmparser"
-version = "0.96.0"
+version = "0.100.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adde01ade41ab9a5d10ec8ed0bb954238cf8625b5cd5a13093d6de2ad9c2be1a"
+checksum = "64b20236ab624147dfbb62cf12a19aaf66af0e41b8398838b66e997d07d269d4"
 dependencies = [
  "indexmap",
  "url",
@@ -10492,34 +10485,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c37f310b5a62bfd5ae7c0f1d8e6f98af16a5d6d84ba764e9c36439ec14e318b"
 dependencies = [
  "indexmap-nostd",
-]
-
-[[package]]
-name = "wasmtime"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ad5af6ba38311282f2a21670d96e78266e8c8e2f38cbcd52c254df6ccbc7731"
-dependencies = [
- "anyhow",
- "bincode",
- "cfg-if",
- "indexmap",
- "libc",
- "log",
- "object 0.29.0",
- "once_cell",
- "paste",
- "psm",
- "rayon",
- "serde",
- "target-lexicon",
- "wasmparser 0.89.1",
- "wasmtime-cache",
- "wasmtime-cranelift",
- "wasmtime-environ 1.0.2",
- "wasmtime-jit 1.0.2",
- "wasmtime-runtime 1.0.2",
- "windows-sys 0.36.1",
 ]
 
 [[package]]
@@ -10548,12 +10513,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmtime-asm-macros"
-version = "1.0.2"
+name = "wasmtime"
+version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45de63ddfc8b9223d1adc8f7b2ee5f35d1f6d112833934ad7ea66e4f4339e597"
+checksum = "f6e89f9819523447330ffd70367ef4a18d8c832e24e8150fe054d1d912841632"
 dependencies = [
+ "anyhow",
+ "bincode",
  "cfg-if",
+ "indexmap",
+ "libc",
+ "log",
+ "object 0.29.0",
+ "once_cell",
+ "paste",
+ "psm",
+ "rayon",
+ "serde",
+ "target-lexicon",
+ "wasmparser 0.100.0",
+ "wasmtime-cache",
+ "wasmtime-cranelift",
+ "wasmtime-environ 6.0.1",
+ "wasmtime-jit 6.0.1",
+ "wasmtime-runtime 6.0.1",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -10566,10 +10550,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmtime-cache"
-version = "1.0.2"
+name = "wasmtime-asm-macros"
+version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcd849399d17d2270141cfe47fa0d91ee52d5f8ea9b98cf7ddde0d53e5f79882"
+checksum = "9bd3a5e46c198032da934469f3a6e48649d1f9142438e4fd4617b68a35644b8a"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
+name = "wasmtime-cache"
+version = "6.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b389ae9b678b9c3851091a4804f4182d688d27aff7abc9aa37fa7be37d8ecffa"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -10577,23 +10570,23 @@ dependencies = [
  "directories-next",
  "file-per-thread-logger",
  "log",
- "rustix 0.35.13",
+ "rustix",
  "serde",
- "sha2 0.9.9",
+ "sha2 0.10.6",
  "toml 0.5.11",
- "windows-sys 0.36.1",
+ "windows-sys 0.42.0",
  "zstd",
 ]
 
 [[package]]
 name = "wasmtime-cranelift"
-version = "1.0.2"
+version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bd91339b742ff20bfed4532a27b73c86b5bcbfedd6bea2dcdf2d64471e1b5c6"
+checksum = "59b2c92a08c0db6efffd88fdc97d7aa9c7c63b03edb0971dbca745469f820e8c"
 dependencies = [
  "anyhow",
  "cranelift-codegen",
- "cranelift-entity 0.88.2",
+ "cranelift-entity 0.93.1",
  "cranelift-frontend",
  "cranelift-native",
  "cranelift-wasm",
@@ -10602,27 +10595,8 @@ dependencies = [
  "object 0.29.0",
  "target-lexicon",
  "thiserror",
- "wasmparser 0.89.1",
- "wasmtime-environ 1.0.2",
-]
-
-[[package]]
-name = "wasmtime-environ"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebb881c61f4f627b5d45c54e629724974f8a8890d455bcbe634330cc27309644"
-dependencies = [
- "anyhow",
- "cranelift-entity 0.88.2",
- "gimli 0.26.2",
- "indexmap",
- "log",
- "object 0.29.0",
- "serde",
- "target-lexicon",
- "thiserror",
- "wasmparser 0.89.1",
- "wasmtime-types 1.0.2",
+ "wasmparser 0.100.0",
+ "wasmtime-environ 6.0.1",
 ]
 
 [[package]]
@@ -10645,28 +10619,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmtime-jit"
-version = "1.0.2"
+name = "wasmtime-environ"
+version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1985c628011fe26adf5e23a5301bdc79b245e0e338f14bb58b39e4e25e4d8681"
+checksum = "9a6db9fc52985ba06ca601f2ff0ff1f526c5d724c7ac267b47326304b0c97883"
 dependencies = [
- "addr2line 0.17.0",
  "anyhow",
- "bincode",
- "cfg-if",
- "cpp_demangle",
+ "cranelift-entity 0.93.1",
  "gimli 0.26.2",
+ "indexmap",
  "log",
  "object 0.29.0",
- "rustc-demangle",
- "rustix 0.35.13",
  "serde",
  "target-lexicon",
  "thiserror",
- "wasmtime-environ 1.0.2",
- "wasmtime-jit-debug 1.0.2",
- "wasmtime-runtime 1.0.2",
- "windows-sys 0.36.1",
+ "wasmparser 0.100.0",
+ "wasmtime-types 6.0.1",
 ]
 
 [[package]]
@@ -10687,20 +10655,33 @@ dependencies = [
  "serde",
  "target-lexicon",
  "wasmtime-environ 5.0.1",
- "wasmtime-jit-icache-coherence",
+ "wasmtime-jit-icache-coherence 5.0.1",
  "wasmtime-runtime 5.0.1",
  "windows-sys 0.42.0",
 ]
 
 [[package]]
-name = "wasmtime-jit-debug"
-version = "1.0.2"
+name = "wasmtime-jit"
+version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f671b588486f5ccec8c5a3dba6b4c07eac2e66ab8c60e6f4e53717c77f709731"
+checksum = "b77e3a52cd84d0f7f18554afa8060cfe564ccac61e3b0802d3fd4084772fa5f6"
 dependencies = [
+ "addr2line 0.17.0",
+ "anyhow",
+ "bincode",
+ "cfg-if",
+ "cpp_demangle",
+ "gimli 0.26.2",
+ "log",
  "object 0.29.0",
- "once_cell",
- "rustix 0.35.13",
+ "rustc-demangle",
+ "serde",
+ "target-lexicon",
+ "wasmtime-environ 6.0.1",
+ "wasmtime-jit-debug 6.0.1",
+ "wasmtime-jit-icache-coherence 6.0.1",
+ "wasmtime-runtime 6.0.1",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -10710,6 +10691,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9841a44c82c74101c10ad4f215392761a2523b3c6c838597962bdb6de75fdb3"
 dependencies = [
  "once_cell",
+]
+
+[[package]]
+name = "wasmtime-jit-debug"
+version = "6.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0245e8a9347017c7185a72e215218a802ff561545c242953c11ba00fccc930f"
+dependencies = [
+ "object 0.29.0",
+ "once_cell",
+ "rustix",
 ]
 
 [[package]]
@@ -10724,28 +10716,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmtime-runtime"
-version = "1.0.2"
+name = "wasmtime-jit-icache-coherence"
+version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee8f92ad4b61736339c29361da85769ebc200f184361959d1792832e592a1afd"
+checksum = "67d412e9340ab1c83867051d8d1d7c90aa8c9afc91da086088068e2734e25064"
 dependencies = [
- "anyhow",
- "cc",
  "cfg-if",
- "indexmap",
  "libc",
- "log",
- "mach",
- "memfd",
- "memoffset 0.6.5",
- "paste",
- "rand 0.8.5",
- "rustix 0.35.13",
- "thiserror",
- "wasmtime-asm-macros 1.0.2",
- "wasmtime-environ 1.0.2",
- "wasmtime-jit-debug 1.0.2",
- "windows-sys 0.36.1",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -10765,7 +10743,7 @@ dependencies = [
  "memoffset 0.6.5",
  "paste",
  "rand 0.8.5",
- "rustix 0.36.9",
+ "rustix",
  "wasmtime-asm-macros 5.0.1",
  "wasmtime-environ 5.0.1",
  "wasmtime-jit-debug 5.0.1",
@@ -10773,15 +10751,27 @@ dependencies = [
 ]
 
 [[package]]
-name = "wasmtime-types"
-version = "1.0.2"
+name = "wasmtime-runtime"
+version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d23d61cb4c46e837b431196dd06abb11731541021916d03476a178b54dc07aeb"
+checksum = "d594e791b5fdd4dbaf8cf7ae62f2e4ff85018ce90f483ca6f42947688e48827d"
 dependencies = [
- "cranelift-entity 0.88.2",
- "serde",
- "thiserror",
- "wasmparser 0.89.1",
+ "anyhow",
+ "cc",
+ "cfg-if",
+ "indexmap",
+ "libc",
+ "log",
+ "mach",
+ "memfd",
+ "memoffset 0.6.5",
+ "paste",
+ "rand 0.8.5",
+ "rustix",
+ "wasmtime-asm-macros 6.0.1",
+ "wasmtime-environ 6.0.1",
+ "wasmtime-jit-debug 6.0.1",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -10794,6 +10784,18 @@ dependencies = [
  "serde",
  "thiserror",
  "wasmparser 0.96.0",
+]
+
+[[package]]
+name = "wasmtime-types"
+version = "6.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6688d6f96d4dbc1f89fab626c56c1778936d122b5f4ae7a57c2eb42b8d982e2"
+dependencies = [
+ "cranelift-entity 0.93.1",
+ "serde",
+ "thiserror",
+ "wasmparser 0.100.0",
 ]
 
 [[package]]
@@ -11040,7 +11042,7 @@ dependencies = [
  "lazy_static",
  "libc",
  "log",
- "nix",
+ "nix 0.24.3",
  "rand 0.8.5",
  "thiserror",
  "tokio",
@@ -11056,6 +11058,16 @@ dependencies = [
  "either",
  "libc",
  "once_cell",
+]
+
+[[package]]
+name = "wide"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b689b6c49d6549434bf944e6b0f39238cf63693cb7a147e9d887507fffa3b223"
+dependencies = [
+ "bytemuck",
+ "safe_arch",
 ]
 
 [[package]]
@@ -11110,30 +11122,17 @@ dependencies = [
 
 [[package]]
 name = "windows-sys"
-version = "0.36.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea04155a16a59f9eab786fe12a4a450e75cdb175f9e0d80da1e17db09f55b8d2"
-dependencies = [
- "windows_aarch64_msvc 0.36.1",
- "windows_i686_gnu 0.36.1",
- "windows_i686_msvc 0.36.1",
- "windows_x86_64_gnu 0.36.1",
- "windows_x86_64_msvc 0.36.1",
-]
-
-[[package]]
-name = "windows-sys"
 version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a3e1820f08b8513f676f7ab6c1f99ff312fb97b553d30ff4dd86f9f15728aa7"
 dependencies = [
  "windows_aarch64_gnullvm",
- "windows_aarch64_msvc 0.42.1",
- "windows_i686_gnu 0.42.1",
- "windows_i686_msvc 0.42.1",
- "windows_x86_64_gnu 0.42.1",
+ "windows_aarch64_msvc 0.42.2",
+ "windows_i686_gnu 0.42.2",
+ "windows_i686_msvc 0.42.2",
+ "windows_x86_64_gnu 0.42.2",
  "windows_x86_64_gnullvm",
- "windows_x86_64_msvc 0.42.1",
+ "windows_x86_64_msvc 0.42.2",
 ]
 
 [[package]]
@@ -11147,24 +11146,24 @@ dependencies = [
 
 [[package]]
 name = "windows-targets"
-version = "0.42.1"
+version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e2522491fbfcd58cc84d47aeb2958948c4b8982e9a2d8a2a35bbaed431390e7"
+checksum = "8e5180c00cd44c9b1c88adb3693291f1cd93605ded80c250a75d472756b4d071"
 dependencies = [
  "windows_aarch64_gnullvm",
- "windows_aarch64_msvc 0.42.1",
- "windows_i686_gnu 0.42.1",
- "windows_i686_msvc 0.42.1",
- "windows_x86_64_gnu 0.42.1",
+ "windows_aarch64_msvc 0.42.2",
+ "windows_i686_gnu 0.42.2",
+ "windows_i686_msvc 0.42.2",
+ "windows_x86_64_gnu 0.42.2",
  "windows_x86_64_gnullvm",
- "windows_x86_64_msvc 0.42.1",
+ "windows_x86_64_msvc 0.42.2",
 ]
 
 [[package]]
 name = "windows_aarch64_gnullvm"
-version = "0.42.1"
+version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c9864e83243fdec7fc9c5444389dcbbfd258f745e7853198f365e3c4968a608"
+checksum = "597a5118570b68bc08d8d59125332c54f1ba9d9adeedeef5b99b02ba2b0698f8"
 
 [[package]]
 name = "windows_aarch64_msvc"
@@ -11174,15 +11173,9 @@ checksum = "17cffbe740121affb56fad0fc0e421804adf0ae00891205213b5cecd30db881d"
 
 [[package]]
 name = "windows_aarch64_msvc"
-version = "0.36.1"
+version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9bb8c3fd39ade2d67e9874ac4f3db21f0d710bee00fe7cab16949ec184eeaa47"
-
-[[package]]
-name = "windows_aarch64_msvc"
-version = "0.42.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c8b1b673ffc16c47a9ff48570a9d85e25d265735c503681332589af6253c6c7"
+checksum = "e08e8864a60f06ef0d0ff4ba04124db8b0fb3be5776a5cd47641e942e58c4d43"
 
 [[package]]
 name = "windows_i686_gnu"
@@ -11192,15 +11185,9 @@ checksum = "2564fde759adb79129d9b4f54be42b32c89970c18ebf93124ca8870a498688ed"
 
 [[package]]
 name = "windows_i686_gnu"
-version = "0.36.1"
+version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "180e6ccf01daf4c426b846dfc66db1fc518f074baa793aa7d9b9aaeffad6a3b6"
-
-[[package]]
-name = "windows_i686_gnu"
-version = "0.42.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de3887528ad530ba7bdbb1faa8275ec7a1155a45ffa57c37993960277145d640"
+checksum = "c61d927d8da41da96a81f029489353e68739737d3beca43145c8afec9a31a84f"
 
 [[package]]
 name = "windows_i686_msvc"
@@ -11210,15 +11197,9 @@ checksum = "9cd9d32ba70453522332c14d38814bceeb747d80b3958676007acadd7e166956"
 
 [[package]]
 name = "windows_i686_msvc"
-version = "0.36.1"
+version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e2e7917148b2812d1eeafaeb22a97e4813dfa60a3f8f78ebe204bcc88f12f024"
-
-[[package]]
-name = "windows_i686_msvc"
-version = "0.42.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf4d1122317eddd6ff351aa852118a2418ad4214e6613a50e0191f7004372605"
+checksum = "44d840b6ec649f480a41c8d80f9c65108b92d89345dd94027bfe06ac444d1060"
 
 [[package]]
 name = "windows_x86_64_gnu"
@@ -11228,21 +11209,15 @@ checksum = "cfce6deae227ee8d356d19effc141a509cc503dfd1f850622ec4b0f84428e1f4"
 
 [[package]]
 name = "windows_x86_64_gnu"
-version = "0.36.1"
+version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dcd171b8776c41b97521e5da127a2d86ad280114807d0b2ab1e462bc764d9e1"
-
-[[package]]
-name = "windows_x86_64_gnu"
-version = "0.42.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1040f221285e17ebccbc2591ffdc2d44ee1f9186324dd3e84e99ac68d699c45"
+checksum = "8de912b8b8feb55c064867cf047dda097f92d51efad5b491dfb98f6bbb70cb36"
 
 [[package]]
 name = "windows_x86_64_gnullvm"
-version = "0.42.1"
+version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "628bfdf232daa22b0d64fdb62b09fcc36bb01f05a3939e20ab73aaf9470d0463"
+checksum = "26d41b46a36d453748aedef1486d5c7a85db22e56aff34643984ea85514e94a3"
 
 [[package]]
 name = "windows_x86_64_msvc"
@@ -11252,15 +11227,9 @@ checksum = "d19538ccc21819d01deaf88d6a17eae6596a12e9aafdbb97916fb49896d89de9"
 
 [[package]]
 name = "windows_x86_64_msvc"
-version = "0.36.1"
+version = "0.42.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c811ca4a8c853ef420abd8592ba53ddbbac90410fab6903b3e79972a631f7680"
-
-[[package]]
-name = "windows_x86_64_msvc"
-version = "0.42.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "447660ad36a13288b1db4d4248e857b510e8c3a225c822ba4fb748c0aafecffd"
+checksum = "9aec5da331524158c6d1a4ac0ab1541149c0b9505fde06423b02f5ef0106b9f0"
 
 [[package]]
 name = "winnow"

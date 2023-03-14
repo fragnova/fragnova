@@ -32,7 +32,8 @@ const setMetadata = async (signer, protoHash, metadata_key, data) => {
   await sleep(6000);
   return blake2AsU8a(data);
 };
-const create = async (signer, protoHash, metadata, permissions={"bits": 0b111}, unique=null, max_supply=null) => {
+const create = async (signer, protoHash, metadataName, permissions={"bits": 0b111}, unique=null, max_supply=null) => {
+  const metadata = api.createType("DefinitionMetadata", {name: metadataName, currency: null});
   const txHash = await api.tx.fragments.create(
     protoHash,
     metadata,
@@ -42,7 +43,7 @@ const create = async (signer, protoHash, metadata, permissions={"bits": 0b111}, 
   ).signAndSend(signer);
   console.log(arguments.callee.name, 'sent with transaction hash', txHash.toHex());
   await sleep(6000);
-  return blake2AsU8a([...protoHash, ...metadata.toU8a()], 128);
+  return blake2AsU8a([...protoHash, ...api.createType("Compact<u8>", metadataName.length).toU8a(), ...Buffer.from(metadataName), 0], 128);
 };
 const mint = async (signer, definitionHash, options, amount=null) => {
   const txHash = await api.tx.fragments.mint(
@@ -80,7 +81,7 @@ describe("RPCs", () => {
     jsonDescriptionHash = await setMetadata(alice, protoHash, "json_description", '{"name": "monalisa", "description": "iconic, priceless, renaissance art"}');
     const imageData = "0x" + (await fs.readFile("monalisa.jpeg")).toString("hex");
     imageHash = await setMetadata(alice, protoHash, "image", imageData);
-    definitionHash = await create(alice, protoHash, api.createType("FragmentMetadata", {name: "Dummy Name", currency: null}));
+    definitionHash = await create(alice, protoHash, "Dummy Name");
     await mint(alice, definitionHash, {Quantity: 1});
 
     protoHashChild = await upload(alice, [...Buffer.from('Proto-Italic')], [protoHash]);

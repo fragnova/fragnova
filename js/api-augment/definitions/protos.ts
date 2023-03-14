@@ -4,8 +4,8 @@ export default {
       description: "Query and Return Proto-Fragment data based on `proto_hash`. The **return type** is base64 encoded bytes.",
       type: "String",
       params: [
-        { name: "proto_hash", type: "Hash" },
-        { name: "at", type: "Hash", isOptional: true }
+        { name: "proto_hash", type: "BlockHash" },
+        { name: "at", type: "BlockHash", isOptional: true }
       ]
     },
     getProtos: {
@@ -13,7 +13,7 @@ export default {
       type: "String",
       params: [
         { name: "param", type: "GetProtosParams" },
-        { name: "at", type: "Hash", isOptional: true }
+        { name: "at", type: "BlockHash", isOptional: true }
       ]
     },
     getGenealogy: {
@@ -21,7 +21,7 @@ export default {
       type: "String",
       params: [
         { name: "param", type: "GetGenealogyParams" },
-        { name: "at", type: "Hash", isOptional: true }
+        { name: "at", type: "BlockHash", isOptional: true }
       ]
     },
   },

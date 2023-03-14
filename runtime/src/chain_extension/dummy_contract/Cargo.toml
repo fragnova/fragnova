@@ -5,28 +5,19 @@ authors = ["Fragcolor Pte. Ltd. <ask@fragcolor.com>"]
 edition = "2021"
 
 [dependencies]
-ink_primitives = { version = "4.0.1", default-features = false }
-ink_metadata = { version = "4.0.1", default-features = false, features = ["derive"], optional = true }
-ink_storage = { version = "4.0.1", default-features = false }
 ink = { version = "4.0.1", default-features = false }
-ink_prelude = { version = "4.0.1", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2", default-features = false, features = ["derive"], optional = true }
 
-sp-fragnova = { version = '0.1.0', path = '../../../../primitives/fragnova', default-features = false }
+sp-fragnova = { version = '0.1.0', path = '../../../../primitives/fragnova', default-features = false, features = ["use-as-dep-in-ink-contract"] }
 
 protos = { version = "0.1.30", default-features = false }
 
 fragnova_extensions = { version = '0.1.0', path = '../../../../extensions', default-features = false }
 
 [lib]
-name = "dummy_contract"
 path = "lib.rs"
-crate-type = [
-	# Used for normal contract Wasm blobs.
-	"cdylib",
-]
 
 [features]
 default = ["std"]

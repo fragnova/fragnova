@@ -21,8 +21,8 @@ use pallet_contracts::Determinism;
 
 pub const ALICE: sp_core::ed25519::Public = sp_core::ed25519::Public([1u8; 32]);
 pub const BOB: sp_core::ed25519::Public = sp_core::ed25519::Public([2u8; 32]);
-/// Copied from https://github.com/fragcolor-xyz/substrate/blob/fragnova-v0.9.37/frame/contracts/src/tests.rs#L421
-pub const GAS_LIMIT: Weight = Weight::from_ref_time(100_000_000_000).set_proof_size(256 * 1024);
+/// Copied from https://github.com/fragcolor-xyz/substrate/blob/fragnova-v0.9.39/frame/contracts/src/tests.rs#417
+pub const GAS_LIMIT: Weight = Weight::from_parts(100_000_000_000, 3 * 1024 * 1024);
 
 fn upload_dummy_contract(
 	signer: <Test as frame_system::Config>::AccountId,
@@ -47,7 +47,8 @@ fn upload_dummy_contract(
 	// let bare_upload_code_result = Contracts::bare_upload_code(
 	// 		signer,
 	// 		wasm_binary, // The contract code to deploy in raw bytes.
-	// 		None // The maximum amount of balance that can be charged/reserved from the caller to pay for the storage consumed.
+	// 		None, // The maximum amount of balance that can be charged/reserved from the caller to pay for the storage consumed.
+	// 	Determinism::Deterministic
 	// );
 	// assert!(bare_upload_code_result.is_ok());
 	// let bare_instantiate_result = Contracts::bare_instantiate(
@@ -127,7 +128,7 @@ mod protos_tests {
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
 				contract_result.result.unwrap().data,
-				Some(pallet_protos::Protos::<Test>::get(&proto_hash).unwrap()).encode()
+				Ok::<_, ()>(Some(pallet_protos::Protos::<Test>::get(&proto_hash).unwrap())).encode()
 			);
 		});
 	}
@@ -161,7 +162,7 @@ mod protos_tests {
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
 				contract_result.result.unwrap().data,
-				vec![proto_hash, proto_hash_second].encode()
+				Ok::<_, ()>(vec![proto_hash, proto_hash_second]).encode()
 			);
 		});
 	}
@@ -228,7 +229,7 @@ mod fragments_tests {
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
 				contract_result.result.unwrap().data,
-				Some(pallet_fragments::Definitions::<Test>::get(&definition_hash).unwrap())
+				Ok::<_, ()>(Some(pallet_fragments::Definitions::<Test>::get(&definition_hash).unwrap()))
 					.encode()
 			);
 		});
@@ -282,7 +283,7 @@ mod fragments_tests {
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
 				contract_result.result.unwrap().data,
-				Some(pallet_fragments::Fragments::<Test>::get(&(definition_hash, 1, 1)).unwrap())
+				Ok::<_, ()>(Some(pallet_fragments::Fragments::<Test>::get(&(definition_hash, 1, 1)).unwrap()))
 					.encode()
 			);
 		});
@@ -336,8 +337,7 @@ mod fragments_tests {
 			assert_eq!(contract_result.result.as_ref().unwrap().flags.bits(), 0);
 			assert_eq!(
 				contract_result.result.unwrap().data,
-				pallet_fragments::Inventory::<Test>::get(ALICE, definition_hash)
-					.unwrap()
+				Ok::<_, ()>(pallet_fragments::Inventory::<Test>::get(ALICE, definition_hash).unwrap())
 					.encode()
 			);
 		});

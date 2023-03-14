@@ -4,14 +4,14 @@ use std::sync::Arc;
 
 use codec::Codec;
 use jsonrpsee::{
-	core::{async_trait, Error as JsonRpseeError, RpcResult},
+	core::{Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
 use pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::{Block as BlockT};
 
 pub use pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi;
 
@@ -63,7 +63,6 @@ impl<C, P> FragmentsRpcServerImpl<C, P> {
 }
 
 // Note that the trait name we use is `FragmentsRpcServer`, not `FragmentsRpc`!
-#[async_trait]
 impl<C, Block, AccountId> FragmentsRpcServer<<Block as BlockT>::Hash, AccountId>
 	for FragmentsRpcServerImpl<C, Block>
 where
@@ -83,7 +82,7 @@ where
 		let api = self.client.runtime_api();
 
 		// If the block hash is not supplied in `at`, use the best block's hash
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
 		let param_no_std = GetDefinitionsParams::<AccountId, Vec<u8>> {
 			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
@@ -95,7 +94,7 @@ where
 		};
 
 		let result_outer = api
-			.get_definitions(&at, param_no_std)
+			.get_definitions(at_hash, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
@@ -115,7 +114,7 @@ where
 		let api = self.client.runtime_api();
 
 		// If the block hash is not supplied in `at`, use the best block's hash
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
 		let param_no_std = GetInstancesParams::<AccountId, Vec<u8>> {
 			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
@@ -128,7 +127,7 @@ where
 		};
 
 		let result_outer = api
-			.get_instances(&at, param_no_std)
+			.get_instances(at_hash, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		match result_outer {
 			Err(e) => Err(runtime_error_into_rpc_err(e)),
@@ -148,7 +147,7 @@ where
 		let api = self.client.runtime_api();
 
 		// If the block hash is not supplied in `at`, use the best block's hash
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
 		let param_no_std = GetInstanceOwnerParams::<Vec<u8>> {
 			definition_hash: param.definition_hash.into_bytes(),
@@ -157,7 +156,7 @@ where
 		};
 
 		let result_outer = api
-			.get_instance_owner(&at, param_no_std)
+			.get_instance_owner(at_hash, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 
 		match result_outer {

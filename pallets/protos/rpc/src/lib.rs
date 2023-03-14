@@ -5,15 +5,15 @@ use std::sync::Arc;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use codec::Codec;
 use jsonrpsee::{
-	core::{async_trait, Error as JsonRpseeError, RpcResult},
+	core::{Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
 use pallet_protos::{GetGenealogyParams, GetProtosParams};
 use sc_client_api::BlockBackend;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::{traits::Block as BlockT};
 
 pub use pallet_protos_rpc_runtime_api::ProtosRuntimeApi;
 
@@ -59,7 +59,6 @@ impl<C, P> ProtosRpcServerImpl<C, P> {
 	}
 }
 
-#[async_trait]
 impl<C, Block, AccountId> ProtosRpcServer<<Block as BlockT>::Hash, AccountId>
 	for ProtosRpcServerImpl<C, Block>
 where
@@ -80,7 +79,7 @@ where
 		let api = self.client.runtime_api();
 
 		// If the block hash is not supplied in `at`, use the best block's hash
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
 		let param_no_std = GetProtosParams::<AccountId, Vec<u8>> {
 			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
@@ -95,7 +94,7 @@ where
 			available: param.available,
 		};
 
-		let result_outer = api.get_protos(&at, param_no_std).map(|list_bytes| {
+		let result_outer = api.get_protos(at_hash, param_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
 		});
 		match result_outer {
@@ -115,14 +114,14 @@ where
 		let api = self.client.runtime_api();
 
 		// If the block hash is not supplied in `at`, use the best block's hash
-		let at = BlockId::hash(at.unwrap_or_else(|| self.client.info().best_hash));
+		let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
 		let param_no_std = GetGenealogyParams::<Vec<u8>> {
 			proto_hash: param.proto_hash.into_bytes(),
 			get_ancestors: param.get_ancestors,
 		};
 
-		let result = api.get_genealogy(&at, param_no_std).map(|list_bytes| {
+		let result = api.get_genealogy(at_hash, param_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from("")))
 		});
 		match result {

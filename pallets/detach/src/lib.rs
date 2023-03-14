@@ -244,7 +244,7 @@ pub mod pallet {
 	#[pallet::config]
 	pub trait Config:
 		CreateSignedTransaction<Call<Self>>
-		+ pallet_randomness_collective_flip::Config
+		+ pallet_insecure_randomness_collective_flip::Config
 		+ frame_system::Config
 	{
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.

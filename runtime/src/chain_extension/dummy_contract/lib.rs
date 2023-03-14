@@ -36,25 +36,30 @@ mod dummy_contract {
 
         #[ink(message)]
         pub fn get_proto(&self, proto_hash: Hash256) -> Option<Proto<AccountId, BlockNumber>> {
-            self.env().extension().get_proto(proto_hash)
+            let dummy: Option<Proto<AccountId, BlockNumber>> = self.env().extension().get_proto(proto_hash);
+			return dummy;
         }
         #[ink(message)]
         pub fn get_proto_ids(&self, owner: AccountId) -> Vec<Hash256> {
-            self.env().extension().get_proto_ids(owner)
+            let dummy: Vec<Hash256> = self.env().extension().get_proto_ids(owner);
+			return dummy;
         }
 
         #[ink(message)]
         pub fn get_definition(&self, definition_hash: Hash128) -> Option<FragmentDefinition<Vec<u8>, AssetId, AccountId, BlockNumber>> {
-            self.env().extension().get_definition(definition_hash)
+            let dummy: Option<FragmentDefinition<Vec<u8>, AssetId, AccountId, BlockNumber>> = self.env().extension().get_definition(definition_hash);
+			return dummy;
         }
         #[ink(message)]
         pub fn get_instance(&self, definition_hash: Hash128, edition_id: InstanceUnit, copy_id: InstanceUnit) -> Option<FragmentInstance<BlockNumber>> {
-            self.env().extension().get_instance(definition_hash, edition_id, copy_id)
+            let dummy: Option<FragmentInstance<BlockNumber>> = self.env().extension().get_instance(definition_hash, edition_id, copy_id);
+			return dummy;
         }
-        #[ink(message)]
-        pub fn get_instance_ids(&self, definition_hash: Hash128, owner: AccountId) -> Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)> {
-            self.env().extension().get_instance_ids(definition_hash, owner)
-        }
+        // #[ink(message)]
+        // pub fn get_instance_ids(&self, definition_hash: Hash128, owner: AccountId) -> Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)> {
+        //     let dummy: Vec<(Compact<InstanceUnit>, Compact<InstanceUnit>)> = self.env().extension().get_instance_ids(definition_hash, owner);
+		// 	return dummy;
+        // }
         // It seems that if your ink! contract message modifies anything in a pallet (as opposed to just read), it should have a `&mut self` receiver instead of `&self` receiver.
         // That's what Substrate did here: https://github.com/paritytech/ink/blob/3eb6eb06db97de1d418b62816fd6c97a973aa82b/examples/psp22-extension/lib.rs#L188-L263
         // (notice that the ink! contract messages that purely read things from a pallet have a `&self` receiver while those that modify things have a `&mut self` receiver)

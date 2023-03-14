@@ -11,17 +11,17 @@ version = '0.0.1'
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-sp-core = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
-sp-io = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
-sp-std = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
-sp-runtime = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
-sp-keystore = { version = '0.13.0', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
+sp-core = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+sp-io = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+sp-std = { version = '5.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+sp-runtime = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+sp-keystore = { version = '0.13.0', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 sp-fragnova = { version = '0.1.0', path = '../../primitives/fragnova', default-features = false }
 
-frame-benchmarking = { version = '4.0.0-dev', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
-frame-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
-frame-system = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
-pallet-randomness-collective-flip = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
+frame-benchmarking = { version = '4.0.0-dev', default-features = false, optional = true, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+frame-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+frame-system = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-insecure-randomness-collective-flip = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 
 codec = { package = 'parity-scale-codec', version = '3.0.0', default-features = false, features = ['derive'] }
 scale-info = { version = '2.1.2', default-features = false, features = ['derive'] }
@@ -29,7 +29,7 @@ scale-info = { version = '2.1.2', default-features = false, features = ['derive'
 log = { version = "0.4.14", default-features = false }
 hex = { version = "0.4", default-features = false }
 
-#beefy-merkle-tree = { version = '4.0.0-dev', default-features = false, features = ['keccak'], git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.37-patch1' }
+#beefy-merkle-tree = { version = '4.0.0-dev', default-features = false, features = ['keccak'], git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 
 [dev-dependencies]
 parking_lot = "0.12.1" # copied from https://github.com/JoshOrndorff/recipes/blob/master/pallets/ocw-demo/Cargo.toml#L11
@@ -47,7 +47,7 @@ std = [
 	'frame-benchmarking/std',
     'frame-support/std',
     'frame-system/std',
-    'pallet-randomness-collective-flip/std',
+    'pallet-insecure-randomness-collective-flip/std',
 	'codec/std',
 	"scale-info/std",
 	'log/std',
