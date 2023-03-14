@@ -1,0 +1,2398 @@
+{
+  "source": {
+    "hash": "0x0c41d2505acbb5d72415911170d00c68748f527225981c8b3f82e682e3cc2c14",
+    "language": "ink! 4.0.1",
+    "compiler": "rustc 1.70.0-nightly",
+    "build_info": {
+      "build_mode": "Debug",
+      "cargo_contract_version": "2.1.0",
+      "rust_toolchain": "nightly-aarch64-apple-darwin",
+      "wasm_opt_settings": {
+        "keep_debug_symbols": false,
+        "optimization_passes": "Z"
+      }
+    }
+  },
+  "contract": {
+    "name": "dummy_contract",
+    "version": "0.1.0",
+    "authors": [
+      "Fragcolor Pte. Ltd. <ask@fragcolor.com>"
+    ]
+  },
+  "spec": {
+    "constructors": [
+      {
+        "args": [],
+        "docs": [],
+        "label": "new",
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink_primitives",
+            "ConstructorResult"
+          ],
+          "type": 0
+        },
+        "selector": "0x9bae9d5e"
+      }
+    ],
+    "docs": [],
+    "events": [],
+    "lang_error": {
+      "displayName": [
+        "ink",
+        "LangError"
+      ],
+      "type": 2
+    },
+    "messages": [
+      {
+        "args": [
+          {
+            "label": "proto_hash",
+            "type": {
+              "displayName": [
+                "Hash256"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "docs": [],
+        "label": "get_proto",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 5
+        },
+        "selector": "0x455e879c"
+      },
+      {
+        "args": [
+          {
+            "label": "owner",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 8
+            }
+          }
+        ],
+        "docs": [],
+        "label": "get_proto_ids",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 49
+        },
+        "selector": "0x0c8ecce2"
+      },
+      {
+        "args": [
+          {
+            "label": "definition_hash",
+            "type": {
+              "displayName": [
+                "Hash128"
+              ],
+              "type": 48
+            }
+          }
+        ],
+        "docs": [],
+        "label": "get_definition",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 50
+        },
+        "selector": "0xa97b2868"
+      },
+      {
+        "args": [
+          {
+            "label": "definition_hash",
+            "type": {
+              "displayName": [
+                "Hash128"
+              ],
+              "type": 48
+            }
+          },
+          {
+            "label": "edition_id",
+            "type": {
+              "displayName": [
+                "InstanceUnit"
+              ],
+              "type": 9
+            }
+          },
+          {
+            "label": "copy_id",
+            "type": {
+              "displayName": [
+                "InstanceUnit"
+              ],
+              "type": 9
+            }
+          }
+        ],
+        "docs": [],
+        "label": "get_instance",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 60
+        },
+        "selector": "0x5e9d9435"
+      },
+      {
+        "args": [
+          {
+            "label": "definition_hash",
+            "type": {
+              "displayName": [
+                "Hash128"
+              ],
+              "type": 48
+            }
+          },
+          {
+            "label": "owner",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 8
+            }
+          }
+        ],
+        "docs": [],
+        "label": "get_instance_ids",
+        "mutates": false,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 68
+        },
+        "selector": "0x4ebc82f7"
+      },
+      {
+        "args": [
+          {
+            "label": "definition_hash",
+            "type": {
+              "displayName": [
+                "Hash128"
+              ],
+              "type": 48
+            }
+          },
+          {
+            "label": "edition_id",
+            "type": {
+              "displayName": [
+                "InstanceUnit"
+              ],
+              "type": 9
+            }
+          },
+          {
+            "label": "copy_id",
+            "type": {
+              "displayName": [
+                "InstanceUnit"
+              ],
+              "type": 9
+            }
+          },
+          {
+            "label": "to",
+            "type": {
+              "displayName": [
+                "AccountId"
+              ],
+              "type": 8
+            }
+          },
+          {
+            "label": "new_permissions",
+            "type": {
+              "displayName": [
+                "Option"
+              ],
+              "type": 69
+            }
+          },
+          {
+            "label": "expirations",
+            "type": {
+              "displayName": [
+                "Option"
+              ],
+              "type": 64
+            }
+          }
+        ],
+        "docs": [],
+        "label": "give_instance",
+        "mutates": true,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 70
+        },
+        "selector": "0x26345eaf"
+      }
+    ]
+  },
+  "storage": {
+    "root": {
+      "layout": {
+        "struct": {
+          "fields": [],
+          "name": "DummyContract"
+        }
+      },
+      "root_key": "0x00000000"
+    }
+  },
+  "types": [
+    {
+      "id": 0,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 1
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 1
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "type": {
+        "def": {
+          "tuple": []
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 1,
+                "name": "CouldNotReadInput"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "LangError"
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "type": {
+        "def": {
+          "array": {
+            "len": 32,
+            "type": 4
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": {
+        "def": {
+          "primitive": "u8"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 6
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 6
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 7
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 7
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "name": "category",
+                "type": 10,
+                "typeName": "Categories"
+              },
+              {
+                "name": "references",
+                "type": 25,
+                "typeName": "Vec<Hash256>"
+              },
+              {
+                "name": "patches",
+                "type": 26,
+                "typeName": "Vec<ProtoPatch<TBlockNumber>>"
+              },
+              {
+                "name": "data",
+                "type": 28,
+                "typeName": "ProtoData"
+              },
+              {
+                "name": "block",
+                "type": 9,
+                "typeName": "TBlockNumber"
+              },
+              {
+                "name": "license",
+                "type": 32,
+                "typeName": "UsageLicense<TAccountId>"
+              },
+              {
+                "name": "creator",
+                "type": 8,
+                "typeName": "TAccountId"
+              },
+              {
+                "name": "owner",
+                "type": 33,
+                "typeName": "ProtoOwner<TAccountId>"
+              },
+              {
+                "name": "tags",
+                "type": 42,
+                "typeName": "Vec<Compact<u64>>"
+              },
+              {
+                "name": "metadata",
+                "type": 44,
+                "typeName": "BTreeMap<Compact<u64>, Hash256>"
+              },
+              {
+                "name": "cluster",
+                "type": 47,
+                "typeName": "Option<Hash128>"
+              },
+              {
+                "name": "_reserved1",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved2",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved3",
+                "type": 31,
+                "typeName": "Option<()>"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "TAccountId",
+            "type": 8
+          },
+          {
+            "name": "TBlockNumber",
+            "type": 9
+          }
+        ],
+        "path": [
+          "sp_fragnova",
+          "protos",
+          "Proto"
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 3,
+                "typeName": "[u8; 32]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "ink_primitives",
+          "types",
+          "AccountId"
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "type": {
+        "def": {
+          "primitive": "u64"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 11,
+                    "typeName": "TextCategories"
+                  }
+                ],
+                "index": 0,
+                "name": "Text"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 12,
+                    "typeName": "Option<ShardsTrait>"
+                  }
+                ],
+                "index": 1,
+                "name": "Trait"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 14,
+                    "typeName": "ShardsScriptInfo"
+                  }
+                ],
+                "index": 2,
+                "name": "Shards"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 19,
+                    "typeName": "AudioCategories"
+                  }
+                ],
+                "index": 3,
+                "name": "Audio"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 20,
+                    "typeName": "TextureCategories"
+                  }
+                ],
+                "index": 4,
+                "name": "Texture"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 21,
+                    "typeName": "VectorCategories"
+                  }
+                ],
+                "index": 5,
+                "name": "Vector"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 22,
+                    "typeName": "VideoCategories"
+                  }
+                ],
+                "index": 6,
+                "name": "Video"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 23,
+                    "typeName": "ModelCategories"
+                  }
+                ],
+                "index": 7,
+                "name": "Model"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 24,
+                    "typeName": "BinaryCategories"
+                  }
+                ],
+                "index": 8,
+                "name": "Binary"
+              },
+              {
+                "index": 9,
+                "name": "Bundle"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "Categories"
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "Plain"
+              },
+              {
+                "index": 1,
+                "name": "Json"
+              },
+              {
+                "index": 2,
+                "name": "Wgsl"
+              },
+              {
+                "index": 3,
+                "name": "Markdown"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "TextCategories"
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 13
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 13
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 13,
+      "type": {
+        "def": {
+          "array": {
+            "len": 8,
+            "type": 4
+          }
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "name": "format",
+                "type": 15,
+                "typeName": "ShardsFormat"
+              },
+              {
+                "name": "shards_version",
+                "type": 16,
+                "typeName": "u32"
+              },
+              {
+                "name": "requiring",
+                "type": 18,
+                "typeName": "Vec<ShardsTrait>"
+              },
+              {
+                "name": "implementing",
+                "type": 18,
+                "typeName": "Vec<ShardsTrait>"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "ShardsScriptInfo"
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "Edn"
+              },
+              {
+                "index": 1,
+                "name": "Binary"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "ShardsFormat"
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "type": {
+        "def": {
+          "compact": {
+            "type": 17
+          }
+        }
+      }
+    },
+    {
+      "id": 17,
+      "type": {
+        "def": {
+          "primitive": "u32"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 13
+          }
+        }
+      }
+    },
+    {
+      "id": 19,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "OggFile"
+              },
+              {
+                "index": 1,
+                "name": "Mp3File"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "AudioCategories"
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "PngFile"
+              },
+              {
+                "index": 1,
+                "name": "JpgFile"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "TextureCategories"
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "SvgFile"
+              },
+              {
+                "index": 1,
+                "name": "TtfFile"
+              },
+              {
+                "index": 2,
+                "name": "OtfFile"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "VectorCategories"
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "MkvFile"
+              },
+              {
+                "index": 1,
+                "name": "Mp4File"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "VideoCategories"
+        ]
+      }
+    },
+    {
+      "id": 23,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "GltfFile"
+              },
+              {
+                "index": 1,
+                "name": "Sdf"
+              },
+              {
+                "index": 2,
+                "name": "PhysicsCollider"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "ModelCategories"
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "WasmProgram"
+              },
+              {
+                "index": 1,
+                "name": "WasmReactor"
+              },
+              {
+                "index": 2,
+                "name": "BlendFile"
+              },
+              {
+                "index": 3,
+                "name": "OnnxModel"
+              },
+              {
+                "index": 4,
+                "name": "SafeTensors"
+              },
+              {
+                "index": 5,
+                "name": "RareDomain"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "categories",
+          "BinaryCategories"
+        ]
+      }
+    },
+    {
+      "id": 25,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 3
+          }
+        }
+      }
+    },
+    {
+      "id": 26,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 27
+          }
+        }
+      }
+    },
+    {
+      "id": 27,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "name": "block",
+                "type": 9,
+                "typeName": "TBlockNumber"
+              },
+              {
+                "name": "data_hash",
+                "type": 3,
+                "typeName": "Hash256"
+              },
+              {
+                "name": "references",
+                "type": 25,
+                "typeName": "Vec<Hash256>"
+              },
+              {
+                "name": "data",
+                "type": 28,
+                "typeName": "ProtoData"
+              },
+              {
+                "name": "_reserved1",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved2",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved3",
+                "type": 31,
+                "typeName": "Option<()>"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "TBlockNumber",
+            "type": 9
+          }
+        ],
+        "path": [
+          "sp_fragnova",
+          "protos",
+          "ProtoPatch"
+        ]
+      }
+    },
+    {
+      "id": 28,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 29,
+                    "typeName": "Vec<u8>"
+                  }
+                ],
+                "index": 0,
+                "name": "Local"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 3,
+                    "typeName": "Hash256"
+                  }
+                ],
+                "index": 1,
+                "name": "Arweave"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 30,
+                    "typeName": "[u8; 64]"
+                  }
+                ],
+                "index": 2,
+                "name": "Ipfs"
+              }
+            ]
+          }
+        },
+        "path": [
+          "sp_fragnova",
+          "protos",
+          "ProtoData"
+        ]
+      }
+    },
+    {
+      "id": 29,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 4
+          }
+        }
+      }
+    },
+    {
+      "id": 30,
+      "type": {
+        "def": {
+          "array": {
+            "len": 64,
+            "type": 4
+          }
+        }
+      }
+    },
+    {
+      "id": 31,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 1
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 1
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 32,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "Closed"
+              },
+              {
+                "index": 1,
+                "name": "Open"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 8,
+                    "typeName": "TContractAddress"
+                  }
+                ],
+                "index": 2,
+                "name": "Contract"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "TContractAddress",
+            "type": 8
+          }
+        ],
+        "path": [
+          "sp_fragnova",
+          "protos",
+          "UsageLicense"
+        ]
+      }
+    },
+    {
+      "id": 33,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 8,
+                    "typeName": "TAccountId"
+                  }
+                ],
+                "index": 0,
+                "name": "User"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 34,
+                    "typeName": "LinkedAsset"
+                  }
+                ],
+                "index": 1,
+                "name": "ExternalAsset"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "TAccountId",
+            "type": 8
+          }
+        ],
+        "path": [
+          "sp_fragnova",
+          "protos",
+          "ProtoOwner"
+        ]
+      }
+    },
+    {
+      "id": 34,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 35,
+                    "typeName": "H160"
+                  },
+                  {
+                    "type": 37,
+                    "typeName": "U256"
+                  },
+                  {
+                    "type": 39,
+                    "typeName": "LinkSource"
+                  }
+                ],
+                "index": 0,
+                "name": "Erc721"
+              }
+            ]
+          }
+        },
+        "path": [
+          "sp_fragnova",
+          "protos",
+          "LinkedAsset"
+        ]
+      }
+    },
+    {
+      "id": 35,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 36,
+                "typeName": "[u8; 20]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "primitive_types",
+          "H160"
+        ]
+      }
+    },
+    {
+      "id": 36,
+      "type": {
+        "def": {
+          "array": {
+            "len": 20,
+            "type": 4
+          }
+        }
+      }
+    },
+    {
+      "id": 37,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 38,
+                "typeName": "[u64; 4]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "primitive_types",
+          "U256"
+        ]
+      }
+    },
+    {
+      "id": 38,
+      "type": {
+        "def": {
+          "array": {
+            "len": 4,
+            "type": 9
+          }
+        }
+      }
+    },
+    {
+      "id": 39,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 40,
+                    "typeName": "ecdsa::Signature"
+                  },
+                  {
+                    "type": 9,
+                    "typeName": "u64"
+                  },
+                  {
+                    "type": 37,
+                    "typeName": "U256"
+                  }
+                ],
+                "index": 0,
+                "name": "Evm"
+              }
+            ]
+          }
+        },
+        "path": [
+          "sp_fragnova",
+          "protos",
+          "LinkSource"
+        ]
+      }
+    },
+    {
+      "id": 40,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 41,
+                "typeName": "[u8; 65]"
+              }
+            ]
+          }
+        },
+        "path": [
+          "sp_core",
+          "ecdsa",
+          "Signature"
+        ]
+      }
+    },
+    {
+      "id": 41,
+      "type": {
+        "def": {
+          "array": {
+            "len": 65,
+            "type": 4
+          }
+        }
+      }
+    },
+    {
+      "id": 42,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 43
+          }
+        }
+      }
+    },
+    {
+      "id": 43,
+      "type": {
+        "def": {
+          "compact": {
+            "type": 9
+          }
+        }
+      }
+    },
+    {
+      "id": 44,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 45
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "K",
+            "type": 43
+          },
+          {
+            "name": "V",
+            "type": 3
+          }
+        ],
+        "path": [
+          "BTreeMap"
+        ]
+      }
+    },
+    {
+      "id": 45,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 46
+          }
+        }
+      }
+    },
+    {
+      "id": 46,
+      "type": {
+        "def": {
+          "tuple": [
+            43,
+            3
+          ]
+        }
+      }
+    },
+    {
+      "id": 47,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 48
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 48
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 48,
+      "type": {
+        "def": {
+          "array": {
+            "len": 16,
+            "type": 4
+          }
+        }
+      }
+    },
+    {
+      "id": 49,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 25
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 25
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 50,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 51
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 51
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 51,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 52
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 52
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 52,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "name": "proto_hash",
+                "type": 3,
+                "typeName": "Hash256"
+              },
+              {
+                "name": "metadata",
+                "type": 53,
+                "typeName": "DefinitionMetadata<TU8Array, TFungibleAsset>"
+              },
+              {
+                "name": "permissions",
+                "type": 55,
+                "typeName": "FragmentPerms"
+              },
+              {
+                "name": "unique",
+                "type": 56,
+                "typeName": "Option<UniqueOptions>"
+              },
+              {
+                "name": "max_supply",
+                "type": 59,
+                "typeName": "Option<Compact<InstanceUnit>>"
+              },
+              {
+                "name": "creator",
+                "type": 8,
+                "typeName": "TAccountId"
+              },
+              {
+                "name": "created_at",
+                "type": 9,
+                "typeName": "TBlockNum"
+              },
+              {
+                "name": "custom_metadata",
+                "type": 44,
+                "typeName": "BTreeMap<Compact<u64>, Hash256>"
+              },
+              {
+                "name": "_reserved1",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved2",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved3",
+                "type": 31,
+                "typeName": "Option<()>"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "TU8Array",
+            "type": 29
+          },
+          {
+            "name": "TFungibleAsset",
+            "type": 9
+          },
+          {
+            "name": "TAccountId",
+            "type": 8
+          },
+          {
+            "name": "TBlockNum",
+            "type": 9
+          }
+        ],
+        "path": [
+          "sp_fragnova",
+          "fragments",
+          "FragmentDefinition"
+        ]
+      }
+    },
+    {
+      "id": 53,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "name": "name",
+                "type": 29,
+                "typeName": "TU8Vector"
+              },
+              {
+                "name": "currency",
+                "type": 54,
+                "typeName": "Currency<TFungibleAsset>"
+              },
+              {
+                "name": "_reserved1",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved2",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved3",
+                "type": 31,
+                "typeName": "Option<()>"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "TU8Vector",
+            "type": 29
+          },
+          {
+            "name": "TFungibleAsset",
+            "type": 9
+          }
+        ],
+        "path": [
+          "sp_fragnova",
+          "fragments",
+          "DefinitionMetadata"
+        ]
+      }
+    },
+    {
+      "id": 54,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "Native"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 9,
+                    "typeName": "TFungibleAsset"
+                  }
+                ],
+                "index": 1,
+                "name": "Custom"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "TFungibleAsset",
+            "type": 9
+          }
+        ],
+        "path": [
+          "sp_fragnova",
+          "fragments",
+          "Currency"
+        ]
+      }
+    },
+    {
+      "id": 55,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "name": "bits",
+                "type": 4,
+                "typeName": "u8"
+              }
+            ]
+          }
+        },
+        "path": [
+          "protos",
+          "permissions",
+          "FragmentPerms"
+        ]
+      }
+    },
+    {
+      "id": 56,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 57
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 57
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 57,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "name": "mutable",
+                "type": 58,
+                "typeName": "bool"
+              },
+              {
+                "name": "_reserved1",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved2",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved3",
+                "type": 31,
+                "typeName": "Option<()>"
+              }
+            ]
+          }
+        },
+        "path": [
+          "sp_fragnova",
+          "fragments",
+          "UniqueOptions"
+        ]
+      }
+    },
+    {
+      "id": 58,
+      "type": {
+        "def": {
+          "primitive": "bool"
+        }
+      }
+    },
+    {
+      "id": 59,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 43
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 43
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 60,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 61
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 61
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 61,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 62
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 62
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 62,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "name": "permissions",
+                "type": 55,
+                "typeName": "FragmentPerms"
+              },
+              {
+                "name": "created_at",
+                "type": 9,
+                "typeName": "TBlockNum"
+              },
+              {
+                "name": "custom_data",
+                "type": 63,
+                "typeName": "Option<Hash256>"
+              },
+              {
+                "name": "expiring_at",
+                "type": 64,
+                "typeName": "Option<TBlockNum>"
+              },
+              {
+                "name": "stack_amount",
+                "type": 59,
+                "typeName": "Option<Compact<InstanceUnit>>"
+              },
+              {
+                "name": "metadata",
+                "type": 65,
+                "typeName": "BTreeMap<Compact<u64>, Compact<u64>>"
+              },
+              {
+                "name": "_reserved1",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved2",
+                "type": 31,
+                "typeName": "Option<()>"
+              },
+              {
+                "name": "_reserved3",
+                "type": 31,
+                "typeName": "Option<()>"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "TBlockNum",
+            "type": 9
+          }
+        ],
+        "path": [
+          "sp_fragnova",
+          "fragments",
+          "FragmentInstance"
+        ]
+      }
+    },
+    {
+      "id": 63,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 3
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 3
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 64,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 9
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 9
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 65,
+      "type": {
+        "def": {
+          "composite": {
+            "fields": [
+              {
+                "type": 66
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "K",
+            "type": 43
+          },
+          {
+            "name": "V",
+            "type": 43
+          }
+        ],
+        "path": [
+          "BTreeMap"
+        ]
+      }
+    },
+    {
+      "id": 66,
+      "type": {
+        "def": {
+          "sequence": {
+            "type": 67
+          }
+        }
+      }
+    },
+    {
+      "id": 67,
+      "type": {
+        "def": {
+          "tuple": [
+            43,
+            43
+          ]
+        }
+      }
+    },
+    {
+      "id": 68,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 66
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 66
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 69,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "index": 0,
+                "name": "None"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 55
+                  }
+                ],
+                "index": 1,
+                "name": "Some"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 55
+          }
+        ],
+        "path": [
+          "Option"
+        ]
+      }
+    },
+    {
+      "id": 70,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 71
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 2
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 71
+          },
+          {
+            "name": "E",
+            "type": 2
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 71,
+      "type": {
+        "def": {
+          "variant": {
+            "variants": [
+              {
+                "fields": [
+                  {
+                    "type": 1
+                  }
+                ],
+                "index": 0,
+                "name": "Ok"
+              },
+              {
+                "fields": [
+                  {
+                    "type": 72
+                  }
+                ],
+                "index": 1,
+                "name": "Err"
+              }
+            ]
+          }
+        },
+        "params": [
+          {
+            "name": "T",
+            "type": 1
+          },
+          {
+            "name": "E",
+            "type": 72
+          }
+        ],
+        "path": [
+          "Result"
+        ]
+      }
+    },
+    {
+      "id": 72,
+      "type": {
+        "def": {
+          "variant": {}
+        },
+        "path": [
+          "fragnova_extensions",
+          "MyChainExtensionError"
+        ]
+      }
+    }
+  ],
+  "version": "4"
+}
