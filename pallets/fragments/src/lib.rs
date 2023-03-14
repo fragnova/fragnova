@@ -175,9 +175,11 @@ pub struct PublishingData<TBlockNum> {
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** to **top up** in the **stack of stackable items**
 	pub stack_amount: Option<Compact<InstanceUnit>>,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 
@@ -200,9 +202,11 @@ pub struct SecondarySaleData<TAccountId, TBlockNum> {
 	pub expiration: Option<TBlockNum>,
 	/// Type of Sale
 	pub secondary_sale_type: SecondarySaleType,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 
