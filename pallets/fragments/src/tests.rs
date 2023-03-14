@@ -54,6 +54,9 @@ mod create_tests {
 			DefinitionMetadata::<BoundedVec<_, _>, _> {
 				name: definition.metadata.name.clone().try_into().unwrap(),
 				currency: definition.metadata.currency,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			},
 			definition.permissions,
 			definition.unique.clone(),
@@ -110,6 +113,9 @@ mod create_tests {
 				creator: dd.account_id,
 				created_at: current_block_number,
 				custom_metadata: BTreeMap::new(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 			assert_eq!(
 				<Definitions<Test>>::get(&definition.get_definition_id()).unwrap(),
@@ -248,6 +254,9 @@ mod publish_tests {
 				units_left: publish.quantity.map(|quantity| Compact::from(quantity)),
 				expiration: publish.expires,
 				stack_amount: publish.stack_amount.map(|amount| Compact::from(amount)),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 			assert_eq!(
 				<Publishing<Test>>::get(&publish.definition.get_definition_id()).unwrap(),
@@ -481,6 +490,9 @@ mod mint_tests {
 				expiring_at: None,
 				stack_amount: mint_non_unique.amount.map(|amount| Compact::from(amount)),
 				metadata: BTreeMap::new(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 
 			let quantity = match mint_non_unique.buy_options {
@@ -570,6 +582,9 @@ mod mint_tests {
 				expiring_at: None,
 				stack_amount: mint_unique.amount.map(|amount| Compact::from(amount)),
 				metadata: BTreeMap::new(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 			assert_eq!(
 				<Fragments<Test>>::get((mint_unique.definition.get_definition_id(), 1, 1)).unwrap(),
@@ -808,6 +823,9 @@ mod buy_tests {
 						.stack_amount
 						.map(|amount| Compact::from(amount)),
 					metadata: BTreeMap::new(),
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				};
 				assert_eq!(
 					<Fragments<Test>>::get((
@@ -903,6 +921,9 @@ mod buy_tests {
 				expiring_at: None,
 				stack_amount: buy_unique.publish.stack_amount.map(|amount| Compact::from(amount)),
 				metadata: BTreeMap::new(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 			assert_eq!(
 				<Fragments<Test>>::get((buy_unique.publish.definition.get_definition_id(), 1, 1))
@@ -1774,6 +1795,9 @@ mod resell_tests {
 					new_permissions: resell.new_permissions,
 					expiration: resell.expiration,
 					secondary_sale_type: resell.secondary_sale_type,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				}
 			);
 		});
@@ -2585,6 +2609,9 @@ mod detach_tests {
 					),
 					target_chain: detach.target_chain,
 					target_account: detach.target_account,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				},]
 			);
 		});

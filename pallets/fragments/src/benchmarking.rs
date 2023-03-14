@@ -73,9 +73,14 @@ benchmarks! {
 			name: vec![7u8; <T as pallet_protos::Config>::StringLimit::get() as usize].try_into().unwrap(),
 			// By making currency `Currency::Custom`, we enter an extra if-statement and also do an extra DB read operation
 			currency: Currency::Custom(default_asset_id::<T>().into()),
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		let permissions: FragmentPerms = FragmentPerms::EDIT | FragmentPerms::TRANSFER;
-		let unique: Option<UniqueOptions> = Some(UniqueOptions { mutable: false});
+		let unique: Option<UniqueOptions> = Some(UniqueOptions { mutable: false, _reserved1: None,
+			_reserved2: None,
+			_reserved3: None,});
 		let max_supply: Option<InstanceUnit> = Some(7);
 
 	}: create(RawOrigin::Signed(caller), proto_hash, metadata.clone(), permissions, unique, max_supply) // Execution phase
@@ -105,6 +110,9 @@ benchmarks! {
 		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
 			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -149,6 +157,9 @@ benchmarks! {
 		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
 			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -195,6 +206,9 @@ benchmarks! {
 		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
 			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -246,13 +260,18 @@ benchmarks! {
 		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
 			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
 			proto_hash,
 			metadata.clone(),
 			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-			Some(UniqueOptions {mutable: false}), // unique
+			Some(UniqueOptions {mutable: false, _reserved1: None,
+				_reserved2: None,
+				_reserved3: None,}), // unique
 			// we make the Definition's `max_supply` Some,
 			// because this causes `mint()` to check if `max_supply` is exceeded
 			Some(7)
@@ -296,6 +315,9 @@ benchmarks! {
 		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
 			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(definition_owner.clone()).into(),
@@ -363,13 +385,18 @@ benchmarks! {
 		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
 			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(definition_owner.clone()).into(),
 			proto_hash,
 			metadata.clone(),
 			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-			Some(UniqueOptions {mutable: false}), // unique
+			Some(UniqueOptions {mutable: false, _reserved1: None,
+				_reserved2: None,
+				_reserved3: None,}), // unique
 			None
 		)?;
 		let definition_hash = blake2_128(
@@ -428,6 +455,9 @@ benchmarks! {
 		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
 			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),
@@ -494,6 +524,9 @@ benchmarks! {
 		let metadata = DefinitionMetadata::<BoundedVec<u8, _>, _> {
 			name: b"Je suis un Nom".to_vec().try_into().unwrap(),
 			currency: Currency::Native,
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		Fragments::<T>::create(
 			RawOrigin::Signed(caller.clone()).into(),

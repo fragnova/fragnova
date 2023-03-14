@@ -68,6 +68,10 @@ pub struct LinkTargetVersioned<TAccountId, TBlockNum> {
 	pub prev_block_number: TBlockNum,
 	/// The block number indicating the current version of the linked asset.
 	pub cur_block_number: TBlockNum,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 #[frame_support::pallet]
@@ -316,6 +320,9 @@ pub mod pallet {
 				link_target: target,
 				prev_block_number: T::BlockNumber::zero(),
 				cur_block_number: current_block_number,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 			<Aliases<T>>::insert(&namespace, &alias_index, target_versioned);
 
@@ -375,6 +382,9 @@ pub mod pallet {
 				link_target: target,
 				prev_block_number: T::BlockNumber::zero(),
 				cur_block_number: current_block_number,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 			<Aliases<T>>::insert(&root_namespace, &alias_index, target_versioned);
 
@@ -418,6 +428,9 @@ pub mod pallet {
 				link_target: new_target,
 				prev_block_number: stored_alias.cur_block_number,
 				cur_block_number: current_block_number,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 
 			<Aliases<T>>::insert(&namespace, &alias_index, new_target_versioned);
@@ -455,6 +468,9 @@ pub mod pallet {
 				link_target: new_target,
 				prev_block_number: stored_alias.cur_block_number,
 				cur_block_number: current_block_number,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 
 			<Aliases<T>>::insert(&root_namespace, &alias_index, new_target_versioned);

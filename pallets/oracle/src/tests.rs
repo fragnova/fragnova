@@ -258,6 +258,9 @@ fn offchain_worker_works() {
 			price: U256::from(1269132621),
 			block_number: System::block_number(),
 			public: <Test as SigningTypes>::Public::from(ed25519_public_key),
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 
 		let tx = pool_state.write().transactions.pop().unwrap();
@@ -287,6 +290,9 @@ fn price_storage_after_offchain_worker_works() {
 			price: U256::from(1300),
 			block_number: System::block_number(),
 			public: sp_core::ed25519::Public([69u8; 32]),
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 
 		assert_ok!(store_price_(expected_data.clone()));
@@ -328,6 +334,9 @@ fn fetch_price_zero_will_fail() {
 			price: U256::from(0),
 			block_number: System::block_number(),
 			public: sp_core::ed25519::Public([69u8; 32]),
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 
 		assert_noop!(store_price_(expected_data.clone()), Error::<Test>::PriceIsZero);

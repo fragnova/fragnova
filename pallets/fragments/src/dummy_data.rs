@@ -208,9 +208,20 @@ impl DummyData {
 				linked_asset: None,
 				data: "0x111".as_bytes().to_vec(),
 			},
-			metadata: DefinitionMetadata { name: b"Il Nome".to_vec(), currency: Currency::Native },
+			metadata: DefinitionMetadata {
+				name: b"Il Nome".to_vec(),
+				currency: Currency::Native,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
+			},
 			permissions: FragmentPerms::EDIT | FragmentPerms::TRANSFER,
-			unique: Some(UniqueOptions { mutable: true }),
+			unique: Some(UniqueOptions {
+				mutable: true,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
+			}),
 			max_supply: None,
 		};
 		let definition_unique = definition.clone();

@@ -27,6 +27,10 @@ pub struct DefinitionMetadata<TU8Vector, TFungibleAsset> {
 	pub name: TU8Vector,
 	/// **Currency** that must be used to buy **any and all Fragment Instances created from the Fragment Definition**
 	pub currency: Currency<TFungibleAsset>,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 /// TODO
@@ -35,6 +39,10 @@ pub struct DefinitionMetadata<TU8Vector, TFungibleAsset> {
 pub struct UniqueOptions {
 	/// Whether the unique data of the Fragment instance(s) are mutable
 	pub mutable: bool,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 /// **Struct** of a **Fragment Definition**
@@ -61,6 +69,10 @@ pub struct FragmentDefinition<TU8Array, TFungibleAsset, TAccountId, TBlockNum> {
 	pub created_at: TBlockNum,
 	/// **Map** that maps the **Key of a Proto-Fragment's Custom Metadata Object** to the **Hash of the aforementioned Custom Metadata Object**
 	pub custom_metadata: BTreeMap<Compact<u64>, Hash256>,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 /// **Struct** of a **Fragment Instance**
@@ -90,7 +102,11 @@ pub struct FragmentInstance<TBlockNum> {
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** that are **left** in the **stack of stackable items**
 	pub stack_amount: Option<Compact<InstanceUnit>>,
-	/// TODO: Documentation
 	/// **Map** that maps the **Key of a Proto-Fragment's Metadata Object** to an **Index of the Hash of the aforementioned Metadata Object**
 	pub metadata: BTreeMap<Compact<u64>, Compact<u64>>,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
+	// Total 16 bytes	should be!
 }

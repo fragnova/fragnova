@@ -382,6 +382,9 @@ mod tests {
 				link_target: new_target.clone(),
 				prev_block_number: stored_alias.cur_block_number,
 				cur_block_number: current_block_number,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 			assert_eq!(
 				<Aliases<Test>>::get(&namespace, &alias_index).unwrap(),

@@ -439,6 +439,9 @@ pub mod pallet {
 				metadata: BTreeMap::new(),
 				data: data_stored,
 				cluster,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 
 			// store proto
@@ -583,6 +586,9 @@ pub mod pallet {
 						data_hash,
 						references: new_references.clone(),
 						data: data_stored,
+						_reserved1: None,
+						_reserved2: None,
+						_reserved3: None,
 					});
 
 					for new_reference in new_references.into_iter() {
@@ -835,6 +841,9 @@ pub mod pallet {
 				collection: DetachCollection::Protos(proto_hashes),
 				target_chain,
 				target_account: target_account.into(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 
 			<DetachRequests<T>>::mutate(|requests| {

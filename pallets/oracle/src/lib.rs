@@ -184,6 +184,10 @@ pub mod pallet {
 		pub block_number: TBlockNumber,
 		/// Fragnova Public Account Address (the account address should be in FragKey, otherwise it fails)
 		pub public: TPublic,
+		// Reserved for future use
+		pub _reserved1: Option<()>,
+		pub _reserved2: Option<()>,
+		pub _reserved3: Option<()>,
 	}
 
 	/// Storage use for the latest price received from the oracle.
@@ -438,7 +442,14 @@ pub mod pallet {
 			// -- Sign using any account
 			Signer::<T, T::AuthorityId>::any_account()
 				.send_unsigned_transaction(
-					|account| OraclePrice { price, block_number, public: account.public.clone() },
+					|account| OraclePrice {
+						price,
+						block_number,
+						public: account.public.clone(),
+						_reserved1: None,
+						_reserved2: None,
+						_reserved3: None,
+					},
 					|payload, signature| Call::store_price { oracle_price: payload, signature },
 				)
 				.ok_or_else(|| "Failed to sign transaction")?
