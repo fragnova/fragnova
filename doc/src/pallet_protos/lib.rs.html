@@ -1418,7 +1418,6 @@
 <a href="#1418" id="1418">1418</a>
 <a href="#1419" id="1419">1419</a>
 <a href="#1420" id="1420">1420</a>
-<a href="#1421" id="1421">1421</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1443,7 +1442,10 @@
 <span class="attr">#[allow(missing_docs)]
 </span><span class="kw">mod </span>weights;
 
-<span class="kw">use </span>protos::{categories::{Categories, ShardsFormat}, traits::Trait};
+<span class="kw">use </span>protos::{
+	categories::{Categories, ShardsFormat},
+	traits::Trait,
+};
 
 <span class="kw">use </span>sp_core::crypto::UncheckedFrom;
 
@@ -1549,7 +1551,6 @@
 		frame_system::Config
 		+ pallet_detach::Config
 		+ pallet_accounts::Config
-		+ pallet_assets::Config
 		+ pallet_contracts::Config
 		+ pallet_clusters::Config
 	{
@@ -1672,7 +1673,7 @@
 		<span class="doccomment">/// All the requiring traits of the Shards Script that you want to upload have not been referenced
 		</span>RequiredTraitsMissing,
 		<span class="doccomment">/// All the implementing traits of the Shards Script that you want to upload have not been implemented
-		</span>TraitsNotImplemented
+		</span>TraitsNotImplemented,
 	}
 
 	<span class="comment">// Dispatchable functions allows users to interact with the pallet and invoke state changes.
@@ -1779,7 +1780,6 @@
 					Categories::Trait(<span class="prelude-val">Some</span>(trait_id))
 				},
 				Categories::Shards(info) =&gt; {
-
 					<span class="comment">// only support EDN for now
 					</span><span class="macro">ensure!</span>(info.format == ShardsFormat::Edn, Error::&lt;T&gt;::SystematicFailure);
 
@@ -1808,9 +1808,7 @@
 						</span><span class="kw">let </span><span class="prelude-val">Some</span>(trait_protos) = ProtosByCategory::&lt;T&gt;::get(Categories::Trait(<span class="prelude-val">Some</span>(trait_hash))) <span class="kw">else </span>{
 							<span class="kw">return </span><span class="bool-val">false</span>;
 						};
-						references.iter().any(|proto_hash| {
-							trait_protos.contains(proto_hash)
-						})
+						references.iter().any(|proto_hash| trait_protos.contains(proto_hash))
 					});
 					<span class="macro">ensure!</span>(implement_check, Error::&lt;T&gt;::TraitsNotImplemented);
 

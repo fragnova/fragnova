@@ -94,19 +94,15 @@
 <a href="#94" id="94">94</a>
 <a href="#95" id="95">95</a>
 <a href="#96" id="96">96</a>
-<a href="#97" id="97">97</a>
-<a href="#98" id="98">98</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Types that will be used in the Fragments pallet
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 
-</span><span class="kw">use crate</span>::{Hash256};
+</span><span class="kw">use </span><span class="kw">crate</span>::Hash256;
 <span class="kw">use </span>codec::{Compact, Decode, Encode};
-<span class="kw">use </span>sp_std::{
-	collections::btree_map::BTreeMap,
-};
 <span class="kw">use </span>protos::permissions::FragmentPerms;
+<span class="kw">use </span>sp_std::collections::btree_map::BTreeMap;
 
 <span class="doccomment">/// Type used to represent an Instance&#39;s Edition ID and an Instance&#39;s Copy ID
 </span><span class="kw">pub type </span>InstanceUnit = u64;

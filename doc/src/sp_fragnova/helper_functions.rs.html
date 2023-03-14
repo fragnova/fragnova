@@ -76,16 +76,12 @@
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
 <a href="#78" id="78">78</a>
-<a href="#79" id="79">79</a>
-<a href="#80" id="80">80</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Helper Functions that can be used in other packages of this workspace
 
 </span><span class="kw">use </span>codec::{Decode, Encode, Error <span class="kw">as </span>CodecError};
 <span class="kw">use </span>sp_core::offchain::{HttpRequestStatus, Timestamp};
 <span class="kw">use </span>sp_io::{hashing::blake2_256, offchain};
-<span class="kw">use </span>sp_std::{
-	vec::Vec
-};
+<span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="doccomment">/// Make an HTTP POST Request with data `body` to the URL `url`
 </span><span class="kw">pub fn </span>http_json_post(

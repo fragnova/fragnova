@@ -240,30 +240,8 @@
 <a href="#240" id="240">240</a>
 <a href="#241" id="241">241</a>
 <a href="#242" id="242">242</a>
-<a href="#243" id="243">243</a>
-<a href="#244" id="244">244</a>
-<a href="#245" id="245">245</a>
-<a href="#246" id="246">246</a>
-<a href="#247" id="247">247</a>
-<a href="#248" id="248">248</a>
-<a href="#249" id="249">249</a>
-<a href="#250" id="250">250</a>
-<a href="#251" id="251">251</a>
-</pre><pre class="rust"><code><span class="kw">use </span>codec::{
-	Encode,
-	Compact,
-};
-<span class="kw">use </span>frame_support::{
-	dispatch::RawOrigin,
-	traits::Get
-};
-<span class="kw">use </span>sp_runtime::{
-	traits::{
-		StaticLookup,
-	},
-	DispatchError,
-};
-<span class="kw">use </span>sp_std::vec::Vec;
+</pre><pre class="rust"><code><span class="kw">use </span>codec::{Compact, Encode};
+<span class="kw">use </span>frame_support::{dispatch::RawOrigin, traits::Get};
 <span class="kw">use </span>pallet_contracts::chain_extension::{
 	ChainExtension,
 	Environment,
@@ -272,20 +250,14 @@
 	RetVal,
 	SysConfig, <span class="comment">// `frame_system::Config` is re-exported as &quot;SysConfig&quot; in `pallet_contracts::chain_extension` (https://paritytech.github.io/substrate/master/pallet_contracts/chain_extension/trait.SysConfig.html#)
 </span>};
+<span class="kw">use </span>pallet_fragments::WeightInfo;
 <span class="kw">use </span>sp_fragnova::{
-	Hash128,
-	Hash256,
-	protos::{
-		Proto,
-		ProtoOwner,
-	},
-	fragments::{
-		FragmentDefinition,
-		FragmentInstance,
-		InstanceUnit
-	}
+	fragments::{FragmentDefinition, FragmentInstance, InstanceUnit},
+	protos::{Proto, ProtoOwner},
+	Hash128, Hash256,
 };
-<span class="kw">use </span>pallet_fragments::WeightInfo; <span class="comment">// this is a trait
+<span class="kw">use </span>sp_runtime::{traits::StaticLookup, DispatchError};
+<span class="kw">use </span>sp_std::vec::Vec; <span class="comment">// this is a trait
 
 </span><span class="kw">use </span>protos::permissions::FragmentPerms;
 
@@ -331,7 +303,7 @@
 			<span class="kw">_ </span>=&gt; {
 				<span class="macro">log::error!</span>(<span class="string">&quot;Called an unregistered `func_id`: {:}&quot;</span>, func_id);
 				<span class="kw">return </span><span class="prelude-val">Err</span>(DispatchError::Other(<span class="string">&quot;Unimplemented func_id&quot;</span>))
-			}
+			},
 		};
 
 		<span class="prelude-val">Ok</span>(id)
@@ -345,11 +317,10 @@
 ///
 /// Source: https://paritytech.github.io/substrate/master/pallet_contracts/chain_extension/trait.ChainExtension.html#
 </span><span class="kw">impl</span>&lt;T&gt; ChainExtension&lt;T&gt; <span class="kw">for </span>MyExtension
-	<span class="kw">where
-		</span>T: pallet_contracts::Config + pallet_protos::Config + pallet_fragments::Config,
-		&lt;T <span class="kw">as </span>SysConfig&gt;::AccountId: AsRef&lt;[u8]&gt;,
+<span class="kw">where
+	</span>T: pallet_contracts::Config + pallet_protos::Config + pallet_fragments::Config,
+	&lt;T <span class="kw">as </span>SysConfig&gt;::AccountId: AsRef&lt;[u8]&gt;,
 {
-
 	<span class="doccomment">/// Call the chain extension logic.
 	///
 	/// This is the only function that needs to be implemented in order to write a
@@ -366,12 +337,9 @@
 	/// behaviour.
 	///
 	/// Source: https://paritytech.github.io/substrate/master/pallet_contracts/chain_extension/trait.ChainExtension.html#tymethod.call
-	</span><span class="kw">fn </span>call&lt;E: Ext&gt;(
-		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		env: Environment&lt;E, InitState&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;RetVal, DispatchError&gt;
-		<span class="kw">where
-			</span>E: Ext&lt;T = T&gt;,
+	</span><span class="kw">fn </span>call&lt;E: Ext&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, env: Environment&lt;E, InitState&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;RetVal, DispatchError&gt;
+	<span class="kw">where
+		</span>E: Ext&lt;T = T&gt;,
 	{
 		<span class="kw">let </span>func_id = FuncId::try_from(env.func_id())<span class="question-mark">?</span>;
 
@@ -390,17 +358,19 @@
 				<span class="comment">// We are supposed to charge weight even if we read a storage value according to @bkchr: https://substrate.stackexchange.com/questions/7071/in-the-runtime-chain-extension-should-we-be-charging-weight-if-we-are-reading-a
 				// Furthermore, an actual Substrate Blockchain does `&lt;T as frame_system::Config&gt;::DbWeight::get().reads(1)` to read a storage value here: https://github.com/AstarNetwork/astar-frame/blob/b2f888fafecb7257e68c5e9f0e9e661d1f8007c9/chain-extensions/dapps-staking/src/lib.rs#L150-L156
 				</span>env.charge_weight(&lt;T <span class="kw">as </span>SysConfig&gt;::DbWeight::get().reads(<span class="number">1</span>))<span class="question-mark">?</span>;
-				<span class="kw">let </span>output: <span class="prelude-ty">Option</span>&lt;Proto&lt;T::AccountId, T::BlockNumber&gt;&gt; = pallet_protos::Protos::&lt;T&gt;::get(<span class="kw-2">&amp;</span>proto_hash);
+				<span class="kw">let </span>output: <span class="prelude-ty">Option</span>&lt;Proto&lt;T::AccountId, T::BlockNumber&gt;&gt; =
+					pallet_protos::Protos::&lt;T&gt;::get(<span class="kw-2">&amp;</span>proto_hash);
 				<span class="comment">// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
-				</span>env.write(<span class="kw-2">&amp;</span>output.encode(), <span class="bool-val">false</span>, <span class="prelude-val">None</span>).map_err(|<span class="kw">_</span>| {
-					DispatchError::Other(<span class="string">&quot;ChainExtension failed to get the proto&quot;</span>)
-				})<span class="question-mark">?</span>;
+				</span>env.write(<span class="kw-2">&amp;</span>output.encode(), <span class="bool-val">false</span>, <span class="prelude-val">None</span>)
+					.map_err(|<span class="kw">_</span>| DispatchError::Other(<span class="string">&quot;ChainExtension failed to get the proto&quot;</span>))<span class="question-mark">?</span>;
 			},
 			FuncId::GetProtoIds =&gt; {
 				<span class="kw">let </span>owner: T::AccountId = env.read_as()<span class="question-mark">?</span>; <span class="comment">// TODO Review - Shouldn&#39;t `owner` parameter be of type `ProtoOwner&lt;T::AccountId&gt;` instead of `T::AccountId`
 				</span>env.charge_weight(&lt;T <span class="kw">as </span>SysConfig&gt;::DbWeight::get().reads(<span class="number">1</span>))<span class="question-mark">?</span>;
-				<span class="kw">let </span>output: Vec&lt;Hash256&gt; = pallet_protos::ProtosByOwner::&lt;T&gt;::get(ProtoOwner::&lt;T::AccountId&gt;::User(owner)).unwrap_or_default();
+				<span class="kw">let </span>output: Vec&lt;Hash256&gt; =
+					pallet_protos::ProtosByOwner::&lt;T&gt;::get(ProtoOwner::&lt;T::AccountId&gt;::User(owner))
+						.unwrap_or_default();
 				<span class="comment">// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a `Vec`!
 				</span>env.write(<span class="kw-2">&amp;</span>output.encode(), <span class="bool-val">false</span>, <span class="prelude-val">None</span>).map_err(|<span class="kw">_</span>| {
@@ -411,7 +381,9 @@
 			FuncId::GetDefinition =&gt; {
 				<span class="kw">let </span>definition_hash: Hash128 = env.read_as()<span class="question-mark">?</span>;
 				env.charge_weight(&lt;T <span class="kw">as </span>SysConfig&gt;::DbWeight::get().reads(<span class="number">1</span>))<span class="question-mark">?</span>;
-				<span class="kw">let </span>output: <span class="prelude-ty">Option</span>&lt;FragmentDefinition&lt;Vec&lt;u8&gt;, T::AssetId, T::AccountId, T::BlockNumber&gt;&gt; = pallet_fragments::Definitions::&lt;T&gt;::get(<span class="kw-2">&amp;</span>definition_hash);
+				<span class="kw">let </span>output: <span class="prelude-ty">Option</span>&lt;
+					FragmentDefinition&lt;Vec&lt;u8&gt;, T::AssetId, T::AccountId, T::BlockNumber&gt;,
+				&gt; = pallet_fragments::Definitions::&lt;T&gt;::get(<span class="kw-2">&amp;</span>definition_hash);
 				<span class="comment">// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
 				</span>env.write(<span class="kw-2">&amp;</span>output.encode(), <span class="bool-val">false</span>, <span class="prelude-val">None</span>).map_err(|<span class="kw">_</span>| {
@@ -419,9 +391,11 @@
 				})<span class="question-mark">?</span>;
 			},
 			FuncId::GetInstance =&gt; {
-				<span class="kw">let </span>(definition_hash, edition_id, copy_id): (Hash128, InstanceUnit, InstanceUnit) = env.read_as()<span class="question-mark">?</span>;
+				<span class="kw">let </span>(definition_hash, edition_id, copy_id): (Hash128, InstanceUnit, InstanceUnit) =
+					env.read_as()<span class="question-mark">?</span>;
 				env.charge_weight(&lt;T <span class="kw">as </span>SysConfig&gt;::DbWeight::get().reads(<span class="number">1</span>))<span class="question-mark">?</span>;
-				<span class="kw">let </span>output: <span class="prelude-ty">Option</span>&lt;FragmentInstance&lt;T::BlockNumber&gt;&gt; = pallet_fragments::Fragments::&lt;T&gt;::get((definition_hash, edition_id, copy_id));
+				<span class="kw">let </span>output: <span class="prelude-ty">Option</span>&lt;FragmentInstance&lt;T::BlockNumber&gt;&gt; =
+					pallet_fragments::Fragments::&lt;T&gt;::get((definition_hash, edition_id, copy_id));
 				<span class="comment">// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a a struct that has a `Vec` field!
 				</span>env.write(<span class="kw-2">&amp;</span>output.encode(), <span class="bool-val">false</span>, <span class="prelude-val">None</span>).map_err(|<span class="kw">_</span>| {
@@ -431,7 +405,9 @@
 			FuncId::GetInstanceIds =&gt; {
 				<span class="kw">let </span>(definition_hash, owner): (Hash128, T::AccountId) = env.read_as()<span class="question-mark">?</span>;
 				env.charge_weight(&lt;T <span class="kw">as </span>SysConfig&gt;::DbWeight::get().reads(<span class="number">1</span>))<span class="question-mark">?</span>;
-				<span class="kw">let </span>output: Vec&lt;(Compact&lt;InstanceUnit&gt;, Compact&lt;InstanceUnit&gt;)&gt; = pallet_fragments::Inventory::&lt;T&gt;::get(owner, definition_hash).unwrap_or_default();
+				<span class="kw">let </span>output: Vec&lt;(Compact&lt;InstanceUnit&gt;, Compact&lt;InstanceUnit&gt;)&gt; =
+					pallet_fragments::Inventory::&lt;T&gt;::get(owner, definition_hash)
+						.unwrap_or_default();
 				<span class="comment">// TODO Review - Should `weights_per_byte` be `None`? In the examples (https://github.com/paritytech/ink/blob/master/examples/rand-extension/runtime/chain-extension-example.rs and https://github.com/paritytech/ink/blob/master/examples/psp22-extension/runtime/psp22-extension-example.rs) and in https://github.com/AstarNetwork/astar-frame/search?q=env.write,
 				// I only see `None` - but in our case we are outputting a `Vec`!
 				</span>env.write(<span class="kw-2">&amp;</span>output.encode(), <span class="bool-val">false</span>, <span class="prelude-val">None</span>).map_err(|<span class="kw">_</span>| {
@@ -455,8 +431,14 @@
 				//
 				// We are using `env.read_as_unbounded()` just like it was used in this tutorial: https://www.youtube.com/watch?v=yykPQF0tkqk / https://github.com/HCastano/decoded-2022-demo/blob/master/runtime/src/chain_extension.rs#L104
 				//
-				</span><span class="kw">let </span>(definition_hash, edition_id, copy_id, to, new_permissions, expiration):
-					(Hash128, InstanceUnit, InstanceUnit, T::AccountId, <span class="prelude-ty">Option</span>&lt;FragmentPerms&gt;, <span class="prelude-ty">Option</span>&lt;T::BlockNumber&gt;) = env.read_as_unbounded(env.in_len())<span class="question-mark">?</span>;
+				</span><span class="kw">let </span>(definition_hash, edition_id, copy_id, to, new_permissions, expiration): (
+					Hash128,
+					InstanceUnit,
+					InstanceUnit,
+					T::AccountId,
+					<span class="prelude-ty">Option</span>&lt;FragmentPerms&gt;,
+					<span class="prelude-ty">Option</span>&lt;T::BlockNumber&gt;,
+				) = env.read_as_unbounded(env.in_len())<span class="question-mark">?</span>;
 
 				<span class="comment">// This is the exact same expression that is in the weight macro of `fragments.give()`
 				</span><span class="kw">let </span>weight = &lt;T <span class="kw">as </span>pallet_fragments::Config&gt;::WeightInfo::benchmark_give_instance_that_has_copy_perms().max(
@@ -492,7 +474,7 @@
 					copy_id,
 					T::Lookup::unlookup(to),
 					new_permissions,
-					expiration
+					expiration,
 				)<span class="question-mark">?</span>;
 			},
 		};

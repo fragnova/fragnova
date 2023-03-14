@@ -91,8 +91,8 @@
 
 </span><span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="kw">use </span>fragnova_runtime::{opaque::Block, AccountId, Balance, Index};
+<span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_block_builder::BlockBuilder;
@@ -114,22 +114,22 @@
 </span><span class="kw">pub fn </span>create_full&lt;C, P&gt;(
 	deps: FullDeps&lt;C, P&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
-	<span class="kw">where
-		</span>C: ProvideRuntimeApi&lt;Block&gt;,
-		C: HeaderBackend&lt;Block&gt; + HeaderMetadata&lt;Block, Error = BlockChainError&gt; + <span class="lifetime">&#39;static</span>,
-		C: Send + Sync + <span class="lifetime">&#39;static</span>,
-		C: sc_client_api::BlockBackend&lt;Block&gt;, <span class="comment">// used for in the RPC method `protos_getData`
+<span class="kw">where
+	</span>C: ProvideRuntimeApi&lt;Block&gt;,
+	C: HeaderBackend&lt;Block&gt; + HeaderMetadata&lt;Block, Error = BlockChainError&gt; + <span class="lifetime">&#39;static</span>,
+	C: Send + Sync + <span class="lifetime">&#39;static</span>,
+	C: sc_client_api::BlockBackend&lt;Block&gt;, <span class="comment">// used for in the RPC method `protos_getData`
 
-		</span>C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Index&gt;,
-		C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;,
-		C::Api: pallet_protos_rpc::ProtosRuntimeApi&lt;Block, AccountId&gt;,
-		C::Api: pallet_fragments_rpc::FragmentsRuntimeApi&lt;Block, AccountId&gt;,
-		C::Api: BlockBuilder&lt;Block&gt;,
-		P: TransactionPool + <span class="lifetime">&#39;static</span>,
+	</span>C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Index&gt;,
+	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;,
+	C::Api: pallet_protos_rpc::ProtosRuntimeApi&lt;Block, AccountId&gt;,
+	C::Api: pallet_fragments_rpc::FragmentsRuntimeApi&lt;Block, AccountId&gt;,
+	C::Api: BlockBuilder&lt;Block&gt;,
+	P: TransactionPool + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	<span class="kw">use </span>pallet_fragments_rpc::{FragmentsRpcServer, FragmentsRpcServerImpl};
 	<span class="kw">use </span>pallet_protos_rpc::{ProtosRpcServer, ProtosRpcServerImpl};
+	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	<span class="comment">// use sc_rpc::dev::{Dev, DevApiServer};
 	</span><span class="kw">use </span>substrate_frame_rpc_system::{System, SystemApiServer};
 

@@ -2034,6 +2034,8 @@
 <a href="#2034" id="2034">2034</a>
 <a href="#2035" id="2035">2035</a>
 <a href="#2036" id="2036">2036</a>
+<a href="#2037" id="2037">2037</a>
+<a href="#2038" id="2038">2038</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2512,7 +2514,9 @@
 					</span>})
 				},
 			},
-			Categories::Shards(shards_script_info_struct) =&gt; shards_script_info_struct.format == ShardsFormat::Edn &amp;&amp; str::from_utf8(data).is_ok(),
+			Categories::Shards(shards_script_info_struct) =&gt;
+				shards_script_info_struct.format == ShardsFormat::Edn &amp;&amp;
+					str::from_utf8(data).is_ok(),
 			Categories::Audio(sub_categories) =&gt; <span class="kw">match </span>sub_categories {
 				AudioCategories::OggFile =&gt; infer::is(data, <span class="string">&quot;ogg&quot;</span>),
 				AudioCategories::Mp3File =&gt; infer::is(data, <span class="string">&quot;mp3&quot;</span>),
