@@ -25,6 +25,7 @@ use protos::permissions::FragmentPerms;
 // These type must tally with the types in https://github.com/fragcolor-xyz/fragnova/blob/devel/runtime/src/lib.rs:
 type AccountId = <ink::env::DefaultEnvironment as Environment>::AccountId;
 type BlockNumber = u64; // type BlockNumber = <ink::env::DefaultEnvironment as Environment>::BlockNumber;
+/// Asset ID Type of the Fragnova Blockchain
 pub type AssetId = u64;
 
 /// `#[ink::chain_extension]` defines the interface for a chain extension.
@@ -113,6 +114,7 @@ impl From<scale::Error> for MyChainExtensionError {
 	}
 }
 
+/// The fundamental types of the Fragnova Blockchain
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
 pub enum FragnovaEnvironment {}
