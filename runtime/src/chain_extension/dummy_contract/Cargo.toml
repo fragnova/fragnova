@@ -22,10 +22,7 @@ path = "lib.rs"
 [features]
 default = ["std"]
 std = [
-    "ink_metadata/std",
-    "ink_storage/std",
-    "ink_primitives/std",
-    "ink_prelude/std",
+    "ink/std",
     "scale/std",
     "scale-info/std",
     "sp-fragnova/std",
