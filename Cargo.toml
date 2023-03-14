@@ -3,6 +3,7 @@ members = [
     'node',
 	'pallets/*',
     'runtime',
+    'extensions',
 ]
 
 # used locally sometimes...

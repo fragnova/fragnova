@@ -1,7 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use ink_lang as ink;
-
 use fragnova_extensions::FragnovaEnvironment;
 
 #[ink::contract(env = crate::FragnovaEnvironment)]

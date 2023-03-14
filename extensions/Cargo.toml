@@ -1,0 +1,32 @@
+[package]
+name = "fragnova_extensions"
+description = "Definitions of all the Chain Extension Methods of the Fragnova Blockchain. Fragnova ink! smart contract developers should integrate these method definitons into the environment of their smart contracts (https://paritytech.github.io/ink/ink/attr.chain_extension.html#example-environment), if they wish to call these methods in their smart contracts."
+version = "0.1.1"
+authors = ["Fragcolor Pte. Ltd. <ask@fragcolor.com>"]
+edition = "2021"
+license = "BSD-3-Clause"
+
+[dependencies]
+ink = { version = "4.0.1", default-features = false }
+scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] } # this package is named "codec" when used in Fragnova (https://github.com/fragcolor-xyz/fragnova)
+scale-info = { version = "2.3", default-features = false, features = ["derive"], optional = true }
+
+sp-fragnova = { version = '0.1.0', default-features = false, path = '../primitives/fragnova', features = ["use-as-dep-in-ink-contract"] }
+
+protos = { version = "0.1.30", default-features = false }
+
+[dev-dependencies]
+ink_e2e = "4.0.1"
+
+[lib]
+path = "lib.rs"
+
+[features]
+default = ["std"]
+std = [
+	"ink/std",
+	"scale/std",
+	"scale-info/std",
+	"sp-fragnova/std",
+	"protos/std",
+]
