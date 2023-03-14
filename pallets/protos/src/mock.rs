@@ -44,7 +44,7 @@ frame_support::construct_runtime!(
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
 		ProtosPallet: pallet_protos::{Pallet, Call, Storage, Event<T>},
 		Detach: pallet_detach::{Pallet, Call, Storage, Event<T>},
-		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
+		CollectiveFlip: pallet_insecure_randomness_collective_flip::{Pallet, Storage},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
 		Accounts: pallet_accounts::{Pallet, Call, Storage, Event<T>},
@@ -128,7 +128,7 @@ where
 	}
 }
 
-impl pallet_randomness_collective_flip::Config for Test {}
+impl pallet_insecure_randomness_collective_flip::Config for Test {}
 
 /// If `Test` implements `pallet_balances::Config`, the assignment might use `u64` for the `Balance` type. (https://docs.substrate.io/v3/runtime/testing/)
 ///
@@ -268,17 +268,17 @@ impl pallet_contracts::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type CallFilter = frame_support::traits::Nothing;
-	type DepositPerItem = DepositPerItem;
-	type DepositPerByte = DepositPerByte;
-	type CallStack = [pallet_contracts::Frame<Self>; 31];
+	type CallStack = [pallet_contracts::Frame<Self>; 5];
 	type WeightPrice = ();
 	type WeightInfo = ();
 	type ChainExtension = ();
 	type DeletionQueueDepth = ConstU32<1024>;
 	type DeletionWeightLimit = DeletionWeightLimit;
 	type Schedule = MySchedule;
+	type DepositPerByte = DepositPerByte;
+	type DepositPerItem = DepositPerItem;
 	type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-	type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+	type MaxCodeLen = ConstU32<{ 123 * 1024 }>;
 	type MaxStorageKeyLen = ConstU32<128>;
 	type UnsafeUnstableInterface = ConstBool<false>;
 	type MaxDebugBufferLen = ConstU32<{ 2 * 1024 * 1024 }>;

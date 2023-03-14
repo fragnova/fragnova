@@ -146,14 +146,13 @@ const connectToLocalNode = async () => {
         }
       },
 
-      BlockHash: "Hash",
-
-      FragmentMetadata: {
+      DefinitionMetadata: {
         name: "Vec<u8>",
         currency: "Option<AssetId>",
-      },
-      UniqueOptions: {
-        mutable: "bool",
+        // Reserved for future use
+        _reserved1: "Option<()>",
+        _reserved2: "Option<()>",
+        _reserved3: "Option<()>",
       },
 
       GetProtosParams: {

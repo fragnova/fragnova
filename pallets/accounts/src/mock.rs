@@ -119,7 +119,7 @@ where
 	}
 }
 
-impl pallet_randomness_collective_flip::Config for Test {}
+impl pallet_insecure_randomness_collective_flip::Config for Test {}
 
 impl pallet_balances::Config for Test {
 	type Balance = Balance;

@@ -37,7 +37,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-		CollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
+		CollectiveFlip: pallet_insecure_randomness_collective_flip::{Pallet, Storage},
 		DetachPallet: pallet_detach::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -110,7 +110,7 @@ where
 	}
 }
 
-impl pallet_randomness_collective_flip::Config for Test {}
+impl pallet_insecure_randomness_collective_flip::Config for Test {}
 
 impl pallet_detach::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
