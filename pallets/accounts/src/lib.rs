@@ -158,9 +158,11 @@ pub struct EthLockUpdate<TPublic> {
 	pub lock: bool,
 	/// Block number in which the event was emitted
 	pub block_number: u64,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 
@@ -175,9 +177,11 @@ pub struct EthLock<TBalance, TBlockNum> {
 	pub lock_period: u8,
 	/// The week number of the last withdraw. It is zero if the account never withdrawn
 	pub last_withdraw: u128,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 
@@ -194,9 +198,11 @@ pub struct AccountInfo<TAccountID, TMoment> {
 	pub account_id: TAccountID,
 	/// The timestamp when this account was created
 	pub created_at: TMoment,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 

@@ -170,9 +170,11 @@ pub struct DetachRequest {
 	pub target_chain: SupportedChains,
 	/// Public Account Address in the External Blockchain to transfer the ownership of the "detachable thing"s to
 	pub target_account: Vec<u8>, // an eth address or so
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 
@@ -198,9 +200,11 @@ pub struct DetachInternalData<TPublic> {
 	pub remote_signature: Vec<u8>,
 	/// Number of times the the `target_account` on the `target_chain` was specified as the new owner when a "detachable thing" (e.g a Proto-Fragment or a Fragment Instance) was detached.
 	pub nonce: u64,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 
@@ -227,9 +231,11 @@ pub struct ExportData {
 	// so that e.g. if we detach on ethereum the message cannot be repeated and needs to go 1:1 with fragnova
 	/// Detach-Nonce of the Public Account Address  `owner` (in the external blockchain `chain`) when the "detached thing" was detached
 	nonce: u64,
-	// Reserved for future use
+	/// Reserved for future use
 	pub _reserved1: Option<()>,
+	/// Reserved for future use
 	pub _reserved2: Option<()>,
+	/// Reserved for future use
 	pub _reserved3: Option<()>,
 }
 

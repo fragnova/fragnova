@@ -184,9 +184,11 @@ pub mod pallet {
 		pub block_number: TBlockNumber,
 		/// Fragnova Public Account Address (the account address should be in FragKey, otherwise it fails)
 		pub public: TPublic,
-		// Reserved for future use
+		/// Reserved for future use
 		pub _reserved1: Option<()>,
+		/// Reserved for future use
 		pub _reserved2: Option<()>,
+		/// Reserved for future use
 		pub _reserved3: Option<()>,
 	}
 
