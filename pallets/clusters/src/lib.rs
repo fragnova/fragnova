@@ -35,6 +35,10 @@ pub struct CompactSetting {
 	pub name: Compact<u64>,
 	/// The data associated with the Role to be stored
 	pub data: Vec<u8>,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 /// **Struct** of **Role** belonging to a **Cluster**.
@@ -44,6 +48,10 @@ pub struct Role {
 	pub name: Compact<u64>,
 	/// The settings of the Role
 	pub settings: Vec<CompactSetting>,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 /// **Struct** of a **Cluster**
@@ -59,6 +67,10 @@ pub struct Cluster<TAccountId> {
 	pub account_id: TAccountId,
 	/// The map that contains the list of Role IDs belonging to the in Cluster
 	pub roles: Vec<Compact<u64>>,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 #[frame_support::pallet]
@@ -262,6 +274,9 @@ pub mod pallet {
 				cluster_id,
 				account_id: account,
 				roles: Vec::new(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 
 			<Clusters<T>>::insert(cluster_id, cluster);
@@ -301,7 +316,13 @@ pub mod pallet {
 
 			ensure!(!<Roles<T>>::contains_key(&cluster_id, &name_index), Error::<T>::RoleExists);
 
-			let new_role = Role { name: name_index.clone(), settings: vec![] };
+			let new_role = Role {
+				name: name_index.clone(),
+				settings: vec![],
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
+			};
 
 			// write
 			<Clusters<T>>::mutate(&cluster_id, |cluster| {
@@ -469,6 +490,9 @@ pub mod pallet {
 					name: Self::take_name_index(&setting.0, true)
 						.expect("adding if none is true, qed"),
 					data: (*setting.1).clone(),
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				})
 				.collect::<Vec<CompactSetting>>();
 

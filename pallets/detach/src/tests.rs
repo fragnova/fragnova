@@ -152,6 +152,9 @@ mod process_detach_requests_tests {
 						nonce
 					),
 					nonce,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				}
 			);
 			// Verify signature `signature` against SignedPayload object `data`. Returns a bool indicating whether the signature is valid or not.

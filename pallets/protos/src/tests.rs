@@ -62,6 +62,9 @@ mod upload_tests {
 				metadata: BTreeMap::new(),
 				data: ProtoData::Local(vec![]), // empty here if local
 				cluster: None,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 
 			// Ensure that this test case fails if a new field is ever added to the `Proto` struct
@@ -162,7 +165,10 @@ mod patch_tests {
 				block: block_number,
 				data_hash: patch.get_data_hash(),
 				references: patch.new_references.clone(),
-				data: ProtoData::Local(vec![]) // this is empty if local
+				data: ProtoData::Local(vec![]), // this is empty if local
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			}));
 
 			let event = <frame_system::Pallet<Test>>::events()
@@ -420,6 +426,9 @@ mod detach_tests {
 					),
 					target_chain: detach.target_chain,
 					target_account: detach.target_account,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				},]
 			);
 		});

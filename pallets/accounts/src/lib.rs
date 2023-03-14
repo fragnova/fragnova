@@ -158,6 +158,10 @@ pub struct EthLockUpdate<TPublic> {
 	pub lock: bool,
 	/// Block number in which the event was emitted
 	pub block_number: u64,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 /// **Struct** representing the details about the **total amount of locked FRAG Token of a particular Ethereum Account** in the **Fragnova-owned Ethereum Smart Contract** .
@@ -171,6 +175,10 @@ pub struct EthLock<TBalance, TBlockNum> {
 	pub lock_period: u8,
 	/// The week number of the last withdraw. It is zero if the account never withdrawn
 	pub last_withdraw: u128,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 impl<T: SigningTypes> SignedPayload<T> for EthLockUpdate<T::Public> {
@@ -186,6 +194,10 @@ pub struct AccountInfo<TAccountID, TMoment> {
 	pub account_id: TAccountID,
 	/// The timestamp when this account was created
 	pub created_at: TMoment,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 #[frame_support::pallet]
@@ -727,6 +739,9 @@ pub mod pallet {
 						block_number: current_block_number,
 						lock_period,
 						last_withdraw: 0, // never withdrawn
+						_reserved1: None,
+						_reserved2: None,
+						_reserved3: None,
 					},
 				);
 			} else {
@@ -782,6 +797,9 @@ pub mod pallet {
 				AccountInfo {
 					account_id: account.clone(),
 					created_at: <pallet_timestamp::Pallet<T>>::get(),
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				},
 			);
 
@@ -1177,6 +1195,9 @@ pub mod pallet {
 							signature: eth_signature.clone(),
 							lock: locked,
 							block_number,
+							_reserved1: None,
+							_reserved2: None,
+							_reserved3: None,
 						},
 						// The second function closure returns the on-chain call with payload and signature passed in
 						|payload, signature| Call::internal_lock_update {

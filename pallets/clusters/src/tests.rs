@@ -172,6 +172,9 @@ mod create_tests {
 				cluster_id,
 				account_id: wallet_account,
 				roles: Vec::new(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 			let result = <Clusters<Test>>::get(&cluster_id.clone()).unwrap();
 			assert_eq!(cluster, result);
@@ -321,8 +324,13 @@ mod create_tests {
 			));
 
 			let name_setting_index = take_name_index_(&setting_name);
-			let role_setting =
-				CompactSetting { name: name_setting_index, data: setting_data.clone() };
+			let role_setting = CompactSetting {
+				name: name_setting_index,
+				data: setting_data.clone(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
+			};
 			assert!(!<Roles<Test>>::get(&cluster_id, &name_index)
 				.unwrap()
 				.settings
@@ -367,16 +375,26 @@ mod create_tests {
 			));
 
 			let name_setting_index = take_name_index_(&setting_name);
-			let role_setting_1 =
-				CompactSetting { name: name_setting_index, data: setting_data.clone() };
+			let role_setting_1 = CompactSetting {
+				name: name_setting_index,
+				data: setting_data.clone(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
+			};
 
 			assert!(<Roles<Test>>::get(&cluster_id, &role_name_index)
 				.unwrap()
 				.settings
 				.contains(&role_setting_1));
 			let name_setting_index2 = take_name_index_(&setting2_name);
-			let role_setting_2 =
-				CompactSetting { name: name_setting_index2, data: setting2_data.clone() };
+			let role_setting_2 = CompactSetting {
+				name: name_setting_index2,
+				data: setting2_data.clone(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
+			};
 			assert!(<Roles<Test>>::get(&cluster_id, &role_name_index)
 				.unwrap()
 				.settings

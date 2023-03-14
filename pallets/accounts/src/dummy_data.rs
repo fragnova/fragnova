@@ -298,6 +298,9 @@ impl DummyData {
 				),
 				lock: true, // yes, please lock it!
 				block_number: 69,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			},
 			link: Link {
 				fragnova_account_id: sp_core::ed25519::Public::from_raw([3u8; 32]),
@@ -333,6 +336,9 @@ impl DummyData {
 				),
 				lock: true, // yes, please LOCK it!
 				block_number: 69,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			},
 			link: Link {
 				fragnova_account_id: sp_core::ed25519::Public::from_raw([3u8; 32]),
@@ -365,6 +371,9 @@ impl DummyData {
 					),
 					lock: true, // yes, please lock it!
 					block_number: 69,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				},
 				link: Link {
 					fragnova_account_id: sp_core::ed25519::Public::from_raw([4u8; 32]),
@@ -393,6 +402,9 @@ impl DummyData {
 				),
 				lock: false, // yes, please UNLOCK it!
 				block_number: lock.data.block_number.clone() + 69,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			},
 		};
 

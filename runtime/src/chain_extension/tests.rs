@@ -181,6 +181,9 @@ mod fragments_tests {
 			pallet_fragments::DefinitionMetadata::<BoundedVec<u8, _>, _> {
 				name: definition_name.clone().try_into().unwrap(),
 				currency: pallet_fragments::Currency::Native,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			},
 			FragmentPerms::EDIT | FragmentPerms::TRANSFER,
 			None,

@@ -32,6 +32,9 @@ impl DummyData {
 				collection: DetachCollection::Protos(vec![[7u8; 32], [77u8; 32]]),
 				target_chain: SupportedChains::EthereumMainnet,
 				target_account: [7u8; 20].to_vec(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			}],
 		};
 
@@ -48,6 +51,9 @@ impl DummyData {
 			target_account: process_detach_requests.detach_requests[0].target_account.clone(),
 			remote_signature: [7u8; 65].to_vec(), // REVIEW - this doesn't match the `hash`, `nonce`, `target_account` and `target_chain`
 			nonce: 1,
+			_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 		};
 		let validate_unsigned = ValidateUnsigned {
 			source: TransactionSource::Local,
@@ -71,6 +77,9 @@ impl DummyData {
 				target_account: process_detach_requests.detach_requests[0].target_account.clone(),
 				remote_signature: [7u8; 65].to_vec(), // REVIEW - this doesn't match the `hash`, `nonce`, `target_account` and `target_chain`
 				nonce: 1,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			},
 		};
 

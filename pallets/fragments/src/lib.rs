@@ -94,6 +94,7 @@ pub struct GetDefinitionsParams<TAccountId, TString> {
 	// pub categories: Vec<Categories>,
 	// pub tags: Vec<TString>,
 }
+
 #[cfg(test)]
 impl<TAccountId, TString> Default for GetDefinitionsParams<TAccountId, TString> {
 	fn default() -> Self {
@@ -174,6 +175,10 @@ pub struct PublishingData<TBlockNum> {
 	/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** to **top up** in the **stack of stackable items**
 	pub stack_amount: Option<Compact<InstanceUnit>>,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 /// Enum indicating the different ways to put a Fragment Instance on sale.
@@ -195,6 +200,10 @@ pub struct SecondarySaleData<TAccountId, TBlockNum> {
 	pub expiration: Option<TBlockNum>,
 	/// Type of Sale
 	pub secondary_sale_type: SecondarySaleType,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 /// Enum indicating the different ways that one can purchase a Fragment Instance
@@ -542,6 +551,9 @@ pub mod pallet {
 			let metadata = DefinitionMetadata::<Vec<u8>, T::AssetId> {
 				name: metadata.name.into(),
 				currency: metadata.currency,
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 
 			let proto: Proto<T::AccountId, T::BlockNumber> =
@@ -616,6 +628,9 @@ pub mod pallet {
 				creator: who.clone(),
 				created_at: current_block_number,
 				custom_metadata: BTreeMap::new(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 			<Definitions<T>>::insert(&hash, fragment_data);
 
@@ -902,6 +917,9 @@ pub mod pallet {
 					units_left: quantity.map(|x| Compact(x)),
 					expiration: expires,
 					stack_amount: stack_amount.map(|x| Compact(x)),
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				},
 			);
 
@@ -1256,7 +1274,15 @@ pub mod pallet {
 
 			Definition2SecondarySales::<T>::insert(
 				(definition_hash, edition_id, copy_id),
-				SecondarySaleData { owner: who, new_permissions, expiration, secondary_sale_type },
+				SecondarySaleData {
+					owner: who,
+					new_permissions,
+					expiration,
+					secondary_sale_type,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
+				},
 			);
 
 			Self::deposit_event(Event::Resell {
@@ -1426,6 +1452,9 @@ pub mod pallet {
 				),
 				target_chain,
 				target_account: target_account.into(),
+				_reserved1: None,
+				_reserved2: None,
+				_reserved3: None,
 			};
 
 			<DetachRequests<T>>::mutate(|requests| {
@@ -1610,6 +1639,9 @@ pub mod pallet {
 								expiring_at,
 								stack_amount,
 								metadata: BTreeMap::new(),
+								_reserved1: None,
+								_reserved2: None,
+								_reserved3: None,
 							},
 						);
 
@@ -1947,98 +1979,6 @@ pub mod pallet {
 	where
 		T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 	{
-		// pub fn get_definitions_old(params: GetDefinitionsParams<T::AccountId, Vec<u8>>) -> Result<Vec<u8>, Vec<u8>> {
-		//
-		// 	let get_protos_params = GetProtosParams {
-		// 		desc: params.desc,
-		// 		from: params.from,
-		// 		limit: params.limit,
-		// 		metadata_keys: Vec::new(),
-		// 		owner: params.owner,
-		// 		return_owners: params.return_owners,
-		// 		categories: params.categories,
-		// 		tags: params.tags,
-		// 		available: None,
-		// 	};
-		//
-		// 	let map_protos: Map<String, Value> = pallet_protos::Pallet::<T>::get_protos_map(get_protos_params)?;
-		// 	let map_protos_that_have_defs = map_protos
-		// 		.into_iter()
-		// 		.filter(|(proto_id, map_proto)| {
-		// 			let array_proto_id: Hash256 = hex::decode(&proto_id).unwrap().try_into().unwrap(); // using `unwrao()` can lead to panicking
-		// 			<Proto2Fragments<T>>::contains_key(&array_proto_id)
-		// 		})
-		// 		// .filter_map(|(proto_id, map_proto)| -> Option<_> {
-		// 		// 	if let Ok(array_proto_id) = hex::decode(&proto_id) {
-		// 		// 		if Ok(array_proto_id) = array_proto_id.try_into() {
-		// 		// 			if <Proto2Fragments<T>>::contains_key(&array_proto_id) {
-		// 		// 				Some((proto_id, map_proto))
-		// 		// 			} else {
-		// 		// 				None
-		// 		// 			}
-		// 		// 		} else {
-		// 		// 			Some(Err("Failed to convert `proto_id` to Hash256".into()))
-		// 		// 		}
-		// 		// 	} else {
-		// 		// 		Some(Err("`Failed to decode `proto_id``".into()))
-		// 		// 	}
-		// 		// })
-		// 		.skip(params.from as usize)
-		// 		.take(params.limit as usize)
-		// 		.collect::<Map<_, _>>();
-		//
-		// 	let mut map_definitions = Map::new();
-		//
-		// 	for (proto_id, value_map_proto) in map_protos_that_have_defs.into_iter() {
-		// 		let mut map_proto = match value_map_proto {
-		// 			Value::Object(mp) => mp,
-		// 			_ => return Err("Failed to get map_proto".into()),
-		// 		};
-		//
-		// 		let array_proto_id = hex::decode(&proto_id).or(Err("`Failed to decode `proto_id``"))?;
-		// 		let array_proto_id: Hash256 = array_proto_id.try_into().or(Err("Failed to convert `proto_id` to Hash256"))?;
-		//
-		// 		map_proto.insert(String::from("proto"), Value::String(proto_id));
-		//
-		// 		let list_definitions = <Proto2Fragments<T>>::get(&array_proto_id).ok_or("`proto_id` not found in `Proto2Fragments`")?;
-		//
-		// 		for definition in list_definitions.iter() {
-		// 			map_definitions.insert(hex::encode(definition), Value::Object(map_proto.clone())); // TODO: currently using `map_proto.clone()` as a temp fix
-		// 		}
-		// 	}
-		//
-		// 	if !params.metadata_keys.is_empty() {
-		// 		for (definition_id, map_definition) in map_definitions.iter_mut() {
-		//
-		// 			let map_definition = match map_definition {
-		// 				Value::Object(map_definition) => map_definition,
-		// 				_ => return Err("Failed to get map_definition".into()),
-		// 			};
-		//
-		// 			let array_definition_id: Hash128 = if let Ok(array_definition_id) = hex::decode(definition_id) {
-		// 				if let Ok(array_definition_id) = array_definition_id.try_into() {
-		// 					array_definition_id
-		// 				} else {
-		// 					return Err("Failed to convert definition to Hash128".into());
-		// 				}
-		// 			} else {
-		// 				return Err("Failed to decode definition_id".into());
-		// 			};
-		// 			let definition_metadata = if let Some(definition) = <Definitions<T>>::get(array_definition_id) {
-		// 				definition.custom_metadata
-		// 			} else {
-		// 				return Err("Failed to get definition".into());
-		// 			};
-		// 			let mut map_of_matching_metadata_keys = pallet_protos::Pallet::<T>::get_map_of_matching_metadata_keys(&params.metadata_keys, &definition_metadata);
-		// 			(*map_definition).append(&mut map_of_matching_metadata_keys);
-		// 		}
-		// 	}
-		//
-		// 	let result = json!(map_definitions).to_string();
-		//
-		// 	Ok(result.into_bytes())
-		// }
-
 		/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		///
 		/// The returned JSON string has the following format:

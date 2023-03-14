@@ -30,6 +30,9 @@ pub fn store_price_() -> DispatchResult {
 		price: U256::from(1000000),
 		block_number: System::block_number(),
 		public: sp_core::ed25519::Public([69u8; 32]),
+		_reserved1: None,
+		_reserved2: None,
+		_reserved3: None,
 	};
 	Oracle::store_price(
 		RuntimeOrigin::none(),
@@ -485,6 +488,9 @@ mod internal_lock_update_tests {
 					block_number: current_block_number,
 					lock_period: 1,
 					last_withdraw: 0,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				}
 			);
 			let initial_nova_amount =
@@ -564,6 +570,9 @@ mod internal_lock_update_tests {
 					block_number: current_block_number,
 					lock_period: 1,
 					last_withdraw: 0,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				}
 			);
 			let initial_nova_amount =
@@ -596,6 +605,9 @@ mod internal_lock_update_tests {
 					block_number: current_block_number,
 					lock_period: 1,
 					last_withdraw: 0,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				}
 			);
 
@@ -686,6 +698,9 @@ mod internal_lock_update_tests {
 					block_number: current_block_number,
 					lock_period: 255,
 					last_withdraw: 0,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				}
 			);
 		});
@@ -714,6 +729,9 @@ mod internal_lock_update_tests {
 					block_number: current_block_number,
 					lock_period: 255,
 					last_withdraw: 0,
+					_reserved1: None,
+					_reserved2: None,
+					_reserved3: None,
 				}
 			);
 
@@ -918,6 +936,9 @@ mod withdraw_tests {
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
 					last_withdraw: 0,
+					_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 				}
 			);
 
@@ -948,6 +969,9 @@ mod withdraw_tests {
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
 					last_withdraw: u128::try_from(weeks_after_first_lock.clone()).unwrap(),
+					_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 				}
 			);
 
@@ -998,6 +1022,9 @@ mod withdraw_tests {
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
 					last_withdraw: 0,
+					_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 				}
 			);
 
@@ -1018,6 +1045,9 @@ mod withdraw_tests {
 					block_number: current_block,
 					lock_period: <EthLockedFrag<Test>>::get(&lock.data.sender, current_block).unwrap().lock_period,
 					last_withdraw: 0,
+					_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 				}
 			);
 			assert_eq!(
@@ -1029,6 +1059,9 @@ mod withdraw_tests {
 					block_number: future_block_number,
 					lock_period: lock2.data.lock_period,
 					last_withdraw: 0,
+					_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 				}
 			);
 
@@ -1045,6 +1078,9 @@ mod withdraw_tests {
 					block_number: current_block.clone(),
 					lock_period: lock.data.lock_period.clone(),
 					last_withdraw: (last_withdraw +1) as u128,
+					_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 				}
 			);
 			assert_eq!(
@@ -1056,6 +1092,9 @@ mod withdraw_tests {
 					block_number: future_block_number,
 					lock_period: lock2.data.lock_period,
 					last_withdraw: last_withdraw as u128,
+					_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 				}
 			);
 
@@ -1078,6 +1117,9 @@ mod withdraw_tests {
 					block_number: future_block_number,
 					lock_period: lock2.data.lock_period,
 					last_withdraw: last_withdraw as u128,
+					_reserved1: None,
+			_reserved2: None,
+			_reserved3: None,
 				}
 			);
 

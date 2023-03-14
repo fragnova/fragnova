@@ -45,6 +45,10 @@ pub struct ProtoPatch<TBlockNumber> {
 	pub references: Vec<Hash256>,
 	/// **Data** of the **patch** (Only valid if not Local)
 	pub data: ProtoData,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
 
 /// **Enum** that indicates **how a Proto-Fragment can be used**
@@ -96,4 +100,8 @@ pub struct Proto<TAccountId, TBlockNumber> {
 	pub metadata: BTreeMap<Compact<u64>, Hash256>,
 	/// **Cluster** ID where the Proto belongs to (Optional)
 	pub cluster: Option<Hash128>,
+	// Reserved for future use
+	pub _reserved1: Option<()>,
+	pub _reserved2: Option<()>,
+	pub _reserved3: Option<()>,
 }
