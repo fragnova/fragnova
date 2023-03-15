@@ -177,21 +177,20 @@
 <a href="#177" id="177">177</a>
 <a href="#178" id="178">178</a>
 <a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Implementation of the RPC functions related to Pallet Fragments
 
 </span><span class="kw">use </span>std::sync::Arc;
 
 <span class="kw">use </span>codec::Codec;
 <span class="kw">use </span>jsonrpsee::{
-	core::{async_trait, Error <span class="kw">as </span>JsonRpseeError, RpcResult},
+	core::{Error <span class="kw">as </span>JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
 <span class="kw">use </span>pallet_fragments::{GetDefinitionsParams, GetInstanceOwnerParams, GetInstancesParams};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
-<span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
+<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT};
 
 <span class="kw">pub use </span>pallet_fragments_rpc_runtime_api::FragmentsRuntimeApi;
 
@@ -243,7 +242,6 @@
 }
 
 <span class="comment">// Note that the trait name we use is `FragmentsRpcServer`, not `FragmentsRpc`!
-</span><span class="attr">#[async_trait]
 </span><span class="kw">impl</span>&lt;C, Block, AccountId&gt; FragmentsRpcServer&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash, AccountId&gt;
 	<span class="kw">for </span>FragmentsRpcServerImpl&lt;C, Block&gt;
 <span class="kw">where
@@ -263,7 +261,7 @@
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 
 		<span class="comment">// If the block hash is not supplied in `at`, use the best block&#39;s hash
-		</span><span class="kw">let </span>at = BlockId::hash(at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash));
+		</span><span class="kw">let </span>at_hash = at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash);
 
 		<span class="kw">let </span>param_no_std = GetDefinitionsParams::&lt;AccountId, Vec&lt;u8&gt;&gt; {
 			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
@@ -275,7 +273,7 @@
 		};
 
 		<span class="kw">let </span>result_outer = api
-			.get_definitions(<span class="kw-2">&amp;</span>at, param_no_std)
+			.get_definitions(at_hash, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		<span class="kw">match </span>result_outer {
 			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
@@ -295,7 +293,7 @@
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 
 		<span class="comment">// If the block hash is not supplied in `at`, use the best block&#39;s hash
-		</span><span class="kw">let </span>at = BlockId::hash(at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash));
+		</span><span class="kw">let </span>at_hash = at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash);
 
 		<span class="kw">let </span>param_no_std = GetInstancesParams::&lt;AccountId, Vec&lt;u8&gt;&gt; {
 			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
@@ -308,7 +306,7 @@
 		};
 
 		<span class="kw">let </span>result_outer = api
-			.get_instances(<span class="kw-2">&amp;</span>at, param_no_std)
+			.get_instances(at_hash, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 		<span class="kw">match </span>result_outer {
 			<span class="prelude-val">Err</span>(e) =&gt; <span class="prelude-val">Err</span>(runtime_error_into_rpc_err(e)),
@@ -328,7 +326,7 @@
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 
 		<span class="comment">// If the block hash is not supplied in `at`, use the best block&#39;s hash
-		</span><span class="kw">let </span>at = BlockId::hash(at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash));
+		</span><span class="kw">let </span>at_hash = at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash);
 
 		<span class="kw">let </span>param_no_std = GetInstanceOwnerParams::&lt;Vec&lt;u8&gt;&gt; {
 			definition_hash: param.definition_hash.into_bytes(),
@@ -337,7 +335,7 @@
 		};
 
 		<span class="kw">let </span>result_outer = api
-			.get_instance_owner(<span class="kw-2">&amp;</span>at, param_no_std)
+			.get_instance_owner(at_hash, param_no_std)
 			.map(|bytes| bytes.map(|bytes| String::from_utf8(bytes).unwrap_or_default()));
 
 		<span class="kw">match </span>result_outer {

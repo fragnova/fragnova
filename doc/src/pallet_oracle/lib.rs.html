@@ -586,6 +586,19 @@
 <a href="#586" id="586">586</a>
 <a href="#587" id="587">587</a>
 <a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
 </pre><pre class="rust"><code><span class="doccomment">//! pallet-oracle queries the ChainLink Price Feed smart contract on Ethereum to fetch the price of FRAG/USD.
 //!
 //! It works as an Offchain Worker that will be triggered after every block, to fetch the current price.
@@ -772,6 +785,12 @@
 		</span><span class="kw">pub </span>block_number: TBlockNumber,
 		<span class="doccomment">/// Fragnova Public Account Address (the account address should be in FragKey, otherwise it fails)
 		</span><span class="kw">pub </span>public: TPublic,
+		<span class="doccomment">/// Reserved for future use
+		</span><span class="kw">pub </span>_reserved1: <span class="prelude-ty">Option</span>&lt;()&gt;,
+		<span class="doccomment">/// Reserved for future use
+		</span><span class="kw">pub </span>_reserved2: <span class="prelude-ty">Option</span>&lt;()&gt;,
+		<span class="doccomment">/// Reserved for future use
+		</span><span class="kw">pub </span>_reserved3: <span class="prelude-ty">Option</span>&lt;()&gt;,
 	}
 
 	<span class="doccomment">/// Storage use for the latest price received from the oracle.
@@ -1026,7 +1045,14 @@
 			<span class="comment">// -- Sign using any account
 			</span>Signer::&lt;T, T::AuthorityId&gt;::any_account()
 				.send_unsigned_transaction(
-					|account| OraclePrice { price, block_number, public: account.public.clone() },
+					|account| OraclePrice {
+						price,
+						block_number,
+						public: account.public.clone(),
+						_reserved1: <span class="prelude-val">None</span>,
+						_reserved2: <span class="prelude-val">None</span>,
+						_reserved3: <span class="prelude-val">None</span>,
+					},
 					|payload, signature| Call::store_price { oracle_price: payload, signature },
 				)
 				.ok_or_else(|| <span class="string">&quot;Failed to sign transaction&quot;</span>)<span class="question-mark">?

@@ -2036,6 +2036,37 @@
 <a href="#2036" id="2036">2036</a>
 <a href="#2037" id="2037">2037</a>
 <a href="#2038" id="2038">2038</a>
+<a href="#2039" id="2039">2039</a>
+<a href="#2040" id="2040">2040</a>
+<a href="#2041" id="2041">2041</a>
+<a href="#2042" id="2042">2042</a>
+<a href="#2043" id="2043">2043</a>
+<a href="#2044" id="2044">2044</a>
+<a href="#2045" id="2045">2045</a>
+<a href="#2046" id="2046">2046</a>
+<a href="#2047" id="2047">2047</a>
+<a href="#2048" id="2048">2048</a>
+<a href="#2049" id="2049">2049</a>
+<a href="#2050" id="2050">2050</a>
+<a href="#2051" id="2051">2051</a>
+<a href="#2052" id="2052">2052</a>
+<a href="#2053" id="2053">2053</a>
+<a href="#2054" id="2054">2054</a>
+<a href="#2055" id="2055">2055</a>
+<a href="#2056" id="2056">2056</a>
+<a href="#2057" id="2057">2057</a>
+<a href="#2058" id="2058">2058</a>
+<a href="#2059" id="2059">2059</a>
+<a href="#2060" id="2060">2060</a>
+<a href="#2061" id="2061">2061</a>
+<a href="#2062" id="2062">2062</a>
+<a href="#2063" id="2063">2063</a>
+<a href="#2064" id="2064">2064</a>
+<a href="#2065" id="2065">2065</a>
+<a href="#2066" id="2066">2066</a>
+<a href="#2067" id="2067">2067</a>
+<a href="#2068" id="2068">2068</a>
+<a href="#2069" id="2069">2069</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2224,15 +2255,15 @@
 ///   https://docs.substrate.io/v3/runtime/upgrades#runtime-versioning
 </span><span class="attr">#[sp_version::runtime_version]
 </span><span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;fragnova-testnet&quot;</span>),
-	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;fragnova-color&quot;</span>),
+	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;fragnova&quot;</span>),
+	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;fragnova-hstn&quot;</span>),
 	authoring_version: <span class="number">1</span>,
 	<span class="comment">// The version of the runtime specification. A full node will not attempt to use its native
 	//   runtime in substitute for the on-chain Wasm runtime unless all of `spec_name`,
 	//   `spec_version`, and `authoring_version` are the same between Wasm and native.
 	// This value is set to 100 to notify Polkadot-JS App (https://polkadot.js.org/apps) to use
 	//   the compatible custom types.
-	</span>spec_version: <span class="number">6</span>,
+	</span>spec_version: <span class="number">1</span>,
 	impl_version: <span class="number">1</span>,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: <span class="number">1</span>,
@@ -2953,7 +2984,7 @@
 	<span class="kw">type </span>MaxConsumers = frame_support::traits::ConstU32&lt;<span class="number">16</span>&gt;;
 }
 
-<span class="kw">impl </span>pallet_randomness_collective_flip::Config <span class="kw">for </span>Runtime {}
+<span class="kw">impl </span>pallet_insecure_randomness_collective_flip::Config <span class="kw">for </span>Runtime {}
 
 <span class="macro">parameter_types! </span>{
 	<span class="doccomment">/// The maximum number of authorities that `pallet_aura` can hold.
@@ -2983,6 +3014,7 @@
 
 	<span class="kw">type </span>WeightInfo = ();
 	<span class="kw">type </span>MaxAuthorities = MaxAuthorities;
+	<span class="kw">type </span>MaxSetIdSessionEntries = ConstU64&lt;<span class="number">0</span>&gt;;
 }
 
 <span class="macro">parameter_types! </span>{
@@ -3342,16 +3374,16 @@
 	///
 	/// Changing this value for an existing chain might need a storage migration.
 	</span><span class="kw">type </span>DepositPerByte = DepositPerByte;
-	<span class="kw">type </span>CallStack = [pallet_contracts::Frame&lt;<span class="self">Self</span>&gt;; <span class="number">31</span>];
+	<span class="kw">type </span>CallStack = [pallet_contracts::Frame&lt;<span class="self">Self</span>&gt;; <span class="number">5</span>];
 	<span class="kw">type </span>WeightPrice = pallet_transaction_payment::Pallet&lt;<span class="self">Self</span>&gt;;
-	<span class="kw">type </span>WeightInfo = ();
+	<span class="kw">type </span>WeightInfo = pallet_contracts::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
 	<span class="doccomment">/// Type that allows the runtime authors to add new host functions for a contract to call.
 	</span><span class="kw">type </span>ChainExtension = chain_extension::MyExtension;
 	<span class="kw">type </span>DeletionQueueDepth = DeletionQueueDepth;
 	<span class="kw">type </span>DeletionWeightLimit = DeletionWeightLimit;
 	<span class="kw">type </span>Schedule = Schedule;
 	<span class="kw">type </span>AddressGenerator = pallet_contracts::DefaultAddressGenerator;
-	<span class="kw">type </span>MaxCodeLen = ConstU32&lt;{ <span class="number">128 </span>* <span class="number">1024 </span>}&gt;;
+	<span class="kw">type </span>MaxCodeLen = ConstU32&lt;{ <span class="number">123 </span>* <span class="number">1024 </span>}&gt;;
 	<span class="kw">type </span>MaxStorageKeyLen = ConstU32&lt;<span class="number">128</span>&gt;;
 	<span class="doccomment">/// Make contract callable functions marked as `#[unstable]` available.
 	///
@@ -3459,7 +3491,7 @@
 	</span>{
 		<span class="comment">// The System pallet is responsible for accumulating the weight of each block as it gets executed and making sure that it does not exceed the limit.
 		</span>System: frame_system,
-		RandomnessCollectiveFlip: pallet_randomness_collective_flip,
+		RandomnessCollectiveFlip: pallet_insecure_randomness_collective_flip,
 		Timestamp: pallet_timestamp,
 		Aura: pallet_aura,
 		Grandpa: pallet_grandpa,
@@ -3873,7 +3905,6 @@
 		) -&gt; pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo&lt;Balance&gt; {
 			TransactionPayment::query_info(uxt, len)
 		}
-
 		<span class="doccomment">/// Query the detailed fee of a given `call`.
 		</span><span class="kw">fn </span>query_fee_details(
 			uxt: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
@@ -3881,7 +3912,38 @@
 		) -&gt; pallet_transaction_payment::FeeDetails&lt;Balance&gt; {
 			TransactionPayment::query_fee_details(uxt, len)
 		}
+		<span class="kw">fn </span>query_weight_to_fee(weight: Weight) -&gt; Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		<span class="kw">fn </span>query_length_to_fee(length: u32) -&gt; Balance {
+			TransactionPayment::length_to_fee(length)
+		}
 	}
+
+	<span class="kw">impl </span>pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi&lt;Block, Balance, RuntimeCall&gt;
+		<span class="kw">for </span>Runtime
+	{
+		<span class="kw">fn </span>query_call_info(
+			call: RuntimeCall,
+			len: u32,
+		) -&gt; pallet_transaction_payment::RuntimeDispatchInfo&lt;Balance&gt; {
+			TransactionPayment::query_call_info(call, len)
+		}
+		<span class="kw">fn </span>query_call_fee_details(
+			call: RuntimeCall,
+			len: u32,
+		) -&gt; pallet_transaction_payment::FeeDetails&lt;Balance&gt; {
+			TransactionPayment::query_call_fee_details(call, len)
+		}
+		<span class="kw">fn </span>query_weight_to_fee(weight: Weight) -&gt; Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		<span class="kw">fn </span>query_length_to_fee(length: u32) -&gt; Balance {
+			TransactionPayment::length_to_fee(length)
+		}
+	}
+
+
 
 	<span class="doccomment">/// The Runtime API used to dry-run contract interactions.
 	///

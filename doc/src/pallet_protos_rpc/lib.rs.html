@@ -160,7 +160,6 @@
 <a href="#160" id="160">160</a>
 <a href="#161" id="161">161</a>
 <a href="#162" id="162">162</a>
-<a href="#163" id="163">163</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Implementation of the RPC functions related to Pallet Protos
 
 </span><span class="kw">use </span>std::sync::Arc;
@@ -168,15 +167,15 @@
 <span class="kw">use </span>base64::{engine::general_purpose::STANDARD, Engine};
 <span class="kw">use </span>codec::Codec;
 <span class="kw">use </span>jsonrpsee::{
-	core::{async_trait, Error <span class="kw">as </span>JsonRpseeError, RpcResult},
+	core::{Error <span class="kw">as </span>JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 	types::error::{CallError, ErrorObject},
 };
 <span class="kw">use </span>pallet_protos::{GetGenealogyParams, GetProtosParams};
 <span class="kw">use </span>sc_client_api::BlockBackend;
-<span class="kw">use </span>sp_api::ProvideRuntimeApi;
+<span class="kw">use </span>sp_api::{ProvideRuntimeApi};
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
-<span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
+<span class="kw">use </span>sp_runtime::{traits::Block <span class="kw">as </span>BlockT};
 
 <span class="kw">pub use </span>pallet_protos_rpc_runtime_api::ProtosRuntimeApi;
 
@@ -222,8 +221,7 @@
 	}
 }
 
-<span class="attr">#[async_trait]
-</span><span class="kw">impl</span>&lt;C, Block, AccountId&gt; ProtosRpcServer&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash, AccountId&gt;
+<span class="kw">impl</span>&lt;C, Block, AccountId&gt; ProtosRpcServer&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Hash, AccountId&gt;
 	<span class="kw">for </span>ProtosRpcServerImpl&lt;C, Block&gt;
 <span class="kw">where
 	</span>Block: BlockT,
@@ -243,7 +241,7 @@
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 
 		<span class="comment">// If the block hash is not supplied in `at`, use the best block&#39;s hash
-		</span><span class="kw">let </span>at = BlockId::hash(at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash));
+		</span><span class="kw">let </span>at_hash = at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash);
 
 		<span class="kw">let </span>param_no_std = GetProtosParams::&lt;AccountId, Vec&lt;u8&gt;&gt; {
 			metadata_keys: param.metadata_keys.into_iter().map(|s| s.into_bytes()).collect(),
@@ -258,7 +256,7 @@
 			available: param.available,
 		};
 
-		<span class="kw">let </span>result_outer = api.get_protos(<span class="kw-2">&amp;</span>at, param_no_std).map(|list_bytes| {
+		<span class="kw">let </span>result_outer = api.get_protos(at_hash, param_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from(<span class="string">&quot;&quot;</span>)))
 		});
 		<span class="kw">match </span>result_outer {
@@ -278,14 +276,14 @@
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 
 		<span class="comment">// If the block hash is not supplied in `at`, use the best block&#39;s hash
-		</span><span class="kw">let </span>at = BlockId::hash(at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash));
+		</span><span class="kw">let </span>at_hash = at.unwrap_or_else(|| <span class="self">self</span>.client.info().best_hash);
 
 		<span class="kw">let </span>param_no_std = GetGenealogyParams::&lt;Vec&lt;u8&gt;&gt; {
 			proto_hash: param.proto_hash.into_bytes(),
 			get_ancestors: param.get_ancestors,
 		};
 
-		<span class="kw">let </span>result = api.get_genealogy(<span class="kw-2">&amp;</span>at, param_no_std).map(|list_bytes| {
+		<span class="kw">let </span>result = api.get_genealogy(at_hash, param_no_std).map(|list_bytes| {
 			list_bytes.map(|list_bytes| String::from_utf8(list_bytes).unwrap_or(String::from(<span class="string">&quot;&quot;</span>)))
 		});
 		<span class="kw">match </span>result {

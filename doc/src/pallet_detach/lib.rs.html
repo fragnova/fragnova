@@ -881,6 +881,30 @@
 <a href="#881" id="881">881</a>
 <a href="#882" id="882">882</a>
 <a href="#883" id="883">883</a>
+<a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
+<a href="#886" id="886">886</a>
+<a href="#887" id="887">887</a>
+<a href="#888" id="888">888</a>
+<a href="#889" id="889">889</a>
+<a href="#890" id="890">890</a>
+<a href="#891" id="891">891</a>
+<a href="#892" id="892">892</a>
+<a href="#893" id="893">893</a>
+<a href="#894" id="894">894</a>
+<a href="#895" id="895">895</a>
+<a href="#896" id="896">896</a>
+<a href="#897" id="897">897</a>
+<a href="#898" id="898">898</a>
+<a href="#899" id="899">899</a>
+<a href="#900" id="900">900</a>
+<a href="#901" id="901">901</a>
+<a href="#902" id="902">902</a>
+<a href="#903" id="903">903</a>
+<a href="#904" id="904">904</a>
+<a href="#905" id="905">905</a>
+<a href="#906" id="906">906</a>
+<a href="#907" id="907">907</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `detach` performs logic related to Detaching a Proto-Fragment from the Fragnova
 //! Blockchain to an External Blockchain
 
@@ -1053,7 +1077,13 @@
 	</span><span class="kw">pub </span>target_chain: SupportedChains,
 	<span class="doccomment">/// Public Account Address in the External Blockchain to transfer the ownership of the &quot;detachable thing&quot;s to
 	</span><span class="kw">pub </span>target_account: Vec&lt;u8&gt;, <span class="comment">// an eth address or so
-</span>}
+	</span><span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved1: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved2: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved3: <span class="prelude-ty">Option</span>&lt;()&gt;,
+}
 
 <span class="doccomment">/// Payload represents information about a collection of &quot;detachable thing&quot;s (see enum `DetachHash` to see what type of collections can be detached) that will be detached
 ///
@@ -1077,6 +1107,12 @@
 	</span><span class="kw">pub </span>remote_signature: Vec&lt;u8&gt;,
 	<span class="doccomment">/// Number of times the the `target_account` on the `target_chain` was specified as the new owner when a &quot;detachable thing&quot; (e.g a Proto-Fragment or a Fragment Instance) was detached.
 	</span><span class="kw">pub </span>nonce: u64,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved1: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved2: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved3: <span class="prelude-ty">Option</span>&lt;()&gt;,
 }
 
 <span class="doccomment">/// Implementing the `SignedPayload` Trait allows `DetachInternalData` to be used as a signed payload that can be attached to unsigned transactions that are sent on-chain
@@ -1102,6 +1138,12 @@
 	// so that e.g. if we detach on ethereum the message cannot be repeated and needs to go 1:1 with fragnova
 	</span><span class="doccomment">/// Detach-Nonce of the Public Account Address  `owner` (in the external blockchain `chain`) when the &quot;detached thing&quot; was detached
 	</span>nonce: u64,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved1: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved2: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved3: <span class="prelude-ty">Option</span>&lt;()&gt;,
 }
 
 <span class="attr">#[frame_support::pallet]
@@ -1115,7 +1157,7 @@
 	</span><span class="attr">#[pallet::config]
 	</span><span class="kw">pub trait </span>Config:
 		CreateSignedTransaction&lt;Call&lt;<span class="self">Self</span>&gt;&gt;
-		+ pallet_randomness_collective_flip::Config
+		+ pallet_insecure_randomness_collective_flip::Config
 		+ frame_system::Config
 	{
 		<span class="doccomment">/// Because this pallet emits events, it depends on the runtime&#39;s definition of an event.
@@ -1300,6 +1342,9 @@
 				chain: data.target_chain,
 				owner: data.target_account,
 				nonce: data.nonce,
+				_reserved1: <span class="prelude-val">None</span>,
+				_reserved2: <span class="prelude-val">None</span>,
+				_reserved3: <span class="prelude-val">None</span>,
 			};
 
 			<span class="comment">// add to `DetachedHashes` map
@@ -1691,6 +1736,9 @@
 											target_account: request.target_account.clone(),
 											remote_signature: signature.clone(),
 											nonce,
+											_reserved1: <span class="prelude-val">None</span>,
+											_reserved2: <span class="prelude-val">None</span>,
+											_reserved3: <span class="prelude-val">None</span>,
 										},
 										<span class="comment">// Note: `Call` is an enum that gets generated by the macro `#[pallet::Call]`
 										// You can view it in Fragnova&#39;s Rustdoc: https://fragcolor-xyz.github.io/fragnova/doc/pallet_detach/pallet/enum.Call.html#

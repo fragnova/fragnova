@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["FragnovaEnvironment","The fundamental types of the Fragnova Blockchain"],["MyChainExtension","`#[ink::chain_extension]` defines the interface for a chain extension."],["MyChainExtensionError","The error codes of the chain extension `MyChainExtension`"]],"type":[["AssetId","Asset ID Type of the Fragnova Blockchain"]]};

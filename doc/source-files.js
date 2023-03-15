@@ -1,5 +1,6 @@
 var sourcesIndex = JSON.parse('{\
 "fragnova":["",[],["chain_spec.rs","fragnova.rs","lib.rs","rpc.rs","service.rs"]],\
+"fragnova_extensions":["",[],["lib.rs"]],\
 "fragnova_runtime":["",[["chain_extension",[],["mod.rs"]]],["lib.rs"]],\
 "pallet_accounts":["",[],["dummy_data.rs","lib.rs","weights.rs"]],\
 "pallet_aliases":["",[],["lib.rs"]],\

@@ -1418,6 +1418,15 @@
 <a href="#1418" id="1418">1418</a>
 <a href="#1419" id="1419">1419</a>
 <a href="#1420" id="1420">1420</a>
+<a href="#1421" id="1421">1421</a>
+<a href="#1422" id="1422">1422</a>
+<a href="#1423" id="1423">1423</a>
+<a href="#1424" id="1424">1424</a>
+<a href="#1425" id="1425">1425</a>
+<a href="#1426" id="1426">1426</a>
+<a href="#1427" id="1427">1427</a>
+<a href="#1428" id="1428">1428</a>
+<a href="#1429" id="1429">1429</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `protos` performs logic related to Proto-Fragments.
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -1859,6 +1868,9 @@
 				metadata: BTreeMap::new(),
 				data: data_stored,
 				cluster,
+				_reserved1: <span class="prelude-val">None</span>,
+				_reserved2: <span class="prelude-val">None</span>,
+				_reserved3: <span class="prelude-val">None</span>,
 			};
 
 			<span class="comment">// store proto
@@ -2003,6 +2015,9 @@
 						data_hash,
 						references: new_references.clone(),
 						data: data_stored,
+						_reserved1: <span class="prelude-val">None</span>,
+						_reserved2: <span class="prelude-val">None</span>,
+						_reserved3: <span class="prelude-val">None</span>,
 					});
 
 					<span class="kw">for </span>new_reference <span class="kw">in </span>new_references.into_iter() {
@@ -2255,6 +2270,9 @@
 				collection: DetachCollection::Protos(proto_hashes),
 				target_chain,
 				target_account: target_account.into(),
+				_reserved1: <span class="prelude-val">None</span>,
+				_reserved2: <span class="prelude-val">None</span>,
+				_reserved3: <span class="prelude-val">None</span>,
 			};
 
 			&lt;DetachRequests&lt;T&gt;&gt;::mutate(|requests| {

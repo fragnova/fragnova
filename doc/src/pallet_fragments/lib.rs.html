@@ -2227,62 +2227,6 @@
 <a href="#2227" id="2227">2227</a>
 <a href="#2228" id="2228">2228</a>
 <a href="#2229" id="2229">2229</a>
-<a href="#2230" id="2230">2230</a>
-<a href="#2231" id="2231">2231</a>
-<a href="#2232" id="2232">2232</a>
-<a href="#2233" id="2233">2233</a>
-<a href="#2234" id="2234">2234</a>
-<a href="#2235" id="2235">2235</a>
-<a href="#2236" id="2236">2236</a>
-<a href="#2237" id="2237">2237</a>
-<a href="#2238" id="2238">2238</a>
-<a href="#2239" id="2239">2239</a>
-<a href="#2240" id="2240">2240</a>
-<a href="#2241" id="2241">2241</a>
-<a href="#2242" id="2242">2242</a>
-<a href="#2243" id="2243">2243</a>
-<a href="#2244" id="2244">2244</a>
-<a href="#2245" id="2245">2245</a>
-<a href="#2246" id="2246">2246</a>
-<a href="#2247" id="2247">2247</a>
-<a href="#2248" id="2248">2248</a>
-<a href="#2249" id="2249">2249</a>
-<a href="#2250" id="2250">2250</a>
-<a href="#2251" id="2251">2251</a>
-<a href="#2252" id="2252">2252</a>
-<a href="#2253" id="2253">2253</a>
-<a href="#2254" id="2254">2254</a>
-<a href="#2255" id="2255">2255</a>
-<a href="#2256" id="2256">2256</a>
-<a href="#2257" id="2257">2257</a>
-<a href="#2258" id="2258">2258</a>
-<a href="#2259" id="2259">2259</a>
-<a href="#2260" id="2260">2260</a>
-<a href="#2261" id="2261">2261</a>
-<a href="#2262" id="2262">2262</a>
-<a href="#2263" id="2263">2263</a>
-<a href="#2264" id="2264">2264</a>
-<a href="#2265" id="2265">2265</a>
-<a href="#2266" id="2266">2266</a>
-<a href="#2267" id="2267">2267</a>
-<a href="#2268" id="2268">2268</a>
-<a href="#2269" id="2269">2269</a>
-<a href="#2270" id="2270">2270</a>
-<a href="#2271" id="2271">2271</a>
-<a href="#2272" id="2272">2272</a>
-<a href="#2273" id="2273">2273</a>
-<a href="#2274" id="2274">2274</a>
-<a href="#2275" id="2275">2275</a>
-<a href="#2276" id="2276">2276</a>
-<a href="#2277" id="2277">2277</a>
-<a href="#2278" id="2278">2278</a>
-<a href="#2279" id="2279">2279</a>
-<a href="#2280" id="2280">2280</a>
-<a href="#2281" id="2281">2281</a>
-<a href="#2282" id="2282">2282</a>
-<a href="#2283" id="2283">2283</a>
-<a href="#2284" id="2284">2284</a>
-<a href="#2285" id="2285">2285</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `fragments` performs logic related to Fragment Definitions and Fragment Instances
 //!
 //! IMPORTANT STUFF TO KNOW:
@@ -2379,6 +2323,7 @@
 	<span class="comment">// pub categories: Vec&lt;Categories&gt;,
 	// pub tags: Vec&lt;TString&gt;,
 </span>}
+
 <span class="attr">#[cfg(test)]
 </span><span class="kw">impl</span>&lt;TAccountId, TString&gt; Default <span class="kw">for </span>GetDefinitionsParams&lt;TAccountId, TString&gt; {
 	<span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
@@ -2459,6 +2404,12 @@
 	<span class="doccomment">/// If the Fragment instance represents a **stack of stackable items** (for e.g gold coins or arrows - https://runescape.fandom.com/wiki/Stackable_items),
 	/// the **number of items** to **top up** in the **stack of stackable items**
 	</span><span class="kw">pub </span>stack_amount: <span class="prelude-ty">Option</span>&lt;Compact&lt;InstanceUnit&gt;&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved1: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved2: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved3: <span class="prelude-ty">Option</span>&lt;()&gt;,
 }
 
 <span class="doccomment">/// Enum indicating the different ways to put a Fragment Instance on sale.
@@ -2480,6 +2431,12 @@
 	</span><span class="kw">pub </span>expiration: <span class="prelude-ty">Option</span>&lt;TBlockNum&gt;,
 	<span class="doccomment">/// Type of Sale
 	</span><span class="kw">pub </span>secondary_sale_type: SecondarySaleType,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved1: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved2: <span class="prelude-ty">Option</span>&lt;()&gt;,
+	<span class="doccomment">/// Reserved for future use
+	</span><span class="kw">pub </span>_reserved3: <span class="prelude-ty">Option</span>&lt;()&gt;,
 }
 
 <span class="doccomment">/// Enum indicating the different ways that one can purchase a Fragment Instance
@@ -2827,6 +2784,9 @@
 			<span class="kw">let </span>metadata = DefinitionMetadata::&lt;Vec&lt;u8&gt;, T::AssetId&gt; {
 				name: metadata.name.into(),
 				currency: metadata.currency,
+				_reserved1: <span class="prelude-val">None</span>,
+				_reserved2: <span class="prelude-val">None</span>,
+				_reserved3: <span class="prelude-val">None</span>,
 			};
 
 			<span class="kw">let </span>proto: Proto&lt;T::AccountId, T::BlockNumber&gt; =
@@ -2901,6 +2861,9 @@
 				creator: who.clone(),
 				created_at: current_block_number,
 				custom_metadata: BTreeMap::new(),
+				_reserved1: <span class="prelude-val">None</span>,
+				_reserved2: <span class="prelude-val">None</span>,
+				_reserved3: <span class="prelude-val">None</span>,
 			};
 			&lt;Definitions&lt;T&gt;&gt;::insert(<span class="kw-2">&amp;</span>hash, fragment_data);
 
@@ -3187,6 +3150,9 @@
 					units_left: quantity.map(|x| Compact(x)),
 					expiration: expires,
 					stack_amount: stack_amount.map(|x| Compact(x)),
+					_reserved1: <span class="prelude-val">None</span>,
+					_reserved2: <span class="prelude-val">None</span>,
+					_reserved3: <span class="prelude-val">None</span>,
 				},
 			);
 
@@ -3541,7 +3507,15 @@
 
 			</span>Definition2SecondarySales::&lt;T&gt;::insert(
 				(definition_hash, edition_id, copy_id),
-				SecondarySaleData { owner: who, new_permissions, expiration, secondary_sale_type },
+				SecondarySaleData {
+					owner: who,
+					new_permissions,
+					expiration,
+					secondary_sale_type,
+					_reserved1: <span class="prelude-val">None</span>,
+					_reserved2: <span class="prelude-val">None</span>,
+					_reserved3: <span class="prelude-val">None</span>,
+				},
 			);
 
 			<span class="self">Self</span>::deposit_event(Event::Resell {
@@ -3711,6 +3685,9 @@
 				),
 				target_chain,
 				target_account: target_account.into(),
+				_reserved1: <span class="prelude-val">None</span>,
+				_reserved2: <span class="prelude-val">None</span>,
+				_reserved3: <span class="prelude-val">None</span>,
 			};
 
 			&lt;DetachRequests&lt;T&gt;&gt;::mutate(|requests| {
@@ -3895,6 +3872,9 @@
 								expiring_at,
 								stack_amount,
 								metadata: BTreeMap::new(),
+								_reserved1: <span class="prelude-val">None</span>,
+								_reserved2: <span class="prelude-val">None</span>,
+								_reserved3: <span class="prelude-val">None</span>,
 							},
 						);
 
@@ -4232,99 +4212,7 @@
 	<span class="kw">where
 		</span>T::AccountId: UncheckedFrom&lt;T::Hash&gt; + AsRef&lt;[u8]&gt;,
 	{
-		<span class="comment">// pub fn get_definitions_old(params: GetDefinitionsParams&lt;T::AccountId, Vec&lt;u8&gt;&gt;) -&gt; Result&lt;Vec&lt;u8&gt;, Vec&lt;u8&gt;&gt; {
-		//
-		// 	let get_protos_params = GetProtosParams {
-		// 		desc: params.desc,
-		// 		from: params.from,
-		// 		limit: params.limit,
-		// 		metadata_keys: Vec::new(),
-		// 		owner: params.owner,
-		// 		return_owners: params.return_owners,
-		// 		categories: params.categories,
-		// 		tags: params.tags,
-		// 		available: None,
-		// 	};
-		//
-		// 	let map_protos: Map&lt;String, Value&gt; = pallet_protos::Pallet::&lt;T&gt;::get_protos_map(get_protos_params)?;
-		// 	let map_protos_that_have_defs = map_protos
-		// 		.into_iter()
-		// 		.filter(|(proto_id, map_proto)| {
-		// 			let array_proto_id: Hash256 = hex::decode(&amp;proto_id).unwrap().try_into().unwrap(); // using `unwrao()` can lead to panicking
-		// 			&lt;Proto2Fragments&lt;T&gt;&gt;::contains_key(&amp;array_proto_id)
-		// 		})
-		// 		// .filter_map(|(proto_id, map_proto)| -&gt; Option&lt;_&gt; {
-		// 		// 	if let Ok(array_proto_id) = hex::decode(&amp;proto_id) {
-		// 		// 		if Ok(array_proto_id) = array_proto_id.try_into() {
-		// 		// 			if &lt;Proto2Fragments&lt;T&gt;&gt;::contains_key(&amp;array_proto_id) {
-		// 		// 				Some((proto_id, map_proto))
-		// 		// 			} else {
-		// 		// 				None
-		// 		// 			}
-		// 		// 		} else {
-		// 		// 			Some(Err(&quot;Failed to convert `proto_id` to Hash256&quot;.into()))
-		// 		// 		}
-		// 		// 	} else {
-		// 		// 		Some(Err(&quot;`Failed to decode `proto_id``&quot;.into()))
-		// 		// 	}
-		// 		// })
-		// 		.skip(params.from as usize)
-		// 		.take(params.limit as usize)
-		// 		.collect::&lt;Map&lt;_, _&gt;&gt;();
-		//
-		// 	let mut map_definitions = Map::new();
-		//
-		// 	for (proto_id, value_map_proto) in map_protos_that_have_defs.into_iter() {
-		// 		let mut map_proto = match value_map_proto {
-		// 			Value::Object(mp) =&gt; mp,
-		// 			_ =&gt; return Err(&quot;Failed to get map_proto&quot;.into()),
-		// 		};
-		//
-		// 		let array_proto_id = hex::decode(&amp;proto_id).or(Err(&quot;`Failed to decode `proto_id``&quot;))?;
-		// 		let array_proto_id: Hash256 = array_proto_id.try_into().or(Err(&quot;Failed to convert `proto_id` to Hash256&quot;))?;
-		//
-		// 		map_proto.insert(String::from(&quot;proto&quot;), Value::String(proto_id));
-		//
-		// 		let list_definitions = &lt;Proto2Fragments&lt;T&gt;&gt;::get(&amp;array_proto_id).ok_or(&quot;`proto_id` not found in `Proto2Fragments`&quot;)?;
-		//
-		// 		for definition in list_definitions.iter() {
-		// 			map_definitions.insert(hex::encode(definition), Value::Object(map_proto.clone())); // TODO: currently using `map_proto.clone()` as a temp fix
-		// 		}
-		// 	}
-		//
-		// 	if !params.metadata_keys.is_empty() {
-		// 		for (definition_id, map_definition) in map_definitions.iter_mut() {
-		//
-		// 			let map_definition = match map_definition {
-		// 				Value::Object(map_definition) =&gt; map_definition,
-		// 				_ =&gt; return Err(&quot;Failed to get map_definition&quot;.into()),
-		// 			};
-		//
-		// 			let array_definition_id: Hash128 = if let Ok(array_definition_id) = hex::decode(definition_id) {
-		// 				if let Ok(array_definition_id) = array_definition_id.try_into() {
-		// 					array_definition_id
-		// 				} else {
-		// 					return Err(&quot;Failed to convert definition to Hash128&quot;.into());
-		// 				}
-		// 			} else {
-		// 				return Err(&quot;Failed to decode definition_id&quot;.into());
-		// 			};
-		// 			let definition_metadata = if let Some(definition) = &lt;Definitions&lt;T&gt;&gt;::get(array_definition_id) {
-		// 				definition.custom_metadata
-		// 			} else {
-		// 				return Err(&quot;Failed to get definition&quot;.into());
-		// 			};
-		// 			let mut map_of_matching_metadata_keys = pallet_protos::Pallet::&lt;T&gt;::get_map_of_matching_metadata_keys(&amp;params.metadata_keys, &amp;definition_metadata);
-		// 			(*map_definition).append(&amp;mut map_of_matching_metadata_keys);
-		// 		}
-		// 	}
-		//
-		// 	let result = json!(map_definitions).to_string();
-		//
-		// 	Ok(result.into_bytes())
-		// }
-
-		</span><span class="doccomment">/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
+		<span class="doccomment">/// **Query** and **Return** **Fragment Definition(s)** based on **`params`**
 		///
 		/// The returned JSON string has the following format:
 		///
