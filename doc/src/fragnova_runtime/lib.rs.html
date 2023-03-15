@@ -1998,6 +1998,75 @@
 <a href="#1998" id="1998">1998</a>
 <a href="#1999" id="1999">1999</a>
 <a href="#2000" id="2000">2000</a>
+<a href="#2001" id="2001">2001</a>
+<a href="#2002" id="2002">2002</a>
+<a href="#2003" id="2003">2003</a>
+<a href="#2004" id="2004">2004</a>
+<a href="#2005" id="2005">2005</a>
+<a href="#2006" id="2006">2006</a>
+<a href="#2007" id="2007">2007</a>
+<a href="#2008" id="2008">2008</a>
+<a href="#2009" id="2009">2009</a>
+<a href="#2010" id="2010">2010</a>
+<a href="#2011" id="2011">2011</a>
+<a href="#2012" id="2012">2012</a>
+<a href="#2013" id="2013">2013</a>
+<a href="#2014" id="2014">2014</a>
+<a href="#2015" id="2015">2015</a>
+<a href="#2016" id="2016">2016</a>
+<a href="#2017" id="2017">2017</a>
+<a href="#2018" id="2018">2018</a>
+<a href="#2019" id="2019">2019</a>
+<a href="#2020" id="2020">2020</a>
+<a href="#2021" id="2021">2021</a>
+<a href="#2022" id="2022">2022</a>
+<a href="#2023" id="2023">2023</a>
+<a href="#2024" id="2024">2024</a>
+<a href="#2025" id="2025">2025</a>
+<a href="#2026" id="2026">2026</a>
+<a href="#2027" id="2027">2027</a>
+<a href="#2028" id="2028">2028</a>
+<a href="#2029" id="2029">2029</a>
+<a href="#2030" id="2030">2030</a>
+<a href="#2031" id="2031">2031</a>
+<a href="#2032" id="2032">2032</a>
+<a href="#2033" id="2033">2033</a>
+<a href="#2034" id="2034">2034</a>
+<a href="#2035" id="2035">2035</a>
+<a href="#2036" id="2036">2036</a>
+<a href="#2037" id="2037">2037</a>
+<a href="#2038" id="2038">2038</a>
+<a href="#2039" id="2039">2039</a>
+<a href="#2040" id="2040">2040</a>
+<a href="#2041" id="2041">2041</a>
+<a href="#2042" id="2042">2042</a>
+<a href="#2043" id="2043">2043</a>
+<a href="#2044" id="2044">2044</a>
+<a href="#2045" id="2045">2045</a>
+<a href="#2046" id="2046">2046</a>
+<a href="#2047" id="2047">2047</a>
+<a href="#2048" id="2048">2048</a>
+<a href="#2049" id="2049">2049</a>
+<a href="#2050" id="2050">2050</a>
+<a href="#2051" id="2051">2051</a>
+<a href="#2052" id="2052">2052</a>
+<a href="#2053" id="2053">2053</a>
+<a href="#2054" id="2054">2054</a>
+<a href="#2055" id="2055">2055</a>
+<a href="#2056" id="2056">2056</a>
+<a href="#2057" id="2057">2057</a>
+<a href="#2058" id="2058">2058</a>
+<a href="#2059" id="2059">2059</a>
+<a href="#2060" id="2060">2060</a>
+<a href="#2061" id="2061">2061</a>
+<a href="#2062" id="2062">2062</a>
+<a href="#2063" id="2063">2063</a>
+<a href="#2064" id="2064">2064</a>
+<a href="#2065" id="2065">2065</a>
+<a href="#2066" id="2066">2066</a>
+<a href="#2067" id="2067">2067</a>
+<a href="#2068" id="2068">2068</a>
+<a href="#2069" id="2069">2069</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Runtime of the Fragnova Node.
 //!
 //! The runtime for a Substrate node contains all of the business logic
@@ -2093,7 +2162,7 @@
 	construct_runtime, parameter_types,
 	traits::{Contains, KeyOwnerProofSystem, Randomness, StorageInfo},
 	weights::{
-		constants::{RocksDbWeight},
+		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
 		IdentityFee, Weight,
 	},
 	StorageValue,
@@ -2239,6 +2308,9 @@
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
+<span class="doccomment">/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
+/// This is used to limit the maximal weight of a single extrinsic.
+</span><span class="kw">const </span>AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(<span class="number">10</span>);
 <span class="doccomment">/// We allow `Normal` extrinsics to fill up the block up to 75% (i.e up to 75% of the block length and block weight of a block can be filled up by Normal extrinsics).
 /// The rest can be used by Operational extrinsics.
 </span><span class="kw">const </span>NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(<span class="number">75</span>);
@@ -2263,15 +2335,13 @@
 //
 // Source: https://docs.substrate.io/v3/runtime/macros/
 </span><span class="macro">parameter_types! </span>{
-	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
-	</span><span class="kw">pub const </span>BlockHashCount: BlockNumber = <span class="number">2400</span>;
 	<span class="doccomment">/// Version of the runtime.
 	</span><span class="kw">pub const </span>Version: RuntimeVersion = VERSION;
-	<span class="doccomment">/// We allow for 2 seconds of compute with a 6 second average block time.
-	</span><span class="kw">pub </span>BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::with_sensible_defaults(
-			MAXIMUM_BLOCK_WEIGHT,
-			NORMAL_DISPATCH_RATIO,
-	);
+	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
+	</span><span class="kw">pub const </span>BlockHashCount: BlockNumber = <span class="number">2400</span>;
+	<span class="doccomment">/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
+	</span><span class="kw">pub const </span>SS58Prefix: u8 = <span class="number">93</span>;
+
 	<span class="doccomment">/// `max_with_normal_ratio(max: u32, normal: Perbill)` creates a new `BlockLength` with `max` for `Operational` &amp; `Mandatory` and `normal * max` for `Normal`.
 	///
 	/// Note: `BlockLength` is a struct that specifies the maximum total length (in bytes) each extrinsic class can have in a block.
@@ -2280,8 +2350,76 @@
 	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockLength.html#
 	</span><span class="kw">pub </span>BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
 		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
-	<span class="doccomment">/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
-	</span><span class="kw">pub const </span>SS58Prefix: u8 = <span class="number">93</span>;
+
+	<span class="comment">// TODO Review - The same code written here can now be done in a single line with the function `BlockWeights::with_sensible_defaults()`. See this example here: https://github.com/paritytech/substrate/blob/polkadot-v0.9.37/bin/node-template/runtime/src/lib.rs#L145-L148
+	</span><span class="doccomment">/// Set the &quot;target block weight&quot; for the Fragnova Blockchain.
+	///
+	/// # Footnotes
+	///
+	/// ## `BlockWeights::builder()`
+	///
+	/// `BlockWeights::builder()` is called to start constructing a new `BlockWeights` object. By default all kinds except of Mandatory extrinsics are disallowed.
+	///
+	/// ## `BlockWeights` struct
+	///
+	/// A `BlockWeights` struct contains the following information for each extrinsic class:
+	/// 1. **Base weight of any extrinsic** of the **extrinsic class** (`WeightsPerClass::base_extrinsic`): The &quot;overhead cost&quot; (i.e overhead computation time) when running any extrinsic of the extrinsic class.
+	/// 2. **Maximum possible weight** that can be **consumed by a single extrinsic** of the **extrinsic class**: `WeightsPerClass::max_extrinsic`.
+	/// 3. **Maximum possible weight in a block** that can be **consumed by the extrinsic class** (to compute extrinsics): `WeightsPerClass::max_total`.
+	///    - If this is `None`, an unlimited amount of weight can be consumed by the extrinsic class. This is generally highly recommended for `Mandatory` dispatch class, while it can be dangerous for `Normal` class and should only be done with extra care and consideration.
+	///    - In the worst case, the total weight consumed by the extrinsic class is going to be: `MAX(max_total) + MAX(reserved)`. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.WeightsPerClass.html#structfield.max_total
+	/// 4. **Maximum additional amount of weight that can always be consumed by an extrinsic class**, **once a block&#39;s target block weight (`BlockWeights::max_block`)
+	///	   has been reached** (`WeightsPerClass::reserved`): &quot;Often it&#39;s desirable for some class of transactions to be added to the block despite it being full.
+	///    For instance one might want to prevent high-priority `Normal` transactions from pushing out lower-priority `Operational` transactions.
+	///    In such cases you might add a `reserved` capacity for given class.&quot;.
+	///    Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the &quot;src&quot; button - since the diagram gets cut off on the webpage)
+	///    - Note that the `max_total` limit applies to `reserved` space as well.
+	///		 For example, in the diagram (https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# - click the &quot;src&quot; button - since the diagram gets cut off on the
+	///		 webpage), &quot;the sum of weights of `Ext7` &amp; `Ext8` (which are `Operational` extrinsics) mustn&#39;t exceed the `max_total` (of the `Operational` extrinsic)&quot;.
+	///      Please do see the diagram for complete understanding.
+	///    - Setting `reserved` to `Some(x)`, guarantees that at least `x` weight can be consumed by the extrinsic class in every block.
+	///    	  - Note: `x` can be zero obviously. It doesn&#39;t have to only be non-zero integers (obviously!).
+	///    - Setting `reserved` to `None` guarantees that at least `max_total` weight can be consumed by the extrinsic class in every block.
+	///    	  - If `max_total` is set to `None` as well, all extrinsics of the extrinsic class will always end up in the block (recommended for the `Mandatory` extrinsic class).
+	/// Furthermore, a `BlockWeights` struct also contains information about the block:
+	/// 1. **Maximum total amount of weight that can be consumed by all kinds of extrinsics in a block (assuming no extrinsic class uses its `reserved` space)** (`BlockWeights::max_block`)
+	/// 2. **Base weight of a block (i.e the computation time to execute an empty block)** (`BlockWeights::base_block`).
+	///
+	///
+	/// Note: Even though each extrinsic class has its own separate limit `max_total`,
+	/// in an actual block the total weight consumed by each extrinsic class cannot not exceed `max_block` (except for `reserved`).
+	///
+	/// Note 2: As a consequence of `reserved` space, total consumed block weight might exceed `max_block` value,
+	/// so this parameter (i.e `max_block`) should rather be thought of as &quot;target block weight&quot; than a hard limit.
+	///
+	/// Note 3: Each block starts with `BlockWeights::base_block` weight being consumed right away **as part of the Mandatory extrinsic class**. Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html#
+	///
+	/// Source: https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockWeights.html# (click the &quot;src&quot; button - since the diagram gets cut off on the webpage)
+	</span><span class="kw">pub </span>BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights::builder()
+		<span class="comment">// `BlockWeightsBuilder::base_block()` sets the base weight of the block (i.e `BlockWeights::base_block`) to
+		// `frame_support::weights::constants::BlockExecutionWeight` which is defined as the &quot;Time to execute an empty block&quot; (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.BlockExecutionWeight.html#).
+		</span>.base_block(BlockExecutionWeight::get())
+		<span class="comment">// Set the base weight (i.e `WeightsPerClass::base_extrinsic`) for each extrinsic class to `ExtrinsicBaseWeight::get()`.
+		//
+		// Note: `frame_support::weights::constants::ExtrinsicBaseWeight` is the &quot;Time to execute a NO-OP extrinsic, for example `System::remark`&quot; (https://paritytech.github.io/substrate/master/frame_support/weights/constants/struct.ExtrinsicBaseWeight.html#).
+		</span>.for_class(DispatchClass::all(), |weights| {
+			weights.base_extrinsic = ExtrinsicBaseWeight::get();
+		})
+		<span class="comment">// Set the maximum block weight for the `Normal` extrinsic class to `NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT`.
+		</span>.for_class(DispatchClass::Normal, |weights| {
+			weights.max_total = <span class="prelude-val">Some</span>(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+		})
+		<span class="comment">// Set the maximum block weight and the reserved weight for the `Operational` extrinsic class to `MAXIMUM_BLOCK_WEIGHT` and `MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT` respectively.
+		</span>.for_class(DispatchClass::Operational, |weights| {
+			weights.max_total = <span class="prelude-val">Some</span>(MAXIMUM_BLOCK_WEIGHT);
+			<span class="comment">// Operational transactions have some extra reserved space, so that they
+			// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
+			</span>weights.reserved = <span class="prelude-val">Some</span>(
+				MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+			);
+		})
+		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
+		.build_or_panic();
 }
 
 <span class="doccomment">///  **Maximum permitted depth level** that a **descendant call** of the **outermost call of an extrinsic** can be
