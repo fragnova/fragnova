@@ -5,7 +5,7 @@
 //
 // describe("Extrinsics Per Block", () => {
 //
-//   describe("3 `contracts.uploadCode()` extrinsics of length 3 MiB each should execute in the same block", () => {
+//   describe("3 `protos.upload()` extrinsics of length 3 MiB each should execute in the same block", () => {
 //     it("should work", async function () {
 //
 //       // the `it` hook should timeout after 20,000 ms (the default is 2000 ms). We do this to be safe
@@ -27,10 +27,14 @@
 //
 //           const data = [...new Uint8Array(3 * 1024 * 1024).fill(nonce)];
 //
-//           api.tx.contracts.uploadCode(
-//             data,
+//           api.tx.protos.upload(
+//             [],
+//             {text: 'plain'},
+//             [],
 //             null,
-//             "Deterministic"
+//             "Closed",
+//             null,
+//             {local: data},
 //           ).signAndSend(alice, {nonce: nonce}, (result) => {
 //             console.log('Transaction status:', result.status.type);
 //
