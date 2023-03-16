@@ -14,7 +14,7 @@ For details on use, see the [Polkadot API library documentation](https://polkado
 
 ```typescript
 import { options } from "@fragnova/api-augment";
-import { ApiPromise } from '@polkadot/api';
+import { ApiPromise, WsProvider } from '@polkadot/api';
 // ...
 
 const api = await ApiPromise.create({
