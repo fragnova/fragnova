@@ -1,5 +1,5 @@
 {
-  "name": "Fragnova",
+  "name": "Fragnova Testnet",
   "id": "live",
   "chainType": "Live",
   "bootNodes": [],
@@ -16,13 +16,13 @@
       "system": null,
       "aura": {
         "authorities": [
-          "fRmzUZsJ7EXWmU1ye8Q4J2L4iR5EGDCoTz6Xc86TPEbNrg47s"
+          "fRmdFgE9Fxru1QPPVLSGFkGQvmkzBqNyLDH4irGQEmvBXPmN1"
         ]
       },
       "grandpa": {
         "authorities": [
           [
-            "fRjhXdNw7Wc4nGMzPotv1TqZGBdBcFLpvG6vpLboyiefQL5Hf",
+            "fRh2LoB1qKa4rBDihvYh3ynJGqojdxdHoQ5J48mMtQqK42RJs",
             1
           ]
         ]
@@ -30,7 +30,7 @@
       "balances": {
         "balances": [
           [
-            "fRm2sUXyj4bmYLK1v2gMrhqwgYde2d6H1Q5MF8WSPLxFX1Vts",
+            "fRgxJR1Ghei8ccgooy4hC1muwfwinNMszgubrbyGT8cS621tA",
             1000000000000000000000
           ]
         ]
@@ -39,7 +39,7 @@
         "multiplier": "1000000000000000000"
       },
       "sudo": {
-        "key": "fRm2sUXyj4bmYLK1v2gMrhqwgYde2d6H1Q5MF8WSPLxFX1Vts"
+        "key": "fRgxJR1Ghei8ccgooy4hC1muwfwinNMszgubrbyGT8cS621tA"
       },
       "assets": {
         "assets": [],
@@ -52,17 +52,17 @@
       "detach": {
         "ethAuthorities": [],
         "keys": [
-          "fRhpkwAV68SP79e8ZtxA9WzX9ovxPiopXR6Q1Fr2zeXxqVcxS"
+          "fRkZyMoQoX5iHi3dpQQ9ovw8R9izDufqAEUYTHJ3zUzVFCv6T"
         ]
       },
       "accounts": {
         "keys": [
-          "fRhpkwAV68SP79e8ZtxA9WzX9ovxPiopXR6Q1Fr2zeXxqVcxS"
+          "fRkZyMoQoX5iHi3dpQQ9ovw8R9izDufqAEUYTHJ3zUzVFCv6T"
         ]
       },
       "oracle": {
         "keys": [
-          "fRhpkwAV68SP79e8ZtxA9WzX9ovxPiopXR6Q1Fr2zeXxqVcxS"
+          "fRkZyMoQoX5iHi3dpQQ9ovw8R9izDufqAEUYTHJ3zUzVFCv6T"
         ]
       }
     }
