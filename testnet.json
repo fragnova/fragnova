@@ -16,13 +16,13 @@
       "system": null,
       "aura": {
         "authorities": [
-          "fRmdFgE9Fxru1QPPVLSGFkGQvmkzBqNyLDH4irGQEmvBXPmN1"
+          "fRmzUZsJ7EXWmU1ye8Q4J2L4iR5EGDCoTz6Xc86TPEbNrg47s"
         ]
       },
       "grandpa": {
         "authorities": [
           [
-            "fRh2LoB1qKa4rBDihvYh3ynJGqojdxdHoQ5J48mMtQqK42RJs",
+            "fRjhXdNw7Wc4nGMzPotv1TqZGBdBcFLpvG6vpLboyiefQL5Hf",
             1
           ]
         ]
@@ -30,7 +30,7 @@
       "balances": {
         "balances": [
           [
-            "fRgxJR1Ghei8ccgooy4hC1muwfwinNMszgubrbyGT8cS621tA",
+            "fRm2sUXyj4bmYLK1v2gMrhqwgYde2d6H1Q5MF8WSPLxFX1Vts",
             1000000000000000000000
           ]
         ]
@@ -39,7 +39,7 @@
         "multiplier": "1000000000000000000"
       },
       "sudo": {
-        "key": "fRgxJR1Ghei8ccgooy4hC1muwfwinNMszgubrbyGT8cS621tA"
+        "key": "fRm2sUXyj4bmYLK1v2gMrhqwgYde2d6H1Q5MF8WSPLxFX1Vts"
       },
       "assets": {
         "assets": [],
@@ -52,17 +52,17 @@
       "detach": {
         "ethAuthorities": [],
         "keys": [
-          "fRkZyMoQoX5iHi3dpQQ9ovw8R9izDufqAEUYTHJ3zUzVFCv6T"
+          "fRhpkwAV68SP79e8ZtxA9WzX9ovxPiopXR6Q1Fr2zeXxqVcxS"
         ]
       },
       "accounts": {
         "keys": [
-          "fRkZyMoQoX5iHi3dpQQ9ovw8R9izDufqAEUYTHJ3zUzVFCv6T"
+          "fRhpkwAV68SP79e8ZtxA9WzX9ovxPiopXR6Q1Fr2zeXxqVcxS"
         ]
       },
       "oracle": {
         "keys": [
-          "fRkZyMoQoX5iHi3dpQQ9ovw8R9izDufqAEUYTHJ3zUzVFCv6T"
+          "fRhpkwAV68SP79e8ZtxA9WzX9ovxPiopXR6Q1Fr2zeXxqVcxS"
         ]
       }
     }
