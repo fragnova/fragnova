@@ -119,6 +119,8 @@ use ethabi::{ParamType, Token};
 
 use frame_support::traits::ReservableCurrency;
 
+use sp_runtime::traits::StaticLookup;
+
 /// TODO: Documentation
 pub type DiscordID = u64;
 
@@ -910,6 +912,23 @@ pub mod pallet {
 			)?;
 
 			Ok(())
+		}
+
+		/// Allow an external authority to sponsor some nova
+		#[pallet::weight(25_000)]
+		#[pallet::call_index(10)]
+		pub fn sponsor_nova(
+			origin: OriginFor<T>,
+			amount: <T as pallet_balances::Config>::Balance,
+			to: <T::Lookup as StaticLookup>::Source,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			ensure!(<ExternalAuthorities<T>>::get().contains(&who), Error::<T>::SystematicFailure);
+
+			let to = T::Lookup::lookup(to)?;
+
+			<pallet_balances::Pallet<T> as fungible::Mutate<T::AccountId>>::mint_into(&to, amount)
 		}
 	}
 
