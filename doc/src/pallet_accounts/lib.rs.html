@@ -1471,6 +1471,25 @@
 <a href="#1471" id="1471">1471</a>
 <a href="#1472" id="1472">1472</a>
 <a href="#1473" id="1473">1473</a>
+<a href="#1474" id="1474">1474</a>
+<a href="#1475" id="1475">1475</a>
+<a href="#1476" id="1476">1476</a>
+<a href="#1477" id="1477">1477</a>
+<a href="#1478" id="1478">1478</a>
+<a href="#1479" id="1479">1479</a>
+<a href="#1480" id="1480">1480</a>
+<a href="#1481" id="1481">1481</a>
+<a href="#1482" id="1482">1482</a>
+<a href="#1483" id="1483">1483</a>
+<a href="#1484" id="1484">1484</a>
+<a href="#1485" id="1485">1485</a>
+<a href="#1486" id="1486">1486</a>
+<a href="#1487" id="1487">1487</a>
+<a href="#1488" id="1488">1488</a>
+<a href="#1489" id="1489">1489</a>
+<a href="#1490" id="1490">1490</a>
+<a href="#1491" id="1491">1491</a>
+<a href="#1492" id="1492">1492</a>
 </pre><pre class="rust"><code><span class="doccomment">//! This pallet `accounts` performs logic related to FRAG Token
 //!
 //! IMPORTANT NOTE: The term &quot;lock&quot; refers to the *&quot;effective transfer&quot;* of some ERC-20 FRAG tokens from Fragnova-owned FRAG Ethereum Smart Contract to the Fragnova Blockchain.
@@ -1591,6 +1610,8 @@
 <span class="kw">use </span>ethabi::{ParamType, Token};
 
 <span class="kw">use </span>frame_support::traits::ReservableCurrency;
+
+<span class="kw">use </span>sp_runtime::traits::StaticLookup;
 
 <span class="doccomment">/// TODO: Documentation
 </span><span class="kw">pub type </span>DiscordID = u64;
@@ -2383,6 +2404,23 @@
 			)<span class="question-mark">?</span>;
 
 			<span class="prelude-val">Ok</span>(())
+		}
+
+		<span class="doccomment">/// Allow an external authority to sponsor some nova
+		</span><span class="attr">#[pallet::weight(<span class="number">25_000</span>)]
+		#[pallet::call_index(<span class="number">10</span>)]
+		</span><span class="kw">pub fn </span>sponsor_nova(
+			origin: OriginFor&lt;T&gt;,
+			amount: &lt;T <span class="kw">as </span>pallet_balances::Config&gt;::Balance,
+			to: &lt;T::Lookup <span class="kw">as </span>StaticLookup&gt;::Source,
+		) -&gt; DispatchResult {
+			<span class="kw">let </span>who = ensure_signed(origin)<span class="question-mark">?</span>;
+
+			<span class="macro">ensure!</span>(&lt;ExternalAuthorities&lt;T&gt;&gt;::get().contains(<span class="kw-2">&amp;</span>who), Error::&lt;T&gt;::SystematicFailure);
+
+			<span class="kw">let </span>to = T::Lookup::lookup(to)<span class="question-mark">?</span>;
+
+			&lt;pallet_balances::Pallet&lt;T&gt; <span class="kw">as </span>fungible::Mutate&lt;T::AccountId&gt;&gt;::mint_into(<span class="kw-2">&amp;</span>to, amount)
 		}
 	}
 
