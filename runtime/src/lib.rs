@@ -61,12 +61,19 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 mod chain_extension;
 
+/// Constant values used within the runtime.
+pub mod constants;
+use constants::{currency::*, time::*, block::*, validation_logic::*, CONTRACTS_DEBUG_OUTPUT};
+
+/// Generated voter bag information.
+mod voter_bags;
+
 use frame_support::{
 	dispatch::DispatchClass,
-	traits::{ConstBool, ConstU128, ConstU32, ConstU64},
-	weights::constants::WEIGHT_REF_TIME_PER_SECOND,
+	traits::{ConstBool, ConstU128, ConstU32, ConstU64, EitherOfDiverse, U128CurrencyToVote},
+	PalletId,
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::{EnsureRoot, EnsureSigned, EnsureWithSuccess};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
@@ -74,14 +81,18 @@ use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
+	create_runtime_str,
+	curve::PiecewiseLinear,
+	generic,
+	impl_opaque_keys,
 	traits::{
-		BlakeTwo256, Block as BlockT, Extrinsic as ExtrinsicT, IdentifyAccount, NumberFor, Verify,
+		BlakeTwo256, Block as BlockT, Extrinsic as ExtrinsicT, NumberFor, OpaqueKeys, Verify,
 	},
 	transaction_validity::{
-		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
+		InvalidTransaction, TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
 	},
-	ApplyExtrinsicResult, MultiSignature,
+	ApplyExtrinsicResult,
+	FixedU128,
 };
 use sp_std::{prelude::*, str};
 #[cfg(feature = "std")]
@@ -90,7 +101,9 @@ use sp_version::RuntimeVersion;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
-	construct_runtime, parameter_types,
+	construct_runtime,
+	pallet_prelude::Get,
+	parameter_types,
 	traits::{Contains, KeyOwnerProofSystem, Randomness, StorageInfo},
 	weights::{
 		constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight},
@@ -105,11 +118,17 @@ pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use sp_runtime::{Perbill, Permill};
+pub use sp_runtime::{Perbill, Permill, Percent};
 
 use scale_info::prelude::string::String;
 
+#[cfg(any(feature = "std", test))]
+pub use pallet_staking::StakerStatus;
+
 use codec::{Decode, Encode};
+use frame_election_provider_support::{
+	onchain, BalancingConfig, ElectionDataProvider, SequentialPhragmen,
+};
 use frame_support::traits::AsEnsureOriginWithArg;
 use sp_runtime::traits::{ConstU8, SaturatedConversion, StaticLookup};
 
@@ -127,31 +146,16 @@ use protos::{
 	traits::Trait,
 };
 
-/// Prints debug output of the `contracts` pallet to stdout if the node is
-/// started with `-lruntime::contracts=debug`.
-pub const CONTRACTS_DEBUG_OUTPUT: bool = true;
-
-/// An index to a block.
-pub type BlockNumber = u64;
-
-/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = MultiSignature;
-
-/// Some way of identifying an account on the chain. We intentionally make it equivalent
-/// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
-
-/// Balance of an account.
-pub type Balance = u128;
-
-/// Index of a transaction in the chain.
-pub type Index = u32;
-
-/// A hash of some data used by the chain.
-pub type Hash = sp_core::H256;
-
-/// Related to Index pallet
-pub type AccountIndex = u64;
+pub use sp_fragnova::{
+	BlockNumber,
+	Signature,
+	AccountId,
+	Balance,
+	Index,
+	Hash,
+	AccountIndex,
+	Moment,
+};
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -201,59 +205,11 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	state_version: 1,
 };
 
-/// This determines the average expected block time that we are targeting.
-/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
-/// `SLOT_DURATION` is picked up by `pallet_timestamp` which is in turn picked
-/// up by `pallet_aura` to implement `fn slot_duration()`.
-///
-/// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = 6000;
-/// TODO: Documentation
-pub const MILLICENTS: Balance = 1_000_000_000;
-/// TODO: Documentation
-pub const CENTS: Balance = 1_000 * MILLICENTS; // assume this is worth about a cent.
-/// TODO: Documentation
-pub const DOLLARS: Balance = 100 * CENTS;
-/// The amount of balance a caller has to pay for calling an extrinsic with `bytes` bytes and storage items `items`.
-pub const fn deposit(items: u32, bytes: u32) -> Balance {
-	items as Balance * 15 * CENTS + (bytes as Balance) * 6 * CENTS
-}
-
-/// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
-///
-/// Note: Currently it is not possible to change the slot duration after the chain has started.
-///       Attempting to do so will brick block production.
-pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
-
-// Time is measured by number of blocks.
-/// Number of blocks that would be added to the Blockchain on average, when one minute passes
-pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
-/// Number of blocks that would be added to the Blockchain on average, when one hour passes
-pub const HOURS: BlockNumber = MINUTES * 60;
-/// Number of blocks that would be added to the Blockchain on average, when one day passes
-pub const DAYS: BlockNumber = HOURS * 24;
-
 /// The version information is used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
-
-/// We assume that ~10% of the block weight is consumed by `on_initialize` handlers.
-/// This is used to limit the maximal weight of a single extrinsic.
-const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
-/// We allow `Normal` extrinsics to fill up the block up to 75% (i.e up to 75% of the block length and block weight of a block can be filled up by Normal extrinsics).
-/// The rest can be used by Operational extrinsics.
-const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
-/// TODO Documentation - It is actually the "target block weight", not "maximum block weight".
-/// The **maximum block weight** is the **maximum amount of computation time** (assuming no extrinsic class uses its `reserved` space - please see the type `BlockWeights` below to understand what `reserved` is)
-/// that is **allowed to be spent in constructing a block** by a Node.
-///
-/// Here, we set this to 2 seconds because we want a 6 second average block time. (since in Substrate, the **maximum block weight** should be equivalent to **one-third of the target block time** - see the crate documentation above for more information)
-const MAXIMUM_BLOCK_WEIGHT: Weight =
-	Weight::from_parts(2u64 * WEIGHT_REF_TIME_PER_SECOND, u64::MAX);
-/// The maximum possible length (in bytes) that a Fragnova Block can be
-pub const MAXIMUM_BLOCK_LENGTH: u32 = 16 * 1024 * 1024;
 
 // When to use:
 //
@@ -352,11 +308,6 @@ parameter_types! {
 		.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 		.build_or_panic();
 }
-
-///  **Maximum permitted depth level** that a **descendant call** of the **outermost call of an extrinsic** can be
-pub const MAXIMUM_NESTED_CALL_DEPTH_LEVEL: u8 = 4;
-/// Maximum length (in bytes) that the metadata data of a Proto-Fragment / Fragment Definition / Fragment Instance can be
-pub const MAXIMUM_METADATA_DATA_LENGTH: usize = 1 * 1024 * 1024;
 
 mod validation_logic {
 	use protos::categories::ShardsFormat;
@@ -920,9 +871,11 @@ impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 parameter_types! {
 	/// The maximum number of authorities that `pallet_aura` can hold.
 	pub const MaxAuthorities: u32 = 32;
+	pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
 }
 
 impl pallet_aura::Config for Runtime {
+	/// The identifier type for an authority.
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = MaxAuthorities;
@@ -955,7 +908,7 @@ parameter_types! {
 
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
-	type Moment = u64;
+	type Moment = Moment;
 	type OnTimestampSet = Aura;
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = ();
@@ -1384,6 +1337,875 @@ impl pallet_assets::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
+parameter_types! {
+	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
+	pub const CouncilMaxProposals: u32 = 100;
+	pub const CouncilMaxMembers: u32 = 100;
+}
+
+type CouncilCollective = pallet_collective::Instance1;
+
+/// Collective system: Members of a set of account IDs can make their collective feelings known
+/// through dispatched calls from one of two specialized origins.
+///
+/// The membership can be provided in one of two ways: either directly, using the Root-dispatchable
+/// function `set_members`, or indirectly, through implementing the `ChangeMembers`.
+/// The pallet assumes that the amount of members stays at or below `MaxMembers` for its weight
+/// calculations, but enforces this neither in `set_members` nor in `change_members_sorted`.
+///
+/// A "prime" member may be set to help determine the default vote behavior based on chain
+/// config. If `PrimeDefaultVote` is used, the prime vote acts as the default vote in case of any
+/// abstentions after the voting period. If `MoreThanMajorityThenPrimeDefaultVote` is used, then
+/// abstentions will first follow the majority of the collective voting, and then the prime
+/// member.
+///
+/// Voting happens through motions comprising a proposal (i.e. a curried dispatchable) plus a
+/// number of approvals required for it to pass and be called. Motions are open for members to
+/// vote on for a minimum period given by `MotionDuration`. As soon as the needed number of
+/// approvals is given, the motion is closed and executed. If the number of approvals is not reached
+/// during the voting period, then `close` may be called by any account in order to force the end
+/// the motion explicitly. If a prime member is defined then their vote is used in place of any
+/// abstentions and the proposal is executed if there are enough approvals counting the new votes.
+///
+/// If there are not, or if no prime is set, then the motion is dropped without being executed.
+///
+/// # Footnote
+///
+/// For a more detailed explanation and live demo of this pallet, see https://www.youtube.com/watch?v=QJ9yuOqwy4s
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_collective/index.html#
+impl pallet_collective::Config<CouncilCollective> for Runtime {
+	type RuntimeOrigin = RuntimeOrigin;
+	/// The runtime call dispatch type.
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	/// The time-out for council motions.
+	type MotionDuration = CouncilMotionDuration;
+	/// Maximum number of proposals allowed to be active in parallel.
+	type MaxProposals = CouncilMaxProposals;
+	/// The maximum number of members supported by the pallet. Used for weight estimation.
+	///
+	/// NOTE:
+	/// + Benchmarks will need to be re-run and weights adjusted if this changes.
+	/// + This pallet assumes that dependents keep to the limit without enforcing it.
+	type MaxMembers = CouncilMaxMembers;
+	/// Default vote strategy of this collective.
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+	/// Origin allowed to set collective members
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+}
+type EnsureRootOrHalfCouncil = EitherOfDiverse<
+	EnsureRoot<AccountId>,
+	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
+>;
+
+parameter_types! {
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: Balance = 1 * DOLLARS;
+	pub const SpendPeriod: BlockNumber = 1 * DAYS;
+	pub const Burn: Permill = Permill::from_percent(50);
+	pub const TipCountdown: BlockNumber = 1 * DAYS;
+	pub const TipFindersFee: Percent = Percent::from_percent(20);
+	pub const TipReportDepositBase: Balance = 1 * DOLLARS;
+	pub const DataDepositPerByte: Balance = 1 * CENTS;
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const MaximumReasonLength: u32 = 300;
+	pub const MaxApprovals: u32 = 100;
+	pub const MaxBalance: Balance = Balance::max_value();
+}
+
+/// The Treasury pallet provides a "pot" of funds that can be managed by stakeholders in the system
+/// and a structure for making spending proposals from this pot.
+///
+/// ## Overview
+///
+/// The Treasury Pallet itself provides the pot to store funds, and a means for stakeholders to
+/// propose, approve, and deny expenditures. The chain will need to provide a method (e.g.
+/// inflation, fees) for collecting funds.
+///
+/// By way of example, the Council could vote to fund the Treasury with a portion of the block
+/// reward and use the funds to pay developers.
+///
+///
+/// ### Terminology
+///
+/// - **Proposal:** A suggestion to allocate funds from the pot to a beneficiary.
+/// - **Beneficiary:** An account who will receive the funds from a proposal iff the proposal is
+///   approved.
+/// - **Deposit:** Funds that a proposer must lock when making a proposal. The deposit will be
+///   returned or slashed if the proposal is approved or rejected respectively.
+/// - **Pot:** Unspent funds accumulated by the treasury pallet.
+///
+/// ## Footnote
+///
+/// For a more detailed explanation and live demo of this pallet, see https://www.youtube.com/watch?v=HX7vRpOip5U
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_treasury/index.html#
+impl pallet_treasury::Config for Runtime {
+	type PalletId = TreasuryPalletId;
+	/// The staking balance.
+	type Currency = Balances;
+	/// Origin from which approvals must come.
+	type ApproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+	>;
+	/// Origin from which rejections must come.
+	type RejectOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
+	>;
+	type RuntimeEvent = RuntimeEvent;
+	/// Handler for the unbalanced decrease when slashing for a rejected proposal or bounty.
+	type OnSlash = ();
+	/// Fraction of a proposal's value that should be bonded in order to place the proposal.
+	/// An accepted proposal gets these back. A rejected proposal does not.
+	type ProposalBond = ProposalBond;
+	/// Minimum amount of funds that should be placed in a deposit for making a proposal.
+	type ProposalBondMinimum = ProposalBondMinimum;
+	/// Maximum amount of funds that should be placed in a deposit for making a proposal.
+	type ProposalBondMaximum = ();
+	/// Period between successive spends.
+	type SpendPeriod = SpendPeriod;
+	/// Percentage of spare funds (if any) that are burnt per spend period.
+	type Burn = Burn;
+	/// Handler for the unbalanced decrease when treasury funds are burned.
+	type BurnDestination = ();
+	/// Runtime hooks to external pallet using treasury to compute spend funds.
+	type SpendFunds = Bounties;
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+	/// The maximum number of approvals that can wait in the spending queue.
+	///
+	/// NOTE: This parameter is also used within the Bounties Pallet extension if enabled.
+	type MaxApprovals = MaxApprovals;
+	/// The origin required for approving spends from the treasury outside of the proposal
+	/// process. The `Success` value is the maximum amount that this origin is allowed to
+	/// spend at a time.
+	type SpendOrigin = EnsureWithSuccess<EnsureRoot<AccountId>, AccountId, MaxBalance>;
+}
+
+parameter_types! {
+	pub const BountyCuratorDeposit: Permill = Permill::from_percent(50);
+	pub const BountyValueMinimum: Balance = 5 * DOLLARS;
+	pub const BountyDepositBase: Balance = 1 * DOLLARS;
+	pub const CuratorDepositMultiplier: Permill = Permill::from_percent(50);
+	pub const CuratorDepositMin: Balance = 1 * DOLLARS;
+	pub const CuratorDepositMax: Balance = 100 * DOLLARS;
+	pub const BountyDepositPayoutDelay: BlockNumber = 1 * DAYS;
+	pub const BountyUpdatePeriod: BlockNumber = 14 * DAYS;
+}
+
+/// > NOTE: This pallet is tightly coupled with pallet-treasury.
+///
+/// This pallet contains logic related to Bounty Spendings.
+///
+/// A Bounty Spending is a reward for a specified body of work - or specified set of objectives -
+/// that needs to be executed (i.e completed) for a predefined Treasury amount to be paid out. A curator is assigned
+/// after the bounty is approved and funded by Council, to be delegated with the responsibility of
+/// assigning a payout address once the specified set of objectives is completed.
+///
+/// This pallet may opt into using a [`ChildBountyManager`] that enables bounties to be split into
+/// sub-bounties, as children of anh established bounty (called the parent in the context of it's
+/// children).
+///
+/// # Footnote
+///
+/// For a more detailed explanation and live demo of this pallet, see https://www.youtube.com/watch?v=HX7vRpOip5U
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_bounties/index.html#
+impl pallet_bounties::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	/// The amount held on deposit for placing a bounty proposal.
+	type BountyDepositBase = BountyDepositBase;
+	/// The delay period for which a bounty beneficiary need to wait before claim the payout.
+	type BountyDepositPayoutDelay = BountyDepositPayoutDelay;
+	/// Bounty duration in blocks.
+	type BountyUpdatePeriod = BountyUpdatePeriod;
+	/// The curator deposit is calculated as a percentage of the curator fee.
+	///
+	/// This deposit has optional upper and lower bounds with `CuratorDepositMax` and
+	/// `CuratorDepositMin`.
+	type CuratorDepositMultiplier = CuratorDepositMultiplier;
+	/// Minimum amount of funds that should be placed in a deposit for making a proposal.
+	type CuratorDepositMin = CuratorDepositMin;
+	/// Maximum amount of funds that should be placed in a deposit for making a proposal.
+	type CuratorDepositMax = CuratorDepositMax;
+	/// Minimum value for a bounty.
+	type BountyValueMinimum = BountyValueMinimum;
+	/// The amount held on deposit per byte within the tip report reason or bounty description.
+	type DataDepositPerByte = DataDepositPerByte;
+	/// Maximum acceptable reason length.
+	///
+	/// Benchmarks depend on this value, be sure to update weights file when changing this value
+	type MaximumReasonLength = MaximumReasonLength;
+	type WeightInfo = pallet_bounties::weights::SubstrateWeight<Runtime>;
+	/// The child bounty manager.
+	type ChildBountyManager = ChildBounties;
+}
+
+parameter_types! {
+	pub const ChildBountyValueMinimum: Balance = 1 * DOLLARS;
+}
+
+/// > NOTE: This pallet is tightly coupled with `pallet-treasury` and `pallet-bounties`.
+///
+/// This pallet contains logic related to Child Bounties.
+///
+/// With child bounties, a large bounty proposal can be divided into smaller chunks,
+/// for parallel execution (i.e parallel completion), and for efficient governance and tracking of spent funds.
+/// A child bounty is a smaller piece of work, extracted from a parent bounty.
+/// A curator is assigned after the child bounty is created by the parent bounty curator,
+/// to be delegated with the responsibility of assigning a payout address once the specified
+/// set of tasks is completed.
+///
+/// # Footnote
+///
+/// For a more detailed explanation and live demo of this pallet, see https://www.youtube.com/watch?v=HX7vRpOip5U
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_child_bounties/index.html#
+impl pallet_child_bounties::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	/// Maximum number of child bounties that can be added to a parent bounty.
+	type MaxActiveChildBountyCount = ConstU32<5>;
+	/// Minimum value for a child-bounty.
+	type ChildBountyValueMinimum = ChildBountyValueMinimum;
+	type WeightInfo = pallet_child_bounties::weights::SubstrateWeight<Runtime>;
+}
+
+
+/// This pallet is used by the `client/authority-discovery` to retrieve the current and the next set of authorities.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_authority_discovery/index.html#
+impl pallet_authority_discovery::Config for Runtime {
+	type MaxAuthorities = MaxAuthorities;
+}
+
+parameter_types! {
+	// phase durations. 1/4 of the last session for each.
+	pub const SignedPhase: u64 = EPOCH_DURATION_IN_BLOCKS / 4;
+	pub const UnsignedPhase: u64 = EPOCH_DURATION_IN_BLOCKS / 4;
+
+	// signed config
+	pub const SignedRewardBase: Balance = 1 * DOLLARS;
+	pub const SignedDepositBase: Balance = 1 * DOLLARS;
+	pub const SignedDepositByte: Balance = 1 * CENTS;
+
+	pub BetterUnsignedThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
+
+	// miner configs
+	pub const MultiPhaseUnsignedPriority: TransactionPriority = StakingUnsignedPriority::get() - 1u64;
+	pub MinerMaxWeight: Weight = BlockWeights::get()
+		.get(DispatchClass::Normal)
+		.max_extrinsic.expect("Normal extrinsics have a weight limit configured; qed")
+		.saturating_sub(BlockExecutionWeight::get());
+	// Solution can occupy 90% of normal block size
+	pub MinerMaxLength: u32 = Perbill::from_rational(9u32, 10) *
+		*BlockLength::get()
+		.max
+		.get(DispatchClass::Normal);
+}
+
+frame_election_provider_support::generate_solution_type!(
+	#[compact]
+	pub struct NposSolution16::<
+		VoterIndex = u32,
+		TargetIndex = u16,
+		Accuracy = sp_runtime::PerU16,
+		MaxVoters = MaxElectingVoters,
+	>(16)
+);
+
+parameter_types! {
+	pub MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
+	pub MaxElectingVoters: u32 = 40_000;
+	pub MaxElectableTargets: u16 = 10_000;
+	// OnChain values are lower.
+	pub MaxOnChainElectingVoters: u32 = 5000;
+	pub MaxOnChainElectableTargets: u16 = 1250;
+	// The maximum winners that can be elected by the Election pallet which is equivalent to the
+	// maximum active validators the staking pallet can have.
+	pub MaxActiveValidators: u32 = 1000;
+}
+
+/// The numbers configured here could always be more than the the maximum limits of staking pallet
+/// to ensure election snapshot will not run out of memory. For now, we set them to smaller values
+/// since the staking is bounded and the weight pipeline takes hours for this single pallet.
+pub struct ElectionProviderBenchmarkConfig;
+/// Configuration for the benchmarks of the pallet `pallet_election_provider_multi_phase`.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_election_provider_multi_phase/trait.BenchmarkingConfig.html#
+impl pallet_election_provider_multi_phase::BenchmarkingConfig for ElectionProviderBenchmarkConfig {
+	const VOTERS: [u32; 2] = [1000, 2000];
+	const TARGETS: [u32; 2] = [500, 1000];
+	const ACTIVE_VOTERS: [u32; 2] = [500, 800];
+	const DESIRED_TARGETS: [u32; 2] = [200, 400];
+	const SNAPSHOT_MAXIMUM_VOTERS: u32 = 1000;
+	const MINER_MAXIMUM_VOTERS: u32 = 1000;
+	const MAXIMUM_TARGETS: u32 = 300;
+}
+
+/// Maximum number of iterations for balancing that will be executed in the embedded OCW
+/// miner of election provider multi phase.
+pub const MINER_MAX_ITERATIONS: u32 = 10;
+
+/// A source of random balance for NposSolver, which is meant to be run by the OCW election miner.
+pub struct OffchainRandomBalancing;
+impl Get<Option<BalancingConfig>> for OffchainRandomBalancing {
+	fn get() -> Option<BalancingConfig> {
+		use sp_runtime::traits::TrailingZeroInput;
+		let iterations = match MINER_MAX_ITERATIONS {
+			0 => 0,
+			max => {
+				let seed = sp_io::offchain::random_seed();
+				let random = <u32>::decode(&mut TrailingZeroInput::new(&seed))
+					.expect("input is padded with zeroes; qed") %
+					max.saturating_add(1);
+				random as usize
+			},
+		};
+
+		let config = BalancingConfig { iterations, tolerance: 0 };
+		Some(config)
+	}
+}
+
+pub struct OnChainSeqPhragmen;
+impl onchain::Config for OnChainSeqPhragmen {
+	type System = Runtime;
+	type Solver = SequentialPhragmen<
+		AccountId,
+		pallet_election_provider_multi_phase::SolutionAccuracyOf<Runtime>,
+	>;
+	type DataProvider = <Runtime as pallet_election_provider_multi_phase::Config>::DataProvider;
+	type WeightInfo = frame_election_provider_support::weights::SubstrateWeight<Runtime>;
+	type MaxWinners = <Runtime as pallet_election_provider_multi_phase::Config>::MaxWinners;
+	type VotersBound = MaxOnChainElectingVoters;
+	type TargetsBound = MaxOnChainElectableTargets;
+}
+
+/// Configurations for a miner that comes with this pallet.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_election_provider_multi_phase/unsigned/trait.MinerConfig.html#
+impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
+	type AccountId = AccountId;
+	/// Maximum length of the solution that the miner is allowed to generate.
+	///
+	/// Solutions are trimmed to respect this.
+	type MaxLength = MinerMaxLength;
+	/// Maximum weight of the solution that the miner is allowed to generate.
+	///
+	/// Solutions are trimmed to respect this.
+	///
+	/// The weight is computed using `solution_weight`.
+	type MaxWeight = MinerMaxWeight;
+	/// The solution that the miner is mining.
+	type Solution = NposSolution16;
+	/// Maximum number of votes per voter in the snapshots.
+	type MaxVotesPerVoter =
+	<<Self as pallet_election_provider_multi_phase::Config>::DataProvider as ElectionDataProvider>::MaxVotesPerVoter;
+
+	// The unsigned submissions have to respect the weight of the submit_unsigned call, thus their
+	// weight estimate function is wired to this call's weight.
+	fn solution_weight(v: u32, t: u32, a: u32, d: u32) -> Weight {
+		<
+		<Self as pallet_election_provider_multi_phase::Config>::WeightInfo
+		as
+		pallet_election_provider_multi_phase::WeightInfo
+		>::submit_unsigned(v, t, a, d)
+	}
+}
+
+/// # Multi phase, offchain election provider pallet.
+///
+/// Currently, this election-provider has two distinct phases (see [`pallet_election_provider_multi_phase::Phase`]), **signed** and
+/// **unsigned**.
+///
+/// ## Phases
+///
+/// The timeline of pallet is as follows. At each block,
+/// [`frame_election_provider_support::ElectionDataProvider::next_election_prediction`] is used to
+/// estimate the time remaining to the next call to
+/// [`frame_election_provider_support::ElectionProvider::elect`]. Based on this, a phase is chosen.
+/// The timeline is as follows.
+///
+/// ```ignore
+///                                                                    elect()
+///                 +   <--T::SignedPhase-->  +  <--T::UnsignedPhase-->   +
+///   +-------------------------------------------------------------------+
+///    Phase::Off   +       Phase::Signed     +      Phase::Unsigned      +
+/// ```
+///
+/// Note that the unsigned phase starts [`pallet_election_provider_multi_phase::Config::UnsignedPhase`] blocks before the
+/// `next_election_prediction`, but only ends when a call to [`pallet_election_provider_multi_phase::ElectionProvider::elect`] happens. If
+/// no `elect` happens, the signed phase is extended.
+///
+/// > Given this, it is rather important for the user of this pallet to ensure it always terminates
+/// election via `elect` before requesting a new one.
+///
+/// Each of the phases can be disabled by essentially setting their length to zero. If both phases
+/// have length zero, then the pallet essentially runs only the fallback strategy, denoted by
+/// [`Config::Fallback`].
+///
+/// ### Fallback
+///
+/// If we reach the end of both phases (i.e. call to [`pallet_election_provider_multi_phase::ElectionProvider::elect`] happens) and no
+/// good solution is queued, then the fallback strategy [`pallet_election_provider_multi_phase::Config::Fallback`] is used to
+/// determine what needs to be done. The on-chain election is slow, and contains no balancing or
+/// reduction post-processing. If [`pallet_election_provider_multi_phase::Config::Fallback`] fails, the next phase
+/// [`Phase::Emergency`] is enabled, which is a more *fail-safe* approach.
+///
+/// # Footnote:
+///
+/// Check out the diagram here in https://www.youtube.com/watch?v=qVd9lAudynY&t=2502s to see how the "Election Provider" (which is `pallet_election_provider_multi_phase`)
+/// communicates with "Election Data Provider" (which is `pallet_staking`) and "Election Consumer" (which is also `pallet_staking`).
+///
+/// As you can see in the diagram, "Election Provider" expects the "Election Consumer" to call the `elect()` function of the "Election Provider" which returns the winners of the election (i.e the nominated/winning validators)
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_election_provider_multi_phase/index.html#
+impl pallet_election_provider_multi_phase::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	/// Currency type.
+	type Currency = Balances;
+	/// Something that can predict the fee of a call. Used to sensibly distribute rewards.
+	type EstimateCallFee = TransactionPayment;
+	/// Duration of the signed phase.
+	type SignedPhase = SignedPhase;
+	/// Duration of the unsigned phase.
+	type UnsignedPhase = UnsignedPhase;
+	/// The minimum amount of improvement to the solution score that defines a solution as
+	/// "better" in the Unsigned phase.
+	type BetterUnsignedThreshold = BetterUnsignedThreshold;
+	/// The minimum amount of improvement to the solution score that defines a solution as
+	/// "better" in the Signed phase.
+	type BetterSignedThreshold = ();
+	type OffchainRepeat = OffchainRepeat;
+	/// The priority of the unsigned transaction submitted in the unsigned-phase
+	type MinerTxPriority = MultiPhaseUnsignedPriority;
+	/// Configurations of the embedded miner.
+	///
+	/// Any external software implementing this can use the [`pallet_election_provider_multi_phase::unsigned::Miner`] type provided,
+	/// which can mine new solutions and trim them accordingly.
+	type MinerConfig = Self;
+	type SignedMaxSubmissions = ConstU32<10>;
+	/// Base reward for a signed solution
+	type SignedRewardBase = SignedRewardBase;
+	/// Base deposit for a signed solution.
+	type SignedDepositBase = SignedDepositBase;
+	/// Per-byte deposit for a signed solution.
+	type SignedDepositByte = SignedDepositByte;
+	/// The maximum amount of unchecked solutions to refund the call fee for.
+	type SignedMaxRefunds = ConstU32<3>;
+	/// Per-weight deposit for a signed solution.
+	type SignedDepositWeight = ();
+	/// Maximum weight of a signed solution.
+	///
+	/// If [`pallet_election_provider_multi_phase::Config::MinerConfig`] is being implemented to submit signed solutions (outside of
+	/// this pallet), then [`MinerConfig::solution_weight`] is used to compare against
+	/// this value.
+	type SignedMaxWeight = MinerMaxWeight;
+	/// Handler for the slashed deposits.
+	type SlashHandler = (); // burn slashes
+	/// Handler for the rewards.
+	type RewardHandler = (); // nothing to do upon rewards
+	/// Something that will provide the election data.
+	type DataProvider = Staking;
+	/// Configuration for the fallback.
+	type Fallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
+	/// Configuration of the governance-only fallback.
+	///
+	/// As a side-note, it is recommend for test-nets to use `type ElectionProvider =
+	/// BoundedExecution<_>` if the test-net is not expected to have thousands of nominators.
+	type GovernanceFallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
+	/// OCW election solution miner algorithm implementation.
+	type Solver = SequentialPhragmen<AccountId, pallet_election_provider_multi_phase::SolutionAccuracyOf<Self>, OffchainRandomBalancing>;
+	/// Origin that can control this pallet. Note that any action taken by this origin (such)
+	/// as providing an emergency solution is not checked. Thus, it must be a trusted origin.
+	type ForceOrigin = EnsureRootOrHalfCouncil;
+	/// The maximum number of electable targets to put in the snapshot.
+	type MaxElectableTargets = MaxElectableTargets;
+	/// The maximum number of winners that can be elected by this `ElectionProvider`
+	/// implementation.
+	///
+	/// Note: This must always be greater or equal to `T::DataProvider::desired_targets()`.
+	type MaxWinners = MaxActiveValidators;
+	/// The maximum number of electing voters to put in the snapshot. At the moment, snapshots
+	/// are only over a single block, but once multi-block elections are introduced they will
+	/// take place over multiple blocks.
+	type MaxElectingVoters = MaxElectingVoters;
+	/// The configuration of benchmarking.
+	type BenchmarkingConfig = ElectionProviderBenchmarkConfig;
+	type WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight<Self>;
+}
+
+parameter_types! {
+	pub const SessionPeriod: BlockNumber = EPOCH_DURATION_IN_BLOCKS;
+	pub const Offset: BlockNumber = 0;
+}
+
+/// The Session pallet allows validators to manage their session keys, provides a function for changing the session length, and handles session rotation.
+///
+/// ## Overview
+///
+/// ### Terminology
+///
+/// - **Session:** A session is a period of time that has a constant set of validators. Validators
+///   can only join or exit the validator set at a session change. It is measured in block numbers.
+///   The block where a session is ended is determined by the `ShouldEndSession` trait. When the
+///   session is ending, a new validator set can be chosen by `OnSessionEnding` implementations.
+///
+/// - **Session key:** A session key is actually several keys kept together that provide the various
+///   signing functions required by network authorities/validators in pursuit of their duties.
+/// - **Validator ID:** Every account has an associated validator ID. For some simple staking
+///   systems, this may just be the same as the account ID. For staking systems using a
+///   stash/controller model, the validator ID would be the stash account ID of the controller.
+///
+/// ### Goals
+///
+/// The Session pallet is designed to make the following possible:
+///
+/// - Set session keys of the validator set for upcoming sessions.
+/// - Control the length of sessions.
+/// - Configure and switch between either normal or exceptional session rotations.
+///
+/// ## Usage
+///
+/// ### Example from the FRAME
+///
+/// The [Staking pallet](../pallet_staking/index.html) uses the Session pallet to get the validator
+/// set.
+///
+/// ```
+/// use pallet_session as session;
+///
+/// fn validators<T: pallet_session::Config>() -> Vec<<T as pallet_session::Config>::ValidatorId> {
+/// 	<pallet_session::Pallet<T>>::validators()
+/// }
+/// # fn main(){}
+/// ```
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_session/index.html#
+impl pallet_session::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	/// A stable ID for a validator.
+	type ValidatorId = <Self as frame_system::Config>::AccountId;
+	/// A conversion from account ID to validator ID.
+	///
+	/// Its cost must be at most one storage read.
+	type ValidatorIdOf = pallet_staking::StashOf<Self>;
+	/// Indicator for when to end the session.
+	type ShouldEndSession = pallet_session::PeriodicSessions<SessionPeriod, Offset>; // Babe;
+	/// Something that can predict the next session rotation. This should typically come from
+	/// the same logical unit that provides [`ShouldEndSession`], yet, it gives a best effort
+	/// estimate. It is helpful to implement [`EstimateNextNewSession`].
+	type NextSessionRotation = pallet_session::PeriodicSessions<SessionPeriod, Offset>; // Babe;
+	/// Handler for managing new session.
+	type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
+	/// Handler when a session has changed.
+	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+	/// The keys.
+	type Keys = opaque::SessionKeys;
+	type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+}
+
+/// `pallet_session::historical::pallet::Config` (re-exported as `pallet_session::historical::Config`) is
+/// the **Config necessary for the historical pallet.**
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_session/historical/pallet/trait.Config.html#
+///
+/// # Footnote
+///
+/// `pallet_session::historical` is an opt-in utility for tracking historical sessions in FRAME-session.
+///
+/// This is generally useful when implementing blockchains that require accountable
+/// safety where validators from some amount f prior sessions must remain slashable.
+///
+/// Rather than store the full session data for any given session, we instead commit
+/// to the roots of merkle tries containing the session data.
+///
+/// These roots and proofs of inclusion can be generated at any time during the current session.
+/// Afterwards, the proofs can be fed to a consensus module when reporting misbehavior.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_session/historical/index.html#
+impl pallet_session::historical::Config for Runtime {
+	type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
+	type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
+}
+
+// Accepts a number of expressions to create a instance of PiecewiseLinear which represents the
+// NPoS curve (as detailed
+// [here](https://research.web3.foundation/en/latest/polkadot/overview/2-token-economics.html#inflation-model))
+// for those parameters.
+//
+// Parameters are:
+// - `min_inflation`: the minimal amount to be rewarded between validators, expressed as a fraction
+//   of total issuance. Known as `I_0` in the literature. Expressed in millionth, must be between 0
+//   and 1_000_000.
+//
+// - `max_inflation`: the maximum amount to be rewarded between validators, expressed as a fraction
+//   of total issuance. This is attained only when `ideal_stake` is achieved. Expressed in
+//   millionth, must be between min_inflation and 1_000_000.
+//
+// - `ideal_stake`: the fraction of total issued tokens that should be actively staked behind
+//   validators. Known as `x_ideal` in the literature. Expressed in millionth, must be between
+//   0_100_000 and 0_900_000.
+//
+// - `falloff`: Known as `decay_rate` in the literature. A co-efficient dictating the strength of
+//   the global incentivization to get the `ideal_stake`. A higher number results in less typical
+//   inflation at the cost of greater volatility for validators. Expressed in millionth, must be
+//   between 0 and 1_000_000.
+//
+// - `max_piece_count`: The maximum number of pieces in the curve. A greater number uses more
+//   resources but results in higher accuracy. Must be between 2 and 1_000.
+//
+// - `test_precision`: The maximum error allowed in the generated test. Expressed in millionth,
+//   must be between 0 and 1_000_000.
+//
+// Source: https://paritytech.github.io/substrate/master/pallet_staking_reward_curve/macro.build.html#
+pallet_staking_reward_curve::build! {
+	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
+		min_inflation: 0_025_000,
+		max_inflation: 0_100_000,
+		ideal_stake: 0_500_000,
+		falloff: 0_050_000,
+		max_piece_count: 40,
+		test_precision: 0_005_000,
+	);
+}
+
+parameter_types! {
+	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+	pub const BondingDuration: sp_staking::EraIndex = 24 * 28;
+	pub const SlashDeferDuration: sp_staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
+	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+	pub const MaxNominatorRewardedPerValidator: u32 = 256;
+	pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
+	pub OffchainRepeat: BlockNumber = 5;
+	pub HistoryDepth: u32 = 84;
+}
+
+/// A reasonable benchmarking config for staking pallet.
+pub struct StakingBenchmarkingConfig;
+impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
+	type MaxNominators = ConstU32<1000>;
+	type MaxValidators = ConstU32<1000>;
+}
+
+/// The Staking pallet is used to manage funds at stake by network maintainers.
+///
+/// ## Overview
+///
+/// The Staking pallet is the means by which a set of network maintainers (known as _authorities_ in
+/// some contexts and _validators_ in others) are chosen based upon those who voluntarily place
+/// funds under deposit. Under deposit, those funds are rewarded under normal operation but are held
+/// at pain of _slash_ (expropriation) should the staked maintainer be found not to be discharging
+/// its duties properly.
+///
+/// ### Terminology
+///
+/// - Staking: The process of locking up funds for some time, placing them at risk of slashing
+///   (loss) in order to become a rewarded maintainer of the network.
+/// - Validating: The process of running a node to actively maintain the network, either by
+///   producing blocks or guaranteeing finality of the chain.
+/// - Nominating: The process of placing staked funds behind one or more validators in order to
+///   share in any reward, and punishment, they take.
+/// - Stash account: The account holding an owner's funds used for staking.
+/// - Controller account: The account that controls an owner's funds for staking.
+/// - Era: A (whole) number of sessions, which is the period that the validator set (and each
+///   validator's active nominator set) is recalculated and where rewards are paid out.
+/// - Slash: The punishment of a staker by reducing its funds.
+///
+/// ### Goals
+///
+/// The staking system in Substrate NPoS is designed to make the following possible:
+///
+/// - Stake funds that are controlled by a cold wallet.
+/// - Withdraw some, or deposit more, funds without interrupting the role of an entity.
+/// - Switch between roles (nominator, validator, idle) with minimal overhead.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_staking/index.html#
+impl pallet_staking::Config for Runtime {
+	/// Maximum number of nominations per nominator.
+	type MaxNominations = MaxNominations;
+	/// The staking balance.
+	type Currency = Balances;
+	/// Just the `Currency::Balance` type; we have this item to allow us to constrain it to
+	/// `From<u64>`.
+	type CurrencyBalance = Balance;
+	/// Time used for computing era duration.
+	///
+	/// It is guaranteed to start being called from the first `on_finalize`. Thus value at
+	/// genesis is not used.
+	type UnixTime = Timestamp;
+	/// Convert a balance into a number used for election calculation. This must fit into a
+	/// `u64` but is allowed to be sensibly lossy. The `u64` is used to communicate with the
+	/// [`frame_election_provider_support`] crate which accepts u64 numbers and does operations
+	/// in 128.
+	/// Consequently, the backward convert is used convert the u128s from sp-elections back to a
+	/// [`BalanceOf`].
+	type CurrencyToVote = U128CurrencyToVote;
+	/// Tokens have been minted and are unused for validator-reward.
+	/// See [Era payout](https://paritytech.github.io/substrate/master/pallet_staking/index.html#era-payout).
+	type RewardRemainder = Treasury;
+	type RuntimeEvent = RuntimeEvent;
+	type Slash = Treasury; // send the slashed funds to the treasury.
+	type Reward = (); // rewards are minted from the void
+	/// Number of sessions per era.
+	type SessionsPerEra = SessionsPerEra;
+	/// Number of eras that staked funds must remain bonded for.
+	type BondingDuration = BondingDuration;
+	/// Number of eras that slashes are deferred by, after computation.
+	///
+	/// This should be less than the bonding duration. Set to 0 if slashes
+	/// should be applied immediately, without opportunity for intervention.
+	type SlashDeferDuration = SlashDeferDuration;
+	/// A super-majority of the council can cancel the slash.
+	type AdminOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 4>,
+	>;
+	/// Interface for interacting with a session pallet.
+	type SessionInterface = Self;
+	/// The payout for validators and the system for the current era.
+	/// See [Era payout](https://paritytech.github.io/substrate/master/pallet_staking/index.html#era-payout).
+	type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
+	/// Something that can estimate the next session change, accurately or as a best effort
+	/// guess.
+	type NextNewSession = Session;
+	/// The maximum number of nominators rewarded for each validator.
+	///
+	/// For each validator only the `$MaxNominatorRewardedPerValidator` biggest stakers can
+	/// claim their reward. This used to limit the i/o cost for the nominator payout.
+	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+	/// The fraction of the validator set that is safe to be offending.
+	/// After the threshold is reached a new era will be forced.
+	type OffendingValidatorsThreshold = OffendingValidatorsThreshold;
+	/// Something that provides the election functionality.
+	type ElectionProvider = ElectionProviderMultiPhase;
+	/// Something that provides the election functionality at genesis.
+	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
+	/// Something that provides a best-effort sorted list of voters aka electing nominators,
+	/// used for NPoS election.
+	///
+	/// The changes to nominators are reported to this. Moreover, each validator's self-vote is
+	/// also reported as one independent vote.
+	///
+	/// To keep the load off the chain as much as possible, changes made to the staked amount
+	/// via rewards and slashes are not reported and thus need to be manually fixed by the
+	/// staker. In case of `bags-list`, this always means using `rebag` and `putInFrontOf`.
+	///
+	/// Invariant: what comes out of this list will always be a nominator.
+	type VoterList = BagsList;
+	// This a placeholder, to be introduced in the next PR as an instance of bags-list
+	type TargetList = pallet_staking::UseValidatorsMap<Self>;
+	/// The maximum number of `unlocking` chunks a [`StakingLedger`] can
+	/// have. Effectively determines how many unique eras a staker may be
+	/// unbonding in.
+	///
+	/// Note: `MaxUnlockingChunks` is used as the upper bound for the
+	/// `BoundedVec` item `StakingLedger.unlocking`. Setting this value
+	/// lower than the existing value can lead to inconsistencies in the
+	/// `StakingLedger` and will need to be handled properly in a runtime
+	/// migration. The test `reducing_max_unlocking_chunks_abrupt` shows
+	/// this effect.
+	type MaxUnlockingChunks = ConstU32<32>;
+	/// Number of eras to keep in history.
+	type HistoryDepth = HistoryDepth;
+	/// A hook called when any staker is slashed. Mostly likely this can be a no-op unless
+	/// other pallets exist that are affected by slashing per-staker.
+	type OnStakerSlash = NominationPools;
+	type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
+	/// Some parameters of the benchmarking.
+	type BenchmarkingConfig = StakingBenchmarkingConfig;
+}
+
+parameter_types! {
+	pub const BagThresholds: &'static [u64] = &voter_bags::THRESHOLDS;
+}
+
+/// A semi-sorted list, where items hold an `AccountId` based on some `Score`. The
+/// `AccountId` (`id` for short) might be synonym to a `voter` or `nominator` in some context, and
+/// `Score` signifies the chance of each id being included in the final
+/// `SortedListProvider::iter`.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_bags_list/index.html#
+impl pallet_bags_list::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	/// The voter bags-list is loosely kept up to date, and the real source of truth for the score
+	/// of each node is the staking pallet.
+	type ScoreProvider = Staking;
+	/// The list of thresholds separating the various bags.
+	type BagThresholds = BagThresholds;
+	/// The type used to dictate a node position relative to other nodes.
+	type Score = frame_election_provider_support::VoteWeight;
+	type WeightInfo = pallet_bags_list::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+	pub const PostUnbondPoolsWindow: u32 = 4;
+	pub const NominationPoolsPalletId: PalletId = PalletId(*b"py/nopls");
+	pub const MaxPointsToBalance: u8 = 10;
+}
+
+use sp_runtime::traits::Convert;
+pub struct BalanceToU256;
+impl Convert<Balance, sp_core::U256> for BalanceToU256 {
+	fn convert(balance: Balance) -> sp_core::U256 {
+		sp_core::U256::from(balance)
+	}
+}
+pub struct U256ToBalance;
+impl Convert<sp_core::U256, Balance> for U256ToBalance {
+	fn convert(n: sp_core::U256) -> Balance {
+		n.try_into().unwrap_or(Balance::max_value())
+	}
+}
+
+/// A pallet that allows members to delegate their stake to nominating pools. A nomination pool acts
+/// as nominator and nominates validators on the members behalf.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_nomination_pools/index.html#
+impl pallet_nomination_pools::Config for Runtime {
+	type WeightInfo = ();
+	type RuntimeEvent = RuntimeEvent;
+	/// The nominating balance.
+	type Currency = Balances;
+	/// The type that is used for reward counter.
+	type RewardCounter = FixedU128;
+	/// Infallible method for converting `Currency::Balance` to `U256`.
+	type BalanceToU256 = BalanceToU256;
+	/// Infallible method for converting `U256` to `Currency::Balance`.
+	type U256ToBalance = U256ToBalance;
+	/// The interface for nominating.
+	type Staking = Staking;
+	/// The amount of eras a `SubPools::with_era` pool can exist before it gets merged into the
+	/// `SubPools::no_era` pool. In other words, this is the amount of eras a member will be
+	/// able to withdraw from an unbonding pool which is guaranteed to have the correct ratio of
+	/// points to balance; once the `with_era` pool is merged into the `no_era` pool, the ratio
+	/// can become skewed due to some slashed ratio getting merged in at some point.
+	type PostUnbondingPoolsWindow = PostUnbondPoolsWindow;
+	/// The maximum length, in bytes, that a pools metadata maybe.
+	type MaxMetadataLen = ConstU32<256>;
+	/// The maximum number of simultaneous unbonding chunks that can exist per member.
+	type MaxUnbonding = ConstU32<8>;
+	/// The nomination pool's pallet id.
+	type PalletId = NominationPoolsPalletId;
+	/// The maximum pool points-to-balance ratio that an `open` pool can have.
+	///
+	/// This is important in the event slashing takes place and the pool's points-to-balance
+	/// ratio becomes disproportional.
+	///
+	/// Moreover, this relates to the `RewardCounter` type as well, as the arithmetic operations
+	/// are a function of number of points, and by setting this value to e.g. 10, you ensure
+	/// that the total number of points in the system are at most 10 times the total_issuance of
+	/// the chain, in the absolute worse case.
+	///
+	/// For a value of 10, the threshold would be a pool points-to-balance ratio of 10:1.
+	/// Such a scenario would also be the equivalent of the pool being 90% slashed.
+	type MaxPointsToBalance = MaxPointsToBalance;
+}
+
+
 // Construct the Substrate runtime and integrates various pallets into the aforementioned runtime.
 //
 // The parameters here are specific types for `Block`, `NodeBlock`, and `UncheckedExtrinsic` and the pallets that are used by the runtime.
@@ -1445,6 +2267,17 @@ construct_runtime!(
 		Clusters: pallet_clusters,
 		Oracle: pallet_oracle,
 		Aliases: pallet_aliases,
+
+		Council: pallet_collective::<Instance1>,
+		Treasury: pallet_treasury,
+		Bounties: pallet_bounties,
+		ChildBounties: pallet_child_bounties,
+		AuthorityDiscovery: pallet_authority_discovery,
+		ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
+		Staking: pallet_staking,
+		Session: pallet_session,
+		BagsList: pallet_bags_list,
+		NominationPools: pallet_nomination_pools,
 	}
 );
 
@@ -1726,6 +2559,18 @@ impl_runtime_apis! {
 	/// Session keys runtime api.
 	///
 	/// See: https://paritytech.github.io/substrate/master/sp_session/trait.SessionKeys.html#
+	///
+	/// # Footnote
+	///
+	/// ## Terminology
+	///
+	/// - **Session:** A session is a period of time that has a constant set of validators. Validators
+	///   can only join or exit the validator set at a session change. It is measured in block numbers.
+	///
+	/// - **Session key:** A session key is actually several keys kept together that provide the various
+	///   signing functions required by network authorities/validators in pursuit of their duties.
+	///
+	/// Source: https://paritytech.github.io/substrate/master/pallet_session/index.html#
 	impl sp_session::SessionKeys<Block> for Runtime {
 		/// Generate a set of session keys with optionally using the given seed.
 		/// The keys should be stored within the keystore exposed via runtime

@@ -15,8 +15,13 @@
 // The imports from `fragnova_runtime` that follow the pattern "<Pallet>Config" are the <Pallet>'s `GenesisConfig` struct
 // See for more info: https://docs.substrate.io/reference/how-to-guides/basics/configure-genesis-state/
 use fragnova_runtime::{
-	AccountId, AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
+	constants::currency::*,
+	opaque::SessionKeys,
+	AccountsConfig, AssetsConfig, AuraConfig, BalancesConfig, DetachConfig,
 	GenesisConfig, GrandpaConfig, IndicesConfig, OracleConfig, Signature, SudoConfig, SystemConfig,
+	SessionConfig, StakingConfig, CouncilConfig, AuthorityDiscoveryConfig, NominationPoolsConfig,
+	MaxNominations,
+	StakerStatus,
 	WASM_BINARY,
 };
 use sc_service::ChainType;
@@ -24,7 +29,12 @@ use serde_json;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{ecdsa, ed25519, sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{
+	traits::{IdentifyAccount, Verify},
+	Perbill
+};
+
+use sp_fragnova::{AccountId, Balance};
 
 /// TODO: Documentation
 pub type UploadId = ecdsa::Public;
@@ -69,13 +79,15 @@ where
 }
 
 /// Generate an authority key for Aura, Grandpa, Upload, Eth, Detach.
-pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId, UploadId, EthId, DetachId) {
+pub fn authority_keys_from_seed(seed: &str) -> (AccountId, AccountId, AuraId, GrandpaId, UploadId, EthId, DetachId) {
 	(
-		get_from_seed::<AuraId>(s),
-		get_from_seed::<GrandpaId>(s),
-		get_from_seed::<UploadId>(s),
-		get_from_seed_to_eth(s),
-		get_from_seed::<DetachId>(s),
+		get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
+		get_account_id_from_seed::<sr25519::Public>(seed),
+		get_from_seed::<AuraId>(seed),
+		get_from_seed::<GrandpaId>(seed),
+		get_from_seed::<UploadId>(seed),
+		get_from_seed_to_eth(seed),
+		get_from_seed::<DetachId>(seed),
 	)
 }
 
@@ -88,6 +100,13 @@ fn chain_spec_properties() -> serde_json::map::Map<String, serde_json::Value> {
 	.as_object()
 	.expect("Map given; qed")
 	.clone()
+}
+
+fn session_keys(
+	aura: AuraId,
+	grandpa: GrandpaId,
+) -> SessionKeys {
+	SessionKeys { grandpa, aura }
 }
 
 /// Returns the `ChainSpec` struct used when for starting/joining a Fragnova Development Network
@@ -105,6 +124,7 @@ pub fn development_config() -> Result<ChainSpec, String> {
 				wasm_binary,
 				// Initial PoA authorities
 				vec![authority_keys_from_seed("Alice")],
+				vec![],
 				// Sudo account
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Pre-funded accounts
@@ -147,6 +167,7 @@ pub fn local_testnet_config() -> Result<ChainSpec, String> {
 				wasm_binary,
 				// Initial PoA authorities
 				vec![authority_keys_from_seed("Alice"), authority_keys_from_seed("Bob")],
+				vec![],
 				// Sudo account
 				get_account_id_from_seed::<sr25519::Public>("Alice"),
 				// Pre-funded accounts
@@ -207,6 +228,12 @@ pub fn live_config() -> Result<ChainSpec, String> {
 				assets: AssetsConfig::default(),
 				accounts: AccountsConfig::default(),
 				oracle: OracleConfig::default(),
+				session: SessionConfig::default(),
+				staking: StakingConfig::default(),
+				council: CouncilConfig::default(),
+				authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
+				treasury: Default::default(),
+				nomination_pools: NominationPoolsConfig::default(),
 			}
 		},
 		// Bootnodes
@@ -226,11 +253,35 @@ pub fn live_config() -> Result<ChainSpec, String> {
 /// Configures the initial storage state for FRAME modules.
 fn testnet_genesis(
 	wasm_binary: &[u8],
-	initial_authorities: Vec<(AuraId, GrandpaId, UploadId, EthId, DetachId)>,
+	initial_authorities: Vec<(AccountId, AccountId, AuraId, GrandpaId, UploadId, EthId, DetachId)>,
+	initial_nominators: Vec<AccountId>,
 	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	_enable_println: bool,
 ) -> GenesisConfig {
+
+	// stakers: all validators and nominators.
+	let mut rng = rand::thread_rng();
+	let stakers = initial_authorities
+		.iter()
+		.map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+		.chain(initial_nominators.iter().map(|x| {
+			use rand::{seq::SliceRandom, Rng};
+			let limit = (MaxNominations::get() as usize).min(initial_authorities.len());
+			let count = rng.gen::<usize>() % limit;
+			let nominations = initial_authorities
+				.as_slice()
+				.choose_multiple(&mut rng, count)
+				.into_iter()
+				.map(|choice| choice.0.clone())
+				.collect::<Vec<_>>();
+			(x.clone(), x.clone(), STASH, StakerStatus::Nominator(nominations))
+		}))
+		.collect::<Vec<_>>();
+
+	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
+	const STASH: Balance = ENDOWMENT / 1000;
+
 	GenesisConfig {
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
@@ -245,10 +296,10 @@ fn testnet_genesis(
 				.collect(),
 		},
 		aura: AuraConfig {
-			authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
+			authorities: initial_authorities.iter().map(|x| (x.2.clone())).collect(),
 		},
 		grandpa: GrandpaConfig {
-			authorities: initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect(),
+			authorities: initial_authorities.iter().map(|x| (x.3.clone(), 1)).collect(),
 		},
 		sudo: SudoConfig {
 			// Assign network admin rights.
@@ -257,13 +308,41 @@ fn testnet_genesis(
 		transaction_payment: Default::default(),
 		indices: IndicesConfig { indices: vec![] },
 		detach: DetachConfig {
-			eth_authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
-			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
+			eth_authorities: initial_authorities.iter().map(|x| (x.5.clone())).collect(),
+			keys: initial_authorities.iter().map(|x| (x.6.clone())).collect(),
 		},
 		assets: AssetsConfig { assets: vec![], metadata: vec![], accounts: vec![] },
 		accounts: AccountsConfig {
-			keys: initial_authorities.iter().map(|x| (x.4.clone())).collect(),
+			keys: initial_authorities.iter().map(|x| (x.6.clone())).collect(),
 		},
-		oracle: OracleConfig { keys: initial_authorities.iter().map(|x| (x.4.clone())).collect() },
+		oracle: OracleConfig { keys: initial_authorities.iter().map(|x| (x.6.clone())).collect() },
+		session: SessionConfig {
+			keys: initial_authorities
+				.iter()
+				.map(|x| {
+					(
+						x.0.clone(),
+						x.0.clone(),
+						session_keys(x.2.clone(), x.3.clone()),
+					)
+				})
+				.collect::<Vec<_>>(),
+		},
+		staking: StakingConfig {
+			validator_count: initial_authorities.len() as u32,
+			minimum_validator_count: initial_authorities.len() as u32,
+			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
+			slash_reward_fraction: Perbill::from_percent(10),
+			stakers,
+			..Default::default()
+		},
+		council: CouncilConfig::default(),
+		authority_discovery: AuthorityDiscoveryConfig { keys: vec![] },
+		treasury: Default::default(),
+		nomination_pools: NominationPoolsConfig {
+			min_create_bond: 10 * DOLLARS,
+			min_join_bond: 1 * DOLLARS,
+			..Default::default()
+		},
 	}
 }
