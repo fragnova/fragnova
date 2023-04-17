@@ -121,13 +121,13 @@ use frame_support::traits::ReservableCurrency;
 
 use sp_runtime::traits::StaticLookup;
 
-/// TODO: Documentation
+/// Discord uses 64-bit IDs for its users (Snowflakes)
 pub type DiscordID = u64;
 
 /// Enum that indicates the different types of External Account IDs that can be "used as an account" on the Fragnova Blockchain
 #[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 pub enum ExternalID {
-	/// TODO: Documentation
+	/// A discord user ID
 	Discord(DiscordID),
 }
 
