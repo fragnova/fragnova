@@ -1613,13 +1613,13 @@
 
 <span class="kw">use </span>sp_runtime::traits::StaticLookup;
 
-<span class="doccomment">/// TODO: Documentation
+<span class="doccomment">/// Discord uses 64-bit IDs for its users (Snowflakes)
 </span><span class="kw">pub type </span>DiscordID = u64;
 
 <span class="doccomment">/// Enum that indicates the different types of External Account IDs that can be &quot;used as an account&quot; on the Fragnova Blockchain
 </span><span class="attr">#[derive(Encode, Decode, Clone, scale_info::TypeInfo, Debug, PartialEq, Eq)]
 </span><span class="kw">pub enum </span>ExternalID {
-	<span class="doccomment">/// TODO: Documentation
+	<span class="doccomment">/// A discord user ID
 	</span>Discord(DiscordID),
 }
 
@@ -2983,4 +2983,4 @@
 	}
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_accounts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_accounts" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.2 (9eb3afe9e 2023-03-27)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
