@@ -77,6 +77,9 @@ use frame_system::{EnsureRoot, EnsureSigned, EnsureWithSuccess};
 use pallet_grandpa::{
 	fg_primitives, AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList,
 };
+pub use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
+pub use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
+use pallet_session::historical::{self as pallet_session_historical};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -176,12 +179,14 @@ pub mod opaque {
 	// Implement OpaqueKeys for a described struct.
 	// Every field type must implement BoundToRuntimeAppPublic. KeyTypeIdProviders is set to the types given as fields.
 	impl_opaque_keys! {
-		/// TODO: Documentation
+		/// A session key is a concatenation of four public keys. They are used by validators for signing consensus-related messages
+		///
+		/// Source: https://www.youtube.com/watch?v=-PSPfbAcpiQ&t=1120s
 		pub struct SessionKeys {
-			/// TODO: Documentation
 			pub aura: Aura,
-			/// TODO: Documentation
 			pub grandpa: Grandpa,
+			pub im_online: ImOnline,
+			pub authority_discovery: AuthorityDiscovery,
 		}
 	}
 }
@@ -869,36 +874,104 @@ impl frame_system::Config for Runtime {
 impl pallet_insecure_randomness_collective_flip::Config for Runtime {}
 
 parameter_types! {
-	/// The maximum number of authorities that `pallet_aura` can hold.
-	pub const MaxAuthorities: u32 = 32;
+	pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+	/// We prioritize im-online heartbeats over election solution submission.
 	pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+	/// The maximum number of authorities that `pallet_aura` can hold.
+	pub const MaxAuthorities: u32 = 100;
+	pub const MaxKeys: u32 = 10_000;
+	pub const MaxPeerInHeartbeats: u32 = 10_000;
+	pub const MaxPeerDataEncodingSize: u32 = 1_000;
+	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
+	//       Attempting to do so will brick block production.
+	pub const EpochDuration: u64 = EPOCH_DURATION_IN_SLOTS;
+	pub const ReportLongevity: u64 =
+		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
+	pub const MaxSetIdSessionEntries: u32 = BondingDuration::get() * SessionsPerEra::get();
 }
 
+/// The Aura module extends Aura consensus by managing offline reporting.
+///
+/// ## Interface
+///
+/// ### Public Functions
+///
+/// - `slot_duration` - Determine the Aura slot-duration based on the Timestamp module
+///   configuration.
+///
+/// ## Related Modules
+///
+/// - [Timestamp](https://paritytech.github.io/substrate/master/pallet_timestamp/index.html): The Timestamp module is used in Aura to track
+/// consensus rounds (via `slots`).
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_aura/index.html#
 impl pallet_aura::Config for Runtime {
 	/// The identifier type for an authority.
 	type AuthorityId = AuraId;
+	/// A way to check whether a given validator is disabled and should not be authoring blocks.
+	/// Blocks authored by a disabled validator will lead to a panic as part of this module's
+	/// initialization.
 	type DisabledValidators = ();
+	/// The maximum number of authorities that the pallet can hold.
 	type MaxAuthorities = MaxAuthorities;
 }
 
+/// GRANDPA Consensus module for runtime.
+///
+/// This manages the GRANDPA authority set ready for the native code.
+/// These authorities are only for GRANDPA finality, not for consensus overall.
+///
+/// In the future, it will also handle misbehavior reports, and on-chain
+/// finality notifications.
+///
+/// For full integration with GRANDPA, the `GrandpaApi` should be implemented.
+/// The necessary items are re-exported via the `fg_primitives` crate.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_grandpa/index.html#
+///
+/// ## Terminology
+///
+/// - Equivocation Report: An equivocation report is a signaling that someone detected a Aura/Babe authority to have build two blocks on the same height.
+///   So, if someone detects a Aura/Babe authority building two blocks at the same height, it will issue such an equivocation report.
+///   It is up to chain how it wants to handle this. Polkadot for example will slash the offending authority." -
+///
+/// Source: https://stackoverflow.com/questions/71004838/in-substrate-what-is-the-equivocation-handling-system-and-keyownerproof-identif/71016144#71016144
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-
-	type KeyOwnerProofSystem = ();
-
+	/// A system for proving ownership of keys, i.e. that a given key was part
+	/// of a validator set, needed for validating equivocation reports.
+	type KeyOwnerProofSystem = Historical;
+	/// The proof of key ownership, used for validating equivocation reports
+	/// The proof must include the session index and validator count of the
+	/// session at which the equivocation occurred.
 	type KeyOwnerProof =
-		<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-
+	<Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
+	/// The identification of a key owner, used when reporting equivocations.
 	type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
 		KeyTypeId,
 		GrandpaId,
 	)>>::IdentificationTuple;
-
-	type HandleEquivocation = ();
-
+	/// The equivocation handling subsystem, defines methods to report an
+	/// offence (after the equivocation has been validated) and for submitting a
+	/// transaction to report an equivocation (from an offchain context).
+	/// NOTE: when enabling equivocation handling (i.e. this type isn't set to
+	/// `()`) you must use this pallet's `ValidateUnsigned` in the runtime
+	/// definition.
+	type HandleEquivocation = pallet_grandpa::EquivocationHandler<
+		Self::KeyOwnerIdentification,
+		Offences,
+		ReportLongevity,
+	>;
 	type WeightInfo = ();
+	/// Max Authorities in use
 	type MaxAuthorities = MaxAuthorities;
-	type MaxSetIdSessionEntries = ConstU64<0>;
+	/// The maximum number of entries to keep in the set id to session index mapping.
+	///
+	/// Since the `SetIdSession` map is only used for validating equivocations this
+	/// value should relate to the bonding duration of whatever staking system is
+	/// being used (if any). If equivocation handling is not enabled then this value
+	/// can be zero.
+	type MaxSetIdSessionEntries = MaxSetIdSessionEntries;
 }
 
 parameter_types! {
@@ -923,10 +996,25 @@ parameter_types! {
 	/// Whether an account can voluntarily transfer any of its balance to another account
 	///
 	/// Note: This type has been added by Fragnova
-	pub const IsTransferable: bool = false;
+	pub const IsTransferable: bool = true;
 }
 
 impl pallet_balances::Config for Runtime {
+	type MaxLocks = MaxLocks;
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	/// The type for recording an account's balance.
+	type Balance = Balance;
+	/// The ubiquitous event type.
+	type RuntimeEvent = RuntimeEvent;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
+	type IsTransferable = IsTransferable;
+}
+
+impl pallet_balances::Config<pallet_balances::Instance2> for Runtime {
 	type MaxLocks = MaxLocks;
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
@@ -1337,6 +1425,84 @@ impl pallet_assets::Config for Runtime {
 	type BenchmarkHelper = ();
 }
 
+/// Authorship tracking for FRAME runtimes.
+///
+/// This tracks the current author of the block.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_authorship/index.html#
+impl pallet_authorship::Config for Runtime {
+	/// Find the author of a block.
+	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+	type EventHandler = (Staking, ImOnline);
+}
+
+/// # I'm online Pallet
+///
+/// If the local node is a validator (i.e. contains an authority key), this pallet
+/// gossips a heartbeat transaction with each new session. The heartbeat functions
+/// as a simple mechanism to signal that the node is online in the current era.
+///
+/// Received heartbeats are tracked for one era and reset with each new era. The
+/// pallet exposes two public functions to query if a heartbeat has been received
+/// in the current era or session.
+///
+/// The heartbeat is a signed transaction, which was signed using the session key
+/// and includes the recent best block number of the local validators chain as well
+/// as the [NetworkState](https://paritytech.github.io/substrate/master/sp_core/offchain/struct.OpaqueNetworkState.html#).
+/// It is submitted as an Unsigned Transaction via off-chain workers.
+///
+/// ## Interface
+///
+/// ### Public Functions
+///
+/// - `is_online` - True if the validator sent a heartbeat in the current session.
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_im_online/index.html#
+impl pallet_im_online::Config for Runtime {
+	/// The identifier type for an authority.
+	type AuthorityId = ImOnlineId;
+	type RuntimeEvent = RuntimeEvent;
+	/// A trait that allows us to estimate the current session progress and also the
+	/// average session length.
+	///
+	/// This parameter is used to determine the longevity of `heartbeat` transaction and a
+	/// rough time when we should start considering sending heartbeats, since the workers
+	/// avoids sending them at the very beginning of the session, assuming there is a
+	/// chance the authority will produce a block and they won't be necessary.
+	type NextSessionRotation = pallet_session::PeriodicSessions<SessionPeriod, Offset>; // Babe;
+	/// A type for retrieving the validators supposed to be online in a session.
+	type ValidatorSet = Historical;
+	/// A type that gives us the ability to submit unresponsiveness offence reports.
+	type ReportUnresponsiveness = Offences;
+	/// A configuration for base priority of unsigned transactions.
+	///
+	/// This is exposed so that it can be tuned for particular runtime, when
+	/// multiple pallets send unsigned transactions.
+	type UnsignedPriority = ImOnlineUnsignedPriority;
+	type WeightInfo = pallet_im_online::weights::SubstrateWeight<Runtime>;
+	/// The maximum number of keys that can be added.
+	type MaxKeys = MaxKeys;
+	/// The maximum number of peers to be stored in `ReceivedHeartbeats`
+	type MaxPeerInHeartbeats = MaxPeerInHeartbeats;
+	/// The maximum size of the encoding of `PeerId` and `MultiAddr` that are coming
+	/// from the hearbeat
+	type MaxPeerDataEncodingSize = MaxPeerDataEncodingSize;
+}
+
+/// # Offences Pallet
+///
+/// Tracks reported offences
+///
+/// Source: https://paritytech.github.io/substrate/master/pallet_offences/index.html#
+impl pallet_offences::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	/// Full identification of the validator.
+	type IdentificationTuple = pallet_session::historical::IdentificationTuple<Self>;
+	/// A handler called for every offence report.
+	type OnOffenceHandler = Staking;
+}
+
+
 parameter_types! {
 	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
 	pub const CouncilMaxProposals: u32 = 100;
@@ -1445,7 +1611,7 @@ parameter_types! {
 impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	/// The staking balance.
-	type Currency = Balances;
+	type Currency = Frag;
 	/// Origin from which approvals must come.
 	type ApproveOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
@@ -1766,7 +1932,7 @@ impl pallet_election_provider_multi_phase::MinerConfig for Runtime {
 impl pallet_election_provider_multi_phase::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	/// Currency type.
-	type Currency = Balances;
+	type Currency = Frag;
 	/// Something that can predict the fee of a call. Used to sensibly distribute rewards.
 	type EstimateCallFee = TransactionPayment;
 	/// Duration of the signed phase.
@@ -1839,7 +2005,16 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 }
 
 parameter_types! {
+	/// A Session is defined to have the same duration as an Epoch in Fragnova, just like in Polkadot: https://wiki.polkadot.network/docs/maintain-polkadot-parameters
+	///
+	/// Note: "Conceptually, a session and epoch are different. Pallet-Babe/Pallet-Aura only cares about epoch and slots,
+	/// 	   and Pallet-Grandpa/Pallet-Staking only cares about eras and sessions" - https://www.youtube.com/watch?v=-PSPfbAcpiQ&t=459s
 	pub const SessionPeriod: BlockNumber = EPOCH_DURATION_IN_BLOCKS;
+	/// The first session will have length of `Offset`, and
+	/// the following sessions will have length of `SessionPeriod`.
+	/// This may prove nonsensical if `Offset` >= `SessionPeriod`.
+	///
+	/// Source: https://paritytech.github.io/substrate/master/pallet_session/struct.PeriodicSessions.html#
 	pub const Offset: BlockNumber = 0;
 }
 
@@ -1975,7 +2150,7 @@ pallet_staking_reward_curve::build! {
 
 parameter_types! {
 	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
-	pub const BondingDuration: sp_staking::EraIndex = 24 * 28;
+	pub const BondingDuration: sp_staking::EraIndex = 24 * 28; // the bonding period is 28 days
 	pub const SlashDeferDuration: sp_staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
 	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
 	pub const MaxNominatorRewardedPerValidator: u32 = 256;
@@ -2023,12 +2198,30 @@ impl pallet_staking::BenchmarkingConfig for StakingBenchmarkingConfig {
 /// - Withdraw some, or deposit more, funds without interrupting the role of an entity.
 /// - Switch between roles (nominator, validator, idle) with minimal overhead.
 ///
+/// ### Era payout
+///
+/// The era payout is computed using yearly inflation curve defined at
+/// [`Config::EraPayout`] as such:
+///
+/// ```nocompile
+/// staker_payout = yearly_inflation(npos_token_staked / total_tokens) * total_tokens / era_per_year
+/// ```
+/// This payout is used to reward stakers as defined in next section
+///
+/// ```nocompile
+/// remaining_payout = max_yearly_inflation * total_tokens / era_per_year - staker_payout
+/// ```
+/// The remaining reward is send to the configurable end-point
+/// [`Config::RewardRemainder`].
+///
+///
+///
 /// Source: https://paritytech.github.io/substrate/master/pallet_staking/index.html#
 impl pallet_staking::Config for Runtime {
 	/// Maximum number of nominations per nominator.
 	type MaxNominations = MaxNominations;
 	/// The staking balance.
-	type Currency = Balances;
+	type Currency = Frag;
 	/// Just the `Currency::Balance` type; we have this item to allow us to constrain it to
 	/// `From<u64>`.
 	type CurrencyBalance = Balance;
@@ -2095,7 +2288,7 @@ impl pallet_staking::Config for Runtime {
 	/// staker. In case of `bags-list`, this always means using `rebag` and `putInFrontOf`.
 	///
 	/// Invariant: what comes out of this list will always be a nominator.
-	type VoterList = BagsList;
+	type VoterList = VoterList;
 	// This a placeholder, to be introduced in the next PR as an instance of bags-list
 	type TargetList = pallet_staking::UseValidatorsMap<Self>;
 	/// The maximum number of `unlocking` chunks a [`StakingLedger`] can
@@ -2123,13 +2316,14 @@ parameter_types! {
 	pub const BagThresholds: &'static [u64] = &voter_bags::THRESHOLDS;
 }
 
+type VoterBagsListInstance = pallet_bags_list::Instance1;
 /// A semi-sorted list, where items hold an `AccountId` based on some `Score`. The
 /// `AccountId` (`id` for short) might be synonym to a `voter` or `nominator` in some context, and
 /// `Score` signifies the chance of each id being included in the final
 /// `SortedListProvider::iter`.
 ///
 /// Source: https://paritytech.github.io/substrate/master/pallet_bags_list/index.html#
-impl pallet_bags_list::Config for Runtime {
+impl pallet_bags_list::Config<VoterBagsListInstance> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	/// The voter bags-list is loosely kept up to date, and the real source of truth for the score
 	/// of each node is the staking pallet.
@@ -2169,7 +2363,7 @@ impl pallet_nomination_pools::Config for Runtime {
 	type WeightInfo = ();
 	type RuntimeEvent = RuntimeEvent;
 	/// The nominating balance.
-	type Currency = Balances;
+	type Currency = Frag;
 	/// The type that is used for reward counter.
 	type RewardCounter = FixedU128;
 	/// Infallible method for converting `Currency::Balance` to `U256`.
@@ -2249,6 +2443,7 @@ construct_runtime!(
 		Aura: pallet_aura,
 		Grandpa: pallet_grandpa,
 		Balances: pallet_balances,
+		Frag: pallet_balances::<Instance2>,
 		TransactionPayment: pallet_transaction_payment,
 		Sudo: pallet_sudo,
 		Assets: pallet_assets,
@@ -2268,6 +2463,13 @@ construct_runtime!(
 		Oracle: pallet_oracle,
 		Aliases: pallet_aliases,
 
+		// Authorship must be before session in order to note author in the correct session and era
+		// for im-online and staking.
+		Authorship: pallet_authorship,
+		ImOnline: pallet_im_online,
+		Offences: pallet_offences,
+		Historical: pallet_session_historical::{Pallet},
+
 		Council: pallet_collective::<Instance1>,
 		Treasury: pallet_treasury,
 		Bounties: pallet_bounties,
@@ -2276,7 +2478,7 @@ construct_runtime!(
 		ElectionProviderMultiPhase: pallet_election_provider_multi_phase,
 		Staking: pallet_staking,
 		Session: pallet_session,
-		BagsList: pallet_bags_list,
+		VoterList: pallet_bags_list::<Instance1>,
 		NominationPools: pallet_nomination_pools,
 	}
 );
@@ -2629,13 +2831,18 @@ impl_runtime_apis! {
 		/// reporting is disabled for the given runtime (i.e. this method is
 		/// hardcoded to return `None`). Only useful in an offchain context.
 		fn submit_report_equivocation_unsigned_extrinsic(
-			_equivocation_proof: fg_primitives::EquivocationProof<
+			equivocation_proof: fg_primitives::EquivocationProof<
 				<Block as BlockT>::Hash,
 				NumberFor<Block>,
 			>,
-			_key_owner_proof: fg_primitives::OpaqueKeyOwnershipProof,
+			key_owner_proof: fg_primitives::OpaqueKeyOwnershipProof,
 		) -> Option<()> {
-			None
+			let key_owner_proof = key_owner_proof.decode()?;
+
+			Grandpa::submit_unsigned_equivocation_report(
+				equivocation_proof,
+				key_owner_proof,
+			)
 		}
 
 		/// Generates a proof of key ownership for the given authority in the
@@ -2651,12 +2858,13 @@ impl_runtime_apis! {
 		/// older states to be available.
 		fn generate_key_ownership_proof(
 			_set_id: fg_primitives::SetId,
-			_authority_id: GrandpaId,
+			authority_id: GrandpaId,
 		) -> Option<fg_primitives::OpaqueKeyOwnershipProof> {
-			// NOTE: this is the only implementation possible since we've
-			// defined our key owner proof type as a bottom type (i.e. a type
-			// with no values).
-			None
+			use codec::Encode;
+
+			Historical::prove((fg_primitives::KEY_TYPE, authority_id))
+				.map(|p| p.encode())
+				.map(fg_primitives::OpaqueKeyOwnershipProof::new)
 		}
 	}
 

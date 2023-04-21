@@ -53,6 +53,9 @@ pallet-clusters = { version = '0.0.1', default-features = false, path = '../pall
 pallet-aliases = { version = '0.0.1', default-features = false, path = '../pallets/aliases' }
 
 # Copied from https://github.com/fragcolor-xyz/substrate/blob/refs/tags/fragnova-v0.9.39/bin/node/runtime/Cargo.toml
+pallet-authorship = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-im-online = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-offences = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 pallet-collective = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 pallet-treasury = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 pallet-bounties = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
@@ -60,6 +63,7 @@ pallet-child-bounties = { version = '4.0.0-dev', default-features = false, git =
 sp-io = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 frame-election-provider-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 sp-staking = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+sp-authority-discovery = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 pallet-authority-discovery = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 pallet-election-provider-multi-phase = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 pallet-staking = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
@@ -169,6 +173,9 @@ std = [
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-protos-rpc-runtime-api/std',
 	'pallet-fragments-rpc-runtime-api/std',
+	'pallet-authorship/std',
+	'pallet-im-online/std',
+	'pallet-offences/std',
 	'pallet-collective/std',
 	'pallet-treasury/std',
 	'pallet-bounties/std',
@@ -176,6 +183,7 @@ std = [
 	'sp-io/std',
 	'frame-election-provider-support/std',
 	'sp-staking/std',
+	'sp-authority-discovery/std',
 	'pallet-authority-discovery/std',
 	'pallet-election-provider-multi-phase/std',
 	'pallet-staking/std',

@@ -2256,6 +2256,7 @@ dependencies = [
  "pallet-assets",
  "pallet-aura",
  "pallet-authority-discovery",
+ "pallet-authorship",
  "pallet-bags-list",
  "pallet-balances",
  "pallet-bounties",
@@ -2270,10 +2271,12 @@ dependencies = [
  "pallet-fragments-rpc-runtime-api",
  "pallet-grandpa",
  "pallet-identity",
+ "pallet-im-online",
  "pallet-indices",
  "pallet-insecure-randomness-collective-flip",
  "pallet-multisig",
  "pallet-nomination-pools",
+ "pallet-offences",
  "pallet-oracle",
  "pallet-protos",
  "pallet-protos-rpc-runtime-api",
@@ -2293,6 +2296,7 @@ dependencies = [
  "scale-info",
  "serde_json",
  "sp-api",
+ "sp-authority-discovery",
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core 7.0.0",
@@ -5554,6 +5558,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-im-online"
+version = "4.0.0-dev"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-authorship",
+ "parity-scale-codec 3.4.0",
+ "scale-info",
+ "sp-application-crypto 7.0.0",
+ "sp-core 7.0.0",
+ "sp-io 7.0.0",
+ "sp-runtime 7.0.0",
+ "sp-staking",
+ "sp-std 5.0.0",
+]
+
+[[package]]
 name = "pallet-indices"
 version = "4.0.0-dev"
 source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
@@ -5612,6 +5636,23 @@ dependencies = [
  "scale-info",
  "sp-core 7.0.0",
  "sp-io 7.0.0",
+ "sp-runtime 7.0.0",
+ "sp-staking",
+ "sp-std 5.0.0",
+]
+
+[[package]]
+name = "pallet-offences"
+version = "4.0.0-dev"
+source = "git+https://github.com/fragcolor-xyz/substrate.git?tag=fragnova-v0.9.39#0ba470ef7bd4370ee371c4b48181135f6e12c664"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec 3.4.0",
+ "scale-info",
+ "serde",
  "sp-runtime 7.0.0",
  "sp-staking",
  "sp-std 5.0.0",
