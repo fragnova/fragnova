@@ -1009,6 +1009,7 @@ impl pallet_balances::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
+	/// The means of storing the balances of an account.
 	type AccountStore = System;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type IsTransferable = IsTransferable;
@@ -1024,7 +1025,17 @@ impl pallet_balances::Config<pallet_balances::Instance2> for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
-	type AccountStore = System;
+	/// The means of storing the balances of an account.
+	///
+	/// Note: We are storing the FRAG balances of accounts in the `pallet_balances::Instance2` pallet itself,
+	/// instead of the `frame_system` pallet.
+	/// See https://paritytech.github.io/substrate/master/pallet_balances/pallet/type.Account.html# for more information.
+	type AccountStore = frame_support::traits::StorageMapShim<
+		pallet_balances::Account<Runtime, pallet_balances::Instance2>,
+		frame_system::Provider<Runtime>,
+		AccountId,
+		pallet_balances::AccountData<Balance>
+	>;
 	type WeightInfo = pallet_balances::weights::SubstrateWeight<Runtime>;
 	type IsTransferable = IsTransferable;
 }
@@ -2149,7 +2160,7 @@ pallet_staking_reward_curve::build! {
 }
 
 parameter_types! {
-	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+	pub const SessionsPerEra: sp_staking::SessionIndex = 6; // Number of sessions per era.
 	pub const BondingDuration: sp_staking::EraIndex = 24 * 28; // the bonding period is 28 days
 	pub const SlashDeferDuration: sp_staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
 	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
