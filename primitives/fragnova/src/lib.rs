@@ -19,6 +19,9 @@ pub use runtime_interface::fragnova;
 #[cfg(feature = "std")]
 pub use runtime_interface::init;
 
+pub mod core_primitives;
+pub use core_primitives::*;
+
 /// 64 bytes u8-Array
 pub type Hash64 = [u8; 8];
 /// 128 bytes u8-Array

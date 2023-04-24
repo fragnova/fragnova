@@ -52,6 +52,27 @@ pallet-oracle = { version = '0.0.1', default-features = false, path = '../pallet
 pallet-clusters = { version = '0.0.1', default-features = false, path = '../pallets/clusters' }
 pallet-aliases = { version = '0.0.1', default-features = false, path = '../pallets/aliases' }
 
+# Copied from https://github.com/fragcolor-xyz/substrate/blob/refs/tags/fragnova-v0.9.39/bin/node/runtime/Cargo.toml
+pallet-authorship = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-im-online = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-offences = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-collective = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-treasury = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-bounties = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-child-bounties = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+sp-io = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+frame-election-provider-support = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+sp-staking = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+sp-authority-discovery = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-authority-discovery = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-election-provider-multi-phase = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-staking = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-session = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-staking-reward-curve = { git = "https://github.com/fragcolor-xyz/substrate.git", tag = "fragnova-v0.9.39" }
+pallet-staking-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-bags-list = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+pallet-nomination-pools = { version = '1.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
+
 # Used for the RPCs
 frame-system-rpc-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
 pallet-transaction-payment-rpc-runtime-api = { version = '4.0.0-dev', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
@@ -83,11 +104,6 @@ infer = { version = "0.11.0", default-features=false }
 # svgtypes = "0.8.2"
 # wasmparser-nostd = { version = "0.91.0", default-features = false }
 # rmp3 = { version = "0.3", default-features = false } # Official Idiomatic `no_std` bindings to minimp3 (short for "Minimalistic MP3 decoder single header library") (https://github.com/lieff/minimp3). (minimp3's repo's README mentions this crate btw)
-
-[dev-dependencies]
-# `sp-io` is used when testing the `chain_extension` module
-sp-io = { version = '7.0.0', default-features = false, git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
-
 
 [build-dependencies]
 substrate-wasm-builder = { version = '5.0.0-dev', git = 'https://github.com/fragcolor-xyz/substrate.git', tag = 'fragnova-v0.9.39' }
@@ -157,6 +173,24 @@ std = [
 	'pallet-transaction-payment-rpc-runtime-api/std',
 	'pallet-protos-rpc-runtime-api/std',
 	'pallet-fragments-rpc-runtime-api/std',
+	'pallet-authorship/std',
+	'pallet-im-online/std',
+	'pallet-offences/std',
+	'pallet-collective/std',
+	'pallet-treasury/std',
+	'pallet-bounties/std',
+	'pallet-child-bounties/std',
+	'sp-io/std',
+	'frame-election-provider-support/std',
+	'sp-staking/std',
+	'sp-authority-discovery/std',
+	'pallet-authority-discovery/std',
+	'pallet-election-provider-multi-phase/std',
+	'pallet-staking/std',
+	'pallet-session/std',
+	'pallet-staking-runtime-api/std',
+	'pallet-bags-list/std',
+	'pallet-nomination-pools/std',
     'codec/std',
     'scale-info/std',
     'protos/std'
